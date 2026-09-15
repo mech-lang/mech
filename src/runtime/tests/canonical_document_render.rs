@@ -894,3 +894,32 @@ fn served_particle_document_formats_its_annotated_compute_heading() {
     assert!(slots["TOC"].contains("particle-field"));
     assert!(slots["CONTENT"].contains("particle-field"));
 }
+
+#[test]
+fn browser_titles_preserve_lf_and_crlf_source() {
+    for ending in ["\n", "\r\n"] {
+        let source = [
+            "Browser Title",
+            "=============",
+            "section: Examples",
+            "=============",
+            "answer := 42",
+            "The answer is {answer}.",
+            "",
+        ]
+        .join(ending);
+        let document = document(&source);
+        let html = CanonicalDocumentRenderer
+            .format_browser_html(&document)
+            .unwrap();
+        assert!(html.contains("<h1 class='mech-document-title'>Browser Title</h1>"));
+        assert!(html.contains("Examples"));
+        assert!(html.contains("mech-inline-mech-code"));
+    }
+    let source = include_str!("../../../examples/working/fizzbuzz.mec");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document(source))
+        .unwrap();
+    assert!(html.contains("<h1 class='mech-document-title'>Fizz Buzz</h1>"));
+    assert!(html.contains("mech-block-output"));
+}

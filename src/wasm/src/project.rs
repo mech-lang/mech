@@ -21,8 +21,6 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, OutputId};
-#[cfg(test)]
-use mech_engine::root_document_inline_eval_count;
 use mech_engine::root_document_program_output_id;
 use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
@@ -898,9 +896,6 @@ fn build_document_repl_runtime_for_document(
     })
 }
 
-/// Add a runtime-only capture at the last ordinary source statement and
-/// publish it at the original document boundary. Appended console sections
-/// remain after this boundary, so they cannot replace the fixed Output pane.
 fn document_runtime_error(message: impl Into<String>) -> MechError {
     MechError::new(
         GenericError {
@@ -934,7 +929,7 @@ fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
 mod document {
     use super::*;
 
-    fn document_output_ordinals(
+    pub(super) fn document_output_ordinals(
         document: &SourceDocument,
         runtime: &MechRuntime,
     ) -> HashMap<u64, u64> {
@@ -1105,7 +1100,7 @@ mod document {
             Self::from_bundle_with_sources(bundle, root_specifier, source_map, resolutions)
         }
 
-        fn from_bundle_with_sources(
+        pub(super) fn from_bundle_with_sources(
             bundle: CanonicalProgramBundle,
             root_specifier: &str,
             source_map: HashMap<String, String>,
@@ -2556,7 +2551,7 @@ fn run_source_roots<'a>(
         ));
     }
     let durability = runtime.config().resident_durability;
-    runtime.load_root_program(
+    runtime.load_interactive_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,
@@ -2814,6 +2809,98 @@ fn to_js_error(
 }
 
 #[cfg(test)]
+fn canonical_fixture(source: &str) -> MResult<SourceDocument> {
+    SourceDocument::parse_resolved(
+        "bundle:///document.mec",
+        Revision(0),
+        source,
+        ParseConfig::default(),
+    )
+    .map_err(|error| document_runtime_error(format!("fixture source: {error:?}")))
+}
+
+#[cfg(test)]
+fn compile_fixture_bundle(
+    source: &SourceDocument,
+    root: &str,
+    sources: &HashMap<String, String>,
+    resolutions: &[SourceResolutionEntry],
+    mut builder: RuntimeBuilder,
+) -> MResult<CanonicalProgramBundle> {
+    let uri = format!("bundle:///{root}");
+    let source = SourceDocument::parse_resolved(
+        &uri,
+        source.source().revision(),
+        source.source().to_contiguous_string(),
+        ParseConfig::default(),
+    )
+    .map_err(|error| document_runtime_error(format!("fixture source: {error:?}")))?;
+    let mut resolver = InMemorySourceResolver::new();
+    for (path, text) in sources {
+        let target = format!("bundle:///{path}");
+        let document = SourceDocument::parse_resolved(
+            &target,
+            Revision(0),
+            text.as_str(),
+            ParseConfig::default(),
+        )
+        .map_err(|error| document_runtime_error(format!("fixture source: {error:?}")))?;
+        resolver.insert_source(
+            path,
+            mech_runtime::ResolvedSource::new(
+                path,
+                &target,
+                mech_core::MechSourceCode::String(text.clone()),
+            )
+            .with_source_document(document)?
+            .admit_canonical_document()?,
+        )?;
+    }
+    for edge in resolutions {
+        resolver.insert_resolution(
+            edge.referrer.clone(),
+            edge.specifier.clone(),
+            edge.target.clone(),
+        )?;
+    }
+    builder = builder.source_resolver(resolver);
+    let mut compiler = builder.build_compiler()?;
+    let product = compiler.compile_canonical_interactive_root(SourceRequest::new(root))?;
+    CanonicalProgramBundle::from_product(&uri, &source, &product)
+}
+
+#[cfg(test)]
+fn encode_fixture(source: &SourceDocument) -> MResult<String> {
+    compile_fixture_bundle(
+        source,
+        "document.mec",
+        &HashMap::from([(
+            "document.mec".to_owned(),
+            source.source().to_contiguous_string(),
+        )]),
+        &[],
+        browser_runtime_builder(),
+    )?
+    .encode()
+}
+
+#[cfg(test)]
+fn fixture_bootstrap(source: SourceDocument) -> WasmDocumentBootstrap {
+    let bundle = CanonicalProgramBundle::decode(&encode_fixture(&source).unwrap(), None).unwrap();
+    WasmDocumentBootstrap {
+        root_specifier: "document.mec".to_owned(),
+        source_map: HashMap::from([("document.mec".to_owned(), bundle.source.clone())]),
+        resolutions: Vec::new(),
+        document: source,
+        initial_bytecode: bundle.bytecode.into(),
+        console_instance: "repl".to_owned(),
+        lifecycle: DocumentRuntimeLifecycle::default(),
+        #[cfg(feature = "served_project_authority")]
+        served: None,
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -2825,32 +2912,67 @@ mod tests {
   }
 }"#;
 
+    pub(super) fn visible_output_ids(source: &SourceDocument) -> Vec<u64> {
+        use mech_syntax::document::{CodeBlockSyntax, CodeFenceScope, SyntaxKind};
+        let mut pending = vec![source.document().syntax().clone()];
+        let mut ids = Vec::new();
+        while let Some(node) = pending.pop() {
+            if node.kind() == SyntaxKind::MikaSection {
+                continue;
+            }
+            if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+                if !matches!(
+                    fence.info().map(|info| info.scope),
+                    Some(CodeFenceScope::Root)
+                ) {
+                    continue;
+                }
+            }
+            let kind = match node.kind() {
+                SyntaxKind::EvalInlineMechCode => {
+                    Some(mech_engine::SourceDocumentOutputKind::Inline)
+                }
+                SyntaxKind::CodeBlock => Some(mech_engine::SourceDocumentOutputKind::Fence),
+                _ => None,
+            };
+            if let Some(kind) = kind {
+                ids.push(mech_runtime::canonical_document_output_id(
+                    kind,
+                    node.range(),
+                ));
+            }
+            pending.extend(node.children());
+        }
+        ids.sort();
+        ids
+    }
+
     #[test]
     fn document_output_hashes_map_to_resident_output_ordinals() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
+        for source in [
+            include_str!("../../../examples/working/fizzbuzz.mec"),
+            include_str!("../../../tests/fixtures/shims/all-slots.mec"),
+        ] {
+            let source = canonical_fixture(source).unwrap();
+            let document = WasmDocument::from_encoded(&encode_fixture(&source).unwrap()).unwrap();
+            let outputs = document::document_output_ordinals(&source, document.runtime().unwrap());
+            let html = CanonicalDocumentRenderer::default()
+                .format_browser_html(&source.document())
                 .unwrap();
-        let outputs = document::document_output_ordinals(&tree);
-        assert_eq!(outputs.get(&29_884_140_763_677_669), Some(&0));
-
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
-                .unwrap();
-        let outputs = document::document_output_ordinals(&tree);
-        assert_eq!(
-            outputs.get(&mech_core::hash_str("inline-eval:0:0")),
-            Some(&0)
-        );
-        assert_eq!(
-            outputs.len(),
-            2,
-            "inline and fenced root outputs are mapped"
-        );
+            for id in visible_output_ids(&source) {
+                assert!(
+                    html.contains(&format!("{id}:0")),
+                    "renderer must emit the same output address {id}"
+                );
+                assert!(outputs.contains_key(&id), "missing visible output {id}");
+            }
+            assert!(outputs.contains_key(&root_document_program_output_id()));
+        }
     }
 
     #[test]
     fn browser_document_profile_runs_nbody_module_imports() {
-        let tree = mech_syntax::parser::parse(
+        let tree = canonical_fixture(
             "+> combinatorics\n\
              +> stats\n\
              pairs := combinatorics/n-choose-k(10.0, 2.0)\n\
@@ -2859,27 +2981,10 @@ mod tests {
              pairs",
         )
         .unwrap();
-        let bootstrap = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::from([("document.mec".to_string(), String::new())]),
-            resolutions: Vec::new(),
-            tree: tree.clone(),
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
-        let source = bootstrap
-            .initial_repl_document()
-            .source()
-            .to_contiguous_string();
-        let (runtime, outcome) = activate_document_repl_runtime_tree(
-            &bootstrap,
-            MechEventBuffer::default(),
-            &source,
-            tree,
-        )
-        .unwrap();
+        let bootstrap = fixture_bootstrap(tree.clone());
+        let (runtime, outcome) =
+            activate_document_repl_runtime_document(&bootstrap, MechEventBuffer::default(), tree)
+                .unwrap();
 
         assert_eq!(outcome.route, RuntimeProgramRoute::ResidentPure,);
         assert_eq!(
@@ -2917,14 +3022,13 @@ mod tests {
     #[test]
     fn document_program_output_identity_survives_console_overlays() {
         let tree =
-            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
-                .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            canonical_fixture(include_str!("../../../tests/fixtures/shims/all-slots.mec")).unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = document::WasmDocument::from_encoded(&encoded).unwrap();
         let output_id = document
-            .bootstrap
-            .program_output_id()
+            .runtime()
             .unwrap()
+            .program_output_id()
             .expect("the fixture has an implicit program output");
         assert_eq!(
             document
@@ -2934,8 +3038,8 @@ mod tests {
                 .unwrap()
                 .unwrap()
                 .to_string(),
-            "7",
-            "a named fence still contributes the enclosing program result",
+            "41",
+            "the root result stays separate from the named foo fence's result of 7",
         );
 
         document.repl.session.submit("40 + 2").unwrap();
@@ -2948,7 +3052,7 @@ mod tests {
                 .unwrap()
                 .unwrap()
                 .to_string(),
-            "7",
+            "41",
             "a console result must not replace the fixed document output",
         );
     }
@@ -3193,7 +3297,7 @@ mod tests {
             .build_compiler()
             .unwrap();
         let bytecode = compiler
-            .compile_root(SourceRequest::new("demo.mec"), browser_module_options())
+            .compile_interactive_root(SourceRequest::new("demo.mec"), browser_module_options())
             .unwrap()
             .into_parts()
             .1;
@@ -3280,8 +3384,8 @@ mod tests {
 
     #[test]
     fn encoded_document_controller_loads_residently_without_legacy_execution() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("~answer := 0\nanswer += 42\nanswer").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_f64(
@@ -3310,8 +3414,8 @@ mod tests {
 next-phase := #Drive(phase)
 phase = next-phase
 phase"#;
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture(source).unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -3322,7 +3426,7 @@ phase"#;
 
     #[test]
     fn encoded_document_controller_accepts_wildcard_imported_resident_atan2() {
-        let tree = mech_syntax::parser::parse(
+        let tree = canonical_fixture(
             "Resident Atan2\n================\n+> math/*\n================\n\nangle := atan2(1.0, 0.0)\nangle",
         )
         .unwrap();
@@ -3333,16 +3437,7 @@ phase"#;
                 .is_some(),
             "the standard source catalog must install resident math/atan2",
         );
-        let bootstrap = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::from([("document.mec".to_string(), String::new())]),
-            resolutions: Vec::new(),
-            tree,
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
+        let bootstrap = fixture_bootstrap(tree);
         let document = crate::repl::WasmRepl::from_document(bootstrap);
         assert!(document.is_ok(), "{:#?}", document.err());
         let document = document.unwrap();
@@ -3355,11 +3450,10 @@ phase"#;
 
     #[test]
     fn encoded_document_controller_accepts_resident_matrix_scalar_access() {
-        let tree = mech_syntax::parser::parse(
-            "matrix := [1.0 2.0; 3.0 4.0]\nselected := matrix[2,1]\nselected",
-        )
-        .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree =
+            canonical_fixture("matrix := [1.0 2.0; 3.0 4.0]\nselected := matrix[2,1]\nselected")
+                .unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -3378,8 +3472,8 @@ phase"#;
 
     #[test]
     fn document_console_queries_and_updates_the_same_resident_program() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("~answer := 0\nanswer += 42\nanswer").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -3442,8 +3536,8 @@ phase"#;
     #[cfg(feature = "browser_compute")]
     #[test]
     fn accepted_generation_rebuild_preserves_source_and_resident_state() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 41\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("~answer := 0\nanswer += 41\nanswer").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         document.repl.session.submit("answer += 1").unwrap();
         let accepted_source = document.repl.session.source().to_owned();
@@ -3471,9 +3565,8 @@ phase"#;
     #[test]
     fn selecting_a_large_document_value_is_runtime_local_until_ans_is_consumed() {
         let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            canonical_fixture(include_str!("../../../examples/working/fizzbuzz.mec")).unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let accepted_source = document.repl.session.source().to_string();
         let revision = document
@@ -3576,7 +3669,7 @@ phase"#;
     #[test]
     fn source_backed_document_resolves_relative_imports_from_its_root_specifier() {
         let source = "+> ./math.mec\n~answer := 0\nanswer += math/value + 1\nanswer\n";
-        let tree = mech_syntax::parser::parse(source).unwrap();
+        let tree = canonical_fixture(source).unwrap();
         let source_map = HashMap::from([
             ("docs/main.mec".to_string(), source.to_string()),
             (
@@ -3585,9 +3678,26 @@ phase"#;
             ),
         ]);
 
-        let document =
-            WasmDocument::from_tree_with_sources(tree, "docs/main.mec", source_map, Vec::new())
-                .unwrap();
+        let resolutions = vec![SourceResolutionEntry::new(
+            "docs/main.mec",
+            "./math.mec",
+            "docs/math.mec",
+        )];
+        let bundle = compile_fixture_bundle(
+            &tree,
+            "docs/main.mec",
+            &source_map,
+            &resolutions,
+            browser_runtime_builder(),
+        )
+        .unwrap();
+        let document = WasmDocument::from_bundle_with_sources(
+            bundle,
+            "docs/main.mec",
+            source_map,
+            resolutions,
+        )
+        .unwrap();
 
         assert_f64(
             document
@@ -3600,24 +3710,36 @@ phase"#;
     }
 
     #[test]
-    fn source_backed_document_keeps_the_decoded_tree_authoritative() {
-        let decoded_source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
-        let tree = mech_syntax::parser::parse(decoded_source).unwrap();
-        let source_map = HashMap::from([
+    fn source_backed_document_rejects_a_stale_root_without_dual_authority() {
+        let source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
+        let tree = canonical_fixture(source).unwrap();
+        let mut source_map = HashMap::from([
+            ("docs/main.mec".to_owned(), source.to_owned()),
             (
-                "docs/main.mec".to_string(),
-                "answer := 999\nanswer\n".to_string(),
-            ),
-            (
-                "docs/math.mec".to_string(),
-                "value := 41\n<+ value\n".to_string(),
+                "docs/math.mec".to_owned(),
+                "value := 41\n<+ value\n".to_owned(),
             ),
         ]);
-
-        let document =
-            WasmDocument::from_tree_with_sources(tree, "docs/main.mec", source_map, Vec::new())
-                .unwrap();
-
+        let resolutions = vec![SourceResolutionEntry::new(
+            "docs/main.mec",
+            "./math.mec",
+            "docs/math.mec",
+        )];
+        let bundle = compile_fixture_bundle(
+            &tree,
+            "docs/main.mec",
+            &source_map,
+            &resolutions,
+            browser_runtime_builder(),
+        )
+        .unwrap();
+        let document = WasmDocument::from_bundle_with_sources(
+            bundle.clone(),
+            "docs/main.mec",
+            source_map.clone(),
+            resolutions.clone(),
+        )
+        .unwrap();
         assert_f64(
             document
                 .runtime()
@@ -3627,17 +3749,34 @@ phase"#;
             42.0,
         );
         assert_eq!(
-            document.current_interactive_tree().unwrap(),
-            document.repl.session.source_tree().unwrap().clone(),
-            "document projections must use the session's accepted semantic tree",
+            document
+                .repl
+                .session
+                .source_document()
+                .unwrap()
+                .source()
+                .to_contiguous_string(),
+            source
+        );
+        source_map.insert(
+            "docs/main.mec".to_owned(),
+            "answer := 999\nanswer\n".to_owned(),
+        );
+        assert!(
+            WasmDocument::from_bundle_with_sources(
+                bundle,
+                "docs/main.mec",
+                source_map,
+                resolutions
+            )
+            .is_err()
         );
     }
 
     #[test]
     fn source_backed_document_preserves_explicit_resolution_edges_across_reset() {
         let source = "+> ./math.mec\n~answer := 0\nanswer += math/value + 1\nanswer\n";
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture(source).unwrap();
         let source_map = HashMap::from([
             ("bundle/000000.mec".to_string(), source.to_string()),
             (
@@ -3651,8 +3790,17 @@ phase"#;
             "bundle/000001.mec",
         )];
 
-        let mut document = WasmDocument::from_tree_with_sources(
-            tree,
+        let bundle = compile_fixture_bundle(
+            &tree,
+            "bundle/000000.mec",
+            &source_map,
+            &resolutions,
+            browser_runtime_builder(),
+        )
+        .unwrap();
+        let encoded = bundle.encode().unwrap();
+        let mut document = WasmDocument::from_bundle_with_sources(
+            bundle,
             "bundle/000000.mec",
             source_map,
             resolutions,
@@ -3684,8 +3832,8 @@ phase"#;
 
     #[test]
     fn detached_session_reset_reactivates_its_complete_source_baseline() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("~answer := 0\nanswer += 42\nanswer").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         document.repl.session.submit("answer += 1\nanswer").unwrap();
         assert_f64(
@@ -3708,8 +3856,8 @@ phase"#;
 
     #[test]
     fn document_repl_clear_owns_the_complete_workspace_source() {
-        let tree = mech_syntax::parser::parse("x := 1\ny := 2\ny").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("x := 1\ny := 2\ny").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
 
         document
@@ -3732,8 +3880,8 @@ phase"#;
 
     #[test]
     fn document_repl_formats_only_complete_mech_source_entries() {
-        let tree = mech_syntax::parser::parse("baseline := 1").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("baseline := 1").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         let formatted = document
@@ -3753,93 +3901,63 @@ phase"#;
 
     #[test]
     fn appended_document_fragments_continue_the_root_inline_output_namespace() {
-        let baseline = mech_syntax::parser::parse("Baseline {1}.\n\nanswer := 1\nanswer").unwrap();
-        let fragment = mech_syntax::parser::parse("Documentation {2}.").unwrap();
-        let offset = root_document_inline_eval_count(&baseline);
-        assert_eq!(offset, 1);
-
-        let mut formatter = mech_syntax::formatter::Formatter::new();
-        formatter.html = true;
-        formatter.set_root_inline_eval_offset(offset);
-        let html = formatter.program(&fragment);
-        let fragment_id = mech_core::hash_str("inline-eval:0:1");
-        assert!(html.contains(&format!("id=\"{fragment_id}:0\"")), "{html}");
-
-        let mut combined = baseline.clone();
-        combined.body.sections.extend(fragment.body.sections);
+        let baseline = "Baseline {1}.\n\nanswer := 1\nanswer";
+        let source = canonical_fixture(baseline).unwrap();
+        let mut document = WasmDocument::from_encoded(&encode_fixture(&source).unwrap()).unwrap();
+        let original_ids = visible_output_ids(&source);
+        assert_eq!(original_ids.len(), 1);
+        document
+            .repl
+            .session
+            .submit_host_source("Documentation {2}.")
+            .unwrap();
+        let combined = document.repl.session.source_document().unwrap();
+        let ids = visible_output_ids(combined);
         assert_eq!(
-            root_document_output_ids(&combined),
-            vec![
-                mech_core::hash_str("inline-eval:0:0"),
-                mech_core::hash_str("inline-eval:0:1"),
-            ],
+            ids.len(),
+            2,
+            "appended inline output must have a distinct retained identity"
         );
-        assert_eq!(
-            document::document_output_ordinals(&combined).get(&fragment_id),
-            Some(&1),
+        assert!(
+            ids.contains(&original_ids[0]),
+            "unchanged prefix keeps its output identity"
         );
-
-        let source = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::new(),
-            resolutions: Vec::new(),
-            tree: baseline,
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
-        let (runtime_tree, program_output) = document_runtime_tree(&source, combined).unwrap();
-        assert!(program_output.is_some());
-        assert_eq!(
-            document::document_output_ordinals(&runtime_tree).get(&fragment_id),
-            Some(&2),
-            "the hidden fixed program output owns the ordinal before appended documentation",
-        );
+        let outputs = document::document_output_ordinals(combined, document.runtime().unwrap());
+        let html = CanonicalDocumentRenderer::default()
+            .format_browser_html(&combined.document())
+            .unwrap();
+        for id in ids {
+            assert!(
+                html.contains(&format!("{id}:0")),
+                "appended renderer identity {id}"
+            );
+            assert!(outputs.contains_key(&id), "missing appended output {id}");
+        }
     }
 
     #[test]
     fn fixed_program_capture_preserves_trailing_comment_output_order() {
-        let tree = mech_syntax::parser::parse(
-            "~~~mech\nanswer := 40 + 2\n-- The next value is {answer + 1}.\n~~~",
-        )
-        .unwrap();
-        let source_output_ids = root_document_output_ids(&tree);
-        assert_eq!(source_output_ids.len(), 2);
-        assert_eq!(source_output_ids[0], mech_core::hash_str("inline-eval:0:0"));
-
-        let source = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::new(),
-            resolutions: Vec::new(),
-            tree: tree.clone(),
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
-        let (runtime_tree, program_output) = document_runtime_tree(&source, tree.clone()).unwrap();
-        let mut expected = source_output_ids;
-        expected.push(root_document_program_output_id());
-        assert_eq!(root_document_output_ids(&runtime_tree), expected);
-        assert!(program_output.is_some());
-
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let document = WasmDocument::from_encoded(&encoded).unwrap();
-        let output = document
-            .bootstrap
-            .program_output_id()
-            .unwrap()
-            .expect("the fenced statement is the implicit document output");
+        let source =
+            canonical_fixture("~~~mech\nanswer := 40 + 2\n-- The next value is {answer + 1}.\n~~~")
+                .unwrap();
+        let ids = visible_output_ids(&source);
         assert_eq!(
-            document
-                .runtime()
-                .unwrap()
-                .output_value(output)
-                .unwrap()
-                .unwrap()
-                .to_string(),
-            "42",
+            ids.len(),
+            2,
+            "inline comment and fence both retain visible outputs"
+        );
+        let document = WasmDocument::from_encoded(&encode_fixture(&source).unwrap()).unwrap();
+        let runtime = document.runtime().unwrap();
+        let outputs = document::document_output_ordinals(&source, runtime);
+        for id in ids {
+            assert!(outputs.contains_key(&id));
+        }
+        let program = runtime
+            .program_output_id()
+            .expect("fenced statement is the implicit document output");
+        assert_eq!(
+            runtime.output_value(program).unwrap().unwrap().to_string(),
+            "42"
         );
     }
 
@@ -3875,9 +3993,12 @@ phase"#;
         let error = run_project_sources(&mut runtime, &document).unwrap_err();
         assert!(
             error
-                .kind_as::<mech_runtime::RuntimeModuleDependencyMissingError>()
-                .is_some()
+                .kind_message()
+                .contains("missing canonical dependency"),
+            "{error:?}"
         );
+        assert!(error.kind_message().contains("missing.mec"), "{error:?}");
+        assert!(runtime.program_execution_info().program_revision.is_none());
     }
 
     #[test]
@@ -4081,13 +4202,23 @@ scene := {
             ConfigProfileOptions::default(),
         )
         .unwrap();
-        let tree = mech_syntax::parser::parse(source).unwrap();
+        let tree = canonical_fixture(source).unwrap();
         let authority = authority_config(
             config.hosts.clone(),
             config.run.as_ref().unwrap().grants.clone(),
         );
-        let mut document = WasmDocument::from_served_tree(
-            tree,
+        let sources = HashMap::from([("main.mec".to_owned(), source.to_owned())]);
+        let mut builder =
+            runtime_builder_with_factories(None, BrowserSceneRegistry::default()).unwrap();
+        for host in &config.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &config.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        let bundle = compile_fixture_bundle(&tree, "main.mec", &sources, &[], builder).unwrap();
+        let mut document = WasmDocument::from_served_bundle(
+            bundle,
             "main.mec",
             config,
             config_source,
@@ -4485,10 +4616,14 @@ rows := |id<string> x<f64>|
                 planning = planning.run_resource_grant(grant.clone());
             }
             let mut compiler = planning.build_compiler().unwrap();
-            let tree = mech_syntax::parser::parse(&source).unwrap();
-            let prepared =
-                crate::mixed_compute::prepare_compute_region(&mut compiler, &tree, 0.0, 0.0)
-                    .unwrap();
+            let tree = canonical_fixture(&source).unwrap();
+            let prepared = crate::mixed_compute::prepare_compute_document_region(
+                &mut compiler,
+                &tree,
+                0.0,
+                0.0,
+            )
+            .unwrap();
             assert!(!prepared.coordinator.nodes().is_empty());
             assert!(prepared.coordinator.nodes().iter().all(|node| {
                 let node = node.as_operation().expect("EKF coordinator operation");
@@ -5203,14 +5338,14 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn browser_document_profile_executes_both_stats_sum_axes() {
-        let tree = mech_syntax::parser::parse(
+        let tree = canonical_fixture(
             "+> stats\n\
              column-totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
              row-totals := stats/sum/row([1.0 2.0; 3.0 4.0])\n\
              row-totals",
         )
         .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -5236,8 +5371,8 @@ mod browser_tests {
     }
 
     fn encoded_document(source: &str) -> String {
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        mech_core::nodes::compress_and_encode(&tree).unwrap()
+        let tree = canonical_fixture(source).unwrap();
+        encode_fixture(&tree).unwrap()
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -5419,8 +5554,8 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn encoded_document_executes_and_exposes_detached_render_queries() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("~answer := 0\nanswer += 42\nanswer").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let rendered = document.rendered_symbol("answer").unwrap();
         assert!(!rendered.is_null());
@@ -5669,30 +5804,20 @@ mod browser_tests {
     #[wasm_bindgen_test]
     fn encoded_fizzbuzz_document_executes_in_the_resident_browser_product() {
         let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let output_id = tree
-            .body
-            .sections
-            .iter()
-            .flat_map(|section| &section.elements)
-            .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
-                    block
-                        .code
-                        .last()
-                        .map(|(code, _)| mech_core::hash_str(&format!("{code:?}")))
-                }
-                _ => None,
-            })
+            canonical_fixture(include_str!("../../../examples/working/fizzbuzz.mec")).unwrap();
+        let output_id = super::tests::visible_output_ids(&tree)
+            .into_iter()
             .last()
             .expect("FizzBuzz fixture must contain an output block");
-        assert_eq!(
-            output_id, 29_884_140_763_677_669,
-            "the WASM output key must match the native formatter key",
+        let html = CanonicalDocumentRenderer::default()
+            .format_browser_html(&tree.document())
+            .unwrap();
+        assert!(
+            html.contains(&format!("{output_id}:0")),
+            "WASM output key must match native formatter key"
         );
 
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         assert_eq!(
             document.runtime().unwrap().program_route(),
@@ -5713,7 +5838,7 @@ mod browser_tests {
                 .unwrap()
                 .as_string()
                 .as_deref(),
-            Some("29884140763677669"),
+            Some(output_id.to_string().as_str()),
             "u64 output identities must cross JavaScript losslessly",
         );
         let block_html = Reflect::get(&output, &JsValue::from_str("blockHtml"))
@@ -5736,9 +5861,8 @@ mod browser_tests {
     #[wasm_bindgen_test]
     fn factorial_document_exposes_its_unfenced_final_statement() {
         let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/factorial.mec"))
-                .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+            canonical_fixture(include_str!("../../../examples/working/factorial.mec")).unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let output = document.rendered_program_output().unwrap();
 
@@ -5794,8 +5918,8 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn fixed_program_output_resolves_its_live_value_after_steps() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 1\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let tree = canonical_fixture("~answer := 0\nanswer += 1\nanswer").unwrap();
+        let encoded = encode_fixture(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let initial = document.rendered_program_output().unwrap();
         let selection_token = Reflect::get(&initial, &JsValue::from_str("selectionToken"))

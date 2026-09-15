@@ -754,7 +754,12 @@ fn render_title_html(
         .syntax()
         .tokens()
         .into_iter()
-        .find(|token| token.kind() == SyntaxKind::Newline)
+        .find(|token| {
+            matches!(
+                token.kind(),
+                SyntaxKind::Newline | SyntaxKind::CarriageReturn
+            )
+        })
         .map(|token| token.range().start)
         .ok_or_else(|| range_error(title.syntax().range()))?;
     let title_text = title
