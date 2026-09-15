@@ -538,6 +538,7 @@ struct ResultLookup<'a> {
     citation_numbers: HashMap<String, usize>,
     citations: Vec<(DocumentScopeId, SyntaxNode)>,
     footnote_numbers: HashMap<String, usize>,
+    coordinates: HashMap<TextRange, RetainedCoordinates>,
 }
 
 impl<'a> ResultLookup<'a> {
@@ -689,7 +690,25 @@ impl<'a> ResultLookup<'a> {
             citation_numbers,
             citations,
             footnote_numbers,
+            coordinates: retained_coordinates,
         })
+    }
+
+    fn inline_value(
+        &self,
+        owner: DocumentScopeId,
+        range: TextRange,
+    ) -> Option<&RuntimeValueSnapshot> {
+        let coordinates = self.coordinates.get(&range)?;
+        if coordinates.owner != owner {
+            return None;
+        }
+        self.get(
+            owner,
+            coordinates.scope.as_ref()?,
+            SourceDocumentOutputKind::Inline,
+            Some(range),
+        )
     }
 
     fn get(
@@ -887,7 +906,7 @@ fn render_document_node_html(
         render_figure_container_html(value, owner, lookup, output)?;
     } else if let Some(code) = MechCodeSyntax::cast(value.clone()) {
         output.push_str("<pre class='mech-code'><code>");
-        output.push_str(&escape_html(&node_text(code.syntax())?));
+        render_code_comments(code.syntax(), owner, lookup, output, true)?;
         output.push_str("</code></pre>");
     } else if UlSubtitleSyntax::cast(value.clone()).is_some()
         || value.kind() == SyntaxKind::Subtitle
@@ -1008,9 +1027,9 @@ fn render_document_node_text(
             .body()
             .and_then(|body| visible_root_program_range(body.syntax()));
         append_program_text(child, &CanonicalRenderScope::Root, lookup, output, required)?;
-    } else if MechCodeSyntax::cast(value.clone()).is_some()
-        || UlSubtitleSyntax::cast(value.clone()).is_some()
-    {
+    } else if let Some(code) = MechCodeSyntax::cast(value.clone()) {
+        render_code_comments(code.syntax(), owner, lookup, output, false)?;
+    } else if UlSubtitleSyntax::cast(value.clone()).is_some() {
         output.push_str(&node_text(value)?);
     } else if value.kind() == mech_syntax::document::SyntaxKind::BlankLine {
         output.push_str(&node_text(value)?);
@@ -1532,17 +1551,14 @@ fn render_inline_text(
         let range = replacement.range();
         push_source(node, TextRange::new(cursor, range.start), output, false)?;
         if EvalInlineMechCodeSyntax::cast(replacement.clone()).is_some() {
-            let value = lookup
-                .get(
-                    owner,
-                    &CanonicalRenderScope::Root,
-                    SourceDocumentOutputKind::Inline,
-                    Some(range),
-                )
-                .ok_or_else(|| CanonicalDocumentRenderError {
-                    message: "evaluated inline expression has no completed scope result".to_owned(),
-                    range: Some(range),
-                })?;
+            let value =
+                lookup
+                    .inline_value(owner, range)
+                    .ok_or_else(|| CanonicalDocumentRenderError {
+                        message: "evaluated inline expression has no completed scope result"
+                            .to_owned(),
+                        range: Some(range),
+                    })?;
             output.push_str(&value.format_canonical_inline());
         } else {
             let source = node.source().text(range).map_err(|_| range_error(range))?;
@@ -1587,17 +1603,14 @@ fn render_inline_html(
                 return Ok(());
             }
             let range = node.range();
-            let value = lookup
-                .get(
-                    owner,
-                    &CanonicalRenderScope::Root,
-                    SourceDocumentOutputKind::Inline,
-                    Some(range),
-                )
-                .ok_or_else(|| CanonicalDocumentRenderError {
-                    message: "evaluated inline expression has no completed scope result".to_owned(),
-                    range: Some(range),
-                })?;
+            let value =
+                lookup
+                    .inline_value(owner, range)
+                    .ok_or_else(|| CanonicalDocumentRenderError {
+                        message: "evaluated inline expression has no completed scope result"
+                            .to_owned(),
+                        range: Some(range),
+                    })?;
             output.push_str(&value.format_html());
             Ok(())
         }
@@ -2170,6 +2183,46 @@ fn collect_inline_replacements(node: &SyntaxNode, output: &mut Vec<SyntaxNode>) 
     }
 }
 
+fn render_code_comments(
+    code: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+    html: bool,
+) -> Result<(), CanonicalDocumentRenderError> {
+    if !html && lookup.mode == RenderMode::Source {
+        return push_source(code, code.range(), output, false);
+    }
+    let mut comments = Vec::new();
+    let mut pending = vec![code.clone()];
+    while let Some(node) = pending.pop() {
+        if node.kind() == SyntaxKind::Comment {
+            comments.push(node);
+        } else {
+            pending.extend(node.children());
+        }
+    }
+    comments.sort_by_key(|comment| comment.range().start);
+    let mut cursor = code.range().start;
+    for comment in comments {
+        push_source(
+            code,
+            TextRange::new(cursor, comment.range().start),
+            output,
+            html,
+        )?;
+        if html {
+            output.push_str("<span class='mech-comment'>");
+        }
+        render_inline(&comment, owner, lookup, output, html)?;
+        if html {
+            output.push_str("</span>");
+        }
+        cursor = comment.range().end;
+    }
+    push_source(code, TextRange::new(cursor, code.range().end), output, html)
+}
+
 fn render_fence_html(
     fence: &CodeBlockSyntax,
     owner: DocumentScopeId,
@@ -2214,7 +2267,14 @@ fn render_fence_html(
         output.push('\'');
     }
     output.push('>');
-    output.push_str(&escape_html(&fence_body(fence)?));
+    if let Some(code) = fence
+        .mech_code()
+        .filter(|_| render_scope(&info.scope).is_some())
+    {
+        render_code_comments(code.syntax(), owner, lookup, output, true)?;
+    } else {
+        output.push_str(&escape_html(&fence_body(fence)?));
+    }
     output.push_str("</code></pre>");
     let scope = render_scope(&info.scope);
     if lookup.mode == RenderMode::Browser
@@ -2280,7 +2340,14 @@ fn render_fence_text(
     if info.hidden {
         return Ok(());
     }
-    output.push_str(&fence_body(fence)?);
+    if let Some(code) = fence
+        .mech_code()
+        .filter(|_| render_scope(&info.scope).is_some())
+    {
+        render_code_comments(code.syntax(), owner, lookup, output, false)?;
+    } else {
+        output.push_str(&fence_body(fence)?);
+    }
     let presentation = fence
         .presentation()
         .ok_or_else(|| CanonicalDocumentRenderError {
@@ -2330,7 +2397,7 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
     fn collect(node: &SyntaxNode, latest: &mut Option<(TextRange, bool)>) {
         if matches!(
             node.kind(),
-            SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+            SyntaxKind::InlineMechCode | SyntaxKind::MikaSection | SyntaxKind::Comment
         ) {
             return;
         }

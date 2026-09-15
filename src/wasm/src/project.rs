@@ -633,6 +633,26 @@ pub(crate) fn activate_document_repl_runtime(
     activate_document_repl_runtime_document(bootstrap, events, document)
 }
 
+fn load_document_overlay(
+    runtime: &mut MechRuntime,
+    bootstrap: &WasmDocumentBootstrap,
+    source: &str,
+    durability: mech_runtime::ResidentDurabilityPolicy,
+) -> MResult<RuntimeProgramLoadOutcome> {
+    let original = bootstrap.document.source().to_contiguous_string();
+    let request = SourceRequest::new(&bootstrap.root_specifier);
+    if source.len() > original.len() && source.starts_with(&original) {
+        runtime.load_interactive_root_program_retaining_result(
+            request,
+            browser_module_options(),
+            durability,
+            mech_syntax::document::TextSize(original.len() as u32),
+        )
+    } else {
+        runtime.load_interactive_root_program(request, browser_module_options(), durability)
+    }
+}
+
 pub(crate) fn activate_document_repl_runtime_document(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
@@ -675,20 +695,12 @@ pub(crate) fn activate_document_repl_runtime_document(
         {
             match candidate.coordinator.take() {
                 Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
-                None => runtime.load_interactive_root_program(
-                    SourceRequest::new(&bootstrap.source().root_specifier),
-                    browser_module_options(),
-                    durability,
-                ),
+                None => load_document_overlay(runtime, bootstrap, &source, durability),
             }
         }
         #[cfg(not(feature = "browser_compute"))]
         {
-            runtime.load_interactive_root_program(
-                SourceRequest::new(&bootstrap.source().root_specifier),
-                browser_module_options(),
-                durability,
-            )
+            load_document_overlay(runtime, bootstrap, &source, durability)
         }
     };
     let outcome = match activation {
@@ -3055,6 +3067,36 @@ mod tests {
             "41",
             "a console result must not replace the fixed document output",
         );
+    }
+
+    #[test]
+    fn fixed_document_result_survives_multiple_plain_and_fenced_overlays() {
+        for source in [
+            "answer := 41\nanswer\n",
+            "~~~mech\nanswer := 41\nanswer\n~~~\n",
+        ] {
+            let retained = canonical_fixture(source).unwrap();
+            let mut document =
+                WasmDocument::from_encoded(&encode_fixture(&retained).unwrap()).unwrap();
+            let original = document.runtime().unwrap().program_output_id().unwrap();
+            for (entry, expected) in [("40 + 2", "42"), ("ans + 1", "43"), ("9 * 11", "99")] {
+                assert_eq!(
+                    document.repl.session.submit(entry).unwrap().to_string(),
+                    expected
+                );
+                assert_eq!(
+                    document
+                        .runtime()
+                        .unwrap()
+                        .output_value(original)
+                        .unwrap()
+                        .unwrap()
+                        .to_string(),
+                    "41",
+                    "original {source:?} after {entry:?}",
+                );
+            }
+        }
     }
 
     #[test]

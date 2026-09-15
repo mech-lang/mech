@@ -559,6 +559,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     host_interfaces: &'a HostInterfaceCatalog,
     module_manifests: &'a ModuleManifestCatalog,
     program_config: CompilerPlanningConfig,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
 }
 
 #[derive(Clone, Debug)]
@@ -628,7 +629,16 @@ impl<'a> ProgramCompilerView<'a> {
             host_interfaces,
             module_manifests,
             program_config,
+            retained_result_boundary: None,
         }
+    }
+
+    pub(crate) fn with_retained_result_boundary(
+        mut self,
+        boundary: Option<mech_syntax::document::TextSize>,
+    ) -> Self {
+        self.retained_result_boundary = boundary;
+        self
     }
 
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
@@ -1244,30 +1254,42 @@ impl<'a> ProgramCompilerView<'a> {
                 ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
             );
         }
-        let compile = if interactive {
-            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+        let resolved_modules = imports
+            .iter()
+            .filter_map(|import| {
+                import
+                    .declaration
+                    .module
+                    .clone()
+                    .or_else(|| module_namespace_for_import(&import.declaration))
+            })
+            .collect();
+        let program = if interactive && let Some(boundary) = self.retained_result_boundary {
+            CanonicalSourceFrontend.compile_interactive_document_with_retained_result(
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                schemas,
+                writes,
+                &resolved_modules,
+                boundary,
+            )
         } else {
-            CanonicalSourceFrontend::compile_document_with_planning_contract
-        };
-        let program = compile(
-            &CanonicalSourceFrontend,
-            &document.document(),
-            Arc::clone(&self.function_catalog),
-            schemas,
-            writes,
-            &BTreeSet::new(),
-            &BTreeSet::new(),
-            &imports
-                .iter()
-                .filter_map(|import| {
-                    import
-                        .declaration
-                        .module
-                        .clone()
-                        .or_else(|| module_namespace_for_import(&import.declaration))
-                })
-                .collect(),
-        )
+            let compile = if interactive {
+                CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+            } else {
+                CanonicalSourceFrontend::compile_document_with_planning_contract
+            };
+            compile(
+                &CanonicalSourceFrontend,
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                schemas,
+                writes,
+                &BTreeSet::new(),
+                &BTreeSet::new(),
+                &resolved_modules,
+            )
+        }
         .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let compilation = CanonicalDocumentCompilation {
             index: index.root.clone(),

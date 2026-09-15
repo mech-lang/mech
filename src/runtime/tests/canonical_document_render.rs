@@ -923,3 +923,108 @@ fn browser_titles_preserve_lf_and_crlf_source() {
     assert!(html.contains("<h1 class='mech-document-title'>Fizz Buzz</h1>"));
     assert!(html.contains("mech-block-output"));
 }
+
+#[test]
+fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
+    let body = "answer := 40 + 2 -- **Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer + 2 // __Next__: {ans}, {ans + 10}.\n";
+    for (source, named) in [
+        (body.to_owned(), false),
+        (format!("~~~mech\n{body}~~~\n"), false),
+        (format!("root := 0\n~~~mech:example\n{body}~~~\n"), true),
+    ] {
+        for document in [document(&source), streamed_document(&source)] {
+            let frontend = CanonicalSourceFrontend;
+            let root = frontend.compile_document(&document).unwrap();
+            let mut results = vec![execute(
+                document.scope_id(),
+                CanonicalRenderScope::Root,
+                &root,
+                91,
+            )];
+            if named {
+                let program = frontend
+                    .compile_named_document_scope(&document, "example")
+                    .unwrap();
+                results.push(execute(
+                    document.scope_id(),
+                    CanonicalRenderScope::Named("example".into()),
+                    &program,
+                    92,
+                ));
+            }
+            let renderer = CanonicalDocumentRenderer;
+            let html = renderer.render_html(&document, &results).unwrap();
+            assert!(
+                html.contains("<strong class='mech-strong'>Result</strong>"),
+                "{html}"
+            );
+            assert!(html.contains("href='https://mech-lang.org'"), "{html}");
+            assert!(
+                html.contains("<u class='mech-underline'>Next</u>"),
+                "{html}"
+            );
+            for value in [42, 43, 44, 54] {
+                assert!(
+                    html.contains(&format!(">{value}</span>")),
+                    "missing {value}: {html}"
+                );
+            }
+            assert!(
+                !html.contains(">141</span>"),
+                "double braces must not execute: {html}"
+            );
+            let text = renderer.render_text(&document, &results).unwrap();
+            assert!(text.contains(": 42, 43."), "{text}");
+            assert!(text.contains(": 44, 54."), "{text}");
+            let browser = renderer.format_browser_html(&document).unwrap();
+            assert_eq!(
+                browser.matches("class='mech-inline-mech-code'").count(),
+                4,
+                "{browser}"
+            );
+        }
+    }
+}
+
+#[test]
+fn inline_ans_in_comments_tracks_live_state_through_source_and_bytecode() {
+    let document = document("~counter := 0\ncounter += 1 -- **Counter** {ans}\ncounter\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let artifact = program.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(93, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for value in [1, 2, 3] {
+            instance.turn(&[]).unwrap();
+            let values = (0..artifact.outputs().len())
+                .map(|output| {
+                    RuntimeValueSnapshot::from_value(instance.copied_output(output).unwrap())
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let results = [CanonicalScopeResults::from_values(
+                document.scope_id(),
+                CanonicalRenderScope::Root,
+                &program,
+                &values,
+            )
+            .unwrap()];
+            let html = CanonicalDocumentRenderer
+                .render_html(&document, &results)
+                .unwrap();
+            assert!(html.contains(&format!("<strong class='mech-strong'>Counter</strong> <span class='mech-value'>{value}</span>")), "{html}");
+        }
+    }
+}
