@@ -24,6 +24,8 @@ use mech_engine::{
     insert_root_document_program_output_capture, root_document_inline_eval_count,
     root_document_output_ids, root_document_program_output_id,
 };
+#[cfg(feature = "served_project_authority")]
+use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
@@ -155,12 +157,76 @@ impl WasmProject {
     pub fn from_served_bundle(
         config_source: &str,
         sources: JsValue,
+        artifacts: JsValue,
         roots: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        replace_bundle_run_paths(&mut document, bundle_roots_from_js(roots)?)?;
-        Self::from_served_project(document, source_map, Vec::new())
+        let artifact_map = source_map_from_js(artifacts)?;
+        let roots = bundle_roots_from_js(roots)?;
+        replace_bundle_run_paths(&mut document, roots.clone())?;
+        Self::from_served_project_bundle(document, source_map, artifact_map, roots)
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn from_served_project_bundle(
+        document: MechConfigDocument,
+        source_map: HashMap<String, String>,
+        artifact_map: HashMap<String, String>,
+        roots: Vec<String>,
+    ) -> Result<WasmProject, JsValue> {
+        let authority = served_browser_authority()?;
+        validate_served_authority(&document, &authority).map_err(to_js_error)?;
+        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let source_resolver =
+            project_source_resolver_with_resolutions(&source_map, &[]).map_err(to_js_error)?;
+        let mut runtime = build_runtime_from_authority(
+            &document,
+            &authority,
+            source_resolver,
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?;
+        let [root] = roots.as_slice() else {
+            return Err(to_js_error(MechError::new(
+                GenericError {
+                    msg: "canonical browser bundles require exactly one root artifact".to_owned(),
+                },
+                None,
+            )));
+        };
+        let source = source_map.get(root).ok_or_else(|| {
+            JsValue::from_str(&format!("canonical bundle root source is missing: {root}"))
+        })?;
+        let encoded = artifact_map.get(root).ok_or_else(|| {
+            JsValue::from_str(&format!(
+                "canonical bundle root artifact is missing: {root}"
+            ))
+        })?;
+        let bundle = CanonicalProgramBundle::decode(encoded, Some(source)).map_err(to_js_error)?;
+        bundle
+            .validate_dependency_sources(|uri| {
+                uri.strip_prefix("bundle:///")
+                    .and_then(|specifier| source_map.get(specifier))
+                    .map(String::as_str)
+            })
+            .map_err(to_js_error)?;
+        if bundle.canonical_uri != format!("bundle:///{root}") {
+            return Err(JsValue::from_str(
+                "canonical bundle root identity is stale; regenerate the bundle",
+            ));
+        }
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_bytecode_program(&bundle.bytecode, durability)
+            .map_err(to_js_error)?;
+        Ok(Self::from_runtime(
+            runtime,
+            #[cfg(feature = "browser_host_scene")]
+            scenes,
+        ))
     }
 
     #[cfg(feature = "served_project_authority")]
