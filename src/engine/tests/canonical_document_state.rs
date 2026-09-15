@@ -1567,3 +1567,120 @@ fn review_asymmetric_rectangle_admission() {
         &[12.0, 14.0],
     );
 }
+
+#[test]
+fn selected_f64_matrix_updates_propagate_signed_zero_changes() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_engine::resident::CapturedValueInput;
+
+    fn checked_update(
+        kernel: &mech_core::BoundResidentKernel,
+        inputs: &dyn mech_core::ResidentKernelInputs,
+        output: mech_core::ResidentValueMut<'_>,
+    ) -> Result<bool, mech_core::ResidentKernelError> {
+        struct Inputs<'a>(&'a dyn mech_core::ResidentKernelInputs);
+        impl mech_core::ResidentKernelInputs for Inputs<'_> {
+            fn len(&self) -> usize {
+                self.0.len()
+            }
+            fn get(&self, index: usize) -> Option<mech_core::ResidentValueRef<'_>> {
+                self.0.get(index)
+            }
+        }
+        let mech_core::ResidentValueMut::F64(target) = output else {
+            panic!("expected dense F64 selected update")
+        };
+        let before: Vec<_> = target.iter().map(|x| x.to_bits()).collect();
+        let changed = kernel
+            .retained_state::<mech_core::BoundResidentKernel>()
+            .unwrap()
+            .execute(&Inputs(inputs), mech_core::ResidentValueMut::F64(target))?;
+        assert_eq!(
+            changed,
+            before
+                .iter()
+                .zip(target.iter())
+                .any(|(old, new)| *old != new.to_bits()),
+            "kernel must report representation changes"
+        );
+        Ok(changed)
+    }
+
+    for selection in ["a[1,:]", "a[:,1]", "a[[1],[1 2]]"] {
+        let source = format!(
+            "delta := signal<f64>\n~a := [-0.0 -0.0;-0.0 -0.0]\n{selection} += [delta]\n1 / a[1,1]\n"
+        );
+        let artifact = compiled(&source).compile_artifact().unwrap();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        for artifact in [
+            artifact,
+            mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+        ] {
+            let mut catalog = FunctionCatalogBuilder::new();
+            mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x59c, 0),
+                &artifact,
+                &catalog.build().unwrap(),
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            let updates: Vec<_> = instance
+                .plan
+                .steps
+                .iter()
+                .enumerate()
+                .filter_map(|(index, step)| match step {
+                    mech_engine::resident::ActivatedTurnStep::Kernel(node)
+                        if matches!(
+                            node.construction,
+                            mech_core::OutputConstruction::ReadModifyWrite { .. }
+                        ) =>
+                    {
+                        Some((index, node.kernel.clone()))
+                    }
+                    _ => None,
+                })
+                .collect();
+            assert!(!updates.is_empty());
+            for (index, kernel) in updates {
+                instance.plan.replace_kernel_for_test(
+                    index,
+                    mech_core::BoundResidentKernel::new(checked_update, Box::new([]))
+                        .with_retained_state(std::sync::Arc::new(kernel)),
+                );
+            }
+            for (delta, expected) in [
+                (-0.0, f64::NEG_INFINITY),
+                (0.0, f64::INFINITY),
+                (-0.0, f64::INFINITY),
+            ] {
+                let value = ValueDraft {
+                    schema: artifact.inputs()[0].schema,
+                    shape_values: Box::new([]),
+                    data: ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(delta)),
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .unwrap();
+                let input = CapturedValueInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: &value,
+                };
+                instance
+                    .prepare_turn_values(&[input])
+                    .unwrap()
+                    .publish()
+                    .unwrap();
+                let output = instance.copied_output(0).unwrap();
+                let ValueData::F64(actual) = output.data() else {
+                    panic!("{output:?}")
+                };
+                assert_eq!(
+                    actual.to_f64().to_bits(),
+                    expected.to_bits(),
+                    "{selection}: delta {delta:?}"
+                );
+            }
+        }
+    }
+}
