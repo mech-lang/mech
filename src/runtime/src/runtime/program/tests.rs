@@ -5903,6 +5903,142 @@ fn canonical_uncalled_functions_do_not_bind_resource_inputs() {
 }
 
 #[test]
+fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string("dep.mec", "value := 41.0\n<+ value\n")
+        .unwrap();
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    let resolved = crate::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+        .unwrap()
+        .unwrap();
+    // Resolving the supplied root again would compile this newer revision.
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 59.0\nanswer\n",
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let products = [
+        (
+            compiler
+                .compile_canonical_resolved_root(resolved.clone())
+                .unwrap(),
+            42.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_resolved_root(resolved)
+                .unwrap(),
+            42.0,
+            true,
+        ),
+        (
+            compiler
+                .compile_canonical_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+            100.0,
+            false,
+        ),
+        (
+            compiler
+                .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+                .unwrap(),
+            100.0,
+            true,
+        ),
+    ];
+    for (product, expected, interactive) in products {
+        assert_eq!(
+            product.source_dependencies(),
+            &BTreeMap::from([(
+                "memory:dep.mec".into(),
+                mech_core::hash_str("value := 41.0\n<+ value\n")
+            ),])
+        );
+        assert_eq!(
+            product.artifact().outputs().iter().any(|output| {
+                mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
+                    == Some("answer")
+            }),
+            interactive
+        );
+        let mut accepted = runtime();
+        accepted
+            .load_bytecode_program(
+                product.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        let result = accepted
+            .output_value(mech_core::OutputId::new(0))
+            .unwrap()
+            .unwrap();
+        assert_eq!(canonical_f64(result.value()), expected);
+        if interactive {
+            let id = accepted.root_symbol_output_id("answer").unwrap();
+            assert_eq!(
+                canonical_f64(accepted.output_value(id).unwrap().unwrap().value()),
+                expected
+            );
+        }
+    }
+}
+
+#[test]
+fn canonical_interactive_root_keeps_resource_authority_and_dependency_errors() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string(
+            "main.mec",
+            "@clock := timer://clock/tick{:read(tick)}\nanswer := @clock/tick\n",
+        )
+        .unwrap();
+    resolver
+        .insert_canonical_string("broken.mec", "+> ./absent.mec\nanswer := absent/value\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(ProductTimerProvider))
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+        .unwrap();
+    assert!(product.artifact().requirements().iter().any(|(_, requirement)| matches!(requirement,
+        mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+    assert!(product.artifact().outputs().iter().any(|output| {
+        mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
+            == Some("answer")
+    }));
+    assert!(
+        compiler
+            .compile_canonical_interactive_root(SourceRequest::new("broken.mec"))
+            .unwrap_err()
+            .kind_message()
+            .contains("missing canonical dependency")
+    );
+    // A rejected source graph must not poison the reusable compiler.
+    assert!(
+        compiler
+            .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+            .is_ok()
+    );
+}
+
+#[test]
 fn canonical_interactive_uses_configured_resource_planning() {
     let document = canonical_planning_test_document(
         "@clock := timer://clock/tick{:read(tick)}\nanswer := @clock/tick\n",

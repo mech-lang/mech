@@ -154,3 +154,22 @@ until the complete C product matrix passes with those dependencies removed.
 The canonical library compiling after deletion is only an early boundary probe.
 It is not CLI/runtime/browser acceptance. Final evidence must include actual
 product entry points and all named distributions from syntax-s8-cutover-plan.mec.
+
+Rooted interactive and resolved revisions
+----------------------------------------
+
+The canonical root compiler now shares one graph implementation for ordinary
+and interactive projections. `compile_canonical_interactive_root` publishes live
+root symbols with the same configured resources and detached dependency exports.
+`compile_canonical_resolved_root` and its interactive counterpart consume the
+supplied retained root revision without resolving that root a second time.
+
+`canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols`
+executes all four public interfaces: a previously resolved revision produces 42,
+while a later resolver revision produces 100. Both retain dependency identity;
+only interactive products publish the answer symbol. Resource requirements,
+missing dependencies, and compiler reuse after rejection are covered by
+`canonical_interactive_root_keeps_resource_authority_and_dependency_errors`.
+The canonical runtime regression set passes 57 tests. Module-build option parity,
+ordered multi-root compilation, and rooted mixed compilation remain open; these
+prepared entry points do not claim to replace those responsibilities yet.

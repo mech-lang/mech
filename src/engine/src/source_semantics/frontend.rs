@@ -1000,12 +1000,58 @@ impl CanonicalSourceFrontend {
         published_bindings: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_planning_projection(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_definitions,
+            published_bindings,
+            resolved_source_modules,
+            false,
+        )
+    }
+
+    /// Use the same retained planning bindings while exposing interactive symbols.
+    pub fn compile_interactive_document_with_planning_contract(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.compile_document_with_planning_projection(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_definitions,
+            published_bindings,
+            resolved_source_modules,
+            true,
+        )
+    }
+
+    fn compile_document_with_planning_projection(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_definitions: &BTreeSet<String>,
+        published_bindings: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+        interactive: bool,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_options(
             document,
             Some(catalog),
             input_schemas,
-            false,
+            interactive,
             resource_writes,
             external_definitions,
             &published_bindings

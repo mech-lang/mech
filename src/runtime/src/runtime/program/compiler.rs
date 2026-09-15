@@ -189,28 +189,31 @@ impl ProgramCompiler {
         &mut self,
         request: SourceRequest,
     ) -> MResult<ProgramCompilationProduct> {
-        let view = self.view();
-        let resolved = view.source_resolver.resolve(&request)?.ok_or_else(|| {
-            canonical_compilation_error(format!("missing canonical root {}", request.specifier))
-        })?;
-        let resolved = resolved.admit_canonical_document()?;
-        let document = resolved.source_document().ok_or_else(|| {
-            canonical_compilation_error("canonical root has no retained document")
-        })?;
-        let mut source_dependencies = BTreeMap::new();
-        let program = view.compile_canonical_graph_document(
-            document,
-            &resolved.canonical_uri,
-            &mut Vec::new(),
-            &mut HashMap::new(),
-            &mut source_dependencies,
-            false,
-        )?;
-        let artifact = program.compile_artifact_with_external_contracts(
-            &ResidentExternalContractResolver::new(view.resources),
-        )?;
-        ProgramCompilationProduct::from_canonical_artifact(artifact)
-            .map(|product| product.with_source_dependencies(source_dependencies))
+        self.view().compile_canonical_root(request, false)
+    }
+
+    /// Compile the supplied retained revision without resolving the root again.
+    pub fn compile_canonical_resolved_root(
+        &mut self,
+        resolved: ResolvedSource,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_canonical_resolved_root(resolved, false)
+    }
+
+    /// Resolve a canonical graph and publish its live interactive root symbols.
+    pub fn compile_canonical_interactive_root(
+        &mut self,
+        request: SourceRequest,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_canonical_root(request, true)
+    }
+
+    /// Preserve an already resolved interactive revision and its import referrer.
+    pub fn compile_canonical_interactive_resolved_root(
+        &mut self,
+        resolved: ResolvedSource,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_canonical_resolved_root(resolved, true)
     }
 
     pub fn compile_interactive_document(
@@ -804,6 +807,44 @@ impl<'a> ProgramCompilerView<'a> {
             })
     }
 
+    fn compile_canonical_root(
+        &self,
+        request: SourceRequest,
+        interactive: bool,
+    ) -> MResult<ProgramCompilationProduct> {
+        request.validate()?;
+        let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
+            canonical_compilation_error(format!("missing canonical root {}", request.specifier))
+        })?;
+        self.compile_canonical_resolved_root(resolved, interactive)
+    }
+
+    fn compile_canonical_resolved_root(
+        &self,
+        resolved: ResolvedSource,
+        interactive: bool,
+    ) -> MResult<ProgramCompilationProduct> {
+        let resolved = resolved.admit_canonical_document()?;
+        let document = resolved.source_document().ok_or_else(|| {
+            canonical_compilation_error("canonical root has no retained document")
+        })?;
+        let mut source_dependencies = BTreeMap::new();
+        let program = self.compile_canonical_graph_document(
+            document,
+            &resolved.canonical_uri,
+            &mut Vec::new(),
+            &mut HashMap::new(),
+            &mut source_dependencies,
+            false,
+            interactive,
+        )?;
+        let artifact = program.compile_artifact_with_external_contracts(
+            &ResidentExternalContractResolver::new(self.resources),
+        )?;
+        ProgramCompilationProduct::from_canonical_artifact(artifact)
+            .map(|product| product.with_source_dependencies(source_dependencies))
+    }
+
     fn compile_canonical_graph_document(
         &self,
         document: &SourceDocument,
@@ -812,6 +853,7 @@ impl<'a> ProgramCompilerView<'a> {
         exports: &mut HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
         source_dependencies: &mut BTreeMap<String, u64>,
         planning_dependency: bool,
+        interactive: bool,
     ) -> MResult<mech_engine::CanonicalSourceProgram> {
         use crate::resolver::{
             CanonicalDocumentCompilation, CanonicalResolvedImport, SourceScope,
@@ -864,6 +906,7 @@ impl<'a> ProgramCompilerView<'a> {
                     exports,
                     source_dependencies,
                     true,
+                    false,
                 )?;
                 let artifact = program.compile_artifact_with_external_contracts(
                     &ResidentExternalContractResolver::new(self.resources),
@@ -920,26 +963,31 @@ impl<'a> ProgramCompilerView<'a> {
                 ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
             );
         }
-        let program = CanonicalSourceFrontend
-            .compile_document_with_planning_contract(
-                &document.document(),
-                Arc::clone(&self.function_catalog),
-                schemas,
-                writes,
-                &BTreeSet::new(),
-                &BTreeSet::new(),
-                &imports
-                    .iter()
-                    .filter_map(|import| {
-                        import
-                            .declaration
-                            .module
-                            .clone()
-                            .or_else(|| module_namespace_for_import(&import.declaration))
-                    })
-                    .collect(),
-            )
-            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        let compile = if interactive {
+            CanonicalSourceFrontend::compile_interactive_document_with_planning_contract
+        } else {
+            CanonicalSourceFrontend::compile_document_with_planning_contract
+        };
+        let program = compile(
+            &CanonicalSourceFrontend,
+            &document.document(),
+            Arc::clone(&self.function_catalog),
+            schemas,
+            writes,
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+            &imports
+                .iter()
+                .filter_map(|import| {
+                    import
+                        .declaration
+                        .module
+                        .clone()
+                        .or_else(|| module_namespace_for_import(&import.declaration))
+                })
+                .collect(),
+        )
+        .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let compilation = CanonicalDocumentCompilation {
             index: index.root.clone(),
             scope: SourceScope::Program,
