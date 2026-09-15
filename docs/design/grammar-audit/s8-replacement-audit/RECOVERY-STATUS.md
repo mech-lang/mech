@@ -287,3 +287,70 @@ Archive current runs in `s8-ci-archive-review-handoff` and cancel only obsolete
 heads. Exact C90def CI is completed failed; its complete paginated job list and
 run logs are being preserved, not counted as qualification of this new head.
 External blocker: worker quota as above; no new approval required. Checkpoint—not complete.
+
+
+## Current batch checkpoint — live selection geometry and admitted browser products
+
+**Candidate:** `codex/syntax-s8c-cutover` / `50ee7a23bbfb3dee04ea82a42a810ee59c38c6e7`
+(#830), based on R04 `907aeb1e9`. R05 remains separate pending focused review;
+this is not yet the requested R05-integrated C batch or a seal.
+
+**Completed:** E1's base-target guard `0bd98f07e` is propagated through every
+extraction/corrective branch and C. All 50 CI selector/contract tests pass on C.
+Each restacked production tree was compared with its previous published head;
+only the four shared CI-policy files changed. All remote refs were published
+atomically with explicit leases. Registered review slices require their exact
+staging parent; retargeting to integration, another branch, or an absent base
+uses ordinary conservative validation. C retains full qualification.
+
+R05 #847 is now `e7595eb85e4ba0264634d3206c9321fc8e0d6292` (production identical
+to tested `f4e9847fb`). Broadcast fixes retain complete source/decoded matrix
+checks and rollback coverage. Three returned notes were independently reproduced:
+composite matrix field selection, turn-varying Boolean-mask broadcast geometry,
+and inflated 1x1000 rectangular admission. The fixes use recursive composite
+assignment, maintained type resolution without a discarded gather, live selector
+geometry in the addressed kernel, and checked axis-capacity products. All **42
+document-state + 20 memory-runtime tests pass**, including zero/one/two selected
+populations across nonsquare row/column/rectangle cases. Compiler quarantine and
+R3/R4 checks pass. Every returned R05 thread has an evidence reply and is resolved;
+focused rereview is requested on the current head before integration.
+
+C's admitted-product handoff is implemented in `0f2455395` and preserved through
+the CI-only restack. The standalone locked/offline producer fixture passes **14
+catalog cases plus the rooted canary** and emits actual canonical bundles. The
+rebuilt shipping WASM constructor probe passes for plain and imported documents:
+initial artifact revision equals emitted bytecode; step executes; reset restores
+artifact/state; a source edit compiles a different artifact and advances retained
+2 to 5; a different bundle resets to its own revision and initial 3; malformed
+replacement/reset preserves accepted source/revision/output; stale transitive
+source is rejected. The native producer check with compute_backends_native and
+WASM browser-compute-canary release build pass. The new probe is wired into C's
+existing browser qualification job, not a separate full dispatch.
+
+**Remaining:** R05 focused review/acceptance and incorporation into C; native/WASM
+owner tests still using deleted APIs; engine retirement tests; the actual particle
+product's shared browser-planning `compute` provider failure; other unresolved C
+notes; accepted G05/G19 runtime positives and all remaining gap-register items;
+required stable exact-head qualification, reviews and protected landing. The
+rebuilt particle probe at the previous production head got through heading
+rendering but failed server startup (`RuntimeHostProviderNotFound: compute`).
+Browser loading, backend selection, and full particle execution were therefore
+not reached. The separate successful canonical compute/browser probes are not a
+claim that the particle application passes. No positive obligation was removed.
+
+**Current action:** Finish browser/engine test retirement in the existing owner;
+collect R05 review and integrate accepted corrections. CI archives preserve all
+available completed logs and paginated job metadata before cancellation of obsolete
+runs. Current heads retain their ordinary PR workflows; no manual full dispatch
+was added. Cancellations/skips are not passing evidence.
+
+**Next action:** Run/migrate `cargo +nightly-2026-03-03 test --locked --offline -p
+mech-wasm --no-default-features --features browser_compute_canary --lib`; retarget
+its maintained assertions to canonical documents/bundles. Inspect R05's rereview,
+fix any relevant notes, restack C onto accepted R05 and run combined visibility,
+constant-binding, declaration-handoff and affected runtime regressions. Then
+begin R07/G05 control-derived state initialization without a new planning round.
+
+**External blocker:** Worker quota is exhausted; root continues accepted work.
+No additional routine authority is required. Previously recorded capability
+choices remain open before their dependent work. Checkpoint—not complete.

@@ -1,0 +1,36 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r05-updates/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 1.55s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-21785e5e69543ea9)
+
+running 3 tests
+test review_nested_composite_matrix_field_update ... FAILED
+test review_turn_mask_broadcast_activation ... FAILED
+test review_asymmetric_rectangle_admission ... FAILED
+
+failures:
+
+---- review_nested_composite_matrix_field_update stdout ----
+
+thread 'review_nested_composite_matrix_field_update' (28137669) panicked at src/engine/tests/canonical_document_state.rs:35:33:
+"~a := [{value: 1} {value: 4}]\na[1].value += 1\na[1].value + a[2].value\n": source-semantics/unknown-selected-field: source has no field value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- review_turn_mask_broadcast_activation stdout ----
+
+thread 'review_turn_mask_broadcast_activation' (28137670) panicked at src/engine/tests/canonical_document_state.rs:86:13:
+"~a := [10<i32> 20<i32> 30<i32>;40<i32> 50<i32> 60<i32>]\n~n := 0\nn += 1\nmask := [1;2] <= n\na[mask,:] += [1.5 2.5 3.5]\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n": document activation: UnresolvedShape { slot: CellSlotId(11) }; nodes: [SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(6), end: TextSize(55) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(6), end: TextSize(55) } } }, SourceSemanticNode { operation: "matrix/vertcat", role: "matrix", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(6), end: TextSize(55) } } }, SourceSemanticNode { operation: "math/add", role: "state-update", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(64), end: TextSize(70) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(79), end: TextSize(84) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(79), end: TextSize(84) } } }, SourceSemanticNode { operation: "matrix/vertcat", role: "matrix", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(79), end: TextSize(84) } } }, SourceSemanticNode { operation: "compare/lte", role: "operator", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(79), end: TextSize(89) } } }, SourceSemanticNode { operation: "matrix/horzcat", role: "matrix-row", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(103), end: TextSize(116) } } }, SourceSemanticNode { operation: "access/rows", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(91), end: TextSize(99) } } }, SourceSemanticNode { operation: "convert/kind", role: "implicit-conversion", detail: Some("target=matrix<f64;d0×3>"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(90), end: TextSize(116) } } }, SourceSemanticNode { operation: "core/assign/broadcast", role: "assignment-broadcast", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(103), end: TextSize(116) } } }, SourceSemanticNode { operation: "core/assign/indexed-rows/add", role: "state-update", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(90), end: TextSize(116) } } }, SourceSemanticNode { operation: "access/scalar", role: "slice", detail: None, anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(130), end: TextSize(135) } } }, SourceSemanticNode { operation: "convert/kind", role: "implicit-conversion", detail: Some("target=f64"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(146), end: TextSize(159) } } }, SourceSemanticNode { operation: "core/assign", role: "state-definition", detail: Some("a"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(0), end: TextSize(55) } } }, SourceSemanticNode { operation: "core/assign", role: "state-definition", detail: Some("n"), anchor: SourceSemanticAnchor { document: DocumentId(1392), revision: Revision(7), range: TextRange { start: TextSize(56), end: TextSize(63) } } }]
+
+---- review_asymmetric_rectangle_admission stdout ----
+
+thread 'review_asymmetric_rectangle_admission' (28137668) panicked at src/engine/tests/canonical_document_state.rs:100:18:
+state update must execute and publish: Kernel { node: NodeId(5), error: InvalidShape }
+
+
+failures:
+    review_asymmetric_rectangle_admission
+    review_nested_composite_matrix_field_update
+    review_turn_mask_broadcast_activation
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 39 filtered out; finished in 31.18s
+
+error: test failed, to rerun pass `-p mech-engine --test canonical_document_state`
