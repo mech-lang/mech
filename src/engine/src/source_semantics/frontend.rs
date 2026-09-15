@@ -3197,6 +3197,41 @@ impl SemanticBuilder {
                 let function =
                     self.required(value.function(), value.syntax(), "a function name")?;
                 let function_name = node_text(function.syntax())?;
+                // Resolve the callable before lowering arguments. A rejected name
+                // must not allocate nested calls or constants in this builder.
+                if self.resolved_source_modules.iter().any(|module| {
+                    function_name
+                        .strip_prefix(module)
+                        .is_some_and(|suffix| suffix.starts_with('/'))
+                }) {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/source-module-value-not-callable",
+                        message: format!(
+                            "{function_name} belongs to a resolved source module, not a catalog function"
+                        ),
+                        anchor: SourceSemanticAnchor::for_node(function.syntax()),
+                    });
+                }
+                let declaration = if self.local_functions.contains_key(&function_name) {
+                    None
+                } else {
+                    let function_name = self
+                        .function_imports
+                        .get(&function_name)
+                        .cloned()
+                        .unwrap_or_else(|| function_name.clone());
+                    let declaration =
+                        self.source_type_declaration(&function_name).map_err(|_| {
+                            SourceSemanticError {
+                                code: "source-semantics/unknown-function",
+                                message: format!(
+                                    "function {function_name} has no declared source semantics"
+                                ),
+                                anchor: SourceSemanticAnchor::for_node(function.syntax()),
+                            }
+                        })?;
+                    Some((function_name, declaration))
+                };
                 let arguments = self.required(
                     value.arguments(),
                     value.syntax(),
@@ -3231,37 +3266,7 @@ impl SemanticBuilder {
                         }
                     }
                 }
-                if self.resolved_source_modules.iter().any(|module| {
-                    function_name
-                        .strip_prefix(module)
-                        .is_some_and(|suffix| suffix.starts_with('/'))
-                }) {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/source-module-value-not-callable",
-                        message: format!(
-                            "{function_name} belongs to a resolved source module, not a catalog function"
-                        ),
-                        anchor: SourceSemanticAnchor::for_node(function.syntax()),
-                    });
-                }
-                if self.local_functions.contains_key(&function_name) {
-                    self.inline_document_function(&function_name, inputs, &names, value.syntax())?
-                } else {
-                    let function_name = self
-                        .function_imports
-                        .get(&function_name)
-                        .cloned()
-                        .unwrap_or(function_name);
-                    let declaration =
-                        self.source_type_declaration(&function_name).map_err(|_| {
-                            SourceSemanticError {
-                                code: "source-semantics/unknown-function",
-                                message: format!(
-                                    "function {function_name} has no declared source semantics"
-                                ),
-                                anchor: SourceSemanticAnchor::for_node(function.syntax()),
-                            }
-                        })?;
+                if let Some((function_name, declaration)) = declaration {
                     if names.iter().any(|name| !name.is_empty()) {
                         let parameters = declaration.parameter_names.as_ref().ok_or_else(|| {
                             SourceSemanticError {
@@ -3334,6 +3339,8 @@ impl SemanticBuilder {
                         "call",
                         detail,
                     )
+                } else {
+                    self.inline_document_function(&function_name, inputs, &names, value.syntax())?
                 }
             }
             FactorValueSyntax::MatrixComprehension(value) => self.matrix_comprehension(&value)?,
