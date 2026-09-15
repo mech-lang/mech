@@ -1,3 +1,5 @@
+mod promoted_assignment;
+
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
 use mech_core::snapshot::{
@@ -3065,6 +3067,18 @@ fn bind_compound_selection<const MODE: u8, const OPERATION: u64>(
     let SchemaBody::Matrix { element, .. } = schema.body() else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let incoming = request
+        .inputs
+        .get(1)
+        .and_then(|input| request.schemas.get(input.schema_id))
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let incoming_element = match incoming.body() {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        scalar => scalar,
+    };
+    if incoming_element != element.as_ref() {
+        return promoted_assignment::bind(request, MODE, arithmetic);
+    }
     if !snapshot_arithmetic_element_supported(arithmetic, element) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }

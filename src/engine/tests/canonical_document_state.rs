@@ -1158,3 +1158,53 @@ fn terminal_logical_updates_do_not_require_a_gather_population_at_activation() {
         }
     }
 }
+
+#[test]
+fn promoted_repeated_compound_selectors_accumulate_each_occurrence() {
+    turns(
+        "~a := [10<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],:] += 2.5\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n",
+        &[14.0, 18.0],
+    );
+}
+
+#[test]
+fn nested_repeated_compound_selectors_accumulate_each_occurrence() {
+    turns(
+        "~a := [10 20; 30 40]\na[[1 1],:][:,1] += 2\na[1,1]\n",
+        &[14.0, 18.0],
+    );
+}
+
+#[test]
+fn promoted_repeated_updates_use_canonical_conversion_after_each_operation() {
+    for (kind, right) in [
+        ("i8", "2.5"),
+        ("i16", "2.5"),
+        ("i32", "2.5"),
+        ("u8", "2.5"),
+        ("u16", "2.5"),
+        ("u32", "2.5"),
+        // The maintained Number contract intentionally has no lossless
+        // i64/u64/i128/u128 + f64 promotion. Exercise their integer promotions.
+        ("i64", "2<i128>"),
+        ("i128", "2<i64>"),
+        ("u64", "2<u128>"),
+        ("u128", "2<u64>"),
+    ] {
+        let source = format!(
+            "~a := [10<{kind}> 20<{kind}>; 30<{kind}> 40<{kind}>]\na[[1 1],:] += {right}\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n"
+        );
+        turns(&source, &[14.0, 18.0]);
+    }
+    for (start, operation, right, expected) in [
+        ("-1", "+=", "0.5", 0.0),
+        ("2", "*=", "1.5", 4.0),
+        ("60", "/=", "2.5", 9.0),
+        ("10", "-=", "2.5", 4.0),
+    ] {
+        let source = format!(
+            "~a := [{start}<i32> 20<i32>; 30<i32> 40<i32>]\na[[1 1],:] {operation} {right}\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n"
+        );
+        turns(&source, &[expected]);
+    }
+}
