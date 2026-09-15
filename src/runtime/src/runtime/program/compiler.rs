@@ -778,6 +778,7 @@ impl<'a> ProgramCompilerView<'a> {
             .bind_input_constants(&constants)
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         if !initialization {
+            self.validate_canonical_planning_candidate(&program, &context.values)?;
             for name in external {
                 if !program
                     .program()
@@ -852,6 +853,72 @@ impl<'a> ProgramCompilerView<'a> {
         ))
     }
 
+    fn validate_canonical_planning_candidate(
+        &self,
+        program: &CanonicalSourceProgram,
+        values: &BTreeMap<String, Value>,
+    ) -> MResult<()> {
+        let has_write = program.program().nodes.iter().any(|node| {
+            let mech_engine::SourceNodeBody::Operation {
+                requirement: Some(id),
+                ..
+            } = &node.body
+            else {
+                return false;
+            };
+            matches!(program.program().requirements.get(*id),
+                Some(ApplicationRequirement::Resource(request))
+                if matches!(request.intent, ResourceIntent::Assign | ResourceIntent::Send))
+        });
+        if !has_write && values.is_empty() {
+            return Ok(());
+        }
+        let bindings = program
+            .program()
+            .inputs
+            .iter()
+            .enumerate()
+            .filter_map(|(ordinal, input)| {
+                values
+                    .get(&input.name)
+                    .map(|value| (ordinal as u32, value.clone()))
+            })
+            .collect::<Vec<_>>();
+        let planning = program
+            .clone()
+            .bind_input_constants(&bindings)
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        // Explicit live ports can have their defaults evaluated by the
+        // separate initializer projection. Do not fabricate a planning value
+        // for a still-open input merely to execute an unrelated pure graph.
+        if !has_write && !planning.program().inputs.is_empty() {
+            return Ok(());
+        }
+        let artifact = planning.compile_artifact_with_external_contracts(
+            &ResidentExternalContractResolver::new(self.resources),
+        )?;
+        let mut instance = activate_external(
+            ReactiveInstanceId::new(0x4350_4c4e, 0),
+            &artifact,
+            &self.function_catalog,
+            &ActivationFacts::default(),
+            ResidentIntegrityMode::Checked,
+        )
+        .map_err(|error| {
+            canonical_compilation_error(format!(
+                "canonical resource planning activation failed: {error:?}"
+            ))
+        })?;
+        let prepared = instance.prepare_turn(&[]).map_err(|error| {
+            canonical_compilation_error(format!("canonical resource planning failed: {error:?}"))
+        })?;
+        preflight_canonical_effect_payloads(&prepared, &artifact, self.resources)?;
+        // Planning owns no publication authority. All candidate state and
+        // captured effects are discarded after the provider's effect-free hook.
+        prepared.abort();
+        Ok(())
+    }
+
     fn canonical_document_artifact(
         &self,
         document: &SourceDocument,
@@ -867,22 +934,35 @@ impl<'a> ProgramCompilerView<'a> {
         let index = document
             .index()
             .map_err(|error| MechError::new(error, None))?;
-        let (input_schemas, resource_reads, resource_writes, _) =
+        let (input_schemas, resource_reads, resource_writes, planned_reads) =
             self.canonical_document_resources(&index.root, &document.document())?;
         let compile = if interactive {
             CanonicalSourceFrontend::compile_interactive_document_with_catalog_and_resources
         } else {
             CanonicalSourceFrontend::compile_document_with_catalog_and_resources
         };
-        let program = compile(
+        let mut program = compile(
             &CanonicalSourceFrontend,
             &document.document(),
             Arc::clone(&self.function_catalog),
             input_schemas,
-            resource_reads,
+            BTreeMap::new(),
             resource_writes,
         )
         .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        self.validate_canonical_planning_candidate(&program, &planned_reads)?;
+        for (name, request) in resource_reads {
+            if program
+                .program()
+                .inputs
+                .iter()
+                .any(|input| input.name == name)
+            {
+                program = program
+                    .bind_resource_input(&name, request)
+                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            }
+        }
         program
             .compile_artifact_with_external_contracts(&ResidentExternalContractResolver::new(
                 self.resources,
@@ -998,6 +1078,7 @@ impl<'a> ProgramCompilerView<'a> {
                     .collect::<Vec<_>>(),
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        self.validate_canonical_planning_candidate(&program, &planned_reads)?;
         if planning_dependency {
             let bindings = program
                 .program()
@@ -1212,11 +1293,14 @@ impl<'a> ProgramCompilerView<'a> {
                 intent: ResourceIntent::Read,
                 delivery: mech_core::ResourceDelivery::Live,
             };
-            let value = self.resources.plan_read(RuntimeResourceReadRequest {
-                base_uri: key.base_uri,
-                path: key.path,
-                context_name: context_name.clone(),
-            })?;
+            let value = self
+                .resources
+                .plan_read(RuntimeResourceReadRequest {
+                    base_uri: key.base_uri,
+                    path: key.path,
+                    context_name: context_name.clone(),
+                })
+                .map_err(classify_source_planning)?;
             let schemas = value.schemas().ok_or_else(|| {
                 canonical_compilation_error("planned resource read has no schema owner")
             })?;
@@ -1640,6 +1724,7 @@ impl<'a> ProgramCompilerView<'a> {
             &planning_artifact,
             &self.function_catalog,
             &compute.interface,
+            self.resources,
         )?;
 
         let mut coordinator = programs.coordinator;
@@ -2397,6 +2482,38 @@ impl<'a> ProgramCompilerView<'a> {
     }
 }
 
+fn preflight_canonical_effect_payloads(
+    prepared: &mech_engine::resident::PreparedResidentTurn<'_>,
+    artifact: &ProgramArtifact,
+    resources: &RuntimeResourceRegistry,
+) -> MResult<()> {
+    for effect in prepared.effect_intents() {
+        let Some(ApplicationRequirement::Resource(request)) =
+            artifact.requirements().get(effect.requirement)
+        else {
+            continue;
+        };
+        #[cfg(feature = "compute")]
+        if is_compute_kernel_base(&request.base_uri) {
+            continue;
+        }
+        let intent = match request.intent {
+            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+            ResourceIntent::Read => continue,
+        };
+        resources.plan_write(RuntimeResourceWriteCommand {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name.clone(),
+            operation: RuntimeCapabilityOperation::from_name(request.operation.clone())?,
+            value: prepared.materialize_effect_payload(effect.ordinal)?,
+            intent,
+        })?;
+    }
+    Ok(())
+}
+
 fn execute_named_canonical_outputs(
     artifact: &ProgramArtifact,
     catalog: &Arc<mech_core::FunctionCatalog>,
@@ -2454,6 +2571,7 @@ fn capture_canonical_compute_activation_inputs(
     artifact: &ProgramArtifact,
     catalog: &Arc<mech_core::FunctionCatalog>,
     interface: &ComputeRegionInterface,
+    resources: &RuntimeResourceRegistry,
 ) -> MResult<BTreeMap<String, ComputeValue>> {
     let mut instance = activate_external(
         ReactiveInstanceId::new(0x4343_4f4f, 0),
@@ -2472,6 +2590,7 @@ fn capture_canonical_compute_activation_inputs(
             "canonical compute coordinator planning failed: {error:?}"
         ))
     })?;
+    preflight_canonical_effect_payloads(&prepared, artifact, resources)?;
     let effects = prepared
         .effect_intents()
         .map(|intent| (intent.ordinal, intent.requirement))

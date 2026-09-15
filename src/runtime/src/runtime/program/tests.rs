@@ -6321,3 +6321,33 @@ fn canonical_interactive_resource_planning_does_not_execute_host_effects() {
     assert_eq!(trace.preparations, 0);
     assert_eq!(trace.deliveries, 0);
 }
+
+#[test]
+fn canonical_planned_selectors_enforce_portable_index_width_before_activation() {
+    let source = "@typed := test://typed/value{:read(data)}\nvalues := [10.0 20.0 30.0]\nselected := values[1,@typed/data]\nselected\n";
+    for (planned, accepted) in [(1u64, true), (u32::MAX as u64 + 1, false)] {
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .resource_provider(Box::new(TypedObservationProvider {
+                planned: ValueCell::from_exact(planned).unwrap().snapshot().unwrap(),
+            }))
+            .build_compiler()
+            .unwrap();
+        assert_eq!(compiler.compile_canonical_source(source).is_ok(), accepted);
+    }
+}
+
+#[test]
+fn canonical_missing_provider_keeps_the_public_route_failure_class() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let error = compiler.compile_canonical_source(
+        "@clock := missing://clock/tick{:read(delta-seconds)}\ndelta := @clock/delta-seconds\ndelta\n",
+    ).unwrap_err();
+    assert_eq!(
+        error.kind_as::<ResidentRouteFailure>().unwrap().class,
+        ResidentRouteFailureClass::ProviderUnavailable
+    );
+}
