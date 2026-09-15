@@ -1,0 +1,10 @@
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-syntax-s8r07-initializers/src/engine)
+    Finished `test` profile [unoptimized] target(s) in 25.27s
+     Running tests/canonical_document_state.rs (/private/tmp/mech-syntax-s8-extraction-target/debug/deps/canonical_document_state-a174116a5abd2548)
+
+running 2 tests
+test control_initializer_rejects_live_input_dependencies ... ok
+test control_initializer_rejects_state_dependencies ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out; finished in 0.14s
+

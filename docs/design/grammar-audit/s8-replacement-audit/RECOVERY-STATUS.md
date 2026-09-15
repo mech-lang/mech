@@ -443,3 +443,58 @@ capability/semantic decisions remain open for their dependent obligations.
 Obsolete C83fd run 35011917078 was confirmed completed/cancelled after normal cancellation then force
 cancellation; all 29 job records and available logs were preserved first in `s8-ci-archive-signed-zero`; cancellation is not
 qualification. No duplicate manual full dispatch was created. Checkpoint—not complete.
+
+
+## Current checkpoint — shared static failure fixed, R05 review clean
+
+**Candidate:** `codex/syntax-s8c-cutover` /
+`ac4388d4f888e39f13e133ac22d1b88d07bb2166` (#830), based on unchanged R05
+`f118f0b17a6313e54b97319e0d987dcf9853f8c6`. Automatic C qualification run
+35015781991 is pending, not passing. This C commit changes only its production
+routing guard and two guard tests; product code is identical to 8a94aa97e.
+
+**Completed:** R05's implementation review at f118f0b17 returned with no major
+issues at 2026-09-15T19:36:40Z. All prior threads are resolved. C's static
+architecture and static distribution jobs both failed on the same stale
+`load_root_program` string requirement, after the browser project had moved to
+`load_interactive_root_program` to retain public root-symbol queries. The single
+owner fix now requires that interactive production seam. A mutation regression
+proves reverting to the ordinary root loader fails the guard. All 18 commands
+from the local static-contract sequence pass, including repository formatting,
+52 CI/guard unit tests, all R1–R6 contracts, bytecode and unsafe-boundary checks.
+No product test was weakened or changed. The 162 focused Rust tests, 14 catalog
+product cases plus rooted canary, WASM32 test compilation, and browser 53-pass/
+3-fail results belong to the preceding product-identical 8a94aa97e head; they
+are not mislabeled as full exact-head qualification of ac4388d4f.
+
+R07 is now published at `50ae6a64e5b709e7787cec75b735bd19b69f88af` on
+`codex/syntax-s8r07-control-initializers`. Two new tests (four fixtures, each
+source and decoded bytecode) prove live input/state-dependent matches and
+comprehensions must remain unavailable as persistent-state initializers. Both
+tests pass. The original two closed-initializer positives remain red. No R07
+production implementation or additional PR has been published.
+
+**Remaining:** R07's activation implementation, C's three enabled browser
+failures, real particle mixed-compute handoff, all other accepted open gaps and
+required decisions/reviews, exact-head full qualification and protected landing.
+C still has its compute/source-replacement review thread open; no premature
+rereview was requested. R05 clean review does not seal the whole candidate.
+
+**Current action:** Implement R07 closed control initialization through shared
+resident control execution, preserving the live-dependency rejection boundary.
+Continue C qualification and handle actual failures in their existing owners.
+
+**Next action:** In `/private/tmp/mech-syntax-s8r07-initializers`, extend the
+activation schedule to execute closed match/comprehension producers and their
+closed dependencies once. The existing kernel-only ActivatedOnceNode cannot
+simply relabel controls: build_plan, control local storage, execution and
+activation-derived shapes must all be consistent. Reuse the current control
+executor and budget accounting; do not add a second evaluator or replay effects.
+Run both closed positives and the live/state negatives before publishing a fix.
+Poll C run 35015781991, including paginated jobs, and preserve failure logs.
+
+**External blocker:** None for the current accepted work. Existing scope
+decisions and worker quota are unchanged. Obsolete run 35014211166 has all
+29 job records and completed logs preserved in s8-ci-archive-interactive-seam;
+normal cancellation left it queued, so force cancellation was requested.
+Canceled/skipped work is not qualification. Checkpoint—not complete.
