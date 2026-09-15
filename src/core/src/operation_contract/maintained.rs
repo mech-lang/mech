@@ -72,7 +72,7 @@ pub fn maintained_operation_contract(
     };
     if matches!(
         name,
-        "core/assign/identity-indices" | "core/assign/selection-order"
+        "core/assign/identity-indices" | "core/assign/selection-order" | "core/assign/broadcast"
     ) {
         return (input_count == 1)
             .then(|| elementwise_operation_contract(1, ChangeDetectionPolicy::KernelReported));
