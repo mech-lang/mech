@@ -166,3 +166,159 @@ fn selection_order(
         _ => Err(ResidentKernelError::InvalidInput),
     }
 }
+
+pub(super) fn bind_broadcast(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    let [source] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if source.kind != request.output.kind
+        || !matches!(
+            source.kind,
+            ResidentValueKind::F64 | ResidentValueKind::Snapshot
+        )
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let input_schema = request
+        .schemas
+        .get(source.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (
+        SchemaBody::Matrix {
+            element: input_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: output_element,
+            ..
+        },
+    ) = (input_schema.body(), output_schema.body())
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if input_element != output_element
+        || !snapshot_arithmetic_element_supported(SemanticArithmetic::Add, input_element)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let (input_rows, input_columns) = declared_matrix_dimensions(request, source)?;
+    let (rows, columns) = declared_matrix_dimensions(request, &request.output)?;
+    let shape = |rows, columns| -> Result<ResidentShape, ResidentKernelBindError> {
+        Ok(ResidentShape {
+            rows: u32::try_from(rows).map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+            columns: u32::try_from(columns)
+                .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?,
+        })
+    };
+    let input_shape = shape(input_rows, input_columns)?;
+    let output_shape = shape(rows, columns)?;
+    if (source.kind == ResidentValueKind::F64
+        && (source.shape != input_shape || request.output.shape != output_shape))
+        || (source.kind == ResidentValueKind::Snapshot
+            && (source.shape != ResidentShape::SCALAR
+                || request.output.shape != ResidentShape::SCALAR))
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let mode = binary_broadcast_mode(input_shape, output_shape)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    Ok(BoundResidentKernel::new(
+        broadcast,
+        vec![
+            input_rows as u64,
+            input_columns as u64,
+            rows as u64,
+            columns as u64,
+            mode,
+        ]
+        .into_boxed_slice(),
+    )
+    .with_snapshot_output(snapshot_output_metadata(request))
+    .with_snapshot_schemas(request.schemas.clone()))
+}
+
+fn broadcast(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [input_rows, input_columns, rows, columns, mode] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let input_count = input_rows
+        .checked_mul(*input_columns)
+        .and_then(|n| usize::try_from(n).ok())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    match (input(inputs, 0)?, output) {
+        (ResidentValueRef::F64(source), ResidentValueMut::F64(target)) => {
+            if source.len() != input_count || target.len() != count {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let mut changed = false;
+            for (index, destination) in target.iter_mut().enumerate() {
+                let value = source[binary_broadcast_index(*mode, index, rows)];
+                changed |= destination.to_bits() != value.to_bits();
+                *destination = value;
+            }
+            Ok(changed)
+        }
+        (ResidentValueRef::Snapshot([Some(source)]), output @ ResidentValueMut::Snapshot(_)) => {
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            preflight_snapshot_arithmetic(
+                kernel,
+                schemas,
+                &[source],
+                &output,
+                input_count,
+                count,
+                count,
+            )?;
+            let source = snapshot_numeric_elements(source)?;
+            if source.len() != input_count {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let mut values = Vec::with_capacity(count);
+            for row in 0..rows {
+                for column in 0..columns {
+                    let index = match *mode {
+                        BINARY_BROADCAST_SCALAR => 0,
+                        BINARY_BROADCAST_EXACT => row * columns + column,
+                        BINARY_BROADCAST_COLUMN => row,
+                        BINARY_BROADCAST_ROW => column,
+                        _ => return Err(ResidentKernelError::InvalidInput),
+                    };
+                    values.push(source[index].clone());
+                }
+            }
+            write_snapshot_data_with_work_budget(
+                kernel,
+                output,
+                ValueDataDraft::Matrix(values.into_boxed_slice()),
+                None,
+            )
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
