@@ -6,10 +6,8 @@
 //! compilation products and detached typed initialization values
 //! escape this module.
 
-#[cfg(feature = "compute")]
-use std::collections::HashMap;
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     sync::Arc,
 };
 
@@ -44,14 +42,14 @@ use crate::{
     RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
     RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase, SourceDocument,
     SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest,
-    SourceResolver,
+    SourceResolver, import_may_resolve_source_dependency, import_requires_source_dependency,
+    source_request_for_import,
 };
 #[cfg(feature = "compute")]
 use crate::{
     ModuleVersionId, RuntimeModuleDependencyCycleError, RuntimeModuleDependencyMissingError,
     RuntimeModuleExportNotFound, RuntimeModuleImportConflict, SourceContextCapabilityScope,
-    SourceExportDeclaration, import_may_resolve_source_dependency,
-    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
+    SourceExportDeclaration, module_namespace_for_import,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
