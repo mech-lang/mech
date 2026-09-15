@@ -13,10 +13,13 @@ struct Plan {
     rows: usize,
     columns: usize,
     source_len: usize,
+    source_rows: usize,
+    source_columns: usize,
     source: SnapshotAccessSelectorLayout,
     target: SnapshotAccessSelectorLayout,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
     selector_capacity: usize,
+    max_writes: usize,
     promote: ConversionPlan,
     assign: ConversionPlan,
 }
@@ -54,17 +57,16 @@ pub(super) fn bind(
     if schema(&request.output)?.body() != base_schema.body() {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let (incoming, source_len) = match source_schema.body() {
+    let (incoming, source_rows, source_columns) = match source_schema.body() {
         SchemaBody::Matrix { element, .. } => {
             let (r, c) = declared_matrix_dimensions(request, source)?;
-            (
-                element.as_ref(),
-                r.checked_mul(c)
-                    .ok_or(ResidentKernelBindError::UnsupportedLayout)?,
-            )
+            (element.as_ref(), r, c)
         }
-        scalar => (scalar, 1),
+        scalar => (scalar, 1, 1),
     };
+    let source_len = source_rows
+        .checked_mul(source_columns)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let rational_power = cfg!(feature = "r64")
         && arithmetic == SemanticArithmetic::Power
         && destination.as_ref() == &SchemaBody::Rational64
@@ -97,14 +99,24 @@ pub(super) fn bind(
         resident_shape: port.shape,
     };
     let mut capacity = 0usize;
+    let mut axis_capacities = Vec::new();
     for selector in &request.inputs[2..] {
         if !positional_selector_layout(request, selector) {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
+        let axis_capacity = declared_selector_cardinality(request, selector)?;
+        axis_capacities.push(axis_capacity);
         capacity = capacity
-            .checked_add(declared_selector_cardinality(request, selector)?)
+            .checked_add(axis_capacity)
             .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     }
+    let max_writes = match mode {
+        0 => Some(axis_capacities[0]),
+        1 => axis_capacities[0].checked_mul(columns),
+        2 => axis_capacities[0].checked_mul(rows),
+        _ => axis_capacities[0].checked_mul(axis_capacities[1]),
+    }
+    .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             mode,
@@ -113,10 +125,13 @@ pub(super) fn bind(
             rows,
             columns,
             source_len,
+            source_rows,
+            source_columns,
             source: layout(source),
             target: layout(&request.output),
             selectors: request.inputs[2..].iter().map(layout).collect(),
             selector_capacity: capacity,
+            max_writes,
             promote,
             assign,
         }))
@@ -144,25 +159,10 @@ fn execute(
         .ok_or(ResidentKernelError::InvalidShape)?;
     // Numeric snapshots have fixed scalar payloads. Admit the complete draft,
     // selector, conversion and publication storage before materializing it.
-    let max_writes = match plan.mode {
-        0 => plan.selector_capacity,
-        1 => plan
-            .selector_capacity
-            .checked_mul(plan.columns)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        2 => plan
-            .selector_capacity
-            .checked_mul(plan.rows)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        _ => plan
-            .selector_capacity
-            .checked_mul(plan.selector_capacity)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-    };
     let elements = count
         .checked_add(plan.source_len)
         .and_then(|n| n.checked_add(plan.selector_capacity))
-        .and_then(|n| n.checked_add(max_writes))
+        .and_then(|n| n.checked_add(plan.max_writes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let bytes = elements
         .checked_mul(core::mem::size_of::<ValueDataDraft>())
@@ -201,7 +201,7 @@ fn execute(
         .enumerate()
         .map(|(i, layout)| selector_value(schemas, layout, input(inputs, i + 1)?))
         .collect::<Result<Vec<_>, _>>()?;
-    let positions = if plan.mode == 0 {
+    let (positions, selected_rows, selected_columns) = if plan.mode == 0 {
         // Dense logical masks carry physical column-major positions. Read
         // those before selector_value normalizes matrix data to row-major.
         // Numeric selectors retain their authored occurrence order.
@@ -217,10 +217,15 @@ fn execute(
         } else {
             access_indices(&selectors[0], count)?
         };
-        physical
-            .into_iter()
-            .map(|p| (p % plan.rows) * plan.columns + p / plan.rows)
-            .collect::<Vec<_>>()
+        let length = physical.len();
+        (
+            physical
+                .into_iter()
+                .map(|p| (p % plan.rows) * plan.columns + p / plan.rows)
+                .collect::<Vec<_>>(),
+            length,
+            1,
+        )
     } else {
         let rows = if plan.mode == 2 {
             (0..plan.rows).collect()
@@ -232,17 +237,44 @@ fn execute(
         } else {
             access_indices(&selectors[usize::from(plan.mode == 3)], plan.columns)?
         };
-        rows.iter()
-            .flat_map(|r| columns.iter().map(move |c| r * plan.columns + c))
-            .collect::<Vec<_>>()
+        (
+            rows.iter()
+                .flat_map(|r| columns.iter().map(move |c| r * plan.columns + c))
+                .collect::<Vec<_>>(),
+            rows.len(),
+            columns.len(),
+        )
     };
-    if source.len() != 1 && source.len() != positions.len() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    for (ordinal, destination) in positions.into_iter().enumerate() {
+    let source_index = |ordinal: usize| -> Result<usize, ResidentKernelError> {
+        if source.len() == 1 {
+            return Ok(0);
+        }
+        if plan.mode == 0 {
+            return (source.len() == positions.len())
+                .then_some(ordinal)
+                .ok_or(ResidentKernelError::InvalidShape);
+        }
+        if (plan.source_rows != 1 && plan.source_rows != selected_rows)
+            || (plan.source_columns != 1 && plan.source_columns != selected_columns)
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let row = if plan.source_rows == 1 {
+            0
+        } else {
+            ordinal / selected_columns
+        };
+        let column = if plan.source_columns == 1 {
+            0
+        } else {
+            ordinal % selected_columns
+        };
+        Ok(row * plan.source_columns + column)
+    };
+    for (ordinal, &destination) in positions.iter().enumerate() {
         let left = execute_conversion_draft(next[destination].clone(), &plan.promote.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
-        let right = source[if source.len() == 1 { 0 } else { ordinal }].clone();
+        let right = source[source_index(ordinal)?].clone();
         let value = if plan.rational_power {
             numeric_rational_power(left, right)?
         } else {

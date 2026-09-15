@@ -3095,7 +3095,9 @@ fn bind_compound_selection<const MODE: u8, const OPERATION: u64>(
         SchemaBody::Matrix { element, .. } => element.as_ref(),
         scalar => scalar,
     };
-    if incoming_element != element.as_ref() {
+    if incoming_element != element.as_ref()
+        || (MODE != 0 && matches!(incoming.body(), SchemaBody::Matrix { .. }))
+    {
         return promoted_assignment::bind(request, MODE, arithmetic);
     }
     if !snapshot_arithmetic_element_supported(arithmetic, element) {
@@ -3977,6 +3979,10 @@ fn is_snapshot_index_assign_element(body: &SchemaBody) -> bool {
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64
+            | SchemaBody::Record(_)
+            | SchemaBody::Tuple(_)
+            | SchemaBody::Map { .. }
+            | SchemaBody::Table { .. }
     )
 }
 
