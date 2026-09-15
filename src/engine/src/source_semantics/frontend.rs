@@ -8,6 +8,9 @@ use std::sync::Arc;
 #[path = "document_lowering.rs"]
 mod document_lowering;
 
+#[path = "output_projection.rs"]
+mod output_projection;
+
 use mech_core::snapshot::{
     Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
     SnapshotValidationContext,
@@ -376,7 +379,18 @@ impl CanonicalSourceProgram {
                             }
                         })?
                     } else {
-                        value.shape().clone()
+                        let source_schemas = value.schemas().expect("bound values retain their schemas");
+                        let source_schema = source_schemas.get(value.schema()).expect("bound value schema is retained");
+                        let error = |message| SourceSemanticError {
+                            code: "source-semantics/import-value-schema-mismatch",
+                            message,
+                            anchor: anchor(input),
+                        };
+                        let closed = source_schema.closed_body(value.shape())
+                            .map_err(|failure| error(format!("invalid bound value shape: {failure:?}")))?;
+                        mech_core::shape_for_schema_components(
+                            target, &[(target.body(), closed)], None,
+                        ).map_err(|failure| error(format!("incompatible bound input shape: {failure}")))?
                     };
                     value
                         .rebind(declaration.schema, &shape, &self.schemas)
@@ -847,8 +861,17 @@ impl CanonicalSourceFrontend {
         document_lowering::compile_document(document)
     }
 
-    /// Names assigned by executable root statements, using the document
-    /// compiler's scope selection. Local function states belong to the callee.
+    /// Executable root statements selected by the document compiler.
+    /// Named, disabled, Mika and local function bodies retain their own scopes.
+    pub fn root_statement_nodes(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Vec<SyntaxNode>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::root_statement_nodes(document)
+    }
+
+    /// Return the names assigned by the root execution scope.
     pub fn root_state_mutation_names(
         &self,
         document: &DocumentSyntax,
@@ -2402,17 +2425,31 @@ impl SemanticBuilder {
             if !bindings.contains(&name)
                 && let Some(annotation) = variable.annotation()
             {
-                let schema = annotation_schema_draft(&annotation)?;
+                let mut schema = annotation_schema_draft(&annotation)?;
                 if let Some(existing) = self.input_declarations.get(&name) {
                     if !is_dynamic_schema_draft(existing)
                         && !is_dynamic_schema_draft(&schema)
                         && *existing != schema
                     {
-                        return Err(SourceSemanticError {
-                            code: "source-semantics/conflicting-input-kind",
-                            message: format!("input {name} has conflicting kind annotations"),
-                            anchor: SourceSemanticAnchor::for_node(variable.syntax()),
-                        });
+                        if !schema.dimension_parameters.is_empty() {
+                            schema = specialize_annotation_dimensions(
+                                existing,
+                                &schema,
+                                variable.syntax(),
+                            )?;
+                        }
+                        let existing = if existing.dimension_parameters.is_empty() {
+                            existing.clone()
+                        } else {
+                            specialize_annotation_dimensions(&schema, existing, variable.syntax())?
+                        };
+                        if existing != schema {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/conflicting-input-kind",
+                                message: format!("input {name} has conflicting kind annotations"),
+                                anchor: SourceSemanticAnchor::for_node(variable.syntax()),
+                            });
+                        }
                     }
                 }
                 if !is_dynamic_schema_draft(&schema) || !self.input_declarations.contains_key(&name)
@@ -3149,11 +3186,15 @@ impl SemanticBuilder {
                     }
                 }
                 if self.resolved_source_modules.iter().any(|module| {
-                    function_name.strip_prefix(module).is_some_and(|suffix| suffix.starts_with('/'))
+                    function_name
+                        .strip_prefix(module)
+                        .is_some_and(|suffix| suffix.starts_with('/'))
                 }) {
                     return Err(SourceSemanticError {
                         code: "source-semantics/source-module-value-not-callable",
-                        message: format!("{function_name} belongs to a resolved source module, not a catalog function"),
+                        message: format!(
+                            "{function_name} belongs to a resolved source module, not a catalog function"
+                        ),
                         anchor: SourceSemanticAnchor::for_node(function.syntax()),
                     });
                 }
@@ -3679,13 +3720,12 @@ impl SemanticBuilder {
             .or_else(|| self.input_declarations.get(&name))
             .cloned()
             .unwrap_or_else(|| schema.clone());
-        let schema = if !schema.dimension_parameters.is_empty()
-            && !is_dynamic_schema_draft(&declared)
-        {
-            specialize_annotation_dimensions(&declared, &schema, variable.syntax())?
-        } else {
-            schema
-        };
+        let schema =
+            if !schema.dimension_parameters.is_empty() && !is_dynamic_schema_draft(&declared) {
+                specialize_annotation_dimensions(&declared, &schema, variable.syntax())?
+            } else {
+                schema
+            };
         if !is_dynamic_schema_draft(&schema)
             && !is_dynamic_schema_draft(&declared)
             && schema != declared
@@ -6252,9 +6292,26 @@ impl SemanticBuilder {
                 }),
                 None => constant.data,
             };
+            let constant_schema = schemas
+                .table
+                .get(schema)
+                .expect("source constant schema is retained");
+            let shape_values = if constant_schema.dimension_parameters().is_empty() {
+                Box::new([]) as Box<[u64]>
+            } else {
+                mech_core::shape_for_value_data(constant_schema, &data, &[], None)
+                    .map_err(|failure| SourceSemanticError {
+                        code: "source-semantics/unresolved-constant-shape",
+                        message: format!("unable to resolve constant shape: {failure}"),
+                        anchor: self.anchor,
+                    })?
+                    .parameter_values()
+                    .to_vec()
+                    .into_boxed_slice()
+            };
             let value = ValueDraft {
                 schema,
-                shape_values: Box::new([]),
+                shape_values,
                 data,
             }
             .finalize(&SnapshotValidationContext::new(&schemas.table))
@@ -6921,10 +6978,16 @@ fn kind_schema_body(
                 // shape quantifies each independently; supplied values bind
                 // them through the shared type constraint environment.
                 for _ in 0..2 {
-                    extents.push(DimensionExpr::Parameter(dimensions.declare(
-                        DimensionParameterOrigin::Inferred, DimensionLifetime::Turn,
-                        DimensionExpr::Constant(0), None,
-                    ).map_err(|error| internal(anchor, format!("{error:?}")))?));
+                    extents.push(DimensionExpr::Parameter(
+                        dimensions
+                            .declare(
+                                DimensionParameterOrigin::Inferred,
+                                DimensionLifetime::Turn,
+                                DimensionExpr::Constant(0),
+                                None,
+                            )
+                            .map_err(|error| internal(anchor, format!("{error:?}")))?,
+                    ));
                 }
             }
             SchemaBody::Matrix {
@@ -7720,16 +7783,21 @@ impl SemanticBuilder {
                                 variable.syntax(),
                             ));
                         };
-                        if variable
-                            .annotation()
-                            .map(|annotation| annotation_schema_draft(&annotation))
-                            .transpose()?
-                            .is_some_and(|schema| schema != scrutinee_schema)
-                        {
-                            return Err(error(
-                                "match binding requires the scrutinee schema",
-                                variable.syntax(),
-                            ));
+                        if let Some(annotation) = variable.annotation() {
+                            let mut schema = annotation_schema_draft(&annotation)?;
+                            if !schema.dimension_parameters.is_empty() {
+                                schema = specialize_annotation_dimensions(
+                                    &scrutinee_schema,
+                                    &schema,
+                                    variable.syntax(),
+                                )?;
+                            }
+                            if schema != scrutinee_schema {
+                                return Err(error(
+                                    "match binding requires the scrutinee schema",
+                                    variable.syntax(),
+                                ));
+                            }
                         }
                         binding = Some(node_text(identifier.syntax())?);
                         crate::MatchPattern::Bind

@@ -39,24 +39,33 @@ struct DeferredInline {
     waiting: BTreeSet<String>,
 }
 
-pub(super) fn root_state_mutation_names(
+pub(super) fn root_statement_nodes(
     document: &DocumentSyntax,
-) -> Result<BTreeSet<String>, SourceSemanticError> {
+) -> Result<Vec<SyntaxNode>, SourceSemanticError> {
     let mut units = Vec::new();
     collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
-    let mut names = BTreeSet::new();
+    let mut statements = Vec::new();
     while let Some(unit) = units.pop() {
         match unit {
             DocumentUnit::Fence(_, _, children) => units.extend(children),
-            DocumentUnit::Statement(node) => {
-                let target = VariableAssignSyntax::cast(node.clone())
-                    .and_then(|assignment| assignment.target())
-                    .or_else(|| OpAssignSyntax::cast(node).and_then(|assignment| assignment.target()));
-                if let Some(stem) = target.and_then(|target| target.stem()) {
-                    names.insert(node_text(stem.syntax())?);
-                }
-            }
+            DocumentUnit::Statement(node) => statements.push(node),
             _ => {}
+        }
+    }
+    statements.sort_by_key(|node| node.range().start);
+    Ok(statements)
+}
+
+pub(super) fn root_state_mutation_names(
+    document: &DocumentSyntax,
+) -> Result<BTreeSet<String>, SourceSemanticError> {
+    let mut names = BTreeSet::new();
+    for node in root_statement_nodes(document)? {
+        let target = VariableAssignSyntax::cast(node.clone())
+            .and_then(|assignment| assignment.target())
+            .or_else(|| OpAssignSyntax::cast(node).and_then(|assignment| assignment.target()));
+        if let Some(stem) = target.and_then(|target| target.stem()) {
+            names.insert(node_text(stem.syntax())?);
         }
     }
     Ok(names)
@@ -256,7 +265,8 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
         &BTreeSet::new(),
         external_inputs,
         &BTreeSet::new(),
-    )?;
+    )?
+    .retain_static_outputs(external_inputs)?;
 
     Ok(CanonicalMixedSourcePrograms {
         region_name,

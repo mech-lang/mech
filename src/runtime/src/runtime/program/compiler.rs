@@ -719,6 +719,11 @@ impl<'a> ProgramCompilerView<'a> {
                     .map_err(|error| canonical_compilation_error(error.to_string()))?;
             }
         }
+        if initialization {
+            program = program
+                .retain_static_outputs(published)
+                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        }
         Ok(program)
     }
 
@@ -907,10 +912,16 @@ impl<'a> ProgramCompilerView<'a> {
                 writes,
                 &BTreeSet::new(),
                 &BTreeSet::new(),
-                &imports.iter().filter_map(|import| {
-                    import.declaration.module.clone()
-                        .or_else(|| module_namespace_for_import(&import.declaration))
-                }).collect(),
+                &imports
+                    .iter()
+                    .filter_map(|import| {
+                        import
+                            .declaration
+                            .module
+                            .clone()
+                            .or_else(|| module_namespace_for_import(&import.declaration))
+                    })
+                    .collect(),
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let compilation = CanonicalDocumentCompilation {
@@ -1005,7 +1016,9 @@ impl<'a> ProgramCompilerView<'a> {
                 canonical_compilation_error("planned resource read schema is unavailable")
             })?;
             let name = format!("@{}/{}", reference.target, reference.name);
-            input_schemas.insert(name.clone(), schema.body().clone());
+            // Planning schemas cross the provider's schema arena. Resolve its
+            // dimension parameters before handing the body to the compiler.
+            input_schemas.insert(name.clone(), schema.closed_body(value.shape())?);
             planned_reads.insert(name.clone(), value);
             reads.insert(name, request);
         }
@@ -1293,16 +1306,20 @@ impl<'a> ProgramCompilerView<'a> {
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
 
-        let compute_initializer_artifact = programs
-            .compute_initializers
-            .compile_artifact_with_external_contracts(&ResidentExternalContractResolver::new(
-                self.resources,
-            ))?;
-        let initial_inputs = execute_named_canonical_outputs(
-            &compute_initializer_artifact,
-            &self.function_catalog,
-            &external_input_names,
-        )?;
+        let initial_inputs = if external_input_names.is_empty() {
+            BTreeMap::new()
+        } else {
+            let compute_initializer_artifact = programs
+                .compute_initializers
+                .compile_artifact_with_external_contracts(
+                    &ResidentExternalContractResolver::new(self.resources),
+                )?;
+            execute_named_canonical_outputs(
+                &compute_initializer_artifact,
+                &self.function_catalog,
+                &external_input_names,
+            )?
+        };
         let compute_artifact = programs.compute.compile_artifact_with_external_contracts(
             &ResidentExternalContractResolver::new(self.resources),
         )?;

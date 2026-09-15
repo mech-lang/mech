@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::{GenericError, MResult, MechError};
 use mech_syntax::document::{
-    AstNode, DocumentStream, OpAssignSyntax, ParseConfig, Revision,
+    AstNode, DocumentStream, OpAssignSyntax, ParseConfig, Revision, TupleDestructureSyntax,
     VariableAssignSyntax, VariableDefineSyntax,
 };
 
@@ -1163,8 +1163,10 @@ fn remove_canonical_definitions(
 ) -> MResult<(String, std::collections::BTreeSet<String>)> {
     let mut removed = std::collections::BTreeSet::new();
     let mut ranges = Vec::new();
-    let mut pending = vec![document.document().syntax().clone()];
-    while let Some(node) = pending.pop() {
+    let statements = mech_engine::CanonicalSourceFrontend
+        .root_statement_nodes(&document.document())
+        .map_err(|error| interactive_error(error.to_string()))?;
+    for node in statements {
         if let Some(definition) = VariableDefineSyntax::cast(node.clone()) {
             let name = definition
                 .variable()
@@ -1173,6 +1175,28 @@ fn remove_canonical_definitions(
             if name.as_ref().is_some_and(|name| requested.contains(name)) {
                 removed.insert(name.unwrap());
                 ranges.push(definition.syntax().range());
+            }
+            continue;
+        }
+        if let Some(destructure) = TupleDestructureSyntax::cast(node.clone()) {
+            let names = destructure
+                .names()
+                .into_iter()
+                .map(|name| {
+                    name.syntax().text().map_err(|error| {
+                        interactive_error(format!("invalid destructure name: {error:?}"))
+                    })
+                })
+                .collect::<MResult<std::collections::BTreeSet<_>>>()?;
+            if names.iter().any(|name| requested.contains(name)) {
+                if !names.is_subset(requested) {
+                    return Err(interactive_error(format!(
+                        "cannot clear tuple destructure targets independently; clear all of {} together",
+                        names.iter().cloned().collect::<Vec<_>>().join(", "),
+                    )));
+                }
+                removed.extend(names);
+                ranges.push(node.range());
             }
             continue;
         }
@@ -1190,7 +1214,6 @@ fn remove_canonical_definitions(
             }
             continue;
         }
-        pending.extend(node.children());
     }
     let mut source = document.source().to_contiguous_string();
     let bytes = source.as_bytes();
@@ -1198,15 +1221,29 @@ fn remove_canonical_definitions(
         .into_iter()
         .map(|range| {
             let mut start = range.start.0 as usize;
-            while start > 0 && bytes[start - 1] != b'\n' {
-                start -= 1;
-            }
             let mut end = range.end.0 as usize;
-            while end < bytes.len() && bytes[end] != b'\n' {
+            while end < bytes.len() && matches!(bytes[end], b' ' | b'\t') {
                 end += 1;
             }
-            if end < bytes.len() {
+            if bytes.get(end) == Some(&b';') {
                 end += 1;
+                while end < bytes.len() && matches!(bytes[end], b' ' | b'\t') {
+                    end += 1;
+                }
+            } else {
+                while start > 0 && matches!(bytes[start - 1], b' ' | b'\t') {
+                    start -= 1;
+                }
+                if start > 0 && bytes[start - 1] == b';' {
+                    start -= 1;
+                } else if start == 0 || bytes[start - 1] == b'\n' {
+                    if bytes.get(end) == Some(&b'\r') {
+                        end += 1;
+                    }
+                    if bytes.get(end) == Some(&b'\n') {
+                        end += 1;
+                    }
+                }
             }
             (start, end)
         })
@@ -1633,6 +1670,69 @@ mod tests {
     }
 
     #[test]
+    fn canonical_clear_preserves_same_line_statements_and_tuple_ownership() {
+        for source in [
+            "~x := 1; y := 2\n",
+            "y := 2; ~x := 1\n",
+            "~x := 1; x += 3; y := 2\r\n",
+        ] {
+            let initial = crate::SourceDocument::parse_resolved(
+                "repl://clear-inline",
+                Revision(0),
+                Arc::<str>::from(source),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut session = ResidentReplSession::from_document(
+                CanonicalRuntimeFactory {
+                    activations: std::rc::Rc::new(Cell::new(0)),
+                },
+                initial,
+            )
+            .unwrap();
+            session.clear_variables(&["x".to_owned()]).unwrap();
+            assert_eq!(
+                session
+                    .symbol("y")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "2"
+            );
+            assert!(!session.source().contains("x"));
+        }
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://clear-tuple",
+            Revision(0),
+            Arc::<str>::from("pair := (1, 2)\n(x, y) := pair; z := 3\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        let before = session.source().to_owned();
+        assert!(session.clear_variables(&["x".to_owned()]).is_err());
+        assert_eq!(session.source(), before);
+        session
+            .clear_variables(&["x".to_owned(), "y".to_owned()])
+            .unwrap();
+        assert_eq!(
+            session
+                .symbol("z")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "3"
+        );
+        assert!(!session.source().contains("(x, y)"));
+    }
+
+    #[test]
     fn canonical_inactive_mutations_preserve_root_state() {
         for entry in [
             "```mech:worker\n~counter := 0\ncounter += 9\n```\n",
@@ -1641,20 +1741,38 @@ mod tests {
             "╭◉╮⸢~counter := 0\ncounter += 9\n⸥\n",
         ] {
             let initial = crate::SourceDocument::parse_resolved(
-                "repl://scope-mutations", Revision(0),
-                Arc::<str>::from("~counter := 0\ncounter += 1\n"), ParseConfig::default(),
-            ).unwrap();
+                "repl://scope-mutations",
+                Revision(0),
+                Arc::<str>::from("~counter := 0\ncounter += 1\n"),
+                ParseConfig::default(),
+            )
+            .unwrap();
             let mut session = ResidentReplSession::from_document(
-                CanonicalRuntimeFactory { activations: std::rc::Rc::new(Cell::new(0)) }, initial,
-            ).unwrap();
+                CanonicalRuntimeFactory {
+                    activations: std::rc::Rc::new(Cell::new(0)),
+                },
+                initial,
+            )
+            .unwrap();
             session.step(2).unwrap();
             let before = session.symbol("counter").unwrap().unwrap();
             let mut stream = finished_stream(909, entry);
             session.submit_finished_stream(&mut stream).unwrap();
-            assert_eq!(session.symbol("counter").unwrap().unwrap(), before, "{entry}");
+            assert_eq!(
+                session.symbol("counter").unwrap().unwrap(),
+                before,
+                "{entry}"
+            );
             let mut mutation = finished_stream(910, "counter += 1\ncounter\n");
             session.submit_finished_stream(&mut mutation).unwrap();
-            assert_eq!(session.symbol("counter").unwrap().unwrap().format_canonical_inline(), "2");
+            assert_eq!(
+                session
+                    .symbol("counter")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "2"
+            );
         }
     }
 

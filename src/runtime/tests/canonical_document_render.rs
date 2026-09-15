@@ -806,8 +806,12 @@ fn shared_mixed_document_fixture_is_rendered_without_dropping_nodes() {
 
 #[test]
 fn source_body_preserves_front_matter_without_duplicate_framing() {
-    let document = document("Result Report\n===================\nauthor: Ada\n===================\nanswer := 42\n");
-    let html = CanonicalDocumentRenderer.format_html_body(&document).unwrap();
+    let document = document(
+        "Result Report\n===================\nauthor: Ada\n===================\nanswer := 42\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .format_html_body(&document)
+        .unwrap();
     assert!(html.contains("<dt>author</dt><dd>Ada</dd>"), "{html}");
     assert!(!html.contains("<h1"), "{html}");
     assert!(!html.contains("<article"), "{html}");

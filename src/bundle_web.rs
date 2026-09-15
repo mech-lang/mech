@@ -85,7 +85,16 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             "bundle-web requires run.paths in the project config",
         ));
     }
-    if options.loaded_config.document.run.as_ref().unwrap().paths.len() != 1 {
+    if options
+        .loaded_config
+        .document
+        .run
+        .as_ref()
+        .unwrap()
+        .paths
+        .len()
+        != 1
+    {
         return Err(validation_error(
             "bundle-web requires exactly one run root; the browser project activates one root artifact",
         ));
@@ -980,20 +989,38 @@ export default async function init() {}
         ] {
             let root = temp_root("canonical-source-precedence");
             let loaded = write_demo_project(&root);
-            fs::write(root.join("demo.mec"), format!("{import}\nanswer := {value}\n")).unwrap();
-            fs::write(root.join("math.mec"), "custom := 42\ncos := 42\n<+ custom\n<+ cos\n").unwrap();
+            fs::write(
+                root.join("demo.mec"),
+                format!("{import}\nanswer := {value}\n"),
+            )
+            .unwrap();
+            fs::write(
+                root.join("math.mec"),
+                "custom := 42\ncos := 42\n<+ custom\n<+ cos\n",
+            )
+            .unwrap();
             let out = root.join("out");
             let mut options = options(&root, &out, loaded);
             options.source_paths.push(root.join("math.mec"));
             bundle_web_project(options).unwrap();
             let bundle = CanonicalProgramBundle::decode(
-                &fs::read_to_string(out.join("code/demo.mec")).unwrap(), None,
-            ).unwrap();
+                &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+                None,
+            )
+            .unwrap();
             let mut runtime = mech_runtime::RuntimeBuilder::new()
-                .function_catalog(mech_stdlib::source_catalog()).build().unwrap();
+                .function_catalog(mech_stdlib::source_catalog())
+                .build()
+                .unwrap();
             let durability = runtime.config().resident_durability;
-            let loaded = runtime.load_bytecode_program(&bundle.bytecode, durability).unwrap();
-            assert_eq!(loaded.initial_value.format_canonical_inline(), "42", "{import}");
+            let loaded = runtime
+                .load_bytecode_program(&bundle.bytecode, durability)
+                .unwrap();
+            assert_eq!(
+                loaded.initial_value.format_canonical_inline(),
+                "42",
+                "{import}"
+            );
             fs::remove_dir_all(root).unwrap();
         }
     }
@@ -1023,7 +1050,13 @@ export default async function init() {}
         let root = temp_root("multiple-run-roots");
         let mut loaded = write_demo_project(&root);
         fs::write(root.join("second.mec"), "answer := 2\n").unwrap();
-        loaded.document.run.as_mut().unwrap().paths.push("second.mec".into());
+        loaded
+            .document
+            .run
+            .as_mut()
+            .unwrap()
+            .paths
+            .push("second.mec".into());
         let out = root.join("out");
         let mut options = options(&root, &out, loaded);
         options.source_paths.push(root.join("second.mec"));

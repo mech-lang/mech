@@ -310,7 +310,17 @@ impl SemanticBuilder {
                         let name = node_text(identifier.syntax())?;
                         if let Some(value) = names.get(&name).copied() {
                             if let Some(annotation) = variable.annotation() {
-                                let annotation = annotation_schema_draft(&annotation)?;
+                                let mut annotation = annotation_schema_draft(&annotation)?;
+                                let actual = self.schema_draft_of(value)?;
+                                if !annotation.dimension_parameters.is_empty()
+                                    && !is_dynamic_schema_draft(&actual)
+                                {
+                                    annotation = specialize_annotation_dimensions(
+                                        &actual,
+                                        &annotation,
+                                        pattern.syntax(),
+                                    )?;
+                                }
                                 self.conform_dynamic_to_schema(
                                     value,
                                     &annotation,
@@ -335,11 +345,20 @@ impl SemanticBuilder {
                             }
                             CollectionPattern::Equal(value)
                         } else {
-                            let schema = variable
+                            let mut schema = variable
                                 .annotation()
                                 .map(|annotation| annotation_schema_draft(&annotation))
                                 .transpose()?
                                 .unwrap_or_else(|| expected.clone());
+                            if !schema.dimension_parameters.is_empty()
+                                && !is_dynamic_schema_draft(expected)
+                            {
+                                schema = specialize_annotation_dimensions(
+                                    expected,
+                                    &schema,
+                                    pattern.syntax(),
+                                )?;
+                            }
                             if !is_dynamic_schema_draft(expected) && schema != *expected {
                                 return Err(unsupported(
                                     pattern.syntax(),

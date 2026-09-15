@@ -2,7 +2,7 @@ S8B — Execution interfaces and the deleted-code rehearsal
 ===============================================================================
 
 Status: execution preparation and review correction; product qualification remains open.
-Parent: S8A 5e2d43ce5be254fbdf99d094c0115054effd0422.
+Parent: S8A b573284cb4587d4fb0085cc69a80a036830f1b76.
 The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
 records B's public-interface decisions. Canonical configuration, document and
 interactive compilation, mixed compute partitioning, retained import binding,
@@ -29,6 +29,9 @@ compile_tree_artifact_with_input_initializers -> corresponding document method:
   run a second evaluator or leak compiler cells into resident state. Canonical
   initialization and live projections share one retained document and one resource
   planning context; only the initialization projection is temporarily activated.
+  That projection retains requested defaults and their canonical dependencies,
+  including state writers and integrity constraints. Unrelated document outputs
+  remain in the executable artifact and are not evaluated to capture defaults.
 evaluate_static_tree_symbols[_with_inputs] -> document variants:
   preserve requested-symbol filtering and detached RuntimeHostInputValue outputs.
   Requested symbols have distinct output identities, including a variable named
@@ -50,7 +53,12 @@ can introduce a configured resource read on first use while ordinary caller
 bindings remain outside their local scope. Canonical tuple destructuring binds
 local function outputs through the maintained tuple-selection operations.
 Constant ranges use the shared cardinality authority for fixed shape inference;
-runtime-bound ranges retain independent dimension parameters. Typed module
+runtime-bound ranges retain independent dimension parameters. Matrix annotations
+without extents infer independent row and column dimensions through the shared
+type solver. Nested matrices retain separate dimensions. Supplied planning
+values specialize annotations and rebind snapshots against the destination's
+shape context; incompatible element kinds still reject. Repeated input
+annotations share constraints regardless of occurrence order. Typed module
 imports bind catalog exports for wildcard, item, group and alias forms, and mixed
 compute regions inherit root imports without sharing local variable bindings.
 Resolved host capabilities and module catalog ownership stay in the current

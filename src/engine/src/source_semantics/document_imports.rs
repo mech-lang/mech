@@ -10,8 +10,12 @@ impl SemanticBuilder {
     ) -> Result<(), SourceSemanticError> {
         for unit in units {
             match unit {
-                DocumentUnit::Import(import) => self.register_module_import(import, resolved_source_modules)?,
-                DocumentUnit::Fence(_, _, units) => self.register_document_imports(units, resolved_source_modules)?,
+                DocumentUnit::Import(import) => {
+                    self.register_module_import(import, resolved_source_modules)?
+                }
+                DocumentUnit::Fence(_, _, units) => {
+                    self.register_document_imports(units, resolved_source_modules)?
+                }
                 _ => {}
             }
         }

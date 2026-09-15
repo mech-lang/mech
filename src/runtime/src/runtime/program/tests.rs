@@ -5765,3 +5765,74 @@ fn canonical_dimensionless_matrix_annotations_preserve_inferred_shapes() {
         );
     }
 }
+
+#[test]
+fn canonical_resource_planning_closes_provider_matrix_shapes() {
+    for (rows, columns) in [(1, 2), (2, 1), (2, 3)] {
+        let values = (1..=rows * columns)
+            .map(|value| value as f32)
+            .collect::<Vec<_>>();
+        let supplied = RuntimeHostInputValue::F32Matrix {
+            rows,
+            columns,
+            values,
+        };
+        let planned = supplied.clone().into_value().unwrap();
+        assert!(!planned.shape().parameter_values().is_empty());
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .resource_provider(Box::new(TypedObservationProvider { planned }))
+            .build_compiler()
+            .unwrap();
+        let document = canonical_planning_test_document(
+            "@provider := test://typed/value{:read(matrix)}\nanswer := @provider/matrix\n",
+        );
+        compiler.compile_document(&document).unwrap();
+        assert_eq!(
+            compiler
+                .evaluate_static_document_symbols(&document, &["answer"])
+                .unwrap(),
+            BTreeMap::from([("answer".to_owned(), supplied)]),
+        );
+    }
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn canonical_mixed_shipped_particle_region_initializes() {
+    let shipped = include_str!("../../../../../examples/gpu-particles/particles.mec");
+    let start = shipped.find("particle-field @compute\n").unwrap();
+    for count in [5, 257, 16384, 1_000_000] {
+        let source = format!(
+            "+> math\n@particles := compute://particles/kernel{{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}}\n@particles/input/force-point <- [0f32; 0f32]\n@particles/input/force-strength <- 0f32\n@particles/input/dt <- 0.016666667<f32>\n@particles/turn <- 1\n\n{}",
+            shipped[start..].replace(
+                "particle-count := 1000000f32",
+                &format!("particle-count := {count}f32")
+            ),
+        );
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap();
+        let document = canonical_planning_test_document(&source);
+        let mixed = compiler
+            .compile_mixed_document(&document)
+            .unwrap_or_else(|error| panic!("{count} particles: {error:?}"));
+        assert!(mixed.compute.interface.input_named("force-point").is_some());
+    }
+}
+
+#[test]
+fn canonical_static_projection_preserves_independent_integrity_constraints() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    for (limit, valid) in [(50, true), (20, false)] {
+        let document = canonical_planning_test_document(&format!(
+            "answer := 40 + 2\nunrelated := 10 + 20\nsafe! := unrelated <= {limit}\n",
+        ));
+        let result = compiler.evaluate_static_document_symbols(&document, &["answer"]);
+        assert_eq!(result.is_ok(), valid, "limit {limit}: {result:?}");
+    }
+}
