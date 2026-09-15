@@ -467,7 +467,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         root = self.fixture()
         self.replace(
             root,
-            "src/engine/src/resident/numeric.rs",
+            "src/engine/src/resident/numeric/mod.rs",
             "return bound(\n            transpose_dense,",
             "admit_dense_transpose_layout(request.output.kind, request.output.shape)?;\n        return bound(\n            transpose_dense,",
         )
