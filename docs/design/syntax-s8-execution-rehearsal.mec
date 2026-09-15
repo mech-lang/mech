@@ -314,3 +314,22 @@ and result identity, ordered roots, output/metadata adoption, and application
 execution obligations. Full browser document transport, served mixed applications
 and the final distribution matrix also remain open. Backend-only qualification
 must not be substituted for those product results.
+
+
+Canonical frozen-EKF product qualification
+------------------------------------------
+
+The maintained artifact-closure, activation and execution targets now run under
+`full_source,resident-artifact` with the retired parser deleted. All 18 tests pass
+(5 closure, 2 activation, 11 execution). Source and decoded bytecode execute the
+complete 4,096-turn frozen trace with the existing reference values and trajectory
+hash unchanged. Abort, retry, integrity, effects and epoch checks also pass.
+
+Recurrence assertions select `SlotRole::State`; physical retained storage also
+contains the separately published three-scalar estimate. The canonical graph has
+four identity-copy nodes, 24 checked steps, 21 unchecked steps and 120 candidate
+bytes. These assertions describe the current canonical artifact, not the removed
+compiler's storage layout.
+
+This qualifies the frozen artifact product only. Full served mixed EKF/particles,
+the browser loader and the remaining C runtime/distribution failures stay open.
