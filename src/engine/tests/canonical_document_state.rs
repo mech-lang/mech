@@ -1700,3 +1700,44 @@ fn closed_comprehension_initializer_runs_once_before_state_turns() {
         &[8.0, 8.0],
     );
 }
+
+#[test]
+fn control_initializer_rejects_live_input_dependencies() {
+    for source in [
+        "condition := signal<bool>\nx := (condition ? | true => 1 | false => 2)\n~a := x\na\n",
+        "items := signal<[f64]:1,3>\nx := [item + 1 | item <- items]\n~a := x\na\n",
+    ] {
+        assert_unavailable_control_initializer(source);
+    }
+}
+
+#[test]
+fn control_initializer_rejects_state_dependencies() {
+    for source in [
+        "~condition := true\nx := (condition ? | true => 1 | false => 2)\n~a := x\na\n",
+        "~items := [1 2 3]\nx := [item + 1 | item <- items]\n~a := x\na\n",
+    ] {
+        assert_unavailable_control_initializer(source);
+    }
+}
+
+fn assert_unavailable_control_initializer(source: &str) {
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let error = activate(
+            ReactiveInstanceId::new(0x59d, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .err()
+        .expect("live-only control dependencies cannot initialize persistent state");
+        assert!(matches!(error, mech_engine::resident::ResidentActivationError::InitializerUnavailableAtActivation { .. }), "{source:?}: {error:?}");
+    }
+}
