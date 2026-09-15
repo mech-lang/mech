@@ -1800,3 +1800,53 @@ fn assert_unavailable_control_initializer(source: &str) {
         assert!(matches!(error, mech_engine::resident::ResidentActivationError::InitializerUnavailableAtActivation { .. }), "{source:?}: {error:?}");
     }
 }
+
+#[test]
+fn closed_control_activation_reports_budget_exhaustion_and_releases_ownership() {
+    use mech_engine::resident::{
+        ResidentActivationError, ResidentActivationOptions, activate_with_options,
+    };
+    let source = "samples := 1..=32\nvalues := {sample + 1 | sample <- samples}\n~a := values\na\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut admitted = false;
+        // Exercise allocation failures both before and during control execution,
+        // then admit that same artifact without changing its semantic contract.
+        for limit in (512..=262_144).step_by(512) {
+            let budget = mech_core::ManagedMemoryBudget::new(limit);
+            let result = activate_with_options(
+                ReactiveInstanceId::new(0x59f, 0),
+                &artifact,
+                &catalog,
+                &ActivationFacts::default(),
+                ResidentActivationOptions {
+                    memory_budget: Some(budget.clone()),
+                    ..Default::default()
+                },
+            );
+            match result {
+                Ok(instance) => {
+                    assert!(budget.used_bytes() > 0);
+                    drop(instance);
+                    admitted = true;
+                }
+                Err(error) => assert!(
+                    matches!(error, ResidentActivationError::MemoryRuntime { .. }),
+                    "budget {limit}: {error:?}"
+                ),
+            }
+            assert_eq!(budget.used_bytes(), 0, "budget {limit} leaked ownership");
+            if admitted {
+                break;
+            }
+        }
+        assert!(admitted, "closed control must activate within its finite budget");
+    }
+}

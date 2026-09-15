@@ -2083,7 +2083,12 @@ fn activate_internal(
             let node = step.artifact_node;
             instance
                 .execute_activation_control(control)
-                .map_err(|_| ResidentActivationError::ActivationKernel { node })?;
+                .map_err(|error| match error {
+                    ResidentExecutionError::MemoryRuntime { error } => {
+                        ResidentActivationError::MemoryRuntime { error }
+                    }
+                    _ => ResidentActivationError::ActivationKernel { node },
+                })?;
         } else {
             execute_activation_kernel(
                 step,
