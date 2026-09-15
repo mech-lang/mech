@@ -2057,7 +2057,6 @@ impl MechErrorKind for Utf8ConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{Program, decode_and_decompress};
     use mech_runtime::MECH_TOOL_SUBJECT;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -3090,8 +3089,12 @@ mod tests {
         let encoded = String::from_utf8(code.bytes).unwrap();
         assert_ne!(encoded, source_text);
         assert!(!encoded.contains("x := 1"));
-        let decoded: Program = decode_and_decompress(&encoded).unwrap();
-        assert_eq!(decoded, parser::parse(source_text).unwrap());
+        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog()).build().unwrap();
+        let durability = runtime.config().resident_durability;
+        let loaded = runtime.load_bytecode_program(&bundle.bytecode, durability).unwrap();
+        assert_eq!(loaded.initial_value.format_canonical_inline(), "1");
         std::fs::remove_dir_all(root).unwrap();
     }
 
