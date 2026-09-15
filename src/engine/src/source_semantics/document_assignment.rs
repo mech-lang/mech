@@ -128,6 +128,56 @@ impl SemanticBuilder {
                 return Ok(updated);
             }
         };
+        // A fused addressed update is closed over the destination element
+        // kind. Mixed kinds must retain the maintained arithmetic conversions
+        // before assignment converts the result to the destination kind.
+        let same_element = if arithmetic.is_some()
+            && let SchemaBody::Matrix { element, .. } = &schema.body
+        {
+            let replacement_schema = self.schema_draft_of(replacement)?;
+            let replacement_element = match &replacement_schema.body {
+                SchemaBody::Matrix { element, .. } => element.as_ref(),
+                scalar => scalar,
+            };
+            element.as_ref() == replacement_element
+        } else {
+            false
+        };
+        if remaining.is_empty()
+            && same_element
+            && let Some(arithmetic) = arithmetic
+            && matches!(schema.body, SchemaBody::Matrix { .. })
+            && matches!(
+                operation,
+                "core/assign/indexed-axis"
+                    | "core/assign/indexed-rows"
+                    | "core/assign/indexed-columns"
+                    | "core/assign/indexed-rectangle"
+            )
+        {
+            // A gather followed by arithmetic and replacement loses repeated
+            // selector occurrences. Carry the update into the addressed RMW
+            // owner so each occurrence reads the current candidate value.
+            let replacement = self.document_selected_update(
+                selected,
+                &[],
+                replacement,
+                None,
+                statement,
+                value_syntax,
+            )?;
+            let operation = format!("{operation}/{}", arithmetic.strip_prefix("math/").unwrap());
+            let mut inputs = vec![base, replacement];
+            inputs.extend(selectors);
+            return Ok(self.emit_with_schema_draft(
+                &operation,
+                inputs,
+                schema,
+                statement,
+                "state-update",
+                None,
+            ));
+        }
         let replacement = self.document_selected_update(
             selected,
             remaining,

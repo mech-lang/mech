@@ -71,32 +71,34 @@ fn compiled_turns(
         .compile_artifact()
         .expect("document must construct a canonical artifact");
     let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
-    let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bytecode).unwrap();
-    let mut catalog = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
-    let catalog = catalog.build().unwrap();
-    let mut instance = activate(
-        ReactiveInstanceId::new(0x570, 0),
-        &artifact,
-        &catalog,
-        &ActivationFacts::default(),
-    )
-    .unwrap_or_else(|error| panic!("{source:?}: document activation: {error:?}"));
-    let output = compiled
-        .document_outputs()
-        .iter()
-        .find(|binding| binding.kind == kind)
-        .unwrap()
-        .output as usize;
-    for expected in expected {
-        instance
-            .turn(&[])
-            .expect("state update must execute and publish");
-        let output = instance.copied_output(output).unwrap();
-        let ValueData::F64(actual) = output.data() else {
-            panic!("expected a scalar f64 result: {output:?}")
-        };
-        assert_eq!(actual.to_f64(), *expected, "{source:?}");
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+    for artifact in [artifact, decoded] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x570, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{source:?}: document activation: {error:?}"));
+        let output = compiled
+            .document_outputs()
+            .iter()
+            .find(|binding| binding.kind == kind)
+            .unwrap()
+            .output as usize;
+        for expected in expected {
+            instance
+                .turn(&[])
+                .expect("state update must execute and publish");
+            let output = instance.copied_output(output).unwrap();
+            let ValueData::F64(actual) = output.data() else {
+                panic!("expected a scalar f64 result: {output:?}")
+            };
+            assert_eq!(actual.to_f64(), *expected, "{source:?}");
+        }
     }
 }
 
@@ -940,4 +942,134 @@ fn finalized_streams_mika_named_fences_share_only_their_local_owner_and_keep_out
         &[3.0, 6.0],
         mech_engine::SourceDocumentOutputKind::Program,
     );
+}
+
+#[test]
+fn repeated_matrix_compound_selectors_accumulate_in_occurrence_order() {
+    for (source, expected) in [
+        (
+            "~a := [10 20; 30 40]\na[[1 1],:] += [1 2; 3 4]\na[1,1]\n",
+            vec![14.0, 18.0],
+        ),
+        (
+            "~a := [10 20; 30 40]\na[:,[1 1]] += [1 2; 3 4]\na[2,1]\n",
+            vec![37.0, 44.0],
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1],[2 2]] += [1 2; 3 4]\na[1,2]\n",
+            vec![30.0, 40.0],
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1]] += [1; 3]\na[1,1]\n",
+            vec![14.0, 18.0],
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1],:] += 2\na[1,2]\n",
+            vec![24.0, 28.0],
+        ),
+        (
+            "~a := [60 60; 30 40]\na[[1 1],:] /= [2 2; 3 3]\na[1,1]\n",
+            vec![10.0],
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1],:] *= [2 2; 3 3]\na[1,1]\n",
+            vec![60.0, 360.0],
+        ),
+        (
+            "~a := [10 20; 30 40]\na[[1 1],:] -= [1 2; 3 4]\na[1,1]\n",
+            vec![6.0, 2.0],
+        ),
+        (
+            "~a := [2 2; 3 4]\na[[1 1],:] ^= [2 2; 3 3]\na[1,1]\n",
+            vec![64.0],
+        ),
+    ] {
+        turns(source, &expected);
+    }
+}
+
+#[test]
+fn repeated_compound_selections_preserve_exact_numeric_kinds() {
+    for kind in ["i32", "u32", "f32"] {
+        for selection in ["[1 1],:", ":,[1 1]", "[1 1],[2 2]", "[1 1]"] {
+            let source = format!(
+                "~a := [10<{kind}> 20<{kind}>; 30<{kind}> 40<{kind}>]\na[{selection}] += 2<{kind}>\ntotal := a[1,1] + a[1,2] + a[2,1] + a[2,2]\nanswer := total<f64>\nanswer\n"
+            );
+            let increment = if selection == "[1 1]" { 4.0 } else { 8.0 };
+            turns(&source, &[100.0 + increment, 100.0 + 2.0 * increment]);
+        }
+    }
+}
+
+#[test]
+fn repeated_compound_overflow_rejects_without_publishing_and_valid_retry_succeeds() {
+    use mech_core::ResidentKernelError;
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_engine::resident::{CapturedValueInput, ResidentExecutionError};
+    let source = "changes := signal<[i8]:2,2>\n~a := [120<i8> 0<i8>; 0<i8> 0<i8>]\na[[1 1],:] += changes\nselected := a[1,1]\nanswer := selected<f64>\nanswer\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x589, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let before = instance.published_state_hash();
+        for (deltas, expected) in [([1i8, 0, 20, 0], None), ([1, 0, 2, 0], Some(123.0))] {
+            let value = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(deltas.into_iter().map(ValueDataDraft::I8).collect()),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let input = CapturedValueInput {
+                slot: instance.plan.inputs[0].slot,
+                value: &value,
+            };
+            let result = instance
+                .prepare_turn_values(&[input])
+                .and_then(|prepared| prepared.publish());
+            if let Some(expected) = expected {
+                result.unwrap();
+                let value = instance.copied_output(0).unwrap();
+                assert!(matches!(value.data(), ValueData::F64(bits) if bits.to_f64() == expected));
+            } else {
+                assert!(
+                    matches!(
+                        result,
+                        Err(ResidentExecutionError::Kernel {
+                            error: ResidentKernelError::Arithmetic,
+                            ..
+                        })
+                    ),
+                    "{result:?}"
+                );
+                assert_eq!(instance.published_state_hash(), before);
+                assert_eq!(instance.published_epoch(), mech_core::InstanceEpoch::ZERO);
+            }
+        }
+    }
+}
+
+#[test]
+fn selected_compound_assignment_preserves_arithmetic_before_destination_conversion() {
+    for (target, source) in [("a", "~a := -1<i32>"), ("a[[1]]", "~a := [-1<i32>]")] {
+        let result = if target == "a" { "a" } else { "a[1]" };
+        turns(
+            &format!(
+                "{source}\n{target} += 0.5\nselected := {result}\nanswer := selected<f64>\nanswer\n"
+            ),
+            &[0.0],
+        );
+    }
 }
