@@ -268,3 +268,22 @@ fixes and publish combined evidence. Do not request C rereview while notes remai
 perform local accepted work. No new user authority is needed. The previously
 recorded capability/semantic decisions still precede their dependent work.
 Checkpoint—not complete.
+
+
+Latest publication update: C is now `e79a62c38a02229d2ea9c0f7980b8f3ffa5042cb`.
+The actual particle server error was reproduced by the retained annotated-heading
+fixture and fixed in the shared heading renderer. All 37 renderer tests pass;
+the full served browser probe must still be rerun with the rebuilt server.
+C's CLI note received its evidence reply and is resolved. R05's mask note is
+resolved; its mixed row/column broadcast note is still open. No rereview was
+requested over those incomplete notes. The worker changes and evidence are all
+published. The existing CI overlay is published on E1 and C; intermediate slice
+restacking is the next integration-maintenance step, before accepting R05 into C.
+
+Current action/next command: rebuild C's server with the heading fix, run
+`MECH_BIN=/private/tmp/mech-syntax-s8-extraction-target/debug/mech python3 scripts/smoke-gpu-particles-browser.py --backend gpu --particle-count 16384 --software-adapter`;
+then finish the R05 broadcast witness/fix and canonical browser fixture migration.
+Archive current runs in `s8-ci-archive-review-handoff` and cancel only obsolete
+heads. Exact C90def CI is completed failed; its complete paginated job list and
+run logs are being preserved, not counted as qualification of this new head.
+External blocker: worker quota as above; no new approval required. Checkpoint—not complete.

@@ -1,0 +1,25 @@
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/src/runtime)
+   Compiling mech-terminal v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/hosts/terminal)
+   Compiling mech-native-live-host-fixture v0.3.5 (/private/tmp/mech-syntax-s8c-qualification/tests/fixtures/native-live-host)
+    Finished `test` profile [unoptimized] target(s) in 6.34s
+     Running tests/canonical_document_render.rs (target/debug/deps/canonical_document_render-2a6d80727f273067)
+
+running 1 test
+test served_particle_document_formats_its_annotated_compute_heading ... FAILED
+
+failures:
+
+---- served_particle_document_formats_its_annotated_compute_heading stdout ----
+heading children: [(ParagraphNewline, TextRange { start: TextSize(748), end: TextSize(772) })]
+
+thread 'served_particle_document_formats_its_annotated_compute_heading' (28099984) panicked at src/runtime/tests/canonical_document_render.rs:900:9:
+particle presentation: CanonicalDocumentRenderError { message: "canonical document source range is unavailable", range: Some(TextRange { start: TextSize(748), end: TextSize(853) }) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    served_particle_document_formats_its_annotated_compute_heading
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 36 filtered out; finished in 0.58s
+
+error: test failed, to rerun pass `-p mech-runtime --test canonical_document_render`
