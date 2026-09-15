@@ -62,7 +62,7 @@ impl MechRuntime {
                     super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
                 })?;
             candidate_instance
-                .refresh_output_projections(&projection_refresh_targets)
+                .refresh_output_projections(&candidate_artifact, &projection_refresh_targets)
                 .map_err(super::diagnostics::projection_refresh_failure)?;
         }
 
@@ -128,24 +128,13 @@ impl MechRuntime {
         None
     }
 
-    /// Return the resident output that represents the program's implicit
-    /// result. Formatted-document projections precede this result and
-    /// interactive symbol aliases follow it. Integrity constraints are a
-    /// separate inspection surface and never become the program display.
+    /// Return the implicit result's ordinary output identity, using its
+    /// interactive binding when present. Integrity results stay separate.
     pub fn program_output_id(&self) -> Option<OutputId> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
-            return artifact
-                .outputs()
-                .iter()
-                .rfind(|output| {
-                    output.interactive_binding.is_none()
-                        && !artifact
-                            .constraints()
-                            .iter()
-                            .any(|constraint| constraint.name == output.name)
-                })
-                .map(|output| output.output);
+            return super::value::program_result_output_index(artifact)
+                .map(|index| artifact.outputs()[index].output);
         }
         None
     }

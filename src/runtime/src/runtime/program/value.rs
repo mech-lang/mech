@@ -3,6 +3,32 @@ use mech_engine::resident::{PreparedResidentTurn, ReactiveInstance, ResidentValu
 
 use crate::RuntimeValueSnapshot;
 
+/// Identify the implicit result through its interactive alias while retaining
+/// the ordinary output's public identity. Document presentation and constraints
+/// may be published on either side of it.
+pub(crate) fn program_result_output_index(
+    artifact: &mech_engine::ProgramArtifact,
+) -> Option<usize> {
+    let result = artifact.outputs().iter().position(|output| {
+        output
+            .interactive_binding
+            .as_ref()
+            .is_some_and(|binding| binding.lexical_name == "ans")
+    });
+    artifact
+        .outputs()
+        .iter()
+        .rposition(|output| {
+            output.interactive_binding.is_none()
+                && result.is_none_or(|index| output.source == artifact.outputs()[index].source)
+                && !artifact
+                    .constraints()
+                    .iter()
+                    .any(|constraint| constraint.name == output.name)
+        })
+        .or(result)
+}
+
 pub(crate) fn initial_value(
     instance: &ReactiveInstance,
     output_index: Option<usize>,

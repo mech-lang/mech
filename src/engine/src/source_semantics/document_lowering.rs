@@ -536,12 +536,15 @@ fn compile_collected_document(
         let bindings = builder
             .bindings
             .iter()
-            // The runtime already exposes the final result as synthetic `ans`.
-            .filter(|(name, _)| name.as_str() != "ans")
             .map(|(name, binding)| (name.clone(), *binding))
             .collect::<Vec<_>>();
         for (name, binding) in bindings {
-            let value = builder.read_document_binding(binding, &last.syntax)?;
+            // Interactive identity names the retained cell, not its transient
+            // next-value calculation. Replacement migrates that same cell.
+            let value = match binding {
+                PendingBinding::MutableState(state) => PendingValue::State(state),
+                PendingBinding::Value(_) => builder.read_document_binding(binding, &last.syntax)?,
+            };
             builder.publish(
                 &crate::encode_interactive_symbol_output_name(&name),
                 Some(name),

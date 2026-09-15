@@ -2054,6 +2054,148 @@ mod tests {
     }
 
     #[test]
+    fn canonical_interactive_turns_and_replacement_preserve_live_state() {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:interactive-recurrence",
+            Revision(0),
+            "~counter := 0\ncounter += 1\ncounter\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document,
+        )
+        .unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "1");
+        session.step(2).unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        session.submit("display := counter + 10").unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13"
+        );
+        assert_eq!(session.symbol("ans").unwrap().unwrap().to_string(), "13");
+    }
+
+    #[test]
+    fn canonical_interactive_matrix_projection_and_failed_candidate_preserve_state() {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:matrix-recurrence",
+            Revision(0),
+            "~values := [0f32; 1f32]\nvalues += 1f32\nvalues\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document,
+        )
+        .unwrap();
+        session.step(2).unwrap();
+        session.submit("display := values + 10f32").unwrap();
+        for (name, values) in [("values", vec![3.0, 4.0]), ("display", vec![13.0, 14.0])] {
+            assert_eq!(
+                crate::RuntimeHostInputValue::from_numeric_value(
+                    session.symbol(name).unwrap().unwrap().value()
+                )
+                .unwrap(),
+                crate::RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values
+                },
+            );
+        }
+        let source = session.source().to_owned();
+        let values = session.symbol("values").unwrap();
+        let display = session.symbol("display").unwrap();
+        assert!(session.submit("bad := undefined-call(values)").is_err());
+        assert_eq!(session.source(), source);
+        assert_eq!(session.symbol("values").unwrap(), values);
+        assert_eq!(session.symbol("display").unwrap(), display);
+        session.step(1).unwrap();
+        assert_eq!(
+            crate::RuntimeHostInputValue::from_numeric_value(
+                session.symbol("values").unwrap().unwrap().value()
+            )
+            .unwrap(),
+            crate::RuntimeHostInputValue::F32Matrix {
+                rows: 2,
+                columns: 1,
+                values: vec![4.0, 5.0]
+            },
+        );
+    }
+
+    #[test]
+    fn canonical_interactive_rewired_projection_uses_the_migrated_epoch() {
+        let document = |source| {
+            crate::SourceDocument::parse_resolved(
+                "test:rewired-state",
+                Revision(0),
+                source,
+                ParseConfig::default(),
+            )
+            .unwrap()
+        };
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document("~a := 0\n~b := 100\na += 1\nb += 2\ndisplay := a + 10\n"),
+        )
+        .unwrap();
+        session.step(2).unwrap();
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13"
+        );
+        session
+            .replace_document(document(
+                "~a := 0\n~b := 100\na += 1\nb += 2\ndisplay := b + 10\n",
+            ))
+            .unwrap();
+        for (name, expected) in [("a", "3"), ("b", "106"), ("display", "116"), ("ans", "116")] {
+            assert_eq!(session.symbol(name).unwrap().unwrap().to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn canonical_interactive_result_identity_is_independent_of_fence_publication() {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:interactive-result",
+            Revision(0),
+            "~~~mech\n41\n~~~\n42\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document,
+        )
+        .unwrap();
+        assert_eq!(session.symbol("ans").unwrap().unwrap().to_string(), "42");
+        assert_eq!(
+            session
+                .runtime()
+                .unwrap()
+                .program_output_value()
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "42"
+        );
+    }
+
+    #[test]
     fn accepted_source_preserves_compatible_live_resident_state() {
         let mut session = ResidentReplSession::new(SourceRuntimeFactory);
         session.submit("~counter := 0").unwrap();

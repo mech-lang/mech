@@ -195,3 +195,23 @@ checks the scalar default (3), captured activation input (6), and two completed
 compute turns (9 and 13), plus cycle rejection and compiler reuse afterward.
 The canonical runtime regression set passes 58 tests. Full served mixed browser
 adoption and the final C product matrix remain separate open acceptance work.
+
+Interactive state identity and replacement
+------------------------------------------
+
+Canonical interactive bindings now name retained mutable cells and publish the
+implicit `ans` alias explicitly. Projection refresh derives a state writer's
+final candidate value from its published cell instead of executing that transition
+again. Activation and queries share implicit-result selection while preserving
+the ordinary output's name. This uses existing artifact identities and execution
+storage; it introduces no source replay or alternate evaluator.
+
+`canonical_interactive_turns_and_replacement_preserve_live_state` checks three
+accepted turns followed by a replacement that retains state 3 and displays 13.
+`canonical_interactive_matrix_projection_and_failed_candidate_preserve_state`
+covers a two-row matrix, rejection rollback and the following turn.
+`canonical_interactive_rewired_projection_uses_the_migrated_epoch` distinguishes
+two live state identities and checks a changed output dependency.
+`canonical_interactive_result_identity_is_independent_of_fence_publication`
+checks a final result different from the preceding formatted fence.
+The full B runtime library profile with compute executes 709 tests, all passing.
