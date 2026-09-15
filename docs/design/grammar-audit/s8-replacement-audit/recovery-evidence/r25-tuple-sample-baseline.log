@@ -1,0 +1,26 @@
+   Compiling mech-combinatorics v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/set)
+   Compiling mech-math v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/machines/math)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/stdlib)
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/runtime)
+    Finished `test` profile [unoptimized] target(s) in 2m 17s
+     Running tests/canonical_mixed_resource_planning.rs (/private/tmp/mech-syntax-s8c-qualification/target/debug/deps/canonical_mixed_resource_planning-b7a1d887f29fb4c9)
+
+running 1 test
+test canonical_mixed_tuple_sample_paths_publish_their_producer ... FAILED
+
+failures:
+
+---- canonical_mixed_tuple_sample_paths_publish_their_producer stdout ----
+
+thread 'canonical_mixed_tuple_sample_paths_publish_their_producer' (28436200) panicked at src/runtime/tests/canonical_mixed_resource_planning.rs:192:60:
+called `Result::unwrap()` on an `Err` value: MechError { kind name: "CanonicalProgramCompilationError", kind message: "source-semantics/unknown-published-binding: document does not define requested output result.0", message: None, program_range: None, annotations: [], tokens: [], compiler_location: Some(CompilerSourceRange { file: "src/runtime/src/runtime/program/compiler.rs", line: 82 }), source: None }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    canonical_mixed_tuple_sample_paths_publish_their_producer
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 5.09s
+
+error: test failed, to rerun pass `-p mech-runtime --test canonical_mixed_resource_planning`

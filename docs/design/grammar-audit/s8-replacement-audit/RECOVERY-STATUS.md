@@ -8,7 +8,7 @@ All active extraction/corrective PRs and C remain drafts. Ask for review by comm
 
 | Order | Owner and work | Current state / completion condition |
 | --- | --- | --- |
-| 1 | R25 + C/G22 compute/browser handoff | R25 #849 `a4555e3e027b4a4a20404c858088ec9a56ac81dd` has clean implementation review and successful focused CI 35026440740. C #830 `8542fa7f5` includes it. The shipping configured document edit changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The larger EKF source now fails at `unknown-published-binding: ... result.0`; first record a minimal tuple-output witness and its compiler owner, then correct and review that shared handoff. Run real product acceptance and record all remaining failures. |
+| 1 | R25 + C/G22 compute/browser handoff | R25 #849 has a clean review and successful focused CI 35026440740 at `a4555e3e0`; tuple follow-up `425578fa7` is now pushed for review with 7 + 18 passing tests. Published C #830 `8542fa7f5` contains the preceding R25 head; local C `4ef7a01dd` incorporates the follow-up for product testing. The shipping configured document edit changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The larger EKF source now fails at `unknown-published-binding: ... result.0`; the minimal tuple witness now reproduces and passes with the R25 follow-up; complete review and actual EKF rerun before closing this batch. Run real product acceptance and record all remaining failures. |
 | 2 | R08/G18 variable-cardinality layouts | Not started. Dependency for R07's still-red matrix positives. Preserve the existing positive concat/transpose and changing-cardinality obligations; do not substitute fixed-target rejection for acceptance. |
 | 3 | R07/G05 control initializers | Partial pushed branch `94ca8e2b4`, no PR, outside C. Closed-control/budget corrections pass; finish its matrix cases after R08 and review the bounded owner diff. |
 | 4 | R09–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells to select the next ready owner after the initializer batch. No numbered item is implicitly complete. |
@@ -21,8 +21,8 @@ its sampled-output responsibility, and the next dependency-ready R08 correction.
 R07 is idle until its prerequisite is ready. Never exceed three actively changing
 corrective branches. Do not open PRs solely to instantiate every audit boundary.
 
-**Next concrete action:** reduce the EKF `sample/result.0` failure in the owning
-mixed-compiler regression suite and record the cause before changing production.
+**Next concrete action:** finish the shipping WASM/server rebuild for local C
+`4ef7a01dd`, rerun the configured edit and EKF probes, and inspect R25 follow-up review.
 The basic configured edit thread is answered and resolved with shipping evidence:
 https://github.com/mech-lang/mech/pull/830#discussion_r4020517517
 This is not closure of all browser/product obligations or the stack.
@@ -878,3 +878,41 @@ with `--served-compute`; inspect R25 review notes and resolve them before anothe
 review request. Preserve the positive acceptance assertions and ownership.
 
 **External blocker:** none for the current batch. Checkpoint—not complete.
+
+
+## Current checkpoint — tuple sampled-port follow-up in product qualification
+
+**Candidate:** published C `8542fa7f58c5fad7346c8dd204aa97439185712b`;
+local C `4ef7a01dd108a89b8ae2e128ff41532a15bbd177`, rebased without conflicts
+onto R25 `425578fa7`. Draft PRs remain on native stack #850.
+
+**Completed:** The shipping configured timer/compute edit probe passes all seven
+scenarios and is required by C's compute canary. C's final open review thread was
+answered and resolved after actual evidence, then review requested on 8542fa7f5:
+https://github.com/mech-lang/mech/pull/830#issuecomment-5688603153
+R25's prior exact head had clean review and green focused CI. The larger EKF
+product revealed a tuple-port/lexical-producer mismatch, recorded in G28 before
+implementation. Its strict reduced witness fails on the preceding R25 head.
+The follow-up preserves retained leaf identity and validates even unread declared
+ports; implicit/named/nested tuple and decoded-interface regressions pass.
+All 7 focused and 18 existing mixed tests pass, as does formatting.
+Review requested after confirming no unresolved R25 threads:
+https://github.com/mech-lang/mech/pull/849#issuecomment-5688639907
+
+**Remaining:** follow-up review and actual EKF qualification, all accepted open
+R02/R06–R24 obligations in the live queue, required C reviews, final exact-head
+full qualification, protected merge and post-merge verification. Do not infer
+completion from the higher R25 identifier. C workflow 35027739951 was live at
+this checkpoint. Prior C workflow 35026816791 is cancelled after preserving
+30 then-visible paginated job records and 25 logs; cancellation is not success.
+
+**Current action:** shipping WASM build session 98693 in the local C tree;
+log `/private/tmp/mech-syntax-qualification/c-r25-tuple-wasm-build.log`.
+No native server build has yet been started for this new tuple-follow-up tree.
+
+**Next action:** poll session 98693; after success, rebuild native `mech` with
+compute_backends_native, run the configured document probe and the scalar single-
+filter EKF product command from the prior checkpoint logs. Inspect the current
+R25/C reviews and respond before requesting any additional review.
+
+**External blocker:** none for this batch. Checkpoint—not complete.

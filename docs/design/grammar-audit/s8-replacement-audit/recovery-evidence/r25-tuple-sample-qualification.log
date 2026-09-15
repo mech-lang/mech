@@ -1,0 +1,39 @@
+   Compiling mech-runtime v0.3.5 (/private/tmp/mech-syntax-s8r25-compute-read-planning/src/runtime)
+    Finished `test` profile [unoptimized] target(s) in 14.61s
+     Running unittests src/lib.rs (/private/tmp/mech-syntax-s8c-qualification/target/debug/deps/mech_runtime-05a7f0f991f8f30f)
+
+running 18 tests
+test runtime::actor::tests::transactional_mailbox::duplicate_durable_message_ids_mixed_with_other_ids_preserve_fifo ... ok
+test runtime::program::external::tests::mixed_effect_cleanup_compensates_before_transactional_abort ... ok
+test runtime::program::tests::mixed_compilation_rejects_multiple_compute_regions_for_v04 ... ok
+test runtime::program::tests::canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers ... ok
+test runtime::program::tests::canonical_mixed_document_owns_partitioning_and_typed_initializers ... ok
+test runtime::program::tests::mixed_tree_compilation_owns_partitioning_and_typed_initializers ... ok
+test runtime::program::tests::mixed_tree_coordinator_retains_interactive_root_symbols ... ok
+test runtime::program::tests::canonical_mixed_document_retains_batched_activation_values ... ok
+test runtime::program::tests::canonical_mixed_source_retains_tuple_destructured_results ... ok
+test runtime::program::tests::canonical_mixed_source_inlines_user_function_graphs ... ok
+test runtime::program::tests::mixed_tree_rejects_coordinator_input_with_the_wrong_shape_without_a_provider ... ok
+test runtime::program::tests::mixed_tree_retains_array_activation_as_outer_broadcast_extent ... ok
+test runtime::program::tests::mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout ... ok
+test runtime::program::tests::mixed_tree_retains_only_explicit_sample_read_capabilities ... ok
+test runtime::program::tests::mixed_root_preserves_imports_in_coordinator_and_compute_products ... ok
+test runtime::program::tests::mixed_root_inlines_user_function_graphs_into_compute_artifacts ... ok
+test runtime::program::tests::canonical_mixed_shipped_particle_region_initializes ... ok
+test runtime::program::tests::canonical_mixed_shipped_ekf_region_compiles ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 696 filtered out; finished in 7.55s
+
+     Running tests/canonical_mixed_resource_planning.rs (/private/tmp/mech-syntax-s8c-qualification/target/debug/deps/canonical_mixed_resource_planning-b7a1d887f29fb4c9)
+
+running 7 tests
+test canonical_mixed_sample_read_is_planned_without_a_compute_provider ... ok
+test canonical_mixed_keeps_ordinary_read_planning_in_its_provider ... ok
+test canonical_mixed_unknown_compute_reads_reject_at_the_interface ... ok
+test canonical_mixed_retained_tuple_port_is_validated_even_without_a_read ... ok
+test canonical_mixed_sample_shapes_survive_bytecode ... ok
+test canonical_mixed_telemetry_uses_its_declared_types ... ok
+test canonical_mixed_tuple_sample_paths_publish_their_producer ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.31s
+

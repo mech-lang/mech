@@ -80,3 +80,24 @@ schemas. No second parser, guessed scalar schema, or eager runtime host is permi
 Focused regression target: `canonical_mixed_resource_planning` on branch
 `codex/syntax-s8r25-compute-read-planning`. The required C product continuation is
 changed-kernel execution, retained inline identity, and failed-edit rollback.
+
+
+### G28 follow-up — tuple sample ports and producer publication
+
+The actual EKF product at C `8542fa7f5` gets past provider planning but fails
+`source-semantics/unknown-published-binding` for `result.0`. The resource path is
+a flattened compute-interface port, not a lexical document binding. Passing
+that full port name into the semantic frontend's requested binding publication
+confuses the two identities. The owning boundary remains R25's mixed compiler
+handoff, supported by the canonical semantic frontend; no new PR is needed.
+The actual product log is `recovery-evidence/c-r25-ekf-cpu-single.log`.
+
+Strict minimal acceptance added before a production correction:
+`canonical_mixed_resource_planning::canonical_mixed_tuple_sample_paths_publish_their_producer`.
+It covers implicit result and named tuple producers, including nested tuple ports;
+assertions preserve the exact retained leaf names and coordinator schemas. The
+correction must retain the existing exact port validation, rejecting nonexistent
+leaves even when their producer exists, and must not retain every sibling merely
+because one leaf was requested. Source/decoded interface identity remains required.
+This expands the explicit G28 sample-shape acceptance to the existing tuple-port
+contract exposed by the shipping EKF application; it does not alter that contract.
