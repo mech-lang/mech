@@ -2,7 +2,10 @@
 
 use super::*;
 
-fn function_parameter(node: &SyntaxNode) -> Result<(String, SchemaDraft), SourceSemanticError> {
+fn function_parameter(
+    builder: &SemanticBuilder,
+    node: &SyntaxNode,
+) -> Result<(String, SchemaDraft), SourceSemanticError> {
     let name = node
         .children()
         .find(|child| child.kind() == SyntaxKind::Identifier)
@@ -21,7 +24,10 @@ fn function_parameter(node: &SyntaxNode) -> Result<(String, SchemaDraft), Source
                 "function parameter has no kind".to_owned(),
             )
         })?;
-    Ok((node_text(&name)?, annotation_schema_draft(&annotation)?))
+    Ok((
+        node_text(&name)?,
+        builder.annotation_schema_draft(&annotation)?,
+    ))
 }
 
 impl SemanticBuilder {
@@ -103,7 +109,7 @@ impl SemanticBuilder {
         let parameters = function
             .children()
             .filter(|child| child.kind() == SyntaxKind::FunctionArg)
-            .map(|node| function_parameter(&node))
+            .map(|node| function_parameter(self, &node))
             .collect::<Result<Vec<_>, _>>()?;
         let mut selected = vec![None; parameters.len()];
         for (input, supplied) in inputs.into_iter().zip(names) {
@@ -160,7 +166,7 @@ impl SemanticBuilder {
         let outputs = outputs
             .children()
             .filter(|child| child.kind() == SyntaxKind::FunctionArg)
-            .map(|node| function_parameter(&node))
+            .map(|node| function_parameter(self, &node))
             .collect::<Result<Vec<_>, _>>()?;
         let mut local_bindings = BTreeMap::new();
         let mut parameter_names = BTreeSet::new();

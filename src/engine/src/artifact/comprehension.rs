@@ -21,6 +21,11 @@ pub enum CollectionPattern<S = SchemaId, V = ComprehensionValue> {
     },
     /// A repeated binding is equality, including across generators (a join).
     Equal(V),
+    /// A nominal enum variant, with an optional recursively matched payload.
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<CollectionPattern<S, V>>>,
+    },
     Tuple(Box<[CollectionPattern<S, V>]>),
     Array {
         prefix: Box<[CollectionPattern<S, V>]>,
@@ -175,6 +180,7 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
             equalities = equalities.checked_add(1)?;
         }
         let children = match pattern {
+            CollectionPattern::Enum { payload, .. } => usize::from(payload.is_some()),
             CollectionPattern::Tuple(items) => items.len(),
             CollectionPattern::Array {
                 prefix,
@@ -190,6 +196,9 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
             return None;
         }
         match pattern {
+            CollectionPattern::Enum { payload, .. } => {
+                pending.extend(payload.iter().map(|item| (item.as_ref(), depth + 1)));
+            }
             CollectionPattern::Tuple(items) => {
                 pending.extend(items.iter().map(|item| (item, depth + 1)));
             }
@@ -247,6 +256,11 @@ pub(super) fn pattern_locals(
                 return None;
             }
             locals.push(*schema);
+        }
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                pattern_locals(payload, locals)?;
+            }
         }
         CollectionPattern::Tuple(items) => {
             for item in items {
@@ -568,6 +582,35 @@ fn validate_pattern(
                 return None;
             }
         }
+        CollectionPattern::Enum { ordinal, payload } => {
+            let payload_schema = match expected.body() {
+                SchemaBody::Enum { variants, .. } => {
+                    variants.get(*ordinal as usize)?.payload.as_ref()
+                }
+                SchemaBody::Dynamic => None,
+                _ => return None,
+            };
+            match (payload_schema, payload) {
+                (Some(schema), Some(pattern)) => validate_pattern(
+                    draft,
+                    pattern,
+                    &component_schema(expected, schema)?,
+                    inputs,
+                    locals,
+                )?,
+                (None, None) if matches!(expected.body(), SchemaBody::Enum { .. }) => {}
+                (_, Some(pattern)) if matches!(expected.body(), SchemaBody::Dynamic) => {
+                    validate_pattern(
+                        draft,
+                        pattern,
+                        &component_schema(expected, &SchemaBody::Dynamic)?,
+                        inputs,
+                        locals,
+                    )?;
+                }
+                _ => return None,
+            }
+        }
         CollectionPattern::Tuple(items) => {
             let fields = match expected.body() {
                 SchemaBody::Tuple(fields) if fields.len() == items.len() => Some(fields),
@@ -643,6 +686,12 @@ impl<S, V> CollectionPattern<S, V> {
                 schema: schema(s),
             },
             Self::Equal(v) => CollectionPattern::Equal(value(v)),
+            Self::Enum { ordinal, payload } => CollectionPattern::Enum {
+                ordinal: *ordinal,
+                payload: payload
+                    .as_ref()
+                    .map(|payload| Box::new(payload.map(schema, value))),
+            },
             Self::Tuple(items) => {
                 CollectionPattern::Tuple(items.iter().map(|item| item.map(schema, value)).collect())
             }
@@ -661,6 +710,11 @@ impl<S, V> CollectionPattern<S, V> {
     pub(crate) fn bindings(&self, visit: &mut impl FnMut(u32, &S)) {
         match self {
             Self::Bind { local, schema } => visit(*local, schema),
+            Self::Enum { payload, .. } => {
+                if let Some(payload) = payload {
+                    payload.bindings(visit);
+                }
+            }
             Self::Tuple(items) => {
                 for item in items {
                     item.bindings(visit);
