@@ -1038,42 +1038,44 @@ actionable R08/R07 review finding.
 
 **External blocker:** none. Checkpoint—not complete.
 
-## Current checkpoint — R19 activation owner published
+## Current checkpoint — R20 ordered graph identity published
 
-**Candidate:** R19 draft #876 is `codex/syntax-s8r19-activation-scopes` /
-`f75a2f099`, directly based on R18 draft #874 at `ca8992ccd`. Review is
-requested at the exact R19 head; both PRs remain drafts.
+**Candidate:** R20 draft #877 is `codex/syntax-s8r20-ordered-graph` /
+`f2bd4855c6464af0dcdadba8c07868dfbdcba101`, directly based on the
+published rebased R19 head `cd70463d488324b0523cd32416488e3b1af59091`.
+R20 remains a draft; review handling is assigned to another agent.
 
-**Completed:** G15 now has one typed activation owner from retained-document
-lowering through graph revision 13, bytecode, resident control, live host
-scheduling, and retained replay evidence. Fixed and patterned scopes stay idle
-at load, run only for their stable trigger, sample captures without admitting a
-turn, execute source-order locals and ordered lazy guards, support structural,
-repeated and computed patterns, commit multi-register changes atomically, and
-reject excluded nested/context/own-trigger forms before installation. Root
-control block identities are isolated from called computed-pattern functions.
-Six source/decoded engine regressions pass. The canonical ProgramCompiler plus
-resident-host product witness proves sample-only input, exact triggering, latest
-capture observation, retained trigger identity, evidence drain, and owner
-release on unload. Runtime all-features check, format/diff gates, the 20-fixture
-revision-13 bytecode format contract, and five fresh deterministic producer
-runs pass.
+**Completed:** G16 now retains one deduplicated canonical graph identity for
+every reachable retained source, including transitive paths through non-root
+modules. Dependencies lower once in topological order, only caller-requested
+roots publish, program and presentation outputs retain caller order, and shared
+providers plan once. The source and decoded two-turn witness publishes main
+`101`, then `102`, with the explicit dependency publishing `1`, then `2`; the
+intermediate root stays hidden. The provider witness records one plan, zero
+compile-time reads and one live read per turn. A later-root rejection records
+zero live reads, effect preparations or deliveries, and retrying the same
+compiler produces byte-identical output to a fresh compiler. Existing ordered
+root, live-export, provider-count and callable-visibility regressions pass.
+Runtime all-features test compilation, format/diff checks and the 20-fixture
+bytecode format contract pass. The unrelated pre-existing resident
+`access/range` layout failure remains outside R20.
 
-**Remaining:** R19 review and focused exact-head CI; accepted corrective
-boundaries R02, R06, R20, R21, R22, R23, R24 and R26; integration of accepted
-batches into the designated C candidate; deleted-parser product probes after
-each batch; one stable exact-C full qualification; protected merge and
-post-merge verification. R15 remains the explicit post-v0.4 interval-unit issue.
-R25 is being handled by another agent and is not duplicated here.
+**Remaining:** accepted corrective boundaries R02, R06, R21, R22, R23, R24 and
+R26; integration of accepted batches into the designated C candidate;
+deleted-parser product probes after each coherent batch; one stable exact-C
+full qualification; protected merge and post-merge verification. R15 remains
+the post-v0.4 interval-unit issue #865. R25 is assigned to another agent and is
+not duplicated here.
 
-**Current action:** inspect returning #876 review and focused checks, resolve
-every actionable thread before requesting another review, and preserve the
-exact `f75a2f099` validation record.
+**Current action:** R21/G21 is initialized from exact R20 on
+`codex/syntax-s8r21-authority-retirement`. Its executable retirement gate finds
+the remaining compiler tree authority (`compile_tree` and
+`plan_artifact_tree_with_services`) plus interactive `from_tree`; browser tree
+ownership is separately G22.
 
-**Next action:** if R19 remains clean, begin R20/G16 from the exact R19 head and
-implement the accepted ordered transitive explicit-root contract: shared
-identity, caller output order, once-only provider planning, and rollback on a
-later-root failure.
+**Next action:** remove the runtime tree compiler and interactive tree/cache
+authorities, migrate their production callers to retained canonical documents,
+and run the named interactive, compiler and module-index acceptance cells.
+Then publish the R21 slice on R20 without absorbing G22 browser work.
 
 **External blocker:** none. Checkpoint—not complete.
-
