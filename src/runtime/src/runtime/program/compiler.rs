@@ -2038,9 +2038,19 @@ impl<'a> ProgramCompilerView<'a> {
 
         let mut coordinator = coordinator;
         for (name, request) in resource_reads {
-            coordinator = coordinator
-                .bind_resource_input(&name, request)
-                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            // The source index also sees reads in local function bodies. Those
+            // bodies contribute inputs only when inlined, so bind only reads
+            // that survived canonical coordinator lowering.
+            if coordinator
+                .program()
+                .inputs
+                .iter()
+                .any(|input| input.name == name)
+            {
+                coordinator = coordinator
+                    .bind_resource_input(&name, request)
+                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            }
         }
         let coordinator =
             coordinator.compile_artifact_with_external_contracts(&compute_contracts)?;
