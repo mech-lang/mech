@@ -145,7 +145,9 @@ impl SchemaTableBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{IntegerWidth, SchemaBody, SchemaDraft};
+    use crate::{
+        CanonicalNominalPath, IntegerWidth, NominalKey, NominalKind, SchemaBody, SchemaDraft,
+    };
 
     fn schema(body: SchemaBody) -> Schema {
         SchemaDraft {
@@ -277,6 +279,43 @@ mod tests {
         assert!(closed.clone_allocation_bound_bytes().unwrap() <= retained_bound);
         assert!(retained_bound <= construction_bound);
         assert!(closed.len() as u64 <= entry_bound);
+    }
+
+    #[test]
+    fn rooted_component_closure_excludes_unreachable_arena_entries() {
+        let tuple_schema = schema(SchemaBody::Tuple(
+            vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice(),
+        ));
+        let unrelated_schema = schema(SchemaBody::Atom(NominalKey::from_path(
+            NominalKind::Atom,
+            &CanonicalNominalPath::new(vec!["unrelated".to_owned()]).unwrap(),
+        )));
+        let mut builder = SchemaTableBuilder::new();
+        let tuple = builder.insert(tuple_schema.clone()).unwrap();
+        builder.insert(unrelated_schema.clone()).unwrap();
+        let build = builder.finish().unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let budget = SnapshotCanonicalizationBudget::new(u64::MAX);
+        let (retained, construction, nodes) = build
+            .table
+            .component_closure_bounds_for_roots_with_budget(&[tuple], &budget)
+            .unwrap();
+        let closed = build.table.component_closure_for_roots(&[tuple]).unwrap();
+
+        assert_eq!(closed.len(), 3);
+        assert!(
+            closed
+                .entries()
+                .any(|entry| entry.schema() == &tuple_schema)
+        );
+        assert!(
+            !closed
+                .entries()
+                .any(|entry| entry.schema() == &unrelated_schema)
+        );
+        assert!(closed.clone_allocation_bound_bytes().unwrap() <= retained);
+        assert!(retained <= construction);
+        assert!(closed.len() as u64 <= nodes);
     }
 
     #[test]
@@ -541,83 +580,40 @@ impl SchemaTable {
     /// structural projection needs one to publish the selected child.
     #[doc(hidden)]
     pub fn extend_with_component_closure_preserving_ids(&self) -> Result<Self, SemanticModelError> {
-        fn retain_children(
-            parent: &Schema,
-            body: &SchemaBody,
-            entries: &mut Vec<SchemaEntry>,
-        ) -> Result<(), SemanticModelError> {
-            fn retain(
-                parent: &Schema,
-                child: &SchemaBody,
-                entries: &mut Vec<SchemaEntry>,
-            ) -> Result<(), SemanticModelError> {
-                let schema = parent.canonical_component_schema(child)?;
-                let key = schema.key();
-                let canonical_bytes = schema.canonical_bytes();
-                if let Some(existing) = entries.iter().find(|entry| entry.key == key) {
-                    if existing.canonical_bytes.as_ref() != canonical_bytes.as_ref() {
-                        return Err(SemanticModelError::SchemaKeyCollision { key });
-                    }
-                } else {
-                    u32::try_from(entries.len())
-                        .map_err(|_| SemanticModelError::SchemaIdExhausted)?;
-                    entries.push(SchemaEntry {
-                        schema,
-                        key,
-                        canonical_bytes,
-                    });
-                }
-                retain_children(parent, child, entries)
-            }
-
-            match body {
-                SchemaBody::Enum { variants, .. } => {
-                    for child in variants
-                        .iter()
-                        .filter_map(|variant| variant.payload.as_ref())
-                    {
-                        retain(parent, child, entries)?;
-                    }
-                }
-                SchemaBody::Option(child)
-                | SchemaBody::Matrix { element: child, .. }
-                | SchemaBody::Set { element: child, .. } => retain(parent, child, entries)?,
-                SchemaBody::Tuple(children) => {
-                    for child in children {
-                        retain(parent, child, entries)?;
-                    }
-                }
-                SchemaBody::Record(fields)
-                | SchemaBody::Table {
-                    columns: fields, ..
-                } => {
-                    for field in fields {
-                        retain(parent, &field.schema, entries)?;
-                    }
-                }
-                SchemaBody::Map { key, value, .. } => {
-                    retain(parent, key, entries)?;
-                    retain(parent, value, entries)?;
-                }
-                SchemaBody::Dynamic
-                | SchemaBody::Bool
-                | SchemaBody::UnsignedInteger(_)
-                | SchemaBody::SignedInteger(_)
-                | SchemaBody::FloatingPoint(_)
-                | SchemaBody::Complex(_)
-                | SchemaBody::Rational64
-                | SchemaBody::String
-                | SchemaBody::Id
-                | SchemaBody::Index
-                | SchemaBody::Atom(_)
-                | SchemaBody::ReifiedType => {}
-            }
-            Ok(())
-        }
-
         let mut entries = self.entries.to_vec();
         for entry in self.entries.iter() {
-            retain_children(&entry.schema, entry.schema.body(), &mut entries)?;
+            retain_component_children(&entry.schema, entry.schema.body(), &mut entries)?;
+        }
+        Ok(Self {
+            entries: entries.into_boxed_slice(),
+        })
+    }
+
+    /// Builds the canonical component closure reachable only from the given
+    /// root schemas. The returned table is intended for key-based merging;
+    /// its local IDs need not match the source arena.
+    #[doc(hidden)]
+    pub fn component_closure_for_roots(
+        &self,
+        roots: &[SchemaId],
+    ) -> Result<Self, SemanticModelError> {
+        let mut entries = Vec::new();
+        for root in roots {
+            let entry = self
+                .entry(*root)
+                .ok_or(SemanticModelError::InvalidSchemaHandleV1)?;
+            if entries
+                .iter()
+                .any(|existing: &SchemaEntry| existing.key == entry.key)
+            {
+                continue;
+            }
+            entries.push(entry.clone());
+        }
+        let root_count = entries.len();
+        for index in 0..root_count {
+            let schema = entries[index].schema.clone();
+            retain_component_children(&schema, schema.body(), &mut entries)?;
         }
         Ok(Self {
             entries: entries.into_boxed_slice(),
@@ -661,6 +657,22 @@ impl SchemaTable {
         })
     }
 
+    /// Bounds a component closure restricted to the supplied root schema IDs.
+    #[doc(hidden)]
+    pub fn component_closure_bounds_for_roots_with_budget(
+        &self,
+        roots: &[SchemaId],
+        budget: &SnapshotCanonicalizationBudget,
+    ) -> Option<(u64, u64, u64)> {
+        component_closure_cost_for_roots_with_budget(self, Some(roots), Some(budget)).map(|cost| {
+            (
+                cost.retained_bytes,
+                cost.construction_bytes,
+                cost.entry_count,
+            )
+        })
+    }
+
     /// Checked allocation witness for an independently owned clone of this
     /// canonical schema context. It includes the table header, entry slice,
     /// each concrete cloned schema allocation and the retained canonical byte
@@ -675,6 +687,79 @@ impl SchemaTable {
                 .checked_add(schema_clone_heap_bytes(&entry.schema)?)
         })
     }
+}
+
+fn retain_component(
+    parent: &Schema,
+    child: &SchemaBody,
+    entries: &mut Vec<SchemaEntry>,
+) -> Result<(), SemanticModelError> {
+    let schema = parent.canonical_component_schema(child)?;
+    let key = schema.key();
+    let canonical_bytes = schema.canonical_bytes();
+    if let Some(existing) = entries.iter().find(|entry| entry.key == key) {
+        if existing.canonical_bytes.as_ref() != canonical_bytes.as_ref() {
+            return Err(SemanticModelError::SchemaKeyCollision { key });
+        }
+    } else {
+        u32::try_from(entries.len()).map_err(|_| SemanticModelError::SchemaIdExhausted)?;
+        entries.push(SchemaEntry {
+            schema,
+            key,
+            canonical_bytes,
+        });
+    }
+    retain_component_children(parent, child, entries)
+}
+
+fn retain_component_children(
+    parent: &Schema,
+    body: &SchemaBody,
+    entries: &mut Vec<SchemaEntry>,
+) -> Result<(), SemanticModelError> {
+    match body {
+        SchemaBody::Enum { variants, .. } => {
+            for child in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                retain_component(parent, child, entries)?;
+            }
+        }
+        SchemaBody::Option(child)
+        | SchemaBody::Matrix { element: child, .. }
+        | SchemaBody::Set { element: child, .. } => retain_component(parent, child, entries)?,
+        SchemaBody::Tuple(children) => {
+            for child in children {
+                retain_component(parent, child, entries)?;
+            }
+        }
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => {
+            for field in fields {
+                retain_component(parent, &field.schema, entries)?;
+            }
+        }
+        SchemaBody::Map { key, value, .. } => {
+            retain_component(parent, key, entries)?;
+            retain_component(parent, value, entries)?;
+        }
+        SchemaBody::Dynamic
+        | SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64
+        | SchemaBody::String
+        | SchemaBody::Id
+        | SchemaBody::Index
+        | SchemaBody::Atom(_)
+        | SchemaBody::ReifiedType => {}
+    }
+    Ok(())
 }
 
 impl Schema {
@@ -723,6 +808,14 @@ struct CloneEncodingCost {
 
 fn component_closure_cost_with_budget(
     table: &SchemaTable,
+    budget: Option<&SnapshotCanonicalizationBudget>,
+) -> Option<ComponentClosureCost> {
+    component_closure_cost_for_roots_with_budget(table, None, budget)
+}
+
+fn component_closure_cost_for_roots_with_budget(
+    table: &SchemaTable,
+    roots: Option<&[SchemaId]>,
     budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Option<ComponentClosureCost> {
     fn charge(budget: Option<&SnapshotCanonicalizationBudget>) -> Option<()> {
@@ -1105,11 +1198,12 @@ fn component_closure_cost_with_budget(
         })
     }
 
+    let root_count = roots.map_or(table.entries.len(), <[SchemaId]>::len);
     let mut retained = (core::mem::size_of::<SchemaTable>() as u64)
-        .checked_add(clone_slice_bytes::<SchemaEntry>(table.entries.len())?)?;
+        .checked_add(clone_slice_bytes::<SchemaEntry>(root_count)?)?;
     let mut maximum_component = 0_u64;
-    let mut count = u64::try_from(table.len()).ok()?;
-    for entry in table.entries() {
+    let mut count = u64::try_from(root_count).ok()?;
+    let mut measure_entry = |entry: &SchemaEntry| -> Option<()> {
         charge(budget)?;
         let parameters = parameters_cost(entry.schema().dimension_parameters(), budget)?;
         let body = body_cost(
@@ -1124,6 +1218,19 @@ fn component_closure_cost_with_budget(
             .checked_add(u64::try_from(entry.canonical_bytes().len()).ok()?)?
             .checked_add(parameters.clone_bytes)?
             .checked_add(body.clone_bytes)?;
+        Some(())
+    };
+    match roots {
+        Some(roots) => {
+            for root in roots {
+                measure_entry(table.entry(*root)?)?;
+            }
+        }
+        None => {
+            for entry in table.entries() {
+                measure_entry(entry)?;
+            }
+        }
     }
     let construction = retained
         .checked_mul(2)?

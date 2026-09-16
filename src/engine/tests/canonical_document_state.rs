@@ -1077,6 +1077,16 @@ fn comprehension_foreign_dynamic_schemas_survive_pattern_matching() {
         let dynamic_input = &artifact.inputs()[0];
         let mut foreign_builder = SchemaTableBuilder::new();
         let tuple = foreign_builder.insert(tuple_schema.clone()).unwrap();
+        let unrelated = foreign_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(vec![SchemaBody::Bool; 1_024].into_boxed_slice()),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
         let outer = foreign_builder
             .insert(
                 artifact
@@ -1088,8 +1098,10 @@ fn comprehension_foreign_dynamic_schemas_survive_pattern_matching() {
             .unwrap();
         let foreign_build = foreign_builder.finish().unwrap();
         let tuple = foreign_build.resolve(tuple).unwrap();
+        let unrelated = foreign_build.resolve(unrelated).unwrap();
         let outer = foreign_build.resolve(outer).unwrap();
         let foreign_schemas = std::sync::Arc::new(foreign_build.table);
+        let unrelated_key = foreign_schemas.entry(unrelated).unwrap().key();
         let input = Some(
             ValueDraft {
                 schema: outer,
@@ -1134,7 +1146,122 @@ fn comprehension_foreign_dynamic_schemas_survive_pattern_matching() {
             SequenceView::F64(values)
                 if values.iter().map(|value| value.to_f64()).eq([1.0])
         ));
+        assert!(
+            output
+                .schemas()
+                .unwrap()
+                .find_by_key(unrelated_key)
+                .is_none(),
+            "the merged comprehension arena excludes unrelated foreign schemas",
+        );
     }
+}
+
+#[test]
+fn comprehension_same_plan_dynamic_schema_supplies_missing_pattern_children() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft as D};
+    use mech_core::{SchemaDraft, SchemaTableBuilder, ValueDraft};
+    use mech_engine::ProgramArtifactDraft;
+
+    let source = "out := [1 | (x, *) <- signal<[*]:1,1>]\nout\n";
+    let compiled = compiled(source);
+    let artifact = compiled.compile_artifact().unwrap();
+    let tuple_schema = SchemaDraft {
+        body: SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice()),
+        dimension_parameters: Box::new([]),
+    }
+    .finalize()
+    .unwrap();
+    let mut additional = SchemaTableBuilder::new();
+    additional.insert(tuple_schema.clone()).unwrap();
+    let additional = additional.finish().unwrap().table;
+    assert_eq!(
+        additional.len(),
+        1,
+        "the hand-authored arena omits child schemas"
+    );
+    let schemas = artifact
+        .schemas()
+        .extend_preserving_ids(&additional)
+        .unwrap();
+    assert!(schemas.find_by_key(tuple_schema.key()).is_some());
+    assert!(
+        schemas
+            .entries()
+            .all(|entry| !matches!(entry.schema().body(), SchemaBody::String | SchemaBody::Bool))
+    );
+    let artifact = ProgramArtifactDraft {
+        schemas,
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: artifact.slots().to_vec().into_boxed_slice(),
+        nodes: artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: artifact.bindings().to_vec().into_boxed_slice(),
+        outputs: artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let shared_schemas = std::sync::Arc::new(artifact.schemas().clone());
+    let tuple = shared_schemas.find_by_key(tuple_schema.key()).unwrap();
+    let outer = artifact.inputs()[0].schema;
+    let input = Some(
+        ValueDraft {
+            schema: outer,
+            shape_values: Box::new([]),
+            data: D::Matrix(
+                vec![D::Dynamic(Some(Box::new(ValueDraft {
+                    schema: tuple,
+                    shape_values: Box::new([]),
+                    data: D::Tuple(
+                        vec![D::String("same-plan".into()), D::Bool(true)].into_boxed_slice(),
+                    ),
+                })))]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(
+            &shared_schemas,
+        ))
+        .unwrap(),
+    );
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x5a8, 0),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance
+        .turn(&[CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::Snapshot(core::slice::from_ref(&input)),
+        }])
+        .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
+    let output = instance.copied_output(0).unwrap();
+    let ValueData::Matrix(matrix) = output.data() else {
+        panic!("expected matrix output: {output:?}")
+    };
+    assert!(matches!(
+        matrix.elements(),
+        SequenceView::F64(values) if values.iter().map(|value| value.to_f64()).eq([1.0])
+    ));
+    let output_schemas = output.schemas().unwrap();
+    assert!(
+        output_schemas
+            .entries()
+            .any(|entry| matches!(entry.schema().body(), SchemaBody::String))
+    );
+    assert!(
+        output_schemas
+            .entries()
+            .any(|entry| matches!(entry.schema().body(), SchemaBody::Bool))
+    );
 }
 
 #[test]
