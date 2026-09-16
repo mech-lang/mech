@@ -238,6 +238,23 @@ fn pattern_components_addressable(
         crate::CollectionPattern::Wildcard
         | crate::CollectionPattern::Bind { .. }
         | crate::CollectionPattern::Equal(_) => true,
+        crate::CollectionPattern::Enum { ordinal, payload } => {
+            let SchemaBody::Enum { variants, .. } = parent.body() else {
+                return true;
+            };
+            let Some((pattern, body)) = payload.as_deref().zip(
+                variants
+                    .get(*ordinal as usize)
+                    .and_then(|variant| variant.payload.as_ref()),
+            ) else {
+                return true;
+            };
+            if matches!(pattern, crate::CollectionPattern::Wildcard) {
+                return true;
+            }
+            canonical_component_schema_id(parent, body, schemas)
+                .is_some_and(|schema| pattern_components_addressable(pattern, schema, schemas))
+        }
         crate::CollectionPattern::Tuple(patterns) => {
             let SchemaBody::Tuple(items) = parent.body() else {
                 // Shape mismatch is an ordinary runtime nonmatch. There is no
@@ -333,6 +350,11 @@ fn visit_pattern_values(
 ) {
     match pattern {
         crate::CollectionPattern::Equal(value) => visit(*value),
+        crate::CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                visit_pattern_values(payload, visit);
+            }
+        }
         crate::CollectionPattern::Tuple(items) => {
             for item in items {
                 visit_pattern_values(item, visit);
@@ -488,6 +510,7 @@ pub(super) fn bind_inner(
     (
         Box<[ActivatedCollectionStep]>,
         Box<[ResidentRegion]>,
+        Box<[ResidentReadLocation]>,
         ResidentReadLocation,
         SchemaId,
         mech_core::CallMemoryPlan,
@@ -667,23 +690,30 @@ pub(super) fn bind_inner(
                                 output_schema: output.schema,
                                 steps: Box::new([]),
                                 locals: Box::new([]),
+                                schema_reads: Box::new([]),
                                 yield_value: ResidentReadLocation::Scratch(output.region),
                                 yield_schema: output.schema,
                             },
                         )));
-                        let (nested_steps, nested_locals, yielded, yield_schema, memory) =
-                            bind_inner(
-                                artifact,
-                                catalog,
-                                owner,
-                                nested,
-                                &input_sources,
-                                output_slot,
-                                layout,
-                                steps,
-                                reads,
-                                calls,
-                            )?;
+                        let (
+                            nested_steps,
+                            nested_locals,
+                            nested_schema_reads,
+                            yielded,
+                            yield_schema,
+                            memory,
+                        ) = bind_inner(
+                            artifact,
+                            catalog,
+                            owner,
+                            nested,
+                            &input_sources,
+                            output_slot,
+                            layout,
+                            steps,
+                            reads,
+                            calls,
+                        )?;
                         let ActivatedTurnStep::Comprehension(prepared) =
                             &mut steps[index.get() as usize]
                         else {
@@ -693,6 +723,7 @@ pub(super) fn bind_inner(
                             .expect("unpublished nested collection plan");
                         prepared.steps = nested_steps;
                         prepared.locals = nested_locals;
+                        prepared.schema_reads = nested_schema_reads;
                         prepared.yield_value = yielded;
                         prepared.yield_schema = yield_schema;
                         calls.push((

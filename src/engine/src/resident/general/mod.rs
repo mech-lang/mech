@@ -2309,18 +2309,25 @@ fn activate_internal(
     let workspace = TurnWorkspace::new(&plan, &managed_memory)?;
     let continuations = vec![None; plan.steps.len()];
     let output_ready = plan
-        .output_materializations
+        .outputs
         .iter()
-        .map(|materialization| {
-            !plan.steps.iter().any(|step| {
-                matches!(
-                    step,
-                    ActivatedTurnStep::Match(control)
-                        if control.continuation
-                            && ResidentReadLocation::Scratch(control.write.region)
-                                == materialization.source
-                )
-            })
+        .map(|output| {
+            plan.output_materializations
+                .iter()
+                .filter(|materialization| {
+                    plan.slots[materialization.target.get() as usize].physical_index == output.slot
+                })
+                .all(|materialization| {
+                    !plan.steps.iter().any(|step| {
+                        matches!(
+                            step,
+                            ActivatedTurnStep::Match(control)
+                                if control.continuation
+                                    && ResidentReadLocation::Scratch(control.write.region)
+                                        == materialization.source
+                        )
+                    })
+                })
         })
         .collect();
     let mut instance = ReactiveInstance {
@@ -6933,23 +6940,30 @@ fn bind_control_block(
                             output_schema: output.schema,
                             steps: Box::new([]),
                             locals: Box::new([]),
+                            schema_reads: Box::new([]),
                             yield_value: ResidentReadLocation::Scratch(output.region),
                             yield_schema: output.schema,
                         },
                     )));
-                    let (nested_steps, nested_locals, yielded, yield_schema, memory) =
-                        comprehension::bind_inner(
-                            artifact,
-                            catalog,
-                            owner,
-                            nested,
-                            &inputs,
-                            output_slot,
-                            layout,
-                            steps,
-                            reads,
-                            calls,
-                        )?;
+                    let (
+                        nested_steps,
+                        nested_locals,
+                        nested_schema_reads,
+                        yielded,
+                        yield_schema,
+                        memory,
+                    ) = comprehension::bind_inner(
+                        artifact,
+                        catalog,
+                        owner,
+                        nested,
+                        &inputs,
+                        output_slot,
+                        layout,
+                        steps,
+                        reads,
+                        calls,
+                    )?;
                     let ActivatedTurnStep::Comprehension(prepared) = &mut steps[index as usize]
                     else {
                         unreachable!()
@@ -6958,6 +6972,7 @@ fn bind_control_block(
                         .expect("unpublished nested collection plan");
                     prepared.steps = nested_steps;
                     prepared.locals = nested_locals;
+                    prepared.schema_reads = nested_schema_reads;
                     prepared.yield_value = yielded;
                     prepared.yield_schema = yield_schema;
                     calls.push((
