@@ -454,8 +454,7 @@ impl KernelCostEstimate {
         }
         #[cfg(test)]
         {
-            return detached_test_turn_plan(self.demand)
-                .and_then(ResidentBudgetPermit::from_turn_plan);
+            return detached_turn_plan(self.demand).and_then(ResidentBudgetPermit::from_turn_plan);
         }
         #[cfg(not(test))]
         {
@@ -517,7 +516,7 @@ impl KernelCostEstimate {
 }
 
 #[cfg(test)]
-fn detached_test_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
+fn detached_turn_plan(demand: ResourceDemand) -> Result<TurnMemoryPlan, ResidentKernelError> {
     let target = mech_core::TargetMemoryProfile::current_resident_cpu()
         .map_err(|_| ResidentKernelError::InvalidShape)?;
     let node = mech_core::NodeId::new(0);
@@ -576,6 +575,18 @@ impl<P> PreparedKernel<P> {
     }
 
     pub(crate) fn admit(self) -> Result<AdmittedKernel<P>, ResidentKernelError> {
+        Ok(AdmittedKernel {
+            plan: self.plan,
+            _permit: self.cost.checked()?,
+        })
+    }
+
+    /// Admit work performed by a control node outside an ordinary kernel
+    /// call. Match result conversion owns its payload through the control
+    /// write scope, while this permit validates and accumulates the complete
+    /// conversion demand against the same resident target limits.
+    pub(crate) fn admit_control(self) -> Result<AdmittedKernel<P>, ResidentKernelError> {
+        let _scope = ControlWorkScopeGuard::enter();
         Ok(AdmittedKernel {
             plan: self.plan,
             _permit: self.cost.checked()?,
@@ -1005,8 +1016,8 @@ mod tests {
 
     #[test]
     fn nested_turn_authority_restores_previous_plan_after_panic() {
-        let outer = Arc::new(detached_test_turn_plan(ResourceDemand::default()).unwrap());
-        let inner = Arc::new(detached_test_turn_plan(ResourceDemand::default()).unwrap());
+        let outer = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
+        let inner = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
         assert!(with_active_turn_plan(|plan| plan.is_none()));
         with_resident_turn_plan(outer.clone(), || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -1030,7 +1041,53 @@ mod tests {
     }
 
     #[test]
-    fn resident_estimates_reconcile_with_the_real_node_turn_plan() {
+    fn standalone_control_admission_accumulates_repeated_work() {
+        let cost = KernelCostEstimate {
+            demand: ResourceDemand {
+                work: mech_core::WorkDemand {
+                    compute: MAX_RESIDENT_COMPUTE_WORK / 2 + 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        };
+        let plan = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
+        with_resident_turn_plan(plan, || {
+            with_control_work_budget(|| {
+                assert!(PreparedKernel::new((), cost).admit_control().is_ok());
+                assert!(matches!(
+                    PreparedKernel::new((), cost).admit_control(),
+                    Err(ResidentKernelError::InvalidShape),
+                ));
+            });
+        });
+    }
+
+    #[test]
+    fn standalone_control_admission_accumulates_repeated_comparisons() {
+        let cost = KernelCostEstimate {
+            demand: ResourceDemand {
+                work: mech_core::WorkDemand {
+                    comparison: MAX_RESIDENT_COMPARISON_WORK / 2 + 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        };
+        let plan = Arc::new(detached_turn_plan(ResourceDemand::default()).unwrap());
+        with_resident_turn_plan(plan, || {
+            with_control_work_budget(|| {
+                assert!(PreparedKernel::new((), cost).admit_control().is_ok());
+                assert!(matches!(
+                    PreparedKernel::new((), cost).admit_control(),
+                    Err(ResidentKernelError::InvalidShape),
+                ));
+            });
+        });
+    }
+
+    #[test]
+    fn control_admission_reconciles_with_the_real_node_turn_plan() {
         let node = mech_core::NodeId::new(7);
         let program = crate::memory_planner::ProgramMemoryPlan {
             allocations: vec![mech_core::AllocationPlan {
@@ -1065,24 +1122,57 @@ mod tests {
             &crate::memory_planner::TurnMemoryFacts::default(),
         )
         .unwrap();
-        let checked = with_resident_turn_plan(base, || {
-            KernelCostEstimate {
-                demand: ResourceDemand {
-                    persistent_bytes: 24,
-                    ..ResourceDemand::default()
-                },
-            }
-            .checked()
+        let checked = with_resident_turn_plan(base.clone(), || {
+            with_control_work_budget(|| {
+                PreparedKernel::new(
+                    (),
+                    KernelCostEstimate {
+                        demand: ResourceDemand {
+                            persistent_bytes: 24,
+                            ..ResourceDemand::default()
+                        },
+                    },
+                )
+                .admit_control()
+            })
         })
         .unwrap();
-        assert_eq!(checked._plan.node, node);
-        assert_eq!(checked._plan.allocations[0].capacity_bytes, 24);
-        assert_eq!(checked._plan.arenas[0].capacity_bytes, 24);
+        assert_eq!(checked._permit._plan.node, node);
+        assert_eq!(
+            checked._permit._plan.allocations[0].id,
+            mech_core::MemoryObjectId::new(3)
+        );
+        assert_eq!(
+            checked._permit._plan.allocations[0].owner,
+            mech_core::MemoryObjectOwner::NodeScratch { node, ordinal: 0 }
+        );
+        assert_eq!(checked._permit._plan.allocations[0].capacity_bytes, 24);
+        assert_eq!(checked._permit._plan.arenas[0].capacity_bytes, 24);
+
+        let mut bounded = base;
+        bounded.budget_limits.max_output_bytes = Some(23);
+        assert!(matches!(
+            with_resident_turn_plan(bounded, || {
+                with_control_work_budget(|| {
+                    PreparedKernel::new(
+                        (),
+                        KernelCostEstimate {
+                            demand: ResourceDemand {
+                                persistent_bytes: 24,
+                                ..ResourceDemand::default()
+                            },
+                        },
+                    )
+                    .admit_control()
+                })
+            }),
+            Err(ResidentKernelError::InvalidShape)
+        ));
     }
 
     #[test]
     fn incremental_progress_checks_match_full_admission_without_rebuilding_the_plan() {
-        let mut base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        let mut base = detached_turn_plan(ResourceDemand::default()).unwrap();
         base.facts.additional_demand.work.compute = 17;
         let base = Arc::new(base);
         let snapshot = (*base).clone();
@@ -1139,7 +1229,7 @@ mod tests {
 
     #[test]
     fn incremental_progress_cannot_admit_candidate_publication_facts() {
-        let base = detached_test_turn_plan(ResourceDemand::default()).unwrap();
+        let base = detached_turn_plan(ResourceDemand::default()).unwrap();
         with_resident_turn_plan(base, || {
             assert_eq!(
                 KernelCostEstimate {
