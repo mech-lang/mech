@@ -189,9 +189,10 @@ class ImpactClassifierTests(unittest.TestCase):
 
 
 class RegisteredReviewTests(unittest.TestCase):
-    def test_registered_slice_keeps_affected_owners_static_checks_and_regressions(self):
+    def test_registered_slice_runs_static_checks_and_its_focused_regressions(self):
         result = CI_IMPACT.classify(["src/engine/src/source_semantics/frontend.rs"], ["ci:full"], OWNERS, "review")
-        self.assertEqual(result["changed_owners"], ["mech-engine", "s8-review-regressions"])
+        self.assertEqual(result["matched_owners"], ["mech-engine"])
+        self.assertEqual(result["changed_owners"], ["s8-review-regressions"])
         self.assertTrue(result["static_contracts_required"])
         self.assertTrue(result["review_only"])
         for field in ["standard_canaries_required", "windows_canary_required", "browser_canary_required", "cross_cutting_standard_suite_required", "full_validation_required"]:
