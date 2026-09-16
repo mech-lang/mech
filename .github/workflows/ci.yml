@@ -644,6 +644,13 @@ jobs:
           path: /tmp/browser-compute-canary
       - name: Restore the shared compute browser build
         run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+      - name: Verify canonical document bundle activation and replacement
+        env:
+          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-document-bundles
+        run: |
+          cargo fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          cargo run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech

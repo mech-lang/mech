@@ -106,6 +106,7 @@ fn play_mika_farewell(draw_target: ProgressDrawTarget, message: String, frame_de
         final_state.tick();
     }
 
+
     final_state.finish();
 }
 
@@ -955,15 +956,18 @@ mod tests {
         use indicatif::InMemoryTerm;
 
         let terminal = InMemoryTerm::new(10, 80);
+        let frame_delay = Duration::from_millis(10);
+        let expected_duration =
+            frame_delay * u32::try_from(MICROMIKA_WAVE.len().saturating_sub(1)).unwrap();
         let started = Instant::now();
         play_mika_farewell(
             ProgressDrawTarget::term_like(Box::new(terminal.clone())),
             "⸢Okay cya!⸥\n".to_string(),
-            Duration::from_millis(10),
+            frame_delay,
         );
 
         assert!(
-            started.elapsed() >= Duration::from_millis(50),
+            started.elapsed() >= expected_duration,
             "Mika farewell did not advance through its wave frames"
         );
         assert!(terminal.contents().contains("╭◉╮ ⸢Okay cya!⸥"));

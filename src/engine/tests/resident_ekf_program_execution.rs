@@ -1,4 +1,4 @@
-#![cfg(all(feature = "resident-artifact", feature = "compiler"))]
+#![cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 
 use mech_core::{
     AccessMode, ApplicationRequirement, BindingId, BoundResidentKernel, ChangeDetectionPolicy,
@@ -10,9 +10,9 @@ use mech_core::{
 };
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
-    ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass,
-    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
-    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
+    ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentTurnSummary,
+    ResidentValueBorrow, activate, activate_with_options, compile_frozen_ekf_source,
+    frozen_ekf_compiler_catalog,
 };
 use mech_engine::__resident_ekf::ResidentEkfBatch;
 use mech_engine::{
@@ -54,7 +54,7 @@ fn state(instance: &ReactiveInstance) -> [f64; 12] {
         .plan
         .slots
         .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .filter(|slot| slot.role == mech_engine::SlotRole::State)
     {
         let ResidentValueBorrow::F64 { values, .. } =
             instance.state_borrow(slot.artifact_id).unwrap()
@@ -291,8 +291,10 @@ fn unchecked_integrity_is_explicit_and_omits_constraint_only_nodes() -> MResult<
     let checked_summary = execute_turn(&mut checked, &frame).unwrap();
     let unchecked_summary = execute_turn(&mut unchecked, &frame).unwrap();
     assert_eq!(state(&checked), state(&unchecked));
-    assert_eq!(checked_summary.dirty_nodes, 20);
-    assert_eq!(unchecked_summary.dirty_nodes, 17);
+    assert_eq!(checked_summary.dirty_nodes, 24);
+    // Unchecked execution omits the three integrity predicates; the four
+    // canonical identity-copy nodes still execute.
+    assert_eq!(unchecked_summary.dirty_nodes, 21);
 
     let mut invalid = frame;
     invalid[0] = f64::NAN;
@@ -342,8 +344,9 @@ fn source_and_bytecode_artifacts_execute_the_complete_frozen_trace() -> MResult<
         assert_eq!(source_receipt.before_epoch, decoded_receipt.before_epoch);
         assert_eq!(source_receipt.after_epoch, decoded_receipt.after_epoch);
         assert_eq!(source_receipt.state_hash, decoded_receipt.state_hash);
-        assert_eq!(source_receipt.touched_slots, 2);
-        assert_eq!(source_receipt.dirty_nodes, 20);
+        // Two recurrence cells plus the independently published estimate.
+        assert_eq!(source_receipt.touched_slots, 3);
+        assert_eq!(source_receipt.dirty_nodes, 24);
         trajectory.push(state(&source));
     }
 
@@ -379,7 +382,8 @@ fn abort_and_integrity_failure_leave_publication_unchanged() -> MResult<()> {
     assert_eq!(state(&instance), published);
     let probe = instance.structural_probe();
     assert_eq!(probe.candidate_seed_bytes, 0);
-    assert_eq!(probe.candidate_materialized_bytes, 96);
+    // Twelve recurrence scalars plus the three-scalar output publication.
+    assert_eq!(probe.candidate_materialized_bytes, 120);
     assert_eq!(probe.published_buffer_copy_bytes, 0);
     assert_eq!(probe.publication_store_count, 1);
     Ok(())

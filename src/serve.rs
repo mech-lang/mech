@@ -747,13 +747,13 @@ impl ServerSourceRegistry {
                 },
             );
             if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
-                let code = crate::browser_planning::compile_browser_document_bundle(
+                let code = crate::browser_planning::compile_browser_document_payload(
                     compiler
                         .as_mut()
                         .expect("live served roots construct a browser compiler"),
                     uri,
+                    &key,
                     &document,
-                    has_compute_host,
                 )?
                 .encode()?;
                 // A dependency change invalidates this response as well as

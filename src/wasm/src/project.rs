@@ -2964,6 +2964,11 @@ mod document {
             })
         }
 
+        #[wasm_bindgen(js_name = runtimeInfo)]
+        pub fn runtime_info(&self) -> Result<JsValue, JsValue> {
+            runtime_info_value(&self.runtime()?.program_execution_info())
+        }
+
         #[wasm_bindgen(js_name = renderedOutput)]
         pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
             let max_elements = self.repl.session.value_element_limit();
@@ -4988,22 +4993,8 @@ mod tests {
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
+        let presentation_output_ids =
+            mech_runtime::canonical_document_presentation_output_ids(&document.document()).unwrap();
         BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)
@@ -5067,7 +5058,7 @@ mod tests {
             }
             assert_eq!(
                 outputs.contains_key(&root_document_program_output_id()),
-                bootstrap.program_output_id().unwrap().is_some(),
+                runtime.program_output_id().is_some(),
             );
         }
     }

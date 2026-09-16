@@ -224,6 +224,10 @@ def main() -> None:
             if project_copy is not None:
                 shutil.rmtree(project_copy)
         else:
+            server_output = work / "server.log"
+            if server_output.exists():
+                print("GPU particle server output (last 32 KiB):", file=sys.stderr)
+                print(server_output.read_bytes()[-32768:].decode("utf-8", errors="replace"), file=sys.stderr)
             print(f"GPU particle smoke artifacts retained at {work}", file=sys.stderr)
             if project_copy is not None:
                 print(f"GPU particle smoke project retained at {project_copy}", file=sys.stderr)

@@ -935,7 +935,7 @@ pub static CANONICAL_PORTS: &[RulePort] = &[
         activation: RegistryActivationStatus::Active,
         node_policy: NodePolicy::Node(SyntaxKind::Comment),
         phase: Some(PortPhase::Phase2B),
-        notes: "rich comment semantics wait for the complete paragraph-element grammar",
+        notes: "rich comment bodies use the complete canonical paragraph-element grammar",
     },
     RulePort {
         name: "comment-sigil",

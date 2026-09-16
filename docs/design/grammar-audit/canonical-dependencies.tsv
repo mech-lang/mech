@@ -15,7 +15,7 @@ alphanumeric	alpha-token|digit-token	citation|reference|section-reference
 ampersand	none	identifier-symbol|symbol
 and	ws0e	logic-operator
 any	none	any-token|code-block
-any-token	any	comment|grammar-terminal-token|source-import-tail
+any-token	any	grammar-terminal-token|source-import-tail
 apostrophe	none	punctuation|transpose
 argument-list	call-arg|call-arg-with-binding|left-parenthesis|list-separator|right-parenthesis	fsm|function-call
 assign-operator	whitespace0	invariant-define|variable-assign|variable-define
@@ -75,7 +75,7 @@ code-terminal	comment|mika-section-close|new-line|right-brace|semicolon|space-ta
 codeblock-sigil	grave-codeblock-sigil|tilde-codeblock-sigil	code-block
 colon	none	atom|binding|call-arg-with-binding|center-alignment|citation|context-capability-declaration|empty-map|enum-variant|footnote|identifier-path-segment-emoji|import-alias-operator|kind-atom|kind-map|kind-matrix|kind-scalar|kind-set|kind-table|left-alignment|mapping|option-mapping|parse-repl-command|pattern-atom-struct|punctuation|right-alignment|select-all|title-front-matter|tuple-struct
 comma	none	binding|grammar-list|grammar-term|identifier-path-segment-emoji|list-separator|mapping|matrix-column|option-mapping|punctuation|swizzle-subscript|table-column
-comment	any-token|comment-sigil|new-line|space-tab	code-terminal|fsm-comment-arm|mech-code-alt
+comment	comment-sigil|new-line|paragraph-element|space-tab	code-terminal|fsm-comment-arm|mech-code-alt
 comment-sigil	none	comment|divide|raw-subtract
 comparison-operator	equal-to|greater-than|greater-than-equal|less-than|less-than-equal|not-equal|strict-equal|strict-not-equal	l2
 complement	ws0e	set-operator
@@ -365,7 +365,7 @@ output-operator	output-operator-a|output-operator-u	activation-arm|fsm-output|fs
 output-operator-a	whitespace0	output-operator
 output-operator-u	whitespace0	output-operator
 paragraph	idea-sigil|mika-section-close|new-line|paragraph-element	citation|paragraph-newline|section-element
-paragraph-element	emphasis|eval-inline-mech-code|footnote-reference|highlight|hyperlink|inline-code|inline-equation|inline-mech-code|paragraph-text|raw-hyperlink|reference|section-reference|strikethrough|strong|underline	emphasis|highlight|inline-paragraph|paragraph|strikethrough|strong|underline
+paragraph-element	emphasis|eval-inline-mech-code|footnote-reference|highlight|hyperlink|inline-code|inline-equation|inline-mech-code|paragraph-text|raw-hyperlink|reference|section-reference|strikethrough|strong|underline	comment|emphasis|highlight|inline-paragraph|paragraph|strikethrough|strong|underline
 paragraph-newline	new-line|paragraph	abstract-el|checked-item|error-block|footnote|idea-block|info-block|ordered-list-item|question-block|quote-block|subtitle|success-block|ul-subtitle|unchecked-item|unordered-list-item|warning-block
 paragraph-text	asterisk|bar|define-operator|equation-sigil|footnote-prefix|grave|highlight-sigil|http-prefix|img-prefix|left-angle|left-brace|left-bracket|mika-section-close|mika-section-open|right-bracket|section-sigil|text|tilde|underscore	paragraph-element
 parenthetical-term	formula|left-parenthesis|right-parenthesis|space-tab0	factor
