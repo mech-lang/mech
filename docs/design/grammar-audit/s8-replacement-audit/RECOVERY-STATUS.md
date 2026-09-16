@@ -1037,3 +1037,43 @@ review, and integrate the accepted head into C. Interrupt that work for any
 actionable R08/R07 review finding.
 
 **External blocker:** none. Checkpoint—not complete.
+
+## Current checkpoint — R19 activation owner published
+
+**Candidate:** R19 draft #876 is `codex/syntax-s8r19-activation-scopes` /
+`f75a2f099`, directly based on R18 draft #874 at `ca8992ccd`. Review is
+requested at the exact R19 head; both PRs remain drafts.
+
+**Completed:** G15 now has one typed activation owner from retained-document
+lowering through graph revision 13, bytecode, resident control, live host
+scheduling, and retained replay evidence. Fixed and patterned scopes stay idle
+at load, run only for their stable trigger, sample captures without admitting a
+turn, execute source-order locals and ordered lazy guards, support structural,
+repeated and computed patterns, commit multi-register changes atomically, and
+reject excluded nested/context/own-trigger forms before installation. Root
+control block identities are isolated from called computed-pattern functions.
+Six source/decoded engine regressions pass. The canonical ProgramCompiler plus
+resident-host product witness proves sample-only input, exact triggering, latest
+capture observation, retained trigger identity, evidence drain, and owner
+release on unload. Runtime all-features check, format/diff gates, the 20-fixture
+revision-13 bytecode format contract, and five fresh deterministic producer
+runs pass.
+
+**Remaining:** R19 review and focused exact-head CI; accepted corrective
+boundaries R02, R06, R20, R21, R22, R23, R24 and R26; integration of accepted
+batches into the designated C candidate; deleted-parser product probes after
+each batch; one stable exact-C full qualification; protected merge and
+post-merge verification. R15 remains the explicit post-v0.4 interval-unit issue.
+R25 is being handled by another agent and is not duplicated here.
+
+**Current action:** inspect returning #876 review and focused checks, resolve
+every actionable thread before requesting another review, and preserve the
+exact `f75a2f099` validation record.
+
+**Next action:** if R19 remains clean, begin R20/G16 from the exact R19 head and
+implement the accepted ordered transitive explicit-root contract: shared
+identity, caller output order, once-only provider planning, and rollback on a
+later-root failure.
+
+**External blocker:** none. Checkpoint—not complete.
+
