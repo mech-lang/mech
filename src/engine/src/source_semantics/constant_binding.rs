@@ -370,7 +370,8 @@ impl BindingRelocation<'_> {
                 crate::ControlOperationBody::Comprehension(declaration) => {
                     self.comprehension(declaration)
                 }
-                crate::ControlOperationBody::Operation { .. } => {}
+                crate::ControlOperationBody::Operation { .. }
+                | crate::ControlOperationBody::Recur => {}
             }
         }
         self.control_value(&mut block.yield_value);
@@ -485,7 +486,8 @@ impl BindingRelocation<'_> {
                         self.comprehension_value(input);
                     }
                     match &mut operation.body {
-                        crate::ControlOperationBody::Operation { .. } => {}
+                        crate::ControlOperationBody::Operation { .. }
+                        | crate::ControlOperationBody::Recur => {}
                         crate::ControlOperationBody::Match(declaration) => {
                             self.match_declaration(declaration)
                         }

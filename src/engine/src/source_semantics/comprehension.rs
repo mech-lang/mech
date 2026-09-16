@@ -45,7 +45,8 @@ impl PendingComprehension {
                 PendingComprehensionStep::Operation(operation) => {
                     visit(&operation.schema);
                     match &operation.body {
-                        PendingControlOperationBody::Operation { .. } => {}
+                        PendingControlOperationBody::Operation { .. }
+                        | PendingControlOperationBody::Recur => {}
                         PendingControlOperationBody::Match(nested) => {
                             nested.visit_schemas(visit);
                         }
@@ -1096,6 +1097,9 @@ pub(super) fn resolve_comprehension(
                                 crate::ControlOperationBody::Comprehension(resolve_comprehension(
                                     nested, schemas, constants,
                                 ))
+                            }
+                            PendingControlOperationBody::Recur => {
+                                crate::ControlOperationBody::Recur
                             }
                         },
                         inputs: operation.inputs.iter().map(value).collect(),

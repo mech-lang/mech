@@ -72,6 +72,12 @@ pub enum ControlOperationBody<C = OperationContractId> {
     },
     Match(MatchDeclaration<C>),
     Comprehension(super::ComprehensionDeclaration<C>),
+    /// Invoke the enclosing function match with the operation's single input.
+    ///
+    /// This is a lexical back-edge, not a graph edge and not a source-level
+    /// callable lookup. Activation binds it to the enclosing match and the
+    /// resident executor admits a bounded call frame before following it.
+    Recur,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -755,6 +761,13 @@ pub(super) fn validate_match_inner(
                                 next_block,
                             )?
                         }
+                        ControlOperationBody::Recur => {
+                            if inputs.as_slice() != [scrutinee] || operation.schema != output {
+                                return Err(invalid(
+                                    "recursive call must preserve the enclosing input and output schemas",
+                                ));
+                            }
+                        }
                         ControlOperationBody::Operation { .. } => unreachable!(),
                     }
                     continue;
@@ -917,7 +930,8 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
-                                ControlOperationBody::Operation { .. } => {}
+                                ControlOperationBody::Operation { .. }
+                                | ControlOperationBody::Recur => {}
                             }
                         }
                     }
@@ -945,7 +959,8 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
-                                ControlOperationBody::Operation { .. } => {}
+                                ControlOperationBody::Operation { .. }
+                                | ControlOperationBody::Recur => {}
                             }
                         }
                     }
@@ -1128,6 +1143,7 @@ impl<C> MatchDeclaration<C> {
                                         )?,
                                     )
                                 }
+                                ControlOperationBody::Recur => ControlOperationBody::Recur,
                             },
                             inputs: operation.inputs.clone(),
                             schema: operation.schema,
