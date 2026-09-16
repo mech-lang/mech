@@ -1487,8 +1487,16 @@ impl ReactiveInstance {
                     self.workspace.changed_slots.push(slot);
                 }
             }
-            if let Some(ready) = self.workspace.candidate_output_ready.get_mut(index) {
-                *ready = true;
+            let physical_target = self.plan.slots[target.get() as usize].physical_index;
+            for (output, ready) in self
+                .plan
+                .outputs
+                .iter()
+                .zip(self.workspace.candidate_output_ready.iter_mut())
+            {
+                if output.slot == physical_target {
+                    *ready = true;
+                }
             }
         }
         Ok(())

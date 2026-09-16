@@ -2099,6 +2099,52 @@ fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
 }
 
 #[test]
+fn interactive_constant_aliases_keep_output_readiness_aligned() {
+    let source = "selected := 40\n~counter := 0\ncounter += 1\n1\n";
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    let compiled = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog(&document(source), catalog.clone())
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let selected = artifact
+            .outputs()
+            .iter()
+            .position(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.lexical_name == "selected")
+            })
+            .unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 70 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert!(
+            (0..artifact.outputs().len()).all(|output| instance.output_borrow(output).is_some())
+        );
+        assert_eq!(
+            instance
+                .copied_output(selected)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(40.0))
+        );
+    }
+}
+
+#[test]
 fn declared_fsm_publishes_output_and_continuation_atomically() {
     let source = "#Publishing() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9u64.\n#Publishing()\n";
     let compiled = CanonicalSourceFrontend

@@ -2329,18 +2329,25 @@ fn activate_internal(
     let workspace = TurnWorkspace::new(&plan, &managed_memory)?;
     let continuations = vec![None; plan.steps.len()];
     let output_ready = plan
-        .output_materializations
+        .outputs
         .iter()
-        .map(|materialization| {
-            !plan.steps.iter().any(|step| {
-                matches!(
-                    step,
-                    ActivatedTurnStep::Match(control)
-                        if control.continuation
-                            && ResidentReadLocation::Scratch(control.write.region)
-                                == materialization.source
-                )
-            })
+        .map(|output| {
+            plan.output_materializations
+                .iter()
+                .filter(|materialization| {
+                    plan.slots[materialization.target.get() as usize].physical_index == output.slot
+                })
+                .all(|materialization| {
+                    !plan.steps.iter().any(|step| {
+                        matches!(
+                            step,
+                            ActivatedTurnStep::Match(control)
+                                if control.continuation
+                                    && ResidentReadLocation::Scratch(control.write.region)
+                                        == materialization.source
+                        )
+                    })
+                })
         })
         .collect();
     let mut instance = ReactiveInstance {
