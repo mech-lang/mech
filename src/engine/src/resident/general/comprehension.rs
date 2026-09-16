@@ -266,6 +266,9 @@ fn supported_pattern_inner(
     match pattern {
         crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => true,
         crate::CollectionPattern::Bind { schema, .. } => schemas.get(*schema).is_some(),
+        crate::CollectionPattern::Enum { payload, .. } => payload
+            .as_deref()
+            .is_none_or(|payload| supported_pattern_inner(payload, schemas)),
         crate::CollectionPattern::Tuple(items) => items
             .iter()
             .all(|item| supported_pattern_inner(item, schemas)),
@@ -296,7 +299,9 @@ fn supported_pattern(
 
 fn structural_pattern<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
     match pattern {
-        crate::CollectionPattern::Tuple(_) | crate::CollectionPattern::Array { .. } => true,
+        crate::CollectionPattern::Enum { .. }
+        | crate::CollectionPattern::Tuple(_)
+        | crate::CollectionPattern::Array { .. } => true,
         crate::CollectionPattern::Wildcard
         | crate::CollectionPattern::Bind { .. }
         | crate::CollectionPattern::Equal(_) => false,
@@ -382,6 +387,13 @@ fn activate_pattern(
             schema: binding(*local, *schema),
         },
         crate::CollectionPattern::Equal(peer) => crate::CollectionPattern::Equal(value(*peer)?),
+        crate::CollectionPattern::Enum { ordinal, payload } => crate::CollectionPattern::Enum {
+            ordinal: *ordinal,
+            payload: payload
+                .as_deref()
+                .map(|payload| activate_pattern(payload, binding, value).map(Box::new))
+                .transpose()?,
+        },
         crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
             items
                 .iter()

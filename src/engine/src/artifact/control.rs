@@ -150,6 +150,33 @@ fn validate_structural_pattern(
                 return None;
             }
         }
+        super::CollectionPattern::Enum { ordinal, payload } => {
+            let payload_schema = match expected.body() {
+                SchemaBody::Enum { variants, .. } => {
+                    variants.get(*ordinal as usize)?.payload.as_ref()
+                }
+                SchemaBody::Dynamic => None,
+                _ => return None,
+            };
+            match (payload_schema, payload) {
+                (Some(schema), Some(pattern)) => validate_structural_pattern(
+                    draft,
+                    pattern,
+                    &component_schema(expected, schema)?,
+                    bindings,
+                )?,
+                (None, None) if matches!(expected.body(), SchemaBody::Enum { .. }) => {}
+                (_, Some(pattern)) if matches!(expected.body(), SchemaBody::Dynamic) => {
+                    validate_structural_pattern(
+                        draft,
+                        pattern,
+                        &component_schema(expected, &SchemaBody::Dynamic)?,
+                        bindings,
+                    )?;
+                }
+                _ => return None,
+            }
+        }
         super::CollectionPattern::Tuple(items) => {
             let fields = match expected.body() {
                 SchemaBody::Tuple(fields) if fields.len() == items.len() => Some(fields),

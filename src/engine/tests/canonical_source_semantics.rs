@@ -4,7 +4,13 @@ use std::fs;
 use std::path::PathBuf;
 
 use mech_core::{
-    ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
+    ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, ManagedMemoryBudget,
+    OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody, ShapeRule, ValueData,
+    ValueDataDraft,
+};
+use mech_engine::__resident::{
+    ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate,
+    activate_with_options,
 };
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
@@ -75,6 +81,58 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(snapshot.syntax()).expect("canonical Document")
 }
 
+fn execute_document<'a>(
+    source: &str,
+    turns: impl IntoIterator<Item = (Vec<ResidentValueRef<'a>>, ValueDataDraft)>,
+) {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical document did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut source_instance = activate(
+        ReactiveInstanceId::new(0x540, 1),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let mut decoded_instance = activate(
+        ReactiveInstanceId::new(0x540, 2),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for (values, expected) in turns {
+        for instance in [&mut source_instance, &mut decoded_instance] {
+            assert_eq!(values.len(), instance.plan.inputs.len());
+            let captured = values
+                .iter()
+                .copied()
+                .zip(instance.plan.inputs.iter())
+                .map(|(value, input)| CapturedSignalInput {
+                    slot: input.slot,
+                    value,
+                })
+                .collect::<Vec<_>>();
+            instance.turn(&captured).unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected
+            );
+        }
+    }
+}
+
 #[test]
 fn typed_document_compiles_definition_and_expression_units_in_source_order() {
     let document = document("answer := 40 + 2\nanswer\n");
@@ -91,6 +149,227 @@ fn typed_document_compiles_definition_and_expression_units_in_source_order() {
     compiled
         .compile_artifact()
         .expect("canonical document produces an artifact");
+}
+
+#[test]
+fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment() {
+    let alias = CanonicalSourceFrontend
+        .compile_document(&document("<count> := <u8>\nx<count> := 1\nx\n"))
+        .unwrap();
+    assert!(matches!(
+        alias
+            .schemas()
+            .get(alias.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    alias.compile_artifact().unwrap();
+
+    let enumeration = CanonicalSourceFrontend
+        .compile_document(&document("<color> := Red | Green\nx := :Red\nx\n"))
+        .unwrap();
+    let schema = enumeration
+        .schemas()
+        .get(enumeration.program().outputs[0].schema)
+        .unwrap();
+    let SchemaBody::Enum { variants, .. } = schema.body() else {
+        panic!("declared enum output")
+    };
+    assert_eq!(
+        variants
+            .iter()
+            .map(|variant| variant.name.as_str())
+            .collect::<Vec<_>>(),
+        ["Red", "Green"]
+    );
+    let artifact = enumeration.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    assert_eq!(
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+            .unwrap()
+            .revision(),
+        artifact.revision()
+    );
+}
+
+#[test]
+fn enum_payload_patterns_retain_nominal_identity_through_bytecode() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "<color> := :red<f64> | :green<f64>\n\
+             my-color<color> := :red(300)\n\
+             result := my-color?\n\
+               | :red(x), x > 100 => x\n\
+               | * => 0.\n\
+             result\n",
+        ))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let match_node = artifact
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+            _ => None,
+        })
+        .expect("enum source retains canonical match control");
+    assert!(matches!(
+        &match_node.arms[0].pattern,
+        mech_engine::MatchPattern::Structural(mech_engine::CollectionPattern::Enum {
+            ordinal: 0,
+            payload: Some(_),
+        })
+    ));
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let decoded_match = decoded
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+            _ => None,
+        })
+        .expect("decoded enum match control");
+    assert_eq!(decoded_match, match_node);
+}
+
+#[test]
+fn live_enum_payloads_execute_after_artifact_roundtrip() {
+    let first = [3.0];
+    let second = [9.0];
+    execute_document(
+        "<color> := :red<f64> | :green<f64>\n\
+         my-color<color> := :red(signal<f64>)\n\
+         result := my-color?\n\
+           | :red(x) => x + 1\n\
+           | * => 0.\n\
+         result\n",
+        [
+            (
+                vec![ResidentValueRef::F64(&first)],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(4.0)),
+            ),
+            (
+                vec![ResidentValueRef::F64(&second)],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(10.0)),
+            ),
+        ],
+    );
+}
+
+#[test]
+fn live_structural_enum_payload_retains_its_declared_variant() {
+    let first = [3.0];
+    let second = [9.0];
+    let expected = |value| {
+        ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+            ordinal: 1,
+            payload: Some(Box::new(ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)),
+                    ValueDataDraft::Bool(true),
+                ]
+                .into_boxed_slice(),
+            ))),
+        })
+    };
+    execute_document(
+        "<event> := :idle | :point<(f64,bool)>\n\
+         value<event> := :point((signal<f64>,true))\n\
+         value\n",
+        [
+            (vec![ResidentValueRef::F64(&first)], expected(3.0)),
+            (vec![ResidentValueRef::F64(&second)], expected(9.0)),
+        ],
+    );
+}
+
+#[test]
+fn live_enum_publication_rolls_back_after_managed_allocation_failure() {
+    let source = "<event> := :idle | :point<(f64,bool)>\n\
+                  value<event> := :point((signal<f64>,true))\n\
+                  value\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let memory_budget = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 3),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(memory_budget.clone()),
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+        let inputs = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(value),
+        }];
+        instance.turn(&inputs)
+    };
+
+    turn(&mut instance, &[3.0]).unwrap();
+    let published = instance.copied_output(0).unwrap();
+    let published_epoch = instance.published_epoch();
+
+    memory_budget.inject_snapshot_import_failure_after(0);
+    assert!(turn(&mut instance, &[9.0]).is_err());
+    assert_eq!(instance.published_epoch(), published_epoch);
+    assert_eq!(
+        instance.copied_output(0).unwrap().canonical_data_draft(),
+        published.canonical_data_draft()
+    );
+
+    turn(&mut instance, &[9.0]).unwrap();
+    let ValueData::Enum(value) = instance.copied_output(0).unwrap().data().clone() else {
+        panic!("live constructor must publish its nominal enum")
+    };
+    assert_eq!(value.ordinal(), 1);
+    let ValueData::Tuple(payload) = value.payload().unwrap() else {
+        panic!("point payload must remain structural")
+    };
+    assert!(
+        matches!(payload.as_ref(), [ValueData::F64(value), ValueData::Bool(true)] if value.to_f64() == 9.0)
+    );
+}
+
+#[test]
+fn document_type_environment_rejects_duplicates_cycles_and_unknown_kinds() {
+    for (source, code) in [
+        (
+            "<count> := <u8>\n<count> := <u16>\nx := 1\nx\n",
+            "source-semantics/duplicate-kind-declaration",
+        ),
+        (
+            "<left> := <right>\n<right> := <left>\nx := 1\nx\n",
+            "source-semantics/cyclic-kind-declaration",
+        ),
+        (
+            "<outer> := <missing>\nx := 1\nx\n",
+            "source-semantics/unsupported-kind-annotation",
+        ),
+        (
+            "<color> := Red | Red\nx := 1\nx\n",
+            "source-semantics/duplicate-enum-variant",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .unwrap();
+        assert_eq!(error.code, code, "{source}: {error:?}");
+    }
 }
 
 #[test]
@@ -508,11 +787,11 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             });
         }
     }
-    let mut revision_six = sections.clone();
-    revision_six.nodes = graph
-        .replacen("\"revision\":7", "\"revision\":6", 1)
-        .into_bytes();
-    assert!(mech_engine::decode_program_artifact_sections(&revision_six).is_err());
+    let mut unsupported_revision = sections.clone();
+    let mut unsupported_graph: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    unsupported_graph["revision"] = serde_json::Value::from(0);
+    unsupported_revision.nodes = serde_json::to_vec(&unsupported_graph).unwrap();
+    assert!(mech_engine::decode_program_artifact_sections(&unsupported_revision).is_err());
     // Artifact admission must enforce the complete canonical forbidden-emoji
     // terminal set in all three identifier roles, including a forbidden
     // grapheme after a valid prefix.
@@ -794,7 +1073,15 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         mech_engine::ComprehensionValue::Local(0),
         "immutable alias preserves the generator binding"
     );
-    assert!(control.steps.iter().any(|step| matches!(step, mech_engine::ComprehensionStep::Operation(operation) if operation.operation.canonical_name() == "compare/gt")));
+    assert!(control.steps.iter().any(|step| matches!(
+        step,
+        mech_engine::ComprehensionStep::Operation(operation)
+            if matches!(
+                &operation.body,
+                mech_engine::ControlOperationBody::Operation { operation, .. }
+                    if operation.canonical_name() == "compare/gt"
+            )
+    )));
     qualified.compile_artifact().unwrap();
 
     let destructured = CanonicalSourceFrontend
@@ -823,7 +1110,11 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .iter()
         .find_map(|step| match step {
             mech_engine::ComprehensionStep::Operation(operation)
-                if operation.operation.canonical_name() == "math/add" =>
+                if matches!(
+                    &operation.body,
+                    mech_engine::ControlOperationBody::Operation { operation, .. }
+                        if operation.canonical_name() == "math/add"
+                ) =>
             {
                 Some(operation)
             }

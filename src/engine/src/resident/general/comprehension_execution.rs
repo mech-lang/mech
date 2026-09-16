@@ -1003,6 +1003,35 @@ impl PatternItem {
         }
     }
 
+    pub(super) fn enum_variant(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
+        let Some(resolved) = resolve_pattern_item(self.clone(), schemas)? else {
+            return Ok(None);
+        };
+        let SchemaBody::Enum { variants, .. } = &resolved.body else {
+            return Ok(None);
+        };
+        let ValueDataDraft::Enum(value) = resolved.data else {
+            return Ok(None);
+        };
+        let Some(variant) = variants.get(value.ordinal as usize) else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        let payload = match (variant.payload.as_ref(), value.payload) {
+            (None, None) => None,
+            (Some(body), Some(data)) => Some(Self::component(
+                None,
+                body.clone(),
+                resolved.shape_values,
+                *data,
+            )),
+            _ => return Err(ResidentKernelError::InvalidInput),
+        };
+        Ok(Some((value.ordinal, payload)))
+    }
+
     fn component(
         schema: Option<SchemaId>,
         body: SchemaBody,
@@ -3821,6 +3850,49 @@ impl ReactiveInstance {
                     .map_err(fail)?;
                 Ok(matched)
             }
+            crate::CollectionPattern::Enum { ordinal, payload } => {
+                let Some(resolved) = resolve_pattern_item(item.clone(), schemas).map_err(fail)?
+                else {
+                    return Ok(false);
+                };
+                let SchemaBody::Enum { variants, .. } = &resolved.body else {
+                    return Ok(false);
+                };
+                let Some(variant) = variants.get(*ordinal as usize) else {
+                    return Err(fail(ResidentKernelError::InvalidInput));
+                };
+                let variant_payload = variant.payload.clone();
+                let ValueDataDraft::Enum(value) = resolved.data else {
+                    return Ok(false);
+                };
+                if value.ordinal != *ordinal {
+                    return Ok(false);
+                }
+                match (payload.as_deref(), variant_payload.as_ref(), value.payload) {
+                    (None, None, None) => Ok(true),
+                    (Some(pattern), Some(body), Some(data)) => {
+                        let child = PatternItem::component(None, body.clone(), Box::new([]), *data);
+                        self.match_collection_pattern_item(
+                            node,
+                            locals,
+                            pattern,
+                            &child,
+                            source_shape_values,
+                            item_footprint,
+                            depth + 1,
+                            retained_count,
+                            retained_footprint,
+                            retained_shape_parameter_count,
+                            schemas,
+                            projections,
+                            schema_arena_bytes,
+                            working,
+                            meter,
+                        )
+                    }
+                    _ => Ok(false),
+                }
+            }
             crate::CollectionPattern::Tuple(items) => {
                 if item.structural_len(true) != Some(items.len()) {
                     return Ok(false);
@@ -4014,7 +4086,7 @@ impl ReactiveInstance {
                     meter,
                 )
             }
-            crate::CollectionPattern::Equal(_) => {
+            crate::CollectionPattern::Equal(_) | crate::CollectionPattern::Enum { .. } => {
                 let (item, item_footprint, _) = self
                     .collection_pattern_item(
                         source,

@@ -16,9 +16,13 @@ mod document_assignment;
 mod document_functions;
 #[path = "document_imports.rs"]
 mod document_imports;
+#[path = "document_types.rs"]
+mod document_types;
 
 enum DocumentUnit {
     Import(mech_syntax::document::ModuleImportSyntax),
+    Kind(mech_syntax::document::KindDefineSyntax),
+    Enum(mech_syntax::document::EnumDefineSyntax),
     Function(SyntaxNode),
     Statement(SyntaxNode),
     ResourceSend(mech_syntax::document::ContextSendSyntax),
@@ -456,6 +460,7 @@ fn compile_collected_document(
     builder.resource_writes = resource_writes;
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
+    builder.register_document_types(&units)?;
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
@@ -734,6 +739,14 @@ fn collect_document_units(
         output.push(DocumentUnit::Import(import));
         return Ok(());
     }
+    if let Some(kind) = mech_syntax::document::KindDefineSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Kind(kind));
+        return Ok(());
+    }
+    if let Some(enumeration) = mech_syntax::document::EnumDefineSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Enum(enumeration));
+        return Ok(());
+    }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
     if matches!(
@@ -745,7 +758,6 @@ fn collect_document_units(
     if matches!(
         node.kind(),
         SyntaxKind::ActivationScope
-            | SyntaxKind::EnumDefine
             | SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
             | SyntaxKind::FsmImplementation
@@ -753,7 +765,6 @@ fn collect_document_units(
             // must not be traversed as unrelated child expressions.
             | SyntaxKind::FsmPipe
             | SyntaxKind::FsmSpecification
-            | SyntaxKind::KindDefine
     ) {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-document-unit",
@@ -777,7 +788,10 @@ fn declare_document_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
+            DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::Function(_)
+            | DocumentUnit::Import(_) => {}
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
@@ -803,7 +817,11 @@ fn declare_document_inline_inputs(
 ) -> Result<(), SourceSemanticError> {
     for unit in units {
         match unit {
-            DocumentUnit::Statement(_) | DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
+            DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::Statement(_)
+            | DocumentUnit::Function(_)
+            | DocumentUnit::Import(_) => {}
             DocumentUnit::ResourceSend(_) => {}
             DocumentUnit::Invariant(_) => {}
             DocumentUnit::Inline(inline) => {
@@ -854,7 +872,10 @@ fn compile_document_units_inner(
     let mut last = None;
     for unit in units {
         match unit {
-            DocumentUnit::Function(_) | DocumentUnit::Import(_) => {}
+            DocumentUnit::Kind(_)
+            | DocumentUnit::Enum(_)
+            | DocumentUnit::Function(_)
+            | DocumentUnit::Import(_) => {}
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
                     SyntaxKind::VariableDefine => {
