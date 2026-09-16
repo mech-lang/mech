@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 9;
+const WIRE_GRAPH_REVISION: u32 = 10;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -199,6 +199,7 @@ enum WireNodeBody {
 #[serde(deny_unknown_fields)]
 struct WireMatchDeclaration {
     scrutinee: u16,
+    partial: bool,
     captures: Box<[(u16, u32)]>,
     arms: Box<[WireMatchArm]>,
 }
@@ -1955,6 +1956,7 @@ fn wire_match(
 ) -> WireMatchDeclaration {
     WireMatchDeclaration {
         scrutinee: control.scrutinee,
+        partial: control.partial,
         captures: control
             .captures
             .iter()
@@ -2197,11 +2199,13 @@ fn match_from_wire(
 ) -> Result<super::MatchDeclaration, ArtifactBytecodeError> {
     let WireMatchDeclaration {
         scrutinee,
+        partial,
         captures,
         arms,
     } = control;
     Ok(super::MatchDeclaration {
         scrutinee,
+        partial,
         captures: captures
             .into_iter()
             .map(|(input, schema)| super::ControlCapture {
