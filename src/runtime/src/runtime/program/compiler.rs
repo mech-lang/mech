@@ -1934,6 +1934,12 @@ impl<'a> ProgramCompilerView<'a> {
                 &modules,
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        if !retained_outputs.is_empty() {
+            programs.compute = programs
+                .compute
+                .project_compute_output_paths(&retained_outputs)
+                .map_err(|error| compute_planning_error(error.message))?;
+        }
 
         let bind_imports = |program: CanonicalSourceProgram| -> MResult<CanonicalSourceProgram> {
             let values = program
@@ -1977,16 +1983,26 @@ impl<'a> ProgramCompilerView<'a> {
             &programs.region_name,
         )?;
 
-        for name in &retained_outputs {
-            if !compute
+        if !retained_outputs.is_empty() {
+            let published = compute
                 .interface
                 .outputs
                 .iter()
-                .any(|port| port.name.as_ref() == name)
-            {
-                return Err(compute_planning_error(format!(
-                    "unknown sampled compute output `{name}`"
-                )));
+                .map(|port| port.name.as_ref())
+                .collect::<BTreeSet<_>>();
+            let retained = retained_outputs.iter().map(String::as_str).collect();
+            if published != retained {
+                if let Some(name) = retained_outputs
+                    .iter()
+                    .find(|name| !published.contains(name.as_str()))
+                {
+                    return Err(compute_planning_error(format!(
+                        "unknown sampled compute output `{name}`"
+                    )));
+                }
+                return Err(compute_planning_error(
+                    "compute output projection exposed an undeclared sampled output",
+                ));
             }
         }
 
