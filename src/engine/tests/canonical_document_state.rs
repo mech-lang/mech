@@ -320,6 +320,133 @@ fn closed_comprehension_concatenation_retains_exact_shape() {
 }
 
 #[test]
+fn closed_comprehension_initializer_shape_flows_through_snapshot_arithmetic_and_state() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x + 1 | x <- samples]\nnegated := -values\n~a := negated\na\n",
+        &[
+            (None, (1, 3), &[-2.0, -3.0, -4.0]),
+            (None, (1, 3), &[-2.0, -3.0, -4.0]),
+        ],
+    );
+}
+
+#[test]
+fn closed_comprehension_binary_arithmetic_keeps_its_live_shape() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\ndoubled := values + values\n~a := doubled\na\n",
+        &[
+            (None, (1, 3), &[2.0, 4.0, 6.0]),
+            (None, (1, 3), &[2.0, 4.0, 6.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\nshifted := values + 1\n~a := shifted\na\n",
+        &[
+            (None, (1, 3), &[2.0, 3.0, 4.0]),
+            (None, (1, 3), &[2.0, 3.0, 4.0]),
+        ],
+    );
+}
+
+#[test]
+fn closed_comprehension_kind_conversion_keeps_its_live_shape() {
+    let source = "values := [x | x <- signal<[f64]:1,2>, x > 0]\nconverted<[u8]> := values\nshifted := converted + 1\nshifted\n";
+    let compiled = compiled(source);
+    assert!(compiled.program().nodes.iter().any(|node| {
+        node.operation()
+            .is_some_and(|operation| operation.canonical_name() == "convert/kind")
+    }));
+    variable_matrix_turns(
+        source,
+        &[
+            (Some([1.0, 2.0]), (1, 2), &[2.0, 3.0]),
+            (Some([-1.0, 2.0]), (1, 1), &[3.0]),
+            (Some([-1.0, -2.0]), (1, 0), &[]),
+        ],
+    );
+}
+
+#[test]
+fn closed_comprehension_binary_math_keeps_its_live_shape() {
+    let quarter_turn = std::f64::consts::FRAC_PI_4;
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\nangles := math/atan2(values, values)\n~a := angles\na\n",
+        &[
+            (None, (1, 3), &[quarter_turn, quarter_turn, quarter_turn]),
+            (None, (1, 3), &[quarter_turn, quarter_turn, quarter_turn]),
+        ],
+    );
+}
+
+#[test]
+fn closed_comprehension_unary_comparison_and_logic_keep_live_shapes() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [sample * sample | sample <- samples]\nrooted := math/sqrt(values)\n~a := rooted\na\n",
+        &[
+            (None, (1, 3), &[1.0, 2.0, 3.0]),
+            (None, (1, 3), &[1.0, 2.0, 3.0]),
+        ],
+    );
+    variable_bool_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nless := values < values\nequal := values == values\ncombined := !less && equal\n~a := combined\na\n",
+        &[
+            (None, (1, 3), &[true, true, true]),
+            (None, (1, 3), &[true, true, true]),
+        ],
+    );
+    variable_bool_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\ngreater := values > 1\ncombined := greater && true\n~a := combined\na\n",
+        &[
+            (None, (1, 3), &[false, true, true]),
+            (None, (1, 3), &[false, true, true]),
+        ],
+    );
+    variable_bool_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nmatrix := [values; values]\ngreater := matrix > 2\n~a := greater\na\n",
+        &[
+            (None, (2, 3), &[false, false, true, false, false, true]),
+            (None, (2, 3), &[false, false, true, false, false, true]),
+        ],
+    );
+}
+
+#[test]
+fn closed_comprehension_reductions_resolve_live_axes() {
+    for (reduction, expected_shape, expected_values) in [
+        ("stats/sum/column", (2, 1), &[6.0, 6.0][..]),
+        ("stats/sum/row", (1, 3), &[2.0, 4.0, 6.0][..]),
+    ] {
+        let source = format!(
+            "+> stats\nsamples := 1..=3\nvalues := [sample | sample <- samples]\nmatrix := [values; values]\nreduced := {reduction}(matrix)\n~a := reduced\na\n"
+        );
+        variable_matrix_turns(
+            &source,
+            &[
+                (None, expected_shape, expected_values),
+                (None, expected_shape, expected_values),
+            ],
+        );
+    }
+}
+
+#[test]
+fn closed_comprehension_matrix_dot_publishes_a_dense_scalar() {
+    turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nresult := matrix/dot(values, values)\nresult\n",
+        &[14.0, 14.0],
+    );
+}
+
+#[test]
+fn closed_comprehension_positional_selector_keeps_live_cardinality() {
+    let source = "samples := 1..=3\nselectors := [sample | sample <- samples, sample != 2]\nvalues := [sample * 10 | sample <- samples]\nselected := values[selectors]\n~a := selected\na\n";
+    variable_matrix_turns(
+        source,
+        &[(None, (2, 1), &[10.0, 30.0]), (None, (2, 1), &[10.0, 30.0])],
+    );
+}
+
+#[test]
 fn changing_comprehension_concatenation_publishes_each_shape() {
     variable_matrix_turns(
         "y := [x | x <- signal<[f64]:1,2>, x > 0]\n[y y]\n",
@@ -2134,5 +2261,356 @@ fn selected_f64_matrix_updates_propagate_signed_zero_changes() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn closed_match_initializer_runs_once_before_state_turns() {
+    turns(
+        "x := (true ? | true => 1 | false => 2)\n~a := x\na += 1\na\n",
+        &[2.0, 3.0],
+    );
+}
+
+#[test]
+fn closed_match_converts_dense_matrix_capture_to_snapshot_state() {
+    closed_matrix_turns(
+        "xs := [1 2]\nx := (true ? | true => xs | false => xs)\n~a := x\na\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(matrix_values(actual), [1.0, 2.0]);
+        },
+    );
+    variable_matrix_turns(
+        "x := (true ? | true => signal<[f64]:1,2> | false => [0 0])\nx\n",
+        &[
+            (Some([1.0, 2.0]), (1, 2), &[1.0, 2.0]),
+            (Some([3.0, 4.0]), (1, 2), &[3.0, 4.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "input := signal<[f64]:1,2>\nmatched := (true ? | true => input | false => [0 0])\n~a := [0 0]\na = matched\n[1 / a[1] 1 / a[2]]\n",
+        &[
+            (Some([0.0, 0.0]), (1, 2), &[f64::INFINITY, f64::INFINITY]),
+            (
+                Some([-0.0, 0.0]),
+                (1, 2),
+                &[f64::NEG_INFINITY, f64::INFINITY],
+            ),
+        ],
+    );
+}
+
+#[test]
+fn dense_match_snapshot_materialization_is_admitted_before_allocation() {
+    use mech_engine::resident::{
+        CapturedSignalInput, ResidentActivationOptions, ResidentExecutionError,
+        activate_with_options,
+    };
+
+    let direct = compiled("signal<[string]:1,2>\n")
+        .compile_artifact()
+        .unwrap();
+    let matched =
+        compiled("x := (true ? | true => signal<[string]:1,2> | false => [\"\" \"\"])\nx\n")
+            .compile_artifact()
+            .unwrap();
+    let matched_bytes = mech_engine::encode_program_artifact_bytecode_v1(&matched).unwrap();
+    let large = ["x".repeat(64 * 1024), "y".repeat(64 * 1024)];
+    let small = ["ok".to_owned(), "retry".to_owned()];
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    let fits = |artifact: &mech_engine::ProgramArtifact, limit: u64, turn: bool| {
+        let budget = mech_core::ManagedMemoryBudget::new(limit);
+        let result = activate_with_options(
+            ReactiveInstanceId::new(0x5a1, 0),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+            ResidentActivationOptions {
+                memory_budget: Some(budget.clone()),
+                ..Default::default()
+            },
+        );
+        let admitted = match result {
+            Ok(mut instance) => {
+                let admitted = if turn {
+                    let slot = instance.plan.inputs[0].slot;
+                    instance
+                        .turn(&[CapturedSignalInput {
+                            slot,
+                            value: ResidentValueRef::String(&large),
+                        }])
+                        .is_ok()
+                } else {
+                    true
+                };
+                drop(instance);
+                admitted
+            }
+            Err(_) => false,
+        };
+        assert_eq!(budget.used_bytes(), 0, "limit {limit} leaked ownership");
+        admitted
+    };
+    let minimum = |artifact: &mech_engine::ProgramArtifact, turn| {
+        let mut low = 0_u64;
+        let mut high = 1_u64 << 24;
+        assert!(fits(artifact, high, turn));
+        while low < high {
+            let middle = low + (high - low) / 2;
+            if fits(artifact, middle, turn) {
+                high = middle;
+            } else {
+                low = middle + 1;
+            }
+        }
+        low
+    };
+    let direct_turn = minimum(&direct, true);
+    let match_activation = minimum(&matched, false);
+    let match_turn = minimum(&matched, true);
+    let failure_limit = match_turn - 1;
+    assert!(failure_limit >= direct_turn);
+    assert!(failure_limit >= match_activation);
+
+    for artifact in [
+        matched,
+        mech_engine::decode_program_artifact_bytecode_v1(&matched_bytes).unwrap(),
+    ] {
+        let budget = mech_core::ManagedMemoryBudget::new(failure_limit);
+        let mut instance = activate_with_options(
+            ReactiveInstanceId::new(0x5a1, 1),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+            ResidentActivationOptions {
+                memory_budget: Some(budget.clone()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let slot = instance.plan.inputs[0].slot;
+        let error = instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&large),
+            }])
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            ResidentExecutionError::MemoryRuntime { .. }
+        ));
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&small),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::Matrix(matrix) = output.data() else {
+            panic!("expected String matrix: {output:?}")
+        };
+        let SequenceView::String(values) = matrix.elements() else {
+            panic!("expected packed String matrix: {matrix:?}")
+        };
+        assert_eq!(
+            values.iter().map(AsRef::as_ref).collect::<Vec<&str>>(),
+            small.iter().map(String::as_str).collect::<Vec<_>>()
+        );
+        drop(output);
+        drop(instance);
+        assert_eq!(budget.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn closed_comprehension_scalar_initializer_runs_once_before_state_turns() {
+    turns(
+        "samples := 1..=3\nvalues := [sample + 1 | sample <- samples]\n~a := values[1]\na += 1\na\n",
+        &[3.0, 4.0],
+    );
+}
+
+#[test]
+fn runtime_shaped_selection_resolves_complete_result_geometry() {
+    for (selection, expected_shape, expected_values) in [
+        ("a[1,:]", (1, 2), &[3.0, 4.0][..]),
+        ("a[:,[1 2]]", (1, 2), &[3.0, 4.0][..]),
+        ("a[[1],[1 2]]", (1, 2), &[3.0, 4.0][..]),
+    ] {
+        let source = format!(
+            "samples := [1 2 3]\nvalues := [sample + 1 | sample <- samples, sample > 1]\n~a := values\n{selection}\n"
+        );
+        variable_matrix_turns(
+            &source,
+            &[
+                (None, expected_shape, expected_values),
+                (None, expected_shape, expected_values),
+            ],
+        );
+    }
+
+    variable_matrix_turns(
+        "samples := signal<[f64]:1,2>\nvalues := [sample + 1 | sample <- samples, sample > 0]\nvalues[1,:]\n",
+        &[
+            (Some([1.0, 2.0]), (1, 2), &[2.0, 3.0]),
+            (Some([-1.0, 2.0]), (1, 1), &[3.0]),
+        ],
+    );
+}
+
+#[test]
+fn closed_set_comprehension_initializes_once_outside_the_turn_schedule() {
+    let source = "samples := 1..=3\nvalues := {sample + 1 | sample <- samples}\n~a := values\na\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59e, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let control = artifact
+            .nodes()
+            .iter()
+            .find(|node| matches!(node.body, mech_engine::ExecutableNodeBody::Comprehension(_)))
+            .unwrap()
+            .node;
+        assert!(instance.plan.activation_nodes.contains(&control));
+        assert!(
+            instance
+                .plan
+                .topology
+                .linear_node_order
+                .iter()
+                .all(|index| instance.plan.steps[index.get() as usize].artifact_node() != control)
+        );
+        for _ in 0..2 {
+            instance.turn(&[]).unwrap();
+            let output = instance.copied_output(0).unwrap();
+            assert_eq!(
+                output.canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::Set(
+                    [2.0, 3.0, 4.0]
+                        .into_iter()
+                        .map(|value| mech_core::ValueDataDraft::F64(
+                            mech_core::snapshot::F64Bits::from_f64(value)
+                        ))
+                        .collect()
+                )
+            );
+        }
+    }
+}
+
+#[test]
+fn closed_comprehension_initializer_runs_once_before_state_turns() {
+    turns(
+        "samples := 1..=3\nx-row := [1.0 | sample <- samples]\ny-row := [2.0 | sample <- samples]\nx := x-row'\ny := y-row'\n~trail := [x y]\nnew-row := ([7.0 8.0])\nnext-trail := matrix/vertcat(trail[2..=3,:], new-row)\ntrail = next-trail\ntrail[3,2]\n",
+        &[8.0, 8.0],
+    );
+}
+
+#[test]
+fn control_initializer_rejects_live_input_dependencies() {
+    for source in [
+        "condition := signal<bool>\nx := (condition ? | true => 1 | false => 2)\n~a := x\na\n",
+        "items := signal<[f64]:1,3>\nx := [item + 1 | item <- items]\n~a := x\na\n",
+    ] {
+        assert_unavailable_control_initializer(source);
+    }
+}
+
+#[test]
+fn control_initializer_rejects_state_dependencies() {
+    for source in [
+        "~condition := true\nx := (condition ? | true => 1 | false => 2)\n~a := x\na\n",
+        "~items := [1 2 3]\nx := [item + 1 | item <- items]\n~a := x\na\n",
+    ] {
+        assert_unavailable_control_initializer(source);
+    }
+}
+
+fn assert_unavailable_control_initializer(source: &str) {
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let error = activate(
+            ReactiveInstanceId::new(0x59d, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .err()
+        .expect("live-only control dependencies cannot initialize persistent state");
+        assert!(matches!(error, mech_engine::resident::ResidentActivationError::InitializerUnavailableAtActivation { .. }), "{source:?}: {error:?}");
+    }
+}
+
+#[test]
+fn closed_control_activation_reports_budget_exhaustion_and_releases_ownership() {
+    use mech_engine::resident::{
+        ResidentActivationError, ResidentActivationOptions, activate_with_options,
+    };
+    let source = "samples := 1..=32\nvalues := {sample + 1 | sample <- samples}\n~a := values\na\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut admitted = false;
+        // Exercise allocation failures both before and during control execution,
+        // then admit that same artifact without changing its semantic contract.
+        for limit in (512..=262_144).step_by(512) {
+            let budget = mech_core::ManagedMemoryBudget::new(limit);
+            let result = activate_with_options(
+                ReactiveInstanceId::new(0x59f, 0),
+                &artifact,
+                &catalog,
+                &ActivationFacts::default(),
+                ResidentActivationOptions {
+                    memory_budget: Some(budget.clone()),
+                    ..Default::default()
+                },
+            );
+            match result {
+                Ok(instance) => {
+                    assert!(budget.used_bytes() > 0);
+                    drop(instance);
+                    admitted = true;
+                }
+                Err(error) => assert!(
+                    matches!(error, ResidentActivationError::MemoryRuntime { .. }),
+                    "budget {limit}: {error:?}"
+                ),
+            }
+            assert_eq!(budget.used_bytes(), 0, "budget {limit} leaked ownership");
+            if admitted {
+                break;
+            }
+        }
+        assert!(
+            admitted,
+            "closed control must activate within its finite budget"
+        );
     }
 }
