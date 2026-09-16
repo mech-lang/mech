@@ -9,11 +9,20 @@ use super::OperationReference;
 pub struct ControlBlockId(pub u32);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MatchPattern<C = ConstantId> {
+pub enum MatchPatternValue<C = ConstantId> {
+    Literal(C),
+    Binding(u32),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum MatchPattern<C = ConstantId, S = SchemaId> {
     Literal(C),
     Wildcard,
     /// Makes the scrutinee available to explicitly declared block parameters.
     Bind,
+    /// A schema-directed structural pattern. Bindings are dense within one arm;
+    /// repeated names refer back to an earlier binding through `Equal`.
+    Structural(super::CollectionPattern<S, MatchPatternValue<C>>),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -26,6 +35,7 @@ pub struct ControlCapture {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ControlParameterSource {
     Scrutinee,
+    PatternBinding(u32),
     Capture(u16),
 }
 
@@ -83,6 +93,119 @@ pub struct MatchDeclaration<C = OperationContractId> {
     pub arms: Box<[ControlMatchArm<C>]>,
 }
 
+fn component_schema(
+    parent: &mech_core::Schema,
+    body: &mech_core::SchemaBody,
+) -> Option<mech_core::Schema> {
+    mech_core::SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: parent
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(id as u32),
+                origin: mech_core::DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+            .collect(),
+    }
+    .finalize()
+    .ok()
+}
+
+fn validate_structural_pattern(
+    draft: &super::ProgramArtifactDraft,
+    pattern: &super::CollectionPattern<SchemaId, MatchPatternValue>,
+    expected: &mech_core::Schema,
+    bindings: &mut Vec<SchemaId>,
+) -> Option<()> {
+    use mech_core::SchemaBody;
+    let compatible = |schema: &mech_core::Schema| {
+        matches!(expected.body(), SchemaBody::Dynamic) || schema == expected
+    };
+    match pattern {
+        super::CollectionPattern::Wildcard => {}
+        super::CollectionPattern::Bind { local, schema } => {
+            let definition = draft.schemas.get(*schema)?;
+            if *local as usize != bindings.len() || !compatible(definition) {
+                return None;
+            }
+            bindings.push(*schema);
+        }
+        super::CollectionPattern::Equal(MatchPatternValue::Literal(constant)) => {
+            let schema = draft
+                .schemas
+                .get(draft.constants.get(*constant)?.schema())?;
+            if !compatible(schema) {
+                return None;
+            }
+        }
+        super::CollectionPattern::Equal(MatchPatternValue::Binding(local)) => {
+            let schema = draft.schemas.get(*bindings.get(*local as usize)?)?;
+            if !compatible(schema) {
+                return None;
+            }
+        }
+        super::CollectionPattern::Tuple(items) => {
+            let fields = match expected.body() {
+                SchemaBody::Tuple(fields) if fields.len() == items.len() => Some(fields),
+                SchemaBody::Dynamic => None,
+                _ => return None,
+            };
+            for (index, item) in items.iter().enumerate() {
+                validate_structural_pattern(
+                    draft,
+                    item,
+                    &component_schema(
+                        expected,
+                        fields.map_or(&SchemaBody::Dynamic, |fields| &fields[index]),
+                    )?,
+                    bindings,
+                )?;
+            }
+        }
+        super::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => {
+            let element = match expected.body() {
+                SchemaBody::Matrix { element, .. } => element.as_ref(),
+                SchemaBody::Dynamic => expected.body(),
+                _ => return None,
+            };
+            for item in prefix {
+                validate_structural_pattern(
+                    draft,
+                    item,
+                    &component_schema(expected, element)?,
+                    bindings,
+                )?;
+            }
+            if let Some(rest) = rest {
+                validate_structural_pattern(
+                    draft,
+                    rest,
+                    &super::comprehension::array_rest_schema(expected, element)?,
+                    bindings,
+                )?;
+            }
+            for item in suffix {
+                validate_structural_pattern(
+                    draft,
+                    item,
+                    &component_schema(expected, element)?,
+                    bindings,
+                )?;
+            }
+        }
+    }
+    Some(())
+}
+
 pub(super) fn validate_match(
     draft: &super::ProgramArtifactDraft,
     node: mech_core::NodeId,
@@ -132,17 +255,19 @@ fn validate_match_inner(
             && declaration
                 .arms
                 .iter()
-                .any(|arm| matches!(arm.pattern, MatchPattern::Literal(_))))
+                .any(|arm| matches!(&arm.pattern, MatchPattern::Literal(_))))
     {
         return Err(invalid(
             "match requires a closed result and scalar literal-pattern scrutinee",
         ));
     }
     if !closed_value(scrutinee)
-        && declaration
-            .arms
-            .iter()
-            .any(|arm| arm.pattern == MatchPattern::Bind)
+        && declaration.arms.iter().any(|arm| {
+            matches!(
+                &arm.pattern,
+                MatchPattern::Bind | MatchPattern::Structural(_)
+            )
+        })
     {
         return Err(invalid("match bindings require a closed value schema"));
     }
@@ -164,14 +289,23 @@ fn validate_match_inner(
     }
     let mut coverage = [false; 2];
     for arm in &declaration.arms {
-        if let MatchPattern::Literal(constant) = arm.pattern {
+        let mut pattern_bindings = Vec::new();
+        if let MatchPattern::Literal(constant) = &arm.pattern {
             let value = draft
                 .constants
-                .get(constant)
+                .get(*constant)
                 .ok_or_else(|| invalid("unknown literal pattern constant"))?;
             if value.schema() != scrutinee {
                 return Err(invalid("literal pattern schema differs from scrutinee"));
             }
+        }
+        if let MatchPattern::Structural(pattern) = &arm.pattern {
+            let schema = draft
+                .schemas
+                .get(scrutinee)
+                .ok_or_else(|| invalid("unknown structural scrutinee schema"))?;
+            validate_structural_pattern(draft, pattern, schema, &mut pattern_bindings)
+                .ok_or_else(|| invalid("invalid structural match pattern"))?;
         }
         for (block, is_guard) in arm
             .guard
@@ -187,12 +321,17 @@ fn validate_match_inner(
                 .ok_or_else(|| invalid("block count overflow"))?;
             for parameter in &block.parameters {
                 let expected = match parameter.source {
-                    ControlParameterSource::Scrutinee if arm.pattern == MatchPattern::Bind => {
+                    ControlParameterSource::Scrutinee
+                        if matches!(&arm.pattern, MatchPattern::Bind) =>
+                    {
                         scrutinee
                     }
                     ControlParameterSource::Scrutinee => {
                         return Err(invalid("unbound scrutinee parameter"));
                     }
+                    ControlParameterSource::PatternBinding(local) => *pattern_bindings
+                        .get(local as usize)
+                        .ok_or_else(|| invalid("unknown pattern binding parameter"))?,
                     ControlParameterSource::Capture(index) => {
                         declaration
                             .captures
@@ -277,10 +416,21 @@ fn validate_match_inner(
                     ));
                 }
                 for (input, port) in operation.inputs.iter().zip(&contract.inputs) {
+                    let live_pattern_parameter = matches!(
+                        input,
+                        ControlValue::Parameter { block: owner, ordinal }
+                            if *owner == block.id
+                                && block.parameters.get(*ordinal as usize).is_some_and(|parameter| {
+                                    matches!(
+                                        parameter.source,
+                                        ControlParameterSource::PatternBinding(_)
+                                    )
+                                })
+                    );
                     if port.access != AccessMode::Read
                         || port.delivery != DeliveryMode::Signal
                         || value_schema(*input, index)? != port.schema
-                        || !closed_value(port.schema)
+                        || (!closed_value(port.schema) && !live_pattern_parameter)
                     {
                         return Err(invalid("block operation input contract mismatch"));
                     }
@@ -308,15 +458,16 @@ fn validate_match_inner(
             }
         }
         if arm.guard.is_none() {
-            match arm.pattern {
+            match &arm.pattern {
                 MatchPattern::Literal(constant) => {
                     if let mech_core::ValueData::Bool(value) =
-                        draft.constants.get(constant).unwrap().data()
+                        draft.constants.get(*constant).unwrap().data()
                     {
                         coverage[*value as usize] = true;
                     }
                 }
                 MatchPattern::Wildcard | MatchPattern::Bind => coverage = [true; 2],
+                MatchPattern::Structural(_) => {}
             }
         }
     }
@@ -331,8 +482,54 @@ pub const MAX_CONTROL_ARMS: usize = 4_096;
 pub const MAX_CONTROL_BLOCKS: usize = 8_192;
 pub const MAX_CONTROL_OPERATIONS: usize = 65_536;
 pub const MAX_CONTROL_OPERANDS: usize = 262_144;
+/// Scratch ordinals are encoded as `u16`; operations and pattern bindings
+/// share that one namespace during resident activation.
+pub const MAX_CONTROL_LOCALS: usize = u16::MAX as usize + 1;
 /// Keeps validation, encoding and execution recursion within a bounded stack.
 pub const MAX_CONTROL_DEPTH: usize = 8;
+
+fn match_counts<C>(root: &MatchDeclaration<C>) -> Option<[usize; 5]> {
+    let mut counts = [0usize; 5];
+    let limits = [
+        MAX_CONTROL_ARMS,
+        MAX_CONTROL_BLOCKS,
+        MAX_CONTROL_OPERATIONS,
+        MAX_CONTROL_OPERANDS,
+        MAX_CONTROL_LOCALS,
+    ];
+    let mut pending = vec![(root, 1usize)];
+    while let Some((control, depth)) = pending.pop() {
+        if depth > MAX_CONTROL_DEPTH {
+            return None;
+        }
+        let mut add = |index: usize, amount: usize| -> Option<()> {
+            counts[index] = counts[index].checked_add(amount)?;
+            (counts[index] <= limits[index]).then_some(())
+        };
+        add(0, control.arms.len())?;
+        add(3, control.captures.len())?;
+        for arm in &control.arms {
+            if let MatchPattern::Structural(pattern) = &arm.pattern {
+                let metrics = super::comprehension::pattern_metrics(pattern)?;
+                add(3, metrics.nodes)?;
+                add(4, metrics.bindings)?;
+            }
+            for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                add(1, 1)?;
+                add(2, block.operations.len())?;
+                add(3, block.parameters.len())?;
+                add(4, block.operations.len())?;
+                for operation in &block.operations {
+                    add(3, operation.inputs.len())?;
+                    if let ControlOperationBody::Match(nested) = &operation.body {
+                        pending.push((nested, depth.checked_add(1)?));
+                    }
+                }
+            }
+        }
+    }
+    Some(counts)
+}
 
 pub(super) fn validate_control_counts(
     draft: &super::ProgramArtifactDraft,
@@ -390,34 +587,38 @@ pub(super) fn validate_control_counts(
         let super::ExecutableNodeBody::Match(control) = &node.body else {
             continue;
         };
-        let mut pending = vec![(control, 1)];
-        while let Some((control, depth)) = pending.pop() {
-            if depth > MAX_CONTROL_DEPTH {
-                return Err(invalid());
-            }
-            add(0, control.arms.len())?;
-            add(3, control.captures.len())?;
-            for block in control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            {
-                add(1, 1)?;
-                add(2, block.operations.len())?;
-                add(3, block.parameters.len())?;
-                for operation in &block.operations {
-                    add(3, operation.inputs.len())?;
-                    if let ControlOperationBody::Match(nested) = &operation.body {
-                        pending.push((nested, depth + 1));
-                    }
-                }
-            }
+        let control_counts = match_counts(control).ok_or_else(invalid)?;
+        for (index, count) in control_counts[..4].iter().copied().enumerate() {
+            add(index, count)?;
         }
     }
     Ok(())
 }
 
 impl<C> MatchDeclaration<C> {
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) fn pattern_bindings(&self) -> Vec<(u32, u32, SchemaId)> {
+        fn append<C>(control: &MatchDeclaration<C>, output: &mut Vec<(u32, u32, SchemaId)>) {
+            for arm in &control.arms {
+                if let MatchPattern::Structural(pattern) = &arm.pattern {
+                    pattern.bindings(&mut |local, schema| {
+                        output.push((arm.body.id.0, local, *schema));
+                    });
+                }
+                for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                    for operation in &block.operations {
+                        if let ControlOperationBody::Match(nested) = &operation.body {
+                            append(nested, output);
+                        }
+                    }
+                }
+            }
+        }
+        let mut output = Vec::new();
+        append(self, &mut output);
+        output
+    }
+
     pub(super) fn validate_depth(
         &self,
         node: mech_core::NodeId,
@@ -515,7 +716,7 @@ impl<C> MatchDeclaration<C> {
                 .iter()
                 .map(|arm| {
                     Ok(ControlMatchArm {
-                        pattern: arm.pattern,
+                        pattern: arm.pattern.clone(),
                         guard: arm.guard.as_ref().map(&mut block).transpose()?,
                         body: block(&arm.body)?,
                     })
@@ -545,4 +746,86 @@ pub(crate) fn is_control_scalar_schema(schema: &mech_core::Schema) -> bool {
 pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
     schema.dimension_parameters().is_empty()
         && !matches!(schema.body(), mech_core::SchemaBody::Dynamic)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn combined_match_operations_and_bindings_share_the_u16_scratch_limit() {
+        let pattern = super::super::CollectionPattern::Array {
+            prefix: (0..=MAX_CONTROL_LOCALS)
+                .map(|local| super::super::CollectionPattern::Bind {
+                    local: u32::try_from(local).unwrap(),
+                    schema: SchemaId::new(0),
+                })
+                .collect(),
+            rest: None,
+            suffix: Box::new([]),
+        };
+        let control = MatchDeclaration::<OperationContractId> {
+            scrutinee: 0,
+            captures: Box::new([]),
+            arms: vec![ControlMatchArm {
+                pattern: MatchPattern::Structural(pattern),
+                guard: None,
+                body: ControlBlock {
+                    id: ControlBlockId(0),
+                    parameters: Box::new([]),
+                    operations: Box::new([]),
+                    yield_value: ControlValue::Constant(mech_core::ConstantId::new(0)),
+                },
+            }]
+            .into_boxed_slice(),
+        };
+        assert_eq!(match_counts(&control), None);
+    }
+
+    #[test]
+    fn overdepth_control_is_rejected_by_the_bounded_count_walk() {
+        fn leaf() -> MatchDeclaration<OperationContractId> {
+            MatchDeclaration {
+                scrutinee: 0,
+                captures: Box::new([]),
+                arms: vec![ControlMatchArm {
+                    pattern: MatchPattern::Wildcard,
+                    guard: None,
+                    body: ControlBlock {
+                        id: ControlBlockId(0),
+                        parameters: Box::new([]),
+                        operations: Box::new([]),
+                        yield_value: ControlValue::Constant(mech_core::ConstantId::new(0)),
+                    },
+                }]
+                .into_boxed_slice(),
+            }
+        }
+
+        let mut control = leaf();
+        for depth in 1..=MAX_CONTROL_DEPTH {
+            control = MatchDeclaration {
+                scrutinee: 0,
+                captures: Box::new([]),
+                arms: vec![ControlMatchArm {
+                    pattern: MatchPattern::Wildcard,
+                    guard: None,
+                    body: ControlBlock {
+                        id: ControlBlockId(depth as u32),
+                        parameters: Box::new([]),
+                        operations: vec![ControlOperation {
+                            node: 0,
+                            body: ControlOperationBody::Match(control),
+                            inputs: Box::new([]),
+                            schema: SchemaId::new(0),
+                        }]
+                        .into_boxed_slice(),
+                        yield_value: ControlValue::Constant(mech_core::ConstantId::new(0)),
+                    },
+                }]
+                .into_boxed_slice(),
+            };
+        }
+        assert_eq!(match_counts(&control), None);
+    }
 }

@@ -844,6 +844,89 @@
           "--exact"
         ]
       ]
+    },
+    "860": {
+      "branch": "codex/syntax-s8r10-structural-match",
+      "base": "codex/syntax-s8r09-comprehension-storage",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "canonical_boolean_match",
+          "--test",
+          "canonical_source_completion",
+          "--test",
+          "canonical_source_semantics"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--lib",
+          "comprehension_execution::tests"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--lib",
+          "rejected_structural_arm_releases_its_payload_bindings_before_fallthrough"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "program_artifact_contract",
+          "committed_source_bytecode_fixtures_pass_current_artifact_validation",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--lib",
+          "--no-default-features",
+          "--features",
+          "full_compiler,resident-routing-source",
+          "runtime::program::query::control_comparison::tests"
+        ]
+      ]
     }
   }
 }
