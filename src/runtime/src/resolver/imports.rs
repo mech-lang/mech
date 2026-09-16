@@ -213,40 +213,37 @@ pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclar
 #[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
-    use mech_syntax::parser;
-
-    fn parse_fenced(source: &str) -> FencedMechCode {
-        let tree = parser::parse(source).unwrap();
-        for section in &tree.body.sections {
-            for element in &section.elements {
-                if let mech_core::SectionElement::FencedMechCode(code) = element {
-                    return code.clone();
-                }
-            }
-        }
-        panic!("expected fenced code block");
+    fn source_index(source: &str) -> crate::SourceIndex {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:imports",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        crate::SourceIndex::from_document(&document.document()).unwrap()
     }
 
     #[test]
     fn stdlib_single_imports_are_not_source_imports() {
-        let fenced = parse_fenced("~~~mech\n+> math/sin\n~~~\n");
-        let imports = imports_from_fenced_code(&fenced);
-        assert!(imports.is_empty());
+        let imports = source_index("~~~mech\n+> math/sin\n~~~\n").program_imports();
+        assert_eq!(imports.len(), 1);
+        assert!(!import_requires_source_dependency(&imports[0]));
     }
 
     #[test]
     fn stdlib_wildcard_imports_are_not_source_imports() {
-        let fenced = parse_fenced("~~~mech\n+> math/*\n~~~\n");
-        let imports = imports_from_fenced_code(&fenced);
-        assert!(imports.is_empty());
+        let imports = source_index("~~~mech\n+> math/*\n~~~\n").program_imports();
+        assert_eq!(imports.len(), 1);
+        assert!(!import_requires_source_dependency(&imports[0]));
     }
 
     #[test]
     fn classifies_dependency_only_imports() {
-        let fenced = parse_fenced(
+        let imports = source_index(
             "~~~mech\n+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n~~~\n",
-        );
-        let imports = imports_from_fenced_code(&fenced);
+        ).program_imports();
+        assert_eq!(imports.len(), 6);
         assert!(
             imports
                 .iter()
@@ -339,15 +336,15 @@ mod tests {
 
     #[test]
     fn exports_are_extracted() {
-        let fenced = parse_fenced("~~~mech\n<+ area\n~~~\n");
-        let exports = exports_from_fenced_code(&fenced);
+        let exports = source_index("~~~mech\n<+ area\n~~~\n").program_exports();
+        assert_eq!(exports.len(), 1);
         assert_eq!(exports[0].name, "area");
     }
 
     #[test]
     fn all_imports_create_dependency_edges() {
-        let fenced = parse_fenced("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n");
-        let imports = imports_from_fenced_code(&fenced);
+        let imports = source_index("~~~mech\n+> math\n+> math/sin\n+> math/*\n+> ./dep.mec\n~~~\n")
+            .program_imports();
         let dependencies = import_dependencies(&imports);
         assert_eq!(dependencies.len(), 1);
         assert_eq!(dependencies[0].specifier, "./dep.mec");

@@ -109,6 +109,7 @@ full-hosts = [
       "mech-build?/full-hosts",
       ]
 compute_backends_native = [
+      "mech-browser", "mech-browser/pointer",
       "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
       "mech-runtime/compute",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
@@ -125,7 +126,11 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 cli_core = []
 cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
 cli = ["cli-product"]
-formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+formatter_core = [
+      "serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika",
+      "mech-syntax/variable_define", "mech-core/variable_define",
+      "mech-runtime", "mech-runtime/source", "mech-runtime/pretty_print",
+      ]
 build = [
       "cli_core", "compiler",
       "dep:mech-build",

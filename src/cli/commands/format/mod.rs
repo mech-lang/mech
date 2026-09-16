@@ -1,15 +1,16 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
 use mech_runtime::{
-    DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT, SharedCapabilityKernel,
+    CanonicalDocumentRenderer, DefaultIdGenerator, FS_READ, HostFilesystemAuthority,
+    MECH_TOOL_SUBJECT, SharedCapabilityKernel, SourceDocument,
 };
-use mech_syntax::formatter::*;
-use mech_syntax::parser;
+use mech_syntax::document::{ParseConfig, Revision};
 
 mod document_bundle;
 mod publication;
@@ -17,6 +18,9 @@ mod publication;
 use document_bundle::resolve_document_source_bundle;
 use publication::{PlannedOutput, publish_outputs_recoverably};
 
+use crate::canonical_presentation::{
+    HtmlShimExtraSlots, render_canonical_html, validate_shipped_shim_render,
+};
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
     LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
@@ -170,6 +174,20 @@ fn format_error(message: impl Into<String>) -> MechError {
         None,
     )
     .with_compiler_loc()
+}
+
+fn canonical_document(source: &str) -> MResult<SourceDocument> {
+    let document = SourceDocument::parse_resolved(
+        "cli:format",
+        Revision(0),
+        Arc::<str>::from(source),
+        ParseConfig::default(),
+    )
+    .map_err(|error| format_error(format!("invalid retained source: {error:?}")))?;
+    document
+        .index()
+        .map_err(|error| MechError::new(error, None))?;
+    Ok(document)
 }
 
 fn common_parent_directory(paths: &[PathBuf]) -> MResult<PathBuf> {
@@ -916,14 +934,13 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         &wasm_module_url,
                         &document_sources,
                     )?;
-                    let tree = parser::parse(authoritative_source.trim())?;
-                    let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_style_sheets_and_slots(
-                        &tree,
+                    let document = canonical_document(authoritative_source)?;
+                    let render = render_canonical_html(
+                        &document.document(),
                         html_style_sheets(stylesheet_str.clone()),
                         shim_str.clone(),
                         &document_slots,
-                    );
+                    )?;
                     if let Some(shim_name) = shipped_shim {
                         validate_shipped_shim_render(shim_name, &render)?;
                     }
@@ -991,9 +1008,10 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
         for (target, mech_src) in loaded_sources {
             let content = match mech_src {
                 MechSourceCode::String(source) => {
-                    let tree = parser::parse(source.trim())?;
-                    let mut formatter = Formatter::new();
-                    formatter.format(&tree)
+                    let document = canonical_document(&source)?;
+                    CanonicalDocumentRenderer
+                        .format_text(&document.document())
+                        .map_err(|error| format_error(error.to_string()))?
                 }
                 MechSourceCode::Html(content) => content,
                 other => {

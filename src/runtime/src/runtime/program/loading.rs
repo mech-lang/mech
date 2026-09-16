@@ -63,10 +63,26 @@ impl MechRuntime {
         source: &str,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
-        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        let document = super::compiler::retained_compiler_document(source)?;
+        self.load_document_program(&document, durability)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_document_program(
+        &mut self,
+        document: &crate::SourceDocument,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(
+            u64::try_from(document.source().byte_len().to_usize()).unwrap_or(u64::MAX),
+        )?;
         self.load_production_with(durability, |runtime| {
             Ok(Arc::new(
-                runtime.plan_source_product(source)?.into_parts().0,
+                runtime
+                    .compiler_view()?
+                    .compile_document(document)?
+                    .into_parts()
+                    .0,
             ))
         })
     }
@@ -81,14 +97,27 @@ impl MechRuntime {
         source: &str,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
-        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        let document = super::compiler::retained_compiler_document(source)?;
+        self.load_interactive_document_program(&document, durability)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_document_program(
+        &mut self,
+        document: &crate::SourceDocument,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(
+            u64::try_from(document.source().byte_len().to_usize()).unwrap_or(u64::MAX),
+        )?;
         self.load_production_with_projection(
             durability,
             InitialValueProjection::InteractiveRootResult,
             |runtime| {
                 Ok(Arc::new(
                     runtime
-                        .plan_interactive_source_product(source)?
+                        .compiler_view()?
+                        .compile_interactive_document(document)?
                         .into_parts()
                         .0,
                 ))
@@ -145,6 +174,30 @@ impl MechRuntime {
         module_options: ModuleBuildOptions<'_>,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_interactive_root_with_capture(request, module_options, durability, None)
+    }
+
+    /// Compile an appended document while keeping the original prefix result
+    /// at output zero. The current console result remains the interactive `ans`.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_root_program_retaining_result(
+        &mut self,
+        request: SourceRequest,
+        module_options: ModuleBuildOptions<'_>,
+        durability: crate::ResidentDurabilityPolicy,
+        boundary: mech_syntax::document::TextSize,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_interactive_root_with_capture(request, module_options, durability, Some(boundary))
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn load_interactive_root_with_capture(
+        &mut self,
+        request: SourceRequest,
+        module_options: ModuleBuildOptions<'_>,
+        durability: crate::ResidentDurabilityPolicy,
+        boundary: Option<mech_syntax::document::TextSize>,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
         self.load_production_with_projection(
             durability,
             InitialValueProjection::InteractiveRootResult,
@@ -165,6 +218,7 @@ impl MechRuntime {
                                 .plan_interactive_resolved_root_source_product(
                                     resolved,
                                     module_options,
+                                    boundary,
                                 )?
                                 .into_parts()
                                 .0,
@@ -293,22 +347,11 @@ impl MechRuntime {
         &mut self,
         resolved: crate::ResolvedSource,
         module_options: ModuleBuildOptions<'_>,
+        boundary: Option<mech_syntax::document::TextSize>,
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
+            .with_retained_result_boundary(boundary)
             .compile_interactive_resolved_root(resolved, module_options)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_source(source)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_interactive_source_product(
-        &mut self,
-        source: &str,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_interactive_source(source)
     }
 
     #[cfg(feature = "resident-routing-source")]

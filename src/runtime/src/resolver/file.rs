@@ -12,8 +12,6 @@ use std::sync::{Arc, Mutex};
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
-#[cfg(feature = "source")]
-use crate::resolver::{SourceIndex, source_request_for_import};
 use crate::{FS_IMPORT, FS_READ, FS_RESOLVE, SharedCapabilityKernel, check_fs_capability};
 
 use super::{
@@ -333,33 +331,8 @@ impl SourceResolver for FileSourceResolver {
             let mut resolved = resolved;
             if resolved.kind == SourceKind::Mech {
                 if matches!(&resolved.source, MechSourceCode::String(_)) {
-                    resolved = self.with_source_revision(resolved, |resolved| {
-                        let MechSourceCode::String(source_text) = &resolved.source else {
-                            unreachable!("textual source checked before admission");
-                        };
-                        let tree = mech_syntax::parser::parse(source_text.trim())?;
-                        let referrer = canonical_uri.clone();
-                        let index = SourceIndex::from_program(&tree);
-                        index.validate_address_targets()?;
-                        let imports = index.all_imports();
-                        let exports = index.all_exports();
-                        let contexts = index.all_contexts();
-                        let address_references = index.all_address_references();
-                        let scopes = index.module_scopes();
-                        let dependencies = imports
-                            .iter()
-                            .map(|import| source_request_for_import(import, Some(&referrer)))
-                            .collect::<Vec<_>>();
-
-                        Ok(resolved
-                            .with_syntax_tree(tree)
-                            .with_imports(imports)
-                            .with_exports(exports)
-                            .with_contexts(contexts)
-                            .with_address_references(address_references)
-                            .with_dependencies(dependencies)
-                            .with_scopes(scopes))
-                    })?;
+                    resolved = self
+                        .with_source_revision(resolved, ResolvedSource::admit_canonical_document)?;
                 }
             }
             resolved

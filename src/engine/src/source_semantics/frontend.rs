@@ -829,6 +829,32 @@ impl CanonicalSourceFrontend {
         )
     }
 
+    /// Retain the original document result while compiling appended console
+    /// source through the same semantic graph. The boundary belongs to an
+    /// unchanged source prefix; it does not introduce executable syntax.
+    pub fn compile_interactive_document_with_retained_result(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        resolved_source_modules: &BTreeSet<String>,
+        boundary: mech_syntax::document::TextSize,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_capture_options(
+            document,
+            Some(catalog),
+            input_schemas,
+            true,
+            resource_writes,
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+            resolved_source_modules,
+            Some(boundary),
+        )
+    }
+
     fn compile_document_with_planning_projection(
         &self,
         document: &DocumentSyntax,
@@ -854,6 +880,21 @@ impl CanonicalSourceFrontend {
                 .collect(),
             resolved_source_modules,
         )
+    }
+
+    /// Read placement declarations through the same semantic authority that
+    /// partitions mixed documents. Hosts use this to choose the compilation route.
+    pub fn document_compute_regions(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Vec<(String, mech_core::ComputePlacement)>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::document_compute_regions(document).map(|regions| {
+            regions
+                .into_iter()
+                .map(|(_, name, placement)| (name, placement))
+                .collect()
+        })
     }
 
     /// Partition one retained mixed document into coordinator, compute, and
@@ -2379,6 +2420,8 @@ struct SemanticBuilder {
     active_recursive_outputs: Vec<(String, SchemaDraft)>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    retained_result_boundary: Option<mech_syntax::document::TextSize>,
+    retained_result: Option<(PendingValue, SyntaxNode)>,
 }
 
 impl SemanticBuilder {
@@ -2451,6 +2494,8 @@ impl SemanticBuilder {
             active_recursive_outputs: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
+            retained_result_boundary: None,
+            retained_result: None,
         }
     }
 

@@ -18,181 +18,185 @@ fn parse(
     parse_canonical_mechdown_rule_for_test(source(text), rule, ParseConfig::default())
         .unwrap_or_else(|| {
             panic!(
-                "{} is not a Phase 2B rule",
+                "{} is not an exposed Mechdown rule",
                 canonical_rule_name(rule).unwrap()
             )
         })
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct LegacyPrefix {
-    consumed: TextSize,
-    remaining: TextSize,
-}
-
-fn legacy_prefix<Output>(
-    input: &str,
-    parser: for<'source> fn(
-        mech_syntax::ParseString<'source>,
-    ) -> mech_syntax::ParseResult<'source, Output>,
-) -> Option<LegacyPrefix> {
-    let graphemes = mech_syntax::graphemes::init_tag(input);
-    parser(mech_syntax::ParseString::new(&graphemes))
-        .ok()
-        .map(|(remaining, _)| {
-            let consumed = graphemes[..remaining.cursor]
-                .iter()
-                .map(|grapheme| grapheme.len())
-                .sum::<usize>();
-            let remaining = graphemes[remaining.cursor..]
-                .iter()
-                .map(|grapheme| grapheme.len())
-                .sum::<usize>();
-            LegacyPrefix {
-                consumed: TextSize(consumed as u32),
-                remaining: TextSize(remaining as u32),
-            }
-        })
-}
-
-fn assert_parity<Output>(
-    rule: RuleId,
-    parser: for<'source> fn(
-        mech_syntax::ParseString<'source>,
-    ) -> mech_syntax::ParseResult<'source, Output>,
-    inputs: &[&str],
-) {
-    for input in inputs {
-        let canonical = parse(input, rule);
-        let legacy = legacy_prefix(input, parser);
-        assert_eq!(canonical.rule, rule, "{input:?}");
+// Explicit physical prefixes are the contract. No second parser is consulted.
+fn assert_prefixes(rule: RuleId, inputs: &[(&str, Option<&str>)]) {
+    for (input, expected) in inputs {
+        let parsed = parse(input, rule);
+        assert_eq!(parsed.rule, rule, "{input:?}");
         assert_eq!(
-            canonical.syntax().kind(),
+            parsed.syntax().kind(),
             SyntaxKind::CanonicalFragment,
             "{input:?}"
         );
         assert_eq!(
-            canonical.matched,
-            legacy.is_some(),
-            "{} acceptance mismatch for {input:?}",
-            canonical_rule_name(rule).unwrap(),
+            parsed.matched,
+            expected.is_some(),
+            "{} on {input:?}",
+            canonical_rule_name(rule).unwrap()
         );
-
-        if let Some(legacy) = legacy {
-            assert!(canonical.diagnostics.is_empty(), "{input:?}");
-            assert_eq!(canonical.consumed.start, TextSize::ZERO, "{input:?}");
-            assert_eq!(
-                canonical.consumed.end,
-                legacy.consumed,
-                "{} consumed extent mismatch for {input:?}",
-                canonical_rule_name(rule).unwrap(),
-            );
-            assert_eq!(
-                canonical.source.byte_len().0 - canonical.consumed.end.0,
-                legacy.remaining.0,
-                "{} remaining extent mismatch for {input:?}",
-                canonical_rule_name(rule).unwrap(),
-            );
-            assert_eq!(
-                reconstruct_source_range(&canonical.root, &canonical.source, canonical.consumed)
-                    .unwrap(),
-                &input[..legacy.consumed.0 as usize],
-                "{} did not preserve its consumed source for {input:?}",
-                canonical_rule_name(rule).unwrap(),
-            );
-            validate_lossless_range(&canonical.root, &canonical.source, canonical.consumed)
-                .unwrap();
-        } else {
-            assert_eq!(
-                canonical.consumed,
-                TextRange::empty(TextSize::ZERO),
-                "{input:?}"
-            );
-            assert!(canonical.diagnostics.is_empty(), "{input:?}");
-        }
+        assert!(
+            parsed.diagnostics.is_empty(),
+            "{input:?}: {:?}",
+            parsed.diagnostics
+        );
+        let prefix = expected.unwrap_or("");
+        assert!(input.starts_with(prefix));
+        assert_eq!(
+            parsed.consumed,
+            TextRange::new(TextSize::ZERO, TextSize(prefix.len() as u32)),
+            "{input:?}"
+        );
+        assert_eq!(
+            parsed
+                .source
+                .text(TextRange::new(
+                    parsed.consumed.end,
+                    parsed.source.byte_len()
+                ))
+                .unwrap(),
+            &input[prefix.len()..],
+            "{input:?}"
+        );
+        assert_eq!(
+            reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+            prefix,
+            "{input:?}"
+        );
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
     }
 }
 
 #[test]
-fn all_13_closed_rules_match_legacy_acceptance_and_prefix_boundaries() {
-    assert_parity(
+fn all_13_closed_rules_preserve_declared_acceptance_and_physical_prefixes() {
+    assert_prefixes(
         rules::COMMENT_SIGIL,
-        mech_syntax::comment_sigil,
-        &["--tail", "//tail", "-tail", "/tail"],
+        &[
+            ("--tail", Some("--")),
+            ("//tail", Some("//")),
+            ("-tail", None),
+            ("/tail", None),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::COMMENT,
-        mech_syntax::comment,
         &[
-            "--",
-            "// text",
-            " \t-- text\nnext",
-            " \t// text\rnext",
-            " \t// text\r\nnext",
-            "\u{00a0}// text",
-            "\u{2009}// text",
-            "not a comment",
+            ("--", Some("--")),
+            ("// text", Some("// text")),
+            (" \t-- text\nnext", Some(" \t-- text")),
+            (" \t// text\rnext", Some(" \t// text")),
+            (" \t// text\r\nnext", Some(" \t// text")),
+            (" // text", Some(" // text")),
+            (" // text", Some(" // text")),
+            ("not a comment", None),
         ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::CODEBLOCK_SIGIL,
-        mech_syntax::codeblock_sigil,
-        &["```text", "~~~text", "``text", "~~text"],
-    );
-    assert_parity(
-        rules::INLINE_CODE,
-        mech_syntax::inline_code,
-        &["`text`tail", "``tail", "`x := 1`tail", "```text```"],
-    );
-    assert_parity(
-        rules::INLINE_EQUATION,
-        mech_syntax::inline_equation,
-        &["$$x$$tail", "$$\\alpha$$tail", "not an equation"],
-    );
-    assert_parity(
-        rules::RAW_HYPERLINK,
-        mech_syntax::raw_hyperlink,
         &[
-            "http://example.com",
-            "http://example.com/path tail",
-            "http://example.com\tpath\nnext",
-            "https",
+            ("```text", Some("```")),
+            ("~~~text", Some("~~~")),
+            ("``text", None),
+            ("~~text", None),
         ],
     );
-    assert_parity(
+    assert_prefixes(
+        rules::INLINE_CODE,
+        &[
+            ("`text`tail", Some("`text`")),
+            ("``tail", Some("``")),
+            ("`x := 1`tail", Some("`x := 1`")),
+            ("```text```", None),
+        ],
+    );
+    assert_prefixes(
+        rules::INLINE_EQUATION,
+        &[
+            ("$$x$$tail", Some("$$x$$")),
+            ("$$\\alpha$$tail", Some("$$\\alpha$$")),
+            ("not an equation", None),
+        ],
+    );
+    assert_prefixes(
+        rules::RAW_HYPERLINK,
+        &[
+            ("http://example.com", Some("http://example.com")),
+            (
+                "http://example.com/path tail",
+                Some("http://example.com/path"),
+            ),
+            (
+                "http://example.com\tpath\nnext",
+                Some("http://example.com\tpath"),
+            ),
+            ("https", Some("https")),
+        ],
+    );
+    assert_prefixes(
         rules::FOOTNOTE_REFERENCE,
-        mech_syntax::footnote_reference,
-        &["[^note]tail", "[^a b]tail", "note"],
+        &[
+            ("[^note]tail", Some("[^note]")),
+            ("[^a b]tail", Some("[^a b]")),
+            ("note", None),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::REFERENCE,
-        mech_syntax::reference,
-        &["[abc]tail", "[abc](target)", "[123]tail", "[a-b]", "[]"],
+        &[
+            ("[abc]tail", Some("[abc]")),
+            ("[abc](target)", Some("[abc]")),
+            ("[123]tail", Some("[123]")),
+            ("[a-b]", None),
+            ("[]", None),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::SECTION_REFERENCE,
-        mech_syntax::section_reference,
-        &["§1.2 tail", "§abc-tail", "plain"],
+        &[
+            ("§1.2 tail", Some("§1.2")),
+            ("§abc-tail", Some("§abc")),
+            ("plain", None),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::PARAGRAPH_TEXT,
-        mech_syntax::paragraph_text,
-        &["plain prose", "punctuation, emoji 🧪", "plain§next"],
+        &[
+            ("plain prose", Some("plain prose")),
+            ("punctuation, emoji 🧪", Some("punctuation, emoji 🧪")),
+            ("plain§next", Some("plain")),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::THEMATIC_BREAK,
-        mech_syntax::thematic_break,
-        &["*\nnext", "*** \t\rnext", "**\r\nnext", "plain\n"],
+        &[
+            ("*\nnext", Some("*\n")),
+            ("*** \t\rnext", Some("*** \t\r")),
+            ("**\r\nnext", Some("**\r\n")),
+            ("plain\n", None),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::BLANK_LINE,
-        mech_syntax::blank_line,
-        &["\nnext", " \t\rnext", "\u{00a0}\r\nnext", "plain"],
+        &[
+            ("\nnext", Some("\n")),
+            (" \t\rnext", Some(" \t\r")),
+            (" \r\nnext", Some(" \r\n")),
+            ("plain", None),
+        ],
     );
-    assert_parity(
+    assert_prefixes(
         rules::EQUATION,
-        mech_syntax::equation,
-        &["$$x+y\nnext", "$$\\alpha\nnext", "$$x$$\nnext", "plain"],
+        &[
+            ("$$x+y\nnext", Some("$$x+y")),
+            ("$$\\alpha\nnext", Some("$$\\alpha")),
+            ("$$x$$\nnext", Some("$$x$$")),
+            ("plain", None),
+        ],
     );
 }
 
@@ -253,7 +257,7 @@ fn line_rules_require_a_physical_newline_and_never_materialize_one() {
 }
 
 #[test]
-fn comments_are_clean_raw_physical_content_and_leave_the_newline_unconsumed() {
+fn comments_preserve_paragraph_content_and_leave_the_newline_unconsumed() {
     for (input, raw) in [
         ("--", ""),
         ("// text", " text"),
@@ -281,15 +285,9 @@ fn comments_are_clean_raw_physical_content_and_leave_the_newline_unconsumed() {
             "{input:?}",
         );
         assert!(
-            comment.children().all(|child| {
-                !matches!(
-                    child.kind(),
-                    SyntaxKind::Paragraph
-                        | SyntaxKind::ParagraphElement
-                        | SyntaxKind::Error
-                        | SyntaxKind::Missing
-                )
-            }),
+            comment
+                .children()
+                .all(|child| { !matches!(child.kind(), SyntaxKind::Error | SyntaxKind::Missing) }),
             "{input:?}",
         );
         assert!(

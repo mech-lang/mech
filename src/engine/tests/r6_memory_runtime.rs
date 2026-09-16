@@ -268,41 +268,70 @@ fn realization_preserves_per_call_work_and_output_budget_scopes() {
 }
 
 #[test]
-fn ordinary_source_literals_enter_one_interpreter_memory_session() {
-    use mech_core::{FunctionCatalogBuilder, NoMechExecutionServices};
-    use mech_engine::{CompilerPlanningConfig, CompilerPlanningProgram};
-    use std::sync::Arc;
-
-    let mut catalog = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
-    mech_engine::install_intrinsic_compiler_runtime(&mut catalog).unwrap();
-    mech_engine::install_intrinsic_source(&mut catalog).unwrap();
-    let mut program = CompilerPlanningProgram::with_function_catalog(
-        CompilerPlanningConfig::default(),
-        Arc::new(catalog.build().unwrap()),
+fn ordinary_source_literals_enter_one_resident_memory_session() {
+    use mech_core::{FunctionCatalogBuilder, ManagedMemoryBudget, ReactiveInstanceId};
+    use mech_engine::resident::{
+        ActivationFacts, ResidentActivationOptions, activate_with_options,
+    };
+    use mech_syntax::document::{
+        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        parse_canonical_document,
+    };
+    let source =
+        "number := 1.0\ntext := \"managed\"\nmatrix := [1.0 2.0; 3.0 4.0]\n(number, text, matrix)";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(6), Revision(0), source).unwrap(),
+        ParseConfig::default(),
     );
-    let tree = mech_syntax::parser::parse(
-        "number := 1.0\ntext := \"managed\"\nmatrix := [1.0 2.0; 3.0 4.0]\nnumber",
+    assert!(parsed.diagnostics.is_empty());
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let artifact = mech_engine::CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let budget = ManagedMemoryBudget::new(1 << 24);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(6, 0),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(budget.clone()),
+            ..Default::default()
+        },
     )
     .unwrap();
-    let mut services = NoMechExecutionServices;
-    program
-        .plan_tree_with_services(&tree, &mut services)
-        .unwrap();
-
-    let values = program
-        .compiler_root_symbol_cells(&["number", "text", "matrix"])
-        .unwrap();
-    let owner = values[0].1.memory_domain().unwrap().id();
     assert!(
-        values
-            .iter()
-            .all(|(_, value)| value.memory_domain().unwrap().id() == owner),
-        "source cells escaped the interpreter session: {:?}",
-        values
-            .iter()
-            .map(|(name, value)| (name, value.memory_domain().unwrap().id()))
-            .collect::<Vec<_>>()
+        budget.used_bytes() > 0,
+        "the canonical literal program must charge its shared resident owner"
+    );
+    instance.turn(&[]).unwrap();
+    let output = instance.copied_output(0).unwrap();
+    let mech_core::ValueData::Tuple(values) = output.data() else {
+        panic!("literal tuple")
+    };
+    assert_eq!(values.len(), 3);
+    assert!(matches!(values[0], mech_core::ValueData::F64(v) if v.to_f64() == 1.0));
+    assert!(matches!(&values[1], mech_core::ValueData::String(v) if v.as_ref() == "managed"));
+    let mech_core::ValueData::Matrix(matrix) = &values[2] else {
+        panic!("matrix literal")
+    };
+    let mech_core::snapshot::SequenceView::F64(values) = matrix.elements() else {
+        panic!("f64 matrix")
+    };
+    assert_eq!(
+        values.iter().map(|v| v.to_f64()).collect::<Vec<_>>(),
+        [1.0, 2.0, 3.0, 4.0]
+    );
+    drop(output);
+    drop(instance);
+    assert_eq!(
+        budget.used_bytes(),
+        0,
+        "all scalar, string and matrix storage is reclaimed with the resident session"
     );
 }
 
