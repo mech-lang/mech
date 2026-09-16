@@ -1,5 +1,4 @@
-use mech_core::{MechSourceCode, Program};
-use std::sync::Arc;
+use mech_core::MechSourceCode;
 
 #[cfg(feature = "source")]
 use crate::SourceDocument;
@@ -18,7 +17,6 @@ pub struct RuntimeModuleRecord {
     pub source: MechSourceCode,
     #[cfg(feature = "source")]
     pub source_document: Option<SourceDocument>,
-    pub syntax_tree: Option<Arc<Program>>,
     pub compiler_version: String,
     pub language_edition: String,
     pub target: String,
@@ -42,7 +40,6 @@ impl RuntimeModuleRecord {
         kind: SourceKind,
         source: MechSourceCode,
         #[cfg(feature = "source")] source_document: Option<SourceDocument>,
-        syntax_tree: Option<Arc<Program>>,
         compiler_version: impl Into<String>,
         language_edition: impl Into<String>,
         target: impl Into<String>,
@@ -65,7 +62,6 @@ impl RuntimeModuleRecord {
             source,
             #[cfg(feature = "source")]
             source_document,
-            syntax_tree,
             compiler_version: compiler_version.into(),
             language_edition: language_edition.into(),
             target: target.into(),

@@ -349,7 +349,7 @@ fn resolved_document_owner_must_match_the_canonical_uri() {
 }
 
 #[test]
-fn invalid_canonical_authority_never_falls_back_to_an_available_legacy_tree() {
+fn invalid_canonical_authority_never_publishes_module_index_facts() {
     let source = "value := 42\n";
     let document = SourceDocument::parse_resolved(
         "memory:main.mec",
@@ -371,15 +371,12 @@ fn invalid_canonical_authority_never_falls_back_to_an_available_legacy_tree() {
     )
     .with_kind(SourceKind::Mech)
     .with_source_document(document)
-    .unwrap()
-    .with_syntax_tree(mech_syntax::parser::parse(source.trim()).unwrap());
-    assert!(resolved.syntax_tree.is_some());
+    .unwrap();
     assert!(resolved.canonical_document_index().is_err());
 
     let record = ModuleBuilder::new()
         .build_resolved_source(resolved, "test", "v0.4", "native", &[], &[], &[])
         .unwrap();
-    assert!(record.syntax_tree.is_some());
     assert!(record.canonical_document_index().is_err());
 }
 

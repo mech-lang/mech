@@ -41,31 +41,44 @@ pub(in crate::runtime) fn validate_module_import_edges(
     })
 }
 
+#[cfg(feature = "source")]
 fn source_index_for_module_record_source(
-    source: &mech_core::MechSourceCode,
-    syntax_tree: Option<&mech_core::Program>,
+    source_document: Option<&crate::SourceDocument>,
 ) -> MResult<Option<SourceIndex>> {
-    if let Some(tree) = syntax_tree {
-        return Ok(Some(SourceIndex::from_program(tree)));
-    }
-    match source {
-        #[cfg(feature = "source")]
-        mech_core::MechSourceCode::String(source) => {
-            let tree = mech_syntax::parser::parse(source.trim())?;
-            Ok(Some(SourceIndex::from_program(&tree)))
-        }
-        _ => Ok(None),
-    }
+    source_document
+        .map(|document| {
+            document
+                .index()
+                .map(|index| index.root)
+                .map_err(|error| MechError::new(error, None))
+        })
+        .transpose()
 }
 
 fn source_index_for_resolved_source(resolved: &ResolvedSource) -> MResult<Option<SourceIndex>> {
-    source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())
+    #[cfg(feature = "source")]
+    {
+        source_index_for_module_record_source(resolved.source_document())
+    }
+    #[cfg(not(feature = "source"))]
+    {
+        let _ = resolved;
+        Ok(None)
+    }
 }
 
 fn source_index_for_runtime_record(
     record: &crate::RuntimeModuleRecord,
 ) -> MResult<Option<SourceIndex>> {
-    source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())
+    #[cfg(feature = "source")]
+    {
+        source_index_for_module_record_source(record.source_document.as_ref())
+    }
+    #[cfg(not(feature = "source"))]
+    {
+        let _ = record;
+        Ok(None)
+    }
 }
 
 fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
@@ -618,7 +631,6 @@ impl MechRuntime {
             #[cfg(feature = "source")]
             let version = version.with_source_document(record.source_document);
             let version = version
-                .with_syntax_tree(record.syntax_tree)
                 .with_exports(record.exports)
                 .with_imports(record.imports)
                 .with_contexts(record.contexts)
