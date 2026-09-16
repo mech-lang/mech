@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:7,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:8,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 7)
+### Typed graph bodies (graph revision 8)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 7 and typed bodies; earlier graph representations
+The decoder requires revision 8 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -453,13 +453,14 @@ component. A guard is a block or null. A block has
 adds this explicit parameter-source representation so block parameters can consume structural
 pattern bindings without overloading a nullable capture ordinal.
 Each local operation has `node`, `body`, `inputs`, and `schema`. Its body is
-`{"Operation":{"operation":id,"contract":id}}` or a recursively owned `Match`
-declaration with the same fields as a root match. Nested scrutinee and capture
+`{"Operation":{"operation":id,"contract":id}}`, a recursively owned `Match`,
+or a recursively owned `Comprehension`. Nested scrutinee and capture
 ordinals address that local operation's inputs; descendant blocks cannot directly
 reference enclosing block locals.
 Values are externally tagged `Constant(id)`, `Parameter {block,ordinal}`, or
-`Local {block,node}`. Block IDs are dense preorder identities within the root match, including nested
-blocks. Local IDs are dense within their own block.
+`Local {block,node}`. Block IDs are dense preorder identities across match blocks
+and comprehension declarations in one root control graph. Local IDs are dense
+within their own block.
 Global schema, constant, operation, and contract IDs refer to the enclosing
 artifact tables.
 
@@ -468,17 +469,18 @@ operation contracts, Boolean guard yields, identical arm result schemas, and
 an unguarded wildcard/binding or coverage of both Boolean values. It rejects cross-block references
 and undeclared captures. Decoder admission counts nested control arrays before
 allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
-and 262,144 operands across the artifact. Match nesting is limited to eight
+and 262,144 operands across the artifact. Mixed control nesting is limited to eight
 declarations on a path, checked before source-graph contract mapping and before
 wire arrays are allocated. Literal comparison still requires a scalar scrutinee.
 Existing section and aggregate byte
 limits also apply. Every control field participates in the artifact revision.
 
-A collection body is `{"Comprehension":{"kind":0_or_1,"steps":[...],"yield_value":value}}`.
+A collection body is `{"Comprehension":{"id":block_id,"kind":0_or_1,"steps":[...],"yield_value":value}}`.
 Kind 0 constructs a row matrix; kind 1 constructs a canonical set. Values are
 `Constant(id)`, `Input(ordinal)`, or `Local(id)`. Steps are tagged `Generator`
-(`source`, `pattern`), `Operation` (`local`, `operation`, `contract`, `inputs`,
-`schema`), or `Filter(value)`. Generators enumerate their current collection
+(`source`, `pattern`), `Operation` (`local`, `body`, `inputs`, `schema`), or
+`Filter(value)`. An operation body uses the same recursive `Operation`, `Match`,
+or `Comprehension` grammar as a match-local operation. Generators enumerate their current collection
 for each preceding lexical binding; a failed pattern or false filter skips that
 binding. Immutable definitions resolve to lexical values. The final yield runs
 once per surviving binding. Repeated pattern names become equality against
@@ -490,7 +492,9 @@ length; a wildcard rest ignores the middle elements. Local IDs are dense and
 single-writer across all steps. Finalization checks dominance, collection
 sources, pattern projection schemas, Boolean filters, pure ordinary operation
 contracts and the declared yield element. Pattern depth is bounded at 32 and generator nesting at 64; step and operand populations share the artifact-wide
-control limits above. All of these fields participate in artifact identity.
+control limits above. Matrix comprehensions embed the complete yielded element
+schema before their own cardinality parameter; execution requires one concrete
+element shape across all surviving bindings. All of these fields participate in artifact identity.
 Source maps contain diagnostics only and are not serialized as execution data.
 
 An FSM body is `{"Fsm":{"machine":name,"arguments":[...],"stages":[...]}}`.
@@ -498,7 +502,7 @@ Arguments retain their optional canonical name and input ordinal. Each ordered s
 retains a state, asynchronous, or output kind plus a recursively typed value made
 from input ordinals, tuples, arrays, atom structures, or tuple structures. Machine
 and structure names must be canonical source identifiers. The FSM variant introduced by
-graph revision 6 remains part of revision 7; earlier readers must reject the current graph
+graph revision 6 remains part of revision 8; earlier readers must reject the current graph
 instead of treating the changed grammar as their own representation. FSM value depth, stage count, and
 aggregate control populations are bounded during decoder admission.
 
