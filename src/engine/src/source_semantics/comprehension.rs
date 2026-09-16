@@ -211,15 +211,13 @@ impl SemanticBuilder {
                         generator.syntax(),
                         "a generator pattern",
                     )?;
-                    let before_bindings = self.nodes.len();
                     let pattern = self.collection_pattern(&pattern, &element, start, &mut names)?;
-                    let mut pattern_values = Vec::new();
-                    collect_pattern_values(&pattern, &mut pattern_values);
-                    if pattern_values.iter().any(|value| matches!(value, PendingValue::Node(index)
-                        if *index as usize >= before_bindings && !matches!(self.nodes[*index as usize].body, PendingNodeBody::CollectionBinding))) {
-                        return Err(unsupported(generator.syntax(), "computed pattern expressions require an executable pattern evaluation block"));
-                    }
-                    events.push((before_bindings, Qualifier::Generator { source, pattern }));
+                    // Pattern expressions are ordinary pure lexical operations. Place
+                    // their executable steps before this generator so each value is
+                    // evaluated in the current outer binding before candidate matching.
+                    // Newly declared pattern bindings remain private to the generator
+                    // and are omitted from the step stream below.
+                    events.push((self.nodes.len(), Qualifier::Generator { source, pattern }));
                 }
                 ComprehensionQualifierValueSyntax::Definition(definition) => {
                     if definition.mutability_marker().is_some() {
@@ -861,10 +859,7 @@ mod tests {
         ] {
             compile(source).compile_artifact().unwrap();
         }
-        for source in [
-            "[x | x <- [1 2], x<bool> <- [true false]]",
-            "[1 | 1 + 1 <- [2 3]]",
-        ] {
+        for source in ["[x | x <- [1 2], x<bool> <- [true false]]"] {
             let error = CanonicalSourceFrontend
                 .compile_expression(&expression(source))
                 .err()
@@ -890,6 +885,8 @@ mod tests {
             "[item + 1 | item <- [1 2 3], item > 1]",
             "{item + 1 | item <- {1,2,3}, item > 1}",
             "[(x,y) | x <- [1 2], x <- [2 3], y <- [4 5]]",
+            "[1 | 1 + 1 <- [2 3]]",
+            "[x | x <- [1 2], x + 1 <- [2 4]]",
         ] {
             let mut compiled = compile(source);
             let artifact = compiled
