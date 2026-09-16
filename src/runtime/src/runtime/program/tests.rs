@@ -1200,7 +1200,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .build_compiler()
         .unwrap();
     let rooted = rooted_compiler
-        .compile_root(
+        .compile_canonical_root_with_options(
             SourceRequest::new("fizzbuzz.mec"),
             ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
         )
@@ -1312,14 +1312,14 @@ fn activation_only_compilation_preserves_the_artifact_without_retaining_bytecode
 
 #[test]
 fn static_initialization_returns_detached_row_major_matrix_values() {
-    let tree = mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]").unwrap();
+    let document = canonical_planning_test_document("matrix := [1f32 2f32; 3f32 4f32]");
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
     let mut first = compiler
-        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .evaluate_static_document_symbols(&document, &["matrix"])
         .unwrap();
     assert_eq!(
         first.remove("matrix"),
@@ -1331,7 +1331,7 @@ fn static_initialization_returns_detached_row_major_matrix_values() {
     );
 
     let second = compiler
-        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .evaluate_static_document_symbols(&document, &["matrix"])
         .unwrap();
     assert_eq!(
         second["matrix"],
@@ -1345,9 +1345,9 @@ fn static_initialization_returns_detached_row_major_matrix_values() {
 
 #[test]
 fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
-    let tree =
-        mech_syntax::parse("supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue")
-            .unwrap();
+    let document = canonical_planning_test_document(
+        "supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue",
+    );
     let inputs = BTreeMap::from([("supplied".to_owned(), RuntimeHostInputValue::F32(40.0))]);
     let external = BTreeSet::from(["supplied-port".to_owned()]);
     let mut compiler = RuntimeBuilder::new()
@@ -1356,9 +1356,10 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
         .unwrap();
 
     let (product, initial_inputs) = compiler
-        .compile_tree_artifact_with_input_initializers(&tree, &inputs, &external)
+        .compile_document_artifact_with_input_initializers(&document, &inputs, &external)
         .unwrap();
 
+    let artifact_input = mech_engine::encode_source_input_name("supplied-port");
     assert_eq!(
         product
             .artifact()
@@ -1366,7 +1367,7 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
             .iter()
             .map(|input| input.name.as_str())
             .collect::<Vec<_>>(),
-        ["supplied-port"]
+        [artifact_input.as_str()]
     );
     assert_eq!(
         initial_inputs["supplied-port"],
@@ -1388,9 +1389,9 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
 
 #[test]
 fn matrix_declaration_defaults_become_typed_live_inputs() {
-    let tree =
-        mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult")
-            .unwrap();
+    let document = canonical_planning_test_document(
+        "matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult",
+    );
     let external = BTreeSet::from(["matrix".to_owned()]);
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
@@ -1398,14 +1399,15 @@ fn matrix_declaration_defaults_become_typed_live_inputs() {
         .unwrap();
 
     let (product, initial_inputs) = compiler
-        .compile_tree_artifact_with_input_initializers(&tree, &BTreeMap::new(), &external)
+        .compile_document_artifact_with_input_initializers(&document, &BTreeMap::new(), &external)
         .unwrap();
 
+    let artifact_input = mech_engine::encode_source_input_name("matrix");
     let input = product
         .artifact()
         .inputs()
         .iter()
-        .find(|input| input.name == "matrix")
+        .find(|input| input.name == artifact_input)
         .expect("the matrix declaration must become an artifact input");
     assert_eq!(
         initial_inputs["matrix"],
@@ -1438,31 +1440,6 @@ x := 1f32
 result := x + 2f32
 result
 "#;
-
-#[cfg(feature = "compute")]
-#[test]
-fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
-    let tree = mech_syntax::parse(MIXED_COMPUTE_SOURCE).unwrap();
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .build_compiler()
-        .unwrap();
-
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
-
-    assert!(mixed.coordinator.artifact().compute_regions().is_empty());
-    assert_eq!(mixed.compute.declaration.name.as_ref(), "calculation");
-    assert_eq!(mixed.compute.interface.inputs.len(), 1);
-    assert_eq!(mixed.compute.interface.outputs.len(), 1);
-    assert_eq!(mixed.compute.interface.outputs[0].name.as_ref(), "result");
-    let input = &mixed.compute.interface.inputs[0];
-    assert_eq!(input.name.as_ref(), "x");
-    assert!(input.dimensions.is_empty());
-    assert_eq!(
-        mixed.compute.initializers.get(input.id),
-        Some(&mech_compute::ComputeValue::ScalarF32(1.0))
-    );
-}
 
 #[cfg(feature = "compute")]
 #[test]
@@ -1632,9 +1609,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_retains_only_explicit_sample_read_capabilities() {
-    let tree = mech_syntax::parse(
-        r#"
+fn mixed_source_retains_only_explicit_sample_read_capabilities() {
+    let source = r#"
 @compute := compute://worker/kernel{:read(sample/result), :write(input/x), :write(turn)}
 @compute/input/x <- 1f32
 @compute/turn <- 1
@@ -1645,15 +1621,13 @@ x := 1f32
 result := x + 2f32
 unused := x + 3f32
 (result, unused)
-"#,
-    )
-    .unwrap();
+"#;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_source(source).unwrap();
 
     assert_eq!(
         mixed.retained_outputs,
@@ -1663,9 +1637,8 @@ unused := x + 3f32
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_coordinator_retains_interactive_root_symbols() {
-    let tree = mech_syntax::parse(
-        r#"
+fn mixed_source_coordinator_retains_interactive_root_symbols() {
+    let source = r#"
 visible := 41
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
 @compute/input/x <- visible
@@ -1676,15 +1649,13 @@ calculation @compute
 x := 1f32
 result := x + 1f32
 result
-"#,
-    )
-    .unwrap();
+"#;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_source(source).unwrap();
     let names = mixed
         .coordinator
         .artifact()
@@ -1699,9 +1670,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_retains_array_activation_as_outer_broadcast_extent() {
-    let tree = mech_syntax::parse(
-        r#"
+fn mixed_source_retains_array_activation_as_outer_broadcast_extent() {
+    let source = r#"
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
 lanes := [1f32 2f32 3f32 4f32]
 @compute/input/x <- lanes
@@ -1712,15 +1682,13 @@ calculation @compute
 x := 0f32
 result := x + 1f32
 result
-"#,
-    )
-    .unwrap();
+"#;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_source(source).unwrap();
 
     assert_eq!(
         mixed.activation_inputs["x"],
@@ -1740,9 +1708,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout() {
-    let tree = mech_syntax::parse(
-        r#"
+fn mixed_source_normalizes_matrix_initializers_to_canonical_row_major_layout() {
+    let source = r#"
 @compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
 @compute/input/matrix <- [0f32 0f32; 0f32 0f32]
 @compute/turn <- 1
@@ -1752,15 +1719,13 @@ calculation @compute
 matrix := [1f32 2f32; 3f32 4f32]
 result := matrix + 1f32
 result
-"#,
-    )
-    .unwrap();
+"#;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let mixed = compiler.compile_mixed_source(source).unwrap();
     let input = mixed.compute.interface.input_named("matrix").unwrap();
 
     assert_eq!(input.dimensions.as_ref(), [2, 2]);
@@ -1776,9 +1741,8 @@ result
 
 #[cfg(feature = "compute")]
 #[test]
-fn mixed_tree_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
-    let tree = mech_syntax::parse(
-        r#"
+fn mixed_source_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
+    let source = r#"
 @compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
 @compute/input/matrix <- [1f32; 2f32]
 @compute/turn <- 1
@@ -1788,15 +1752,13 @@ calculation @compute
 matrix := [1f32 2f32; 3f32 4f32]
 result := matrix + 1f32
 result
-"#,
-    )
-    .unwrap();
+"#;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let error = compiler.compile_mixed_source(source).unwrap_err();
     let rendered = format!("{error:?}");
     assert!(
         rendered.contains("compute boundary planning failed"),
@@ -1839,7 +1801,7 @@ result
         .unwrap();
 
     let mixed = compiler
-        .compile_mixed_root(
+        .compile_canonical_mixed_root(
             SourceRequest::new("main.mec"),
             ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
         )
@@ -1916,7 +1878,7 @@ result
         .unwrap();
 
     let mixed = compiler
-        .compile_mixed_root(
+        .compile_canonical_mixed_root(
             SourceRequest::new("main.mec"),
             ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
         )
@@ -1942,8 +1904,7 @@ result
 #[cfg(feature = "compute")]
 #[test]
 fn mixed_compilation_rejects_multiple_compute_regions_for_v04() {
-    let tree = mech_syntax::parse(
-        r#"
+    let source = r#"
 first @compute
 -------------------------------------------------------------------------------
 a := 1f32 + 1f32
@@ -1951,15 +1912,13 @@ a := 1f32 + 1f32
 second @cpu
 -------------------------------------------------------------------------------
 b := 2f32 + 2f32
-"#,
-    )
-    .unwrap();
+"#;
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap();
 
-    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let error = compiler.compile_mixed_source(source).unwrap_err();
 
     assert!(
         error
@@ -3016,30 +2975,24 @@ fn interactive_root_loader_retains_document_symbols_and_reports_the_root_result(
 
 #[test]
 fn explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact() {
-    for canonical in [false, true] {
-        let mut resolver = InMemorySourceResolver::new();
-        resolver
-            .insert_string(
-                "main.mec",
-                "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
-            )
-            .unwrap();
-        resolver
-            .insert_string("dep.mec", "value := 41\n<+ value\nvalue\n")
-            .unwrap();
-        let mut compiler = RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_catalog())
-            .source_resolver(resolver)
-            .build_compiler()
-            .unwrap();
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string("dep.mec", "value := 41\n<+ value\nvalue\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
 
-        let compile_roots = if canonical {
-            ProgramCompiler::compile_canonical_roots
-        } else {
-            ProgramCompiler::compile_roots
-        };
-        let product = compile_roots(
-            &mut compiler,
+    let product = compiler
+        .compile_canonical_roots(
             &[
                 SourceRequest::new("main.mec"),
                 SourceRequest::new("dep.mec"),
@@ -3047,71 +3000,64 @@ fn explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact()
             ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
         )
         .unwrap();
-        let outputs = product
-            .artifact()
+    let outputs = product
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        outputs,
+        ["answer", "value"],
+        "explicit roots must be published in caller order"
+    );
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    assert_eq!(
+        decoded
             .outputs()
             .iter()
             .map(|output| output.name.as_str())
-            .collect::<Vec<_>>();
-
-        assert_eq!(
-            outputs,
-            ["answer", "value"],
-            "explicit roots must be published in caller order"
-        );
-        let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
-        assert_eq!(
-            decoded
-                .outputs()
-                .iter()
-                .map(|output| output.name.as_str())
-                .collect::<Vec<_>>(),
-            outputs,
-            "bytecode v1 must retain every explicit root output"
-        );
-    }
+            .collect::<Vec<_>>(),
+        outputs,
+        "bytecode v1 must retain every explicit root output"
+    );
 }
 
 #[test]
 fn explicit_dependency_root_plans_provider_reads_exactly_once() {
-    for canonical in [false, true] {
-        let plans = Arc::new(AtomicUsize::new(0));
-        let mut resolver = InMemorySourceResolver::new();
-        resolver
-            .insert_string(
-                "main.mec",
-                "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
-            )
-            .unwrap();
-        resolver
-            .insert_string(
-                "dep.mec",
-                r#"
+    let plans = Arc::new(AtomicUsize::new(0));
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "dep.mec",
+            r#"
 @clock := test://clock/tick{:read(delta-seconds)}
 value := @clock/delta-seconds
 <+ value
 value
 "#,
-            )
-            .unwrap();
-        let mut compiler = RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_catalog())
-            .source_resolver(resolver)
-            .resource_provider(Box::new(PlanningObservationProvider {
-                plans: plans.clone(),
-                reads: Arc::new(AtomicUsize::new(0)),
-                value_bits: Arc::new(AtomicU64::new(41.0_f64.to_bits())),
-            }))
-            .build_compiler()
-            .unwrap();
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .resource_provider(Box::new(PlanningObservationProvider {
+            plans: plans.clone(),
+            reads: Arc::new(AtomicUsize::new(0)),
+            value_bits: Arc::new(AtomicU64::new(41.0_f64.to_bits())),
+        }))
+        .build_compiler()
+        .unwrap();
 
-        let compile_roots = if canonical {
-            ProgramCompiler::compile_canonical_roots
-        } else {
-            ProgramCompiler::compile_roots
-        };
-        let product = compile_roots(
-            &mut compiler,
+    let product = compiler
+        .compile_canonical_roots(
             &[
                 SourceRequest::new("main.mec"),
                 SourceRequest::new("dep.mec"),
@@ -3120,15 +3066,14 @@ value
         )
         .unwrap();
 
-        assert_eq!(plans.load(Ordering::SeqCst), 1);
-        let outputs = product
-            .artifact()
-            .outputs()
-            .iter()
-            .map(|output| output.name.as_str())
-            .collect::<Vec<_>>();
-        assert_eq!(outputs, ["answer", "value"]);
-    }
+    assert_eq!(plans.load(Ordering::SeqCst), 1);
+    let outputs = product
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(outputs, ["answer", "value"]);
 }
 
 #[test]
@@ -3626,11 +3571,11 @@ fn invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery
 }
 
 #[test]
-fn parsed_tree_can_be_loaded_as_a_production_resident_program() {
-    let tree = mech_syntax::parser::parse(external_source().trim()).unwrap();
+fn retained_document_can_be_loaded_as_a_production_resident_program() {
+    let document = canonical_planning_test_document(external_source().trim());
     let (mut runtime, _, _, _) = configured_external_runtime();
     let outcome = runtime
-        .load_tree_program(&tree, crate::ResidentDurabilityPolicy::Volatile)
+        .load_document_program(&document, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
 
     assert_eq!(outcome.route, RuntimeProgramRoute::ResidentExternal);

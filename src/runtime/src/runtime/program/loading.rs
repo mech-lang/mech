@@ -24,7 +24,7 @@ use crate::{
     RuntimeResourceWriteIntent, runtime::MechRuntime,
 };
 #[cfg(feature = "resident-routing-source")]
-use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramCompilationProduct};
+use mech_engine::ProgramCompilationProduct;
 
 use super::diagnostics::activation_failure_for_artifact;
 use super::value::initial_value;
@@ -260,26 +260,27 @@ impl MechRuntime {
         self.load_production_with(durability, |_| Ok(Arc::new(artifact)))
     }
 
+    /// Plans and loads one strictly admitted retained document through the
+    /// resident route. The retained revision is the only source authority.
     #[cfg(feature = "resident-routing-source")]
-    /// Plans and loads an already parsed Mech program through the resident
-    /// route. This entry point never falls back to another executor.
-    pub fn load_tree_program(
+    pub fn load_document_program(
         &mut self,
-        tree: &mech_core::Program,
+        document: &crate::SourceDocument,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
         self.load_production_with(durability, |runtime| {
-            Ok(Arc::new(runtime.plan_tree_product(tree)?.into_parts().0))
+            Ok(Arc::new(
+                runtime.plan_document_product(document)?.into_parts().0,
+            ))
         })
     }
 
-    /// Activates an already parsed document while retaining its root symbols
-    /// for an interactive host. Encoded browser documents use this path so
-    /// execution never depends on formatter/parser round-tripping.
+    /// Activates a retained canonical document while retaining its root
+    /// symbols for an interactive host.
     #[cfg(feature = "resident-routing-source")]
-    pub fn load_interactive_tree_program(
+    pub fn load_interactive_document_program(
         &mut self,
-        tree: &mech_core::Program,
+        document: &crate::SourceDocument,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
         self.load_production_with_projection(
@@ -287,7 +288,10 @@ impl MechRuntime {
             InitialValueProjection::InteractiveRootResult,
             |runtime| {
                 Ok(Arc::new(
-                    runtime.plan_interactive_tree_product(tree)?.into_parts().0,
+                    runtime
+                        .plan_interactive_document_product(document)?
+                        .into_parts()
+                        .0,
                 ))
             },
         )
@@ -334,7 +338,7 @@ impl MechRuntime {
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
-            .compile_resolved_root(resolved, module_options)
+            .compile_canonical_resolved_root(resolved, false, Some(module_options))
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -354,7 +358,7 @@ impl MechRuntime {
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
-            .compile_interactive_resolved_root(resolved, module_options)
+            .compile_canonical_resolved_root(resolved, true, Some(module_options))
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -371,13 +375,23 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
+    fn plan_document_product(
+        &mut self,
+        document: &crate::SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_document(document)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_document_product(
+        &mut self,
+        document: &crate::SourceDocument,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_interactive_document(document)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
     fn compiler_view(&self) -> MResult<super::ProgramCompilerView<'_>> {
-        let program_config = CompilerPlanningConfig {
-            name: self.config.name.clone(),
-            limits: CompilerPlanningLimits {
-                max_planning_steps: self.config.limits.max_steps_per_turn_as_usize()?,
-            },
-        };
         Ok(super::ProgramCompilerView::new(
             Arc::clone(&self.function_catalog),
             self.source_resolver.as_ref(),
@@ -385,24 +399,7 @@ impl MechRuntime {
             &self.module_builder,
             &self.host_interfaces,
             &self.module_manifests,
-            program_config,
         ))
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_tree_product(
-        &mut self,
-        tree: &mech_core::Program,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_tree(tree)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    fn plan_interactive_tree_product(
-        &mut self,
-        tree: &mech_core::Program,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_interactive_tree(tree)
     }
 
     #[cfg(feature = "resident-routing")]

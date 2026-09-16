@@ -28,8 +28,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Program};
-use std::sync::Arc;
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 use crate::capability::CapabilityRequest;
 
@@ -252,13 +251,6 @@ pub struct ResolvedSource {
     #[cfg(feature = "source")]
     #[cfg_attr(feature = "serde", serde(skip))]
     pub source_document: Option<SourceDocument>,
-    /// Canonical syntax tree parsed while resolving textual Mech source.
-    ///
-    /// Source text remains authoritative for identity and host presentation;
-    /// downstream indexing, compilation, and rendering share this tree instead
-    /// of reparsing the same document at every boundary.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub syntax_tree: Option<Arc<Program>>,
     pub kind: SourceKind,
     pub imports: Vec<SourceImportDeclaration>,
     pub exports: Vec<SourceExportDeclaration>,
@@ -283,7 +275,6 @@ impl ResolvedSource {
             source,
             #[cfg(feature = "source")]
             source_document: None,
-            syntax_tree: None,
             kind: SourceKind::Unknown("".to_string()),
             imports: Vec::new(),
             exports: Vec::new(),
@@ -293,11 +284,6 @@ impl ResolvedSource {
             dependencies: Vec::new(),
             capability_requirements: Vec::new(),
         }
-    }
-
-    pub fn with_syntax_tree(mut self, syntax_tree: Program) -> Self {
-        self.syntax_tree = Some(Arc::new(syntax_tree));
-        self
     }
 
     pub fn with_nominal_origin(mut self, origin: mech_core::CanonicalNominalPath) -> Self {
@@ -429,7 +415,6 @@ impl ResolvedSource {
         self.address_references = root.all_address_references();
         self.scopes = root.module_scopes();
         self.imports = imports;
-        self.syntax_tree = None;
         Ok(self)
     }
 
@@ -462,23 +447,14 @@ impl ResolvedSource {
     /// Replace the authoritative source and invalidate every projection that
     /// was derived from its previous contents.
     ///
-    /// Resolvers may cache a parsed tree alongside textual source. Replacing
-    /// the source invalidates that cache and every declaration index.
+    /// Replacing the source invalidates its retained document and every
+    /// declaration projection.
     pub fn replace_source(&mut self, source: MechSourceCode) {
         #[cfg(feature = "source")]
         {
             self.source_document = None;
         }
-        self.syntax_tree = None;
         self.source = source;
-        self.clear_source_projections();
-    }
-
-    /// Replace the typed compiler projection while retaining the source used
-    /// for module identity and presentation.
-    #[cfg(feature = "compute")]
-    pub(crate) fn replace_syntax_tree(&mut self, syntax_tree: Program) {
-        self.syntax_tree = Some(Arc::new(syntax_tree));
         self.clear_source_projections();
     }
 
