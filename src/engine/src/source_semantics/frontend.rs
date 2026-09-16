@@ -2155,6 +2155,8 @@ enum PendingNodeBody {
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall,
+    Suspend,
+    Publish,
 }
 
 struct PendingMatch {
@@ -2186,7 +2188,9 @@ impl PendingMatch {
                             }
                         }
                         PendingControlOperationBody::Operation { .. }
-                        | PendingControlOperationBody::Recur => {}
+                        | PendingControlOperationBody::Recur
+                        | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Publish => {}
                     }
                 }
             }
@@ -2210,7 +2214,9 @@ impl PendingMatch {
                                 nested.visit_schemas(visit)
                             }
                             PendingControlOperationBody::Operation { .. }
-                            | PendingControlOperationBody::Recur => {}
+                            | PendingControlOperationBody::Recur
+                            | PendingControlOperationBody::Suspend
+                            | PendingControlOperationBody::Publish => {}
                         }
                     }
                 }
@@ -2270,6 +2276,8 @@ enum PendingControlOperationBody {
     Match(PendingMatch),
     Comprehension(PendingComprehension),
     Recur,
+    Suspend,
+    Publish,
 }
 
 struct PendingControlBlock {
@@ -2364,6 +2372,7 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
+    local_fsms: BTreeMap<String, document_lowering::document_fsms::DeclaredFsm>,
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
@@ -2435,6 +2444,7 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
+            local_fsms: BTreeMap::new(),
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
@@ -5812,6 +5822,9 @@ impl SemanticBuilder {
     }
 
     fn fsm_pipe(&mut self, pipe: &FsmPipeSyntax) -> Result<PendingValue, SourceSemanticError> {
+        if let Some(value) = self.inline_document_fsm(pipe)? {
+            return Ok(value);
+        }
         let instance = self.required(pipe.instance(), pipe.syntax(), "an FSM instance")?;
         let name = self.required(instance.name(), instance.syntax(), "an FSM name")?;
         let mut inputs = Vec::new();
@@ -6654,7 +6667,10 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall => {
+                    PendingNodeBody::CollectionBinding
+                    | PendingNodeBody::RecursiveCall
+                    | PendingNodeBody::Suspend
+                    | PendingNodeBody::Publish => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
@@ -8436,11 +8452,32 @@ impl SemanticBuilder {
         inputs: &mut Vec<PendingValue>,
         captures: &mut Vec<(u16, SchemaDraft)>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
+        self.control_block_with(
+            expression.syntax(),
+            pattern,
+            pattern_bindings,
+            scrutinee,
+            inputs,
+            captures,
+            |builder| builder.expression(expression).map(|(value, _)| value),
+        )
+    }
+
+    fn control_block_with(
+        &mut self,
+        syntax: &SyntaxNode,
+        pattern: &crate::MatchPattern<usize, SchemaDraft>,
+        pattern_bindings: &BTreeMap<u32, u32>,
+        scrutinee: PendingValue,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft)>,
+        build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
+    ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
             message: "match blocks require pure maintained operations and closed value schemas"
                 .to_owned(),
-            anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+            anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let id = self.next_control_block;
         self.next_control_block = id
@@ -8449,9 +8486,8 @@ impl SemanticBuilder {
             .ok_or_else(unsupported)?;
         let start = self.nodes.len();
         self.control_depth += 1;
-        let result = self
-            .expression(expression)
-            .and_then(|(value, _)| self.schema_draft_of(value).map(|schema| (value, schema)));
+        let result =
+            build(self).and_then(|value| self.schema_draft_of(value).map(|schema| (value, schema)));
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
@@ -8551,6 +8587,8 @@ impl SemanticBuilder {
                     PendingControlOperationBody::Comprehension(control)
                 }
                 PendingNodeBody::RecursiveCall => PendingControlOperationBody::Recur,
+                PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
+                PendingNodeBody::Publish => PendingControlOperationBody::Publish,
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -8639,6 +8677,12 @@ fn resolve_pending_match(
                             ))
                         }
                         PendingControlOperationBody::Recur => crate::ControlOperationBody::Recur,
+                        PendingControlOperationBody::Suspend => {
+                            crate::ControlOperationBody::Suspend
+                        }
+                        PendingControlOperationBody::Publish => {
+                            crate::ControlOperationBody::Publish
+                        }
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
                     schema: schema(&operation.schema),
