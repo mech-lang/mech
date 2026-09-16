@@ -18,6 +18,19 @@ struct Stage {
     mode_input: usize,
     selector_input: usize,
     selector_count: usize,
+    logical: bool,
+}
+
+#[derive(Clone, Copy)]
+struct SelectedPosition {
+    destination: usize,
+    logical_source: Option<LogicalSource>,
+}
+
+#[derive(Clone, Copy)]
+enum LogicalSource {
+    Matrix { row: usize, column: usize },
+    Linear { ordinal: usize },
 }
 
 #[derive(Clone)]
@@ -153,11 +166,12 @@ pub(super) fn bind<const OPERATION: u64>(
         let selectors = extras
             .get(selector_start..end)
             .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+        let mut stage_logical = false;
         for selector in selectors {
             if !positional_selector_layout(request, selector) {
                 return Err(ResidentKernelBindError::UnsupportedLayout);
             }
-            logical_selector |= request
+            stage_logical |= request
                 .schemas
                 .get(selector.schema_id)
                 .is_some_and(|schema| is_logical_selector_schema(schema.body()));
@@ -165,12 +179,14 @@ pub(super) fn bind<const OPERATION: u64>(
                 .checked_add(declared_selector_cardinality(request, selector)?)
                 .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
         }
+        logical_selector |= stage_logical;
         stages.push(Stage {
             mode,
             // Resident execution omits the aliased base input.
             mode_input: extra + 1,
             selector_input: selector_start + 1,
             selector_count,
+            logical: stage_logical,
         });
         extra = end;
     }
@@ -281,29 +297,47 @@ fn collect_selector(
 fn selected_positions(
     plan: &Plan,
     inputs: &dyn ResidentKernelInputs,
-) -> Result<(Vec<usize>, usize, usize), ResidentKernelError> {
-    let mut current: Option<Vec<usize>> = None;
+) -> Result<(Vec<SelectedPosition>, usize, usize), ResidentKernelError> {
+    let mut current: Option<Vec<SelectedPosition>> = None;
     let mut rows = plan.rows;
     let mut columns = plan.columns;
+    let mut linear = false;
     let base_position = |row: usize, column: usize| {
-        row.checked_mul(plan.columns)
-            .and_then(|position| position.checked_add(column))
-            .ok_or(ResidentKernelError::InvalidShape)
+        Ok(SelectedPosition {
+            destination: row
+                .checked_mul(plan.columns)
+                .and_then(|position| position.checked_add(column))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            logical_source: None,
+        })
     };
     for stage in &plan.stages {
-        let previous = |row: usize, column: usize| -> Result<usize, ResidentKernelError> {
-            match current.as_ref() {
-                Some(positions) => positions
-                    .get(
-                        row.checked_mul(columns)
-                            .and_then(|position| position.checked_add(column))
-                            .ok_or(ResidentKernelError::InvalidShape)?,
-                    )
-                    .copied()
-                    .ok_or(ResidentKernelError::InvalidShape),
-                None => base_position(row, column),
-            }
-        };
+        let previous =
+            |row: usize, column: usize| -> Result<SelectedPosition, ResidentKernelError> {
+                let mut position = match current.as_ref() {
+                    Some(positions) => positions
+                        .get(
+                            row.checked_mul(columns)
+                                .and_then(|position| position.checked_add(column))
+                                .ok_or(ResidentKernelError::InvalidShape)?,
+                        )
+                        .copied()
+                        .ok_or(ResidentKernelError::InvalidShape),
+                    None => base_position(row, column),
+                }?;
+                if stage.logical {
+                    position.logical_source = if linear {
+                        let ordinal = column
+                            .checked_mul(rows)
+                            .and_then(|ordinal| ordinal.checked_add(row))
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        Some(LogicalSource::Linear { ordinal })
+                    } else {
+                        Some(LogicalSource::Matrix { row, column })
+                    };
+                }
+                Ok(position)
+            };
         let selectors = |ordinal: usize| input(inputs, stage.selector_input + ordinal);
         let (next_rows, next_columns, mut next) = match stage.mode {
             WHOLE => continue,
@@ -384,6 +418,7 @@ fn selected_positions(
         current = Some(core::mem::take(&mut next));
         rows = next_rows;
         columns = next_columns;
+        linear |= matches!(stage.mode, LINEAR_ALL | LINEAR_GATHER);
     }
     let positions = match current {
         Some(positions) => positions,
@@ -391,6 +426,10 @@ fn selected_positions(
             .rows
             .checked_mul(plan.columns)
             .ok_or(ResidentKernelError::InvalidShape)?)
+            .map(|destination| SelectedPosition {
+                destination,
+                logical_source: None,
+            })
             .collect(),
     };
     Ok((positions, rows, columns))
@@ -402,14 +441,32 @@ fn source_index(
     selected_rows: usize,
     selected_columns: usize,
     ordinal: usize,
-    destination: usize,
+    position: SelectedPosition,
 ) -> Result<usize, ResidentKernelError> {
     if source_len == 1 {
         return Ok(0);
     }
     if plan.logical_selector && (plan.source_rows, plan.source_columns) == (plan.rows, plan.columns)
     {
-        return Ok(destination);
+        let source = position
+            .logical_source
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let (row, column) = match source {
+            LogicalSource::Matrix { row, column } => (row, column),
+            LogicalSource::Linear { ordinal } => {
+                if plan.source_rows == 0 {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                (ordinal % plan.source_rows, ordinal / plan.source_rows)
+            }
+        };
+        if row >= plan.source_rows || column >= plan.source_columns {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        return row
+            .checked_mul(plan.source_columns)
+            .and_then(|source| source.checked_add(column))
+            .ok_or(ResidentKernelError::InvalidShape);
     }
     if (plan.source_rows != 1 && plan.source_rows != selected_rows)
         || (plan.source_columns != 1 && plan.source_columns != selected_columns)
@@ -472,8 +529,11 @@ fn execute(
         .and_then(|value| {
             maximum_population
                 .checked_mul(2)?
-                .checked_add(plan.selector_capacity)?
-                .checked_mul(core::mem::size_of::<usize>())?
+                .checked_mul(core::mem::size_of::<SelectedPosition>())?
+                .checked_add(
+                    plan.selector_capacity
+                        .checked_mul(core::mem::size_of::<usize>())?,
+                )?
                 .checked_add(value)
         })
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -505,20 +565,20 @@ fn execute(
             return Err(ResidentKernelError::InvalidShape);
         }
         let mut changed = false;
-        for (ordinal, destination) in positions.into_iter().enumerate() {
+        for (ordinal, position) in positions.into_iter().enumerate() {
             let source_position = source_index(
                 plan,
                 source.len(),
                 selected_rows,
                 selected_columns,
                 ordinal,
-                destination,
+                position,
             )?;
             let source_row = source_position / plan.source_columns;
             let source_column = source_position % plan.source_columns;
             let source_position = source_column * plan.source_rows + source_row;
-            let row = destination / plan.columns;
-            let column = destination % plan.columns;
+            let row = position.destination / plan.columns;
+            let column = position.destination % plan.columns;
             let destination = column * plan.rows + row;
             let next = compound_f64(
                 plan.arithmetic,
@@ -548,7 +608,8 @@ fn execute(
     if next.len() != count || source.len() != plan.source_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    for (ordinal, destination) in positions.into_iter().enumerate() {
+    for (ordinal, position) in positions.into_iter().enumerate() {
+        let destination = position.destination;
         let left = execute_conversion_draft(next[destination].clone(), &plan.promote.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
         let right = source[source_index(
@@ -557,7 +618,7 @@ fn execute(
             selected_rows,
             selected_columns,
             ordinal,
-            destination,
+            position,
         )?]
         .clone();
         let value = if plan.rational_power {
