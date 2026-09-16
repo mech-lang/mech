@@ -119,6 +119,8 @@ impl CanonicalArtifactWriter {
                 self.comprehension(control);
             }
             super::ControlOperationBody::Recur => self.u8(3),
+            super::ControlOperationBody::Suspend => self.u8(4),
+            super::ControlOperationBody::Publish => self.u8(5),
         }
     }
 

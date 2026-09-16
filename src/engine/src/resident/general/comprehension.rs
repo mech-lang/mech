@@ -87,7 +87,9 @@ pub(super) fn all_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur => {}
+                        | crate::ControlOperationBody::Recur
+                        | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
@@ -131,6 +133,8 @@ pub(super) fn all_local_definitions(
                 }
                 Some(crate::ControlOperationBody::Operation { .. })
                 | Some(crate::ControlOperationBody::Recur)
+                | Some(crate::ControlOperationBody::Suspend)
+                | Some(crate::ControlOperationBody::Publish)
                 | None => {}
             }
         }
@@ -159,7 +163,9 @@ pub(super) fn all_match_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur => {}
+                        | crate::ControlOperationBody::Recur
+                        | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
                         crate::ControlOperationBody::Comprehension(nested) => {
                             output.extend(all_local_definitions(nested));
@@ -704,7 +710,9 @@ pub(super) fn bind_inner(
                         });
                         continue;
                     }
-                    crate::ControlOperationBody::Recur => {
+                    crate::ControlOperationBody::Recur
+                    | crate::ControlOperationBody::Suspend
+                    | crate::ControlOperationBody::Publish => {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
                             node: owner,
                         });
