@@ -1034,15 +1034,23 @@ fn live_enum_publication_rolls_back_after_managed_allocation_failure() {
     };
 
     turn(&mut instance, &[3.0]).unwrap();
-    let published = instance.copied_output(0).unwrap();
+    let published = instance
+        .copied_output(0)
+        .unwrap()
+        .canonical_data_draft()
+        .unwrap();
     let published_epoch = instance.published_epoch();
 
     memory_budget.inject_snapshot_import_failure_after(0);
     assert!(turn(&mut instance, &[9.0]).is_err());
     assert_eq!(instance.published_epoch(), published_epoch);
     assert_eq!(
-        instance.copied_output(0).unwrap().canonical_data_draft(),
-        published.canonical_data_draft()
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        published
     );
 
     turn(&mut instance, &[9.0]).unwrap();
@@ -1457,13 +1465,21 @@ fn a_failed_set_lift_discards_the_whole_candidate_and_allows_retry() {
     };
 
     turn(&mut instance, &[0.0]).unwrap();
-    let published = instance.copied_output(0).unwrap();
+    let published = instance
+        .copied_output(0)
+        .unwrap()
+        .canonical_data_draft()
+        .unwrap();
     let published_epoch = instance.published_epoch();
     assert!(turn(&mut instance, &[1.0]).is_err());
     assert_eq!(instance.published_epoch(), published_epoch);
     assert_eq!(
-        instance.copied_output(0).unwrap().canonical_data_draft(),
-        published.canonical_data_draft()
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        published
     );
     turn(&mut instance, &[0.0]).unwrap();
     assert_eq!(
@@ -1975,6 +1991,435 @@ fn declared_fsm_runs_through_canonical_recursive_control() {
             vec![],
             ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
         )],
+    );
+}
+
+#[test]
+fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
+    let source = "tick := 0\n~x := 0\n~> tick {\n  next := x + 1\n  x = next\n}\nx\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical activation did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    assert_eq!(
+        artifact
+            .nodes()
+            .iter()
+            .filter(|node| matches!(node.body, mech_engine::ExecutableNodeBody::Activation(_)))
+            .count(),
+        1
+    );
+    let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    for (field, replacement) in [
+        ("partial", serde_json::Value::Bool(true)),
+        ("scrutinee", serde_json::Value::from(1)),
+    ] {
+        let mut invalid = sections.clone();
+        let mut graph: serde_json::Value = serde_json::from_slice(&invalid.nodes).unwrap();
+        let activation = graph["nodes"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find_map(|node| node["body"].get_mut("Activation"))
+            .expect("typed activation wire body");
+        activation[field] = replacement;
+        invalid.nodes = serde_json::to_vec(&graph).unwrap();
+        assert!(
+            mech_engine::decode_program_artifact_sections(&invalid).is_err(),
+            "malformed activation {field} must fail artifact admission"
+        );
+    }
+    let state_artifact = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~tick := 0\n~x := 0\n~> tick {\n  next := x + 1\n  x = next\n}\nx\n",
+        ))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let activation = state_artifact
+        .nodes()
+        .iter()
+        .find(|node| matches!(node.body, mech_engine::ExecutableNodeBody::Activation(_)))
+        .unwrap();
+    let mech_engine::BindingDeclaration::Input {
+        source: mech_engine::ArtifactSource::Slot(activation_trigger),
+        ..
+    } = &state_artifact.bindings()[activation.input_bindings.start as usize]
+    else {
+        panic!("state-backed activation trigger")
+    };
+    let mut trigger = *activation_trigger;
+    while state_artifact.slots()[trigger.get() as usize].role != mech_engine::SlotRole::State {
+        let mech_engine::ProducerReference::NodeOutput { node, .. } =
+            state_artifact.slots()[trigger.get() as usize].producer
+        else {
+            panic!("derived trigger read")
+        };
+        let mech_engine::BindingDeclaration::Input {
+            source: mech_engine::ArtifactSource::Slot(source),
+            ..
+        } = &state_artifact.bindings()[state_artifact.nodes()[node.get() as usize]
+            .input_bindings
+            .start as usize]
+        else {
+            panic!("derived trigger read source")
+        };
+        trigger = *source;
+    }
+    let updated = state_artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State && slot.slot != trigger)
+        .unwrap()
+        .slot;
+    let mech_engine::ProducerReference::NodeOutput {
+        node: trigger_writer,
+        output_ordinal: trigger_output,
+    } = state_artifact.slots()[trigger.get() as usize].producer
+    else {
+        panic!("trigger state writer")
+    };
+    let mech_engine::ProducerReference::NodeOutput {
+        node: update_writer,
+        output_ordinal: update_output,
+    } = state_artifact.slots()[updated.get() as usize].producer
+    else {
+        panic!("activation-owned state writer")
+    };
+    let mut slots = state_artifact.slots().to_vec();
+    slots[trigger.get() as usize].producer = mech_engine::ProducerReference::NodeOutput {
+        node: update_writer,
+        output_ordinal: update_output,
+    };
+    slots[updated.get() as usize].producer = mech_engine::ProducerReference::NodeOutput {
+        node: trigger_writer,
+        output_ordinal: trigger_output,
+    };
+    let mut bindings = state_artifact.bindings().to_vec();
+    for binding in &mut bindings {
+        let mech_engine::BindingDeclaration::Output { node, target, .. } = binding else {
+            continue;
+        };
+        if *node == trigger_writer {
+            *target = updated;
+        } else if *node == update_writer {
+            *target = trigger;
+        }
+    }
+    let error = mech_engine::ProgramArtifactDraft {
+        schemas: state_artifact.schemas().clone(),
+        constants: state_artifact.constants().clone(),
+        contracts: state_artifact.contracts().clone(),
+        requirements: state_artifact.requirements().clone(),
+        inputs: state_artifact.inputs().to_vec().into_boxed_slice(),
+        slots: slots.into_boxed_slice(),
+        nodes: state_artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: state_artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: state_artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: state_artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap_err();
+    assert!(matches!(
+        error,
+        mech_engine::ArtifactBuildError::InvalidControl {
+            reason: "activation cannot write its own trigger state",
+            ..
+        }
+    ));
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let value = |instance: &mech_engine::__resident::ReactiveInstance| {
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap()
+    };
+    let expected = |value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value));
+    for (ordinal, program) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 60 + ordinal as u32),
+            program,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        assert_eq!(value(&instance), expected(0.0));
+        instance.turn(&[]).unwrap();
+        assert_eq!(value(&instance), expected(1.0));
+        instance.turn(&[]).unwrap();
+        assert_eq!(value(&instance), expected(2.0));
+    }
+}
+
+#[test]
+fn patterned_activation_dispatches_first_successful_guard_and_samples_captures() {
+    let source = "event := event-source<f64>\nsample := sample-source<f64>\n~selected := 0\n~> event\n  | value, value > 10 => { selected = value + sample }\n  | value, value > 0 => { selected = value * sample }\n  | * => { selected = -1 }\nselected\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("patterned activation did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let cases = [(20.0, 3.0, 23.0), (5.0, 4.0, 20.0), (-5.0, 9.0, -1.0)];
+
+    for (ordinal, program) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 70 + ordinal as u32),
+            program,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        assert_eq!(instance.plan.inputs.len(), 2);
+        assert_eq!(instance.plan.turn_trigger_inputs.len(), 1);
+        for (event, sample, expected) in cases {
+            let values = [event, sample];
+            let inputs = instance
+                .plan
+                .inputs
+                .iter()
+                .zip(values.iter())
+                .map(|(input, value)| CapturedSignalInput {
+                    slot: input.slot,
+                    value: ResidentValueRef::F64(core::slice::from_ref(value)),
+                })
+                .collect::<Vec<_>>();
+            instance.turn(&inputs).unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(expected))
+            );
+        }
+    }
+}
+
+#[test]
+fn computed_activation_pattern_dependencies_remain_sample_only() {
+    let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("computed activation pattern did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, program) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 75 + ordinal as u32),
+            program,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        assert_eq!(instance.plan.inputs.len(), 2);
+        assert_eq!(
+            instance.plan.turn_trigger_inputs.as_ref(),
+            &[instance.plan.inputs[0].artifact_slot]
+        );
+        let event = [1.0, 2.0];
+        let expected = [2.0];
+        let inputs = [
+            CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&event),
+            },
+            CapturedSignalInput {
+                slot: instance.plan.inputs[1].slot,
+                value: ResidentValueRef::F64(&expected),
+            },
+        ];
+        instance.turn(&inputs).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0))
+        );
+    }
+}
+
+#[test]
+fn activation_structural_patterns_and_computed_samples_are_canonical_and_stable() {
+    let cases = [
+        (
+            "event := ((1, 2), 3)\n~selected := 0\n~> event\n  | ((x, y), z) => { selected = x * 100 + y * 10 + z }\nselected\n",
+            123.0,
+        ),
+        (
+            "event := [1 2]\n~selected := 0\n~> event\n  | [left, right] => { selected = left * 10 + right }\nselected\n",
+            12.0,
+        ),
+        (
+            "event := [1 2 3 4]\n~selected := 0\n~> event\n  | [head | rest] => { selected = head + rest[1] + rest[3] }\nselected\n",
+            7.0,
+        ),
+        (
+            "event := [1 2 3 1]\n~selected := 0\n~> event\n  | [x, ..., x] => { selected = x + 10 }\n  | * => { selected = -1 }\nselected\n",
+            11.0,
+        ),
+        (
+            "expected := 2\nevent := [1 2]\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n",
+            1.0,
+        ),
+        (
+            "sample(value<f64>) => <f64>\n  | value + 0.\nexpected := 2\nevent := [1 2]\n~selected := 0\n~> event\n  | [head, sample(expected)] => { selected = head }\n  | * => { selected = -1 }\nselected\n",
+            1.0,
+        ),
+    ];
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (case, expected) in cases {
+        let compiled = CanonicalSourceFrontend
+            .compile_document(&document(case))
+            .unwrap_or_else(|error| {
+                panic!("canonical activation pattern did not compile: {case}\n{error:?}")
+            });
+        let artifact = compiled.compile_artifact().unwrap_or_else(|error| {
+            panic!("canonical activation artifact did not validate: {case}\n{error:?}")
+        });
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        for (ordinal, program) in [&artifact, &decoded].into_iter().enumerate() {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x540, 80 + ordinal as u32),
+                program,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            let topology = instance.structural_probe();
+            for _ in 0..2 {
+                instance.turn(&[]).unwrap();
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(expected)),
+                    "{case}"
+                );
+                assert_eq!(instance.structural_probe(), topology, "{case}");
+            }
+        }
+    }
+}
+
+#[test]
+fn activation_register_commit_is_atomic_and_retryable() {
+    let source = "tick := 0\n~x := 0\n~y := 0\n~> tick {\n  next-x := x + 1\n  next-y := y + 2\n  x = next-x\n  y = next-y\n}\n(x, y)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let budget = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 90),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(budget.clone()),
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+
+    instance.turn(&[]).unwrap();
+    let published = instance
+        .copied_output(0)
+        .unwrap()
+        .canonical_data_draft()
+        .unwrap();
+    let epoch = instance.published_epoch();
+    budget.inject_snapshot_import_failure_after(0);
+    assert!(instance.turn(&[]).is_err());
+    assert_eq!(instance.published_epoch(), epoch);
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        published
+    );
+
+    instance.turn(&[]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::Tuple(
+            [2.0, 4.0]
+                .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                .into()
+        )
+    );
+}
+
+#[test]
+fn activation_preflight_rejects_invalid_scope_contracts() {
+    let assert_code = |source: &str, expected: &str| {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .unwrap_or_else(|| panic!("{expected}: source unexpectedly compiled\n{source}"));
+        assert_eq!(error.code, expected, "{source}\n{error:?}");
+    };
+    assert_code(
+        "event := 0\n~x := 0\n~> event + 1 { x = 1 }\nx\n",
+        "source-semantics/invalid-activation-trigger",
+    );
+    assert_code(
+        "~event := 0\n~> event { event = event + 1 }\nevent\n",
+        "source-semantics/activation-trigger-write",
+    );
+    assert_code(
+        "event := 0\n~x := 0\n~> event { ~local := 1\n x = local }\nx\n",
+        "source-semantics/activation-mutable-definition",
+    );
+    assert_code(
+        "event := 1\n~x := 0\n~> event\n  | 1 => { x = 1 }\nx\n",
+        "source-semantics/non-exhaustive-match",
+    );
+    assert_code(
+        "event := 1\n~x := 0\n~> event\n  | * => { x = 1 }\n  | value => { x = value }\nx\n",
+        "source-semantics/unreachable-activation-arm",
+    );
+    assert_code(
+        "event := 1\ntick := 0\n~x := 0\n~> event {\n  ~> tick { x = 1 }\n}\nx\n",
+        "source-semantics/activation-definition-unsupported",
+    );
+    assert_code(
+        "event := 1\n~x := 0\n~> event {\n  @temporary := test://resource\n}\nx\n",
+        "source-semantics/activation-definition-unsupported",
     );
 }
 

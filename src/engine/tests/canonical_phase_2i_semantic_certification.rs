@@ -411,6 +411,11 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 // bytecode below, including captures, guards, operations and yields.
                 hash.field("Match");
             }
+            mech_engine::SourceNodeBody::Activation(_) => {
+                // The complete typed activation body is sealed by the artifact
+                // bytecode below, including patterns, captures and register writes.
+                hash.field("Activation");
+            }
             mech_engine::SourceNodeBody::Fsm(_) => {
                 // Machine identity, named arguments, stage kinds, and complete
                 // typed values are sealed by artifact bytecode below.
