@@ -276,6 +276,25 @@ impl ResidentPayloadScope {
         Ok(())
     }
 
+    pub(crate) fn admit_snapshot_materialization(
+        &self,
+        persistent_bytes: u64,
+        temporary_bytes: u64,
+    ) -> MemoryRuntimeResult<()> {
+        if self.inner.region.kind != ResidentValueKind::Snapshot {
+            return Err(MemoryRuntimeError::CandidateValidationFailed {
+                object: None,
+                reason: "snapshot materialization requires a Snapshot target".into(),
+            });
+        }
+        let claim_metadata = mech_core::Value::memory_budget_claim_metadata_bytes();
+        self.inner.admit_peak(
+            persistent_bytes,
+            persistent_bytes.saturating_sub(claim_metadata),
+        )?;
+        self.admit_auxiliary(temporary_bytes)
+    }
+
     pub(crate) fn admit_copy(
         &self,
         value: ResidentValueRef<'_>,
