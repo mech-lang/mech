@@ -10,11 +10,11 @@ R25 exact head `45680890c` now registers focused validation for R08 #854, R07 #8
 
 Exact C execution at the current implementation content passes 67/67 canonical document-state tests and the real deleted-parser source product probe: 14 catalog cases plus the rooted source canary. The registry-only parent propagation does not change production code; the new exact C CI run owns remote qualification of `daf69ffff`.
 
-**Remaining:** exact-head reviews and focused checks for R25/R08/R07/R09; accepted R10/G07 through R20/G20 prerequisites; R24/G27 Index ranges; R26/G29 canonical compute lowering; R21–R23 retirement, browser, and distribution closure; unresolved R02/G02, R06/G17, and R15/G12 decisions; one stable exact-C full qualification; protected merge and post-merge verification. No capability has been dropped or converted into an accepted rejection.
+**Remaining:** exact-head reviews and focused checks for R25/R08/R07/R09; accepted R10/G09 through R20/G16 prerequisites; R24/G27 Index ranges; R26/G29 canonical compute lowering; R21–R23 retirement, browser, and distribution closure; unresolved R02/G02, R06/G17, and R15/G12 decisions; one stable exact-C full qualification; protected merge and post-merge verification. No capability has been dropped or converted into an accepted rejection.
 
-**Current action:** monitor and immediately address notes on R25/R08/R07/R09 while the focused checks run. R10/G07 canonical nested-control composition is the next dependency-ready implementation owner after R09 and will use its accepted failing `comprehension-match` and `comprehension-nested` witnesses.
+**Current action:** monitor and immediately address notes on R25/R08/R07/R09 while the focused checks run. R10/G09 canonical structural match patterns is the next dependency-ready implementation owner after R09 and will use its accepted tuple/array/tag binding, guard, fallthrough, and exhaustiveness cells.
 
-**Next action:** confirm the selector marks #854/#856/#858 as review-only and C as landing; fix any actual failed focused job in its owner once. Then create the R10 slice on exact R09, implement G07 without widening R09, run focused source/decoded acceptance, request review, and merge the accepted batch into C for another product probe.
+**Next action:** confirm the selector marks #854/#856/#858 as review-only and C as landing; fix any actual failed focused job in its owner once. Then create the R10 slice on exact R09, implement G09 without widening R09, run focused source/decoded acceptance, request review, and merge the accepted batch into C for another product probe. R11/G07 composed controls follows R10.
 
 **External blocker:** none for routine implementation, testing, review response, rebasing, or integration. The recorded R02/G02, R06/G17, and R15/G12 contract decisions remain explicit future blockers for their dependent work only.
 
