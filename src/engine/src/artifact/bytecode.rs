@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 12;
+const WIRE_GRAPH_REVISION: u32 = 13;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -188,6 +188,7 @@ enum WireNodeBody {
     },
     Comprehension(WireComprehensionDeclaration),
     Match(WireMatchDeclaration),
+    Activation(WireMatchDeclaration),
     Fsm {
         machine: String,
         arguments: Box<[(Option<String>, u16)]>,
@@ -300,6 +301,7 @@ enum WirePattern {
 enum WireMatchPatternValue {
     Literal(u32),
     Binding(u32),
+    Input(u16),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1850,6 +1852,9 @@ fn wire_structural_match_pattern(
         super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local)) => {
             WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(*local))
         }
+        super::CollectionPattern::Equal(super::MatchPatternValue::Input(input)) => {
+            WireStructuralMatchPattern::Equal(WireMatchPatternValue::Input(*input))
+        }
         super::CollectionPattern::Enum { ordinal, payload } => WireStructuralMatchPattern::Enum {
             ordinal: *ordinal,
             payload: payload
@@ -1891,6 +1896,9 @@ fn structural_match_pattern_from_wire(
         }
         WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(local)) => {
             super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local))
+        }
+        WireStructuralMatchPattern::Equal(WireMatchPatternValue::Input(input)) => {
+            super::CollectionPattern::Equal(super::MatchPatternValue::Input(input))
         }
         WireStructuralMatchPattern::Enum { ordinal, payload } => super::CollectionPattern::Enum {
             ordinal,
@@ -1935,6 +1943,9 @@ fn wire_node_body(
         }
         super::ExecutableNodeBody::Match(control) => {
             WireNodeBody::Match(wire_match(control, operations))
+        }
+        super::ExecutableNodeBody::Activation(control) => {
+            WireNodeBody::Activation(wire_match(control, operations))
         }
         super::ExecutableNodeBody::Fsm(control) => WireNodeBody::Fsm {
             machine: control.machine.clone(),
@@ -2180,6 +2191,9 @@ fn node_body_from_wire(
         WireNodeBody::Match(control) => {
             super::ExecutableNodeBody::Match(match_from_wire(control, operation)?)
         }
+        WireNodeBody::Activation(control) => {
+            super::ExecutableNodeBody::Activation(match_from_wire(control, operation)?)
+        }
         WireNodeBody::Fsm {
             machine,
             arguments,
@@ -2266,6 +2280,7 @@ fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationR
             comprehension_operation_references(control)
         }
         super::ExecutableNodeBody::Match(control) => match_operation_references(control),
+        super::ExecutableNodeBody::Activation(control) => match_operation_references(control),
         super::ExecutableNodeBody::Fsm(_) => Vec::new(),
     }
 }
@@ -2313,6 +2328,7 @@ fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
         WireNodeBody::Operation { operation, .. } => vec![*operation],
         WireNodeBody::Comprehension(control) => wire_comprehension_operation_ids(control),
         WireNodeBody::Match(control) => wire_match_operation_ids(control),
+        WireNodeBody::Activation(control) => wire_match_operation_ids(control),
         WireNodeBody::Fsm { .. } => Vec::new(),
     }
 }

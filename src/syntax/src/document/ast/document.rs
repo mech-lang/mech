@@ -5,18 +5,68 @@ use crate::document::red::{
     SyntaxToken,
 };
 use crate::document::{
-    AtomLiteralSyntax, BodySyntax, CodeBlockSyntax, CodeFenceInfo, ContextSendSyntax,
-    EnumDefineSyntax, EnumVariantInlineKindSyntax, EnumVariantKindSyntax, EnumVariantSyntax,
-    EvalInlineMechCodeSyntax, ExpressionSyntax, FsmArmSyntax, FsmAsyncTransitionSyntax,
-    FsmBlockTransitionSyntax, FsmCommentArmSyntax, FsmGuardArmSyntax, FsmGuardSyntax,
-    FsmImplementationSyntax, FsmOutputSyntax, FsmSpecificationSyntax, FsmStateDefinitionSyntax,
-    FsmStateDefinitionVariablesSyntax, FsmStateTransitionSyntax, FsmStatementTransitionSyntax,
-    FsmTransitionSyntax, FsmValueSyntax, KindAnnotationSyntax, KindDefineSyntax, MechCodeAltSyntax,
-    MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax,
-    ParagraphElementSyntax, PatternSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
-    StatementSyntax, SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax,
-    TitleSyntax, TupleDestructureSyntax, UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
+    ActivationArmSyntax, ActivationScopeSyntax, AtomLiteralSyntax, BodySyntax, CodeBlockSyntax,
+    CodeFenceInfo, ContextSendSyntax, EnumDefineSyntax, EnumVariantInlineKindSyntax,
+    EnumVariantKindSyntax, EnumVariantSyntax, EvalInlineMechCodeSyntax, ExpressionSyntax,
+    FsmArmSyntax, FsmAsyncTransitionSyntax, FsmBlockTransitionSyntax, FsmCommentArmSyntax,
+    FsmGuardArmSyntax, FsmGuardSyntax, FsmImplementationSyntax, FsmOutputSyntax,
+    FsmSpecificationSyntax, FsmStateDefinitionSyntax, FsmStateDefinitionVariablesSyntax,
+    FsmStateTransitionSyntax, FsmStatementTransitionSyntax, FsmTransitionSyntax, FsmValueSyntax,
+    KindAnnotationSyntax, KindDefineSyntax, MechCodeAltSyntax, MechCodeSyntax,
+    OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax, ParagraphElementSyntax, PatternSyntax,
+    SectionElementSyntax, SliceRefSyntax, SliceStemSyntax, StatementSyntax, SubscriptListSyntax,
+    SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax, TupleDestructureSyntax,
+    UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
 };
+
+impl ActivationScopeSyntax {
+    pub fn trigger(&self) -> Option<ExpressionSyntax> {
+        self.syntax().children().find_map(ExpressionSyntax::cast)
+    }
+
+    pub fn body(&self) -> Option<MechCodeSyntax> {
+        self.syntax().children().find_map(MechCodeSyntax::cast)
+    }
+
+    pub fn arms(&self) -> Vec<ActivationArmSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(ActivationArmSyntax::cast)
+            .collect()
+    }
+}
+
+impl ActivationArmSyntax {
+    pub fn pattern(&self) -> Option<PatternSyntax> {
+        self.syntax().children().find_map(PatternSyntax::cast)
+    }
+
+    pub fn guard(&self) -> Option<ExpressionSyntax> {
+        let expressions = self
+            .syntax()
+            .children()
+            .filter_map(ExpressionSyntax::cast)
+            .collect::<Vec<_>>();
+        if self.body().is_some() {
+            expressions.first().cloned()
+        } else {
+            (expressions.len() == 2).then(|| expressions[0].clone())
+        }
+    }
+
+    pub fn value(&self) -> Option<ExpressionSyntax> {
+        self.body().is_none().then(|| {
+            self.syntax()
+                .children()
+                .filter_map(ExpressionSyntax::cast)
+                .last()
+        })?
+    }
+
+    pub fn body(&self) -> Option<MechCodeSyntax> {
+        self.syntax().children().find_map(MechCodeSyntax::cast)
+    }
+}
 
 #[derive(Clone, Debug)]
 pub enum FsmArmBodySyntax {

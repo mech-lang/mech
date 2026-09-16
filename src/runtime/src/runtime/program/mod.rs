@@ -81,6 +81,7 @@ pub(crate) struct ResidentExternalExecution {
     pub(crate) artifact: Arc<ProgramArtifact>,
     pub(crate) coordinator: external::ResidentExternalCoordinator,
     pub(crate) trigger_sources: Box<[RuntimeHostInputSource]>,
+    pub(crate) input_sources: Box<[RuntimeHostInputSource]>,
     pub(crate) grants: ResidentAdmissionProof,
 }
 

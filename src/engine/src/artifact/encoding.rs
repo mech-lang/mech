@@ -183,6 +183,11 @@ impl CanonicalArtifactWriter {
                 self.u8(1);
                 self.u32(*local);
             }
+            super::CollectionPattern::Equal(super::MatchPatternValue::Input(input)) => {
+                self.u8(2);
+                self.u8(2);
+                self.u16(*input);
+            }
             super::CollectionPattern::Enum { ordinal, payload } => {
                 self.u8(5);
                 self.u32(*ordinal);
@@ -500,6 +505,10 @@ pub(super) fn program_revision(
             }
             super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);
+                writer.match_declaration(control);
+            }
+            super::ExecutableNodeBody::Activation(control) => {
+                writer.u8(4);
                 writer.match_declaration(control);
             }
             super::ExecutableNodeBody::Fsm(control) => {

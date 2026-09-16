@@ -364,7 +364,7 @@ impl ResidentExternalCoordinator {
         self.instance().has_active_candidate()
     }
 
-    pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
+    pub fn input_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
         let mut sources = std::collections::BTreeSet::new();
         for observation in self.bound.observations() {
             let binding = observation.provider_binding.as_ref().ok_or_else(|| {
@@ -383,6 +383,71 @@ impl ResidentExternalCoordinator {
             }
         }
         Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
+    }
+
+    pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
+        let triggers = self
+            .instance()
+            .plan
+            .turn_trigger_inputs
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut sources = std::collections::BTreeSet::new();
+        for observation in self.bound.observations() {
+            if !triggers.contains(&observation.input.artifact_slot) {
+                continue;
+            }
+            let binding = observation.provider_binding.as_ref().ok_or_else(|| {
+                invalid_value("live observation has no provider binding".to_owned())
+            })?;
+            let request = RuntimeResourceReadRequest {
+                base_uri: observation.request.base_uri.clone(),
+                path: observation.request.path.clone(),
+                context_name: observation.request.context_name.clone(),
+            };
+            if binding.observation_requires_input_driver(&request)? {
+                sources.insert(crate::RuntimeHostInputSource::new(
+                    request.base_uri,
+                    request.path,
+                )?);
+            }
+        }
+        Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub(crate) fn sample_host_updates(
+        &mut self,
+        updates: &[crate::RuntimeHostInputUpdate],
+    ) -> MResult<()> {
+        self.ensure_live_bindings()?;
+        self.validate_host_updates(updates)?;
+        for (ordinal, observation) in self.bound.observations().iter().enumerate() {
+            let Some(update) = updates.iter().rev().find(|update| {
+                update.source.base_uri() == observation.request.base_uri
+                    && update.source.path() == observation.request.path
+            }) else {
+                continue;
+            };
+            self.latest_live_inputs[ordinal] = Some(
+                update
+                    .value
+                    .clone()
+                    .into_value()?
+                    .rebind(
+                        observation.input.schema,
+                        &observation.input.shape,
+                        self.artifact.schemas(),
+                    )
+                    .map_err(|error| {
+                        invalid_value(format!(
+                            "host input does not match the observed schema: {error:?}"
+                        ))
+                    })?,
+            );
+        }
+        Ok(())
     }
 
     pub const fn structural_probe(&self) -> ResidentExternalStructuralProbe {
@@ -404,7 +469,7 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, |_| Ok(()))
+        self.execute_live_turn(None, admission, false, |_| Ok(()))
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -418,7 +483,7 @@ impl ResidentExternalCoordinator {
         updates: &[crate::RuntimeHostInputUpdate],
     ) -> MResult<ResidentExternalTurnOutcome> {
         let admission = self.admit_host_turn(updates)?;
-        self.execute_live_turn(Some(updates), admission, |_| Ok(()))
+        self.execute_live_turn(Some(updates), admission, false, |_| Ok(()))
     }
 
     pub(crate) fn admit_host_turn(
@@ -440,11 +505,11 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(Some(updates), admission, prepublication)
+        self.execute_live_turn(Some(updates), admission, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
-    pub(crate) fn execute_admitted_turn<F>(
+    pub(crate) fn execute_admitted_initial_turn<F>(
         &mut self,
         admission: ResidentExternalTurnAdmission,
         prepublication: F,
@@ -452,7 +517,7 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(None, admission, prepublication)
+        self.execute_live_turn(None, admission, true, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -553,6 +618,7 @@ impl ResidentExternalCoordinator {
         &mut self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
         admission: ResidentExternalTurnAdmission,
+        initial_publication: bool,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -656,9 +722,20 @@ impl ResidentExternalCoordinator {
                 value: &fact.value,
             })
             .collect::<Vec<_>>();
+        let activation_triggers = batch
+            .iter()
+            .flat_map(|batch| batch.facts.iter())
+            .filter(|fact| fact.trigger)
+            .map(|fact| fact.slot)
+            .collect::<Vec<_>>();
         let mut instance = self.instance.take().expect("resident instance is present");
         let result = (|| {
-            let prepared_turn = match instance.prepare_turn_values(&inputs) {
+            let prepared = if initial_publication {
+                instance.prepare_initial_turn_values(&inputs)
+            } else {
+                instance.prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers)
+            };
+            let prepared_turn = match prepared {
                 Ok(prepared) => prepared,
                 Err(error) => {
                     drop(outbox_permit);
@@ -807,10 +884,16 @@ impl ResidentExternalCoordinator {
                 value: &fact.value,
             })
             .collect::<Vec<_>>();
+        let activation_triggers = batch
+            .iter()
+            .flat_map(|batch| batch.facts.iter())
+            .filter(|fact| fact.trigger)
+            .map(|fact| fact.slot)
+            .collect::<Vec<_>>();
         let mut instance = self.instance.take().expect("resident instance is present");
         let result = (|| {
             let prepared_turn = instance
-                .prepare_turn_values(&inputs)
+                .prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers)
                 .map_err(resident_execution_error)?;
             let materialized = match materialize_effects(
                 &prepared_turn,
@@ -1194,7 +1277,13 @@ impl ResidentExternalCoordinator {
                             ))
                         })?
                 };
-                CapturedInputFact::new(
+                let trigger = self
+                    .instance()
+                    .plan
+                    .turn_trigger_inputs
+                    .contains(&observation.input.artifact_slot)
+                    && (host_updates.is_none() || packet_value.is_some());
+                CapturedInputFact::new_with_trigger(
                     sequence,
                     observation.requirement,
                     observation.node,
@@ -1202,6 +1291,7 @@ impl ResidentExternalCoordinator {
                     observation.input.schema_key,
                     observation.input.shape.clone(),
                     value,
+                    trigger,
                     self.artifact.schemas(),
                 )
             })();
@@ -1218,7 +1308,7 @@ impl ResidentExternalCoordinator {
             .facts
             .iter()
             .map(|fact| {
-                CapturedInputFact::new(
+                CapturedInputFact::new_with_trigger(
                     fact.sequence,
                     fact.requirement,
                     fact.node,
@@ -1226,6 +1316,7 @@ impl ResidentExternalCoordinator {
                     fact.schema_key,
                     fact.shape.clone(),
                     fact.value.clone(),
+                    fact.trigger,
                     self.artifact.schemas(),
                 )
             })
