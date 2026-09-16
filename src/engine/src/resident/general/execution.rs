@@ -242,10 +242,20 @@ impl PreparedResidentTurn<'_> {
 
     #[doc(hidden)]
     pub fn output_borrow(&self, output: usize) -> Option<ResidentValueBorrow<'_>> {
-        self.instance
+        let instance = self
+            .instance
             .as_deref()
-            .expect("live prepared resident turn")
-            .output_borrow_at(output, self.working_epoch)
+            .expect("live prepared resident turn");
+        if !instance
+            .workspace
+            .candidate_output_ready
+            .get(output)
+            .copied()
+            .unwrap_or(false)
+        {
+            return None;
+        }
+        instance.output_borrow_at(output, self.working_epoch)
     }
 
     /// Publishes an ordinary pure resident turn.
@@ -292,6 +302,7 @@ impl PreparedResidentTurn<'_> {
 
     fn publish_inner(&mut self) -> ResidentTurnSummary {
         let instance = self.instance.take().expect("live prepared resident turn");
+        instance.publish_continuation_candidates();
         instance
             .published_epoch
             .store(self.working_epoch.get(), Ordering::Release);
@@ -943,6 +954,8 @@ impl ReactiveInstance {
                 ActivatedTurnStep::External(_)
                 | ActivatedTurnStep::Match(_)
                 | ActivatedTurnStep::Recur(_)
+                | ActivatedTurnStep::Suspend(_)
+                | ActivatedTurnStep::Publish(_)
                 | ActivatedTurnStep::Comprehension(_) => None,
             })
             .filter(|(_, node)| {
@@ -1000,6 +1013,8 @@ impl ReactiveInstance {
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
                 ActivatedTurnStep::Match(node) => (Some(node.write.region), None),
                 ActivatedTurnStep::Recur(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Suspend(_) => (None, None),
+                ActivatedTurnStep::Publish(_) => (None, None),
                 ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
@@ -1020,6 +1035,13 @@ impl ReactiveInstance {
         self.workspace.initialized_output_bits.fill(0);
         self.workspace.all_outputs_initialized = false;
         self.workspace.effect_intents.clear();
+        self.workspace.continuation_candidates.fill(None);
+        self.workspace.completed_continuations.fill(0);
+        self.workspace.continuation_publications.fill(0);
+        self.workspace.continuation_capture_frames.clear();
+        self.workspace
+            .candidate_output_ready
+            .clone_from(&self.output_ready);
         self.next_epoch = Some(working_epoch);
         self.candidate_active = false;
         self.candidate_epoch = None;
@@ -1168,7 +1190,34 @@ impl ReactiveInstance {
         self.workspace.touched_slots.clear();
         self.workspace.changed_slots.clear();
         self.workspace.effect_intents.clear();
+        self.workspace.continuation_candidates.fill(None);
+        self.workspace.completed_continuations.fill(0);
+        self.workspace.continuation_publications.fill(0);
+        self.workspace.continuation_capture_frames.clear();
+        self.workspace
+            .candidate_output_ready
+            .clone_from(&self.output_ready);
         self.seed_dirty_bits();
+    }
+
+    fn publish_continuation_candidates(&mut self) {
+        for index in 0..self.plan.steps.len() {
+            let node = ActivatedNodeIndex(index as u32);
+            if bit_is_set(&self.workspace.completed_continuations, index) {
+                self.continuations[index] = None;
+                self.ready_continuations.retain(|ready| *ready != node);
+            }
+            if let Some(value) = self.workspace.continuation_candidates[index].take() {
+                self.continuations[index] = Some(value);
+                if !self.ready_continuations.contains(&node) {
+                    self.ready_continuations.push_back(node);
+                }
+            }
+        }
+        self.output_ready
+            .clone_from(&self.workspace.candidate_output_ready);
+        self.workspace.completed_continuations.fill(0);
+        self.workspace.continuation_publications.fill(0);
     }
 
     fn seed_dirty_bits(&mut self) {
@@ -1356,6 +1405,20 @@ impl ReactiveInstance {
     ) -> Result<(), ResidentExecutionError> {
         for index in 0..self.plan.output_materializations.len() {
             let materialization = self.plan.output_materializations[index];
+            let suspended = self.plan.steps.iter().enumerate().any(|(step, node)| {
+                matches!(
+                    node,
+                    ActivatedTurnStep::Match(control)
+                        if control.continuation
+                            && ResidentReadLocation::Scratch(control.write.region)
+                                == materialization.source
+                            && self.workspace.continuation_candidates[step].is_some()
+                            && !bit_is_set(&self.workspace.continuation_publications, step)
+                )
+            });
+            if suspended {
+                continue;
+            }
             let target = materialization.target;
             let target_region = self.plan.slots[target.get() as usize].region;
             match materialization.source {
@@ -1423,6 +1486,9 @@ impl ReactiveInstance {
                 if !self.state.same_at(target, candidate, before_epoch) {
                     self.workspace.changed_slots.push(slot);
                 }
+            }
+            if let Some(ready) = self.workspace.candidate_output_ready.get_mut(index) {
+                *ready = true;
             }
         }
         Ok(())
@@ -1664,7 +1730,15 @@ impl ReactiveInstance {
                     error: ResidentKernelError::InvalidShape,
                 });
             }
-            return budget::with_resident_turn_plan(turn_plan, || {
+            let continuation_captures = self.continuations[node_index.get() as usize]
+                .as_ref()
+                .map(|continuation| continuation.captures.clone());
+            if let Some(captures) = continuation_captures.as_ref() {
+                self.workspace
+                    .continuation_capture_frames
+                    .push(captures.clone());
+            }
+            let result = budget::with_resident_turn_plan(turn_plan, || {
                 let result = budget::with_control_work_budget(|| {
                     self.execute_match_expression(
                         node_index,
@@ -1686,6 +1760,10 @@ impl ReactiveInstance {
                 }
                 result
             });
+            if continuation_captures.is_some() {
+                self.workspace.continuation_capture_frames.pop();
+            }
+            return result;
         }
         if let ActivatedTurnStep::Recur(call) = self.plan.steps[node_index.get() as usize] {
             return self.execute_recursive_call(
@@ -1697,6 +1775,77 @@ impl ReactiveInstance {
                 live_bytes,
                 live_nodes,
             );
+        }
+        if let ActivatedTurnStep::Suspend(suspension) = self.plan.steps[node_index.get() as usize] {
+            let state = self
+                .read_location(suspension.argument, working_epoch)
+                .map(owned_resident_value)
+                .ok_or(ResidentExecutionError::Kernel {
+                    node: suspension.artifact_node,
+                    error: ResidentKernelError::InvalidInput,
+                })?;
+            let target = suspension.target.get() as usize;
+            let capture_sources = match &self.plan.steps[target] {
+                ActivatedTurnStep::Match(control) => control.capture_sources.clone(),
+                _ => {
+                    return Err(ResidentExecutionError::Kernel {
+                        node: suspension.artifact_node,
+                        error: ResidentKernelError::InvalidInput,
+                    });
+                }
+            };
+            let captures = capture_sources
+                .iter()
+                .copied()
+                .map(|source| {
+                    self.read_location(source, working_epoch)
+                        .map(|value| (source, owned_resident_value(value)))
+                        .ok_or(ResidentExecutionError::Kernel {
+                            node: suspension.artifact_node,
+                            error: ResidentKernelError::InvalidInput,
+                        })
+                })
+                .collect::<Result<Box<[_]>, _>>()?;
+            self.workspace.continuation_candidates[target] =
+                Some(super::ResidentContinuation { state, captures });
+            clear_bit(&mut self.workspace.completed_continuations, target);
+            return Ok(false);
+        }
+        if let ActivatedTurnStep::Publish(publication) = self.plan.steps[node_index.get() as usize]
+        {
+            let value = self
+                .read_location(publication.value, working_epoch)
+                .map(owned_resident_value)
+                .ok_or(ResidentExecutionError::Kernel {
+                    node: publication.artifact_node,
+                    error: ResidentKernelError::InvalidInput,
+                })?;
+            let target = publication.target.get() as usize;
+            let write = match &self.plan.steps[target] {
+                ActivatedTurnStep::Match(control)
+                    if control.write.storage == ResidentStorageClass::Scratch =>
+                {
+                    control.write
+                }
+                _ => {
+                    return Err(ResidentExecutionError::Kernel {
+                        node: publication.artifact_node,
+                        error: ResidentKernelError::InvalidInput,
+                    });
+                }
+            };
+            let unchanged =
+                resident_values_equal(self.workspace.scratch.read(write.region), value.as_ref());
+            copy_input(&mut self.workspace.scratch, write.region, value.as_ref()).map_err(
+                |error| {
+                    error.at(ResidentExecutionError::Kernel {
+                        node: publication.artifact_node,
+                        error: ResidentKernelError::InvalidOutput,
+                    })
+                },
+            )?;
+            set_bit(&mut self.workspace.continuation_publications, target);
+            return Ok(!unchanged);
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -1731,19 +1880,27 @@ impl ReactiveInstance {
         let node = matched.artifact_node;
         let budget_node = matched.budget_node;
         let write = matched.write;
+        let continuation = matched.continuation;
         let arm_count = matched.arms.len();
         let fail = || ResidentExecutionError::Kernel {
             node,
             error: ResidentKernelError::InvalidInput,
         };
         let kernel_fail = |error| ResidentExecutionError::Kernel { node, error };
-        let scrutinee_source = self
+        let recursive_scrutinee = self
             .workspace
             .recursive_scrutinees
             .iter()
             .rev()
-            .find_map(|frame| (frame.target == node_index).then_some(frame.argument))
-            .unwrap_or(matched.scrutinee);
+            .find_map(|frame| (frame.target == node_index).then_some(frame.argument));
+        let scrutinee_source = recursive_scrutinee.unwrap_or(matched.scrutinee);
+        let continuation_scrutinee = if recursive_scrutinee.is_none() && matched.continuation {
+            self.continuations[index]
+                .as_ref()
+                .map(|continuation| continuation.state.clone())
+        } else {
+            None
+        };
         let scrutinee_schema = matched.scrutinee_schema;
         let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
         let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
@@ -1811,8 +1968,10 @@ impl ReactiveInstance {
             let body = arm.body.clone();
             let pattern_matches = match pattern {
                 super::ActivatedMatchPattern::Literal(literal) => {
-                    let scrutinee = self
-                        .read_location(scrutinee_source, working_epoch)
+                    let scrutinee = continuation_scrutinee
+                        .as_ref()
+                        .map(super::OwnedResidentValue::as_ref)
+                        .or_else(|| self.read_location(scrutinee_source, working_epoch))
                         .ok_or_else(fail)?;
                     match (
                         scrutinee,
@@ -1863,8 +2022,10 @@ impl ReactiveInstance {
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
                         let snapshot_finalization_count = structural_snapshot_finalization_count
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
-                        let scrutinee = self
-                            .read_location(scrutinee_source, working_epoch)
+                        let scrutinee = continuation_scrutinee
+                            .as_ref()
+                            .map(super::OwnedResidentValue::as_ref)
+                            .or_else(|| self.read_location(scrutinee_source, working_epoch))
                             .ok_or_else(fail)?;
                         let shape_values = match scrutinee {
                             ResidentValueRef::Snapshot([Some(value)]) => {
@@ -1969,6 +2130,37 @@ impl ReactiveInstance {
                     probe,
                     (live_bytes, live_nodes),
                 )?;
+            }
+            if continuation && self.workspace.continuation_candidates[index].is_some() {
+                let published = bit_is_set(&self.workspace.continuation_publications, index);
+                if published {
+                    set_bit(&mut self.workspace.initialized_output_bits, index);
+                }
+                return Ok(published);
+            }
+            if continuation {
+                set_bit(&mut self.workspace.completed_continuations, index);
+            }
+            let captured_yield = self
+                .workspace
+                .continuation_capture_frames
+                .iter()
+                .rev()
+                .flat_map(|frame| frame.iter())
+                .find_map(|(source, value)| (*source == body.yield_value).then_some(value))
+                .cloned();
+            if let Some(captured) = captured_yield {
+                let target = if write.storage == ResidentStorageClass::Constant {
+                    &mut self.activation
+                } else {
+                    &mut self.workspace.scratch
+                };
+                let unchanged = resident_values_equal(target.read(write.region), captured.as_ref());
+                super::copy_owned_activation_value(&captured, target.write(write.region))
+                    .map_err(|_| fail())?;
+                let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+                set_bit(&mut self.workspace.initialized_output_bits, index);
+                return Ok(!initialized || !unchanged);
             }
             // The selected body's bindings and earlier results remain live
             // through publication, including locals the final yield does not
@@ -2509,6 +2701,18 @@ impl ReactiveInstance {
             set_bit(&mut self.workspace.initialized_output_bits, target_index);
         } else {
             clear_bit(&mut self.workspace.initialized_output_bits, target_index);
+        }
+
+        if self.workspace.continuation_candidates[call.target.get() as usize].is_some() {
+            for (region, value) in &frame {
+                super::copy_owned_activation_value(value, self.workspace.scratch.write(*region))
+                    .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+            }
+            invoked?;
+            return Ok(bit_is_set(
+                &self.workspace.continuation_publications,
+                call.target.get() as usize,
+            ));
         }
 
         let result = invoked.and_then(|changed| {
@@ -3362,6 +3566,16 @@ impl ReactiveInstance {
         location: ResidentReadLocation,
         epoch: InstanceEpoch,
     ) -> Option<ResidentValueRef<'_>> {
+        if let Some(value) = self
+            .workspace
+            .continuation_capture_frames
+            .iter()
+            .rev()
+            .flat_map(|frame| frame.iter())
+            .find_map(|(source, value)| (*source == location).then_some(value))
+        {
+            return Some(value.as_ref());
+        }
         match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.workspace.input.read(region)),
@@ -4396,6 +4610,20 @@ fn regions_equal(
         (ResidentValueRef::String(left), ResidentValueRef::String(right)) => left == right,
         // Composite producers currently declare AlwaysChanged. Keep this
         // conservative until a schema-aware arena comparison is introduced.
+        (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => false,
+        _ => false,
+    }
+}
+
+fn resident_values_equal(left: ResidentValueRef<'_>, right: ResidentValueRef<'_>) -> bool {
+    match (left, right) {
+        (ResidentValueRef::Bool(left), ResidentValueRef::Bool(right)) => left == right,
+        (ResidentValueRef::Index(left), ResidentValueRef::Index(right)) => left == right,
+        (ResidentValueRef::F64(left), ResidentValueRef::F64(right)) => left
+            .iter()
+            .zip(right)
+            .all(|(left, right)| left.to_bits() == right.to_bits()),
+        (ResidentValueRef::String(left), ResidentValueRef::String(right)) => left == right,
         (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => false,
         _ => false,
     }

@@ -16,7 +16,7 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-# Source fixtures were regenerated for graph payload revision 11; their only wire
+# Source fixtures were regenerated for graph payload revision 12; their only wire
 # changes in that migration are the graph revision and checksum.
 # The structural-match fixture also retains R16 canonical pattern metadata.
 EXPECTED_MANIFEST_SHA256 = "5702383dfee4d6775a5ba9bef8d3d7a5005092516729eca6095bf83b989b7d7f"
