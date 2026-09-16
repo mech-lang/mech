@@ -2261,6 +2261,7 @@ enum PendingNodeBody {
     Comprehension(PendingComprehension),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
+    RecursiveCall,
 }
 
 struct PendingMatch {
@@ -2286,7 +2287,8 @@ impl PendingMatch {
                         PendingControlOperationBody::Comprehension(nested) => {
                             nested.visit_schemas(visit)
                         }
-                        PendingControlOperationBody::Operation { .. } => {}
+                        PendingControlOperationBody::Operation { .. }
+                        | PendingControlOperationBody::Recur => {}
                     }
                 }
             }
@@ -2675,6 +2677,7 @@ enum PendingControlOperationBody {
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
+    Recur,
 }
 
 struct PendingControlBlock {
@@ -2772,6 +2775,7 @@ struct SemanticBuilder {
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
+    active_recursive_outputs: Vec<(String, SchemaDraft)>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -2954,6 +2958,7 @@ impl SemanticBuilder {
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
+            active_recursive_outputs: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
         }
@@ -7304,7 +7309,7 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding => {
+                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
@@ -9006,11 +9011,35 @@ impl SemanticBuilder {
                                         ));
                                     }
                                 }
+                                // Give a lexical binding its own call-local region. Besides
+                                // making ordinary matches explicit, this lets a recursive
+                                // invocation bind the new scrutinee without aliasing the
+                                // caller's frame.
+                                let node = self.nodes.len() as u32;
+                                let value = PendingValue::Node(node);
+                                self.nodes.push(PendingNode {
+                                    body: PendingNodeBody::CollectionBinding,
+                                    inferable_projection: variable.annotation().is_none(),
+                                    inputs: Vec::new(),
+                                    schema: scrutinee_schema.clone(),
+                                    exposes_output: true,
+                                    state: None,
+                                    semantic: SourceSemanticNode {
+                                        operation: String::new(),
+                                        role: "match-binding",
+                                        detail: None,
+                                        anchor: SourceSemanticAnchor::for_node(variable.syntax()),
+                                    },
+                                });
                                 self.bindings.insert(
                                     node_text(identifier.syntax())?,
-                                    PendingBinding::Value(scrutinee),
+                                    PendingBinding::Value(value),
                                 );
-                                crate::MatchPattern::Bind
+                                pattern_bindings.insert(node, 0);
+                                crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
+                                    local: 0,
+                                    schema: scrutinee_schema.clone(),
+                                })
                             } else {
                                 let start = self.nodes.len();
                                 let literal = self
@@ -9364,6 +9393,7 @@ impl SemanticBuilder {
                 PendingNodeBody::Comprehension(control) => {
                     PendingControlOperationBody::Comprehension(control)
                 }
+                PendingNodeBody::RecursiveCall => PendingControlOperationBody::Recur,
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -9451,6 +9481,7 @@ fn resolve_pending_match(
                                 nested, schemas, constants,
                             ))
                         }
+                        PendingControlOperationBody::Recur => crate::ControlOperationBody::Recur,
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
                     schema: schema(&operation.schema),

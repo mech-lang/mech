@@ -140,12 +140,10 @@ impl SemanticBuilder {
             message,
             anchor: SourceSemanticAnchor::for_node(call),
         };
-        if self.active_functions.iter().any(|active| active == name)
-            || self.active_functions.len() >= crate::MAX_CONTROL_DEPTH as usize
-        {
+        if self.active_functions.len() >= crate::MAX_CONTROL_DEPTH as usize {
             return Err(error(
-                "source-semantics/recursive-function",
-                format!("function {name} cannot be finitely inlined"),
+                "source-semantics/function-expansion-depth",
+                format!("function {name} exceeds the lexical expansion depth"),
             ));
         }
         let function = self.local_functions[name].clone();
@@ -198,6 +196,90 @@ impl SemanticBuilder {
                     "canonical function has no supported body".to_owned(),
                 )
             })?;
+        if self.active_functions.iter().any(|active| active == name) {
+            if self
+                .active_functions
+                .last()
+                .is_none_or(|active| active != name)
+            {
+                return Err(error(
+                    "source-semantics/mutual-recursion",
+                    format!("function {name} forms an unsupported mutual recursion cycle"),
+                ));
+            }
+            if !matches!(body, DocumentFunctionBody::Patterns(_)) {
+                return Err(error(
+                    "source-semantics/recursive-statement-function",
+                    format!("function {name} requires a pattern body for canonical recursion"),
+                ));
+            }
+            let expected = self
+                .active_recursive_outputs
+                .iter()
+                .rev()
+                .find_map(|(active, output)| (active == name).then_some(output.clone()))
+                .ok_or_else(|| {
+                    error(
+                        "source-semantics/recursive-function",
+                        format!("function {name} has no active callable frame"),
+                    )
+                })?;
+            let arguments = parameters
+                .iter()
+                .zip(selected)
+                .map(|((_, schema), input)| {
+                    self.conform_schema_draft(
+                        input,
+                        schema,
+                        call,
+                        "source-semantics/incompatible-function-argument",
+                        "recursive argument does not satisfy its declared kind",
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let argument = if let [argument] = arguments.as_slice() {
+                *argument
+            } else {
+                let mut dimensions = Vec::new();
+                let elements = arguments
+                    .iter()
+                    .map(|argument| {
+                        embed_schema_draft(
+                            &self.schema_draft_of(*argument)?,
+                            &mut dimensions,
+                            SourceSemanticAnchor::for_node(call),
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                self.emit_with_schema_draft(
+                    "core/composite-pack",
+                    arguments,
+                    SchemaDraft {
+                        dimension_parameters: dimensions.into_boxed_slice(),
+                        body: SchemaBody::Tuple(elements.into_boxed_slice()),
+                    },
+                    call,
+                    "function-arguments",
+                    Some(name.to_owned()),
+                )
+            };
+            let index = self.nodes.len() as u32;
+            self.nodes.push(PendingNode {
+                body: PendingNodeBody::RecursiveCall,
+                inferable_projection: false,
+                inputs: vec![argument],
+                schema: expected,
+                exposes_output: true,
+                state: None,
+                semantic: SourceSemanticNode {
+                    operation: format!("function/{name}/recur"),
+                    role: "recursive-call",
+                    detail: Some(name.to_owned()),
+                    anchor: SourceSemanticAnchor::for_node(call),
+                },
+            });
+            return Ok(PendingValue::Node(index));
+        }
         let mut local_bindings = BTreeMap::new();
         let mut parameter_names = BTreeSet::new();
         let mut arguments = Vec::new();
@@ -713,8 +795,12 @@ impl SemanticBuilder {
             self.schema_draft_of(scrutinee)?.body,
             SchemaBody::Enum { .. }
         );
+        self.active_recursive_outputs
+            .push((name.to_owned(), expected.clone()));
         let result =
-            self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected))?;
+            self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected));
+        self.active_recursive_outputs.pop();
+        let result = result?;
         self.conform_schema_draft(
             result,
             &expected,
