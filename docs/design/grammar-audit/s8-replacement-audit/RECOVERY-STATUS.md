@@ -1,41 +1,24 @@
 # Recovery continuation after audit acceptance
 
-## Live execution queue — 2026-09-15
+## Live landing checkpoint — 2026-09-15
 
-R identifiers are ownership boundaries, not completed milestones. This queue is
-the current execution order; the checkpoints below preserve historical evidence.
-All active extraction/corrective PRs and C remain drafts. Ask for review by comment.
+**Candidate:** `codex/syntax-s8c-cutover` / `daf69ffff909aa9c17bfa69e08718c8a5bf2664c`, published as draft #830 on native stack #859 and targeting `integration/v0.4` through R09 #858. The accepted correction chain is R01 #842, R03 #843, R04 #844, R05 #847, R25 #849, R08 #854, R07 #856, and R09 #858.
 
-| Order | Owner and work | Current state / completion condition |
-| --- | --- | --- |
-| 1 | R25 + C/G22 compute/browser handoff | R25 #849 content `425578fa7` has a clean review and 7 + 18 passing tests. The current stack head is `6dcd269c9`; its R25 diff still contains the reviewed correction and additionally inherits the lower-stack filesystem-import fix. Focused CI 35030743606 has passed both owners, review regressions, browser canary, architecture, distribution and three mutation shards; its final status is still queued. C #830 current head is `7968e6341` with full qualification run 35030747629 queued. The shipping configured document edit passes all seven scenarios, changes result 1→3, preserves inline selection identity, and rolls back malformed edits. The EKF rerun gets past R25's provider and `result.0` failures and now stops at the distinct G29/R26 canonical-artifact/portable-kernel handoff. R25 closes when exact-head focused CI completes; C remains open. |
-| 2 | R08/G18 variable-cardinality layouts | Draft [#854](https://github.com/mech-lang/mech/pull/854) is published at exact head `f4dc9bbe`. All four review findings are fixed, answered and resolved. The latest correction admits Index and String snapshot transpose and has direct plus source/decoded regressions. All 50 canonical document-state tests pass. Fresh review and focused exact-head CI are pending. |
-| 3 | R07/G05 control initializers | Draft [#856](https://github.com/mech-lang/mech/pull/856) is published at exact head `718b4854d`, based on R08. Closed comprehension and match initializers execute once through the shared resident dispatcher; live/state dependencies remain rejected, dynamic result shape remains snapshot-backed, and budget failure preserves publication. All 56 canonical document-state tests and the affected owner tests pass. Review and focused exact-head CI are pending. |
-| 4 | R09/G06 retained comprehension storage | Branch `codex/syntax-s8r09-comprehension-storage` is based on exact R07 and is actively changing. Strict source/decoded `i32`, String and tuple witnesses are being implemented through one schema-directed retained item path. No PR exists yet. |
-| 5 | R10–R20 semantic prerequisites | Corrective implementations remain pending; use the accepted dependency/acceptance cells after R09. No numbered item is implicitly complete. |
-| Product blocker | R26/G29 canonical EKF compute lowering | Newly demonstrated and explicitly owned before implementation. The single-lane shipping CPU witness fails at portable lowering after R25 succeeds. No corrective branch or PR exists. Preserve the full CPU/WebGPU oracle; do not fold this into R25 or count semantic-only compilation as acceptance. |
-| Across accepted batches | R21–R23 in C: authority retirement, browser adoption, distribution closure | Partially implemented, incomplete. Keep real deleted-parser and product probes running; fix failures in their owners. Hold one stable C head for final full qualification only after accepted obligations close. |
-| Outstanding decisions | R02/G02, R06/G17, R15/G12 | Recorded capability/contract decisions remain open. Positive obligations have not been excluded. These are not implicitly deferred beyond landing. |
-| Outstanding implementation | R24/G27 Index ranges; R26/G29 canonical compute lowering | Strict failing witnesses exist; neither has a production implementation or PR. Both must close before final qualification. |
+**Completed:** R09/G06 implementation content is `f357c0823`: schema-directed retained comprehension values now cover every canonical packed scalar kind and closed structural snapshots; pattern descent moves owned children, Dynamic elements unwrap for structural matching, parameterized binding drafts retain their source shape, packed outputs exclude standalone wrapper/root costs, and nested Set/Map finalization is preflighted. All five R09 review threads were answered and resolved. Evidence passes 67/67 canonical document-state tests, 11/11 lexical-collection tests, both completion witnesses, and 3/3 focused ownership/accounting tests.
 
-**Active change lanes:** C, R08/R07 review and validation, and R09 implementation.
-R25 is validation-only; R26 is recorded but not yet changing.
-Never exceed three actively changing
-corrective branches. Do not open PRs solely to instantiate every audit boundary.
+R25 exact head `45680890c` now registers focused validation for R08 #854, R07 #856, and R09 #858. The selector/full-contract suites pass 50/50. That policy is propagated through exact heads R08 `fe7f8f02d`, R07 `e0840e3ef`, R09 `4b4291831`, and C `daf69ffff`. C remains the sole landing candidate and retains full qualification. Superseded R09 run 35042390841 and C run 35042537922 were canceled after their newer exact-head runs appeared.
 
-**Next concrete action:** implement R09/G06's strict retained comprehension
-storage witnesses while R08 and R07 review and focused checks run. Any returning
-R08/R07 finding takes priority and must be answered and resolved before another
-review request.
-R08 exact-head evidence is in `recovery-evidence/r08-exact-head-focused.log`.
-The full engine library run passed 451 tests and reproduced its sole failing
-indexed-assignment assertion unchanged at the R25 base; the base witness is in
-`recovery-evidence/r08-baseline-indexed-assignment.log` and is not counted as
-R08 success.
-The basic configured edit thread is answered and resolved with shipping evidence:
-https://github.com/mech-lang/mech/pull/830#discussion_r4020517517
-This is not closure of all browser/product obligations or the stack.
+Exact C execution at the current implementation content passes 67/67 canonical document-state tests and the real deleted-parser source product probe: 14 catalog cases plus the rooted source canary. The registry-only parent propagation does not change production code; the new exact C CI run owns remote qualification of `daf69ffff`.
 
+**Remaining:** exact-head reviews and focused checks for R25/R08/R07/R09; accepted R10/G07 through R20/G20 prerequisites; R24/G27 Index ranges; R26/G29 canonical compute lowering; R21–R23 retirement, browser, and distribution closure; unresolved R02/G02, R06/G17, and R15/G12 decisions; one stable exact-C full qualification; protected merge and post-merge verification. No capability has been dropped or converted into an accepted rejection.
+
+**Current action:** monitor and immediately address notes on R25/R08/R07/R09 while the focused checks run. R10/G07 canonical nested-control composition is the next dependency-ready implementation owner after R09 and will use its accepted failing `comprehension-match` and `comprehension-nested` witnesses.
+
+**Next action:** confirm the selector marks #854/#856/#858 as review-only and C as landing; fix any actual failed focused job in its owner once. Then create the R10 slice on exact R09, implement G07 without widening R09, run focused source/decoded acceptance, request review, and merge the accepted batch into C for another product probe.
+
+**External blocker:** none for routine implementation, testing, review response, rebasing, or integration. The recorded R02/G02, R06/G17, and R15/G12 contract decisions remain explicit future blockers for their dependent work only.
+
+**Status:** Checkpoint—not complete.
 
 The review of `d25fbaad01f69c077cb26d4cb0aeadcb4dd1b117` accepts the reconciled
 planning baseline and exact-preserving extraction. It does not seal replacement
