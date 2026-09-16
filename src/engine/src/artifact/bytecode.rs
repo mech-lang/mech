@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 10;
+const WIRE_GRAPH_REVISION: u32 = 11;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -353,6 +353,7 @@ enum WireControlOperationBody {
     Operation { operation: u32, contract: u32 },
     Match(WireMatchDeclaration),
     Comprehension(WireComprehensionDeclaration),
+    Recur,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -1694,6 +1695,7 @@ fn wire_control_operation_body(
         super::ControlOperationBody::Comprehension(control) => {
             WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
         }
+        super::ControlOperationBody::Recur => WireControlOperationBody::Recur,
     }
 }
 
@@ -2087,6 +2089,7 @@ fn control_operation_body_from_wire(
         WireControlOperationBody::Comprehension(control) => {
             super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
         }
+        WireControlOperationBody::Recur => super::ControlOperationBody::Recur,
     })
 }
 
@@ -2260,6 +2263,7 @@ fn control_body_operation_references(
         super::ControlOperationBody::Comprehension(control) => {
             comprehension_operation_references(control)
         }
+        super::ControlOperationBody::Recur => Vec::new(),
     }
 }
 
@@ -2302,6 +2306,7 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Comprehension(control) => {
             wire_comprehension_operation_ids(control)
         }
+        WireControlOperationBody::Recur => Vec::new(),
     }
 }
 

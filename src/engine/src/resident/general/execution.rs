@@ -41,6 +41,13 @@ use super::{
     StateArena, StateVersion, TypedResidentArena,
 };
 
+// This is a host-stack safety ceiling, not the language's recursion budget.
+// Every call is independently admitted through the cumulative resident work
+// and frame-memory budget below. Keeping the emergency ceiling modest ensures
+// an adversarial call cannot reach the Rust stack limit before admission can
+// report a recoverable turn failure.
+const MAX_RESIDENT_RECURSION_DEPTH: usize = 32;
+
 #[derive(Clone, Copy, Debug)]
 pub struct CapturedSignalInput<'a> {
     pub slot: SlotIndex,
@@ -935,6 +942,7 @@ impl ReactiveInstance {
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
                 ActivatedTurnStep::External(_)
                 | ActivatedTurnStep::Match(_)
+                | ActivatedTurnStep::Recur(_)
                 | ActivatedTurnStep::Comprehension(_) => None,
             })
             .filter(|(_, node)| {
@@ -991,6 +999,7 @@ impl ReactiveInstance {
                 ),
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
                 ActivatedTurnStep::Match(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Recur(node) => (Some(node.write.region), None),
                 ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
@@ -1678,6 +1687,15 @@ impl ReactiveInstance {
                 result
             });
         }
+        if let ActivatedTurnStep::Recur(call) = self.plan.steps[node_index.get() as usize] {
+            return self.execute_recursive_call(
+                node_index,
+                call,
+                before_epoch,
+                working_epoch,
+                probe,
+            );
+        }
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::External(_)
@@ -1717,7 +1735,13 @@ impl ReactiveInstance {
             error: ResidentKernelError::InvalidInput,
         };
         let kernel_fail = |error| ResidentExecutionError::Kernel { node, error };
-        let scrutinee_source = matched.scrutinee;
+        let scrutinee_source = self
+            .workspace
+            .recursive_scrutinees
+            .iter()
+            .rev()
+            .find_map(|(target, source)| (*target == node_index).then_some(*source))
+            .unwrap_or(matched.scrutinee);
         let scrutinee_schema = matched.scrutinee_schema;
         let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
         let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
@@ -2310,6 +2334,110 @@ impl ReactiveInstance {
             live_bytes,
             live_nodes,
         )
+    }
+
+    fn execute_recursive_call(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        call: super::ActivatedRecursiveCall,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: call.artifact_node,
+            error,
+        };
+        let depth = self.workspace.recursive_scrutinees.len();
+        if depth >= MAX_RESIDENT_RECURSION_DEPTH
+            || call.write.storage != ResidentStorageClass::Scratch
+        {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
+        let (regions, returned) = {
+            let ActivatedTurnStep::Match(root) = &self.plan.steps[call.target.get() as usize]
+            else {
+                return Err(fail(ResidentKernelError::InvalidInput));
+            };
+            let mut regions = root.locals.to_vec();
+            regions.sort_by_key(|region| (region.kind as u8, region.offset, region.len));
+            regions.dedup();
+            (regions, root.write)
+        };
+
+        let frame_bytes = regions
+            .iter()
+            .try_fold(0u64, |total, region| {
+                resident_frame_value_bytes(self.workspace.scratch.read(*region), &self.plan.schemas)
+                    .and_then(|bytes| total.checked_add(bytes))
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })
+            .map_err(fail)?;
+        let live_frame_bytes = frame_bytes
+            .checked_mul((depth + 1) as u64)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: 1,
+                    temporary_bytes: live_frame_bytes,
+                    cloned_bytes: frame_bytes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+
+        let frame = regions
+            .iter()
+            .map(|region| {
+                (
+                    *region,
+                    owned_resident_value(self.workspace.scratch.read(*region)),
+                )
+            })
+            .collect::<Vec<_>>();
+        self.workspace
+            .recursive_scrutinees
+            .push((call.target, call.argument));
+        let invoked =
+            self.execute_match_expression(call.target, before_epoch, working_epoch, probe);
+        self.workspace.recursive_scrutinees.pop();
+
+        let result = invoked.and_then(|changed| {
+            let location = match returned.storage {
+                ResidentStorageClass::Constant => ResidentReadLocation::Constant(returned.region),
+                ResidentStorageClass::Input => ResidentReadLocation::Input(returned.region),
+                ResidentStorageClass::State => ResidentReadLocation::State {
+                    slot: returned.slot,
+                    region: returned.region,
+                },
+                ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(returned.region),
+            };
+            self.read_location(location, working_epoch)
+                .map(|value| (changed, owned_resident_value(value)))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))
+        });
+
+        for (region, value) in &frame {
+            super::copy_owned_activation_value(value, self.workspace.scratch.write(*region))
+                .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+        }
+        let (changed, result) = result?;
+        super::copy_owned_activation_value(
+            &result,
+            self.workspace.scratch.write(call.write.region),
+        )
+        .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+        set_bit(
+            &mut self.workspace.initialized_output_bits,
+            node_index.get() as usize,
+        );
+        Ok(changed)
     }
 
     fn match_structural_pattern_item(
@@ -3944,6 +4072,58 @@ fn copy_input(
         .finish_payload_write(region, scope)
         .map_err(ResidentCopyError::Memory)?;
     result.map_err(|_| ResidentCopyError::Layout)
+}
+
+fn owned_resident_value(value: ResidentValueRef<'_>) -> super::OwnedResidentValue {
+    match value {
+        ResidentValueRef::Bool(values) => {
+            super::OwnedResidentValue::Bool(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Index(values) => {
+            super::OwnedResidentValue::Index(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::F64(values) => {
+            super::OwnedResidentValue::F64(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::String(values) => {
+            super::OwnedResidentValue::String(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            super::OwnedResidentValue::Snapshot(values.to_vec().into_boxed_slice())
+        }
+    }
+}
+
+fn resident_frame_value_bytes(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+) -> Option<u64> {
+    let fixed = |len: usize, element: usize| {
+        u64::try_from(len)
+            .ok()?
+            .checked_mul(u64::try_from(element).ok()?)
+    };
+    match value {
+        ResidentValueRef::Bool(values) => fixed(values.len(), core::mem::size_of::<u8>()),
+        ResidentValueRef::Index(values) => fixed(values.len(), core::mem::size_of::<u64>()),
+        ResidentValueRef::F64(values) => fixed(values.len(), core::mem::size_of::<f64>()),
+        ResidentValueRef::String(values) => values.iter().try_fold(
+            fixed(values.len(), core::mem::size_of::<String>())?,
+            |total, value| total.checked_add(u64::try_from(value.len()).ok()?),
+        ),
+        ResidentValueRef::Snapshot(values) => values.iter().try_fold(
+            fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
+            |total, value| {
+                let bytes = value.as_ref().map_or(Some(0), |value| {
+                    value
+                        .retained_footprint(schemas)
+                        .ok()
+                        .map(|value| value.retained_bytes)
+                })?;
+                total.checked_add(bytes)
+            },
+        ),
+    }
 }
 
 fn copy_input_unchecked(
