@@ -42,7 +42,6 @@ struct Plan {
     source_len: usize,
     source_rows: usize,
     source_columns: usize,
-    logical_selector: bool,
     dense_f64: bool,
     source: SnapshotAccessSelectorLayout,
     target: SnapshotAccessSelectorLayout,
@@ -142,7 +141,6 @@ pub(super) fn bind<const OPERATION: u64>(
     let mut stages = Vec::new();
     let mut extra = 0usize;
     let mut selector_capacity = 0usize;
-    let mut logical_selector = false;
     while extra < extras.len() {
         let mode = match extras[extra].resolved_selector {
             Some(mech_core::ResidentResolvedSelector::Ordinal(ordinal)) => u64::try_from(ordinal)
@@ -179,7 +177,6 @@ pub(super) fn bind<const OPERATION: u64>(
                 .checked_add(declared_selector_cardinality(request, selector)?)
                 .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
         }
-        logical_selector |= stage_logical;
         stages.push(Stage {
             mode,
             // Resident execution omits the aliased base input.
@@ -207,7 +204,6 @@ pub(super) fn bind<const OPERATION: u64>(
             source_len,
             source_rows,
             source_columns,
-            logical_selector,
             dense_f64,
             source: layout(source),
             target: layout(&request.output),
@@ -241,15 +237,19 @@ fn selected_count(value: ResidentValueRef<'_>, upper: usize) -> Result<usize, Re
 fn selection_geometry(
     plan: &Plan,
     inputs: &dyn ResidentKernelInputs,
-) -> Result<(usize, usize, usize), ResidentKernelError> {
+) -> Result<(usize, usize, usize, Option<(usize, usize)>), ResidentKernelError> {
     let mut rows = plan.rows;
     let mut columns = plan.columns;
     let mut maximum = 0usize;
+    let mut logical_geometry = None;
     for stage in &plan.stages {
         if mode_value(input(inputs, stage.mode_input)?)? != stage.mode {
             return Err(ResidentKernelError::InvalidInput);
         }
         let selectors = |ordinal: usize| input(inputs, stage.selector_input + ordinal);
+        if stage.logical {
+            logical_geometry = Some((rows, columns));
+        }
         (rows, columns) = match stage.mode {
             LINEAR_ALL => (
                 rows.checked_mul(columns)
@@ -278,7 +278,7 @@ fn selection_geometry(
                 .ok_or(ResidentKernelError::InvalidShape)?,
         );
     }
-    Ok((rows, columns, maximum))
+    Ok((rows, columns, maximum, logical_geometry))
 }
 
 fn collect_selector(
@@ -440,14 +440,14 @@ fn source_index(
     source_len: usize,
     selected_rows: usize,
     selected_columns: usize,
+    logical_geometry: Option<(usize, usize)>,
     ordinal: usize,
     position: SelectedPosition,
 ) -> Result<usize, ResidentKernelError> {
     if source_len == 1 {
         return Ok(0);
     }
-    if plan.logical_selector && (plan.source_rows, plan.source_columns) == (plan.rows, plan.columns)
-    {
+    if logical_geometry == Some((plan.source_rows, plan.source_columns)) {
         let source = position
             .logical_source
             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -509,7 +509,8 @@ fn execute(
         .rows
         .checked_mul(plan.columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let (selected_rows, selected_columns, maximum_population) = selection_geometry(plan, inputs)?;
+    let (selected_rows, selected_columns, maximum_population, logical_geometry) =
+        selection_geometry(plan, inputs)?;
     let selected_count = selected_rows
         .checked_mul(selected_columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -554,6 +555,19 @@ fn execute(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
+    // Validate every RHS route before the dense lane mutates its aliased
+    // candidate. A late intermediate-view coordinate must reject atomically.
+    for (ordinal, position) in positions.iter().copied().enumerate() {
+        source_index(
+            plan,
+            plan.source_len,
+            selected_rows,
+            selected_columns,
+            logical_geometry,
+            ordinal,
+            position,
+        )?;
+    }
     if plan.dense_f64 {
         let ResidentValueRef::F64(source) = input(inputs, 0)? else {
             return Err(ResidentKernelError::InvalidInput);
@@ -571,6 +585,7 @@ fn execute(
                 source.len(),
                 selected_rows,
                 selected_columns,
+                logical_geometry,
                 ordinal,
                 position,
             )?;
@@ -617,6 +632,7 @@ fn execute(
             source.len(),
             selected_rows,
             selected_columns,
+            logical_geometry,
             ordinal,
             position,
         )?]

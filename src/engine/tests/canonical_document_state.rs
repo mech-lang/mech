@@ -1585,16 +1585,35 @@ fn logical_selected_updates_route_full_base_rhs_by_destination_position() {
 
 #[test]
 fn nested_logical_routing_uses_immediate_view_coordinates() {
-    for (selection, expected) in [
-        ("a[[2 1],:][[true;false],:]", vec![10.0, 20.0, 31.0, 42.0]),
-        ("a[:,[2 1]][:,[true false]]", vec![10.0, 21.0, 30.0, 50.0]),
-        ("a[[4 1]][[true;false]]", vec![10.0, 20.0, 30.0, 41.0]),
+    for (selection, rhs, expected) in [
+        (
+            "a[[2 1],:][[true;false],:]",
+            "[1.5 2.5;10.5 20.5]",
+            vec![10.0, 20.0, 31.0, 42.0],
+        ),
+        (
+            "a[:,[2 1]][:,[true false]]",
+            "[1.5 2.5;10.5 20.5]",
+            vec![10.0, 21.0, 30.0, 50.0],
+        ),
+        (
+            "a[[4 1]][[true;false]]",
+            "[1.5;10.5]",
+            vec![10.0, 20.0, 30.0, 41.0],
+        ),
     ] {
         let source = format!(
-            "~a := [10<i32> 20<i32>;30<i32> 40<i32>]\nrhs := [1.5 2.5;10.5 20.5]\n{selection} += rhs\na\n"
+            "~a := [10<i32> 20<i32>;30<i32> 40<i32>]\nrhs := {rhs}\n{selection} += rhs\na\n"
         );
         matrix_turns(&source, &[expected]);
     }
+    matrix_turns(
+        "~a := [10<i32> 20<i32>;30<i32> 40<i32>;50<i32> 60<i32>]\n\
+         rhs := [1.5 2.5;10.5 20.5]\n\
+         a[[3 1],:][[true;false],:] += rhs\n\
+         a\n",
+        &[vec![10.0, 20.0, 30.0, 40.0, 51.0, 62.0]],
+    );
 }
 
 #[test]
