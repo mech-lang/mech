@@ -370,6 +370,9 @@ impl BindingDeclaration {
 pub enum ExecutableNodeBody {
     Operation(OperationNodeBody),
     Match(super::MatchDeclaration),
+    /// Trigger-owned lexical control. Its first input is the sole reactive
+    /// trigger; remaining inputs are sampled captures.
+    Activation(super::MatchDeclaration),
     Comprehension(super::ComprehensionDeclaration),
     Fsm(super::FsmDeclaration),
 }
@@ -416,6 +419,7 @@ impl NodeDeclaration {
                 requirement: operation.requirement,
             }),
             ExecutableNodeBody::Match(_)
+            | ExecutableNodeBody::Activation(_)
             | ExecutableNodeBody::Comprehension(_)
             | ExecutableNodeBody::Fsm(_) => None,
         }
@@ -675,6 +679,39 @@ impl ProgramArtifactDraft {
                 node_handles.push(None);
                 continue;
             }
+            if let super::SourceNodeBody::Activation(control) =
+                &graph.nodes[node.node.get() as usize].body
+            {
+                let invalid = |reason| ArtifactBuildError::InvalidControl {
+                    node: node.node,
+                    reason,
+                };
+                if declaration.is_some() {
+                    return Err(invalid("activation has no ordinary root contract"));
+                }
+                if !matches!(&node.body, ExecutableNodeBody::Activation(_)) {
+                    return Err(invalid("compiler activation body mismatch"));
+                }
+                let mut handles = Vec::new();
+                append_match_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                control_handles.insert(
+                    node.node,
+                    control.map_contracts(|_, _, _| {
+                        Ok::<_, ArtifactBuildError>(
+                            handles.next().expect("activation contract count"),
+                        )
+                    })?,
+                );
+                node_handles.push(None);
+                continue;
+            }
             if let super::SourceNodeBody::Comprehension(control) =
                 &graph.nodes[node.node.get() as usize].body
             {
@@ -801,6 +838,14 @@ impl ProgramArtifactDraft {
                     *control = control_handles
                         .remove(&node.node)
                         .expect("compiler control handles")
+                        .map_contracts(|_, _, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
+                        })?;
+                }
+                (ExecutableNodeBody::Activation(control), None) => {
+                    *control = control_handles
+                        .remove(&node.node)
+                        .expect("compiler activation handles")
                         .map_contracts(|_, _, contract| {
                             Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
                         })?;

@@ -477,6 +477,12 @@ pub struct ActivatedPlan {
     pub external_admission: ResidentExternalAdmission,
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
+    /// Artifact input slots that schedule a turn. Inputs used only as
+    /// activation captures are retained as sampled values instead.
+    pub turn_trigger_inputs: Box<[CellSlotId]>,
+    /// Per-activation input roots. Runtime turns use this to schedule exactly
+    /// the scopes whose trigger observations arrived in the admitted batch.
+    activation_turn_inputs: Box<[(ActivatedNodeIndex, Box<[CellSlotId]>)]>,
     pub outputs: Box<[ActivatedOutput]>,
     output_materializations: Box<[ActivatedOutputMaterialization]>,
     pub constraints: Box<[ActivatedConstraint]>,
@@ -2140,8 +2146,10 @@ fn resident_concrete_execution_cases(
             )?;
             continue;
         }
-        let crate::ExecutableNodeBody::Match(control) = &node.body else {
-            continue;
+        let control = match &node.body {
+            crate::ExecutableNodeBody::Match(control)
+            | crate::ExecutableNodeBody::Activation(control) => control,
+            _ => continue,
         };
         let sources = node_inputs(artifact, node.node)?
             .into_iter()
@@ -2877,6 +2885,12 @@ fn classify_nodes(
     loop {
         let before = activation.len();
         for node in artifact.nodes() {
+            // Activation scopes are turn owners even when their trigger and
+            // captures are closed. Loading may allocate their lexical control
+            // but must never execute the scope body.
+            if matches!(&node.body, crate::ExecutableNodeBody::Activation(_)) {
+                continue;
+            }
             if matches!(
                 classes[node.node.get() as usize],
                 NodeClass::Observation | NodeClass::External
@@ -3994,6 +4008,9 @@ fn build_layout(
             crate::ExecutableNodeBody::Match(control) => {
                 comprehension::all_match_local_definitions(control)
             }
+            crate::ExecutableNodeBody::Activation(control) => {
+                comprehension::all_match_local_definitions(control)
+            }
             crate::ExecutableNodeBody::Comprehension(control) => {
                 comprehension::all_local_definitions(control)
             }
@@ -4678,8 +4695,10 @@ fn build_plan(
             continue;
         }
         let Some(node) = node.as_operation() else {
-            let crate::ExecutableNodeBody::Match(control) = &node.body else {
-                unreachable!()
+            let control = match &node.body {
+                crate::ExecutableNodeBody::Match(control)
+                | crate::ExecutableNodeBody::Activation(control) => control,
+                _ => unreachable!(),
             };
             let input_sources = node_inputs(artifact, node.node)?;
             let input_reads = input_sources
@@ -4906,8 +4925,10 @@ fn build_plan(
             ));
             continue;
         }
-        let crate::ExecutableNodeBody::Match(control) = &node.body else {
-            continue;
+        let control = match &node.body {
+            crate::ExecutableNodeBody::Match(control)
+            | crate::ExecutableNodeBody::Activation(control) => control,
+            _ => continue,
         };
         let input_sources = node_inputs(artifact, node.node)?;
         let input_reads = input_sources
@@ -4978,6 +4999,117 @@ fn build_plan(
         })
         .collect::<Vec<_>>()
         .into_boxed_slice();
+    let input_slots = inputs
+        .iter()
+        .map(|input| input.artifact_slot)
+        .collect::<BTreeSet<_>>();
+    let mut consumers = BTreeMap::<CellSlotId, Vec<(NodeId, usize)>>::new();
+    for node in artifact.nodes() {
+        for (ordinal, source) in node_inputs(artifact, node.node)?.into_iter().enumerate() {
+            if let ArtifactSource::Slot(slot) = source {
+                consumers
+                    .entry(slot)
+                    .or_default()
+                    .push((node.node, ordinal));
+            }
+        }
+    }
+    let mut published = artifact
+        .outputs()
+        .iter()
+        .map(|output| output.source)
+        .collect::<BTreeSet<_>>();
+    published.extend(artifact.constraints().iter().flat_map(|constraint| {
+        constraint.inputs.iter().filter_map(|source| match source {
+            ArtifactSource::Slot(slot) => Some(*slot),
+            ArtifactSource::Constant(_) => None,
+        })
+    }));
+    let activation_sample_edge = |node: NodeId, ordinal: usize| {
+        matches!(
+            &artifact.nodes()[node.get() as usize].body,
+            crate::ExecutableNodeBody::Activation(control)
+                if ordinal != control.scrutinee as usize
+        )
+    };
+    // Pure nodes used only to compute an activation capture belong to that
+    // capture's sampled dependency cone. Host updates may refresh their input
+    // snapshots, but only the activation scrutinee schedules their execution.
+    let mut sampled_nodes = BTreeSet::new();
+    for node in artifact.nodes().iter().rev() {
+        let pure = match &node.body {
+            crate::ExecutableNodeBody::Operation(operation) => matches!(
+                artifact.contracts().get(operation.contract),
+                Some(mech_core::ResolvedOperationContract::Declared(contract))
+                    if contract.interaction == ExternalInteraction::Pure
+            ),
+            crate::ExecutableNodeBody::Match(_) | crate::ExecutableNodeBody::Comprehension(_) => {
+                true
+            }
+            crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => false,
+        };
+        if !pure {
+            continue;
+        }
+        let output = node_output_slot(artifact, node.node)?;
+        if published.contains(&output)
+            || artifact.slots()[output.get() as usize].role != SlotRole::Derived
+        {
+            continue;
+        }
+        let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
+        if !uses.is_empty()
+            && uses.iter().all(|(consumer, ordinal)| {
+                activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains(consumer)
+            })
+        {
+            sampled_nodes.insert(node.node);
+        }
+    }
+    let turn_trigger_inputs = inputs
+        .iter()
+        .filter(|input| {
+            if published.contains(&input.artifact_slot) {
+                return true;
+            }
+            let uses = consumers
+                .get(&input.artifact_slot)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            uses.is_empty()
+                || !uses.iter().all(|(consumer, ordinal)| {
+                    activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains(consumer)
+                })
+        })
+        .map(|input| input.artifact_slot)
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let mut activation_turn_inputs = Vec::new();
+    for node in artifact.nodes() {
+        let crate::ExecutableNodeBody::Activation(control) = &node.body else {
+            continue;
+        };
+        let source = *node_inputs(artifact, node.node)?
+            .get(control.scrutinee as usize)
+            .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+        let mut dependencies = BTreeSet::new();
+        collect_resident_input_dependencies(
+            artifact,
+            source,
+            &input_slots,
+            &mut BTreeSet::new(),
+            &mut dependencies,
+        )?;
+        let activated = artifact_to_activated[node.node.get() as usize]
+            .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+        activation_turn_inputs.push((
+            activated,
+            dependencies
+                .into_iter()
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ));
+    }
     let outputs = artifact
         .outputs()
         .iter()
@@ -5179,6 +5311,8 @@ fn build_plan(
         external_admission: options.external,
         topology,
         inputs,
+        turn_trigger_inputs,
+        activation_turn_inputs: activation_turn_inputs.into_boxed_slice(),
         outputs,
         output_materializations,
         constraints,
@@ -5801,7 +5935,16 @@ fn build_topology(
             continue;
         }
         let current = artifact_to_activated[node.node.get() as usize].unwrap();
-        for source in node_inputs(artifact, node.node)? {
+        let activation_scrutinee = match &node.body {
+            crate::ExecutableNodeBody::Activation(control) => Some(control.scrutinee as usize),
+            _ => None,
+        };
+        for (ordinal, source) in node_inputs(artifact, node.node)?.into_iter().enumerate() {
+            if activation_scrutinee.is_some_and(|scrutinee| ordinal != scrutinee) {
+                // Sample captures are read by the activation body, but they do
+                // not schedule it or form dirty-propagation edges into it.
+                continue;
+            }
             let ArtifactSource::Slot(slot_id) = source else {
                 continue;
             };
@@ -6169,6 +6312,43 @@ fn node_inputs(
             }
         })
         .collect()
+}
+
+fn collect_resident_input_dependencies(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    input_slots: &BTreeSet<CellSlotId>,
+    visited_nodes: &mut BTreeSet<NodeId>,
+    dependencies: &mut BTreeSet<CellSlotId>,
+) -> Result<(), ResidentActivationError> {
+    let ArtifactSource::Slot(slot) = source else {
+        return Ok(());
+    };
+    if input_slots.contains(&slot) {
+        dependencies.insert(slot);
+        return Ok(());
+    }
+    let declaration = artifact.slots().get(slot.get() as usize).ok_or(
+        ResidentActivationError::InvalidDependency {
+            node: NodeId::new(slot.get()),
+        },
+    )?;
+    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+        return Ok(());
+    };
+    if !visited_nodes.insert(node) {
+        return Ok(());
+    }
+    for input in node_inputs(artifact, node)? {
+        collect_resident_input_dependencies(
+            artifact,
+            input,
+            input_slots,
+            visited_nodes,
+            dependencies,
+        )?;
+    }
+    Ok(())
 }
 
 fn activated_input_source(artifact: &ProgramArtifact, slot: CellSlotId) -> ActivatedInputSource {
@@ -6866,6 +7046,7 @@ fn activate_match_pattern(
     owner: NodeId,
     owner_block: u32,
     pattern: &crate::MatchPattern,
+    inputs: &[ArtifactSource],
     layout: &LayoutBuild,
 ) -> Result<ActivatedMatchPattern, ResidentActivationError> {
     fn structural(
@@ -6873,6 +7054,7 @@ fn activate_match_pattern(
         owner: NodeId,
         owner_block: u32,
         pattern: &crate::CollectionPattern<SchemaId, crate::MatchPatternValue>,
+        inputs: &[ArtifactSource],
         layout: &LayoutBuild,
     ) -> Result<
         crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
@@ -6906,19 +7088,36 @@ fn activate_match_pattern(
                     schema: slot.schema,
                 })
             }
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Input(input)) => {
+                let source = *inputs
+                    .get(*input as usize)
+                    .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+                let schema = match source {
+                    ArtifactSource::Constant(constant) => artifact
+                        .constants()
+                        .get(constant)
+                        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?
+                        .schema(),
+                    ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].schema,
+                };
+                crate::CollectionPattern::Equal(ActivatedPatternValue {
+                    location: resolve_read(layout, source)?,
+                    schema,
+                })
+            }
             crate::CollectionPattern::Enum { ordinal, payload } => crate::CollectionPattern::Enum {
                 ordinal: *ordinal,
                 payload: payload
                     .as_deref()
                     .map(|item| {
-                        structural(artifact, owner, owner_block, item, layout).map(Box::new)
+                        structural(artifact, owner, owner_block, item, inputs, layout).map(Box::new)
                     })
                     .transpose()?,
             },
             crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
                 items
                     .iter()
-                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .map(|item| structural(artifact, owner, owner_block, item, inputs, layout))
                     .collect::<Result<_, _>>()?,
             ),
             crate::CollectionPattern::Array {
@@ -6928,17 +7127,17 @@ fn activate_match_pattern(
             } => crate::CollectionPattern::Array {
                 prefix: prefix
                     .iter()
-                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .map(|item| structural(artifact, owner, owner_block, item, inputs, layout))
                     .collect::<Result<_, _>>()?,
                 rest: rest
                     .as_deref()
                     .map(|item| {
-                        structural(artifact, owner, owner_block, item, layout).map(Box::new)
+                        structural(artifact, owner, owner_block, item, inputs, layout).map(Box::new)
                     })
                     .transpose()?,
                 suffix: suffix
                     .iter()
-                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .map(|item| structural(artifact, owner, owner_block, item, inputs, layout))
                     .collect::<Result<_, _>>()?,
             },
         })
@@ -6952,7 +7151,7 @@ fn activate_match_pattern(
         crate::MatchPattern::Structural(pattern) => {
             let metrics = crate::pattern_metrics(pattern)
                 .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
-            let pattern = structural(artifact, owner, owner_block, pattern, layout)?;
+            let pattern = structural(artifact, owner, owner_block, pattern, inputs, layout)?;
             let snapshot_finalization_count = snapshot_pattern_finalization_count(&pattern)
                 .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
             ActivatedMatchPattern::Structural {
@@ -6997,8 +7196,14 @@ fn bind_match_arms(
         .iter()
         .map(|arm| {
             let owner_block = arm.body.id.0;
-            let pattern =
-                activate_match_pattern(artifact, owner, owner_block, &arm.pattern, layout)?;
+            let pattern = activate_match_pattern(
+                artifact,
+                owner,
+                owner_block,
+                &arm.pattern,
+                captures,
+                layout,
+            )?;
             fn collect_binding_regions(
                 pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
                 bindings: &mut Vec<(u32, ResidentRegion)>,

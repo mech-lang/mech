@@ -827,6 +827,29 @@ impl ReactiveInstance {
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
+    /// Prepares the initial publication turn while leaving every activation
+    /// scope dormant. Ordinary roots still run so mixed programs publish their
+    /// non-activation results at load time.
+    pub fn prepare_initial_turn(
+        &mut self,
+        inputs: &[CapturedSignalInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
     pub fn prepare_turn_values(
         &mut self,
         inputs: &[CapturedValueInput<'_>],
@@ -843,6 +866,51 @@ impl ReactiveInstance {
             self.next_epoch = Some(working_epoch);
             return Err(error);
         }
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Value-backed form of [`Self::prepare_initial_turn`].
+    pub fn prepare_initial_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Prepares a host-driven turn while scheduling only activation scopes
+    /// whose retained artifact input appeared as a trigger in this batch.
+    /// Ordinary resident roots retain their established turn behavior.
+    pub fn prepare_turn_values_with_activation_triggers(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+        trigger_inputs: &[mech_core::CellSlotId],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.select_activation_roots(trigger_inputs);
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
@@ -1276,6 +1344,27 @@ impl ReactiveInstance {
                 &mut self.workspace.dirty_bits,
                 &self.plan.topology.mandatory_candidate_mask,
             );
+        }
+    }
+
+    fn select_activation_roots(&mut self, trigger_inputs: &[mech_core::CellSlotId]) {
+        for (node, inputs) in &self.plan.activation_turn_inputs {
+            // An input-free scope has no host fact that can name its trigger.
+            // Every explicit turn therefore admits it; initial publication uses
+            // the dedicated preparation path above to keep it dormant.
+            let active =
+                inputs.is_empty() || inputs.iter().any(|input| trigger_inputs.contains(input));
+            if active {
+                set_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            } else {
+                clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            }
+        }
+    }
+
+    fn clear_activation_roots(&mut self) {
+        for (node, _) in &self.plan.activation_turn_inputs {
+            clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
         }
     }
 

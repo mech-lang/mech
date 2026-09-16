@@ -702,6 +702,56 @@ fn independent_external_runtime_with_source(
     (runtime, reads)
 }
 
+fn independent_canonical_external_runtime_with_source(
+    source: &str,
+) -> (crate::MechRuntime, Arc<AtomicUsize>) {
+    let reads = Arc::new(AtomicUsize::new(0));
+    let fast_bits = Arc::new(AtomicU64::new(2.0_f64.to_bits()));
+    let slow_bits = Arc::new(AtomicU64::new(3.0_f64.to_bits()));
+    let provider = || IndependentObservationProvider {
+        reads: reads.clone(),
+        fast_bits: fast_bits.clone(),
+        slow_bits: slow_bits.clone(),
+    };
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, resource) in [
+        (9_020, "test://clock/fast/delta-seconds"),
+        (9_021, "test://clock/slow/delta-seconds"),
+    ] {
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                CapabilityId(id),
+                subject.clone(),
+                resource,
+                ["read"],
+            )))
+            .unwrap();
+    }
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    (runtime, reads)
+}
+
 fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
     independent_external_runtime_with_source(
         r#"
@@ -3943,6 +3993,130 @@ fn resident_host_packet_groups_preserve_activation_boundaries() {
 }
 
 #[test]
+fn activation_capture_packets_sample_without_running_until_the_trigger_arrives() {
+    let (mut runtime, _) = independent_canonical_external_runtime_with_source(
+        r#"
+@fast := test://clock/fast{:read(delta-seconds)}
+@slow := test://clock/slow{:read(delta-seconds)}
+event := @fast/delta-seconds
+~selected := 0.0
+~> event { selected = event + @slow/delta-seconds }
+selected
+"#,
+    );
+    let fast = crate::RuntimeHostInputSource::new("test://clock/fast", "delta-seconds").unwrap();
+    let slow = crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap();
+    let selected = |runtime: &crate::MechRuntime| {
+        let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+            panic!("activation input fixture must remain resident external")
+        };
+        canonical_f64(&execution.coordinator.instance().copied_output(0).unwrap())
+    };
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            slow,
+            crate::RuntimeHostInputValue::F64(9.0),
+        ))
+        .unwrap();
+    let sampled = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(sampled.turn.is_none());
+    assert_eq!(selected(&runtime), 0.0);
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            fast,
+            crate::RuntimeHostInputValue::F64(4.0),
+        ))
+        .unwrap();
+    let triggered = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        triggered.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(selected(&runtime), 13.0);
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("activation input fixture must remain resident external")
+    };
+    let batch = execution.coordinator.input_facts().next().unwrap().1;
+    assert_eq!(batch.facts.iter().filter(|fact| fact.trigger).count(), 1);
+    let evidence = runtime.drain_resident_evidence().unwrap();
+    assert_eq!(evidence.input_batches.len(), 1);
+    assert_eq!(evidence.receipts.len(), 1);
+    runtime.unload_active_program().unwrap();
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
+}
+
+#[test]
+fn mixed_initial_publication_runs_ordinary_roots_and_defers_input_free_activation() {
+    let source = r#"
+trigger := true
+~count := 0
+~> trigger { count = count + 1 }
+answer := 40 + 2
+answer
+"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+
+    let output = |runtime: &crate::MechRuntime| {
+        let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+            panic!("mixed activation fixture must remain resident pure")
+        };
+        canonical_f64(&execution.instance.copied_output(0).unwrap())
+    };
+    assert_eq!(output(&runtime), 42.0);
+
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(
+            "trigger := true\n~count := 0\n~> trigger { count = count + 1 }\ncount\n",
+        )
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(output(&runtime), 0.0);
+
+    let ActiveProgramExecution::ResidentPure(execution) = &mut runtime.active_program else {
+        panic!("mixed activation fixture must remain resident pure")
+    };
+    execution
+        .instance
+        .prepare_turn_values_with_activation_triggers(&[], &[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(output(&runtime), 1.0);
+}
+
+#[test]
 fn resident_recurrence_advances_when_a_same_turn_parent_is_unchanged() {
     let (mut runtime, _, _, _) = configured_external_runtime();
     runtime
@@ -5127,12 +5301,15 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
 }
 
 #[test]
-fn effect_only_resident_program_executes_once_during_activation() {
+fn effect_only_resident_program_executes_during_initial_publication_with_dormant_activation() {
     let (mut runtime, scene) = product_nbody_runtime();
     let loaded = runtime
         .load_source_program(
             r#"
 @scene := scene://orbit/frame{:write(points)}
+trigger := true
+~count := 0
+~> trigger { count = count + 1 }
 points := [1.0 2.0]
 @scene/points <- points
 "#,

@@ -529,12 +529,13 @@ impl MechRuntime {
                 ResidentExternalLimits::default(),
             )?;
             let trigger_sources = coordinator.trigger_sources()?;
-            self.ensure_exact_resident_input_drivers(&trigger_sources)?;
+            let input_sources = coordinator.input_sources()?;
+            self.ensure_exact_resident_input_drivers(&input_sources)?;
             if trigger_sources.is_empty() {
                 let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
                 let turn_started = Instant::now();
                 let admission = coordinator.admit_turn()?;
-                let outcome = coordinator.execute_admitted_turn(admission, |_| {
+                let outcome = coordinator.execute_admitted_initial_turn(admission, |_| {
                     super::super::limits::enforce_turn_duration_limit(
                         max_turn_duration_ms,
                         turn_started,
@@ -554,12 +555,13 @@ impl MechRuntime {
                 artifact,
                 coordinator,
                 trigger_sources,
+                input_sources,
                 grants: authority,
             })
         } else {
             let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
             let turn_started = Instant::now();
-            let prepared = instance.prepare_turn(&[]).map_err(|error| {
+            let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
                 route_failure(
                     ResidentRouteFailureClass::ActivationFailure,
                     format!("initial pure resident turn failed: {error:?}"),

@@ -318,9 +318,9 @@ impl CanonicalSourceProgram {
                         node: NodeId(index as u32),
                         operation: operation.clone(),
                     }),
-                crate::SourceNodeBody::Match(_) | crate::SourceNodeBody::Comprehension(_) => {
-                    Ok(None)
-                }
+                crate::SourceNodeBody::Match(_)
+                | crate::SourceNodeBody::Activation(_)
+                | crate::SourceNodeBody::Comprehension(_) => Ok(None),
                 crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -381,6 +381,7 @@ impl CanonicalSourceProgram {
                     })
                 }
                 crate::SourceNodeBody::Match(_)
+                | crate::SourceNodeBody::Activation(_)
                 | crate::SourceNodeBody::Comprehension(_)
                 | crate::SourceNodeBody::Fsm(_) => Ok(None),
             })
@@ -1247,7 +1248,9 @@ impl SourceSchemas {
                     return Err(error);
                 }
             }
-            if let PendingNodeBody::Match(control) = &node.body {
+            if let PendingNodeBody::Match(control) | PendingNodeBody::Activation(control) =
+                &node.body
+            {
                 let mut failure = None;
                 control.visit_schemas(&mut |schema| {
                     if failure.is_none()
@@ -2259,6 +2262,7 @@ enum PendingNodeBody {
         requirement: Option<mech_core::ApplicationRequirement>,
     },
     Match(PendingMatch),
+    Activation(PendingMatch),
     Comprehension(PendingComprehension),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
@@ -2306,6 +2310,14 @@ struct PendingMatchArm {
     pattern: crate::MatchPattern<usize, SchemaDraft>,
     guard: Option<PendingControlBlock>,
     body: PendingControlBlock,
+}
+
+#[derive(Clone)]
+struct SourceMatchArm {
+    pattern: Option<PatternSyntax>,
+    guard: Option<ExpressionSyntax>,
+    body: SourceMatchBody,
+    syntax: SyntaxNode,
 }
 
 fn structural_component_schema_draft(
@@ -2468,7 +2480,6 @@ fn structurally_irrefutable<V>(
         crate::CollectionPattern::Equal(_) => false,
     }
 }
-
 fn structural_coverage_space(expected: &SchemaDraft) -> StructuralCoverageSpace {
     match &expected.body {
         SchemaBody::Bool => StructuralCoverageSpace::Bool,
@@ -2654,13 +2665,14 @@ fn cover_structural_pattern<V>(
 ) {
     coverage.cover(structural_coverage_pattern(pattern, expected, literal_bool));
 }
-
 #[derive(Clone)]
-struct SourceMatchArm {
-    pattern: Option<PatternSyntax>,
-    guard: Option<ExpressionSyntax>,
-    value: ExpressionSyntax,
-    syntax: SyntaxNode,
+enum SourceMatchBody {
+    Expression(ExpressionSyntax),
+    Activation {
+        items: Vec<SyntaxNode>,
+        states: Vec<u32>,
+        syntax: SyntaxNode,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -2794,6 +2806,90 @@ struct SemanticBuilder {
 }
 
 impl SemanticBuilder {
+    fn constant_dimension(expression: &mech_core::DimensionExpr) -> Option<u64> {
+        match expression {
+            mech_core::DimensionExpr::Constant(value) => Some(*value),
+            mech_core::DimensionExpr::Add(items) => items.iter().try_fold(0_u64, |total, item| {
+                total.checked_add(Self::constant_dimension(item)?)
+            }),
+            mech_core::DimensionExpr::Multiply(items) => {
+                items.iter().try_fold(1_u64, |total, item| {
+                    total.checked_mul(Self::constant_dimension(item)?)
+                })
+            }
+            mech_core::DimensionExpr::Hole
+            | mech_core::DimensionExpr::Parameter(_)
+            | mech_core::DimensionExpr::Min(_)
+            | mech_core::DimensionExpr::Max(_) => None,
+        }
+    }
+
+    fn structural_pattern_is_irrefutable(
+        pattern: &crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
+        expected: &SchemaBody,
+    ) -> bool {
+        match pattern {
+            crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
+            crate::CollectionPattern::Equal(_) => false,
+            crate::CollectionPattern::Enum { ordinal, payload } => {
+                let SchemaBody::Enum { variants, .. } = expected else {
+                    return false;
+                };
+                if variants.len() != 1 || *ordinal != 0 {
+                    return false;
+                }
+                match (&variants[0].payload, payload.as_deref()) {
+                    (None, None) => true,
+                    (Some(schema), Some(pattern)) => {
+                        Self::structural_pattern_is_irrefutable(pattern, schema)
+                    }
+                    _ => false,
+                }
+            }
+            crate::CollectionPattern::Tuple(items) => {
+                let SchemaBody::Tuple(fields) = expected else {
+                    return false;
+                };
+                fields.len() == items.len()
+                    && items.iter().zip(fields).all(|(pattern, schema)| {
+                        Self::structural_pattern_is_irrefutable(pattern, schema)
+                    })
+            }
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                let SchemaBody::Matrix {
+                    element,
+                    dimensions,
+                } = expected
+                else {
+                    return false;
+                };
+                if !prefix
+                    .iter()
+                    .chain(suffix.iter())
+                    .all(|pattern| Self::structural_pattern_is_irrefutable(pattern, element))
+                {
+                    return false;
+                }
+                let Some(length) = dimensions.iter().try_fold(1_u64, |total, dimension| {
+                    total.checked_mul(Self::constant_dimension(dimension)?)
+                }) else {
+                    return false;
+                };
+                let fixed = (prefix.len() + suffix.len()) as u64;
+                match rest.as_deref() {
+                    None => length == fixed,
+                    Some(crate::CollectionPattern::Wildcard)
+                    | Some(crate::CollectionPattern::Bind { .. }) => length >= fixed,
+                    Some(_) => false,
+                }
+            }
+        }
+    }
+
     fn annotation_schema_draft(
         &self,
         annotation: &KindAnnotationSyntax,
@@ -7339,6 +7435,14 @@ impl SemanticBuilder {
                             &constant_ids,
                         ))
                     }
+                    PendingNodeBody::Activation(control) => {
+                        contracts.push(None);
+                        crate::SourceNodeBody::Activation(resolve_pending_match(
+                            control,
+                            &schemas.table,
+                            &constant_ids,
+                        ))
+                    }
                 };
                 SourceNode {
                     body,
@@ -8875,10 +8979,63 @@ mod review_tests;
 mod mask_review_tests;
 
 impl SemanticBuilder {
+    fn retain_activation_pattern_nodes(
+        &mut self,
+        start: usize,
+        constraint_start: usize,
+        inputs: &mut [PendingValue],
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        let generated = self.nodes.split_off(start);
+        let mut remap = BTreeMap::new();
+        let mut next = start as u32;
+        for (offset, node) in generated.iter().enumerate() {
+            if !matches!(node.body, PendingNodeBody::CollectionBinding) {
+                remap.insert(start as u32 + offset as u32, next);
+                next += 1;
+            }
+        }
+        let remap_value = |value: &mut PendingValue| -> Result<(), SourceSemanticError> {
+            let PendingValue::Node(index) = value else {
+                return Ok(());
+            };
+            if (*index as usize) < start {
+                return Ok(());
+            }
+            *index = *remap.get(index).ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/activation-computed-pattern-binding",
+                message:
+                    "a computed activation pattern cannot depend on a binding from the same pattern"
+                        .to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            })?;
+            Ok(())
+        };
+        for mut node in generated {
+            if matches!(node.body, PendingNodeBody::CollectionBinding) {
+                continue;
+            }
+            for input in &mut node.inputs {
+                remap_value(input)?;
+            }
+            self.nodes.push(node);
+        }
+        for input in inputs {
+            remap_value(input)?;
+        }
+        for constraint in &mut self.constraints[constraint_start..] {
+            remap_value(&mut constraint.value)?;
+        }
+        Ok(())
+    }
+
     fn resolve_structural_match_pattern(
         &self,
         pattern: &comprehension::SourcePattern,
         binding_start: usize,
+        activation: bool,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft)>,
     ) -> Result<
         crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
         SourceSemanticError,
@@ -8906,6 +9063,21 @@ impl SemanticBuilder {
                     {
                         crate::MatchPatternValue::Binding(*index - binding_start as u32)
                     }
+                    value if activation => {
+                        let schema = self.schema_draft_of(*value)?;
+                        let input = match inputs.iter().position(|existing| existing == value) {
+                            Some(input) => input,
+                            None => {
+                                inputs.push(*value);
+                                inputs.len() - 1
+                            }
+                        };
+                        let input = u16::try_from(input).map_err(|_| invalid())?;
+                        if !captures.iter().any(|(existing, _)| *existing == input) {
+                            captures.push((input, schema));
+                        }
+                        crate::MatchPatternValue::Input(input)
+                    }
                     _ => return Err(invalid()),
                 };
                 crate::CollectionPattern::Equal(value)
@@ -8915,15 +9087,29 @@ impl SemanticBuilder {
                 payload: payload
                     .as_deref()
                     .map(|payload| {
-                        self.resolve_structural_match_pattern(payload, binding_start)
-                            .map(Box::new)
+                        self.resolve_structural_match_pattern(
+                            payload,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                        .map(Box::new)
                     })
                     .transpose()?,
             },
             crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
                 items
                     .iter()
-                    .map(|item| self.resolve_structural_match_pattern(item, binding_start))
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                    })
                     .collect::<Result<_, _>>()?,
             ),
             crate::CollectionPattern::Array {
@@ -8933,18 +9119,40 @@ impl SemanticBuilder {
             } => crate::CollectionPattern::Array {
                 prefix: prefix
                     .iter()
-                    .map(|item| self.resolve_structural_match_pattern(item, binding_start))
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                    })
                     .collect::<Result<_, _>>()?,
                 rest: rest
                     .as_deref()
                     .map(|item| {
-                        self.resolve_structural_match_pattern(item, binding_start)
-                            .map(Box::new)
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                        .map(Box::new)
                     })
                     .transpose()?,
                 suffix: suffix
                     .iter()
-                    .map(|item| self.resolve_structural_match_pattern(item, binding_start))
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(
+                            item,
+                            binding_start,
+                            activation,
+                            inputs,
+                            captures,
+                        )
+                    })
                     .collect::<Result<_, _>>()?,
             },
         })
@@ -8962,12 +9170,16 @@ impl SemanticBuilder {
                 Ok(SourceMatchArm {
                     pattern: Some(self.required(arm.pattern(), arm.syntax(), "match pattern")?),
                     guard: arm.guard(),
-                    value: self.required(arm.value(), arm.syntax(), "match result")?,
+                    body: SourceMatchBody::Expression(self.required(
+                        arm.value(),
+                        arm.syntax(),
+                        "match result",
+                    )?),
                     syntax: arm.syntax().clone(),
                 })
             })
             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
-        self.lower_match_expression(scrutinee, &arms, syntax, false, None)
+        self.lower_match_expression(scrutinee, &arms, syntax, false, None, false)
     }
 
     fn lower_match_expression(
@@ -8977,15 +9189,32 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
         partial: bool,
         expected_result: Option<&SchemaDraft>,
+        activation: bool,
     ) -> Result<PendingValue, SourceSemanticError> {
         self.match_depth += 1;
-        let result = self.lower_match_expression_inner(
-            scrutinee,
-            arms,
-            syntax,
-            partial,
-            expected_result,
-        );
+        let result = if self.control_depth != 0 {
+            self.lower_match_expression_inner(
+                scrutinee,
+                arms,
+                syntax,
+                partial,
+                expected_result,
+                activation,
+            )
+        } else {
+            let saved_next_control_block = self.next_control_block;
+            self.next_control_block = 0;
+            let result = self.lower_match_expression_inner(
+                scrutinee,
+                arms,
+                syntax,
+                partial,
+                expected_result,
+                activation,
+            );
+            self.next_control_block = saved_next_control_block;
+            result
+        };
         self.match_depth -= 1;
         result
     }
@@ -8997,6 +9226,7 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
         partial: bool,
         expected_result: Option<&SchemaDraft>,
+        activation: bool,
     ) -> Result<PendingValue, SourceSemanticError> {
         let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
             code: "source-semantics/unsupported-match",
@@ -9010,12 +9240,18 @@ impl SemanticBuilder {
         let mut coverage =
             StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
         let mut result_schema = None;
-        if self.control_depth == 0 {
-            self.next_control_block = 0;
-        }
         for arm in arms {
+            if activation && coverage.is_complete() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unreachable-activation-arm",
+                    message: "an unguarded irrefutable activation arm must be last".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(&arm.syntax),
+                });
+            }
             let saved = self.bindings.clone();
+            let saved_definitions = self.scope_definitions.clone();
             let binding_start = self.nodes.len();
+            let constraint_start = self.constraints.len();
             let lowered_arm = (|| -> Result<PendingMatchArm, SourceSemanticError> {
                 let mut pattern_bindings = BTreeMap::new();
                 let pattern = match arm.pattern.as_ref() {
@@ -9135,9 +9371,11 @@ impl SemanticBuilder {
                                 binding_start,
                                 &mut names,
                             )?;
-                            if self.nodes[binding_start..].iter().any(|node| {
-                                !matches!(node.body, PendingNodeBody::CollectionBinding)
-                            }) {
+                            if !activation
+                                && self.nodes[binding_start..].iter().any(|node| {
+                                    !matches!(node.body, PendingNodeBody::CollectionBinding)
+                                })
+                            {
                                 return Err(error(
                                     "computed structural patterns belong to the computed-pattern owner",
                                     pattern_syntax.syntax(),
@@ -9149,9 +9387,13 @@ impl SemanticBuilder {
                                 };
                                 pattern_bindings.insert(*index, local);
                             });
-                            crate::MatchPattern::Structural(
-                                self.resolve_structural_match_pattern(&source, binding_start)?,
-                            )
+                            crate::MatchPattern::Structural(self.resolve_structural_match_pattern(
+                                &source,
+                                binding_start,
+                                activation,
+                                &mut inputs,
+                                &mut captures,
+                            )?)
                         }
                     },
                 };
@@ -9199,16 +9441,71 @@ impl SemanticBuilder {
                 } else {
                     None
                 };
-                let result = arm.value.clone();
-                let (body, schema) = self.control_block(
-                    &result,
-                    &pattern,
-                    &pattern_bindings,
-                    scrutinee,
-                    &mut inputs,
-                    &mut captures,
-                    expected_result,
-                )?;
+                let (body, schema) = match &arm.body {
+                    SourceMatchBody::Expression(result) => self.control_block(
+                        result,
+                        &pattern,
+                        &pattern_bindings,
+                        scrutinee,
+                        &mut inputs,
+                        &mut captures,
+                        expected_result,
+                    )?,
+                    SourceMatchBody::Activation {
+                        items,
+                        states,
+                        syntax,
+                    } => {
+                        let saved_writer_inputs = states
+                            .iter()
+                            .map(|state| {
+                                let writer = self.states[*state as usize].producer_node as usize;
+                                (*state, self.nodes[writer].inputs[0])
+                            })
+                            .collect::<Vec<_>>();
+                        let result = self.control_block_with(
+                            syntax,
+                            &pattern,
+                            &pattern_bindings,
+                            scrutinee,
+                            &mut inputs,
+                            &mut captures,
+                            |builder| {
+                                for item in items {
+                                    match item.kind() {
+                                        SyntaxKind::VariableDefine => {
+                                            builder.definition(
+                                                &VariableDefineSyntax::cast(item.clone()).unwrap(),
+                                            )?;
+                                        }
+                                        SyntaxKind::TupleDestructure => {
+                                            builder.document_tuple_destructure(item)?;
+                                        }
+                                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                                            builder.document_assignment(item)?;
+                                        }
+                                        SyntaxKind::Expression => {
+                                            builder.expression(
+                                                &ExpressionSyntax::cast(item.clone()).unwrap(),
+                                            )?;
+                                        }
+                                        _ => unreachable!("activation body was preflighted"),
+                                    }
+                                }
+                                let values = states
+                                    .iter()
+                                    .map(|state| builder.current_state_value(*state))
+                                    .collect();
+                                builder.pack_activation_values(values, syntax)
+                            },
+                        );
+                        for (state, value) in saved_writer_inputs {
+                            let writer = self.states[state as usize].producer_node as usize;
+                            self.nodes[writer].inputs[0] = value;
+                        }
+                        result?
+                    }
+                };
                 if result_schema
                     .as_ref()
                     .is_some_and(|expected| expected != &schema)
@@ -9227,8 +9524,27 @@ impl SemanticBuilder {
                 })
             })();
             self.bindings = saved;
-            self.nodes.truncate(binding_start);
-            let lowered_arm = lowered_arm?;
+            self.scope_definitions = saved_definitions;
+            let lowered_arm = match lowered_arm {
+                Ok(lowered_arm) => {
+                    if activation {
+                        self.retain_activation_pattern_nodes(
+                            binding_start,
+                            constraint_start,
+                            &mut inputs,
+                            &arm.syntax,
+                        )?;
+                    } else {
+                        self.nodes.truncate(binding_start);
+                    }
+                    lowered_arm
+                }
+                Err(error) => {
+                    self.nodes.truncate(binding_start);
+                    self.constraints.truncate(constraint_start);
+                    return Err(error);
+                }
+            };
             if lowered_arm.guard.is_none() {
                 match &lowered_arm.pattern {
                     crate::MatchPattern::Literal(index) => {
@@ -9268,11 +9584,19 @@ impl SemanticBuilder {
         }
         let index = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
-            body: PendingNodeBody::Match(PendingMatch {
-                partial,
-                captures,
-                arms: lowered,
-            }),
+            body: if activation {
+                PendingNodeBody::Activation(PendingMatch {
+                    partial,
+                    captures,
+                    arms: lowered,
+                })
+            } else {
+                PendingNodeBody::Match(PendingMatch {
+                    partial,
+                    captures,
+                    arms: lowered,
+                })
+            },
             inferable_projection: false,
             inputs,
             schema: result_schema.expect("exhaustive match has arms"),
@@ -9599,6 +9923,9 @@ fn resolve_pending_match(
                             }
                             crate::MatchPatternValue::Binding(local) => {
                                 crate::MatchPatternValue::Binding(*local)
+                            }
+                            crate::MatchPatternValue::Input(input) => {
+                                crate::MatchPatternValue::Input(*input)
                             }
                         }),
                     ),
