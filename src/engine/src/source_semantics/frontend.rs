@@ -2262,6 +2262,9 @@ enum PendingNodeBody {
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall(u8),
+
+    Suspend,
+    Publish,
 }
 
 struct PendingMatch {
@@ -2271,25 +2274,75 @@ struct PendingMatch {
 }
 
 impl PendingMatch {
-    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
-        for arm in &self.arms {
-            if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
-                pattern.bindings(&mut |_, schema| visit(schema));
-            }
-            for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
-                for (_, schema) in &block.parameters {
-                    visit(schema);
-                }
+    fn blocks(&self) -> Vec<&PendingControlBlock> {
+        fn append<'a>(control: &'a PendingMatch, output: &mut Vec<&'a PendingControlBlock>) {
+            for block in control
+                .arms
+                .iter()
+                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+            {
+                output.push(block);
                 for operation in &block.operations {
-                    visit(&operation.schema);
                     match &operation.body {
-                        PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
+                        PendingControlOperationBody::Match(nested) => append(nested, output),
                         PendingControlOperationBody::Comprehension(nested) => {
-                            nested.visit_schemas(visit)
+                            for step in &nested.steps {
+                                if let PendingComprehensionStep::Operation(operation) = step
+                                    && let PendingControlOperationBody::Match(nested) =
+                                        &operation.body
+                                {
+                                    append(nested, output);
+                                }
+                            }
                         }
                         PendingControlOperationBody::Operation { .. }
-                        | PendingControlOperationBody::Recur(_) => {}
+                        | PendingControlOperationBody::Recur(_)
+                        | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Publish => {}
                     }
+                }
+            }
+        }
+        let mut output = Vec::new();
+        append(self, &mut output);
+        output
+    }
+
+    fn visit_pattern_binding_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        fn append(control: &PendingMatch, visit: &mut impl FnMut(&SchemaDraft)) {
+            for arm in &control.arms {
+                if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
+                    pattern.bindings(&mut |_, schema| visit(schema));
+                }
+                for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                    for operation in &block.operations {
+                        match &operation.body {
+                            PendingControlOperationBody::Match(nested) => append(nested, visit),
+                            PendingControlOperationBody::Comprehension(nested) => {
+                                nested.visit_schemas(visit)
+                            }
+                            PendingControlOperationBody::Operation { .. }
+                            | PendingControlOperationBody::Recur(_)
+                            | PendingControlOperationBody::Suspend
+                            | PendingControlOperationBody::Publish => {}
+                        }
+                    }
+                }
+            }
+        }
+        append(self, visit);
+    }
+
+    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        self.visit_pattern_binding_schemas(visit);
+        for block in self.blocks() {
+            for (_, schema) in &block.parameters {
+                visit(schema);
+            }
+            for operation in &block.operations {
+                visit(&operation.schema);
+                if let PendingControlOperationBody::Comprehension(nested) = &operation.body {
+                    nested.visit_schemas(visit);
                 }
             }
         }
@@ -2678,6 +2731,9 @@ enum PendingControlOperationBody {
     Match(PendingMatch),
     Comprehension(PendingComprehension),
     Recur(u8),
+
+    Suspend,
+    Publish,
 }
 
 struct PendingControlBlock {
@@ -2774,6 +2830,7 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
+    local_fsms: BTreeMap<String, document_lowering::document_fsms::DeclaredFsm>,
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
@@ -2953,6 +3010,7 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
+            local_fsms: BTreeMap::new(),
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
@@ -6370,6 +6428,9 @@ impl SemanticBuilder {
     }
 
     fn fsm_pipe(&mut self, pipe: &FsmPipeSyntax) -> Result<PendingValue, SourceSemanticError> {
+        if let Some(value) = self.inline_document_fsm(pipe)? {
+            return Ok(value);
+        }
         let instance = self.required(pipe.instance(), pipe.syntax(), "an FSM instance")?;
         let name = self.required(instance.name(), instance.syntax(), "an FSM name")?;
         let mut inputs = Vec::new();
@@ -7307,7 +7368,10 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall(_) => {
+                    PendingNodeBody::CollectionBinding
+                    | PendingNodeBody::RecursiveCall(_)
+                    | PendingNodeBody::Suspend
+                    | PendingNodeBody::Publish => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
@@ -9275,12 +9339,44 @@ impl SemanticBuilder {
         captures: &mut Vec<(u16, SchemaDraft)>,
         expected: Option<&SchemaDraft>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
+        self.control_block_with(
+            expression.syntax(),
+            pattern,
+            pattern_bindings,
+            scrutinee,
+            inputs,
+            captures,
+            |builder| {
+                let (value, _) = builder.expression(expression)?;
+                expected.map_or(Ok(value), |expected| {
+                    builder.conform_schema_draft(
+                        value,
+                        expected,
+                        expression.syntax(),
+                        "source-semantics/incompatible-function-output",
+                        "function arm does not satisfy its declared output kind",
+                    )
+                })
+            },
+        )
+    }
+
+    fn control_block_with(
+        &mut self,
+        syntax: &SyntaxNode,
+        pattern: &crate::MatchPattern<usize, SchemaDraft>,
+        pattern_bindings: &BTreeMap<u32, u32>,
+        scrutinee: PendingValue,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft)>,
+        build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
+    ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
             message:
                 "match blocks require pure maintained operations and closed final value schemas"
                     .to_owned(),
-            anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+            anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let id = self.next_control_block;
         self.next_control_block = id
@@ -9289,18 +9385,8 @@ impl SemanticBuilder {
             .ok_or_else(unsupported)?;
         let start = self.nodes.len();
         self.control_depth += 1;
-        let result = self.expression(expression).and_then(|(value, _)| {
-            let value = expected.map_or(Ok(value), |expected| {
-                self.conform_schema_draft(
-                    value,
-                    expected,
-                    expression.syntax(),
-                    "source-semantics/incompatible-function-output",
-                    "function arm does not satisfy its declared output kind",
-                )
-            })?;
-            self.schema_draft_of(value).map(|schema| (value, schema))
-        });
+        let result =
+            build(self).and_then(|value| self.schema_draft_of(value).map(|schema| (value, schema)));
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
@@ -9414,6 +9500,9 @@ impl SemanticBuilder {
                 PendingNodeBody::RecursiveCall(ancestor) => {
                     PendingControlOperationBody::Recur(ancestor)
                 }
+
+                PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
+                PendingNodeBody::Publish => PendingControlOperationBody::Publish,
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -9503,6 +9592,12 @@ fn resolve_pending_match(
                         }
                         PendingControlOperationBody::Recur(ancestor) => {
                             crate::ControlOperationBody::Recur(*ancestor)
+                        }
+                        PendingControlOperationBody::Suspend => {
+                            crate::ControlOperationBody::Suspend
+                        }
+                        PendingControlOperationBody::Publish => {
+                            crate::ControlOperationBody::Publish
                         }
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),

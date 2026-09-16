@@ -1952,6 +1952,512 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
 }
 
 #[test]
+fn declared_fsm_runs_through_canonical_recursive_control() {
+    let source = "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(41)\nresult\n";
+    execute_document(
+        source,
+        [
+            (
+                vec![],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
+            ),
+            (
+                vec![],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
+            ),
+        ],
+    );
+
+    let named = source.replace("#Increment(41)", "#Increment(value: 41)");
+    execute_document(
+        &named,
+        [(
+            vec![],
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
+        )],
+    );
+}
+
+#[test]
+fn declared_fsm_diagnostics_reject_invalid_declarations_calls_and_transitions() {
+    let assert_code = |source: &str, expected: &str| {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .unwrap_or_else(|| panic!("{expected}: source unexpectedly compiled"));
+        assert_eq!(error.code, expected, "{source}\n{error:?}");
+    };
+    let specification = "#Machine(left<u64>, right<u64>) => <u64>\n  | :Start(left<u64>, right<u64>)\n  | :Done(value<u64>).\n";
+    let implementation = "#Machine(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n";
+
+    assert_code("#Missing(1u64)\n", "source-semantics/unknown-fsm");
+    assert_code(
+        &format!("{specification}{implementation}#Machine(1u64)\n"),
+        "source-semantics/missing-fsm-argument",
+    );
+    assert_code(
+        &format!("{specification}{implementation}#Machine(left: 1u64, left: 2u64)\n"),
+        "source-semantics/duplicate-fsm-argument",
+    );
+    assert_code(
+        &format!("{specification}{implementation}#Machine(left: 1u64, extra: 2u64)\n"),
+        "source-semantics/unknown-fsm-argument",
+    );
+    assert_code(
+        &format!("{specification}{implementation}#Machine(true, 2u64)\n"),
+        "source-semantics/incompatible-fsm-argument",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, right) -> :Missing\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/unknown-fsm-state",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, right) -> :Start(true, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/incompatible-fsm-state-payload",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => true.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/incompatible-fsm-output",
+    );
+    assert_code(
+        &format!("{specification}{specification}{implementation}#Machine(1u64, 2u64)\n"),
+        "source-semantics/duplicate-fsm-specification",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, left) -> :Start(left, left)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/duplicate-fsm-implementation-parameter",
+    );
+}
+
+#[test]
+fn declared_fsm_guards_and_multi_value_states_use_one_control_owner() {
+    let traffic = "#TrafficLight(steps<u64>) => <u64>\n  | :Red(steps<u64>)\n  | :Green(steps<u64>)\n  | :Yellow(steps<u64>)\n  | :Done(out<u64>).\n#TrafficLight(steps) -> :Red(steps)\n  :Red(steps)\n    | steps > 0u64 -> :Green(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Green(steps)\n    | steps > 0u64 -> :Yellow(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Yellow(steps)\n    | steps > 0u64 -> :Red(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Done(out) => out.\n#TrafficLight(6u64)\n";
+    execute_document(traffic, [(vec![], ValueDataDraft::U64(0))]);
+
+    let fibonacci = "#Fibonacci(n<u64>) => <u64>\n  | :Compute(n<u64>, a<u64>, b<u64>)\n  | :Done(n<u64>).\n#Fibonacci(n) -> :Compute(n, 0u64, 1u64)\n  :Compute(n, a, b)\n    | n > 0u64 -> :Compute(n - 1u64, b, a + b)\n    | n == 0u64 -> :Done(a)\n  :Done(n) => n.\n#Fibonacci(10u64)\n";
+    execute_document(fibonacci, [(vec![], ValueDataDraft::U64(55))]);
+}
+
+#[test]
+fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical async FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 20 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+
+        let epoch = instance.published_epoch();
+        let prepared = instance.prepare_turn(&[]).unwrap();
+        prepared.abort();
+        assert_eq!(instance.published_epoch(), epoch);
+        assert!(!instance.has_ready_continuation());
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(instance.ready_continuation_count(), 1);
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(instance.ready_continuation_count(), 1);
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(!instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(42)
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_publishes_output_and_continuation_atomically() {
+    let source = "#Publishing() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9u64.\n#Publishing()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical publishing FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 25 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+
+        let epoch = instance.published_epoch();
+        let prepared = instance.prepare_turn(&[]).unwrap();
+        assert!(prepared.output_borrow(0).is_some());
+        assert_eq!(
+            prepared
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(7)
+        );
+        prepared.abort();
+        assert_eq!(instance.published_epoch(), epoch);
+        assert!(!instance.has_ready_continuation());
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(7)
+        );
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(7)
+        );
+
+        instance.turn(&[]).unwrap();
+        assert!(!instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(9)
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_bytecode_rejects_malformed_typed_continuation_operations() {
+    let source = "#Publishing() => <u64>\n  | :Start\n  | :Later.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Later\n  :Later => 9u64.\n#Publishing()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    mech_engine::decode_program_artifact_sections(&sections).unwrap();
+    let graph = String::from_utf8(sections.nodes.clone()).unwrap();
+    assert!(graph.contains("\"body\":\"Publish\""), "{graph}");
+
+    for malformed in ["Suspend", "Recur"] {
+        let mut sections = sections.clone();
+        sections.nodes = graph
+            .replacen(
+                "\"body\":\"Publish\"",
+                &format!("\"body\":\"{malformed}\""),
+                1,
+            )
+            .into_bytes();
+        assert!(
+            mech_engine::decode_program_artifact_sections(&sections).is_err(),
+            "malformed {malformed} operation must fail typed artifact admission"
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_continuation_retains_lexical_captures() {
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Captured(signal<f64>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical captured FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 30 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let first = [10.0];
+        let changed = [99.0];
+        let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+            let inputs = [CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(value),
+            }];
+            instance.turn(&inputs).unwrap();
+        };
+
+        turn(&mut instance, &first);
+        assert!(instance.output_borrow(0).is_none());
+        turn(&mut instance, &changed);
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(10.0))
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_continuation_owns_managed_composite_captures() {
+    let source = "#CapturedTuple(value<(f64,f64)>) => <(f64,f64)>\n  | :Start\n  | :Later.\n#CapturedTuple(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#CapturedTuple((10, 20))\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical tuple FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let expected = ValueDataDraft::Tuple(
+        [10.0, 20.0]
+            .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+            .into(),
+    );
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 35 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert!(instance.output_borrow(0).is_none());
+        assert!(instance.has_ready_continuation());
+        instance.turn(&[]).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_statement_and_block_transitions_share_the_arm_control_block() {
+    let source = "#Code() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Code() -> :Start\n  :Start\n    -> x := 40u64\n    -> {y := x + 1u64\n        z := y + 1u64}\n    -> :Done(z)\n  :Done(value) => value.\n#Code()\n";
+    execute_document(source, [(vec![], ValueDataDraft::U64(42))]);
+}
+
+#[test]
+fn declared_fsm_failed_yields_and_resumes_preserve_the_published_continuation() {
+    let source = "#Atomic(seed<f64>) => <f64>\n  | :Start\n  | :Later(value<f64>)\n  | :Done(value<f64>).\n#Atomic(seed) -> :Start\n  :Start ~> :Later(seed)\n  :Later(value) -> :Done(value + 1)\n  :Done(value) => value.\n#Atomic(signal<f64>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let budget = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 40),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(budget.clone()),
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+        let input = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(value),
+        }];
+        instance.turn(&input)
+    };
+
+    let epoch = instance.published_epoch();
+    budget.inject_snapshot_import_failure_after(0);
+    assert!(turn(&mut instance, &[41.0]).is_err());
+    assert_eq!(instance.published_epoch(), epoch);
+    assert!(!instance.has_ready_continuation());
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, &[41.0]).unwrap();
+    let suspended_epoch = instance.published_epoch();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.output_borrow(0).is_none());
+
+    budget.inject_snapshot_import_failure_after(0);
+    assert!(turn(&mut instance, &[99.0]).is_err());
+    assert_eq!(instance.published_epoch(), suspended_epoch);
+    assert!(instance.has_ready_continuation());
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, &[99.0]).unwrap();
+    assert!(!instance.has_ready_continuation());
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0))
+    );
+}
+
+#[test]
+fn declared_fsm_wakeup_rejects_reset_and_replacement_generations() {
+    use mech_engine::__resident::StateMigrationPolicy;
+
+    let source = "#Resettable() => <u64>\n  | :Start\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Resettable() -> :Start\n  :Start ~> :Later(41u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Resettable()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 50),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    let stale = instance.continuation_wakeup().unwrap();
+    assert!(instance.accepts_continuation_wakeup(stale));
+
+    let reset = activate(
+        instance.id.checked_next_generation().unwrap(),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    assert!(!reset.accepts_continuation_wakeup(stale));
+
+    let replacement_source = source.replace("value + 1u64", "value + 2u64");
+    let replacement = CanonicalSourceFrontend
+        .compile_document(&document(&replacement_source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    instance
+        .reactivate(
+            &replacement,
+            &catalog,
+            &ActivationFacts::default(),
+            StateMigrationPolicy::PreserveCompatibleResetIncompatible,
+        )
+        .unwrap();
+    assert!(!instance.accepts_continuation_wakeup(stale));
+    assert!(!instance.has_ready_continuation());
+}
+
+#[test]
+fn declared_fsm_wakeup_drains_are_bounded_and_fair_across_instances() {
+    use mech_engine::resident::ResidentContinuationScheduler;
+
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 42u64.\n#Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut left = activate(
+        ReactiveInstanceId::new(0x540, 60),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let mut right = activate(
+        ReactiveInstanceId::new(0x540, 61),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    left.turn(&[]).unwrap();
+    right.turn(&[]).unwrap();
+
+    let mut scheduler = ResidentContinuationScheduler::new();
+    let first = scheduler.collect_ready(&[&left, &right], 1);
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].instance(), left.id);
+    assert!(left.accepts_continuation_wakeup(first[0]));
+    left.turn(&[]).unwrap();
+    assert!(left.has_ready_continuation());
+    assert!(right.has_ready_continuation());
+
+    let second = scheduler.collect_ready(&[&left, &right], 1);
+    assert_eq!(second.len(), 1);
+    assert_eq!(second[0].instance(), right.id);
+    assert!(right.accepts_continuation_wakeup(second[0]));
+    right.turn(&[]).unwrap();
+    assert!(left.has_ready_continuation());
+    assert!(right.has_ready_continuation());
+
+    let third = scheduler.collect_ready(&[&left, &right], 1);
+    assert_eq!(third.len(), 1);
+    assert_eq!(third[0].instance(), left.id);
+    assert!(left.accepts_continuation_wakeup(third[0]));
+}
+
+#[test]
 fn maximum_depth_structured_fsm_values_roundtrip() {
     let nested_value = |wrappers| {
         let mut value = ":x".to_owned();
@@ -2245,11 +2751,14 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     let mech_engine::SourceNodeBody::Match(control) = &typed_pattern.program().nodes[0].body else {
         panic!("typed match");
     };
-    assert_eq!(control.arms[0].pattern, mech_engine::MatchPattern::Bind);
+    assert!(matches!(
+        control.arms[0].pattern,
+        mech_engine::MatchPattern::Structural(mech_engine::CollectionPattern::Bind { .. })
+    ));
     let parameter = &control.arms[0].body.parameters[0];
     assert_eq!(
         parameter.source,
-        mech_engine::ControlParameterSource::Scrutinee
+        mech_engine::ControlParameterSource::PatternBinding(0)
     );
     assert_eq!(
         typed_pattern
