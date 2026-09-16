@@ -20,7 +20,7 @@ use mech_core::{
 };
 use mech_engine::resident::{ActivationFacts, CapturedValueInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, ProgramArtifact};
-use mech_runtime::SourceDocument;
+use mech_runtime::{InMemorySourceResolver, RuntimeBuilder, SourceDocument, SourceRequest};
 use mech_syntax::document::{ParseConfig, Revision};
 
 struct Case {
@@ -987,6 +987,99 @@ fn binding_relocates_existing_state_initializer_and_output_constants() {
                 "bound state",
             );
         }
+    }
+}
+
+#[test]
+fn resolved_detached_matrix_import_composes_with_nested_updates_and_rollback() {
+    let dependency = "matrix := [120<i8> 0<i8>;0<i8> 0<i8>]\n<+ matrix\n";
+    let root = "+> ./dep.mec\ndivisors := signal<[i16]:2,1>\n~a := dep/matrix\na[[1 1],:][:,1] /= divisors\na\n";
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string("dep.mec", dependency)
+        .unwrap();
+    resolver.insert_canonical_string("main.mec", root).unwrap();
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_root(SourceRequest::new("main.mec"))
+        .unwrap();
+    assert_eq!(
+        product.source_dependencies(),
+        &BTreeMap::from([("memory:dep.mec".to_owned(), mech_core::hash_str(dependency))])
+    );
+    let decoded = decoded(product.artifact());
+    for (route, artifact) in [("source", product.artifact()), ("bytecode", &decoded)] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x58c, 8),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap_or_else(|error| panic!("{route}: activation: {error:?}"));
+        let input = instance.plan.inputs[0].clone();
+        let input_value = |values: [i16; 2]| {
+            snapshot(
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::SignedInteger(IntegerWidth::W16)),
+                    dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(1)]
+                        .into_boxed_slice(),
+                },
+                D::Matrix(
+                    values
+                        .into_iter()
+                        .map(D::I16)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            )
+            .rebind(input.schema, &input.shape, artifact.schemas())
+            .unwrap()
+        };
+        let expected = |first| {
+            snapshot(
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::SignedInteger(IntegerWidth::W8)),
+                    dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
+                        .into_boxed_slice(),
+                },
+                D::Matrix(vec![D::I8(first), D::I8(0), D::I8(0), D::I8(0)].into_boxed_slice()),
+            )
+        };
+        let publish = |instance: &mut mech_engine::resident::ReactiveInstance, values: [i16; 2]| {
+            let value = input_value(values);
+            instance
+                .prepare_turn_values(&[CapturedValueInput {
+                    slot: input.slot,
+                    value: &value,
+                }])
+                .and_then(|prepared| prepared.publish())
+        };
+
+        publish(&mut instance, [2, 3]).unwrap();
+        assert_exact(
+            &instance.copied_output(0).unwrap(),
+            &expected(20),
+            &format!("{route}: imported nested update"),
+        );
+        let before_failure = instance.published_state_hash();
+        assert!(publish(&mut instance, [2, 0]).is_err());
+        assert_eq!(instance.published_state_hash(), before_failure);
+        assert_exact(
+            &instance.copied_output(0).unwrap(),
+            &expected(20),
+            &format!("{route}: rollback"),
+        );
+        publish(&mut instance, [2, 2]).unwrap();
+        assert_exact(
+            &instance.copied_output(0).unwrap(),
+            &expected(5),
+            &format!("{route}: retry"),
+        );
     }
 }
 

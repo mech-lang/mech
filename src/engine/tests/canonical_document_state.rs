@@ -1181,6 +1181,22 @@ fn nested_repeated_compound_selectors_accumulate_each_occurrence() {
 }
 
 #[test]
+fn nested_selected_updates_reject_invalid_arity_without_panicking() {
+    for source in [
+        "~a := [1 2; 3 4]\na[1,1,1][1] += 1\na\n",
+        "~a := [1 2; 3 4]\na[1][1,1,1] += 1\na\n",
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .expect("invalid nested selector arity must be a source error");
+        assert_eq!(error.code, "source-semantics/invalid-selection-arity");
+        assert!(!error.anchor.range.is_empty());
+    }
+    turns("~a := [1 2; 3 4]\na[1,:][:,1] += 1\na[1,1]\n", &[2.0, 3.0]);
+}
+
+#[test]
 fn promoted_repeated_updates_use_canonical_conversion_after_each_operation() {
     for (kind, right) in [
         ("i8", "2.5"),

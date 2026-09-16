@@ -439,6 +439,47 @@
           "canonical_document_state",
           "--test",
           "r6_memory_runtime"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-core",
+          "--features",
+          "full",
+          "--test",
+          "snapshot_relations_contract"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_constant_binding"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_call_visibility"
         ]
       ],
       "base": "codex/syntax-s8r04-dynamic-binding"

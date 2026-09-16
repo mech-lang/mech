@@ -473,6 +473,16 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "manufactures an execution permit")
 
+    def test_40_extracted_resident_binder_cannot_manufacture_execution_permit(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/resident/numeric/promoted_assignment.rs",
+            "    validate_rmw(request, count, region)?;",
+            "    super::super::budget::PreparedKernel::new((), Default::default()).admit()?;\n    validate_rmw(request, count, region)?;",
+        )
+        self.assert_failure(root, "manufactures an execution permit")
+
 
     def test_41_scratch_must_have_physical_records(self):
         root = self.fixture()

@@ -139,6 +139,183 @@ fn exact_language_and_key_float_relations_are_distinct() {
     );
 }
 
+fn assert_snapshot_matches_canonical_payload(schemas: &SchemaTable, left: &Value, right: &Value) {
+    assert_eq!(left.schema_key(), right.schema_key());
+    assert_eq!(left.shape(), right.shape());
+    assert_eq!(
+        left.snapshot_eq(schemas, right, schemas).unwrap(),
+        left.canonical_payload_bytes(schemas).unwrap()
+            == right.canonical_payload_bytes(schemas).unwrap(),
+    );
+}
+
+#[test]
+fn dynamic_rational_table_equality_checks_complete_column_lengths() {
+    let (schemas, schema) = fixture(SchemaBody::Table {
+        columns: vec![SchemaField {
+            name: "q".to_owned(),
+            schema: SchemaBody::Rational64,
+        }]
+        .into_boxed_slice(),
+        rows: CardinalitySpec::Dynamic { upper_bound: None },
+    });
+    let table = |rows: &[(i64, u64)]| {
+        value(
+            &schemas,
+            schema,
+            ValueDataDraft::Table(
+                vec![TableColumnDraft {
+                    name: "q".to_owned(),
+                    values: rows
+                        .iter()
+                        .map(|(numerator, denominator)| ValueDataDraft::Rational64 {
+                            numerator: *numerator,
+                            denominator: *denominator,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        )
+    };
+    let zero = table(&[]);
+    let one = table(&[(1, 2)]);
+    let two = table(&[(1, 2), (3, 4)]);
+    let one_again = table(&[(1, 2)]);
+
+    for (left, right, expected) in [
+        (&zero, &one, false),
+        (&one, &zero, false),
+        (&one, &two, false),
+        (&two, &one, false),
+        (&one, &one_again, true),
+    ] {
+        assert_eq!(
+            left.snapshot_eq(&schemas, right, &schemas).unwrap(),
+            expected
+        );
+        assert_snapshot_matches_canonical_payload(&schemas, left, right);
+    }
+}
+
+#[test]
+fn structural_snapshot_equality_matches_canonical_payload_for_nested_collections() {
+    let record = SchemaBody::Record(
+        vec![
+            SchemaField {
+                name: "flag".to_owned(),
+                schema: SchemaBody::Bool,
+            },
+            SchemaField {
+                name: "q".to_owned(),
+                schema: SchemaBody::Rational64,
+            },
+        ]
+        .into_boxed_slice(),
+    );
+    let body = SchemaBody::Tuple(
+        vec![
+            SchemaBody::Option(Box::new(SchemaBody::FloatingPoint(FloatWidth::W64))),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                    .into_boxed_slice(),
+            },
+            SchemaBody::Set {
+                element: Box::new(SchemaBody::Index),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            },
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::String),
+                value: Box::new(record),
+                cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+            },
+        ]
+        .into_boxed_slice(),
+    );
+    let (schemas, schema) = fixture(body);
+    let nested = |second: &str, set: &[u64], map_rows: &[(&str, bool, i64, u64)]| {
+        value(
+            &schemas,
+            schema,
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::Option(OptionDraft {
+                        present: true,
+                        value: Some(Box::new(ValueDataDraft::F64(F64Bits::from_bits(
+                            0x7ff8_0000_0000_0042,
+                        )))),
+                    }),
+                    ValueDataDraft::Matrix(
+                        vec![
+                            ValueDataDraft::String("left".to_owned()),
+                            ValueDataDraft::String(second.to_owned()),
+                        ]
+                        .into_boxed_slice(),
+                    ),
+                    ValueDataDraft::Set(
+                        set.iter()
+                            .copied()
+                            .map(ValueDataDraft::Index)
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                    ValueDataDraft::Map(
+                        map_rows
+                            .iter()
+                            .map(|(key, flag, numerator, denominator)| MapEntryDraft {
+                                items: vec![
+                                    ValueDataDraft::String((*key).to_owned()),
+                                    ValueDataDraft::Record(
+                                        vec![
+                                            NamedValueDraft {
+                                                name: "flag".to_owned(),
+                                                value: ValueDataDraft::Bool(*flag),
+                                            },
+                                            NamedValueDraft {
+                                                name: "q".to_owned(),
+                                                value: ValueDataDraft::Rational64 {
+                                                    numerator: *numerator,
+                                                    denominator: *denominator,
+                                                },
+                                            },
+                                        ]
+                                        .into_boxed_slice(),
+                                    ),
+                                ]
+                                .into_boxed_slice(),
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    ),
+                ]
+                .into_boxed_slice(),
+            ),
+        )
+    };
+    let original = nested("right", &[2, 1], &[("a", true, 1, 2)]);
+    let equal = nested("right", &[1, 2], &[("a", true, 1, 2)]);
+    let different_payload = nested("changed", &[1, 2], &[("a", true, 1, 2)]);
+    let different_cardinality = nested("right", &[1], &[("a", true, 1, 2), ("b", false, 3, 4)]);
+
+    for candidate in [&equal, &different_payload, &different_cardinality] {
+        assert_snapshot_matches_canonical_payload(&schemas, &original, candidate);
+        assert_snapshot_matches_canonical_payload(&schemas, candidate, &original);
+    }
+    assert!(original.snapshot_eq(&schemas, &equal, &schemas).unwrap());
+    assert!(
+        !original
+            .snapshot_eq(&schemas, &different_payload, &schemas)
+            .unwrap()
+    );
+    assert!(
+        !original
+            .snapshot_eq(&schemas, &different_cardinality, &schemas)
+            .unwrap()
+    );
+}
+
 #[test]
 fn sets_and_maps_are_sorted_deduplicated_and_hash_stable() {
     let (set_schemas, set_id) = fixture(SchemaBody::Set {

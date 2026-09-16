@@ -36,6 +36,9 @@ REQUIRED = (
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/resident/matrix_literal.rs",
     "src/engine/src/resident/numeric/mod.rs",
+    "src/engine/src/resident/numeric/nested_assignment.rs",
+    "src/engine/src/resident/numeric/promoted_assignment.rs",
+    "src/engine/src/resident/numeric/selection_address.rs",
     "src/compute/src/memory.rs",
     "src/compute/src/program.rs",
     "hosts/gpu/src/execution_plan.rs",
@@ -552,8 +555,11 @@ def failures(root: Path) -> list[str]:
     for relative in (
         "src/engine/src/resident/matrix_literal.rs",
         "src/engine/src/resident/numeric/mod.rs",
+        "src/engine/src/resident/numeric/nested_assignment.rs",
+        "src/engine/src/resident/numeric/promoted_assignment.rs",
+        "src/engine/src/resident/numeric/selection_address.rs",
     ):
-        for name, body in function_bodies(sources.get(relative, ""), "bind_"):
+        for name, body in function_bodies(sources.get(relative, ""), "bind"):
             if "PreparedKernel" in body or re.search(r"\badmit_\w*\s*\(", body):
                 found.append(
                     f"{relative}: Resident binder {name} manufactures an execution permit"

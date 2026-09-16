@@ -1372,9 +1372,11 @@ fn sequence_exact_eq(left: &SequenceStorage, right: &SequenceStorage) -> bool {
     match (left, right) {
         (SequenceStorage::Unit(left), SequenceStorage::Unit(right)) => left == right,
         (SequenceStorage::Rational64(left), SequenceStorage::Rational64(right)) => {
-            left.iter().zip(right.iter()).all(|(left, right)| {
-                left.numerator() == right.numerator() && left.denominator() == right.denominator()
-            })
+            left.len() == right.len()
+                && left.iter().zip(right.iter()).all(|(left, right)| {
+                    left.numerator() == right.numerator()
+                        && left.denominator() == right.denominator()
+                })
         }
         _ => false,
     }

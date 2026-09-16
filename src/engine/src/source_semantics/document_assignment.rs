@@ -229,6 +229,7 @@ impl SemanticBuilder {
                 SubscriptItemSyntax::Brace(brace) => self.subscript_values(&brace.values())?,
                 _ => unreachable!("nested matrix updates admit bracket and brace selectors"),
             };
+            validate_selection_arity(&selectors, item.syntax())?;
             let mode = match selectors.as_slice() {
                 [None] => 1,
                 [Some(_)] => 2,

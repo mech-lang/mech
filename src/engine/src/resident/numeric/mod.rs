@@ -16092,6 +16092,64 @@ mod tests {
     }
 
     #[test]
+    fn rational_table_hold_reports_cardinality_change_and_schedules_dependent_projection() {
+        let table_body = SchemaBody::Table {
+            columns: vec![mech_core::SchemaField {
+                name: "q".to_owned(),
+                schema: SchemaBody::Rational64,
+            }]
+            .into_boxed_slice(),
+            rows: mech_core::CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let (schemas, ids) = test_schema_table([table_body]);
+        let table_schema = ids[0];
+        let table = |rows: &[(i64, u64)]| {
+            test_value(
+                &schemas,
+                table_schema,
+                ValueDataDraft::Table(
+                    vec![mech_core::snapshot::TableColumnDraft {
+                        name: "q".to_owned(),
+                        values: rows
+                            .iter()
+                            .map(|(numerator, denominator)| ValueDataDraft::Rational64 {
+                                numerator: *numerator,
+                                denominator: *denominator,
+                            })
+                            .collect::<Vec<_>>()
+                            .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+        };
+        let source = [Some(table(&[(1, 2), (3, 4)]))];
+        let mut target = [Some(table(&[(1, 2)]))];
+        let hold = BoundResidentKernel::new(hold_state, Box::new([]))
+            .with_snapshot_schemas(schemas.clone());
+
+        let changed = hold
+            .execute(
+                &Inputs(&[ResidentValueRef::Snapshot(&source)]),
+                ResidentValueMut::Snapshot(&mut target),
+            )
+            .unwrap();
+        assert!(
+            changed,
+            "different row cardinality must schedule dependents"
+        );
+
+        let mut dependent_rows = 1;
+        if changed {
+            let ValueData::Table(table) = target[0].as_ref().unwrap().data() else {
+                panic!("hold output must retain its table schema")
+            };
+            dependent_rows = table.column(0).unwrap().len();
+        }
+        assert_eq!(dependent_rows, 2);
+    }
+
+    #[test]
     fn f64_change_detection_uses_schema_identity_for_one_by_one_matrices() {
         fn request_for(
             body: SchemaBody,

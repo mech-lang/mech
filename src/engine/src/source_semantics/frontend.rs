@@ -125,6 +125,20 @@ struct PendingSelection {
     schema: SchemaDraft,
 }
 
+fn validate_selection_arity(
+    selectors: &[Option<PendingValue>],
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    if selectors.is_empty() || selectors.len() > 2 {
+        return Err(SourceSemanticError {
+            code: "source-semantics/invalid-selection-arity",
+            message: "selection requires one or two selectors".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        });
+    }
+    Ok(())
+}
+
 impl CanonicalSourceFrontend {
     /// Lower retained roots into one graph in dependency order and publish
     /// their results in caller order. No root text is joined or reparsed.
@@ -5307,13 +5321,7 @@ impl SemanticBuilder {
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<(Option<&'static str>, Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
-        if selectors.is_empty() || selectors.len() > 2 {
-            return Err(SourceSemanticError {
-                code: "source-semantics/invalid-selection-arity",
-                message: "selection requires one or two selectors".to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            });
-        }
+        validate_selection_arity(&selectors, syntax)?;
         if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
             return Ok((None, Vec::new(), source));
         }
