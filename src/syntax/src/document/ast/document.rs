@@ -312,6 +312,17 @@ impl DocumentSyntax {
     /// disabled/inert fences. Evaluated inline expressions and named Mech
     /// scopes count as source. Consumers still perform semantic validation.
     pub fn contains_executable_source(&self) -> bool {
+        self.contains_program_source_inner(false)
+    }
+
+    /// Whether this document contains active program syntax, including imports
+    /// and context/export declarations. This supports CLI source/path
+    /// disambiguation without treating metadata as an executable result.
+    pub fn contains_program_source(&self) -> bool {
+        self.contains_program_source_inner(true)
+    }
+
+    fn contains_program_source_inner(&self, include_declarations: bool) -> bool {
         use crate::document::{CodeFenceScope, NodeFlags};
         if self.syntax().flags().intersects(
             NodeFlags::ERROR
@@ -347,7 +358,10 @@ impl DocumentSyntax {
                     .items()
                     .iter()
                     .filter_map(MechCodeAltSyntax::value)
-                    .any(|item| mech_code_item_is_executable(&item))
+                    .any(|item| {
+                        mech_code_item_is_executable(&item)
+                            || (include_declarations && mech_code_item_is_declaration(&item))
+                    })
                 {
                     return true;
                 }
@@ -362,6 +376,19 @@ impl DocumentSyntax {
         let mut sections = Vec::new();
         collect_sections(self.syntax(), &mut sections);
         sections
+    }
+}
+
+fn mech_code_item_is_declaration(item: &SyntaxNode) -> bool {
+    match item.kind() {
+        SyntaxKind::ContextDeclaration
+        | SyntaxKind::ExportDeclaration
+        | SyntaxKind::ImportDeclaration
+        | SyntaxKind::ModuleImport => true,
+        SyntaxKind::Statement => item
+            .children()
+            .any(|child| mech_code_item_is_declaration(&child)),
+        _ => false,
     }
 }
 

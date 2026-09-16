@@ -993,37 +993,51 @@ mod document {
     use super::*;
 
     pub(super) fn document_output_ordinals(
-        bootstrap: &WasmDocumentBootstrap,
-    ) -> MResult<HashMap<u64, u64>> {
-        let program = match CanonicalSourceFrontend
-            .compile_document(&bootstrap.document.document().document())
-        {
-            Ok(program) => program,
-            Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
-            Err(error) => return Err(document_runtime_error(error.to_string())),
-        };
-        let outputs = program
-            .document_outputs()
-            .iter()
-            .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
-            .collect::<Vec<_>>();
-        if outputs.len() != bootstrap.presentation_output_ids.len() {
-            return Err(document_runtime_error(format!(
-                "browser presentation payload has {} addresses for {} canonical outputs",
-                bootstrap.presentation_output_ids.len(),
-                outputs.len(),
-            )));
+        document: &SourceDocument,
+        runtime: &MechRuntime,
+    ) -> HashMap<u64, u64> {
+        use mech_syntax::document::{AstNode, SyntaxKind};
+
+        let mut names = HashMap::new();
+        for ordinal in 0..u32::MAX {
+            let Some(name) = runtime.output_name(OutputId::new(ordinal)) else {
+                break;
+            };
+            names.insert(name, u64::from(ordinal));
         }
-        let mut ordinals = bootstrap
-            .presentation_output_ids
-            .iter()
-            .copied()
-            .zip(outputs.into_iter().map(|output| u64::from(output.output)))
-            .collect::<HashMap<_, _>>();
-        if let Some(output) = bootstrap.program_output_id()? {
-            ordinals.insert(root_document_program_output_id(), u64::from(output.0));
+        let mut outputs = HashMap::new();
+        if let Some(output) = runtime.program_output_id() {
+            outputs.insert(root_document_program_output_id(), u64::from(output.0));
         }
-        Ok(ordinals)
+        let mut pending = vec![document.document().syntax().clone()];
+        while let Some(node) = pending.pop() {
+            let role = match node.kind() {
+                SyntaxKind::EvalInlineMechCode => {
+                    Some(("inline", SourceDocumentOutputKind::Inline))
+                }
+                SyntaxKind::CodeBlock => Some(("fence", SourceDocumentOutputKind::Fence)),
+                _ => None,
+            };
+            if let Some((role, kind)) = role {
+                let local_name = format!("document:{role}:{}", node.range().start.0);
+                let ordered_name = format!(
+                    "document:{}:{role}:{}",
+                    node.source().document().0,
+                    node.range().start.0
+                );
+                if let Some(ordinal) = names
+                    .get(local_name.as_str())
+                    .or_else(|| names.get(ordered_name.as_str()))
+                {
+                    outputs.insert(
+                        mech_runtime::canonical_document_output_id(kind, node.range()),
+                        *ordinal,
+                    );
+                }
+            }
+            pending.extend(node.children());
+        }
+        outputs
     }
 
     fn selected_value_response(
@@ -1186,9 +1200,14 @@ mod document {
         pub(super) fn try_from_bootstrap(
             bootstrap: WasmDocumentBootstrap,
         ) -> MResult<WasmDocument> {
-            let document_output_ordinals = document_output_ordinals(&bootstrap)?;
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
+            let document_output_ordinals = document_output_ordinals(
+                bootstrap.document.document(),
+                repl.session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?,
+            );
             Ok(Self {
                 repl,
                 bootstrap,
@@ -1289,6 +1308,11 @@ mod document {
                     authority,
                 }),
             })
+        }
+
+        #[wasm_bindgen(js_name = runtimeInfo)]
+        pub fn runtime_info(&self) -> Result<JsValue, JsValue> {
+            runtime_info_value(&self.runtime()?.program_execution_info())
         }
 
         #[wasm_bindgen(js_name = renderedOutput)]
@@ -1992,6 +2016,13 @@ mod document {
                     document_runtime_error("document session has no retained source")
                 })?;
             let (_, output_id) = runtime_document(self.bootstrap.source(), current)?;
+            self.document_output_ordinals = document_output_ordinals(
+                current,
+                self.repl
+                    .session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?,
+            );
             if let (Some(program_output), Some(output_id)) =
                 (self.program_output.as_mut(), output_id)
             {
@@ -2983,22 +3014,8 @@ mod tests {
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
+        let presentation_output_ids =
+            mech_runtime::canonical_document_presentation_output_ids(&document.document()).unwrap();
         BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)
@@ -3043,13 +3060,16 @@ mod tests {
             include_str!("../../../tests/fixtures/shims/all-slots.mec"),
         ] {
             let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
-            let outputs = document::document_output_ordinals(&bootstrap).unwrap();
+            let repl = crate::repl::WasmRepl::from_document(bootstrap.clone()).unwrap();
+            let runtime = repl.session.runtime().unwrap();
+            let outputs =
+                document::document_output_ordinals(bootstrap.document.document(), runtime);
             for output_id in &bootstrap.presentation_output_ids {
                 assert!(outputs.contains_key(output_id));
             }
             assert_eq!(
                 outputs.contains_key(&root_document_program_output_id()),
-                bootstrap.program_output_id().unwrap().is_some(),
+                runtime.program_output_id().is_some(),
             );
         }
     }

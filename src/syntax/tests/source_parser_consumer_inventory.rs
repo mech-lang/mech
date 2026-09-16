@@ -2139,20 +2139,10 @@ fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<Stri
 }
 
 #[test]
-fn production_parser_callers_are_exactly_inventoried() {
+fn production_parser_callers_are_physically_absent_after_cutover() {
     let consumers = consumers();
-    let mut expected = BTreeMap::new();
     let mut total = 0usize;
     for (id, row) in &consumers {
-        let source = fs::read_to_string(repository_root().join(&row.source_path))
-            .unwrap_or_else(|error| panic!("read consumer source for {id}: {error}"));
-        assert!(
-            function_scopes(&production_tokens(&source))
-                .iter()
-                .any(|(caller, _, _)| caller == &row.caller),
-            "missing caller {} for {id}",
-            row.caller
-        );
         for (field, value) in [
             ("feature gate", &row.feature_gate),
             ("input policy", &row.input_policy),
@@ -2171,14 +2161,10 @@ fn production_parser_callers_are_exactly_inventoried() {
                 && !row.cutover_action.contains("compat"),
             "noncanonical cutover target for {id}"
         );
-        assert!(
-            expected
-                .insert((row.source_path.clone(), row.caller.clone()), row.calls)
-                .is_none(),
-            "duplicate source/caller contract for {id}"
-        );
         total += row.calls;
     }
+    // Preserve the frozen historical census as removal provenance even though
+    // none of those call sites may remain in the shipping product graph.
     assert_eq!(total, EXPECTED_PRODUCTION_CALLS);
     // Keep the 29-call census frozen while checking each explicitly routed
     // consumer has zero remaining parser calls. Routing does not seal a consumer.
@@ -2197,7 +2183,10 @@ fn production_parser_callers_are_exactly_inventoried() {
         prohibited_aliases.is_empty(),
         "production parser aliases are prohibited: {prohibited_aliases:#?}"
     );
-    assert_eq!(discovered, expected);
+    assert!(
+        discovered.is_empty(),
+        "retiring production parser callers remain after cutover: {discovered:#?}"
+    );
 }
 
 #[test]
