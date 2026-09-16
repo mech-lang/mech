@@ -93,6 +93,9 @@ pub struct ControlMatchArm<C = OperationContractId> {
 pub struct MatchDeclaration<C = OperationContractId> {
     /// Ordinal in the enclosing node's input bindings; evaluated once.
     pub scrutinee: u16,
+    /// Function dispatch may deliberately be partial and fails the call when
+    /// no ordered arm matches. Ordinary match expressions remain exhaustive.
+    pub partial: bool,
     pub captures: Box<[ControlCapture]>,
     pub arms: Box<[ControlMatchArm<C>]>,
 }
@@ -812,10 +815,17 @@ pub(super) fn validate_match_inner(
         if arm.guard.is_none() {
             match &arm.pattern {
                 MatchPattern::Literal(constant) => {
-                    if let mech_core::ValueData::Bool(value) =
-                        draft.constants.get(*constant).unwrap().data()
-                    {
-                        coverage.cover_bool(*value);
+                    match draft.constants.get(*constant).unwrap().data() {
+                        mech_core::ValueData::Bool(value) => coverage.cover_bool(*value),
+                        mech_core::ValueData::Enum(value) => {
+                            if value.payload().is_none() {
+                                coverage.cover(StructuralCoveragePattern::Enum {
+                                    ordinal: value.ordinal(),
+                                    payload: None,
+                                });
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 MatchPattern::Wildcard | MatchPattern::Bind => {
@@ -827,7 +837,7 @@ pub(super) fn validate_match_inner(
             }
         }
     }
-    if !coverage.is_complete() {
+    if !declaration.partial && !coverage.is_complete() {
         return Err(invalid("non-exhaustive match"));
     }
     Ok(())
@@ -1113,6 +1123,7 @@ impl<C> MatchDeclaration<C> {
         };
         Ok(MatchDeclaration {
             scrutinee: self.scrutinee,
+            partial: self.partial,
             captures: self.captures.clone(),
             arms: self
                 .arms
@@ -1303,6 +1314,7 @@ mod tests {
         };
         let control = MatchDeclaration::<OperationContractId> {
             scrutinee: 0,
+            partial: false,
             captures: Box::new([]),
             arms: vec![ControlMatchArm {
                 pattern: MatchPattern::Structural(pattern),
@@ -1324,6 +1336,7 @@ mod tests {
         fn leaf() -> MatchDeclaration<OperationContractId> {
             MatchDeclaration {
                 scrutinee: 0,
+                partial: false,
                 captures: Box::new([]),
                 arms: vec![ControlMatchArm {
                     pattern: MatchPattern::Wildcard,
@@ -1343,6 +1356,7 @@ mod tests {
         for depth in 1..=MAX_CONTROL_DEPTH {
             control = MatchDeclaration {
                 scrutinee: 0,
+                partial: false,
                 captures: Box::new([]),
                 arms: vec![ControlMatchArm {
                     pattern: MatchPattern::Wildcard,

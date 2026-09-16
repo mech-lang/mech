@@ -1096,6 +1096,121 @@ fn document_type_environment_rejects_duplicates_cycles_and_unknown_kinds() {
 }
 
 #[test]
+fn pattern_functions_lower_to_ordered_partial_control() {
+    for source in [
+        "first(n<f64>) => <f64>\n  | n => 42\n  | * => 99.\nfirst(7)\n",
+        "plus(x<f64>, y<f64>) => <f64>\n  | (x, y) => x + y.\nplus(y: 2, x: 40)\n",
+        "only-zero(n<f64>) => <f64>\n  | 0 => 42.\nonly-zero(0)\n",
+        "twice(n<f64>) => <f64>\n  | n => n * 2.\ntwice([1 2 3; 4 5 6])\n",
+        "positive(n<f64>) => <bool>\n  | n => n > 0.\npositive([-1 0 2])\n",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let control = artifact
+            .nodes()
+            .iter()
+            .find_map(|node| match &node.body {
+                mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+                _ => None,
+            })
+            .expect("pattern function call lowers to match control");
+        assert!(control.partial);
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(decoded.revision(), artifact.revision());
+    }
+}
+
+#[test]
+fn pattern_functions_lift_over_sets_with_deduplication_and_distinct_output_kind() {
+    let negative = [-2.0];
+    let positive = [3.0];
+    execute_document(
+        "classify(n<f64>) => <bool>\n\
+           | n => n > 0.\n\
+         result := classify({signal<f64>, 0})\n\
+         result\n",
+        [
+            (
+                vec![ResidentValueRef::F64(&negative)],
+                ValueDataDraft::Set(vec![ValueDataDraft::Bool(false)].into_boxed_slice()),
+            ),
+            (
+                vec![ResidentValueRef::F64(&positive)],
+                ValueDataDraft::Set(
+                    vec![ValueDataDraft::Bool(false), ValueDataDraft::Bool(true)]
+                        .into_boxed_slice(),
+                ),
+            ),
+        ],
+    );
+    execute_document(
+        "classify(n<f64>) => <bool>\n\
+           | n => n > 0.\n\
+         empty<{f64}> := {}\n\
+         classify(empty)\n",
+        [(Vec::new(), ValueDataDraft::Set(Box::new([])))],
+    );
+}
+
+#[test]
+fn a_failed_set_lift_discards_the_whole_candidate_and_allows_retry() {
+    let source = "only-zero(n<f64>) => <f64>\n\
+                    | 0 => 42.\n\
+                  result := only-zero({signal<f64>})\n\
+                  result\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 4),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+        let inputs = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(value),
+        }];
+        instance.turn(&inputs)
+    };
+
+    turn(&mut instance, &[0.0]).unwrap();
+    let published = instance.copied_output(0).unwrap();
+    let published_epoch = instance.published_epoch();
+    assert!(turn(&mut instance, &[1.0]).is_err());
+    assert_eq!(instance.published_epoch(), published_epoch);
+    assert_eq!(
+        instance.copied_output(0).unwrap().canonical_data_draft(),
+        published.canonical_data_draft()
+    );
+    turn(&mut instance, &[0.0]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::Set(
+            vec![ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(
+                42.0
+            ))]
+            .into_boxed_slice()
+        )
+    );
+}
+
+#[test]
 fn typed_document_rejects_recovered_source_before_semantics() {
     let document = document("answer :=\n");
     let error = match CanonicalSourceFrontend.compile_document(&document) {
