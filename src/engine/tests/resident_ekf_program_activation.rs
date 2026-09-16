@@ -1,4 +1,4 @@
-#![cfg(all(feature = "resident-artifact", feature = "compiler"))]
+#![cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 
 use std::collections::BTreeSet;
 
@@ -6,8 +6,8 @@ use mech_core::{
     InstanceEpoch, MResult, MemoryObjectOwner, ReactiveInstanceId, TransactionRequirement,
 };
 use mech_engine::__resident::{
-    ActivationFacts, FrozenEkfCompilationServices, ResidentStorageClass, ResidentValueBorrow,
-    activate, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
+    ActivationFacts, FrozenEkfCompilationServices, ResidentValueBorrow, activate,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 
 const SOURCE: &str =
@@ -18,7 +18,7 @@ fn f64_state(instance: &mech_engine::__resident::ReactiveInstance) -> Vec<Vec<f6
         .plan
         .slots
         .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .filter(|slot| slot.role == mech_engine::SlotRole::State)
         .map(
             |slot| match instance.state_borrow(slot.artifact_id).unwrap() {
                 ResidentValueBorrow::F64 { values, .. } => values.to_vec(),
@@ -46,12 +46,16 @@ fn public_ekf_artifact_activates_into_generic_storage_without_a_turn() -> MResul
         instance.plan.program_revision,
         compilation.source_artifact.revision()
     );
-    assert_eq!(instance.plan.steps.len(), 20);
+    // Canonical source includes four identity-copy nodes in addition to
+    // the frozen arithmetic, predicates and state writers.
+    assert_eq!(instance.plan.steps.len(), 24);
     assert!(instance.plan.activation_nodes.is_empty());
     assert_eq!(instance.plan.inputs.len(), 1);
     assert_eq!(instance.plan.outputs.len(), 1);
-    assert_eq!(instance.state.candidate_bytes(), 96);
-    assert_eq!(instance.state.dual_payload_bytes(), 192);
+    // Twelve recurrence scalars and the separately retained three-scalar
+    // estimate publication each own their candidate storage.
+    assert_eq!(instance.state.candidate_bytes(), 120);
+    assert_eq!(instance.state.dual_payload_bytes(), 240);
     assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
     assert_eq!(instance.next_epoch(), Some(InstanceEpoch::new(1)));
 

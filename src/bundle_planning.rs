@@ -43,6 +43,7 @@ pub(super) fn retained_sources(
                 .with_nominal_package_id(package_id);
         }
         let source = source
+            .with_kind(mech_runtime::SourceKind::from_path(path))
             .with_source_document(document.clone())?
             .admit_canonical_document()?;
         resolver.insert_source(uri.clone(), source)?;

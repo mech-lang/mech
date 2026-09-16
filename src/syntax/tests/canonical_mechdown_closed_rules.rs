@@ -185,7 +185,7 @@ fn line_rules_require_a_physical_newline_and_never_materialize_one() {
 }
 
 #[test]
-fn comments_are_clean_raw_physical_content_and_leave_the_newline_unconsumed() {
+fn comments_preserve_paragraph_content_and_leave_the_newline_unconsumed() {
     for (input, raw) in [
         ("--", ""),
         ("// text", " text"),
@@ -213,15 +213,9 @@ fn comments_are_clean_raw_physical_content_and_leave_the_newline_unconsumed() {
             "{input:?}",
         );
         assert!(
-            comment.children().all(|child| {
-                !matches!(
-                    child.kind(),
-                    SyntaxKind::Paragraph
-                        | SyntaxKind::ParagraphElement
-                        | SyntaxKind::Error
-                        | SyntaxKind::Missing
-                )
-            }),
+            comment
+                .children()
+                .all(|child| { !matches!(child.kind(), SyntaxKind::Error | SyntaxKind::Missing) }),
             "{input:?}",
         );
         assert!(

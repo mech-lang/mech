@@ -22,55 +22,107 @@ pub fn configured_browser_compiler_builder(
         .host_factory(Box::new(mech_scene::SceneHostFactory::with_backend(
             mech_scene::RecordingSceneBackend::new(),
         )?))?;
-    for host in hosts
-        .iter()
-        .filter(|host| browser_document_compiler_host(host))
+    #[cfg(feature = "compute_backends_native")]
     {
+        builder = builder.host_factory(Box::new(mech_browser::PointerHostFactory::planning()))?;
+    }
+    for host in hosts {
+        if host.provider == "compute" {
+            // The compute provider is materialized from the compiled region by
+            // the browser. Validate its configuration here without activating it.
+            #[cfg(feature = "compute_backends_native")]
+            mech_gpu::validate_compute_host_settings(&host.settings)?;
+            continue;
+        }
+        #[cfg(not(feature = "compute_backends_native"))]
+        if host.provider == "pointer" {
+            continue;
+        }
         builder = builder.host_instance(host.clone());
     }
     Ok(builder)
 }
 
-fn browser_document_compiler_host(host: &HostInstanceConfig) -> bool {
-    !matches!(host.provider.as_str(), "compute" | "pointer")
-}
-
 /// Compile the browser's admitted coordinator through the canonical root graph.
+/// Compute regions use the mixed compiler; both paths retain dependency hashes.
 pub(crate) fn compile_browser_document_bundle(
     compiler: &mut mech_runtime::ProgramCompiler,
     uri: &str,
     document: &mech_runtime::SourceDocument,
-    uses_compute: bool,
 ) -> MResult<mech_runtime::CanonicalProgramBundle> {
-    match compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri)) {
-        Ok(product) => mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product),
-        Err(error) if uses_compute => {
-            #[cfg(feature = "compute_backends_native")]
-            {
-                let mixed = compiler.compile_canonical_mixed_root(
-                    mech_runtime::SourceRequest::new(uri),
-                    mech_runtime::ModuleBuildOptions::new(
-                        env!("CARGO_PKG_VERSION"),
-                        "v0.4",
-                        "browser",
-                        &["compute"],
-                        &[],
-                    ),
-                )?;
-                return mech_runtime::CanonicalProgramBundle::from_artifact_product(
-                    uri,
-                    document,
-                    &mixed.coordinator,
-                    mixed.source_dependencies,
-                );
-            }
-            #[cfg(not(feature = "compute_backends_native"))]
-            {
-                Err(error)
-            }
+    let regions = mech_engine::CanonicalSourceFrontend
+        .document_compute_regions(&document.document())
+        .map_err(|error| {
+            MechError::new(
+                mech_core::GenericError {
+                    msg: error.to_string(),
+                },
+                None,
+            )
+        })?;
+    if regions.is_empty() {
+        let product =
+            compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))?;
+        mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product)
+    } else {
+        #[cfg(feature = "compute_backends_native")]
+        {
+            let mixed = compiler.compile_canonical_mixed_root(
+                mech_runtime::SourceRequest::new(uri),
+                mech_runtime::ModuleBuildOptions::new(
+                    env!("CARGO_PKG_VERSION"),
+                    "v0.4",
+                    "browser",
+                    &["compute"],
+                    &[],
+                ),
+            )?;
+            mech_runtime::CanonicalProgramBundle::from_artifact_product(
+                uri,
+                document,
+                &mixed.coordinator,
+                mixed.source_dependencies,
+            )
         }
-        Err(error) => Err(error),
+        #[cfg(not(feature = "compute_backends_native"))]
+        {
+            return Err(MechError::new(
+                mech_core::GenericError {
+                    msg: "browser compute compilation requires compute_backends_native".into(),
+                },
+                None,
+            ));
+        }
     }
+}
+
+/// Validate the configured browser program, then transport its retained source
+/// and canonical presentation addresses. The browser recompiles that single
+/// source authority for its own target instead of decoding a native artifact.
+pub(crate) fn compile_browser_document_payload(
+    compiler: &mut mech_runtime::ProgramCompiler,
+    canonical_uri: &str,
+    root_specifier: &str,
+    document: &mech_runtime::SourceDocument,
+) -> MResult<mech_runtime::BrowserDocumentPayload> {
+    compile_browser_document_bundle(compiler, canonical_uri, document)?;
+    let presentation_output_ids = mech_runtime::canonical_document_presentation_output_ids(
+        &document.document(),
+    )
+    .map_err(|error| {
+        MechError::new(
+            mech_core::GenericError {
+                msg: error.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    Ok(mech_runtime::BrowserDocumentPayload::new(
+        root_specifier,
+        document.source().to_contiguous_string(),
+    )?
+    .with_presentation_output_ids(presentation_output_ids))
 }
 
 #[derive(Clone, Debug)]
@@ -146,33 +198,114 @@ impl RuntimeHostFactory for ClockFactory {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "compute_backends_native"))]
 mod tests {
     use super::*;
+    use mech_runtime::{InMemorySourceResolver, SourceDocument};
+    use std::collections::BTreeMap;
 
     #[test]
-    fn mixed_compute_hosts_do_not_enter_the_document_compiler() {
+    fn configured_mixed_browser_bundle_retains_pointer_contracts_and_dependencies() {
+        let uri = "bundle:///main.mec";
+        let source = "+> ./dep.mec\n@pointer := pointer://mouse/frame{:read(pulse), :read(position)}\n@compute := compute://worker/kernel{:write(input/x), :write(turn)}\n@compute/input/x <- @pointer/position\n@compute/turn <- @pointer/pulse\n\ncalculation @compute\n-------------------\nx := [0f32; 0f32]\nresult := x + dep/value\nresult\n";
+        let dependency = "value := 2f32\n<+ value\n";
+        let document = SourceDocument::parse_resolved(
+            uri,
+            mech_syntax::document::Revision(0),
+            source,
+            Default::default(),
+        )
+        .unwrap();
+        let mut resolver = InMemorySourceResolver::new();
+        for (resolved_uri, text) in [(uri, source), ("bundle:///dep.mec", dependency)] {
+            let retained = SourceDocument::parse_resolved(
+                resolved_uri,
+                mech_syntax::document::Revision(0),
+                text,
+                Default::default(),
+            )
+            .unwrap();
+            resolver
+                .insert_source(
+                    resolved_uri,
+                    mech_runtime::ResolvedSource::new(
+                        resolved_uri,
+                        resolved_uri,
+                        mech_core::MechSourceCode::String(text.into()),
+                    )
+                    .with_kind(mech_runtime::SourceKind::Mech)
+                    .with_source_document(retained)
+                    .unwrap()
+                    .admit_canonical_document()
+                    .unwrap(),
+                )
+                .unwrap();
+        }
+        resolver
+            .insert_resolution(uri, "./dep.mec", "bundle:///dep.mec")
+            .unwrap();
         let hosts = [
             HostInstanceConfig {
-                name: "pointer".to_owned(),
-                provider: "pointer".to_owned(),
+                name: "mouse".into(),
+                provider: "pointer".into(),
                 settings: ConfigValue::Map(Default::default()),
             },
             HostInstanceConfig {
-                name: "particles".to_owned(),
-                provider: "compute".to_owned(),
-                settings: ConfigValue::Map(Default::default()),
-            },
-            HostInstanceConfig {
-                name: "clock".to_owned(),
-                provider: "timer".to_owned(),
-                settings: ConfigValue::Map(Default::default()),
+                name: "worker".into(),
+                provider: "compute".into(),
+                settings: ConfigValue::Map(BTreeMap::from([
+                    ("region".into(), ConfigValue::String("calculation".into())),
+                    ("backend".into(), ConfigValue::String("auto".into())),
+                ])),
             },
         ];
-
-        configured_browser_compiler_builder(&hosts, RuntimeConfig::default())
+        let mut compiler = configured_browser_compiler_builder(&hosts, RuntimeConfig::default())
             .unwrap()
+            .source_resolver(resolver)
             .build_compiler()
             .unwrap();
+        let bundle = compile_browser_document_bundle(&mut compiler, uri, &document).unwrap();
+        assert_eq!(
+            bundle.source_dependencies,
+            BTreeMap::from([("bundle:///dep.mec".into(), mech_core::hash_str(dependency))])
+        );
+        bundle.validate(Some(source)).unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
+        for base in ["pointer://mouse/frame", "compute://worker/kernel"] {
+            assert!(artifact.requirements().iter().any(|(_, requirement)| matches!(requirement, mech_core::ApplicationRequirement::Resource(request) if request.base_uri == base)), "{base}");
+        }
+    }
+
+    #[test]
+    fn particle_browser_authority_retains_pointer_and_compute_hosts() {
+        let document = mech_runtime::parse_config_document(
+            "examples/gpu-particles/mech.mcfg",
+            include_str!("../examples/gpu-particles/mech.mcfg"),
+            Default::default(),
+        )
+        .unwrap();
+        let authority =
+            crate::web_runtime_injection_config_from_document(&document, &RuntimeConfig::default())
+                .unwrap();
+        for expected in &document.hosts {
+            assert!(authority.hosts.contains(expected), "{}", expected.provider);
+        }
+        for expected in &document.run.as_ref().unwrap().grants {
+            assert!(
+                authority.run_grants.contains(expected),
+                "{}",
+                expected.target
+            );
+        }
+    }
+
+    #[test]
+    fn invalid_compute_configuration_is_rejected_before_browser_compilation() {
+        let host = HostInstanceConfig {
+            name: "worker".into(),
+            provider: "compute".into(),
+            settings: ConfigValue::Map(Default::default()),
+        };
+        assert!(configured_browser_compiler_builder(&[host], RuntimeConfig::default()).is_err());
     }
 }

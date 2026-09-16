@@ -185,7 +185,8 @@ def check_required_product_seams() -> list[str]:
     required = {
         "src/cli/commands/run.rs": "load_source_program",
         "src/build/src/project/render.rs": "load_bytecode_program",
-        "src/wasm/src/project.rs": "load_canonical_root_program",
+        # Project symbol queries require the canonical interactive root product.
+        "src/wasm/src/project.rs": "load_interactive_root_program",
         "hosts/browser/src/config.rs": "resident_durability",
         "hosts/terminal/src/provider.rs": "CLI_OUTPUT_EFFECT_CONTRACT",
     }
