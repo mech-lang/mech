@@ -2471,6 +2471,7 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
         CanonicalOrderedDocument {
             identity,
+            publish_result: true,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
             nominal_origin: None,
             nominal_package_id: None,

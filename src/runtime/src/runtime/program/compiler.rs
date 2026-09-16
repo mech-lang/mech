@@ -1075,7 +1075,7 @@ impl<'a> ProgramCompilerView<'a> {
                 "ordered compilation requires at least one root",
             ));
         }
-        let resolved = requests
+        let mut resolved = requests
             .iter()
             .map(|request| {
                 request.validate()?;
@@ -1102,38 +1102,49 @@ impl<'a> ProgramCompilerView<'a> {
                 )));
             }
         }
-        let indexes = resolved
-            .iter()
-            .map(|root| {
-                root.source_document()
-                    .ok_or_else(|| {
-                        canonical_compilation_error("ordered root has no retained document")
-                    })?
-                    .index()
-                    .map_err(|error| MechError::new(error, None))
-            })
-            .collect::<MResult<Vec<_>>>()?;
-        let mut root_imports = vec![Vec::new(); resolved.len()];
-        let mut detached_indexes = indexes
-            .iter()
-            .map(|index| index.root.clone())
-            .collect::<Vec<_>>();
-        for (ordinal, root) in resolved.iter().enumerate() {
-            for declaration in indexes[ordinal].root.program_imports() {
+        let requested_roots = resolved.len();
+        let mut indexes = Vec::new();
+        let mut root_imports = Vec::new();
+        let mut detached_indexes = Vec::new();
+        let mut ordinal = 0;
+        while ordinal < resolved.len() {
+            let uri = resolved[ordinal].canonical_uri.clone();
+            let index = resolved[ordinal]
+                .source_document()
+                .ok_or_else(|| {
+                    canonical_compilation_error("ordered root has no retained document")
+                })?
+                .index()
+                .map_err(|error| MechError::new(error, None))?;
+            let mut detached = index.root.clone();
+            let mut imports = Vec::new();
+            for declaration in index.root.program_imports() {
                 if !import_may_resolve_source_dependency(&declaration) {
                     continue;
                 }
-                let request = source_request_for_import(&declaration, Some(&root.canonical_uri));
+                let request = source_request_for_import(&declaration, Some(&uri));
                 let Some(dependency) = self.source_resolver.resolve(&request)? else {
                     continue;
                 };
-                if let Some(dependency) = identities.get(&dependency.canonical_uri).copied() {
-                    detached_indexes[ordinal]
-                        .imports
-                        .retain(|item| item.declaration != declaration);
-                    root_imports[ordinal].push((declaration, dependency));
-                }
+                let dependency = dependency.admit_canonical_document()?;
+                let dependency_id =
+                    if let Some(identity) = identities.get(&dependency.canonical_uri).copied() {
+                        identity
+                    } else {
+                        let identity = resolved.len();
+                        identities.insert(dependency.canonical_uri.clone(), identity);
+                        resolved.push(dependency);
+                        identity
+                    };
+                detached
+                    .imports
+                    .retain(|item| item.declaration != declaration);
+                imports.push((declaration, dependency_id));
             }
+            indexes.push(index);
+            detached_indexes.push(detached);
+            root_imports.push(imports);
+            ordinal += 1;
         }
         fn visit(
             root: usize,
@@ -1265,6 +1276,7 @@ impl<'a> ProgramCompilerView<'a> {
                 nominal_origin: document.nominal_origin().cloned(),
                 nominal_package_id: document.nominal_package_id().map(str::to_owned),
                 identity: ordinal,
+                publish_result: ordinal < requested_roots,
                 input_schemas: schemas,
                 resource_writes: writes,
                 imports,

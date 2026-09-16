@@ -112,6 +112,10 @@ pub struct CanonicalOrderedDocument {
     pub nominal_origin: Option<CanonicalNominalPath>,
     pub nominal_package_id: Option<String>,
     pub identity: usize,
+    /// Whether this document was named by the caller and therefore owns a
+    /// published root result. Linked dependencies retain their live graph and
+    /// exports without becoming additional program outputs.
+    pub publish_result: bool,
     pub input_schemas: BTreeMap<String, SchemaBody>,
     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
     pub imports: BTreeMap<String, CanonicalOrderedImport>,
