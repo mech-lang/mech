@@ -3,7 +3,7 @@ mod constant_binding;
 
 #[path = "comprehension.rs"]
 mod comprehension;
-use comprehension::{PendingComprehension, resolve_comprehension};
+use comprehension::{PendingComprehension, PendingComprehensionStep, resolve_comprehension};
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -1167,28 +1167,7 @@ impl SourceSchemas {
         for node in nodes {
             if let PendingNodeBody::Comprehension(control) = &node.body {
                 let mut failure = None;
-                for step in &control.steps {
-                    match step {
-                        crate::ComprehensionStep::Generator { pattern, .. } => {
-                            pattern.bindings(&mut |_, schema| {
-                                if let Err(error) = insert(schema) {
-                                    failure = Some(error);
-                                }
-                            })
-                        }
-                        crate::ComprehensionStep::Operation(operation) => {
-                            insert(&operation.schema)?;
-                        }
-                        crate::ComprehensionStep::Filter(_) => {}
-                    }
-                }
-                if let Some(error) = failure {
-                    return Err(error);
-                }
-            }
-            if let PendingNodeBody::Match(control) = &node.body {
-                let mut failure = None;
-                control.visit_pattern_binding_schemas(&mut |schema| {
+                control.visit_schemas(&mut |schema| {
                     if failure.is_none()
                         && let Err(error) = insert(schema)
                     {
@@ -1198,13 +1177,18 @@ impl SourceSchemas {
                 if let Some(error) = failure {
                     return Err(error);
                 }
-                for block in control.blocks() {
-                    for (_, schema) in &block.parameters {
-                        insert(schema)?;
+            }
+            if let PendingNodeBody::Match(control) = &node.body {
+                let mut failure = None;
+                control.visit_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
                     }
-                    for operation in &block.operations {
-                        insert(&operation.schema)?;
-                    }
+                });
+                if let Some(error) = failure {
+                    return Err(error);
                 }
             }
         }
@@ -2179,8 +2163,19 @@ impl PendingMatch {
             {
                 output.push(block);
                 for operation in &block.operations {
-                    if let PendingControlOperationBody::Match(nested) = &operation.body {
-                        append(nested, output);
+                    match &operation.body {
+                        PendingControlOperationBody::Match(nested) => append(nested, output),
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            for step in &nested.steps {
+                                if let PendingComprehensionStep::Operation(operation) = step
+                                    && let PendingControlOperationBody::Match(nested) =
+                                        &operation.body
+                                {
+                                    append(nested, output);
+                                }
+                            }
+                        }
+                        PendingControlOperationBody::Operation { .. } => {}
                     }
                 }
             }
@@ -2198,14 +2193,33 @@ impl PendingMatch {
                 }
                 for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
                     for operation in &block.operations {
-                        if let PendingControlOperationBody::Match(nested) = &operation.body {
-                            append(nested, visit);
+                        match &operation.body {
+                            PendingControlOperationBody::Match(nested) => append(nested, visit),
+                            PendingControlOperationBody::Comprehension(nested) => {
+                                nested.visit_schemas(visit)
+                            }
+                            PendingControlOperationBody::Operation { .. } => {}
                         }
                     }
                 }
             }
         }
         append(self, visit);
+    }
+
+    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        self.visit_pattern_binding_schemas(visit);
+        for block in self.blocks() {
+            for (_, schema) in &block.parameters {
+                visit(schema);
+            }
+            for operation in &block.operations {
+                visit(&operation.schema);
+                if let PendingControlOperationBody::Comprehension(nested) = &operation.body {
+                    nested.visit_schemas(visit);
+                }
+            }
+        }
     }
 }
 
@@ -2234,6 +2248,7 @@ enum PendingControlOperationBody {
         contract: OperationContractDeclaration,
     },
     Match(PendingMatch),
+    Comprehension(PendingComprehension),
 }
 
 struct PendingControlBlock {
@@ -8311,6 +8326,9 @@ impl SemanticBuilder {
                     }
                 }
                 PendingNodeBody::Match(control) => PendingControlOperationBody::Match(control),
+                PendingNodeBody::Comprehension(control) => {
+                    PendingControlOperationBody::Comprehension(control)
+                }
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -8390,6 +8408,11 @@ fn resolve_pending_match(
                         },
                         PendingControlOperationBody::Match(nested) => {
                             crate::ControlOperationBody::Match(resolve_pending_match(
+                                nested, schemas, constants,
+                            ))
+                        }
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            crate::ControlOperationBody::Comprehension(resolve_comprehension(
                                 nested, schemas, constants,
                             ))
                         }
