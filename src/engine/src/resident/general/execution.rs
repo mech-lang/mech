@@ -1543,7 +1543,7 @@ impl ReactiveInstance {
         Ok(())
     }
 
-    fn execute_step(
+    pub(super) fn execute_step(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
@@ -1560,10 +1560,14 @@ impl ReactiveInstance {
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Match(_)
         ) {
-            let node = self.plan.steps[node_index.get() as usize].artifact_node();
+            let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            let node = matched.artifact_node;
             let turn_plan = crate::memory_planner::plan_current_resident_turn(
                 &self.plan.memory_plan,
-                node,
+                matched.budget_node,
                 &crate::memory_planner::TurnMemoryFacts::default(),
             )
             .map_err(|_| ResidentExecutionError::Kernel {
