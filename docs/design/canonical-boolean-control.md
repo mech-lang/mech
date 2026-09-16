@@ -57,8 +57,9 @@ subsequent input. Pattern depth and generator nesting are bounded in artifacts;
 bytecode population limits apply before graph allocation.
 
 This remains an S4 increment. Comprehension composite bindings and yields,
-computed pattern evaluation blocks, control nested in or containing
-comprehensions, and FSM lowering still require implementation. Matches can nest
-in match bodies and guards, with at most eight declarations on a path.
+recursive match/comprehension control, and ordered computed-pattern evaluation
+use the canonical control graph. Matches can nest in match bodies and guards,
+with at most eight mixed control declarations on a path. FSM lowering still
+requires implementation.
 Unsupported cases remain explicit errors and do not count as executable
 completion evidence.

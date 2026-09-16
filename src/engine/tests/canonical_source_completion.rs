@@ -427,6 +427,25 @@ fn comprehensions_execute_nested_canonical_control() {
 }
 
 #[test]
+fn comprehension_computed_patterns_evaluate_in_lexical_order() {
+    execute(
+        "y := [1 | signal<f64> + 1 <- [2 3]]",
+        [
+            (vec![ResidentValueRef::F64(&[1.0])], matrix(&[1.0])),
+            (vec![ResidentValueRef::F64(&[2.0])], matrix(&[1.0])),
+            (
+                vec![ResidentValueRef::F64(&[3.0])],
+                Data::Matrix(Box::new([])),
+            ),
+        ],
+    );
+    execute(
+        "y := [x | x <- [1 2], x + 1 <- [2 4]]",
+        [(vec![], matrix(&[1.0]))],
+    );
+}
+
+#[test]
 fn nested_comprehension_rejects_inconsistent_element_shapes_before_publish() {
     let source = "x := [[z | z <- [1 2], z <= item] | item <- [1 2]]";
     let artifact = compile(source).compile_artifact().unwrap();

@@ -21,9 +21,9 @@ FSM artifacts own machine identity, argument roles, ordered stage kinds, and
 typed stage values; they do not reconstruct behavior from source-map strings.
 Borrowed tuple, array, and tagged-pattern projection executes with primitive
 bindings, and matches support compound results and nested bodies and guards.
-Composite comprehension bindings/yields, computed pattern blocks, composition
-with nested comprehensions, the FSM resident continuation owner, and other S4
-limits remain unfinished. The exact S6 registry candidate is staged here;
+Composite comprehension bindings/yields, recursive comprehension control, and
+ordered computed-pattern evaluation now execute through the canonical artifact.
+The FSM resident continuation owner and other S4 limits remain unfinished. The exact S6 registry candidate is staged here;
 activation and qualification remain gated on S4 completion.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
 2I-D/2I-E delivery assumption with independently gated milestones. This
