@@ -530,8 +530,25 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
 
 #[test]
 fn semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership() {
-    let compiled = CanonicalSourceFrontend
+    let fixed = CanonicalSourceFrontend
         .compile_expression(&expression("1..3"))
+        .unwrap();
+    let fixed_schema = fixed
+        .schemas()
+        .get(fixed.program().outputs[0].schema)
+        .unwrap();
+    assert!(fixed_schema.dimension_parameters().is_empty());
+    assert!(
+        matches!(fixed_schema.body(), SchemaBody::Matrix { dimensions, .. }
+            if dimensions.as_ref() == [DimensionExpr::Constant(1), DimensionExpr::Constant(2)])
+    );
+
+    // Constant ranges now carry their exact cardinality in the wire schema.
+    // Keep the shape-hash witness parameterized by using a genuinely dynamic
+    // endpoint, so this assertion still proves that non-wire shape values and
+    // their owning slots affect the semantic certificate.
+    let compiled = CanonicalSourceFrontend
+        .compile_expression(&expression("1..limit"))
         .unwrap();
     let schema = compiled
         .schemas()
