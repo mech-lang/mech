@@ -2102,14 +2102,20 @@ pub(super) fn compile_ordered_documents(
         let mut bindings = builder.bindings.keys().cloned().collect();
         declare_document_inputs(&mut builder, &units, &mut bindings)?;
         declare_document_inline_inputs(&mut builder, &units, &bindings)?;
-        let last =
-            compile_document_units(&mut builder, units, &bindings, &mut presentation, false)?
-                .ok_or_else(|| {
-                    internal(
-                        anchor,
-                        "ordered root has no executable source unit".to_owned(),
-                    )
-                })?;
+        let mut root_presentation = Vec::new();
+        let last = compile_document_units(
+            &mut builder,
+            units,
+            &bindings,
+            &mut root_presentation,
+            false,
+        )?
+        .ok_or_else(|| {
+            internal(
+                anchor,
+                "ordered root has no executable source unit".to_owned(),
+            )
+        })?;
         // Keep the source binding's name where the last expression names it;
         // otherwise each root has its own unambiguous result identity.
         let text = node_text(&last.syntax)?;
@@ -2125,7 +2131,10 @@ pub(super) fn compile_ordered_documents(
         } else {
             format!("root:{}:result", root.identity)
         };
-        results.insert(root.identity, (name, last));
+        if root.publish_result {
+            results.insert(root.identity, (name, last));
+            presentation.push((root.identity, root_presentation));
+        }
         let mut root_exports = BTreeMap::new();
         for export in exports {
             let name = builder.required(export.name(), export.syntax(), "an exported name")?;
@@ -2164,24 +2173,27 @@ pub(super) fn compile_ordered_documents(
         });
         builder.publish(&name, None, last.value, &last.syntax);
     }
-    for (kind, value, owner) in presentation {
-        let role = match kind {
-            SourceDocumentOutputKind::Inline => "inline",
-            SourceDocumentOutputKind::Fence => "fence",
-            SourceDocumentOutputKind::Program => unreachable!(),
-        };
-        let anchor = SourceSemanticAnchor::for_node(&owner);
-        let name = format!(
-            "document:{}:{role}:{}",
-            anchor.document.0,
-            owner.range().start.0
-        );
-        output_bindings.push(SourceDocumentOutput {
-            output: builder.outputs.len() as u32,
-            kind,
-            visible: true,
-        });
-        builder.publish(&name, None, value, &owner);
+    presentation.sort_by_key(|(identity, _)| *identity);
+    for (_, root_presentation) in presentation {
+        for (kind, value, owner) in root_presentation {
+            let role = match kind {
+                SourceDocumentOutputKind::Inline => "inline",
+                SourceDocumentOutputKind::Fence => "fence",
+                SourceDocumentOutputKind::Program => unreachable!(),
+            };
+            let anchor = SourceSemanticAnchor::for_node(&owner);
+            let name = format!(
+                "document:{}:{role}:{}",
+                anchor.document.0,
+                owner.range().start.0
+            );
+            output_bindings.push(SourceDocumentOutput {
+                output: builder.outputs.len() as u32,
+                kind,
+                visible: true,
+            });
+            builder.publish(&name, None, value, &owner);
+        }
     }
     builder.order_document_state_writers();
     let mut program = builder.finish()?;
