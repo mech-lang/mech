@@ -696,7 +696,7 @@ impl SemanticBuilder {
                 Ok(SourceMatchArm {
                     pattern,
                     guard: None,
-                    value,
+                    body: SourceMatchBody::Expression(value),
                     syntax: arm,
                 })
             })
@@ -707,7 +707,7 @@ impl SemanticBuilder {
         );
         self.active_recursive_outputs
             .push((name.to_owned(), expected.clone()));
-        let result = self.lower_match_expression(scrutinee, &arms, body, !enum_input);
+        let result = self.lower_match_expression(scrutinee, &arms, body, !enum_input, false);
         self.active_recursive_outputs.pop();
         let result = result?;
         self.conform_schema_draft(

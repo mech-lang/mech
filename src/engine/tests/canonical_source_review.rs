@@ -216,7 +216,11 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         .iter()
         .find_map(|step| match step {
             mech_engine::ComprehensionStep::Operation(operation)
-                if operation.operation.canonical_name() == "math/add" =>
+                if matches!(
+                    &operation.body,
+                    mech_engine::ControlOperationBody::Operation { operation, .. }
+                        if operation.canonical_name() == "math/add"
+                ) =>
             {
                 Some(operation)
             }

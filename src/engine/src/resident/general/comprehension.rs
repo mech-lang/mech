@@ -1177,6 +1177,7 @@ mod tests {
         let peer = mech_core::ConstantId::new(5);
         let yielded = mech_core::ConstantId::new(7);
         let control = crate::ComprehensionDeclaration {
+            id: crate::ControlBlockId(0),
             kind: crate::ComprehensionKind::Matrix,
             steps: vec![crate::ComprehensionStep::Generator {
                 source: crate::ComprehensionValue::Constant(generator),
