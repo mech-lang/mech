@@ -21,14 +21,6 @@ pub enum ActivatedCollectionStep {
     Operation {
         node: ActivatedNodeIndex,
         work: u64,
-        /// Prefix of the control's shared local inventory that is initialized
-        /// when this operation executes. Nested matches retain their current
-        /// output too because they have no call-local memory contract.
-        retained_local_count: u32,
-        /// Sorted indices in that prefix which the operation's own call plan
-        /// already accounts for. Keeping only compact exclusions avoids a
-        /// quadratic retained-region array for large comprehensions.
-        excluded_locals: Box<[u32]>,
     },
     Filter(ResidentReadLocation),
 }
@@ -104,7 +96,7 @@ pub(super) fn all_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur(_)
+                        | crate::ControlOperationBody::Recur
                         | crate::ControlOperationBody::Suspend
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
@@ -121,41 +113,38 @@ pub(super) fn all_local_definitions(
         control: &crate::ComprehensionDeclaration,
         output: &mut Vec<(bool, bool, u32, u32, SchemaId)>,
     ) {
-        let mut next_local = 0u32;
-        for step in &control.steps {
-            match step {
-                crate::ComprehensionStep::Generator { pattern, .. } => {
-                    pattern.bindings(&mut |local, schema| {
-                        assert_eq!(local, next_local, "validated collection locals");
-                        output.push((false, true, control.id.0, local, *schema));
-                        next_local += 1;
-                    });
+        for (local, (turn_shaped_binding, schema)) in
+            local_definitions(control).into_iter().enumerate()
+        {
+            let nested_control = control.steps.iter().find_map(|step| match step {
+                crate::ComprehensionStep::Operation(operation)
+                    if operation.local == local as u32 =>
+                {
+                    Some(&operation.body)
                 }
-                crate::ComprehensionStep::Operation(operation) => {
-                    assert_eq!(operation.local, next_local, "validated collection locals");
-                    output.push((
-                        false,
-                        matches!(
-                            operation.body,
-                            crate::ControlOperationBody::Comprehension(_)
-                        ),
-                        control.id.0,
-                        operation.local,
-                        operation.schema,
-                    ));
-                    next_local += 1;
-                    match &operation.body {
-                        crate::ControlOperationBody::Match(nested) => append_match(nested, output),
-                        crate::ControlOperationBody::Comprehension(nested) => {
-                            append_comprehension(nested, output)
-                        }
-                        crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur(_)
-                        | crate::ControlOperationBody::Suspend
-                        | crate::ControlOperationBody::Publish => {}
-                    }
+                _ => None,
+            });
+            output.push((
+                false,
+                turn_shaped_binding
+                    || matches!(
+                        nested_control,
+                        Some(crate::ControlOperationBody::Comprehension(_))
+                    ),
+                control.id.0,
+                local as u32,
+                schema,
+            ));
+            match nested_control {
+                Some(crate::ControlOperationBody::Match(nested)) => append_match(nested, output),
+                Some(crate::ControlOperationBody::Comprehension(nested)) => {
+                    append_comprehension(nested, output)
                 }
-                crate::ComprehensionStep::Filter(_) => {}
+                Some(crate::ControlOperationBody::Operation { .. })
+                | Some(crate::ControlOperationBody::Recur)
+                | Some(crate::ControlOperationBody::Suspend)
+                | Some(crate::ControlOperationBody::Publish)
+                | None => {}
             }
         }
     }
@@ -183,7 +172,7 @@ pub(super) fn all_match_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur(_)
+                        | crate::ControlOperationBody::Recur
                         | crate::ControlOperationBody::Suspend
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
@@ -230,31 +219,6 @@ fn primitive(body: &SchemaBody) -> bool {
     )
 }
 
-fn operation_retained_local_scope(
-    operation: &crate::ComprehensionOperation,
-) -> Option<(u32, Box<[u32]>)> {
-    let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
-    let retained_local_count = operation.local.checked_add(u32::from(nested_match))?;
-    let excluded_locals = if nested_match {
-        Box::new([])
-    } else {
-        let mut excluded = operation
-            .inputs
-            .iter()
-            .filter_map(|value| match value {
-                crate::ComprehensionValue::Local(local) if *local < retained_local_count => {
-                    Some(*local)
-                }
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        excluded.sort_unstable();
-        excluded.dedup();
-        excluded.into_boxed_slice()
-    };
-    Some((retained_local_count, excluded_locals))
-}
-
 fn canonical_component_schema(
     parent: &mech_core::Schema,
     body: &SchemaBody,
@@ -297,17 +261,18 @@ fn pattern_components_addressable(
             let SchemaBody::Enum { variants, .. } = enum_parent.body() else {
                 return true;
             };
-            let Some(variant) = variants.get(*ordinal as usize) else {
+            let Some((pattern, body)) = payload.as_deref().zip(
+                variants
+                    .get(*ordinal as usize)
+                    .and_then(|variant| variant.payload.as_ref()),
+            ) else {
                 return true;
             };
-            match (payload.as_deref(), variant.payload.as_ref()) {
-                (Some(pattern), Some(body)) => {
-                    canonical_component_schema_id(&enum_parent, body, schemas).is_some_and(
-                        |schema| pattern_components_addressable(pattern, schema, schemas),
-                    )
-                }
-                _ => true,
+            if matches!(pattern, crate::CollectionPattern::Wildcard) {
+                return true;
             }
+            canonical_component_schema_id(&enum_parent, body, schemas)
+                .is_some_and(|schema| pattern_components_addressable(pattern, schema, schemas))
         }
         crate::CollectionPattern::Tuple(patterns) => {
             let SchemaBody::Tuple(items) = parent.body() else {
@@ -378,53 +343,22 @@ fn supported_pattern(
         && pattern_components_addressable(pattern, element_schema, schemas)
 }
 
-fn generator_element_schema(
-    pattern: &crate::CollectionPattern,
-    source: &mech_core::Schema,
-    schemas: &mech_core::SchemaTable,
-) -> Option<Option<SchemaId>> {
-    let element = match source.body() {
-        SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => element.as_ref(),
-        _ => return None,
-    };
-    if matches!(pattern, crate::CollectionPattern::Wildcard) {
-        return Some(None);
-    }
-    let element_schema = canonical_component_schema_id(source, element, schemas)?;
-    supported_pattern(pattern, element_schema, schemas).then_some(Some(element_schema))
-}
-
-fn schema_adapting_pattern(
-    pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
-    schemas: &mech_core::SchemaTable,
-) -> bool {
-    let composite = |schema| {
-        schemas.get(schema).is_some_and(|schema| {
-            matches!(
-                schema.body(),
-                SchemaBody::Tuple(_) | SchemaBody::Matrix { .. }
-            )
-        })
-    };
+fn structural_pattern<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
     match pattern {
         crate::CollectionPattern::Enum { .. }
         | crate::CollectionPattern::Tuple(_)
         | crate::CollectionPattern::Array { .. } => true,
-        crate::CollectionPattern::Bind { schema, .. } => composite(schema.schema),
-        crate::CollectionPattern::Equal(value) => composite(value.schema),
-        crate::CollectionPattern::Wildcard => false,
+        crate::CollectionPattern::Wildcard
+        | crate::CollectionPattern::Bind { .. }
+        | crate::CollectionPattern::Equal(_) => false,
     }
 }
 
-pub(super) fn uses_structural_patterns(
-    control: &ActivatedComprehensionNode,
-    schemas: &mech_core::SchemaTable,
-) -> bool {
+pub(super) fn uses_structural_patterns(control: &ActivatedComprehensionNode) -> bool {
     control.steps.iter().any(|step| {
         matches!(
             step,
-            ActivatedCollectionStep::Generator { pattern, .. }
-                if schema_adapting_pattern(pattern, schemas)
+            ActivatedCollectionStep::Generator { pattern, .. } if structural_pattern(pattern)
         )
     })
 }
@@ -642,16 +576,6 @@ pub(super) fn bind_inner(
             }
         }
     };
-    let locals = locals(control)
-        .iter()
-        .enumerate()
-        .map(|(local, _)| {
-            layout.slots[layout.control_locals[&(owner, control.id.0, local as u32)]
-                .0
-                .get() as usize]
-                .region
-        })
-        .collect::<Box<[_]>>();
     let mut instructions = Vec::new();
     let mut next_local = 0usize;
     for step in &control.steps {
@@ -668,14 +592,23 @@ pub(super) fn bind_inner(
                 let binding_end = u32::try_from(next_local).map_err(|_| unsupported())?;
                 let source = source(*value);
                 let input = port(source)?;
-                let Some(source_schema) = artifact.schemas().get(input.schema_id) else {
-                    return Err(unsupported());
-                };
                 let Some(element_schema) =
-                    generator_element_schema(pattern, source_schema, artifact.schemas())
+                    artifact.schemas().get(input.schema_id).and_then(|schema| {
+                        let element = match schema.body() {
+                            SchemaBody::Matrix { element, .. }
+                            | SchemaBody::Set { element, .. } => element.clone(),
+                            _ => return None,
+                        };
+                        let element_schema =
+                            canonical_component_schema_id(schema, &element, artifact.schemas())?;
+                        Some(element_schema)
+                    })
                 else {
                     return Err(unsupported());
                 };
+                if !supported_pattern(pattern, element_schema, artifact.schemas()) {
+                    return Err(unsupported());
+                }
                 let pattern = activate_pattern(
                     pattern,
                     &|local, schema| ActivatedPatternBinding {
@@ -727,13 +660,6 @@ pub(super) fn bind_inner(
                     .copied()
                     .map(port)
                     .collect::<Result<Vec<_>, _>>()?;
-                let input_reads = input_sources
-                    .iter()
-                    .copied()
-                    .map(|source| resolve_read(layout, source))
-                    .collect::<Result<Vec<_>, _>>()?;
-                let (retained_local_count, excluded_locals) =
-                    operation_retained_local_scope(operation).ok_or_else(unsupported)?;
                 let (reference, contract_id) = match &operation.body {
                     crate::ControlOperationBody::Operation {
                         operation,
@@ -761,7 +687,7 @@ pub(super) fn bind_inner(
                             steps,
                             reads,
                             calls,
-                            &[index],
+                            None,
                         )?;
                         let ActivatedTurnStep::Match(prepared) = &mut steps[index.get() as usize]
                         else {
@@ -771,15 +697,15 @@ pub(super) fn bind_inner(
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
-                            retained_local_count,
-                            excluded_locals,
                         });
                         continue;
                     }
                     crate::ControlOperationBody::Comprehension(nested) => {
                         let index = ActivatedNodeIndex(steps.len() as u32);
                         let start = reads.len() as u32;
-                        reads.extend(input_reads.iter().copied());
+                        for input in &input_sources {
+                            reads.push(resolve_read(layout, *input)?);
+                        }
                         steps.push(ActivatedTurnStep::Comprehension(std::sync::Arc::new(
                             ActivatedComprehensionNode {
                                 artifact_node: owner,
@@ -842,12 +768,10 @@ pub(super) fn bind_inner(
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
-                            retained_local_count,
-                            excluded_locals,
                         });
                         continue;
                     }
-                    crate::ControlOperationBody::Recur(_)
+                    crate::ControlOperationBody::Recur
                     | crate::ControlOperationBody::Suspend
                     | crate::ControlOperationBody::Publish => {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
@@ -874,7 +798,9 @@ pub(super) fn bind_inner(
                     memory_plan,
                 ));
                 let start = reads.len() as u32;
-                reads.extend(input_reads.iter().copied());
+                for input in input_sources {
+                    reads.push(resolve_read(layout, input)?);
+                }
                 let mech_core::ResolvedOperationContract::Declared(contract) =
                     artifact.contracts().get(contract_id).unwrap()
                 else {
@@ -991,15 +917,20 @@ pub(super) fn bind_inner(
                 } else {
                     return Err(unsupported());
                 };
-                instructions.push(ActivatedCollectionStep::Operation {
-                    node: index,
-                    work,
-                    retained_local_count,
-                    excluded_locals,
-                });
+                instructions.push(ActivatedCollectionStep::Operation { node: index, work });
             }
         }
     }
+    let locals = locals(control)
+        .iter()
+        .enumerate()
+        .map(|(local, _)| {
+            layout.slots[layout.control_locals[&(owner, control.id.0, local as u32)]
+                .0
+                .get() as usize]
+                .region
+        })
+        .collect();
     let inputs = captures
         .iter()
         .copied()
@@ -1048,7 +979,6 @@ fn materialization_memory(
 ) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
     let name = match kind {
         crate::ComprehensionKind::Matrix => "matrix-comprehension",
-        crate::ComprehensionKind::MatrixPreserveShape => "shape-preserving-matrix-comprehension",
         crate::ComprehensionKind::Set => "set-comprehension",
     };
     let declaration = mech_core::OperationContractDeclaration {
@@ -1141,106 +1071,6 @@ mod tests {
     }
 
     #[test]
-    fn root_composite_bindings_and_equalities_request_projection_planning() {
-        let mut builder = SchemaTableBuilder::new();
-        let tuple = builder
-            .insert(
-                SchemaDraft {
-                    body: SchemaBody::Tuple(
-                        vec![SchemaBody::Dynamic, SchemaBody::Dynamic].into_boxed_slice(),
-                    ),
-                    dimension_parameters: Box::new([]),
-                }
-                .finalize()
-                .unwrap(),
-            )
-            .unwrap();
-        let scalar = builder
-            .insert(
-                SchemaDraft {
-                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
-                    dimension_parameters: Box::new([]),
-                }
-                .finalize()
-                .unwrap(),
-            )
-            .unwrap();
-        let build = builder.finish().unwrap();
-        let tuple = build.resolve(tuple).unwrap();
-        let scalar = build.resolve(scalar).unwrap();
-        let region = ResidentRegion {
-            kind: ResidentValueKind::Snapshot,
-            offset: 0,
-            len: 1,
-            shape: mech_core::ResidentShape::SCALAR,
-        };
-        let binding = |schema| crate::CollectionPattern::Bind {
-            local: 0,
-            schema: ActivatedPatternBinding { region, schema },
-        };
-        let equal = crate::CollectionPattern::Equal(ActivatedPatternValue {
-            location: ResidentReadLocation::Constant(region),
-            schema: tuple,
-        });
-
-        assert!(schema_adapting_pattern(&binding(tuple), &build.table));
-        assert!(schema_adapting_pattern(&equal, &build.table));
-        assert!(!schema_adapting_pattern(&binding(scalar), &build.table));
-    }
-
-    #[test]
-    fn comprehension_local_inventory_traverses_large_operation_lists_in_source_order() {
-        const OPERATION_COUNT: u32 = 4_096;
-        let schema = SchemaId::new(0);
-        let steps = (0..OPERATION_COUNT)
-            .map(|local| {
-                crate::ComprehensionStep::Operation(crate::ComprehensionOperation {
-                    local,
-                    body: crate::ControlOperationBody::Operation {
-                        operation: crate::OperationReference {
-                            module_path: Box::new([]),
-                            operation_name: "identity".to_owned(),
-                        },
-                        contract: mech_core::OperationContractId::new(0),
-                    },
-                    inputs: Box::new([]),
-                    schema,
-                })
-            })
-            .collect();
-        let control = crate::ComprehensionDeclaration {
-            id: crate::ControlBlockId(7),
-            kind: crate::ComprehensionKind::Matrix,
-            steps,
-            yield_value: crate::ComprehensionValue::Local(OPERATION_COUNT - 1),
-        };
-
-        let definitions = all_local_definitions(&control);
-        assert_eq!(definitions.len(), OPERATION_COUNT as usize);
-        for (local, definition) in definitions.into_iter().enumerate() {
-            assert_eq!(definition, (false, false, 7, local as u32, schema));
-        }
-        let scopes = control
-            .steps
-            .iter()
-            .map(|step| {
-                let crate::ComprehensionStep::Operation(operation) = step else {
-                    unreachable!()
-                };
-                operation_retained_local_scope(operation).unwrap()
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(scopes.len(), OPERATION_COUNT as usize);
-        assert!(
-            scopes
-                .iter()
-                .enumerate()
-                .all(|(local, (count, excluded))| *count == local as u32 && excluded.is_empty()),
-            "each operation retains only a constant-sized view of the shared inventory"
-        );
-    }
-
-    #[test]
     fn component_addressability_uses_canonical_parameter_numbering() {
         let component = |parameter| SchemaBody::Matrix {
             element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
@@ -1295,7 +1125,7 @@ mod tests {
             .into_boxed_slice(),
         );
 
-        let tuple = schemas.get(root).unwrap();
+        let tuple = schemas.entries().next().unwrap().schema();
         let SchemaBody::Tuple(components) = tuple.body() else {
             panic!("first schema is the tuple witness")
         };
@@ -1331,46 +1161,6 @@ mod tests {
 
         assert!(!pattern_components_addressable(&pattern, root, &schemas));
         assert!(!supported_pattern(&pattern, root, &schemas));
-    }
-
-    #[test]
-    fn wildcard_generator_does_not_require_a_retained_element_schema() {
-        let mut builder = SchemaTableBuilder::new();
-        let source = builder
-            .insert(
-                SchemaDraft {
-                    body: SchemaBody::Matrix {
-                        element: Box::new(SchemaBody::Tuple(
-                            vec![SchemaBody::Bool].into_boxed_slice(),
-                        )),
-                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
-                            .into_boxed_slice(),
-                    },
-                    dimension_parameters: Box::new([]),
-                }
-                .finalize()
-                .unwrap(),
-            )
-            .unwrap();
-        let build = builder.finish().unwrap();
-        let source = build.resolve(source).unwrap();
-        let schemas = build.table;
-        let source = schemas.get(source).unwrap();
-
-        assert_eq!(
-            generator_element_schema(&crate::CollectionPattern::Wildcard, source, &schemas),
-            Some(None),
-        );
-        assert_eq!(
-            generator_element_schema(
-                &crate::CollectionPattern::Tuple(
-                    vec![crate::CollectionPattern::Wildcard].into_boxed_slice(),
-                ),
-                source,
-                &schemas,
-            ),
-            None,
-        );
     }
 
     #[test]
@@ -1429,7 +1219,6 @@ mod tests {
         let peer = mech_core::ConstantId::new(5);
         let yielded = mech_core::ConstantId::new(7);
         let control = crate::ComprehensionDeclaration {
-            id: crate::ControlBlockId(0),
             kind: crate::ComprehensionKind::Matrix,
             steps: vec![crate::ComprehensionStep::Generator {
                 source: crate::ComprehensionValue::Constant(generator),
