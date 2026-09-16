@@ -706,12 +706,29 @@ fn schema_body_from_reified_kind(
     value: &ReifiedKind,
     context: &SpecializationContext<'_>,
 ) -> MResult<SchemaBody> {
-    let (kind, _dimensions, named) = value.decoded_closed_kind().map_err(|error| {
+    let (kind, dimensions, named) = value.decoded_closed_kind().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
 
+    fn open_dimension(
+        dimension: &DimensionExpr,
+        declarations: &[DimensionParameterDeclaration],
+    ) -> bool {
+        let DimensionExpr::Parameter(id) = dimension else {
+            return false;
+        };
+        declarations
+            .get(id.get() as usize)
+            .is_some_and(|declaration| {
+                declaration.id == *id
+                    && declaration.lower_bound == DimensionExpr::Constant(0)
+                    && declaration.upper_bound.is_none()
+            })
+    }
+
     fn schema(
         kind: &KindExpr,
+        dimensions: &[DimensionParameterDeclaration],
         named: &BTreeMap<KindId, CanonicalNominalPath>,
         context: &SpecializationContext<'_>,
     ) -> MResult<SchemaBody> {
@@ -726,6 +743,9 @@ fn schema_body_from_reified_kind(
         };
         let cardinality = |dimension: &DimensionExpr| match dimension {
             DimensionExpr::Hole => CardinalitySpec::Dynamic { upper_bound: None },
+            dimension if open_dimension(dimension, dimensions) => {
+                CardinalitySpec::Dynamic { upper_bound: None }
+            }
             dimension => CardinalitySpec::Exact(dimension.clone()),
         };
         Ok(match kind {
@@ -762,18 +782,26 @@ fn schema_body_from_reified_kind(
             }
             KindExpr::Matrix {
                 element,
-                dimensions,
+                dimensions: extents,
             } => SchemaBody::Matrix {
-                element: Box::new(schema(element, named, context)?),
-                dimensions: dimensions.clone(),
+                element: Box::new(schema(element, dimensions, named, context)?),
+                dimensions: if !extents.is_empty()
+                    && extents
+                        .iter()
+                        .all(|extent| open_dimension(extent, dimensions))
+                {
+                    Box::new([])
+                } else {
+                    extents.clone()
+                },
             },
             KindExpr::Option(element) => {
-                SchemaBody::Option(Box::new(schema(element, named, context)?))
+                SchemaBody::Option(Box::new(schema(element, dimensions, named, context)?))
             }
             KindExpr::Tuple(elements) => SchemaBody::Tuple(
                 elements
                     .iter()
-                    .map(|element| schema(element, named, context))
+                    .map(|element| schema(element, dimensions, named, context))
                     .collect::<MResult<Vec<_>>>()?
                     .into_boxed_slice(),
             ),
@@ -783,7 +811,7 @@ fn schema_body_from_reified_kind(
                     .map(|field| {
                         Ok(SchemaField {
                             name: field.name.clone(),
-                            schema: schema(&field.kind, named, context)?,
+                            schema: schema(&field.kind, dimensions, named, context)?,
                         })
                     })
                     .collect::<MResult<Vec<_>>>()?
@@ -795,7 +823,7 @@ fn schema_body_from_reified_kind(
                     .map(|column| {
                         Ok(SchemaField {
                             name: column.name.clone(),
-                            schema: schema(&column.kind, named, context)?,
+                            schema: schema(&column.kind, dimensions, named, context)?,
                         })
                     })
                     .collect::<MResult<Vec<_>>>()?
@@ -806,7 +834,7 @@ fn schema_body_from_reified_kind(
                 element,
                 cardinality: extent,
             } => SchemaBody::Set {
-                element: Box::new(schema(element, named, context)?),
+                element: Box::new(schema(element, dimensions, named, context)?),
                 cardinality: cardinality(extent),
             },
             KindExpr::Map {
@@ -814,8 +842,8 @@ fn schema_body_from_reified_kind(
                 value,
                 cardinality: extent,
             } => SchemaBody::Map {
-                key: Box::new(schema(key, named, context)?),
-                value: Box::new(schema(value, named, context)?),
+                key: Box::new(schema(key, dimensions, named, context)?),
+                value: Box::new(schema(value, dimensions, named, context)?),
                 cardinality: cardinality(extent),
             },
             KindExpr::TypeOf(_) => SchemaBody::ReifiedType,
@@ -827,7 +855,7 @@ fn schema_body_from_reified_kind(
         })
     }
 
-    schema(&kind, &named, context)
+    schema(&kind, &dimensions, &named, context)
 }
 
 /// Canonical source specialization for the frozen `convert/kind` intrinsic.
@@ -1185,6 +1213,88 @@ mod canonical_conversion_tests {
         assert!(matches!(
             specialized.output().snapshot().unwrap().data(),
             ValueData::U8(7)
+        ));
+    }
+
+    #[test]
+    fn dimensionless_reified_matrix_kind_inherits_the_source_shape() {
+        let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
+        let named = NamedKinds(BTreeMap::from([(id, path)]));
+        let dimensions = [0, 1].map(|id| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        });
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Matrix {
+                element: Box::new(KindExpr::Named(id)),
+                dimensions: vec![
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]
+                .into_boxed_slice(),
+            },
+            &dimensions,
+            &named,
+        )
+        .unwrap();
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                kind.canonical_bytes().to_vec().into_boxed_slice(),
+            )),
+        )
+        .unwrap();
+        let source = ValueCell::from_schema_data(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0, 4.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )
+        .unwrap();
+        let invocation =
+            SpecializationInvocation::from_cells(vec![source, target].into_boxed_slice());
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
+
+        let specialized = ConvertKind
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+
+        assert_eq!(
+            specialized.output().closed_schema_body().unwrap(),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
+                    .into_boxed_slice(),
+            }
+        );
+        assert!(matches!(
+            specialized
+                .output()
+                .snapshot()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::Matrix(values)
+                if values.as_ref()
+                    == [ValueDataDraft::U8(1), ValueDataDraft::U8(2),
+                        ValueDataDraft::U8(3), ValueDataDraft::U8(4)]
         ));
     }
 

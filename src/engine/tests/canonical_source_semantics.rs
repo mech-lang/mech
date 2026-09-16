@@ -2702,6 +2702,7 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
     );
 
     for source in [
+        "<[u8]>",
         "<[u8]:1_024,2u8>",
         "<{u8:f64}>",
         "<{u8}:10>",
@@ -2719,7 +2720,60 @@ fn reviewed_exact_source_authorities_cover_matches_kinds_logic_and_matrices() {
             reified.constants().get(id).unwrap().data(),
             ValueData::Type(_)
         ));
-        if source == "<[u8]:1_024,2u8>" {
+        if source == "<[u8]>" {
+            let ValueData::Type(mech_core::snapshot::ReifiedType::Kind(kind)) =
+                reified.constants().get(id).unwrap().data()
+            else {
+                panic!("matrix kind did not retain a canonical kind value")
+            };
+            let (kind, dimensions, _) = kind.decoded_closed_kind().unwrap();
+            assert_eq!(dimensions.len(), 2);
+            assert_eq!(
+                dimensions
+                    .iter()
+                    .map(|dimension| (
+                        dimension.origin,
+                        dimension.lifetime,
+                        dimension.lower_bound.clone(),
+                        dimension.upper_bound.clone(),
+                    ))
+                    .collect::<Vec<_>>(),
+                vec![
+                    (
+                        mech_core::DimensionParameterOrigin::Explicit,
+                        mech_core::DimensionLifetime::Activation,
+                        mech_core::DimensionExpr::Constant(0),
+                        None,
+                    );
+                    2
+                ]
+            );
+            assert!(matches!(
+                kind,
+                mech_core::KindExpr::Matrix { dimensions, .. }
+                    if dimensions.as_ref()
+                        == [mech_core::DimensionExpr::Parameter(
+                                mech_core::DimensionParameterId::new(0)),
+                            mech_core::DimensionExpr::Parameter(
+                            mech_core::DimensionParameterId::new(1))]
+            ));
+            let artifact = reified.compile_artifact().unwrap();
+            let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+                &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(decoded.revision(), artifact.revision());
+            for raw in 0..artifact.constants().len() {
+                let id = mech_core::ConstantId::new(raw as u32);
+                let expected = artifact.constants().get(id).unwrap();
+                let actual = decoded.constants().get(id).unwrap();
+                assert_eq!(expected.schema_key(), actual.schema_key());
+                assert_eq!(
+                    expected.value_hash(artifact.schemas()).unwrap(),
+                    actual.value_hash(decoded.schemas()).unwrap()
+                );
+            }
+        } else if source == "<[u8]:1_024,2u8>" {
             let ValueData::Type(mech_core::snapshot::ReifiedType::Kind(kind)) =
                 reified.constants().get(id).unwrap().data()
             else {
