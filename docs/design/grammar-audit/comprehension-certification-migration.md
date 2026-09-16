@@ -74,6 +74,14 @@ comprehensions embed the yielded element's dimension parameters before their own
 cardinality parameter and reject inconsistent element shapes before publication.
 Revision 7 remains rejected without a compatibility reader.
 
+## Nominal-pattern graph revision
+
+Graph payload revision 9 adds one canonical nominal-enum pattern to the shared
+structural grammar. It carries the declared variant ordinal and either the
+variant's recursive payload pattern or no payload. The artifact validator checks
+that the ordinal and payload agree with the scrutinee's exact nominal enum
+schema. Revision 8 remains rejected without a compatibility reader.
+
 ## Complete syntax evidence
 
 Clean-tree fingerprints use canonical-clean-tree-v2: an explicit traversal

@@ -1296,6 +1296,35 @@ impl PatternItem {
         }
     }
 
+    pub(super) fn enum_variant(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
+        let Some(resolved) = resolve_pattern_item(self.clone(), schemas)? else {
+            return Ok(None);
+        };
+        let SchemaBody::Enum { variants, .. } = &resolved.body else {
+            return Ok(None);
+        };
+        let ValueDataDraft::Enum(value) = resolved.data else {
+            return Ok(None);
+        };
+        let Some(variant) = variants.get(value.ordinal as usize) else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        let payload = match (variant.payload.as_ref(), value.payload) {
+            (None, None) => None,
+            (Some(body), Some(data)) => Some(Self::component(
+                None,
+                body.clone(),
+                resolved.shape_values,
+                *data,
+            )),
+            _ => return Err(ResidentKernelError::InvalidInput),
+        };
+        Ok(Some((value.ordinal, payload)))
+    }
+
     fn component(
         schema: Option<SchemaId>,
         body: SchemaBody,
@@ -5162,6 +5191,35 @@ impl ReactiveInstance {
                     .map_err(fail)?;
                 Ok(matched)
             }
+            crate::CollectionPattern::Enum { ordinal, payload } => {
+                let Some((actual, child)) = item.enum_variant(schemas).map_err(fail)? else {
+                    return Ok(false);
+                };
+                if actual != *ordinal {
+                    return Ok(false);
+                }
+                match (payload.as_deref(), child) {
+                    (None, None) => Ok(true),
+                    (Some(pattern), Some(child)) => self.match_collection_pattern_item(
+                        node,
+                        locals,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        item_footprint,
+                        depth + 1,
+                        retained_count,
+                        retained_footprint,
+                        retained_shape_parameter_count,
+                        schemas,
+                        projections,
+                        schema_arena_bytes,
+                        working,
+                        meter,
+                    ),
+                    _ => Ok(false),
+                }
+            }
             crate::CollectionPattern::Tuple(items) => {
                 if item.structural_len(true) != Some(items.len()) {
                     return Ok(false);
@@ -5355,7 +5413,7 @@ impl ReactiveInstance {
                     meter,
                 )
             }
-            crate::CollectionPattern::Equal(_) => {
+            crate::CollectionPattern::Equal(_) | crate::CollectionPattern::Enum { .. } => {
                 let (item, item_footprint, _) = self
                     .collection_pattern_item(
                         source,
@@ -6023,6 +6081,69 @@ mod tests {
             assert_eq!(unowned.node_count, COUNT as u64 - 1);
         }
         assert_eq!(meter.estimate().compute_work(), 2 * COUNT as u64);
+    }
+
+    #[test]
+    fn enum_pattern_payload_preserves_resolved_shape_values() {
+        let parameter = DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(8)),
+        };
+        let enum_body = SchemaBody::Enum {
+            key: NominalKey::from_bytes([0x13; 32]),
+            variants: vec![mech_core::EnumVariantSchema {
+                name: "values".to_owned(),
+                payload: Some(SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    ]
+                    .into_boxed_slice(),
+                }),
+            }]
+            .into_boxed_slice(),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let enumeration = builder
+            .insert(
+                SchemaDraft {
+                    body: enum_body,
+                    dimension_parameters: vec![parameter].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let enumeration = built.resolve(enumeration).unwrap();
+        let schemas = built.into_parts().0;
+        let body = schemas.get(enumeration).unwrap().body().clone();
+        let item = PatternItem::component(
+            Some(enumeration),
+            body,
+            vec![3].into_boxed_slice(),
+            ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Matrix(
+                    [1.0, 2.0, 3.0]
+                        .into_iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .collect(),
+                ))),
+            }),
+        );
+
+        let (ordinal, Some(PatternItem::Component { shape_values, .. })) =
+            item.enum_variant(&schemas).unwrap().unwrap()
+        else {
+            panic!("enum payload must remain a shaped component")
+        };
+        assert_eq!(ordinal, 0);
+        assert_eq!(shape_values.as_ref(), [3]);
     }
 
     #[test]

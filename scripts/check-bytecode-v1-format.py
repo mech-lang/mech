@@ -16,31 +16,31 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-# Source fixtures were regenerated for graph payload revision 8; their only wire
+# Source fixtures were regenerated for graph payload revision 9; their only wire
 # changes in that migration are the graph revision and checksum.
-EXPECTED_MANIFEST_SHA256 = "41bffe0cfb88205500ff93a26e90aabe3c7699a0483be5b512325f681dc74d41"
+EXPECTED_MANIFEST_SHA256 = "cbc8e0019e49bdd2d1eb0d1eb04c5138d6b8fc131be24138d7ba851fb4c673f9"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
-    "literal-f64.mecb": "260a3d8438add33e969e7b13a66a6076c5813ecf015b1f25588e79d6c84c0fd4",
-    "scalar-add-f64.mecb": "69395f52bcbb9972b39f2162ffb5ff0e46e72c22c73ec67a5c3fe30cbe6af212",
-    "structural-match.mecb": "cb0d0d20d800d52e53ed2b4f2948fcf053571f55c262337143abe6b424c473e6",
-    "fixed-matrix-add-f64.mecb": "6d57e0ebe60991fc315a108d47c5f6268732841acdcf31fb2fc93ac1117ac5a7",
-    "dynamic-matrix-add-f64.mecb": "b1fe2c121275a95aa46e00d8392ee33bd4b42ccb8a673d87883f9efe238d26e3",
-    "variadic-horzcat-f64.mecb": "5e539984c861d8b5fcebb97304dedb172672ab044bf365e46ef3a65bfea53507",
-    "string.mecb": "a9bb95211f2c3032997cbeb39e3f6a9c4e6247ec5c55a41de2564d2fc50ac903",
-    "unary.mecb": "134e5381879fa8f1738137bb12cc96e0378776d163ee15f9c6c2027adb9d3383",
-    "ternary.mecb": "bb1c8a7b746d7492e2bf3bd2d69453d12c2e3a1ea67b45d3422aaa8fe6783f60",
-    "quaternary.mecb": "c87dee1e63480679190875f4bbb2d4df2c59b4ce1543ef1bee7a1cd137696475",
-    "named-module-operation.mecb": "3312187a36911383488504b1837a398d55f0abd001d88150a4b81723fead21d5",
-    "cli-stdout.mecb": "6ca2b8319c4f14f86a3725dd2683dfe10b5afe8629a488438eee2e9a08ff4ae0",
-    "console.mecb": "90b95af819640700c43a89aff5c3cf9ed66989f0234f2c8c402a22a04d836e1e",
-    "time.mecb": "1aa99a261fdcc1b1519af60d350de9b4347384a9e423c92742e7e082ebb3d829",
-    "timer.mecb": "a1f9a438e10737fffc2063677da21a60e8ab6f457070245d70e296732fa61afb",
-    "scene.mecb": "b83e88d9f0a0149267054730a417d66f45fabe2606fefdb684fcf835984104b6",
-    "robot-arm.mecb": "8873d2c5c640d874dc78c767c6e2ee7bd8057788d07145bdfe203eda9bf64ec2",
-    "synthetic-live-read.mecb": "8d065d721ac9fb3da828d5d2868b31288e333ba40310b27db56b909e7ebdd66e",
+    "literal-f64.mecb": "abf7799e3b8cc3a5840083676b2f514bb938456d2e341351baa09a6b6f727e1a",
+    "scalar-add-f64.mecb": "bf2cd59c91b874c37fc32d74a1374f1ad1ab1a40b8e64e50f1dd6503e4209df6",
+    "structural-match.mecb": "d9395ecb91313247f48d864332e3db2d2f4811d237ecbb9f43bfbad35619d73f",
+    "fixed-matrix-add-f64.mecb": "d9bbbabbaf42dd933fd7212746e040b236af020670e0bcdaf5ef2a44111b280d",
+    "dynamic-matrix-add-f64.mecb": "765bbc3cc683dcad1271c1b21a531d6da92d8132a56a7bb54c17e1002a78d0a2",
+    "variadic-horzcat-f64.mecb": "d39e7f31ae23cda42b221c0ecb2bfabc8e71dc54dfe714cbe326a4156ca5086f",
+    "string.mecb": "44b6e858c3bb0a0958a3ff43b16f7b9cc679524da47f5a85366b06aecc179a6e",
+    "unary.mecb": "228d4d9f7010e9a7f1161a885825cfb28ade08fa96d0f02d7290d8acc668dd77",
+    "ternary.mecb": "0c8217c53938a3add2f50307975caff5b244ecc1df7f6281b252e2aa5387d51f",
+    "quaternary.mecb": "d6c00a71d96ef65cce129efbebe9843acc67a46e82b7dd992ec4aa50d42b04d3",
+    "named-module-operation.mecb": "255cbade78be9a56111d93698054ef65303b92d81000e60cb97c39643dfb1c86",
+    "cli-stdout.mecb": "902cfad3dec391967886cf505bf995abaca230f3169ff67709746a8b89a74081",
+    "console.mecb": "01899a38f334f3482d0067398478a5328aaa2540b028e1d2fb6f29d4c709cbc9",
+    "time.mecb": "3ca516525b93ca0144f8e284458dd2c38b3be0d723c66a0b365c6f9cd62cece7",
+    "timer.mecb": "0e8b2daf2c6dae1318c6a039be9071b7a1c98a7439c55bdf5bcbabedc199107e",
+    "scene.mecb": "4e3181ff4ec847be09ed934fbedc0df95cbda39964bb68602b4a3b1391d81265",
+    "robot-arm.mecb": "1a3e3066406d55d756ae8201dadf2e5127f13a898458aa1316e11ec3daffe0ea",
+    "synthetic-live-read.mecb": "d5420d83c1a6cc474ba0b70a14302696f7cc8f20b3121d7b45c637ebf8acb13e",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",
@@ -932,15 +932,19 @@ def validate_fixture(entry: dict[str, object]) -> None:
         decoded_requirements == entry.get("application_requirements"),
         f"{name}: decoded requirements disagree with manifest",
     )
-    if sections[4]["item_count"] == 0 and all(artifact_present):
+    if instruction_count == 0:
         # Canonical artifact-only fixtures need no compatibility instruction
         # stream; their executable graph lives in the revisioned artifact
         # sections validated by the Rust contract suite.
         require(
+            all(artifact_present),
+            f"{name}: an instruction-free fixture requires a ProgramArtifact payload",
+        )
+        require(
             not section_payloads[4],
             f"{name}: zero-count instruction section has payload bytes",
         )
-        decoded_runtime_ids = set()
+        decoded_runtime_ids: set[int] = set()
     else:
         decoded_runtime_ids, _ = decode_instructions(
             section_payloads[4],

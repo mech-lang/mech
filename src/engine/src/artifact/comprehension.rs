@@ -21,6 +21,11 @@ pub enum CollectionPattern<S = SchemaId, V = ComprehensionValue> {
     },
     /// A repeated binding is equality, including across generators (a join).
     Equal(V),
+    /// A nominal enum variant, with an optional recursively matched payload.
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<CollectionPattern<S, V>>>,
+    },
     Tuple(Box<[CollectionPattern<S, V>]>),
     Array {
         prefix: Box<[CollectionPattern<S, V>]>,
@@ -183,6 +188,7 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
             dense_finalizations = dense_finalizations.checked_add(1)?;
         }
         let children = match pattern {
+            CollectionPattern::Enum { payload, .. } => usize::from(payload.is_some()),
             CollectionPattern::Tuple(items) => items.len(),
             CollectionPattern::Array {
                 prefix,
@@ -198,6 +204,9 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
             return None;
         }
         match pattern {
+            CollectionPattern::Enum { payload, .. } => {
+                pending.extend(payload.iter().map(|item| (item.as_ref(), depth + 1, false)));
+            }
             CollectionPattern::Tuple(items) => {
                 pending.extend(items.iter().map(|item| (item, depth + 1, false)));
             }
@@ -256,6 +265,11 @@ pub(super) fn pattern_locals(
                 return None;
             }
             locals.push(*schema);
+        }
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                pattern_locals(payload, locals)?;
+            }
         }
         CollectionPattern::Tuple(items) => {
             for item in items {
@@ -580,6 +594,23 @@ fn validate_pattern(
                 return None;
             }
         }
+        CollectionPattern::Enum { ordinal, payload } => {
+            let SchemaBody::Enum { variants, .. } = expected.body() else {
+                return None;
+            };
+            let payload_schema = variants.get(*ordinal as usize)?.payload.as_ref();
+            match (payload_schema, payload) {
+                (Some(schema), Some(pattern)) => validate_pattern(
+                    draft,
+                    pattern,
+                    &component_schema(expected, schema)?,
+                    inputs,
+                    locals,
+                )?,
+                (None, None) => {}
+                _ => return None,
+            }
+        }
         CollectionPattern::Tuple(items) => {
             let fields = match expected.body() {
                 SchemaBody::Tuple(fields) if fields.len() == items.len() => Some(fields),
@@ -655,6 +686,12 @@ impl<S, V> CollectionPattern<S, V> {
                 schema: schema(s),
             },
             Self::Equal(v) => CollectionPattern::Equal(value(v)),
+            Self::Enum { ordinal, payload } => CollectionPattern::Enum {
+                ordinal: *ordinal,
+                payload: payload
+                    .as_ref()
+                    .map(|payload| Box::new(payload.map(schema, value))),
+            },
             Self::Tuple(items) => {
                 CollectionPattern::Tuple(items.iter().map(|item| item.map(schema, value)).collect())
             }
@@ -673,6 +710,11 @@ impl<S, V> CollectionPattern<S, V> {
     pub(crate) fn bindings(&self, visit: &mut impl FnMut(u32, &S)) {
         match self {
             Self::Bind { local, schema } => visit(*local, schema),
+            Self::Enum { payload, .. } => {
+                if let Some(payload) = payload {
+                    payload.bindings(visit);
+                }
+            }
             Self::Tuple(items) => {
                 for item in items {
                     item.bindings(visit);
@@ -705,6 +747,57 @@ mod schema_tests {
         NodeId, OperationContractTableBuilder, SchemaBody, SchemaDraft, SchemaTableBuilder,
         ValueDataDraft, ValueDraft,
     };
+
+    #[test]
+    fn nominal_enum_patterns_reject_dynamic_expected_schemas() {
+        let mut builder = SchemaTableBuilder::new();
+        let dynamic = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Dynamic,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let dynamic = built.resolve(dynamic).unwrap();
+        let schemas = built.into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas).finish().unwrap();
+        let draft = crate::ProgramArtifactDraft {
+            schemas,
+            constants: constants.into_parts().0,
+            contracts: OperationContractTableBuilder::new()
+                .finish()
+                .unwrap()
+                .into_parts()
+                .0,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        };
+        let expected = draft.schemas.get(dynamic).unwrap();
+        let mut locals = Vec::new();
+        assert!(
+            validate_pattern(
+                &draft,
+                &CollectionPattern::Enum {
+                    ordinal: 0,
+                    payload: Some(Box::new(CollectionPattern::Wildcard)),
+                },
+                expected,
+                &[],
+                &mut locals,
+            )
+            .is_none()
+        );
+    }
 
     #[test]
     fn parameterized_set_yields_fail_artifact_validation() {

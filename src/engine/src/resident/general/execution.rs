@@ -2352,6 +2352,28 @@ impl ReactiveInstance {
                 .map_err(fail)?
                 .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
             }
+            crate::CollectionPattern::Enum { ordinal, payload } => {
+                let Some((actual, value_payload)) =
+                    item.enum_variant(&self.plan.schemas).map_err(fail)?
+                else {
+                    return Ok(false);
+                };
+                if actual != *ordinal {
+                    return Ok(false);
+                }
+                match (payload.as_deref(), value_payload.as_ref()) {
+                    (None, None) => Ok(true),
+                    (Some(pattern), Some(child)) => self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    ),
+                    _ => Ok(false),
+                }
+            }
             crate::CollectionPattern::Tuple(items) => {
                 if item.structural_len(true) != Some(items.len()) {
                     return Ok(false);
