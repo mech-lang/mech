@@ -1,6 +1,5 @@
 use super::*;
-use mech_core::{MechSourceCode, Program};
-use std::sync::Arc;
+use mech_core::MechSourceCode;
 
 #[derive(Clone, Debug)]
 pub struct RuntimeWorkspaceTargetSnapshot {
@@ -20,7 +19,6 @@ pub struct RuntimeWorkspaceSourceSnapshot {
     pub source: Option<MechSourceCode>,
     #[cfg(feature = "source")]
     pub source_document: Option<crate::SourceDocument>,
-    pub syntax_tree: Option<Arc<Program>>,
     pub module_version: Option<ModuleVersionId>,
     pub content_hash: u64,
     pub modified_time: Option<SystemTime>,

@@ -24,7 +24,7 @@ use std::sync::Mutex;
 #[cfg(all(test, feature = "source"))]
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Program};
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
 #[cfg(feature = "source")]
 use crate::SourceDocument;
@@ -230,9 +230,6 @@ pub struct ModuleVersionRecord {
     #[cfg(feature = "source")]
     #[cfg_attr(feature = "serde", serde(skip))]
     pub source_document: Option<SourceDocument>,
-    /// Parsed form of `source`, cached for in-process compiler and host reuse.
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub syntax_tree: Option<Arc<Program>>,
     pub bytecode: Option<Vec<u8>>,
     pub exports: Vec<SourceExportDeclaration>,
     pub imports: Vec<SourceImportDeclaration>,
@@ -271,7 +268,6 @@ impl ModuleVersionRecord {
             source: None,
             #[cfg(feature = "source")]
             source_document: None,
-            syntax_tree: None,
             bytecode: None,
             exports: Vec::new(),
             imports: Vec::new(),
@@ -292,11 +288,6 @@ impl ModuleVersionRecord {
     #[cfg(feature = "source")]
     pub fn with_source_document(mut self, source_document: Option<SourceDocument>) -> Self {
         self.source_document = source_document;
-        self
-    }
-
-    pub fn with_syntax_tree(mut self, syntax_tree: Option<Arc<Program>>) -> Self {
-        self.syntax_tree = syntax_tree;
         self
     }
 
