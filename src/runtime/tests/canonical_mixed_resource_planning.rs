@@ -253,14 +253,14 @@ fn canonical_mixed_tuple_sample_paths_publish_their_producer() {
             "@compute := compute://worker/kernel{{:write(turn), :read(sample/{path})}}\n@compute/turn <- 1\nanswer := @compute/sample/{path}\nanswer\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\npacked := (counter, (counter + 1f32, counter + 2f32))\npacked\n"
         );
         let mixed = compiler.compile_mixed_source(&source).unwrap();
-        assert!(
-            mixed
-                .compute
-                .interface
+        let names = |interface: &mech_compute::ComputeRegionInterface| {
+            interface
                 .outputs
                 .iter()
-                .any(|port| port.name.as_ref() == path)
-        );
+                .map(|port| port.name.to_string())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(names(&mixed.compute.interface), vec![path]);
         let bytes =
             mech_engine::encode_program_artifact_bytecode_v1(&mixed.compute.artifact).unwrap();
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
@@ -269,14 +269,7 @@ fn canonical_mixed_tuple_sample_paths_publish_their_producer() {
             decoded.compute_regions().first(),
         )
         .unwrap();
-        let names = |interface: &mech_compute::ComputeRegionInterface| {
-            interface
-                .outputs
-                .iter()
-                .map(|port| port.name.to_string())
-                .collect::<Vec<_>>()
-        };
-        assert_eq!(names(&decoded_interface), names(&mixed.compute.interface));
+        assert_eq!(names(&decoded_interface), vec![path]);
         let bytes =
             mech_engine::encode_program_artifact_bytecode_v1(mixed.coordinator.artifact()).unwrap();
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
