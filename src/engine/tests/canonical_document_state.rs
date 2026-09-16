@@ -1584,6 +1584,20 @@ fn logical_selected_updates_route_full_base_rhs_by_destination_position() {
 }
 
 #[test]
+fn nested_logical_routing_uses_immediate_view_coordinates() {
+    for (selection, expected) in [
+        ("a[[2 1],:][[true;false],:]", vec![10.0, 20.0, 31.0, 42.0]),
+        ("a[:,[2 1]][:,[true false]]", vec![10.0, 21.0, 30.0, 50.0]),
+        ("a[[4 1]][[true;false]]", vec![10.0, 20.0, 30.0, 41.0]),
+    ] {
+        let source = format!(
+            "~a := [10<i32> 20<i32>;30<i32> 40<i32>]\nrhs := [1.5 2.5;10.5 20.5]\n{selection} += rhs\na\n"
+        );
+        matrix_turns(&source, &[expected]);
+    }
+}
+
+#[test]
 fn sparse_nested_update_does_not_materialize_base_sized_addresses() {
     // Keep the executable witness at the resident target's 65,536-element
     // output ceiling. The artifact assertions are the scale-independent proof
