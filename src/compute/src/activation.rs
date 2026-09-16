@@ -313,11 +313,15 @@ impl<'a> ComputeActivationValues<'a> {
 fn matrix_shape(dimensions: &[u64]) -> Result<(usize, usize), String> {
     match dimensions {
         [] => Ok((1, 1)),
+        [rows] => Ok((
+            usize::try_from(*rows).map_err(|_| "activation row extent overflow")?,
+            1,
+        )),
         [rows, columns] => Ok((
             usize::try_from(*rows).map_err(|_| "activation row extent overflow")?,
             usize::try_from(*columns).map_err(|_| "activation column extent overflow")?,
         )),
-        _ => Err("activation supports scalar and matrix f32 values".into()),
+        _ => Err("activation supports scalar, vector, and matrix f32 values".into()),
     }
 }
 
@@ -329,4 +333,20 @@ fn extent(rows: usize, columns: usize) -> Result<usize, String> {
         return Err("activation extent exceeds compute addressing".into());
     }
     Ok(elements)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::matrix_shape;
+
+    #[test]
+    fn activation_shape_contract_admits_rank_one_vectors() {
+        assert_eq!(matrix_shape(&[]), Ok((1, 1)));
+        assert_eq!(matrix_shape(&[3]), Ok((3, 1)));
+        assert_eq!(matrix_shape(&[2, 3]), Ok((2, 3)));
+        assert_eq!(
+            matrix_shape(&[2, 3, 4]),
+            Err("activation supports scalar, vector, and matrix f32 values".to_owned())
+        );
+    }
 }
