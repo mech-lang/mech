@@ -31,6 +31,39 @@ fn unsupported(syntax: &SyntaxNode, message: &str) -> SourceSemanticError {
     }
 }
 
+fn canonical_component_schema_draft(
+    parent: &SchemaDraft,
+    body: &SchemaBody,
+    syntax: &SyntaxNode,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    let component = SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: parent.dimension_parameters.clone(),
+    }
+    .finalize()
+    .map_err(|error| {
+        internal(
+            SourceSemanticAnchor::for_node(syntax),
+            format!("unable to canonicalize collection component schema: {error:?}"),
+        )
+    })?;
+    Ok(SchemaDraft {
+        body: component.body().clone(),
+        dimension_parameters: component
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(id as u32),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+            .collect(),
+    })
+}
+
 impl SemanticBuilder {
     pub(super) fn comprehension(
         &mut self,
@@ -76,7 +109,7 @@ impl SemanticBuilder {
                     let schema = self.schema_draft_of(source)?;
                     let element = match &schema.body {
                         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
-                            schema_component(&schema, element)
+                            canonical_component_schema_draft(&schema, element, generator.syntax())?
                         }
                         SchemaBody::Dynamic => schema,
                         _ => {
@@ -421,7 +454,9 @@ impl SemanticBuilder {
                 }
                 PatternValueSyntax::Array(array) => {
                     let element = match &expected.body {
-                        SchemaBody::Matrix { element, .. } => schema_component(expected, element),
+                        SchemaBody::Matrix { element, .. } => {
+                            canonical_component_schema_draft(expected, element, pattern.syntax())?
+                        }
                         SchemaBody::Dynamic => expected.clone(),
                         _ => {
                             return Err(unsupported(
@@ -513,10 +548,14 @@ impl SemanticBuilder {
                 .iter()
                 .enumerate()
                 .map(|(index, item)| {
-                    let schema = fields.map_or_else(
-                        || builtin_schema_draft(BuiltinSchema::Dynamic),
-                        |fields| schema_component(expected, &fields[index]),
-                    );
+                    let schema = match fields {
+                        None => builtin_schema_draft(BuiltinSchema::Dynamic),
+                        Some(fields) => canonical_component_schema_draft(
+                            expected,
+                            &fields[index],
+                            item.syntax(),
+                        )?,
+                    };
                     self.collection_pattern(item, &schema, start, names)
                 })
                 .collect::<Result<Box<[_]>, _>>()?,
@@ -544,7 +583,7 @@ impl SemanticBuilder {
         );
         let payload = match &expected.body {
             SchemaBody::Tuple(fields) if fields.len() == 2 => {
-                schema_component(expected, &fields[1])
+                canonical_component_schema_draft(expected, &fields[1], name)?
             }
             _ => builtin_schema_draft(BuiltinSchema::Dynamic),
         };
