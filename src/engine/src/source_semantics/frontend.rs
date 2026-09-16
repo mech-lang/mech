@@ -1084,6 +1084,63 @@ struct SourceSchemas {
     dynamic_payload_ids: BTreeMap<usize, SchemaId>,
 }
 
+fn retain_schema_tree(
+    anchor: SourceSemanticAnchor,
+    builder: &mut SchemaTableBuilder,
+    draft: &SchemaDraft,
+) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
+    let schema = draft
+        .clone()
+        .finalize()
+        .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
+    let handle = builder
+        .insert(schema)
+        .map_err(|error| internal(anchor, format!("unable to retain source schema: {error:?}")))?;
+    let mut retain = |body: &SchemaBody| {
+        retain_schema_tree(
+            anchor,
+            builder,
+            &SchemaDraft {
+                body: body.clone(),
+                dimension_parameters: draft.dimension_parameters.clone(),
+            },
+        )
+        .map(drop)
+    };
+    match &draft.body {
+        SchemaBody::Enum { variants, .. } => {
+            for payload in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                retain(payload)?;
+            }
+        }
+        SchemaBody::Option(element)
+        | SchemaBody::Matrix { element, .. }
+        | SchemaBody::Set { element, .. } => retain(element)?,
+        SchemaBody::Tuple(elements) => {
+            for element in elements {
+                retain(element)?;
+            }
+        }
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => {
+            for field in fields {
+                retain(&field.schema)?;
+            }
+        }
+        SchemaBody::Map { key, value, .. } => {
+            retain(key)?;
+            retain(value)?;
+        }
+        _ => {}
+    }
+    Ok(handle)
+}
+
 impl SourceSchemas {
     fn build(
         anchor: SourceSemanticAnchor,
@@ -1092,15 +1149,7 @@ impl SourceSchemas {
         constants: &[PendingConstant],
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
-        let mut insert = |draft: &SchemaDraft| {
-            let schema = draft
-                .clone()
-                .finalize()
-                .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
-            builder.insert(schema).map_err(|error| {
-                internal(anchor, format!("unable to retain source schema: {error:?}"))
-            })
-        };
+        let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
         let input_handles = inputs
             .iter()
             .map(|value| insert(&value.schema))
