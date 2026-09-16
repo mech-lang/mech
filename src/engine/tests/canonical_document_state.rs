@@ -438,6 +438,28 @@ fn closed_comprehension_matrix_dot_publishes_a_dense_scalar() {
 }
 
 #[test]
+fn closed_comprehension_matmul_resolves_live_product_dimensions() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nproduct := matrix/matmul(values', values)\n~state := product\nstate\n",
+        &[
+            (None, (3, 3), &[1.0, 2.0, 3.0, 2.0, 4.0, 6.0, 3.0, 6.0, 9.0]),
+            (None, (3, 3), &[1.0, 2.0, 3.0, 2.0, 4.0, 6.0, 3.0, 6.0, 9.0]),
+        ],
+    );
+}
+
+#[test]
+fn closed_comprehension_matmul_publishes_a_dense_scalar() {
+    closed_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nproduct := matrix/matmul(values, values')\n~state := product\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 1));
+            assert_eq!(matrix_values(actual), [14.0]);
+        },
+    );
+}
+
+#[test]
 fn closed_comprehension_positional_selector_keeps_live_cardinality() {
     let source = "samples := 1..=3\nselectors := [sample | sample <- samples, sample != 2]\nvalues := [sample * 10 | sample <- samples]\nselected := values[selectors]\n~a := selected\na\n";
     variable_matrix_turns(

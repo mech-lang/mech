@@ -5458,52 +5458,69 @@ fn bind_matmul(
         .schemas
         .get(request.output.schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let (
-        SchemaBody::Matrix {
-            element: lhs_element,
-            ..
-        },
-        SchemaBody::Matrix {
-            element: rhs_element,
-            ..
-        },
-        SchemaBody::Matrix {
-            element: output_element,
-            ..
-        },
-    ) = (lhs_schema.body(), rhs_schema.body(), output_schema.body())
+    let SchemaBody::Matrix {
+        element: lhs_element,
+        ..
+    } = lhs_schema.body()
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let (rows, inner) = declared_matrix_dimensions(request, lhs)?;
-    let (rhs_rows, columns) = declared_matrix_dimensions(request, rhs)?;
-    let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
+    let SchemaBody::Matrix {
+        element: rhs_element,
+        ..
+    } = rhs_schema.body()
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
     if lhs.kind != ResidentValueKind::Snapshot
         || rhs.kind != ResidentValueKind::Snapshot
-        || request.output.kind != ResidentValueKind::Snapshot
         || lhs.shape != ResidentShape::SCALAR
         || rhs.shape != ResidentShape::SCALAR
         || request.output.shape != ResidentShape::SCALAR
-        || inner != rhs_rows
-        || output_dimensions != (rows, columns)
         || lhs_element != rhs_element
-        || lhs_element != output_element
         || !is_dot_numeric_schema(lhs_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    Ok(bound(
-        matrix_multiply_snapshot,
-        vec![rows as u64, inner as u64, columns as u64].into_boxed_slice(),
-    )?
-    .with_snapshot_output(ResidentSnapshotOutput {
-        schema: request.output.schema_id,
-        schema_key: request.output.schema_key,
-        shape: request.output.shape_instance.clone(),
-        exact_cardinality: None,
-        maximum_cardinality: None,
-    })
-    .with_snapshot_schemas(request.schemas.clone()))
+    match (request.output.kind, output_schema.body()) {
+        (
+            ResidentValueKind::Snapshot,
+            SchemaBody::Matrix {
+                element: output_element,
+                ..
+            },
+        ) if lhs_element == output_element => Ok(bound(
+            matrix_multiply_snapshot,
+            Vec::<u64>::new().into_boxed_slice(),
+        )?
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        })
+        .with_snapshot_schemas(request.schemas.clone())),
+        (
+            ResidentValueKind::F64,
+            SchemaBody::Matrix {
+                element: output_element,
+                ..
+            },
+        ) if lhs_element == output_element
+            && matches!(
+                lhs_element.as_ref(),
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            ) =>
+        {
+            Ok(bound(
+                matrix_multiply_snapshot_f64,
+                Vec::<u64>::new().into_boxed_slice(),
+            )?
+            .with_snapshot_schemas(request.schemas.clone()))
+        }
+        _ => Err(ResidentKernelBindError::UnsupportedLayout),
+    }
 }
 
 fn dot_element_schema(body: &SchemaBody) -> &SchemaBody {
@@ -14427,12 +14444,24 @@ fn matrix_multiply_snapshot(
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let [rows, inner, columns] = kernel.parameters() else {
+    let [] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let inner = usize::try_from(*inner).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let lhs_schema = lhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let rhs_schema = rhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, inner) = snapshot_matrix_dimensions(lhs, lhs_schema.body())?;
+    let (rhs_rows, columns) = snapshot_matrix_dimensions(rhs, rhs_schema.body())?;
+    if inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_shape = resolved_snapshot_output_shape(kernel, rows, columns)?;
     let lhs_len = rows
         .checked_mul(inner)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -14449,9 +14478,6 @@ fn matrix_multiply_snapshot(
     if lhs_matrix.elements().len() != lhs_len || rhs_matrix.elements().len() != rhs_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
     let compute_work = output_len
         .checked_mul(inner)
         .and_then(|work| work.checked_mul(2))
@@ -14502,12 +14528,42 @@ fn matrix_multiply_snapshot(
             result.push(sum);
         }
     }
-    write_snapshot_data_with_work_budget(
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         output,
+        &output_shape,
         ValueDataDraft::Matrix(result.into_boxed_slice()),
         Some(0),
     )
+}
+
+fn matrix_multiply_snapshot_f64(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let (
+        Some(ResidentValueRef::Snapshot([Some(lhs)])),
+        Some(ResidentValueRef::Snapshot([Some(rhs)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let lhs_schema = lhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let rhs_schema = rhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, inner) = snapshot_matrix_dimensions(lhs, lhs_schema.body())?;
+    let (rhs_rows, columns) = snapshot_matrix_dimensions(rhs, rhs_schema.body())?;
+    if rows != 1 || columns != 1 || inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    matrix_dot_snapshot_f64(kernel, inputs, output)
 }
 
 fn matrix_dot_f64(
