@@ -90,6 +90,9 @@ pub struct ControlMatchArm<C = OperationContractId> {
 pub struct MatchDeclaration<C = OperationContractId> {
     /// Ordinal in the enclosing node's input bindings; evaluated once.
     pub scrutinee: u16,
+    /// Function dispatch may deliberately be partial and fails the call when
+    /// no ordered arm matches. Ordinary match expressions remain exhaustive.
+    pub partial: bool,
     pub captures: Box<[ControlCapture]>,
     pub arms: Box<[ControlMatchArm<C>]>,
 }
@@ -316,6 +319,10 @@ pub(super) fn validate_match_inner(
         ));
     }
     let mut coverage = [false; 2];
+    let mut enum_coverage = match draft.schemas.get(scrutinee).map(|schema| schema.body()) {
+        Some(mech_core::SchemaBody::Enum { variants, .. }) => Some(vec![false; variants.len()]),
+        _ => None,
+    };
     for arm in &declaration.arms {
         let mut pattern_bindings = Vec::new();
         if let MatchPattern::Literal(constant) = &arm.pattern {
@@ -498,18 +505,41 @@ pub(super) fn validate_match_inner(
         if arm.guard.is_none() {
             match &arm.pattern {
                 MatchPattern::Literal(constant) => {
-                    if let mech_core::ValueData::Bool(value) =
-                        draft.constants.get(*constant).unwrap().data()
-                    {
-                        coverage[*value as usize] = true;
+                    match draft.constants.get(*constant).unwrap().data() {
+                        mech_core::ValueData::Bool(value) => coverage[*value as usize] = true,
+                        mech_core::ValueData::Enum(value) => {
+                            if let Some(variants) = &mut enum_coverage
+                                && let Some(covered) = variants.get_mut(value.ordinal() as usize)
+                            {
+                                *covered = true;
+                            }
+                        }
+                        _ => {}
                     }
                 }
-                MatchPattern::Wildcard | MatchPattern::Bind => coverage = [true; 2],
+                MatchPattern::Wildcard | MatchPattern::Bind => {
+                    coverage = [true; 2];
+                    if let Some(variants) = &mut enum_coverage {
+                        variants.fill(true);
+                    }
+                }
+                MatchPattern::Structural(super::CollectionPattern::Enum { ordinal, .. }) => {
+                    if let Some(variants) = &mut enum_coverage
+                        && let Some(covered) = variants.get_mut(*ordinal as usize)
+                    {
+                        *covered = true;
+                    }
+                }
                 MatchPattern::Structural(_) => {}
             }
         }
     }
-    if coverage != [true; 2] {
+    let exhaustive = enum_coverage
+        .as_ref()
+        .map_or(coverage == [true; 2], |variants| {
+            variants.iter().all(|covered| *covered)
+        });
+    if !declaration.partial && !exhaustive {
         return Err(invalid("non-exhaustive match"));
     }
     Ok(())
@@ -751,6 +781,7 @@ impl<C> MatchDeclaration<C> {
         };
         Ok(MatchDeclaration {
             scrutinee: self.scrutinee,
+            partial: self.partial,
             captures: self.captures.clone(),
             arms: self
                 .arms
@@ -807,6 +838,7 @@ mod tests {
         };
         let control = MatchDeclaration::<OperationContractId> {
             scrutinee: 0,
+            partial: false,
             captures: Box::new([]),
             arms: vec![ControlMatchArm {
                 pattern: MatchPattern::Structural(pattern),
@@ -828,6 +860,7 @@ mod tests {
         fn leaf() -> MatchDeclaration<OperationContractId> {
             MatchDeclaration {
                 scrutinee: 0,
+                partial: false,
                 captures: Box::new([]),
                 arms: vec![ControlMatchArm {
                     pattern: MatchPattern::Wildcard,
@@ -847,6 +880,7 @@ mod tests {
         for depth in 1..=MAX_CONTROL_DEPTH {
             control = MatchDeclaration {
                 scrutinee: 0,
+                partial: false,
                 captures: Box::new([]),
                 arms: vec![ControlMatchArm {
                     pattern: MatchPattern::Wildcard,

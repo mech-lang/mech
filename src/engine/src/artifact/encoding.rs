@@ -123,6 +123,7 @@ impl CanonicalArtifactWriter {
 
     fn match_declaration(&mut self, control: &super::MatchDeclaration) {
         self.u16(control.scrutinee);
+        self.u8(u8::from(control.partial));
         self.u64(control.captures.len() as u64);
         for capture in &control.captures {
             self.u16(capture.input);

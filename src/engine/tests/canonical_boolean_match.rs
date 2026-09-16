@@ -111,6 +111,7 @@ fn fixture() -> ProgramArtifactDraft {
             node: NodeId(0),
             body: ExecutableNodeBody::Match(MatchDeclaration {
                 scrutinee: 0,
+                partial: false,
                 captures: Box::new([]),
                 arms: vec![
                     ControlMatchArm {
