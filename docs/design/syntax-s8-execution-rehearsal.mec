@@ -1,0 +1,79 @@
+S8B — Execution interfaces and the deleted-code rehearsal
+===============================================================================
+
+Status: B1 dependency preparation; no execution consumer is accepted.
+Parent: S8A 49311d39e0fe2bc036761e272d6a11fdad9e8ed0.
+The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
+fixes B's initial public-interface decisions.
+
+1. Compiler migration contract
+-------------------------------------------------------------------------------
+
+Replace the Program input in ProgramCompiler and ProgramCompilerView with the
+retained SourceDocument / its selected typed document owner. Preserve each
+existing method's output and host boundary. Planned replacements:
+
+compile_tree -> compile_document -> ProgramCompilationProduct.
+compile_interactive_tree -> compile_interactive_document -> observable product.
+compile_tree_artifact -> compile_document_artifact -> ProgramArtifact product.
+compile_tree_artifact_with_inputs -> compile_document_artifact_with_inputs:
+  retain detached planning values and the explicit set of live input names.
+compile_tree_artifact_with_input_initializers -> corresponding document method:
+  capture declaration-time values in the same short-lived planning pass; do not
+  run a second evaluator or leak compiler cells into resident state.
+evaluate_static_tree_symbols[_with_inputs] -> document variants:
+  preserve requested-symbol filtering and detached RuntimeHostInputValue outputs.
+compile_mixed_tree -> compile_mixed_document:
+  canonical typed declaration/executable partitions retain module resolution,
+  compute regions, coordinator artifacts and advertised target requirements.
+
+Source text methods construct the retained source once and delegate to these
+interfaces. Root/resolved-source methods reuse the cache owner. Do not construct
+Program to call an unchanged method. Do not insert a parser flag into a compiler.
+Missing lowering/resolution semantics block the owning S4/S7A prerequisite.
+
+Initializers and planning values are not automatically live input ports. The
+external_input_names distinction is an acceptance assertion, not optional cleanup.
+Resolved host capabilities and module catalog ownership stay in the current
+ProgramCompiler boundary. Production witnesses must enter those methods.
+
+2. Bundle/browser decisions requiring implementation before C approval
+-------------------------------------------------------------------------------
+
+The old producer serializes nodes::Program into CODE; WasmDocument/bootstrap
+loaders decode it. That payload must be removed at both boundaries together.
+Prepare retained source plus current accepted artifact publication and loader
+admission. Keep the existing bytecode/artifact format. Preserve source-resolution
+edges, source identity, HTML/output binding identities and browser target checks.
+
+The exact envelope/cache discriminator remains B-owned and unapproved. Prove a
+real generated bundle loads and executes before marking either endpoint complete.
+Old AST payloads must reject with a regeneration instruction. No format-tree
+reconstruction or old decoder fallback. Native/WASM version/target admission
+continues through existing artifact validation.
+
+3. First C rehearsal and ownership of expected failures
+-------------------------------------------------------------------------------
+
+Create the actual codex/syntax-s8c-cutover branch now. Begin by physically removing
+the Nom recognizer/direct-rule modules and document/lower/legacy, and draft CLI
+classification's canonical route. Keep all maintained tests until their reviewed
+disposition is implemented; unretargeted tests are blockers, not passes/skips.
+
+A owns preparation of source-cache, resolver, presentation and retained-source
+interfaces for its ten contracts. B owns compiler/config/interactive/bundle/browser
+interface preparation for its seventeen execution contracts.
+S7A owns missing renderer/declaration behavior; S4 owns semantic implementation.
+Only C changes shipping routes, module/export wiring and dependency removal after
+the owning A/B interface is prepared. A route failure caused by an interface gap
+returns to that interface owner; the final route change stays with C. No new
+semantic layer belongs on C.
+
+The first draft is deliberately incomplete and cannot satisfy deletion closure:
+remaining product routes and AST owners must still be migrated. Record its exact
+compiler errors, not a blanket expected-red exemption. A/B cannot be accepted
+until the complete C product matrix passes with those dependencies removed.
+
+The canonical library compiling after deletion is only an early boundary probe.
+It is not CLI/runtime/browser acceptance. Final evidence must include actual
+product entry points and all named distributions from syntax-s8-cutover-plan.mec.
