@@ -148,6 +148,23 @@ fn matrix_values(value: &Value) -> Vec<f64> {
     }
 }
 
+fn f32_matrix_values(value: &Value) -> Vec<f32> {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("expected matrix output: {value:?}")
+    };
+    match matrix.elements() {
+        SequenceView::F32(values) => values.iter().map(|value| value.to_f32()).collect(),
+        SequenceView::Values(values) => values
+            .iter()
+            .map(|value| match value {
+                ValueData::F32(value) => value.to_f32(),
+                other => panic!("expected f32 matrix element: {other:?}"),
+            })
+            .collect(),
+        other => panic!("expected f32 matrix storage: {other:?}"),
+    }
+}
+
 fn bool_matrix_values(value: &Value) -> Vec<bool> {
     let ValueData::Matrix(matrix) = value.data() else {
         panic!("expected matrix output: {value:?}")
@@ -683,6 +700,115 @@ fn runtime_shaped_state_supports_whole_value_updates_after_initialization() {
             (None, (2, 2), &[1.0, 2.0, 10.0, 20.0]),
         ],
     );
+}
+
+#[test]
+fn runtime_shaped_state_resolves_snapshot_rhs_axes_for_indexed_assignment() {
+    closed_matrix_turns(
+        "samples := 1..=2\nraw-values := [x | x <- samples]\nvalues<[f32]> := raw-values\nreplacement-raw := [x | x <- [9]]\nreplacement-values<[f32]> := replacement-raw\nreplacement := replacement-values[1]\n~state := values\nstate[2] = replacement\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(f32_matrix_values(actual), [1.0, 9.0]);
+        },
+    );
+}
+
+#[test]
+fn runtime_shaped_state_assigns_all_dense_primitive_rhs_kinds() {
+    closed_matrix_turns(
+        "samples := [true false]\nvalues := [x | x <- samples]\n~state := values\nstate = [false true]\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(bool_matrix_values(actual), [false, true]);
+        },
+    );
+    closed_matrix_turns(
+        "samples := [1<index> 2<index>]\nvalues := [x | x <- samples]\n~state := values\nstate[2] = 7<index>\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(index_matrix_values(actual), [1, 7]);
+        },
+    );
+    closed_matrix_turns(
+        "values := (true ? | true => [\"a\" \"b\"] | false => [\"c\" \"d\"])\n~state := values\nstate[2] = \"longer replacement\"\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            let ValueData::Matrix(matrix) = actual.data() else {
+                panic!("expected String matrix: {actual:?}")
+            };
+            let SequenceView::String(values) = matrix.elements() else {
+                panic!("expected packed String matrix: {matrix:?}")
+            };
+            assert_eq!(
+                values.iter().map(AsRef::as_ref).collect::<Vec<&str>>(),
+                ["a", "longer replacement"]
+            );
+        },
+    );
+}
+
+#[test]
+fn runtime_shaped_matrices_use_semantic_strict_equality_with_dense_operands() {
+    for (source, expected) in [
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\nvalues === [1 2 3]\n",
+            true,
+        ),
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\n[1 2 3] !== values\n",
+            false,
+        ),
+        (
+            "samples := 1..=2\nvalues := [x | x <- samples]\nvalues === [1 2 3]\n",
+            false,
+        ),
+        (
+            "values := [x | x <- [true false]]\nvalues === [true false]\n",
+            true,
+        ),
+        (
+            "values := [x | x <- [1<index> 2<index>]]\n[1<index> 2<index>] === values\n",
+            true,
+        ),
+        (
+            "values := (true ? | true => [\"a\" \"b\"] | false => [\"c\" \"d\"])\nvalues === [\"a\" \"b\"]\n",
+            true,
+        ),
+    ] {
+        let compiled = compiled(source);
+        let output = compiled
+            .document_outputs()
+            .iter()
+            .find(|binding| binding.kind == mech_engine::SourceDocumentOutputKind::Program)
+            .unwrap()
+            .output as usize;
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        for artifact in [
+            artifact,
+            mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap(),
+        ] {
+            let mut catalog = FunctionCatalogBuilder::new();
+            mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x570, 0),
+                &artifact,
+                &catalog.build().unwrap(),
+                &ActivationFacts::default(),
+            )
+            .unwrap_or_else(|error| panic!("{source:?}: strict activation: {error:?}"));
+            for _ in 0..2 {
+                instance
+                    .turn(&[])
+                    .unwrap_or_else(|error| panic!("{source:?}: strict turn: {error:?}"));
+                let actual = instance.copied_output(output).unwrap();
+                let ValueData::Bool(actual) = actual.data() else {
+                    panic!("{source:?}: expected Bool output: {actual:?}")
+                };
+                assert_eq!(*actual, expected, "{source:?}");
+            }
+        }
+    }
 }
 
 #[test]
