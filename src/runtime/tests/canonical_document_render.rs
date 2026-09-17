@@ -352,6 +352,20 @@ fn hidden_and_output_suppressed_fences_do_not_leak_the_program_result() {
         ("```mech{output: false}\n42\n```\n", true),
     ] {
         let document = document(source);
+        let source_html = CanonicalDocumentRenderer.format_html(&document).unwrap();
+        assert!(source_html.contains("<code>42\n</code>"), "{source_html}");
+        assert_eq!(
+            source_html.contains("class='mech-code-block hidden'"),
+            !source_is_visible
+        );
+        assert!(
+            !source_html.contains("class='mech-output'"),
+            "{source_html}"
+        );
+        assert_eq!(
+            CanonicalDocumentRenderer.format_text(&document).unwrap(),
+            source
+        );
         let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
         let results = [execute(
             document.scope_id(),
