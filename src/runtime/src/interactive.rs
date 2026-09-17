@@ -5,6 +5,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use mech_core::{GenericError, MResult, MechError};
+use mech_syntax::document::{
+    AstNode, DocumentStream, OpAssignSyntax, ParseConfig, Revision, TupleDestructureSyntax,
+    VariableAssignSyntax, VariableDefineSyntax,
+};
 
 use crate::{
     DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticOwner, DiagnosticPhase, MechEvent,
@@ -116,6 +120,17 @@ pub trait ResidentReplRuntimeFactory {
         Ok((runtime, outcome))
     }
 
+    /// Build and activate one strictly admitted retained canonical revision.
+    /// Hosts preparing the S8 cutover override this instead of reconstructing
+    /// an executable tree from the source projection.
+    fn activate_document(
+        &self,
+        events: MechEventBuffer,
+        document: &crate::SourceDocument,
+    ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+        self.activate(events, &document.source().to_contiguous_string())
+    }
+
     /// Build and activate an already parsed candidate tree.
     ///
     /// Document hosts override this boundary so their decoded program remains
@@ -155,8 +170,10 @@ pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     factory: F,
     initial_source: Option<String>,
     initial_tree: Option<mech_core::nodes::Program>,
+    initial_document: Option<crate::SourceDocument>,
     source: String,
     source_tree: Option<mech_core::nodes::Program>,
+    source_document: Option<crate::SourceDocument>,
     runtime: Option<MechRuntime>,
     program_events: Option<MechEventBuffer>,
     pending_selection: Option<PendingSelection>,
@@ -178,8 +195,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             factory,
             initial_source: None,
             initial_tree: None,
+            initial_document: None,
             source: String::new(),
             source_tree: None,
+            source_document: None,
             runtime: None,
             program_events: None,
             pending_selection: None,
@@ -199,8 +218,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             factory,
             initial_source: Some(source.clone()),
             initial_tree: None,
+            initial_document: None,
             source: String::new(),
             source_tree: None,
+            source_document: None,
             runtime: None,
             program_events: None,
             pending_selection: None,
@@ -225,8 +246,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             factory,
             initial_source: Some(source.clone()),
             initial_tree: Some(tree.clone()),
+            initial_document: None,
             source: String::new(),
             source_tree: None,
+            source_document: None,
             runtime: None,
             program_events: None,
             pending_selection: None,
@@ -238,6 +261,32 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             value_element_limit: DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
         };
         session.replace_source_tree(source, tree)?;
+        Ok(session)
+    }
+
+    /// Construct a canonical interactive session around one retained source
+    /// revision. No legacy syntax tree is created or retained.
+    pub fn from_document(factory: F, document: crate::SourceDocument) -> MResult<Self> {
+        let source = document.source().to_contiguous_string();
+        let mut session = Self {
+            factory,
+            initial_source: Some(source.clone()),
+            initial_tree: None,
+            initial_document: Some(document.clone()),
+            source: String::new(),
+            source_tree: None,
+            source_document: None,
+            runtime: None,
+            program_events: None,
+            pending_selection: None,
+            cleared_synthetic_symbols: std::collections::BTreeSet::new(),
+            retained_selections: BTreeMap::new(),
+            reusable_selection_tokens: BTreeMap::new(),
+            events: MechEventJournal::default(),
+            quiet: false,
+            value_element_limit: DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
+        };
+        session.replace_document(document)?;
         Ok(session)
     }
 
@@ -272,6 +321,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.source_tree.as_ref()
     }
 
+    pub fn source_document(&self) -> Option<&crate::SourceDocument> {
+        self.source_document.as_ref()
+    }
+
     pub fn runtime(&self) -> Option<&MechRuntime> {
         self.runtime.as_ref()
     }
@@ -301,6 +354,32 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     /// browser documentation loading) already emitted its causal source echo.
     pub fn submit_host_source(&mut self, entry: &str) -> MResult<RuntimeValueSnapshot> {
         self.submit_without_source_echo(entry, false)
+    }
+
+    /// Submit only after S7B has finalized the complete entry stream. Open,
+    /// limited, and cancelled streams fail before candidate construction and
+    /// therefore cannot execute or replace the accepted runtime.
+    pub fn submit_finished_stream(
+        &mut self,
+        stream: &mut DocumentStream,
+    ) -> MResult<RuntimeValueSnapshot> {
+        let entry = crate::SourceDocument::from_finished_stream(stream).map_err(|error| {
+            interactive_error(format!("interactive source is not final: {error:?}"))
+        })?;
+        let entry_source = entry.source().to_contiguous_string();
+        self.emit_source_echo(&entry_source);
+        self.submit_prepared_entry(&entry_source, Some(entry), true)
+    }
+
+    /// Replace the accepted program with a finalized streamed document.
+    pub fn replace_finished_stream(
+        &mut self,
+        stream: &mut DocumentStream,
+    ) -> MResult<RuntimeValueSnapshot> {
+        let document = crate::SourceDocument::from_finished_stream(stream).map_err(|error| {
+            interactive_error(format!("interactive source is not final: {error:?}"))
+        })?;
+        self.replace_document(document)
     }
 
     /// Inspect an already resident value without recompiling the active
@@ -346,6 +425,25 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         entry: &str,
         emit_value_response: bool,
     ) -> MResult<RuntimeValueSnapshot> {
+        self.submit_prepared_entry(entry, None, emit_value_response)
+    }
+
+    /// One preparation and commit path for typed and finalized-stream entries.
+    /// Selection is consumed only by a successfully accepted candidate.
+    fn submit_prepared_entry(
+        &mut self,
+        entry: &str,
+        finalized: Option<crate::SourceDocument>,
+        emit_value_response: bool,
+    ) -> MResult<RuntimeValueSnapshot> {
+        if finalized
+            .as_ref()
+            .is_some_and(|document| !document.is_strictly_clean())
+        {
+            return Err(interactive_error(
+                "interactive canonical document contains syntax diagnostics",
+            ));
+        }
         let (entry, suppress_value) = executable_submission(entry);
         let mut appended_source = String::new();
         if let Some(selection) = &self.pending_selection {
@@ -362,13 +460,42 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             candidate_source.push('\n');
         }
         candidate_source.push_str(&appended_source);
-        let overlay = mech_syntax::parser::parse(appended_source.trim())?;
-        let changed_state_names = resident_state_mutations(&overlay);
-        let value = if let Some(mut tree) = self.source_tree.clone() {
-            tree.body.sections.extend(overlay.body.sections);
-            self.replace_source_tree_preserving(candidate_source, tree, &changed_state_names)?
+        let value = if finalized.is_none() && self.source_document.is_none() {
+            let overlay = mech_syntax::parser::parse(appended_source.trim())?;
+            let changed_state_names = resident_state_mutations(&overlay);
+            if let Some(mut tree) = self.source_tree.clone() {
+                tree.body.sections.extend(overlay.body.sections);
+                self.replace_source_tree_preserving(candidate_source, tree, &changed_state_names)?
+            } else {
+                self.replace_source_preserving(candidate_source, &changed_state_names)?
+            }
         } else {
-            self.replace_source_preserving(candidate_source, &changed_state_names)?
+            let parse = |source: &str| {
+                crate::SourceDocument::parse_resolved(
+                    "runtime:interactive",
+                    Revision(self.source_revision().saturating_add(1)),
+                    Arc::<str>::from(source),
+                    ParseConfig::default(),
+                )
+                .map_err(|error| {
+                    interactive_error(format!("invalid interactive source: {error:?}"))
+                })
+            };
+            let overlay = match finalized {
+                Some(document) if document.source().to_contiguous_string() == appended_source => {
+                    document
+                }
+                _ => parse(&appended_source)?,
+            };
+            let changed_state_names = mech_engine::CanonicalSourceFrontend
+                .root_state_mutation_names(&overlay.document())
+                .map_err(|error| interactive_error(error.to_string()))?;
+            let candidate = if self.source.is_empty() {
+                overlay
+            } else {
+                parse(&candidate_source)?
+            };
+            self.replace_document_preserving(candidate, &changed_state_names)?
         };
         if emit_value_response && !self.quiet && !suppress_value && !value.is_empty() {
             let canonical = value.format_repl_inline(self.value_element_limit);
@@ -398,6 +525,34 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.replace_source_preserving(candidate_source, &std::collections::BTreeSet::new())
     }
 
+    pub fn replace_document(
+        &mut self,
+        document: crate::SourceDocument,
+    ) -> MResult<RuntimeValueSnapshot> {
+        self.replace_document_preserving(document, &std::collections::BTreeSet::new())
+    }
+
+    fn replace_document_preserving(
+        &mut self,
+        document: crate::SourceDocument,
+        changed_state_names: &std::collections::BTreeSet<String>,
+    ) -> MResult<RuntimeValueSnapshot> {
+        if !document.is_strictly_clean() {
+            return Err(interactive_error(
+                "interactive canonical document contains syntax diagnostics",
+            ));
+        }
+        let source = document.source().to_contiguous_string();
+        self.replace_source_candidate(source, None, Some(document), Some(changed_state_names))
+    }
+
+    fn source_revision(&self) -> u64 {
+        self.source_document
+            .as_ref()
+            .map(|document| document.source().revision().0)
+            .unwrap_or(0)
+    }
+
     /// Rebuild the currently accepted program through the normal candidate
     /// handoff while preserving compatible resident state.
     ///
@@ -408,6 +563,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     pub fn rebuild_runtime_preserving_state(&mut self) -> MResult<RuntimeValueSnapshot> {
         let source = self.source.clone();
         let unchanged = std::collections::BTreeSet::new();
+        if let Some(document) = self.source_document.clone() {
+            return self.replace_document_preserving(document, &unchanged);
+        }
         match self.source_tree.clone() {
             Some(tree) => self.replace_source_tree_preserving(source, tree, &unchanged),
             None => self.replace_source_preserving(source, &unchanged),
@@ -427,7 +585,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 changed_state_names,
             );
         }
-        self.replace_source_candidate(candidate_source, None, Some(changed_state_names))
+        self.replace_source_candidate(candidate_source, None, None, Some(changed_state_names))
     }
 
     fn replace_source_tree(
@@ -451,6 +609,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.replace_source_candidate(
             candidate_source,
             Some(candidate_tree),
+            None,
             Some(changed_state_names),
         )
     }
@@ -459,17 +618,22 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         &mut self,
         candidate_source: String,
         candidate_tree: Option<mech_core::nodes::Program>,
+        candidate_document: Option<crate::SourceDocument>,
         changed_state_names: Option<&std::collections::BTreeSet<String>>,
     ) -> MResult<RuntimeValueSnapshot> {
         let candidate_events = MechEventBuffer::default();
-        let activated = match candidate_tree.clone() {
-            Some(tree) => {
+        let activated = match (candidate_document.as_ref(), candidate_tree.clone()) {
+            (Some(document), None) => self
+                .factory
+                .activate_document(candidate_events.clone(), document),
+            (None, Some(tree)) => {
                 self.factory
                     .activate_tree(candidate_events.clone(), &candidate_source, tree)
             }
-            None => self
+            (None, None) => self
                 .factory
                 .activate(candidate_events.clone(), &candidate_source),
+            (Some(_), Some(_)) => unreachable!("candidate has one source authority"),
         };
         let (mut candidate, outcome) = match activated {
             Ok(candidate) => candidate,
@@ -535,6 +699,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.program_events = Some(candidate_events);
         self.source = candidate_source;
         self.source_tree = candidate_tree;
+        self.source_document = candidate_document;
         self.pending_selection = None;
         self.cleared_synthetic_symbols.clear();
         self.reusable_selection_tokens.clear();
@@ -559,14 +724,24 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     /// unchanged. With no names, the complete resident workspace is removed.
     pub fn clear_variables(&mut self, names: &[String]) -> MResult<Vec<String>> {
         if names.is_empty() {
-            if self.source_tree.is_some() {
+            if self.source_document.is_some() {
+                let document = crate::SourceDocument::parse_resolved(
+                    "runtime:interactive",
+                    Revision(self.source_revision().saturating_add(1)),
+                    Arc::<str>::from(""),
+                    ParseConfig::default(),
+                )
+                .map_err(|error| interactive_error(format!("invalid empty source: {error:?}")))?;
+                self.replace_document(document)?;
+            } else if self.source_tree.is_some() {
                 self.replace_source_candidate(
                     String::new(),
                     Some(mech_syntax::parser::parse("")?),
                     None,
+                    None,
                 )?;
             } else {
-                self.replace_source_candidate(String::new(), None, None)?;
+                self.replace_source_candidate(String::new(), None, None, None)?;
             }
             return Ok(Vec::new());
         }
@@ -600,6 +775,27 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             self.pending_selection = None;
             self.cleared_synthetic_symbols.insert("ans".to_string());
             return Ok(vec!["ans".to_string()]);
+        }
+        if let Some(document) = self.source_document.clone() {
+            let (candidate_source, mut removed) =
+                remove_canonical_definitions(&document, &requested)?;
+            let missing = requested.difference(&removed).cloned().collect::<Vec<_>>();
+            if !missing.is_empty() {
+                return Err(missing_variable_error(&missing));
+            }
+            let candidate = crate::SourceDocument::parse_resolved(
+                "runtime:interactive",
+                Revision(self.source_revision().saturating_add(1)),
+                Arc::<str>::from(candidate_source),
+                ParseConfig::default(),
+            )
+            .map_err(|error| interactive_error(format!("invalid cleared source: {error:?}")))?;
+            self.replace_document(candidate)?;
+            if clear_ans {
+                self.cleared_synthetic_symbols.insert("ans".to_string());
+                removed.insert("ans".to_string());
+            }
+            return Ok(removed.into_iter().collect());
         }
         let mut tree = match &self.source_tree {
             Some(tree) => tree.clone(),
@@ -646,11 +842,20 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 
     pub fn reset(&mut self) -> MResult<()> {
+        if let Some(initial_document) = self.initial_document.clone() {
+            self.replace_source_candidate(
+                initial_document.source().to_contiguous_string(),
+                None,
+                Some(initial_document),
+                None,
+            )?;
+            return Ok(());
+        }
         if let Some(initial_source) = self.initial_source.clone() {
             if let Some(initial_tree) = self.initial_tree.clone() {
-                self.replace_source_candidate(initial_source, Some(initial_tree), None)?;
+                self.replace_source_candidate(initial_source, Some(initial_tree), None, None)?;
             } else {
-                self.replace_source_candidate(initial_source, None, None)?;
+                self.replace_source_candidate(initial_source, None, None, None)?;
             }
             return Ok(());
         }
@@ -659,9 +864,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 String::new(),
                 Some(mech_syntax::parser::parse("")?),
                 None,
+                None,
             )?;
         } else {
-            self.replace_source_candidate(String::new(), None, None)?;
+            self.replace_source_candidate(String::new(), None, None, None)?;
         }
         Ok(())
     }
@@ -977,6 +1183,124 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 }
 
+fn remove_canonical_definitions(
+    document: &crate::SourceDocument,
+    requested: &std::collections::BTreeSet<String>,
+) -> MResult<(String, std::collections::BTreeSet<String>)> {
+    let mut removed = std::collections::BTreeSet::new();
+    let mut ranges = Vec::new();
+    let statements = mech_engine::CanonicalSourceFrontend
+        .root_statement_nodes(&document.document())
+        .map_err(|error| interactive_error(error.to_string()))?;
+    for node in statements {
+        if let Some(definition) = VariableDefineSyntax::cast(node.clone()) {
+            let name = definition
+                .variable()
+                .and_then(|variable| variable.stem())
+                .and_then(|stem| stem.syntax().text().ok());
+            if name.as_ref().is_some_and(|name| requested.contains(name)) {
+                removed.insert(name.unwrap());
+                ranges.push(definition.syntax().range());
+            }
+            continue;
+        }
+        if let Some(destructure) = TupleDestructureSyntax::cast(node.clone()) {
+            let names = destructure
+                .names()
+                .into_iter()
+                .map(|name| {
+                    name.syntax().text().map_err(|error| {
+                        interactive_error(format!("invalid destructure name: {error:?}"))
+                    })
+                })
+                .collect::<MResult<std::collections::BTreeSet<_>>>()?;
+            if names.iter().any(|name| requested.contains(name)) {
+                if !names.is_subset(requested) {
+                    return Err(interactive_error(format!(
+                        "cannot clear tuple destructure targets independently; clear all of {} together",
+                        names.iter().cloned().collect::<Vec<_>>().join(", "),
+                    )));
+                }
+                removed.extend(names);
+                ranges.push(node.range());
+            }
+            continue;
+        }
+        let target = VariableAssignSyntax::cast(node.clone())
+            .and_then(|assignment| assignment.target())
+            .or_else(|| {
+                OpAssignSyntax::cast(node.clone()).and_then(|assignment| assignment.target())
+            });
+        if let Some(name) = target
+            .and_then(|target| target.stem())
+            .and_then(|stem| stem.syntax().text().ok())
+        {
+            if requested.contains(&name) {
+                ranges.push(node.range());
+            }
+            continue;
+        }
+    }
+    let mut source = document.source().to_contiguous_string();
+    let bytes = source.as_bytes();
+    let mut byte_ranges = ranges
+        .into_iter()
+        .map(|range| {
+            let mut start = range.start.0 as usize;
+            let mut end = range.end.0 as usize;
+            while end < bytes.len() && matches!(bytes[end], b' ' | b'\t') {
+                end += 1;
+            }
+            if bytes.get(end) == Some(&b';') {
+                end += 1;
+                while end < bytes.len() && matches!(bytes[end], b' ' | b'\t') {
+                    end += 1;
+                }
+            } else {
+                while start > 0 && matches!(bytes[start - 1], b' ' | b'\t') {
+                    start -= 1;
+                }
+                if start > 0 && bytes[start - 1] == b';' {
+                    start -= 1;
+                } else if start == 0 || bytes[start - 1] == b'\n' {
+                    if bytes.get(end) == Some(&b'\r') {
+                        end += 1;
+                    }
+                    if bytes.get(end) == Some(&b'\n') {
+                        end += 1;
+                    }
+                }
+            }
+            (start, end)
+        })
+        .collect::<Vec<_>>();
+    byte_ranges.sort_unstable();
+    let mut merged: Vec<(usize, usize)> = Vec::new();
+    for (start, end) in byte_ranges {
+        if let Some(previous) = merged.last_mut().filter(|previous| start <= previous.1) {
+            previous.1 = previous.1.max(end);
+        } else {
+            merged.push((start, end));
+        }
+    }
+    for (start, end) in merged.into_iter().rev() {
+        source.replace_range(start..end, "");
+    }
+    Ok((source, removed))
+}
+
+fn missing_variable_error(missing: &[String]) -> MechError {
+    interactive_error(format!(
+        "resident variable{} {} not found",
+        if missing.len() == 1 { "" } else { "s" },
+        missing
+            .iter()
+            .map(|name| format!("`{name}`"))
+            .collect::<Vec<_>>()
+            .join(", "),
+    ))
+}
+
 fn remove_resident_definitions(
     code: &mut Vec<(
         mech_core::nodes::MechCode,
@@ -1241,6 +1565,7 @@ fn interactive_error(message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_syntax::document::{DocumentId, StreamProgress};
 
     #[test]
     fn resident_state_mutations_include_compound_assignments() {
@@ -1296,12 +1621,330 @@ mod tests {
 
     struct SourceRuntimeFactory;
 
+    struct CanonicalRuntimeFactory {
+        activations: std::rc::Rc<Cell<usize>>,
+    }
+
     impl ResidentReplRuntimeFactory for SourceRuntimeFactory {
         fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
             MechRuntime::builder()
                 .function_catalog(mech_stdlib::source_catalog())
                 .build()
         }
+    }
+
+    impl ResidentReplRuntimeFactory for CanonicalRuntimeFactory {
+        fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
+            unreachable!("canonical test activation uses the retained document boundary")
+        }
+
+        fn activate_document(
+            &self,
+            _events: MechEventBuffer,
+            document: &crate::SourceDocument,
+        ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+            self.activations.set(self.activations.get() + 1);
+            let mut runtime = MechRuntime::builder()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build()?;
+            if document.source().to_contiguous_string().trim().is_empty() {
+                return Ok((
+                    runtime,
+                    RuntimeProgramLoadOutcome {
+                        route: crate::RuntimeProgramRoute::None,
+                        initial_value: RuntimeValueSnapshot::empty(),
+                        info: crate::RuntimeProgramExecutionInfo::default(),
+                    },
+                ));
+            }
+            let mut compiler = crate::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build_compiler()?;
+            let product = compiler.compile_interactive_document(document)?;
+            let durability = runtime.config().resident_durability;
+            let outcome = runtime.load_bytecode_program(product.bytecode(), durability)?;
+            Ok((runtime, outcome))
+        }
+    }
+
+    fn finished_stream(id: u64, source: &str) -> DocumentStream {
+        let mut stream = DocumentStream::new(DocumentId(id), ParseConfig::default());
+        stream.append(source, u64::MAX).unwrap();
+        assert_eq!(stream.finish(u64::MAX).progress, StreamProgress::Finished);
+        stream
+    }
+
+    #[test]
+    fn canonical_clear_removes_definitions_assignments_and_op_assignments() {
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://clear",
+            Revision(0),
+            Arc::<str>::from("~x := 1\nx = 2\nx += 1\ny := 9\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        assert_eq!(session.clear_variables(&["x".to_owned()]).unwrap(), ["x"]);
+        assert_eq!(session.source(), "y := 9\n");
+        assert!(session.clear_variables(&["x".to_owned()]).is_err());
+    }
+
+    #[test]
+    fn canonical_clear_preserves_same_line_statements_and_tuple_ownership() {
+        for source in [
+            "~x := 1; y := 2\n",
+            "y := 2; ~x := 1\n",
+            "~x := 1; x += 3; y := 2\r\n",
+        ] {
+            let initial = crate::SourceDocument::parse_resolved(
+                "repl://clear-inline",
+                Revision(0),
+                Arc::<str>::from(source),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut session = ResidentReplSession::from_document(
+                CanonicalRuntimeFactory {
+                    activations: std::rc::Rc::new(Cell::new(0)),
+                },
+                initial,
+            )
+            .unwrap();
+            session.clear_variables(&["x".to_owned()]).unwrap();
+            assert_eq!(
+                session
+                    .symbol("y")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "2"
+            );
+            assert!(!session.source().contains("x"));
+        }
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://clear-tuple",
+            Revision(0),
+            Arc::<str>::from("pair := (1, 2)\n(x, y) := pair; z := 3\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        let before = session.source().to_owned();
+        assert!(session.clear_variables(&["x".to_owned()]).is_err());
+        assert_eq!(session.source(), before);
+        session
+            .clear_variables(&["x".to_owned(), "y".to_owned()])
+            .unwrap();
+        assert_eq!(
+            session
+                .symbol("z")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "3"
+        );
+        assert!(!session.source().contains("(x, y)"));
+    }
+
+    #[test]
+    fn canonical_inactive_mutations_preserve_root_state() {
+        for entry in [
+            "```mech:worker\n~counter := 0\ncounter += 9\n```\n",
+            "```mech:disabled\ncounter = 99\n```\n",
+            "unused() = result<f64> := ~counter := 0.0; counter += 9.0; result := counter.\n",
+            "╭◉╮⸢~counter := 0\ncounter += 9\n⸥\n",
+        ] {
+            let initial = crate::SourceDocument::parse_resolved(
+                "repl://scope-mutations",
+                Revision(0),
+                Arc::<str>::from("~counter := 0\ncounter += 1\n"),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut session = ResidentReplSession::from_document(
+                CanonicalRuntimeFactory {
+                    activations: std::rc::Rc::new(Cell::new(0)),
+                },
+                initial,
+            )
+            .unwrap();
+            session.step(2).unwrap();
+            let before = session.symbol("counter").unwrap().unwrap();
+            let mut stream = finished_stream(909, entry);
+            session.submit_finished_stream(&mut stream).unwrap();
+            assert_eq!(
+                session.symbol("counter").unwrap().unwrap(),
+                before,
+                "{entry}"
+            );
+            let mut mutation = finished_stream(910, "counter += 1\ncounter\n");
+            session.submit_finished_stream(&mut mutation).unwrap();
+            assert_eq!(
+                session
+                    .symbol("counter")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "2"
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_invariants_keep_queryable_sigil_names() {
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://invariants",
+            Revision(0),
+            Arc::<str>::from("x := 1\nsafe! := x <= 2\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        for names in [vec![], vec!["safe!".to_owned()]] {
+            let constraints = session.integrity_constraints(&names).unwrap();
+            assert_eq!(constraints.len(), 1);
+            assert_eq!(constraints[0].0, "safe!");
+            assert_eq!(constraints[0].1.format_canonical_inline(), "true");
+        }
+        assert!(
+            session
+                .integrity_constraints(&["safe".to_owned()])
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn canonical_finished_stream_preserves_pending_selection() {
+        for (streamed, suppress) in [(false, false), (true, false), (false, true), (true, true)] {
+            let initial = crate::SourceDocument::parse_resolved(
+                "repl://selected-stream",
+                Revision(0),
+                Arc::<str>::from("selected := 40\n~counter := 0\ncounter += 1\n1\n"),
+                ParseConfig::default(),
+            )
+            .unwrap();
+            let mut session = ResidentReplSession::from_document(
+                CanonicalRuntimeFactory {
+                    activations: std::rc::Rc::new(Cell::new(0)),
+                },
+                initial,
+            )
+            .unwrap();
+            session.select_value("selected", session.symbol("selected").unwrap().unwrap());
+            let accepted = session.source().to_owned();
+            let counter = session.symbol("counter").unwrap().unwrap();
+            let submit = |session: &mut ResidentReplSession<CanonicalRuntimeFactory>,
+                          source: &str| {
+                if streamed {
+                    session.submit_finished_stream(&mut finished_stream(920, source))
+                } else {
+                    session.submit(source)
+                }
+            };
+            assert!(submit(&mut session, "missing-name + ans\n").is_err());
+            assert_eq!(session.source(), accepted);
+            assert_eq!(session.symbol("counter").unwrap().unwrap(), counter);
+            assert_eq!(
+                session
+                    .symbol("ans")
+                    .unwrap()
+                    .unwrap()
+                    .format_canonical_inline(),
+                "40"
+            );
+            session.drain_events().unwrap();
+            let source = if suppress { "ans + 2;\n" } else { "ans + 2\n" };
+            assert_eq!(
+                submit(&mut session, source)
+                    .unwrap()
+                    .format_canonical_inline(),
+                "42"
+            );
+            assert!(session.pending_selection.is_none());
+            assert!(session.source_document().is_some());
+            let events = session.drain_events().unwrap();
+            assert_eq!(events.iter().filter(|event| matches!(&event.event, MechEvent::Repl(ReplEvent::SourceEcho {source: echo}) if echo == source.trim_end())).count(), 1);
+            assert_eq!(events.iter().filter(|event| matches!(&event.event, MechEvent::Repl(ReplEvent::Response(response)) if response.kind == ReplResponseKind::ValueInspection)).count(), usize::from(!suppress));
+            assert_eq!(
+                submit(&mut session, "ans + 1\n")
+                    .unwrap()
+                    .format_canonical_inline(),
+                "43"
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_interactive_lifecycle_executes_only_final_streams() {
+        let activations = std::rc::Rc::new(Cell::new(0));
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://initial",
+            Revision(0),
+            Arc::<str>::from("x := 1\n"),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::clone(&activations),
+            },
+            initial,
+        )
+        .unwrap();
+        assert_eq!(activations.get(), 1);
+
+        let mut open = DocumentStream::new(DocumentId(901), ParseConfig::default());
+        open.append("y := x + 1\n", u64::MAX).unwrap();
+        assert!(session.submit_finished_stream(&mut open).is_err());
+        assert_eq!(activations.get(), 1);
+        assert_eq!(session.source(), "x := 1\n");
+
+        assert_eq!(open.finish(u64::MAX).progress, StreamProgress::Finished);
+        let value = session.submit_finished_stream(&mut open).unwrap();
+        assert_eq!(value.format_canonical_inline(), "2");
+        assert_eq!(activations.get(), 2);
+        assert!(session.source_document().is_some());
+
+        let mut replacement = finished_stream(902, "x := 3\n");
+        assert_eq!(
+            session
+                .replace_finished_stream(&mut replacement)
+                .unwrap()
+                .format_canonical_inline(),
+            "3"
+        );
+        assert_eq!(activations.get(), 3);
+        session.reset().unwrap();
+        assert_eq!(session.source(), "x := 1\n");
+        assert_eq!(activations.get(), 4);
+        assert_eq!(session.clear_variables(&["x".to_owned()]).unwrap(), ["x"]);
+        assert!(session.source().is_empty());
+        assert_eq!(activations.get(), 5);
+
+        let mut cancelled = DocumentStream::new(DocumentId(903), ParseConfig::default());
+        cancelled.append("z := 9\n", u64::MAX).unwrap();
+        cancelled.cancel();
+        assert!(session.replace_finished_stream(&mut cancelled).is_err());
+        assert_eq!(activations.get(), 5);
     }
 
     impl ResidentReplRuntimeFactory for CapturingProgramEventFactory {
@@ -1408,6 +2051,148 @@ mod tests {
         assert!(session.drain_events().unwrap().iter().any(|event| {
             format!("{event:?}").contains("deliberate retired runtime stop failure")
         }));
+    }
+
+    #[test]
+    fn canonical_interactive_turns_and_replacement_preserve_live_state() {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:interactive-recurrence",
+            Revision(0),
+            "~counter := 0\ncounter += 1\ncounter\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document,
+        )
+        .unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "1");
+        session.step(2).unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        session.submit("display := counter + 10").unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13"
+        );
+        assert_eq!(session.symbol("ans").unwrap().unwrap().to_string(), "13");
+    }
+
+    #[test]
+    fn canonical_interactive_matrix_projection_and_failed_candidate_preserve_state() {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:matrix-recurrence",
+            Revision(0),
+            "~values := [0f32; 1f32]\nvalues += 1f32\nvalues\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document,
+        )
+        .unwrap();
+        session.step(2).unwrap();
+        session.submit("display := values + 10f32").unwrap();
+        for (name, values) in [("values", vec![3.0, 4.0]), ("display", vec![13.0, 14.0])] {
+            assert_eq!(
+                crate::RuntimeHostInputValue::from_numeric_value(
+                    session.symbol(name).unwrap().unwrap().value()
+                )
+                .unwrap(),
+                crate::RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values
+                },
+            );
+        }
+        let source = session.source().to_owned();
+        let values = session.symbol("values").unwrap();
+        let display = session.symbol("display").unwrap();
+        assert!(session.submit("bad := undefined-call(values)").is_err());
+        assert_eq!(session.source(), source);
+        assert_eq!(session.symbol("values").unwrap(), values);
+        assert_eq!(session.symbol("display").unwrap(), display);
+        session.step(1).unwrap();
+        assert_eq!(
+            crate::RuntimeHostInputValue::from_numeric_value(
+                session.symbol("values").unwrap().unwrap().value()
+            )
+            .unwrap(),
+            crate::RuntimeHostInputValue::F32Matrix {
+                rows: 2,
+                columns: 1,
+                values: vec![4.0, 5.0]
+            },
+        );
+    }
+
+    #[test]
+    fn canonical_interactive_rewired_projection_uses_the_migrated_epoch() {
+        let document = |source| {
+            crate::SourceDocument::parse_resolved(
+                "test:rewired-state",
+                Revision(0),
+                source,
+                ParseConfig::default(),
+            )
+            .unwrap()
+        };
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document("~a := 0\n~b := 100\na += 1\nb += 2\ndisplay := a + 10\n"),
+        )
+        .unwrap();
+        session.step(2).unwrap();
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13"
+        );
+        session
+            .replace_document(document(
+                "~a := 0\n~b := 100\na += 1\nb += 2\ndisplay := b + 10\n",
+            ))
+            .unwrap();
+        for (name, expected) in [("a", "3"), ("b", "106"), ("display", "116"), ("ans", "116")] {
+            assert_eq!(session.symbol(name).unwrap().unwrap().to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn canonical_interactive_result_identity_is_independent_of_fence_publication() {
+        let document = crate::SourceDocument::parse_resolved(
+            "test:interactive-result",
+            Revision(0),
+            "~~~mech\n41\n~~~\n42\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            document,
+        )
+        .unwrap();
+        assert_eq!(session.symbol("ans").unwrap().unwrap().to_string(), "42");
+        assert_eq!(
+            session
+                .runtime()
+                .unwrap()
+                .program_output_value()
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "42"
+        );
     }
 
     #[test]

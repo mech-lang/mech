@@ -62,7 +62,7 @@ impl MechRuntime {
                     super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
                 })?;
             candidate_instance
-                .refresh_output_projections(&projection_refresh_targets)
+                .refresh_output_projections(&candidate_artifact, &projection_refresh_targets)
                 .map_err(super::diagnostics::projection_refresh_failure)?;
         }
 
