@@ -11519,7 +11519,7 @@ fn snapshot_selector_materialization_cost(
     meter: &mut super::budget::ResidentBudgetMeter,
 ) -> Result<SelectorMaterializationCost, ResidentKernelError> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
-        if value.schema() != layout.schema || value.shape() != &layout.shape {
+        if value.schema() != layout.schema {
             return Err(ResidentKernelError::InvalidInput);
         }
         value
@@ -14689,6 +14689,150 @@ mod tests {
                     .unwrap()
             );
         }
+    }
+
+    #[test]
+    fn promoted_rows_consume_runtime_sized_snapshot_sources() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft,
+        };
+
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![rows, columns].into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let base = builder
+            .insert(test_schema(matrix(
+                SchemaBody::SignedInteger(mech_core::IntegerWidth::W32),
+                DimensionExpr::Constant(2),
+                DimensionExpr::Constant(2),
+            )))
+            .unwrap();
+        let source = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(2)),
+                    }]
+                    .into_boxed_slice(),
+                    body: matrix(
+                        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        DimensionExpr::Constant(2),
+                    ),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let selector = builder.insert(test_schema(SchemaBody::Index)).unwrap();
+        let built = builder.finish().unwrap();
+        let base = built.resolve(base).unwrap();
+        let source = built.resolve(source).unwrap();
+        let selector = built.resolve(selector).unwrap();
+        let (schemas, _) = built.into_parts();
+        let layout = |schema, kind, shape, parameters: &[u64]| mech_core::ResidentPortLayout {
+            schema_id: schema,
+            schema_key: schemas.entry(schema).unwrap().key(),
+            kind,
+            shape,
+            shape_instance: schemas
+                .get(schema)
+                .unwrap()
+                .instantiate_shape(parameters.to_vec().into_boxed_slice())
+                .unwrap(),
+            resolved_selector: None,
+        };
+        let contract = test_contract(
+            &[base, source, selector],
+            base,
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_compound_selection::<1, 0>(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                layout(
+                    base,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                    &[],
+                ),
+                layout(
+                    source,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                    &[0],
+                ),
+                layout(
+                    selector,
+                    ResidentValueKind::Index,
+                    ResidentShape::SCALAR,
+                    &[],
+                ),
+            ],
+            output: layout(
+                base,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+                &[],
+            ),
+        })
+        .unwrap();
+        let source_value = [Some(
+            ValueDraft {
+                schema: source,
+                shape_values: vec![1].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(
+                    [1.5, 2.5]
+                        .into_iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap(),
+        )];
+        let selector_value = [2_u64];
+        let inputs = [
+            ResidentValueRef::Snapshot(&source_value),
+            ResidentValueRef::Index(&selector_value),
+        ];
+        let mut output = [Some(test_value(
+            &schemas,
+            base,
+            ValueDataDraft::Matrix(
+                [10, 11, 20, 21]
+                    .into_iter()
+                    .map(ValueDataDraft::I32)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        ))];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output),),
+            Ok(true),
+        );
+        let ValueData::Matrix(values) = output[0].as_ref().unwrap().data() else {
+            panic!("promoted rows must preserve the complete matrix")
+        };
+        let SequenceView::I32(values) = values.elements() else {
+            panic!("promoted rows must retain the destination element type")
+        };
+        assert_eq!(values, &[10, 11, 21, 23]);
     }
 
     #[test]
