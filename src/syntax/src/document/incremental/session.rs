@@ -63,6 +63,21 @@ impl DocumentSession {
         })
     }
 
+    pub fn into_stream(self) -> crate::document::DocumentStream {
+        crate::document::DocumentStream::from_session(self.current.source, self.ids, self.config)
+    }
+    pub(crate) fn from_stream_parts(
+        current: SyntaxSnapshot,
+        ids: IdGenerator,
+        config: ParseConfig,
+    ) -> Self {
+        Self {
+            current,
+            ids,
+            config,
+        }
+    }
+
     pub fn snapshot(&self) -> &SyntaxSnapshot {
         &self.current
     }

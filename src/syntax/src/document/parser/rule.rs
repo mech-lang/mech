@@ -47,6 +47,7 @@ struct RuleFrame {
 #[derive(Clone, Debug, Default)]
 pub struct RuleStack {
     rules: Vec<RuleFrame>,
+    peak_depth: usize,
 }
 
 impl RuleStack {
@@ -63,6 +64,7 @@ impl RuleStack {
             context: Some(context),
             canonical: None,
         });
+        self.peak_depth = self.peak_depth.max(self.rules.len());
     }
 
     pub fn push_canonical(&mut self, rule: RuleId) {
@@ -70,6 +72,7 @@ impl RuleStack {
             context: None,
             canonical: Some(rule),
         });
+        self.peak_depth = self.peak_depth.max(self.rules.len());
     }
 
     pub fn current_rule(&self) -> Option<RuleId> {
@@ -78,6 +81,10 @@ impl RuleStack {
 
     pub fn current_context(&self) -> Option<ParserContextId> {
         self.rules.last().and_then(|frame| frame.context)
+    }
+
+    pub(crate) fn peak_depth(&self) -> usize {
+        self.peak_depth
     }
 
     pub fn len(&self) -> usize {

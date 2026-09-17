@@ -486,17 +486,19 @@ mod tests {
                         id: NodeId(1),
                         kind: SyntaxKind::Expression,
                         text_len: range.len(),
-                        children: Arc::from([GreenElement::Token(GreenToken {
-                            id: TokenId(2),
-                            kind: SyntaxKind::BoxDrawing,
-                            text_len: range.len(),
-                            flags: if range.is_empty() {
-                                TokenFlags::MISSING
-                            } else {
-                                TokenFlags::NONE
+                        children: crate::document::GreenChildren::from([GreenElement::Token(
+                            GreenToken {
+                                id: TokenId(2),
+                                kind: SyntaxKind::BoxDrawing,
+                                text_len: range.len(),
+                                flags: if range.is_empty() {
+                                    TokenFlags::MISSING
+                                } else {
+                                    TokenFlags::NONE
+                                },
+                                text_hash: 0,
                             },
-                            text_hash: 0,
-                        })]),
+                        )]),
                         flags: NodeFlags::NONE,
                         structural_hash: 0,
                     }),

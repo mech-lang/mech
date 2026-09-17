@@ -6435,7 +6435,7 @@ mod tests {
                         id: mech_syntax::document::NodeId(1),
                         kind: SyntaxKind::Literal,
                         text_len: mech_syntax::document::TextSize::ZERO,
-                        children: std::sync::Arc::from([]),
+                        children: Default::default(),
                         flags: NodeFlags::NONE,
                         structural_hash: 0,
                     }),

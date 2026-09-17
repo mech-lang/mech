@@ -84,12 +84,24 @@ impl SyntaxNode {
         children
     }
 
-    pub fn children(&self) -> impl Iterator<Item = SyntaxNode> {
-        self.children_with_tokens()
-            .into_iter()
-            .filter_map(|child| match child {
-                SyntaxElement::Node(node) => Some(node),
-                SyntaxElement::Token(_) => None,
+    pub fn children(&self) -> impl Iterator<Item = SyntaxNode> + use<> {
+        let source = self.source.clone();
+        let mut offset = self.offset;
+        self.green
+            .children
+            .clone()
+            .into_values()
+            .filter_map(move |child| {
+                let start = offset;
+                offset += child.text_len();
+                match child {
+                    GreenElement::Node(node) => Some(Self {
+                        green: node,
+                        source: source.clone(),
+                        offset: start,
+                    }),
+                    GreenElement::Token(_) => None,
+                }
             })
     }
 

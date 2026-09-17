@@ -532,9 +532,20 @@ impl Continuation {
         final_input: bool,
         allowance: &mut u64,
     ) -> Progress {
-        while !self.frames.is_empty() {
+        while !self.frames.is_empty() || parser.state.tree_cache.pending() {
             if !final_input && parser.is_halted() {
                 return Progress::Limited;
+            }
+            if parser.state.tree_cache.pending() {
+                let before = *allowance;
+                let complete = parser.advance_tree_cache(allowance);
+                self.work += before - *allowance;
+                if !complete {
+                    return Progress::NeedsProcessing;
+                }
+                if self.frames.is_empty() {
+                    break;
+                }
             }
             if *allowance == 0 {
                 return Progress::NeedsProcessing;

@@ -1,11 +1,10 @@
 Canonical Retained-Document Streaming — S7B
 ===============================================================================
 
-Status: B1/B2 committed. B3 grammar ownership implemented; B4 publication follows.
-All 80 recursive rules and all document combinators retain open-input state.
-Document/fence recovery and physical/filtered found-syntax classification use
-owned continuations. Snapshot publication, remaining materialization accounting,
-and the complete B5/B6 qualification and closeout remain open.
+Status: B1-B4 implemented. B5 qualification and B6 closeout remain open.
+The public DocumentStream lifecycle retains canonical grammar, source, events,
+diagnostics, and completed typed nodes. Ordinary publication shares persistent
+journals; explicit finite previews and final exports have separate accounting.
 Baseline: S7A PR #825, 34cb58ad3e676723d7161ae52906395cdfaa83c0.
 Branch: codex/syntax-s7b-streaming, targeting codex/syntax-s7-document-root.
 
@@ -780,3 +779,61 @@ exercise ignored trivia inside operators, combining clusters, and joined emoji.
 These are ownership results, not end-to-end streaming qualification. B4 must
 replace eager publication and account for retained tree/cache materialization;
 B5 must run the final full matrix and turn all four B1 performance gates green.
+
+B4 snapshots and sessions checkpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+DocumentStream::new/with_limits starts an open canonical document. append and
+advance return NeedInput or NeedsProcessing separately from Finished, Cancelled,
+and Limited. finish declares final EOF and is idempotent; cancel preserves source.
+Oversized appends reject atomically. Empty appends preserve identity, counters,
+and outstanding scheduling status. Hard parser work remains cumulative.
+
+StreamUpdate carries compact replacement suffixes for event and diagnostic
+journals. StreamView shares those persistent journals and the source, exposes
+accepted/pending ranges, and supplies existing SyntaxNode values for materialized
+completed markers. Looking up a completed node uses the event index; it does not
+rebuild NodeIndex or enumerate unchanged nodes. Abandoned speculative markers
+are removed from the current journal while older views remain immutable.
+
+Completed markers own immutable green nodes with stable identities. Retained
+materialization hashes token bytes under the continuation allowance and reuses
+completed children. Parent child storage copies logarithmic tree paths; child
+order and the frozen Phase 2I-C structural hashes are unchanged. Typed child
+iteration is lazy. Clean brace/map replay consumes the same cached subtree rather
+than synchronously sinking its event range again.
+
+preview explicitly runs canonical finite-prefix interpretation, separately
+charged, without changing the live grammar, fuel, or recovery. Preview identities
+are distinct from live/final identities even at the same revision. Preview IDs
+come from the session sequence, preventing element-ID collisions with live nodes.
+materialize explicitly exports the finalized or limited tree and indexes once;
+repeated calls share the result. A preview or limited result never authorizes
+execution. S8 must require Finished/Finalized and normal strict validation.
+
+apply_edits discards suspended frames and materialization work, invalidates all
+identities in the old live interpretation, and charges a full restart. Historical
+views remain valid. Subsequent appends resume the new interpretation. Existing
+DocumentSession ordinary edits preserve their established reconciliation policy;
+into_stream establishes retained parsing, and into_session explicitly exports a
+finalized/limited snapshot for editing. Production callers remain unchanged.
+
+StreamWork separates accepted/copied/indexed source, persistent allocation and
+mutation work, canonical continuation/scanner/materialization work, checkpoint
+rewinds and reused bytes, normal publications, previews, explicit exports, and
+edit restarts. It records component peaks for source pieces, events, markers,
+rule depth, document frames, and pending materialization requests. Event/node
+storage and materialization belong to normal processing, not hidden preview.
+Full export charges a conservative volume including source, events, diagnostics,
+node/token indexes, restarts, and any remaining resource cleanup. Arbitrary edit
+storage work has a documented linear/logarithmic bound separate from measured
+append counters; it is not covered by the small-append performance claim.
+
+Focused B4 qualification passes 26 tests across lifecycle, equivalence, resources,
+complexity, certification, and frozen rule-surface targets. The four original
+positive gates now use DocumentStream, include ordinary publication and final
+canonical draining, and retain full-source/uncapped/equivalence checks. A broad
+full run passed 890 tests and surfaced two storage-refactor issues (the canonical
+type allowlist and frozen hash preservation); both pass focused reruns. The
+165-test library and existing typed/incremental targets also pass. Final exact-head
+base/full, reduced/native/WASM, consumer, review, and CI results remain B5/B6 work.
