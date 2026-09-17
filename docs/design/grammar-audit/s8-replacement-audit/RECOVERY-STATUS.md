@@ -3,7 +3,7 @@
 ## Live landing checkpoint — 2026-09-17
 
 **Candidate:** `codex/syntax-s8c-cutover` /
-`3b7a9a0d74d05d49724038bd3e042e5f48080027`, published as draft #830 on
+`90825ae35add8d0030831428ccf983808528d071`, published as draft #830 on
 R26 `45eeb5dbb8e43c8b44057cef335c94e19867f402`. This is the designated combined
 qualification candidate for the complete R01–R26 correction stack and targets
 `integration/v0.4` through the protected stacked path.
@@ -20,7 +20,7 @@ names now have exact regressions.
 Canonical native planning now consumes artifact requirements directly, validates
 resource ownership and write payloads through the trusted providers, and avoids a
 synthetic turn for read-only artifacts. Exact local evidence passes 397 root
-compute-enabled tests, 128 syntax tests, 682 runtime tests, seven canonical host
+compute-enabled tests, 128 syntax tests, 682 runtime tests, eight canonical host
 planning tests, one fixed document-mount test, and three served-document tests.
 Time and timer reads, scene writes, and the robot custom send build and execute as
 generated native applications. The first eleven native graph generation cases
@@ -29,16 +29,14 @@ patch integrity, resident-routing, warning-policy, interactive-architecture,
 compiler-planning-quarantine, and unsafe-boundary checks pass. The PR has zero
 current unresolved review threads.
 
-**Remaining:** obtain review of exact C `3b7a9a0d7` and complete protected CI on
+**Remaining:** obtain review of exact C `90825ae35` and complete protected CI on
 that SHA. The local machine has no Node or Chrome executable, so the JavaScript
 bootstrap and browser product probes remain assigned to CI. Inspect every actual
 failed job, fix genuine failures in their owner, propagate the changed candidate,
 and requalify it. Once exact-head review and qualification are clean, merge the
 stack through the protected path and verify the landed target.
 
-**Current action:** request review of the published exact C head and monitor the
-new CI run, prioritizing the early native plan and browser compute/product jobs
-that failed on the preceding head.
+**Current action:** restore the missing GitHub check suite for the published exact C head, request review of that SHA, and monitor the early native plan and browser compute/product jobs that failed on the preceding head.
 
 **Next action:** inspect the first completed exact-head jobs. If a genuine failure
 appears, add its reproducer and fix it once in the owning C correction; otherwise
