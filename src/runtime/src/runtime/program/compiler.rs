@@ -37,12 +37,12 @@ use crate::SourceContextCapabilityScope;
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeResourceKey,
-    RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase, SourceDocument,
-    SourceImportAlias, SourceImportDeclaration, SourceIndex, SourceRequest, SourceResolver,
-    import_may_resolve_source_dependency, import_requires_source_dependency,
-    module_namespace_for_import, source_request_for_import,
+    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyMissingError,
+    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    SourceContextBase, SourceDocument, SourceImportAlias, SourceImportDeclaration, SourceIndex,
+    SourceRequest, SourceResolver, import_may_resolve_source_dependency,
+    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
@@ -1240,10 +1240,14 @@ impl<'a> ProgramCompilerView<'a> {
             let request = source_request_for_import(&declaration, Some(uri));
             let Some(dependency) = self.source_resolver.resolve(&request)? else {
                 if import_requires_source_dependency(&declaration) {
-                    return Err(canonical_compilation_error(format!(
-                        "missing canonical dependency {} from {uri}",
-                        request.specifier
-                    )));
+                    return Err(MechError::new(
+                        RuntimeModuleDependencyMissingError {
+                            module: uri.to_owned(),
+                            specifier: request.specifier,
+                            referrer: request.referrer,
+                        },
+                        None,
+                    ));
                 }
                 continue;
             };
