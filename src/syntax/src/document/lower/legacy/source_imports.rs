@@ -18,6 +18,7 @@ type LowerResult<T> = Result<T, String>;
 
 /// A package-private direct-rule value used by the Phase 2F parity tests.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacySourceImportValue {
     Tail(LegacyToken),
     Component(Vec<LegacyToken>),
@@ -58,6 +59,7 @@ pub fn lower_legacy_source_import_specifier(
 /// Lower any node-valued Phase 2F source-import production for internal parity
 /// coverage. Token and transparent productions intentionally have no wrapper
 /// node value here.
+#[cfg(test)]
 pub(crate) fn lower_phase_2f_source_import_value(
     syntax: &SyntaxNode,
 ) -> Result<LegacySourceImportValue, DiagnosticStore> {
@@ -154,6 +156,7 @@ fn lower_source_path_component_node(syntax: &SyntaxNode) -> LowerResult<Vec<Lega
                 SyntaxKind::Dash => TokenKind::Dash,
                 SyntaxKind::Underscore => TokenKind::Underscore,
                 SyntaxKind::Period => TokenKind::Period,
+                SyntaxKind::Percent => TokenKind::Percent,
                 _ => {
                     return Err(String::from(
                         "source-path-component has an unsupported token",
@@ -198,9 +201,10 @@ fn lower_source_mec_path_node(syntax: &SyntaxNode) -> LowerResult<Vec<LegacyToke
         ));
     }
     let text = merge_text(&tokens);
-    if !text.ends_with(".mec") {
+    let leaf = text.rsplit('/').next().unwrap_or(&text);
+    if leaf.contains('.') && !leaf.ends_with(".mec") {
         return Err(String::from(
-            "source-mec-path must end with lowercase `.mec`",
+            "source-mec-path must be extensionless or end with lowercase `.mec`",
         ));
     }
     Ok(tokens)
@@ -352,6 +356,7 @@ fn lower_source_import_uri_scheme_node(syntax: &SyntaxNode) -> LowerResult<Vec<L
                 SyntaxKind::Plus => TokenKind::Plus,
                 SyntaxKind::Dash => TokenKind::Dash,
                 SyntaxKind::Period => TokenKind::Period,
+                SyntaxKind::Percent => TokenKind::Percent,
                 _ => {
                     return Err(String::from(
                         "source-import-uri-scheme has an unsupported token",

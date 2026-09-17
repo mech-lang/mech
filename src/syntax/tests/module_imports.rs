@@ -63,7 +63,11 @@ fn assert_single_paragraph(src: &str) {
         .iter()
         .flat_map(|section| &section.elements)
         .collect::<Vec<_>>();
-    assert_eq!(elements.len(), 1, "expected one section element for {src:?}");
+    assert_eq!(
+        elements.len(),
+        1,
+        "expected one section element for {src:?}"
+    );
     assert!(
         matches!(elements[0], SectionElement::Paragraph(_)),
         "expected a paragraph for {src:?}, got {:?}",
@@ -155,7 +159,10 @@ fn import_sigil_text_remains_a_paragraph() {
 #[test]
 fn committed_module_import_errors_do_not_fall_back_to_paragraphs() {
     for source in ["+> math/", "+> math/*/x"] {
-        assert!(parser::parse(source).is_err(), "{source:?} must be rejected");
+        assert!(
+            parser::parse(source).is_err(),
+            "{source:?} must be rejected"
+        );
     }
 }
 

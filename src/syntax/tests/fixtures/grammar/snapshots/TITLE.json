@@ -3,6 +3,7 @@
     "body": {
       "sections": [
         {
+          "annotations": [],
           "elements": [
             {
               "Paragraph": {
@@ -41,6 +42,7 @@
       "author": null,
       "date": null,
       "hero": null,
+      "imports": [],
       "kicker": null,
       "next": null,
       "previous": null,

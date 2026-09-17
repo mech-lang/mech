@@ -1,6 +1,6 @@
 //! Canonical grammar-metalanguage productions.
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 
 use crate::document::{
     Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticTags, ExpectedSyntax,
@@ -749,22 +749,14 @@ fn cursor_looks_like_rule_start(cursor: &mut super::super::Cursor<'_>) -> bool {
     cursor_logical_starts_with(cursor, "=")
 }
 
-fn cursor_logical_starts_with(
-    cursor: &super::super::Cursor<'_>,
-    literal: &str,
-) -> bool {
+fn cursor_logical_starts_with(cursor: &super::super::Cursor<'_>, literal: &str) -> bool {
     cursor
         .filtered_grapheme_literal_end(literal, is_grammar_ignored)
         .is_some()
 }
 
-fn cursor_consume_logical_literal(
-    cursor: &mut super::super::Cursor<'_>,
-    literal: &str,
-) -> bool {
-    let Some(end) =
-        cursor.filtered_grapheme_literal_end(literal, is_grammar_ignored)
-    else {
+fn cursor_consume_logical_literal(cursor: &mut super::super::Cursor<'_>, literal: &str) -> bool {
+    let Some(end) = cursor.filtered_grapheme_literal_end(literal, is_grammar_ignored) else {
         return false;
     };
     cursor.bump_bytes((end - cursor.offset()).0).is_some()

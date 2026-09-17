@@ -479,9 +479,7 @@ pub(super) fn parse_binding(parser: &mut Parser<'_>) -> Attempt {
     binding_with_marker(parser).attempt()
 }
 
-fn binding_with_marker(
-    parser: &mut Parser<'_>,
-) -> FactAttempt<BindingCandidate> {
+fn binding_with_marker(parser: &mut Parser<'_>) -> FactAttempt<BindingCandidate> {
     transactional_fact(parser, rules::BINDING, |parser| {
         let node = parser.start();
         if !base::parse_rule(parser, rules::WHITESPACE0)

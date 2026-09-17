@@ -1,6 +1,7 @@
 //! Typed syntax views for the closed Phase 2E module-import productions.
 
 use crate::document::{AstNode, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
+use alloc::vec::Vec;
 
 use super::paths::IdentifierPathSegmentSyntax;
 

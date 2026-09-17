@@ -190,7 +190,15 @@ fn grammar_filtering_is_lossless_and_matches_legacy_values() {
 fn grammar_literals_respect_graphemes_across_piece_boundaries() {
     let text = "rule := \"e\u{301}b\u{2764}\u{fe0f}\";";
     let snapshot = parse_canonical_grammar(
-        piece_source(&["rule := \"", "e", "\u{301}", "b", "\u{2764}", "\u{fe0f}", "\";"]),
+        piece_source(&[
+            "rule := \"",
+            "e",
+            "\u{301}",
+            "b",
+            "\u{2764}",
+            "\u{fe0f}",
+            "\";",
+        ]),
         ParseConfig::default(),
     );
     assert!(

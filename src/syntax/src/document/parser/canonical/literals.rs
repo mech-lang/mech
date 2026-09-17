@@ -12,8 +12,8 @@ use crate::document::{
     SyntaxKind, TextEdit, TextRange, TextSize,
 };
 
-use super::super::rule::rules;
 use super::super::Parser;
+use super::super::rule::rules;
 use super::base;
 use super::combinator::{self, Attempt};
 

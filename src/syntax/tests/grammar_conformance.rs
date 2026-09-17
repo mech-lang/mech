@@ -24,6 +24,27 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use unicode_segmentation::UnicodeSegmentation;
 
+// Fixed terminal declarations may span lines after workspace formatting.
+fn fixed_terminal_declarations(source: &str) -> Vec<String> {
+    let mut declarations = Vec::new();
+    let mut current = String::new();
+    for line in source.lines().map(str::trim) {
+        if current.is_empty()
+            && !["leaf!", "ws0_leaf!", "ws1_leaf!"]
+                .iter()
+                .any(|prefix| line.starts_with(prefix))
+        {
+            continue;
+        }
+        current.push_str(line);
+        if line.ends_with(");") || line.ends_with('}') {
+            declarations.push(std::mem::take(&mut current));
+        }
+    }
+    assert!(current.is_empty(), "unclosed fixed-terminal declaration");
+    declarations
+}
+
 const HEADER: &[&str] = &[
     "id",
     "rule",
@@ -113,8 +134,6 @@ const ENTRY_POINTS: &[&str] = &[
     "question-block",
     "quote-block",
     "regular-table",
-    "repl",
-    "repl-crlf",
     "section",
     "section-element",
     "slice",
@@ -2456,54 +2475,6 @@ fn run_mika_alternative_terminal_contracts(_source: &str) -> ParseOutcome {
     ParseOutcome::Failure
 }
 
-fn repl_value(command: ReplCommand) -> Value {
-    match command {
-        ReplCommand::Help => json!({"Help": null}),
-        ReplCommand::Quit => json!({"Quit": null}),
-        ReplCommand::Save(path) => json!({"Save": path}),
-        ReplCommand::Docs(name) => json!({"Docs": name}),
-        ReplCommand::Code(code) => {
-            let entries = code
-                .into_iter()
-                .map(|(name, source)| json!([name, serialize(&source)]))
-                .collect::<Vec<_>>();
-            json!({"Code": entries})
-        }
-        ReplCommand::Ls => json!({"Ls": null}),
-        ReplCommand::Profile(enabled) => json!({"Profile": enabled}),
-        ReplCommand::Cd(path) => json!({"Cd": path}),
-        ReplCommand::Step(step_id, count) => json!({"Step": [step_id, count]}),
-        ReplCommand::Load(paths) => json!({"Load": paths}),
-        ReplCommand::Whos(names) => json!({"Whos": names}),
-        ReplCommand::Plan => json!({"Plan": null}),
-        ReplCommand::Symbols(name) => json!({"Symbols": name}),
-        ReplCommand::Clear(name) => json!({"Clear": name}),
-        ReplCommand::Clc => json!({"Clc": null}),
-    }
-}
-
-fn run_repl(source: &str) -> ParseOutcome {
-    match parse_repl_command(source) {
-        Ok((remaining, command)) => {
-            let source_len = source.len();
-            let consumed = source_len - remaining.len();
-            ParseOutcome::Success {
-                ast: repl_value(command),
-                consumed,
-                source_len,
-                remaining: remaining.to_owned(),
-                diagnostics: 0,
-            }
-        }
-        Err(_) => ParseOutcome::Failure,
-    }
-}
-
-fn run_repl_crlf(source: &str) -> ParseOutcome {
-    let completed = format!("{source}\r\n");
-    run_repl(&completed)
-}
-
 fn run_canonical_phase_2i_expression(source: &str) -> ParseOutcome {
     let snapshot = TextSnapshot::new(DocumentId(0x2c6), Revision(0), source).unwrap();
     let parsed =
@@ -2528,8 +2499,6 @@ fn run_case(entry_point: &str, source: &str) -> ParseOutcome {
     match entry_point {
         "parse" => run_public_parse(source),
         "grammar" => run_public_grammar(source),
-        "repl" => run_repl(source),
-        "repl-crlf" => run_repl_crlf(source),
         "abstract-el" => run_nom(source, abstract_el),
         "activation-scope" => run_nom(source, activation_scope),
         "alternative-terminal-contracts" => run_alternative_terminal_contracts(source),
@@ -2876,7 +2845,6 @@ fn grammar_cases_manifest_is_well_formed() {
         "number",
         "paragraph",
         "pattern",
-        "repl-command",
         "statement",
         "string",
         "structure",
@@ -3096,7 +3064,14 @@ fn alternative_terminal_contracts_match_source() {
             contract_branches
                 .get(function_name)
                 .unwrap_or_else(|| panic!("missing alternative contract for {function_name}")),
-            &first_alt_branches(source, function_name),
+            &first_alt_branches(
+                source,
+                if function_name == "escaped_char" {
+                    "simple_escaped_char"
+                } else {
+                    function_name
+                }
+            ),
             "{function_name} source alternatives drifted from its executable contract"
         );
     }
@@ -3435,8 +3410,8 @@ fn fixed_terminal_contracts_match_source_and_inventory() {
     let base_source =
         fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/base.rs"))
             .expect("base.rs must be readable");
-    let source_signatures = base_source
-        .lines()
+    let source_signatures = fixed_terminal_declarations(&base_source)
+        .iter()
         .filter_map(|line| {
             let line = line.trim();
             let (parser_macro, invocation) = if let Some(invocation) = line.strip_prefix("leaf!") {
@@ -3625,6 +3600,11 @@ fn production_conformance_mapping_is_complete() {
             offset + 2
         );
         let production_id = fields[id];
+        if production_id.starts_with("repl.") {
+            // The runtime now owns interactive commands; this is a frozen
+            // Phase 0 mapping, retained with its archived corpus.
+            continue;
+        }
         let mapping = fields[conformance_cases];
         assert_ne!(
             mapping, "pending-phase-0c",
@@ -3775,29 +3755,4 @@ fn grammar_empty_terminal_panic_is_safely_recorded() {
         result.is_err(),
         "the Phase 0 baseline unexpectedly stopped panicking on an empty grammar terminal"
     );
-}
-
-#[test]
-fn repl_crlf_completion_boundaries() {
-    assert!(matches!(
-        parse_repl_command(":cd /tmp\r\n"),
-        Ok(("", ReplCommand::Cd(path))) if path == "/tmp"
-    ));
-    // Without CRLF the `cd` branch fails, then ordinary ordered fallback lets
-    // the later one-letter `c` code alias consume the complete command.
-    assert!(matches!(
-        parse_repl_command(":cd /tmp\n"),
-        Ok(("", ReplCommand::Code(code))) if code.len() == 1
-    ));
-    assert!(matches!(
-        parse_repl_command(":load one.mec two.mec\r\n"),
-        Ok(("", ReplCommand::Load(paths)))
-            if paths == ["one.mec".to_owned(), "two.mec".to_owned()]
-    ));
-    assert!(parse_repl_command(":load one.mec two.mec\n").is_err());
-    assert!(matches!(
-        parse_repl_command(":help\r\n"),
-        Ok(("", ReplCommand::Help))
-    ));
-    assert!(parse_repl_command(":help\n\n").is_err());
 }

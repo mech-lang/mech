@@ -151,13 +151,30 @@ pub(crate) fn parse_source_rule_prefix(
     let end = parser.offset();
     fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
     let output = parser.finish();
-    let sink_result = sink(&output.events, &source, &mut ids)
-        .expect("canonical source-rule events must form one root");
+    // A valid zero-event budget cannot form the outer fragment. Return the
+    // same bounded failed snapshot as the public parser instead of making a
+    // test-support resource limit an assertion failure.
+    let sink_result = sink(&output.events, &source, &mut ids).ok();
+    let root = sink_result
+        .as_ref()
+        .map(|result| result.root.clone())
+        .unwrap_or_else(|| {
+            Arc::new(GreenNode {
+                id: ids.node(),
+                kind: SyntaxKind::CanonicalFragment,
+                text_len: TextRange::new(start, end).len(),
+                children: Default::default(),
+                flags: NodeFlags::ERROR | NodeFlags::CONTAINS_ERROR,
+                structural_hash: 0,
+            })
+        });
 
     let mut diagnostics = DiagnosticStore::new(source.revision());
     for mut pending in output.diagnostics {
         if let Some(event) = pending.event
-            && let Some(node) = sink_result.event_nodes.get(&event)
+            && let Some(node) = sink_result
+                .as_ref()
+                .and_then(|result| result.event_nodes.get(&event))
         {
             pending.diagnostic.primary = DiagnosticAnchor::Element {
                 element: crate::document::SyntaxElementId::Node(*node),
@@ -168,13 +185,13 @@ pub(crate) fn parse_source_rule_prefix(
     }
 
     let consumed = TextRange::new(start, end);
-    let nodes = NodeIndex::build_at(&sink_result.root, consumed.start);
+    let nodes = NodeIndex::build_at(&root, consumed.start);
     let mut stats = output.stats;
     stats.new_node_count = nodes.node_count() as u64;
     CanonicalSourceRuleSnapshot {
         source,
         rule,
-        root: sink_result.root,
+        root,
         diagnostics,
         nodes,
         stats,

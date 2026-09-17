@@ -95,6 +95,7 @@ pub(crate) fn parse_source_path_component_token(parser: &mut Parser<'_>) -> Atte
             || base::parse_rule(parser, rules::DASH)
             || base::parse_rule(parser, rules::UNDERSCORE)
             || base::parse_rule(parser, rules::PERIOD)
+            || base::parse_rule(parser, rules::PERCENT)
         {
             Attempt::Matched
         } else {
@@ -127,7 +128,7 @@ pub(crate) fn parse_source_path_component(parser: &mut Parser<'_>) -> Attempt {
     })
 }
 
-/// Parse the maximal `.mec` path candidate with noncommitting validation.
+/// Parse a maximal extensionless or `.mec` path with noncommitting validation.
 pub(crate) fn parse_source_mec_path(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::SOURCE_MEC_PATH, |parser| {
         let path = parser.start();
@@ -156,7 +157,10 @@ pub(crate) fn parse_source_mec_path(parser: &mut Parser<'_>) -> Attempt {
         let valid = parser
             .source()
             .text(candidate)
-            .map(|text| text.ends_with(".mec"))
+            .map(|text| {
+                let leaf = text.rsplit('/').next().unwrap_or(&text);
+                !leaf.contains('.') || leaf.ends_with(".mec")
+            })
             .unwrap_or(false);
         if !valid {
             path.abandon(parser);
@@ -247,6 +251,7 @@ pub(crate) fn parse_uri_scheme_part(parser: &mut Parser<'_>) -> Attempt {
             || base::parse_rule(parser, rules::PLUS)
             || base::parse_rule(parser, rules::DASH)
             || base::parse_rule(parser, rules::PERIOD)
+            || base::parse_rule(parser, rules::PERCENT)
         {
             Attempt::Matched
         } else {

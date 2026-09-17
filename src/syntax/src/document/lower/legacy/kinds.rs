@@ -3,9 +3,7 @@ use alloc::string::String;
 use mech_core::nodes::Kind;
 
 use crate::document::ast::kinds::{KindAnySyntax, KindAtomSyntax, KindEmptySyntax};
-use crate::document::{
-    AstNode, DiagnosticStore, SyntaxElement, SyntaxKind, SyntaxNode,
-};
+use crate::document::{AstNode, DiagnosticStore, SyntaxElement, SyntaxKind, SyntaxNode};
 
 use super::base::lower_legacy_identifier;
 use super::common;
@@ -20,26 +18,31 @@ pub fn lower_legacy_kind_any(syntax: &KindAnySyntax) -> Result<Kind, DiagnosticS
 
 /// Lower the primitive `kind-empty` form.
 pub fn lower_legacy_kind_empty(syntax: &KindEmptySyntax) -> Result<Kind, DiagnosticStore> {
-    lower_value(syntax.syntax(), SyntaxKind::KindEmpty, "kind-empty", |node| {
-        let tokens = common::direct_tokens(node, "kind-empty")?;
-        if tokens.is_empty() {
-            return Err(String::from(
-                "kind-empty syntax requires at least one underscore",
-            ));
-        }
-        for token in &tokens {
-            common::validate_token(token)?;
-            let text = token
-                .text()
-                .map_err(|_| String::from("cannot read canonical kind-empty token source"))?;
-            if token.kind() != SyntaxKind::Underscore || text != "_" {
+    lower_value(
+        syntax.syntax(),
+        SyntaxKind::KindEmpty,
+        "kind-empty",
+        |node| {
+            let tokens = common::direct_tokens(node, "kind-empty")?;
+            if tokens.is_empty() {
                 return Err(String::from(
-                    "kind-empty syntax contains a non-underscore token",
+                    "kind-empty syntax requires at least one underscore",
                 ));
             }
-        }
-        Ok(Kind::Empty)
-    })
+            for token in &tokens {
+                common::validate_token(token)?;
+                let text = token
+                    .text()
+                    .map_err(|_| String::from("cannot read canonical kind-empty token source"))?;
+                if token.kind() != SyntaxKind::Underscore || text != "_" {
+                    return Err(String::from(
+                        "kind-empty syntax contains a non-underscore token",
+                    ));
+                }
+            }
+            Ok(Kind::Empty)
+        },
+    )
 }
 
 /// Lower the primitive `kind-atom` form.

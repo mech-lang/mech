@@ -254,7 +254,11 @@ pub(super) fn parse_not_factor(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = parse_factor(parser);
+        let Some(child) = parser.with_nesting(parse_factor) else {
+            super::nesting_limit(parser);
+            node.complete(parser, SyntaxKind::NotFactor);
+            return Attempt::Committed;
+        };
         if let Some(result) = child_result(parser, node, SyntaxKind::NotFactor, child) {
             return result;
         }
@@ -527,7 +531,11 @@ fn unary_factor(
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = parse_factor(parser);
+        let Some(child) = parser.with_nesting(parse_factor) else {
+            super::nesting_limit(parser);
+            node.complete(parser, kind);
+            return Attempt::Committed;
+        };
         if let Some(result) = child_result(parser, node, kind, child) {
             return result;
         }

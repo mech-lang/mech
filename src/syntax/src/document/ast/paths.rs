@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
-use crate::document::red::{AstNode, SyntaxNode, SyntaxToken};
 use crate::document::SyntaxKind;
+use crate::document::red::{AstNode, SyntaxNode, SyntaxToken};
 
 macro_rules! path_ast_node {
     ($name:ident, $kind:ident) => {
@@ -24,7 +24,7 @@ macro_rules! path_ast_node {
     };
 }
 
-/// Typed view of the existing Phase 2A path-segment node.
+// Typed view of the existing Phase 2A path-segment node.
 path_ast_node!(IdentifierPathSegmentSyntax, IdentifierPathSegment);
 path_ast_node!(ContextAddressPathSyntax, ContextAddressPath);
 path_ast_node!(PrefixedContextPathSyntax, PrefixedContextPath);
@@ -38,7 +38,9 @@ impl ContextAddressPathSyntax {
 
 impl PrefixedContextPathSyntax {
     pub fn context(&self) -> Option<IdentifierPathSegmentSyntax> {
-        self.0.children().find_map(IdentifierPathSegmentSyntax::cast)
+        self.0
+            .children()
+            .find_map(IdentifierPathSegmentSyntax::cast)
     }
 
     pub fn address(&self) -> Option<ContextAddressPathSyntax> {

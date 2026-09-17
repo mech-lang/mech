@@ -34,7 +34,7 @@ kind-matrix	kinds	node	KindMatrix	new	Emits a matrix kind.
 kind-record	kinds	node	KindRecord	new	Emits a record kind.
 kind-scalar	kinds	node	KindScalar	new	Emits a scalar kind.
 kind-set	kinds	node	KindSet	new	Emits a set kind.
-kind-table	kinds	node	KindTable	new	Emits a table kind.
+kind-table	kinds	node	TableKind	new	Emits a table kind.
 kind-tuple	kinds	node	KindTuple	new	Emits a tuple kind.
 kind-with-option	kinds	node	KindWithOption	new	Emits a kind and its optional marker.
 l1	precedence	conditional-node	LogicExpression	new	Wraps only when a logic chain forms.

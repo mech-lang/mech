@@ -159,8 +159,9 @@ fn removing_paragraph_newline_reparses_the_containing_section() {
 
 #[test]
 fn deleting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
-    let regression =
-        include_str!("fixtures/document/promoted-regressions/underlined-subtitle-reclassification.mec");
+    let regression = include_str!(
+        "fixtures/document/promoted-regressions/underlined-subtitle-reclassification.mec"
+    );
     let regression = regression
         .strip_suffix('\n')
         .expect("the checked-in fixture has a conventional final newline");
@@ -182,8 +183,9 @@ fn deleting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
 
 #[test]
 fn editing_a_comment_line_can_reclassify_an_underlined_subtitle() {
-    let regression =
-        include_str!("fixtures/document/promoted-regressions/comment-to-subtitle-reclassification.mec");
+    let regression = include_str!(
+        "fixtures/document/promoted-regressions/comment-to-subtitle-reclassification.mec"
+    );
     let regression = regression
         .strip_suffix('\n')
         .expect("the checked-in fixture has a conventional final newline");
@@ -204,7 +206,8 @@ fn editing_a_comment_line_can_reclassify_an_underlined_subtitle() {
 
 #[test]
 fn removing_a_section_heading_merges_it_with_the_prior_section() {
-    let regression = include_str!("fixtures/document/promoted-regressions/removed-section-heading.mec");
+    let regression =
+        include_str!("fixtures/document/promoted-regressions/removed-section-heading.mec");
     let mut session = DocumentSession::new("2\n1. Code\n-\n", ParseConfig::default());
     session.apply_edits(&[TextEdit::replace(
         TextRange::new(TextSize(2), TextSize(9)),
@@ -239,10 +242,7 @@ fn inserting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
         "-------------",
     )]);
     assert_equivalent(&session);
-    let update = session.apply_edits(&[TextEdit::insert(
-        TextSize(45),
-        "-------------",
-    )]);
+    let update = session.apply_edits(&[TextEdit::insert(TextSize(45), "-------------")]);
     assert_eq!(update.stats.document_fallbacks, 1);
     assert_equivalent(&session);
     assert_eq!(
@@ -258,8 +258,9 @@ fn inserting_a_line_prefix_can_reclassify_an_underlined_subtitle() {
 
 #[test]
 fn incomplete_definition_recovery_includes_the_following_line() {
-    let _case_description =
-        include_str!("fixtures/document/promoted-regressions/incomplete-definition-following-nul.case");
+    let _case_description = include_str!(
+        "fixtures/document/promoted-regressions/incomplete-definition-following-nul.case"
+    );
     let mut session = DocumentSession::new("x := 1= 19+x := \n\0\0\0", ParseConfig::default());
     session.apply_edits(&[TextEdit::delete(TextRange::new(TextSize(2), TextSize(12)))]);
     assert_eq!(
@@ -278,7 +279,8 @@ fn incomplete_definition_recovery_includes_the_following_line() {
 
 #[test]
 fn deleting_whitespace_can_join_a_definition_across_lines() {
-    let regression = include_str!("fixtures/document/promoted-regressions/cross-line-definition.mec");
+    let regression =
+        include_str!("fixtures/document/promoted-regressions/cross-line-definition.mec");
     let regression = regression
         .strip_suffix('\n')
         .expect("the checked-in fixture has a conventional final newline");

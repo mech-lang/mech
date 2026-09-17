@@ -29,14 +29,14 @@ use crate::{ParseResult, ParseString};
 use nom::Err;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum LegacyValue {
+enum ParityValue {
     Subscript(Subscript),
     Pattern(Pattern),
     Assignment(OpAssignOp),
     Transparent,
 }
 
-type LegacyParser = for<'source> fn(ParseString<'source>) -> ParseResult<'source, LegacyValue>;
+type LegacyParser = for<'source> fn(ParseString<'source>) -> ParseResult<'source, ParityValue>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Prefix {
@@ -46,13 +46,12 @@ struct Prefix {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct LegacyMatch {
-    value: LegacyValue,
+    value: ParityValue,
     prefix: Prefix,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum LegacyOutcome {
-    Matched,
     Error,
     Failure,
 }
@@ -76,59 +75,59 @@ struct Contract {
 
 fn legacy_statement_separator<'source>(
     input: ParseString<'source>,
-) -> ParseResult<'source, LegacyValue> {
+) -> ParseResult<'source, ParityValue> {
     let (input, _) = crate::expressions::statement_separator(input)?;
-    Ok((input, LegacyValue::Transparent))
+    Ok((input, ParityValue::Transparent))
 }
 
-fn legacy_select_all<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_select_all<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, value) = crate::expressions::select_all(input)?;
-    Ok((input, LegacyValue::Subscript(value)))
+    Ok((input, ParityValue::Subscript(value)))
 }
 
 fn legacy_swizzle_subscript<'source>(
     input: ParseString<'source>,
-) -> ParseResult<'source, LegacyValue> {
+) -> ParseResult<'source, ParityValue> {
     let (input, value) = crate::expressions::swizzle_subscript(input)?;
-    Ok((input, LegacyValue::Subscript(value)))
+    Ok((input, ParityValue::Subscript(value)))
 }
 
-fn legacy_dot_subscript<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_dot_subscript<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, value) = crate::expressions::dot_subscript(input)?;
-    Ok((input, LegacyValue::Subscript(value)))
+    Ok((input, ParityValue::Subscript(value)))
 }
 
 fn legacy_dot_subscript_int<'source>(
     input: ParseString<'source>,
-) -> ParseResult<'source, LegacyValue> {
+) -> ParseResult<'source, ParityValue> {
     let (input, value) = crate::expressions::dot_subscript_int(input)?;
-    Ok((input, LegacyValue::Subscript(value)))
+    Ok((input, ParityValue::Subscript(value)))
 }
 
-fn legacy_wildcard<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_wildcard<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, value) = crate::patterns::wildcard(input)?;
-    Ok((input, LegacyValue::Pattern(value)))
+    Ok((input, ParityValue::Pattern(value)))
 }
 
 fn legacy_spread_operator<'source>(
     input: ParseString<'source>,
-) -> ParseResult<'source, LegacyValue> {
+) -> ParseResult<'source, ParityValue> {
     let (input, _) = crate::patterns::spread_operator(input)?;
-    Ok((input, LegacyValue::Transparent))
+    Ok((input, ParityValue::Transparent))
 }
 
 fn legacy_op_assign_operator<'source>(
     input: ParseString<'source>,
-) -> ParseResult<'source, LegacyValue> {
+) -> ParseResult<'source, ParityValue> {
     let (input, value) = super::op_assign_operator(input)?;
-    Ok((input, LegacyValue::Assignment(value)))
+    Ok((input, ParityValue::Assignment(value)))
 }
 
 macro_rules! legacy_assignment_leaf {
     ($name:ident, $parser:ident) => {
-        fn $name<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+        fn $name<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
             let (input, value) = super::$parser(input)?;
-            Ok((input, LegacyValue::Assignment(value)))
+            Ok((input, ParityValue::Assignment(value)))
         }
     };
 }
@@ -139,16 +138,16 @@ legacy_assignment_leaf!(legacy_mul_assign_operator, mul_assign_operator);
 legacy_assignment_leaf!(legacy_div_assign_operator, div_assign_operator);
 legacy_assignment_leaf!(legacy_exp_assign_operator, exp_assign_operator);
 
-fn legacy_send_operator<'source>(input: ParseString<'source>) -> ParseResult<'source, LegacyValue> {
+fn legacy_send_operator<'source>(input: ParseString<'source>) -> ParseResult<'source, ParityValue> {
     let (input, _) = super::send_operator(input)?;
-    Ok((input, LegacyValue::Transparent))
+    Ok((input, ParityValue::Transparent))
 }
 
 fn legacy_guard_operator<'source>(
     input: ParseString<'source>,
-) -> ParseResult<'source, LegacyValue> {
+) -> ParseResult<'source, ParityValue> {
     let (input, _) = crate::state_machines::guard_operator(input)?;
-    Ok((input, LegacyValue::Transparent))
+    Ok((input, ParityValue::Transparent))
 }
 
 fn phase_2g_contracts() -> [Contract; 15] {
@@ -320,7 +319,7 @@ fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
     root.children().find_map(|child| find_node(&child, kind))
 }
 
-fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) -> LegacyValue {
+fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) -> ParityValue {
     match contract.value {
         CanonicalValue::Subscript(kind) => {
             let node = find_node(&canonical.syntax(), kind)
@@ -331,7 +330,7 @@ fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) 
                 LegacySubscriptPrimitiveValue::SelectAll(value)
                 | LegacySubscriptPrimitiveValue::Swizzle(value)
                 | LegacySubscriptPrimitiveValue::Dot(value)
-                | LegacySubscriptPrimitiveValue::DotInt(value) => LegacyValue::Subscript(value),
+                | LegacySubscriptPrimitiveValue::DotInt(value) => ParityValue::Subscript(value),
             }
         }
         CanonicalValue::Pattern(kind) => {
@@ -339,7 +338,7 @@ fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) 
                 .expect("matched pattern leaf must retain its syntax node");
             match lower_phase_2g_pattern_value(&WildcardPatternSyntax::cast(node).unwrap()).unwrap()
             {
-                LegacyPatternPrimitiveValue::Wildcard(value) => LegacyValue::Pattern(value),
+                LegacyPatternPrimitiveValue::Wildcard(value) => ParityValue::Pattern(value),
             }
         }
         CanonicalValue::Assignment(kind) => {
@@ -353,7 +352,7 @@ fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) 
                 | LegacyControlValue::Sub(value)
                 | LegacyControlValue::Mul(value)
                 | LegacyControlValue::Div(value)
-                | LegacyControlValue::Exp(value) => LegacyValue::Assignment(value),
+                | LegacyControlValue::Exp(value) => ParityValue::Assignment(value),
             }
         }
         CanonicalValue::Transparent(token_kind) => {
@@ -372,7 +371,7 @@ fn canonical_value(contract: Contract, canonical: &CanonicalSourceRuleSnapshot) 
                 "transparent {} must retain its central physical token",
                 contract.name,
             );
-            LegacyValue::Transparent
+            ParityValue::Transparent
         }
     }
 }

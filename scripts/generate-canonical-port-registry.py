@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import subprocess
 from pathlib import Path
 
 EXPECTED_RULES = 539
@@ -223,7 +224,11 @@ def render() -> str:
             ]
         )
     lines.extend(["];", ""])
-    return "\n".join(lines)
+    # Keep generated Rust identical to the workspace's formatting contract.
+    return subprocess.run(
+        ["rustfmt", "+nightly-2026-03-03", "--edition", "2024"],
+        input="\n".join(lines), text=True, capture_output=True, check=True,
+    ).stdout
 
 
 def main() -> None:

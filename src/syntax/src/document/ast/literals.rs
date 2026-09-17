@@ -80,8 +80,8 @@ literal_ast_node!(HexadecimalLiteralSyntax, HexadecimalLiteral);
 literal_ast_node!(OctalLiteralSyntax, OctalLiteral);
 literal_ast_node!(BinaryLiteralSyntax, BinaryLiteral);
 
-/// `digit-sequence` was introduced by Phase 2A and gains this typed view so
-/// literal accessors need not expose untyped child-node searches.
+// `digit-sequence` was introduced by Phase 2A and gains this typed view so
+// literal accessors need not expose untyped child-node searches.
 literal_ast_node!(DigitSequenceSyntax, DigitSequence);
 
 impl EmptyLiteralSyntax {

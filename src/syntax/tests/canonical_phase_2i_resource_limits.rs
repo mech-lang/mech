@@ -53,6 +53,32 @@ fn nesting_limit_finishes_balanced_without_stack_overflow() {
 }
 
 #[test]
+fn unary_prefixes_charge_the_configured_nesting_limit() {
+    let limits = ParseLimits {
+        max_nesting: 4,
+        ..ParseLimits::default()
+    };
+    for (rule, text) in [
+        (rules::EXPRESSION, format!("{}1", "-".repeat(4_096))),
+        (rules::NEGATE_FACTOR, format!("{}1", "-".repeat(4_096))),
+        (rules::EXPRESSION, format!("{}true", "!".repeat(4_096))),
+        (rules::NOT_FACTOR, format!("{}true", "!".repeat(4_096))),
+    ] {
+        let parsed =
+            parse_canonical_phase_2i_rule_for_test(source(&text), rule, ParseConfig { limits })
+                .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{rule:?}");
+        assert!(
+            parsed
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code.as_str() == "syntax/nesting-limit"),
+            "{rule:?}"
+        );
+    }
+}
+
+#[test]
 fn fuel_is_a_hard_limit_and_resource_completion_is_balanced() {
     let limits = ParseLimits {
         fuel: 64,
@@ -89,6 +115,29 @@ fn event_budget_is_a_hard_limit_and_resource_completion_is_balanced() {
     assert!(parsed.stats.events_emitted <= u64::from(limits.max_events));
     assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
     assert!(!parsed.diagnostics.is_empty());
+}
+
+#[test]
+fn zero_event_budget_returns_a_bounded_failed_snapshot() {
+    let limits = ParseLimits {
+        max_events: 0,
+        ..ParseLimits::default()
+    };
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        source("1 + 2"),
+        rules::EXPRESSION,
+        ParseConfig { limits },
+    )
+    .unwrap();
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.stats.events_emitted, 0);
+    assert!(!parsed.is_strictly_clean());
+    assert!(
+        parsed
+            .root
+            .flags
+            .intersects(NodeFlags::ERROR | NodeFlags::CONTAINS_ERROR)
+    );
 }
 
 #[test]

@@ -7,7 +7,7 @@ use mech_core::nodes::{
     ModuleImport, ModuleImportAlias, ModuleImportGroupItem, ModuleImportIntrinsicSegment,
     ModuleImportKind, ModuleImportPath, ModuleImportPathSegment,
 };
-use mech_core::{Identifier, Token as LegacyToken, TokenKind};
+use mech_core::{Identifier, TokenKind};
 
 use crate::document::ast::imports::{
     ModuleImportAliasSyntax, ModuleImportPathSyntax, ModuleImportSyntax,
@@ -23,6 +23,7 @@ type LowerResult<T> = Result<T, String>;
 
 /// A package-private direct-rule value used by the Phase 2E parity tests.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(test)]
 pub(crate) enum LegacyModuleImportValue {
     NameSegment(ModuleImportPathSegment),
     IntrinsicSegment(ModuleImportPathSegment),
@@ -81,6 +82,7 @@ pub fn lower_legacy_module_import_alias(
 
 /// Lower any node-valued Phase 2E direct production for internal parity
 /// coverage. The two transparent productions intentionally have no value.
+#[cfg(test)]
 pub(crate) fn lower_phase_2e_module_import_value(
     syntax: &SyntaxNode,
 ) -> Result<LegacyModuleImportValue, DiagnosticStore> {

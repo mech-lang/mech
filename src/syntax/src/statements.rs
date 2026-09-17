@@ -386,8 +386,8 @@ fn source_import_specifier(input: ParseString) -> ParseResult<MechString> {
 // Grammar: docs/design/specification.mec, `import-declaration`.
 pub fn import_declaration(input: ParseString) -> ParseResult<ImportDeclaration> {
     let (input, _) = whitespace0(input)?;
-  let (input, _) = import_sigil(input)?;
-  let (input, _) = space_tab1(input)?;
+    let (input, _) = import_sigil(input)?;
+    let (input, _) = space_tab1(input)?;
     let (input, specifier) = source_import_specifier(input)?;
     if !source_wildcard_specifier_is_valid(&specifier.to_string()) {
         return Err(nom::Err::Failure(ParseError::new(
@@ -627,9 +627,9 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
 }
 
 #[cfg(test)]
-#[path = "statements/phase_2f_parity.rs"]
+#[path = "statement_phase_2f_parity.rs"]
 mod canonical_phase_2f_parity;
 
 #[cfg(test)]
-#[path = "statements/phase_2g_parity.rs"]
+#[path = "statement_phase_2g_parity.rs"]
 mod canonical_phase_2g_parity;

@@ -159,12 +159,6 @@ MIKA-CLOSE-SECTION-ZERO-CONSUMPTION	section	section	mika	accept-prefix	accepted/
 MIKA-DISABLED	mika	mika	mika-disabled	feature-disabled	rejected/mika-disabled.mec	-	Mika parser is absent when the feature is disabled.
 GRAMMAR	grammar	grammar	all	accept	accepted/grammar.mec	snapshots/GRAMMAR.json	EBNF prefixes choice sequence grouping list range and terminals.
 GRAMMAR-MISSING-SEMICOLON	grammar	grammar	all	reject	rejected/grammar-missing-semicolon.mec	-	Grammar rule requires a semicolon.
-REPL-HELP	repl-command	repl	all	accept	accepted/repl-help.txt	snapshots/REPL-HELP.json	Help command.
-REPL-SAVE	repl-command	repl	all	accept	accepted/repl-save.txt	snapshots/REPL-SAVE.json	Save command with path.
-REPL-PROFILE	repl-command	repl	all	accept	accepted/repl-profile.txt	snapshots/REPL-PROFILE.json	Profile command.
-REPL-STEP	repl-command	repl	all	accept	accepted/repl-step.txt	snapshots/REPL-STEP.json	Step command with count and cycles.
-REPL-CODE	repl-command	repl	all	accept	accepted/repl-code.txt	snapshots/REPL-CODE.json	Code command preserves remaining command text.
-REPL-UNKNOWN	repl-command	repl	all	reject	rejected/repl-unknown.txt	-	Unknown command rejects.
 MIXED-DOCUMENT	complete-document	parse	all	accept	accepted/mixed-document.mec	snapshots/MIXED-DOCUMENT.json	Complete title front matter paragraph Mech fence and admonition document.
 FEATURE-DEFAULT	complete-document	parse	default	accept	accepted/feature-default.mec	snapshots/FEATURE-DEFAULT.json	Default-feature sentinel.
 FEATURE-BASE	complete-document	parse	base	accept	accepted/feature-base.mec	snapshots/FEATURE-BASE.json	Base-feature sentinel.
@@ -240,20 +234,6 @@ SECTION-PARAGRAPH	section-selection	parse	all	accept	accepted/section-paragraph.
 ALT-BEST-MECH-CODE	mech-code	mech-code	all	accept	accepted/alt-best-mech-code.mec	snapshots/ALT-BEST-MECH-CODE.json	Longest mech-code-alt candidate selects statement over identifier expression.
 ALT-BEST-SECTION-ELEMENT	image	section-element	all	accept	accepted/alt-best-section-image.mec	snapshots/ALT-BEST-SECTION-ELEMENT.json	Longest section element selects image over broad paragraph candidates.
 GRAMMAR-WHITESPACE-STRIPPING	grammar	grammar	all	accept	accepted/grammar-whitespace-stripping.mec	snapshots/GRAMMAR-WHITESPACE-STRIPPING.json	Public grammar normalization removes whitespace even inside terminals.
-REPL-HELP-ALIAS	repl-command	repl	all	accept	accepted/repl-help-alias.txt	snapshots/REPL-HELP-ALIAS.json	Short help alias.
-REPL-QUIT-ALIAS	repl-command	repl	all	accept	accepted/repl-quit-alias.txt	snapshots/REPL-QUIT-ALIAS.json	Short quit alias.
-REPL-DOCS	repl-command	repl	all	accept	accepted/repl-docs.txt	snapshots/REPL-DOCS.json	Docs command with subject.
-REPL-DOCS-ALIAS	repl-command	repl	all	accept	accepted/repl-docs-alias.txt	snapshots/REPL-DOCS-ALIAS.json	Short docs alias.
-REPL-SYMBOLS	repl-command	repl	all	accept	accepted/repl-symbols.txt	snapshots/REPL-SYMBOLS.json	Symbols command.
-REPL-WHOS-ALIAS	repl-command	repl	all	accept	accepted/repl-whos-alias.txt	snapshots/REPL-WHOS-ALIAS.json	Short whos alias with names.
-REPL-PLAN-ALIAS	repl-command	repl	all	accept	accepted/repl-plan-alias.txt	snapshots/REPL-PLAN-ALIAS.json	Short plan alias.
-REPL-LS	repl-command	repl	all	accept	accepted/repl-ls.txt	snapshots/REPL-LS.json	List command.
-REPL-CLEAR	repl-command	repl	all	accept	accepted/repl-clear.txt	snapshots/REPL-CLEAR.json	Clear command.
-REPL-CLC	repl-command	repl	all	accept	accepted/repl-clc.txt	snapshots/REPL-CLC.json	Clear console command.
-REPL-SAVE-EMPTY	repl-command	repl	all	accept	accepted/repl-save-empty.txt	snapshots/REPL-SAVE-EMPTY.json	Save accepts an empty path after required space.
-REPL-CODE-ALIAS	repl-command	repl	all	accept	accepted/repl-code-alias.txt	snapshots/REPL-CODE-ALIAS.json	Short code alias consumes the remainder.
-REPL-PREFIX-REJECT	repl-command	repl	all	reject	rejected/repl-prefix.txt	-	Complete REPL root rejects a longer token after a valid command prefix.
-REPL-PROFILE-VALUE	repl-command	repl	all	reject	rejected/repl-profile-value.txt	-	Profile command accepts only on or off.
 BASE-LITERAL-EMPTY	literal	literal	all	accept	accepted/literal-empty.mec	snapshots/BASE-LITERAL-EMPTY.json	Underscore is the empty literal.
 KIND-KIND	kind-annotation	kind-annotation	all	accept	accepted/kind-kind.mec	snapshots/KIND-KIND.json	A kind can itself be annotated as kind.
 KIND-ANY	kind-annotation	kind-annotation	all	accept	accepted/kind-any.mec	snapshots/KIND-ANY.json	Wildcard any-kind annotation.
@@ -262,8 +242,6 @@ TABLE-FANCY	fancy-table	fancy-table	all	accept	accepted/table-fancy.mec	snapshot
 TABLE-REGULAR	regular-table	regular-table	all	accept-prefix	accepted/table-regular.mec	snapshots/TABLE-REGULAR.json	Regular table succeeds through its typed header and data row, then leaves a named boundary sentinel; at bare EOF its whitespace0 separator fails the non-consuming separated-list guard.
 BOX-DRAWING-CHAR	box-drawing-char	box-drawing-char	all	accept	accepted/box-drawing-char.mec	snapshots/BOX-DRAWING-CHAR.json	Successful ordinary box-drawing character parser.
 BOX-DRAWING-EMOJI	box-drawing-emoji	box-drawing-emoji	all	accept	accepted/box-drawing-emoji.mec	snapshots/BOX-DRAWING-EMOJI.json	Successful bold box-drawing emoji parser.
-REPL-CD	repl-command	repl-crlf	all	accept	accepted/repl-cd.txt	snapshots/REPL-CD.json	CD command terminated with an explicit CRLF by the named entry point.
-REPL-LOAD	repl-command	repl-crlf	all	accept	accepted/repl-load.txt	snapshots/REPL-LOAD.json	Load command terminated with an explicit CRLF by the named entry point.
 IMPORT-MODULE-ONLY	module-import	module-import	all	accept	accepted/import-module-only.mec	snapshots/IMPORT-MODULE-ONLY.json	Module-only structured import.
 IMPORT-MODULE-GROUP	module-import	module-import	all	accept	accepted/import-module-group.mec	snapshots/IMPORT-MODULE-GROUP.json	Grouped structured module import.
 IMPORT-MODULE-INTRINSIC	module-import	module-import	all	accept	accepted/import-module-intrinsic.mec	snapshots/IMPORT-MODULE-INTRINSIC.json	Structured import with an intrinsic path segment.

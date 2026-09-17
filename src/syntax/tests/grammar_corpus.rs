@@ -194,18 +194,19 @@ fn raw_parser_outcomes_match_manifest() {
                         continue;
                     }
                 };
-                let parsed =
-                    panic::catch_unwind(AssertUnwindSafe(|| parser::parse(&source).is_ok()));
+                let parsed = panic::catch_unwind(AssertUnwindSafe(|| parser::parse(&source)));
                 match parsed {
                     Err(_) => failures.push(format!("{}: raw parser panicked", entry.path)),
-                    Ok(actual_accepts) => {
+                    Ok(result) => {
+                        let actual_accepts = result.is_ok();
                         let expected_accepts = entry.outcome == ExpectedOutcome::Accept;
                         if actual_accepts != expected_accepts {
                             failures.push(format!(
-                                "{}: expected {}, raw parser returned {}",
+                                "{}: expected {}, raw parser returned {} ({:?})",
                                 entry.path,
                                 if expected_accepts { "accept" } else { "reject" },
-                                if actual_accepts { "accept" } else { "reject" }
+                                if actual_accepts { "accept" } else { "reject" },
+                                result.err()
                             ));
                         }
                     }

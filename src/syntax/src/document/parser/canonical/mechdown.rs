@@ -3,11 +3,10 @@
 //! This module contains only the exact closed grammar island selected for
 //! Phase 2B. It does not call prototype or legacy production parsers.
 
-use alloc::string::String;
 use crate::document::{
-    DiagnosticAnchor, DiagnosticLabel, ExpectedSyntax, RuleId, SyntaxKind, TextRange,
-    TextSnapshot,
+    DiagnosticAnchor, DiagnosticLabel, ExpectedSyntax, RuleId, SyntaxKind, TextRange, TextSnapshot,
 };
+use alloc::string::String;
 
 use super::super::rule::rules;
 use super::super::{ParseConfig, Parser};
