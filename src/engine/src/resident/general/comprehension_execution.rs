@@ -412,9 +412,12 @@ impl PatternItem {
             .body()
             .clone_allocation_bound_bytes()
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let mut workspace = schemas
-            .clone_allocation_bound_bytes()
-            .and_then(|bytes| bytes.checked_add(body_bytes.checked_mul(3)?))
+        // Schema entries are borrowed throughout binding resolution. Charge
+        // only the bodies, witness buffers, and parameter-value boxes built by
+        // `into_binding`; charging the complete arena here would multiply an
+        // unrelated retained owner by every generator iteration.
+        let mut workspace = body_bytes
+            .checked_mul(3)
             .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
             .ok_or(ResidentKernelError::InvalidShape)?;
         match self {
@@ -2028,7 +2031,7 @@ fn collection_canonicalization_work(
 }
 
 impl ReactiveInstance {
-    fn comprehension_live_local_footprint(
+    pub(super) fn comprehension_live_local_footprint(
         &self,
         locals: &[ResidentRegion],
         excluded: Option<ResidentRegion>,
@@ -3237,8 +3240,9 @@ impl ReactiveInstance {
             match &control.steps[position] {
                 ActivatedCollectionStep::Operation { node, work } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
+                    let output = self.kernel_scratch_output_region(*node);
                     let live_locals = self
-                        .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
+                        .comprehension_live_local_footprint(&control.locals, output, schemas, meter)
                         .map_err(fail)?;
                     let shape_parameter_count = schemas
                         .get(control.output_schema)
@@ -3824,8 +3828,59 @@ mod tests {
         let workspace = item
             .binding_resolution_workspace(matrix, &[3], &schemas)
             .unwrap();
-        assert!(workspace > schemas.clone_allocation_bound_bytes().unwrap());
-        assert!(workspace >= 6 * core::mem::size_of::<u64>() as u64);
+        let body_bytes = schemas
+            .get(matrix)
+            .unwrap()
+            .body()
+            .clone_allocation_bound_bytes()
+            .unwrap();
+        assert_eq!(
+            workspace,
+            body_bytes * 5 + 8 * core::mem::size_of::<u64>() as u64
+        );
+    }
+
+    #[test]
+    fn ordinary_scalar_binding_does_not_charge_the_schema_arena() {
+        let mut builder = SchemaTableBuilder::new();
+        let scalar = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        for width in [
+            IntegerWidth::W8,
+            IntegerWidth::W16,
+            IntegerWidth::W32,
+            IntegerWidth::W64,
+        ] {
+            builder
+                .insert(
+                    SchemaDraft {
+                        body: SchemaBody::UnsignedInteger(width),
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+        }
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let (schemas, _) = build.into_parts();
+        let item = PatternItem::Plain(ValueDataDraft::F64(F64Bits::from_f64(1.0)));
+
+        assert_eq!(
+            item.binding_resolution_workspace(scalar, &[], &schemas)
+                .unwrap(),
+            0
+        );
+        assert!(schemas.clone_allocation_bound_bytes().unwrap() > 0);
     }
 
     #[test]

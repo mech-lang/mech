@@ -234,16 +234,27 @@ impl<'a> SnapshotValidationContext<'a> {
         if let Some(schemas) = self.shared_schemas.get() {
             return Ok(schemas.clone());
         }
-        let bytes = self.schemas.clone_allocation_bound_bytes().ok_or(
-            crate::MemoryRuntimeError::InvalidLayout {
-                object: self
-                    .construction_authority
-                    .and_then(SnapshotConstructionAuthority::allocation_object),
-                size: u64::MAX,
-                alignment: u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX),
-                reason: "snapshot schema context clone layout overflows",
-            },
-        )?;
+        let invalid_layout = || crate::MemoryRuntimeError::InvalidLayout {
+            object: self
+                .construction_authority
+                .and_then(SnapshotConstructionAuthority::allocation_object),
+            size: u64::MAX,
+            alignment: u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX),
+            reason: "snapshot schema context clone layout overflows",
+        };
+        let schema_size =
+            u64::try_from(core::mem::size_of::<SchemaTable>()).map_err(|_| invalid_layout())?;
+        let owner_overhead = Value::shared_owner_allocation_bytes(
+            core::mem::size_of::<SchemaTable>(),
+            core::mem::align_of::<SchemaTable>(),
+        )
+        .checked_sub(schema_size)
+        .ok_or_else(invalid_layout)?;
+        let bytes = self
+            .schemas
+            .clone_allocation_bound_bytes()
+            .and_then(|bytes| bytes.checked_add(owner_overhead))
+            .ok_or_else(invalid_layout)?;
         let alignment = u32::try_from(core::mem::align_of::<SchemaTable>()).unwrap_or(u32::MAX);
         if let Some(authority) = self.construction_authority {
             authority.admit_snapshot_allocation(bytes, alignment)?;
@@ -4498,7 +4509,12 @@ mod tests {
             .collect::<Vec<_>>();
         assert!(Arc::ptr_eq(&owners[0], &owners[1]));
         let schema_clone = (
-            schemas.clone_allocation_bound_bytes().unwrap(),
+            schemas.clone_allocation_bound_bytes().unwrap()
+                + Value::shared_owner_allocation_bytes(
+                    core::mem::size_of::<SchemaTable>(),
+                    core::mem::align_of::<SchemaTable>(),
+                )
+                - core::mem::size_of::<SchemaTable>() as u64,
             core::mem::align_of::<SchemaTable>() as u32,
         );
         assert_eq!(

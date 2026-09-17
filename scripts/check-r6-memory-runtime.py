@@ -498,6 +498,11 @@ def failures(root: Path) -> list[str]:
         if contextual_rebinds
         else (rebinds[0] if rebinds else "")
     )
+    admitted_schema_owner = (
+        "schemas: Some(context.try_clone_schemas()?)"
+        if contextual_rebinds
+        else "schemas: Some(Arc::new(schemas.clone()))"
+    )
     frozen_data = balanced_body(snapshot, "FrozenSnapshotData")
     frozen_storage = balanced_body(snapshot, "FrozenSnapshotStorage")
     if (
@@ -506,10 +511,7 @@ def failures(root: Path) -> list[str]:
         or "return Ok(self.clone())" not in rebind_ownership
         or "root: self.root.clone()" not in snapshot
         or "schema_body_contains_dynamic" not in rebind_ownership
-        or not (
-            "schemas: Some(Arc::new(schemas.clone()))" in rebind_ownership
-            or "schemas: Some(context.try_clone_schemas()?)" in rebind_ownership
-        )
+        or admitted_schema_owner not in rebind_ownership
     ):
         found.append("canonical snapshots do not preserve shared frozen ownership")
     if (
