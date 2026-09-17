@@ -5,11 +5,11 @@ use crate::document::red::{
     SyntaxToken,
 };
 use crate::document::{
-    BodySyntax, CodeBlockSyntax, CodeFenceInfo, EvalInlineMechCodeSyntax, ExpressionSyntax,
-    MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax,
-    ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
+    BodySyntax, CodeBlockSyntax, CodeFenceInfo, ContextSendSyntax, EvalInlineMechCodeSyntax,
+    ExpressionSyntax, MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax,
+    OptionMapSyntax, ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
     SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax,
-    UlSubtitleSyntax, VariableAssignSyntax,
+    UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
 };
 
 impl DocumentSyntax {
@@ -186,6 +186,9 @@ impl CodeBlockSyntax {
                 }
             }
         }
+        if self.info()?.hidden {
+            presentation.show_output = false;
+        }
         Some(presentation)
     }
 
@@ -212,6 +215,16 @@ impl CodeBlockSyntax {
 }
 
 impl EvalInlineMechCodeSyntax {
+    pub fn expression(&self) -> Option<ExpressionSyntax> {
+        self.syntax().children().find_map(ExpressionSyntax::cast)
+    }
+}
+
+impl ContextSendSyntax {
+    pub fn target(&self) -> Option<VariableSyntax> {
+        self.syntax().children().find_map(VariableSyntax::cast)
+    }
+
     pub fn expression(&self) -> Option<ExpressionSyntax> {
         self.syntax().children().find_map(ExpressionSyntax::cast)
     }

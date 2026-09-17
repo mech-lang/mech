@@ -87,6 +87,7 @@ pub struct CanonicalSourceProgram {
     contracts: Box<[Option<OperationContractDeclaration>]>,
     source_map: SourceSemanticMap,
     document_outputs: Box<[SourceDocumentOutput]>,
+    document_exports: Box<[SourceDocumentExport]>,
 }
 
 /// A typed route from document presentation to an existing artifact output.
@@ -95,13 +96,25 @@ pub struct CanonicalSourceProgram {
 pub struct SourceDocumentOutput {
     pub output: u32,
     pub kind: SourceDocumentOutputKind,
+    /// Whether this output owns a visible document presentation slot.
+    /// The aggregate program result remains available to execution consumers
+    /// even when its producing inline/fence already owns presentation or is
+    /// explicitly hidden.
+    pub visible: bool,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SourceDocumentOutputKind {
     Program,
     Inline,
     Fence,
+}
+
+/// A document export connected to the artifact output that carries its value.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceDocumentExport {
+    pub output: u32,
+    pub name: String,
 }
 
 impl CanonicalSourceProgram {
@@ -136,6 +149,10 @@ impl CanonicalSourceProgram {
 
     pub const fn document_outputs(&self) -> &[SourceDocumentOutput] {
         &self.document_outputs
+    }
+
+    pub const fn document_exports(&self) -> &[SourceDocumentExport] {
+        &self.document_exports
     }
 
     pub fn compile_artifact(&self) -> Result<ProgramArtifact, ArtifactBuildError> {
@@ -5332,6 +5349,7 @@ impl SemanticBuilder {
             contracts: contracts.into_boxed_slice(),
             source_map,
             document_outputs: Box::new([]),
+            document_exports: Box::new([]),
         })
     }
 }

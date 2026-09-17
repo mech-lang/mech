@@ -147,13 +147,14 @@ impl SemanticBuilder {
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<(PendingValue, Vec<PendingValue>, &'static str), SourceSemanticError> {
-        let selected = self.select_values(base, selectors.clone(), syntax)?;
         // Whole-value writes retain the base geometry even though the read
-        // spelling matrix[:] exposes a flattened selection view.
+        // spelling matrix[:] exposes a flattened selection view. Do not emit
+        // that read: its result is discarded by the whole-value assignment,
+        // but every emitted node would still be retained and executed.
         let selected = if matches!(selectors.as_slice(), [None] | [None, None]) {
             base
         } else {
-            selected
+            self.select_values(base, selectors.clone(), syntax)?
         };
         let operation = match selectors.as_slice() {
             [None] | [None, None] => "core/assign/whole-value",

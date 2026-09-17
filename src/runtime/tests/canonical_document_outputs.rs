@@ -110,21 +110,21 @@ fn shared_document_fixture_renders_inline_and_fence_outputs_from_the_root_progra
     rendered_turns(
         source,
         &[
-            &[(Program, "42"), (Inline, "42"), (Fence, "42")],
-            &[(Program, "43"), (Inline, "43"), (Fence, "43")],
+            &[(Program, "42"), (Inline, "41"), (Fence, "42")],
+            &[(Program, "43"), (Inline, "42"), (Fence, "43")],
         ],
     );
 }
 
 #[test]
-fn fence_results_keep_statement_versions_while_inline_reads_the_completed_program() {
+fn inline_and_fence_results_keep_their_source_order_versions() {
     use SourceDocumentOutputKind::{Fence, Inline, Program};
     let source = "The final answer is {answer}.\n\n~answer := 0\n~~~mech\nanswer += 1\nanswer\n~~~\nanswer += 1\nanswer\n";
     rendered_turns(
         source,
         &[
-            &[(Program, "2"), (Inline, "2"), (Fence, "1")],
-            &[(Program, "4"), (Inline, "4"), (Fence, "3")],
+            &[(Program, "2"), (Inline, "0"), (Fence, "1")],
+            &[(Program, "4"), (Inline, "2"), (Fence, "3")],
         ],
     );
 }
@@ -150,6 +150,69 @@ fn repeated_fence_results_and_inline_only_documents_have_stable_distinct_binding
         &[&[(Program, "1"), (Fence, "1"), (Fence, "1")]],
     );
     rendered_turns("Evaluated {1 + 2}.\n", &[&[(Program, "3"), (Inline, "3")]]);
+}
+
+#[test]
+fn deferred_inline_does_not_become_the_aggregate_result_when_a_later_definition_resolves_it() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "Value {answer}.\n~answer := 41\n";
+    let compiled = compile(source);
+    assert_eq!(
+        compiled.document_outputs(),
+        [
+            mech_engine::SourceDocumentOutput {
+                output: 0,
+                kind: Program,
+                visible: true,
+            },
+            mech_engine::SourceDocumentOutput {
+                output: 1,
+                kind: Inline,
+                visible: true,
+            },
+        ]
+    );
+    let program_anchor = compiled.source_map().outputs[0];
+    assert_eq!(
+        &source[program_anchor.range.start.0 as usize..program_anchor.range.end.0 as usize],
+        "~answer := 41"
+    );
+    rendered_turns(source, &[&[(Program, "41"), (Inline, "41")]]);
+}
+
+#[test]
+fn deferred_inline_preserves_already_bound_state_at_its_source_position() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "~y := 0\nValue {x + y}.\ny += 1\nx := 1\nx\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "1"), (Inline, "1")],
+            &[(Program, "1"), (Inline, "2")],
+        ],
+    );
+}
+
+#[test]
+fn deferred_inline_snapshots_each_forward_local_when_it_becomes_available() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "Value {x + z}.\n~x := 1\nx += 10\nz := 2\nz\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "2"), (Inline, "3")],
+            &[(Program, "2"), (Inline, "13")],
+        ],
+    );
+}
+
+#[test]
+fn forward_local_slice_stems_defer_without_manufacturing_external_inputs() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    rendered_turns(
+        "Value {answer[1]}.\nanswer := [41]\n",
+        &[&[(Program, "[41]"), (Inline, "41")]],
+    );
 }
 
 #[test]

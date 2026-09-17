@@ -219,10 +219,7 @@ fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
         ("executable.mec", Ok(())),
         ("interactive.mec", Ok(())),
         ("malformed.mec", Err("source-semantics/recovered-syntax")),
-        (
-            "resolver-index.mec",
-            Err("source-semantics/unsupported-document-unit"),
-        ),
+        ("resolver-index.mec", Ok(())),
         ("wasm-document.mec", Ok(())),
     ];
     for (name, expected) in cases {
@@ -240,6 +237,35 @@ fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
             (Err(actual), Ok(())) => panic!("{name} unexpectedly failed: {actual:?}"),
         }
     }
+}
+
+#[test]
+fn resolver_declarations_are_metadata_and_exports_have_artifact_outputs() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "+> ./dependency.mec\n@local := @env\nvalue := 42\n<+ value\n",
+        ))
+        .unwrap();
+    assert_eq!(compiled.document_exports().len(), 1);
+    let export = &compiled.document_exports()[0];
+    assert_eq!(export.name, "value");
+    assert_eq!(
+        compiled.program().outputs[export.output as usize].name,
+        "value"
+    );
+    assert_eq!(
+        compiled.program().outputs[export.output as usize].source,
+        compiled.program().outputs[0].source
+    );
+    compiled.compile_artifact().unwrap();
+
+    let error = CanonicalSourceFrontend
+        .compile_document(&document("value := 42\n<+ missing\n"))
+        .err()
+        .unwrap();
+    assert_eq!(error.code, "source-semantics/unknown-export");
+    assert_eq!(error.anchor.document, DocumentId(0x541));
+    assert_eq!(error.anchor.range.start, TextSize(12));
 }
 
 #[test]

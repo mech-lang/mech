@@ -541,7 +541,10 @@ Current S7A consumer completion is tracked in
 `docs/design/syntax-s7a-consumer-closeout.md`. The execution-boundary list below
 records the earlier review baseline; whole, compound, and indexed assignments
 have since received canonical execution and rollback regressions. The remaining
-declaration and scope obligations stay in S7A.
+declaration and scope obligations stay in S7A. The S7A consumer-completion
+candidate now connects canonical import/export metadata to resolved artifact
+bindings in root, named and Mika owners and adds direct retained-document
+text/HTML rendering; final-head CI and review remain the seal authority.
 
 Execution boundary under review:
 
@@ -551,13 +554,16 @@ Execution boundary under review:
 - Deferred state initializers are represented but rejected at artifact build;
   unresolved/custom operation contracts are also rejected there. Structured
   source forms are not executable merely because their graph or hash exists.
-- Seventeen document-unit kinds currently report unsupported-document-unit:
-  activation scopes, context declarations/sends, enums, exports, FSM declaration/
-  specification/implementation units, functions, invariants, imports, kind
-  definitions, module imports, compound assignments, tuple destructuring, and
-  assignments. Their syntax/typed coverage does not establish engine execution.
+- Eleven document-unit kinds currently report unsupported-document-unit:
+  activation scopes, context sends, enums, FSM expression/declaration/
+  specification/implementation units, functions, invariants, kind definitions,
+  and tuple destructuring. Resolver-owned imports/module imports/context
+  declarations are metadata at lowering, and exports publish named artifact
+  outputs. Their positive handoff tests do not claim semantics for the remaining
+  explicitly unsupported forms.
 - Display-only inline Mech and Mika-local sections are excluded from outer
-  execution collection. Their exclusion does not implement child-scope execution.
+  execution collection. Independently compiled Mika and named owners supply
+  owner-associated results to the canonical renderer.
   Function or Mika-local bodies must never be flattened into the outer scope.
 
 These boundaries require explicit review against S0-S7 obligations before a
