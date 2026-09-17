@@ -3813,9 +3813,13 @@ separators. Map, set, tuple, record, and binding interiors use `whitespace0`,
 so their separators may cross newlines.
 
 Whitespace rule:
-The `source-import-tail` URI parser stops before newline or semicolon and
-trims trailing Unicode whitespace after parsing. Source declarations require
-`whitespace1` after `+>` or `<+`, which can include newlines.
+`import-declaration` requires `space-tab1` after `+>`, accepting ordinary
+space, tab, no-break space, or thin space, but not a newline.
+`export-declaration` retains `whitespace1` after `<+`, accepting ordinary
+space, tab, or newline, but not no-break space or thin space.
+`source-import-tail` stops before newline or semicolon and trims trailing
+Unicode whitespace from its semantic token while retaining the physical source
+in concrete syntax.
 
 Whitespace rule:
 `guard-operator`, `output-operator`, and `list-separator` consume their own

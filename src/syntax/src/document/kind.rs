@@ -287,6 +287,29 @@ define_syntax_kinds! {
   ModuleSuffixImport => node,
   ModuleOnlyImport => node,
   ModuleImport => node,
+
+  // Phase 2F source-import values. Keep this append-only: persisted green-tree
+  // discriminants depend on every preceding kind.
+  SourceImportTail => node,
+  SourcePathComponent => node,
+  SourceMecPath => node,
+  RelativeSourceImportSpecifier => node,
+  AbsoluteSourceImportSpecifier => node,
+  BareSourceImportSpecifier => node,
+  SourceImportUriScheme => node,
+  UriSourceImportSpecifier => node,
+  SourceImportSpecifier => node,
+  ImportDeclaration => node,
+
+  // Phase 2F declaration values follow the source-import tail. Keep this
+  // append-only: persisted green-tree discriminants depend on every prior kind.
+  ExportDeclaration => node,
+  ContextDeclaration => node,
+  ContextBaseContext => node,
+  ContextBaseResourceUri => node,
+  ContextCapabilityDeclaration => node,
+  ContextCapabilityPath => node,
+  ContextCapabilityScope => node,
 }
 
 #[cfg(test)]
@@ -449,6 +472,33 @@ mod tests {
     ];
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 220 + offset as u16);
+      assert!(!kind.is_token());
+    }
+  }
+
+  #[test]
+  fn phase_2f_source_import_kinds_are_append_only() {
+    let appended = [
+      SyntaxKind::SourceImportTail,
+      SyntaxKind::SourcePathComponent,
+      SyntaxKind::SourceMecPath,
+      SyntaxKind::RelativeSourceImportSpecifier,
+      SyntaxKind::AbsoluteSourceImportSpecifier,
+      SyntaxKind::BareSourceImportSpecifier,
+      SyntaxKind::SourceImportUriScheme,
+      SyntaxKind::UriSourceImportSpecifier,
+      SyntaxKind::SourceImportSpecifier,
+      SyntaxKind::ImportDeclaration,
+      SyntaxKind::ExportDeclaration,
+      SyntaxKind::ContextDeclaration,
+      SyntaxKind::ContextBaseContext,
+      SyntaxKind::ContextBaseResourceUri,
+      SyntaxKind::ContextCapabilityDeclaration,
+      SyntaxKind::ContextCapabilityPath,
+      SyntaxKind::ContextCapabilityScope,
+    ];
+    for (offset, kind) in appended.into_iter().enumerate() {
+      assert_eq!(kind as u16, 237 + offset as u16);
       assert!(!kind.is_token());
     }
   }

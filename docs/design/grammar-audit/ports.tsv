@@ -1,5 +1,5 @@
 grammar-name	family	syntax-status	lowering-status	node-policy	phase	notes
-absolute-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+absolute-source-import-specifier	statements	parity-verified	parity-verified	node:AbsoluteSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 abstract-el	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 abstract-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 activation-arm	activation	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -25,7 +25,7 @@ at	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 atom	literals	parity-verified	parity-verified	node:AtomLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 backslash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 bar	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-bare-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+bare-source-import-specifier	statements	parity-verified	parity-verified	node:BareSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 binary-literal	literals	parity-verified	parity-verified	node:BinaryLiteral	2C	Phase 2C closed literal, path, and primitive kind island
 binding	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 blank-line	mechdown	parity-verified	not-applicable	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
@@ -83,13 +83,13 @@ complex-number	literals	syntax-ported	pending	node:ComplexNumber	2C	Phase 2C syn
 comprehension-qualifier	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 context-address-path	expressions	parity-verified	parity-verified	node:ContextAddressPath	2C	Phase 2C closed literal, path, and primitive kind island
 context-address-path-token	expressions	parity-verified	not-applicable	token	2C	Phase 2C closed literal, path, and primitive kind island
-context-base-context	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-base-resource-uri	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-capability-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-capability-path	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-capability-path-token	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-capability-scope	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-context-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+context-base-context	statements	parity-verified	parity-verified	node:ContextBaseContext	2F	Phase 2F closed source, export, and context declaration layer
+context-base-resource-uri	statements	parity-verified	parity-verified	node:ContextBaseResourceUri	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-declaration	statements	parity-verified	parity-verified	node:ContextCapabilityDeclaration	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-path	statements	parity-verified	parity-verified	node:ContextCapabilityPath	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-path-token	statements	parity-verified	not-applicable	token	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-scope	statements	parity-verified	parity-verified	node:ContextCapabilityScope	2F	Phase 2F closed source, export, and context declaration layer
+context-declaration	statements	parity-verified	parity-verified	node:ContextDeclaration	2F	Phase 2F closed source, export, and context declaration layer
 context-import-alias-segment	imports	parity-verified	parity-verified	node:ContextImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
 context-send	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 cross	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -135,7 +135,7 @@ escaped-char	base	parity-verified	parity-verified	node:EscapedCharacter	2A	Phase
 eval-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 exclamation	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 exp-assign-operator	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-export-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+export-declaration	statements	parity-verified	parity-verified	node:ExportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
 expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 factor	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 false-literal	literals	parity-verified	not-applicable	token	2C	Phase 2C closed literal, path, and primitive kind island
@@ -231,7 +231,7 @@ identifier-symbol	base	parity-verified	not-applicable	token	2A	Phase 2A canonica
 img	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 img-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 import-alias-operator	imports	parity-verified	not-applicable	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-declaration	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+import-declaration	statements	parity-verified	parity-verified	node:ImportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
 import-group-item	imports	parity-verified	parity-verified	node:ImportGroupItem	2E	Phase 2E corrected module-import closure (IMPORT-001)
 import-group-items	imports	parity-verified	parity-verified	node:ImportGroupItems	2E	Phase 2E corrected module-import closure (IMPORT-001)
 import-group-separator	imports	parity-verified	not-applicable	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
@@ -415,7 +415,7 @@ real-number	literals	syntax-ported	pending	node:RealNumber	2C	Phase 2C syntax po
 record	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 reference	mechdown	parity-verified	parity-verified	node:Reference	2B	Phase 2B closed Mechdown grammar island
 regular-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-relative-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+relative-source-import-specifier	statements	parity-verified	parity-verified	node:RelativeSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 repl-identifier	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 right-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 right-angle	literals	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
@@ -441,13 +441,13 @@ set-operator	expressions	parity-verified	parity-verified	node:SetOperator	2D	Pha
 slash	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 slice	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 slice-ref	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-source-import-tail	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-source-import-uri-scheme	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-source-mec-path	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-source-mec-path-wildcard-suffix	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-source-path-component	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-source-path-component-token	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+source-import-specifier	statements	parity-verified	parity-verified	node:SourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
+source-import-tail	statements	parity-verified	parity-verified	node:SourceImportTail	2F	Phase 2F closed source, export, and context declaration layer
+source-import-uri-scheme	statements	parity-verified	parity-verified	node:SourceImportUriScheme	2F	Phase 2F closed source, export, and context declaration layer
+source-mec-path	statements	parity-verified	parity-verified	node:SourceMecPath	2F	Phase 2F closed source, export, and context declaration layer
+source-mec-path-wildcard-suffix	statements	parity-verified	not-applicable	transparent	2F	Phase 2F closed source, export, and context declaration layer
+source-path-component	statements	parity-verified	parity-verified	node:SourcePathComponent	2F	Phase 2F closed source, export, and context declaration layer
+source-path-component-token	statements	parity-verified	not-applicable	token	2F	Phase 2F closed source, export, and context declaration layer
 space	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 space-tab	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 space-tab0	base	parity-verified	not-applicable	transparent	2A	Phase 2A canonical base closure
@@ -522,8 +522,8 @@ unordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 unordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 untyped-integer	literals	parity-verified	parity-verified	node:UntypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
 untyped-real-number	literals	syntax-ported	pending	node:UntypedRealNumber	2C	Phase 2C syntax port; lowering pending for the documented typed scientific-exponent legacy exception.
-uri-scheme-part	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-uri-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+uri-scheme-part	statements	parity-verified	not-applicable	token	2F	Phase 2F closed source, export, and context declaration layer
+uri-source-import-specifier	statements	parity-verified	parity-verified	node:UriSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
 utf8-string	literals	parity-verified	parity-verified	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
 var	expressions	unported	pending	undecided		Deferred with the recursive expression/kind closure: kind-scalar → range-expression → formula/factor → literal → kind-annotation → kind.
 variable-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.

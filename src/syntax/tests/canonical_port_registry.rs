@@ -13,8 +13,9 @@ const EXPECTED_PHASE_2B: usize = 13;
 const EXPECTED_PHASE_2C: usize = 30;
 const EXPECTED_PHASE_2D: usize = 53;
 const EXPECTED_PHASE_2E: usize = 19;
-const EXPECTED_PORTED: usize = 282;
-const EXPECTED_UNPORTED: usize = 257;
+const EXPECTED_PHASE_2F: usize = 21;
+const EXPECTED_PORTED: usize = 303;
+const EXPECTED_UNPORTED: usize = 236;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -78,6 +79,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
         Some(PortPhase::Phase2C) => "2C",
         Some(PortPhase::Phase2D) => "2D",
         Some(PortPhase::Phase2E) => "2E",
+        Some(PortPhase::Phase2F) => "2F",
     }
 }
 
@@ -462,7 +464,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.syntax == SyntaxPortStatus::ParityVerified)
             .count(),
-        277
+        298
     );
     assert_eq!(
         CANONICAL_PORTS
@@ -509,9 +511,16 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         ported
             .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2F))
+            .count(),
+        EXPECTED_PHASE_2F
+    );
+    assert_eq!(
+        ported
+            .iter()
             .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
             .count(),
-        121
+        138
     );
     assert_eq!(
         ported
@@ -525,7 +534,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
             .count(),
-        155
+        159
     );
 }
 
@@ -886,6 +895,122 @@ fn phase_2e_registry_accounting_and_policies_are_exact() {
                 .unwrap_or_else(|| {
                     panic!("{} has unknown canonical child {child}", row[grammar_name])
                 });
+            assert_ne!(
+                child_port.syntax,
+                SyntaxPortStatus::Unported,
+                "{} has unported canonical child {child}",
+                row[grammar_name]
+            );
+        }
+    }
+}
+
+#[test]
+fn phase_2f_registry_accounting_and_policies_are_exact() {
+    let node_policies = [
+        ("source-import-tail", "SourceImportTail"),
+        ("source-path-component", "SourcePathComponent"),
+        ("source-mec-path", "SourceMecPath"),
+        (
+            "relative-source-import-specifier",
+            "RelativeSourceImportSpecifier",
+        ),
+        (
+            "absolute-source-import-specifier",
+            "AbsoluteSourceImportSpecifier",
+        ),
+        ("bare-source-import-specifier", "BareSourceImportSpecifier"),
+        ("source-import-uri-scheme", "SourceImportUriScheme"),
+        ("uri-source-import-specifier", "UriSourceImportSpecifier"),
+        ("source-import-specifier", "SourceImportSpecifier"),
+        ("import-declaration", "ImportDeclaration"),
+        ("export-declaration", "ExportDeclaration"),
+        ("context-declaration", "ContextDeclaration"),
+        ("context-base-context", "ContextBaseContext"),
+        ("context-base-resource-uri", "ContextBaseResourceUri"),
+        (
+            "context-capability-declaration",
+            "ContextCapabilityDeclaration",
+        ),
+        ("context-capability-path", "ContextCapabilityPath"),
+        ("context-capability-scope", "ContextCapabilityScope"),
+    ];
+    let tokens = BTreeSet::from([
+        "source-path-component-token",
+        "uri-scheme-part",
+        "context-capability-path-token",
+    ]);
+    let transparent = BTreeSet::from(["source-mec-path-wildcard-suffix"]);
+    let expected_names = node_policies
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(tokens.iter().copied())
+        .chain(transparent.iter().copied())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(node_policies.len(), 17);
+    assert_eq!(tokens.len(), 3);
+    assert_eq!(transparent.len(), 1);
+    assert_eq!(expected_names.len(), EXPECTED_PHASE_2F);
+
+    let phase_2f = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2F))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2f.len(), EXPECTED_PHASE_2F);
+    assert_eq!(
+        phase_2f
+            .iter()
+            .map(|port| port.name)
+            .collect::<BTreeSet<_>>(),
+        expected_names
+    );
+    for port in &phase_2f {
+        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
+            assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
+            assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
+        } else if tokens.contains(port.name) {
+            assert_eq!(port.node_policy, NodePolicy::Token);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        } else {
+            assert!(transparent.contains(port.name), "{}", port.name);
+            assert_eq!(port.node_policy, NodePolicy::Transparent);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        }
+    }
+    assert_eq!(
+        phase_2f
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
+            .count(),
+        17
+    );
+
+    let inventory =
+        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
+            .expect("read productions.tsv");
+    let mut lines = inventory.lines();
+    let header = fields(lines.next().expect("productions.tsv header"));
+    let grammar_name = header
+        .iter()
+        .position(|column| *column == "grammar-name")
+        .unwrap();
+    let child_rules = header
+        .iter()
+        .position(|column| *column == "child-rules")
+        .unwrap();
+    for row in lines.map(fields) {
+        if !expected_names.contains(row[grammar_name]) {
+            continue;
+        }
+        for child in row[child_rules].split(',') {
+            if child.is_empty() || child == "none" {
+                continue;
+            }
+            let child_port = CANONICAL_PORTS
+                .iter()
+                .find(|port| port.name == child)
+                .unwrap_or_else(|| panic!("{} has unknown canonical child {child}", row[grammar_name]));
             assert_ne!(
                 child_port.syntax,
                 SyntaxPortStatus::Unported,
