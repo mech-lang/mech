@@ -277,6 +277,9 @@ fn canonical_resource_effect_survives_a_later_program_result() {
     .plan(&request)
     .unwrap();
     assert_eq!(plan.hosts.len(), 1);
+    assert_eq!(plan.hosts[0].name, case.instance);
+    assert_eq!(plan.hosts[0].provider, case.provider);
+    assert_eq!(plan.application_requirements.len(), 1);
     assert!(plan.application_requirements.iter().any(|requirement| {
         matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
             if request.base_uri == "cli://stdout"
@@ -338,6 +341,9 @@ fn canonical_read_only_resource_plans_without_a_synthetic_effect_turn() {
     .plan(&request)
     .unwrap();
     assert_eq!(plan.hosts.len(), 1);
+    assert_eq!(plan.hosts[0].name, case.instance);
+    assert_eq!(plan.hosts[0].provider, case.provider);
+    assert_eq!(plan.application_requirements.len(), 1);
     assert!(plan.application_requirements.iter().any(|requirement| {
         matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
             if request.base_uri == case.base_uri
