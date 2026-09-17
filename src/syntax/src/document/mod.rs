@@ -40,6 +40,7 @@ pub use incremental::*;
 pub use index::*;
 pub use line_index::*;
 pub use lower::*;
+pub use parser::stream::*;
 pub use parser::{
     FenceDelimiter, FragmentKind, FragmentSnapshot, ParseConfig, ParseContext, ParseLimits,
     ParseMode, ParseRequestError, ParseRoot, ParserImplementation, parse_canonical_document,

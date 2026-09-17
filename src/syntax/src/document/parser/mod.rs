@@ -21,14 +21,18 @@ pub mod document;
 pub mod event;
 pub mod fragment;
 mod grapheme_scan;
+mod journal;
 pub mod limits;
 mod literal_scan;
+mod tree_cache;
+use journal::Journal;
 pub mod marker;
 pub mod mech;
 pub mod mechdown;
 pub mod recovery;
 mod resource_found;
 pub mod rule;
+pub mod stream;
 pub mod terminal;
 
 pub use checkpoint::*;
@@ -40,6 +44,7 @@ pub use marker::*;
 pub use recovery::*;
 pub use rule::*;
 
+#[derive(Clone, Debug)]
 struct PendingDiagnostic {
     diagnostic: Diagnostic,
     event: Option<usize>,
@@ -47,8 +52,8 @@ struct PendingDiagnostic {
 }
 
 struct ParserOutput {
-    events: Vec<Event>,
-    diagnostics: Vec<PendingDiagnostic>,
+    events: Journal<Event>,
+    diagnostics: Journal<PendingDiagnostic>,
     stats: ParseStats,
 }
 
@@ -106,10 +111,16 @@ pub(crate) struct CursorScope {
 pub(crate) struct ParserState {
     lexical_mode: LexicalMode,
     parse_range: TextRange,
-    events: Vec<Event>,
+    events: Journal<Event>,
+    tree_cache: tree_cache::TreeCache,
     open_markers: Vec<usize>,
+    peak_open_markers: usize,
+    peak_events: usize,
+    rewinds: u64,
+    rewound_bytes: u64,
+    cached_replay_bytes: u64,
     covered_end: TextSize,
-    diagnostics: Vec<PendingDiagnostic>,
+    diagnostics: Journal<PendingDiagnostic>,
     rules: RuleStack,
     config: ParseConfig,
     fuel: u64,
@@ -146,10 +157,16 @@ impl ParserState {
         Self {
             lexical_mode,
             parse_range: range,
-            events: Vec::new(),
+            events: Journal::default(),
+            tree_cache: tree_cache::TreeCache::default(),
             open_markers: Vec::new(),
+            peak_open_markers: 0,
+            peak_events: 0,
+            rewinds: 0,
+            rewound_bytes: 0,
+            cached_replay_bytes: 0,
             covered_end: range.start,
-            diagnostics: Vec::new(),
+            diagnostics: Journal::default(),
             rules: RuleStack::default(),
             config,
             fuel: config.limits.fuel,
@@ -338,6 +355,7 @@ impl<'a> Parser<'a> {
         if self.state.halted || self.state.resource_finalizing {
             return Marker {
                 position: usize::MAX,
+                offset: self.offset(),
             };
         }
         let open_after = self.state.open_markers.len().saturating_add(1);
@@ -346,8 +364,15 @@ impl<'a> Parser<'a> {
             .unwrap_or(usize::MAX);
         if position != usize::MAX {
             self.state.open_markers.push(position);
+            self.state.peak_open_markers = self
+                .state
+                .peak_open_markers
+                .max(self.state.open_markers.len());
         }
-        Marker { position }
+        Marker {
+            position,
+            offset: self.offset(),
+        }
     }
 
     pub(crate) fn complete_marker(
@@ -376,8 +401,14 @@ impl<'a> Parser<'a> {
             Some(marker.position),
             "parser markers must complete in strict LIFO order"
         );
+        let identity = self.ids.node();
         if let Some(event) = self.state.events.get_mut(marker.position) {
-            *event = Event::Start { kind, flags };
+            *event = Event::Start {
+                kind,
+                flags,
+                identity: Some(identity),
+                cached: None,
+            };
         }
         let open_after = self.state.open_markers.len().saturating_sub(1);
         let finish = if self.state.resource_finalizing {
@@ -390,6 +421,9 @@ impl<'a> Parser<'a> {
             "accepted marker start must reserve capacity for its finish"
         );
         self.state.open_markers.pop();
+        self.state
+            .tree_cache
+            .enqueue(&self.state.events, marker.position, marker.offset, identity);
         CompletedMarker {
             position: marker.position,
             kind,
@@ -446,6 +480,9 @@ impl<'a> Parser<'a> {
             }
             return;
         }
+        self.state.rewinds += 1;
+        self.state.rewound_bytes +=
+            u64::from(self.offset().0.saturating_sub(checkpoint.cursor.offset.0));
         self.cursor.rewind(checkpoint.cursor);
         self.state.events.truncate(checkpoint.events);
         self.state.diagnostics.truncate(checkpoint.diagnostics);
@@ -469,13 +506,21 @@ impl<'a> Parser<'a> {
         {
             return None;
         }
-        let node = sink(
-            self.state.events.get(start.events..end.events)?,
-            self.source,
-            self.ids,
-        )
-        .ok()?
-        .root;
+        let mut at = start.events;
+        while matches!(self.state.events.get(at), Some(Event::Tombstone)) {
+            at += 1;
+        }
+        let Event::Start {
+            cached: Some(cached),
+            ..
+        } = self.state.events.get(at)?
+        else {
+            return None;
+        };
+        if cached.end_event != end.events {
+            return None;
+        }
+        let node = cached.node.clone();
         (node.text_len == end.cursor.offset - start.cursor.offset).then_some(CleanSubtree {
             start: start.cursor.offset,
             end: end.cursor.offset,
@@ -504,6 +549,7 @@ impl<'a> Parser<'a> {
         });
         self.state.covered_end = self.state.covered_end.max(subtree.end);
         self.state.stats.reused_node_count = self.state.stats.reused_node_count.saturating_add(1);
+        self.state.cached_replay_bytes += u64::from((subtree.end - subtree.start).0);
         true
     }
 
@@ -742,6 +788,8 @@ impl<'a> Parser<'a> {
                 "ordinary events must reserve the resource envelope and open-marker finishes"
             );
             let _ = self.emit_emergency(Event::Start {
+                identity: None,
+                cached: None,
                 kind: SyntaxKind::Error,
                 flags: NodeFlags::ERROR,
             });
@@ -824,6 +872,7 @@ impl<'a> Parser<'a> {
             self.state.covered_end = self.state.covered_end.max(range.end);
         }
         self.state.events.push(event);
+        self.state.peak_events = self.state.peak_events.max(self.state.events.len());
         Some(position)
     }
 
@@ -833,6 +882,7 @@ impl<'a> Parser<'a> {
         }
         let position = self.state.events.len();
         self.state.events.push(event);
+        self.state.peak_events = self.state.peak_events.max(self.state.events.len());
         Some(position)
     }
 
@@ -853,6 +903,12 @@ impl<'a> Parser<'a> {
         loop {
             let mut allowance = u64::MAX;
             if self.advance_resource_found(&mut allowance) {
+                break;
+            }
+        }
+        loop {
+            let mut allowance = u64::MAX;
+            if self.advance_tree_cache(&mut allowance) {
                 break;
             }
         }
@@ -991,7 +1047,7 @@ fn finish_snapshot(
         .unwrap_or_else(|_| fallback_tree(&source, ids, fallback_kind));
 
     let mut diagnostics = DiagnosticStore::new(source.revision());
-    for mut pending in output.diagnostics {
+    for mut pending in output.diagnostics.iter().cloned() {
         // Accepted append-only prefixes keep their byte ranges. Bind absolute
         // anchors to the exported revision here, not by revisiting every old
         // diagnostic each time input arrives. Edits invalidate live parse state.
@@ -1007,7 +1063,14 @@ fn finish_snapshot(
             }
         }
         if let Some(event) = pending.event
-            && let Some(node) = sink_result.event_nodes.get(&event)
+            && let Some(node) = output
+                .events
+                .get(event)
+                .and_then(|event| match event {
+                    Event::Start { identity, .. } => identity.as_ref(),
+                    _ => None,
+                })
+                .or_else(|| sink_result.event_nodes.get(&event))
         {
             pending.diagnostic.primary = DiagnosticAnchor::Element {
                 element: crate::document::SyntaxElementId::Node(*node),
@@ -1044,7 +1107,7 @@ fn fallback_tree(
             id: ids.node(),
             kind: root_kind,
             text_len: TextSize::ZERO,
-            children: Arc::from([]),
+            children: Default::default(),
             flags: NodeFlags::ERROR,
             structural_hash: 0,
         })
@@ -1201,12 +1264,12 @@ mod tests {
         let checkpoint = parser.checkpoint();
         parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
         let fuel = parser.state.fuel;
-        let events = parser.state.events.as_ptr();
+        let events = parser.state.events.get(0).map(core::ptr::from_ref);
         let steps = parser.stats().parser_steps;
         let state = parser.suspend();
         let source = source.append("b").unwrap();
         let mut parser = Parser::resume(&source, state, &mut ids);
-        assert_eq!(parser.state.events.as_ptr(), events);
+        assert_eq!(parser.state.events.get(0).map(core::ptr::from_ref), events);
         assert_eq!(parser.current_rule(), Some(rules::PARSE));
         assert_eq!(parser.state.open_markers.len(), 1);
         assert_eq!(parser.offset(), TextSize(1));
@@ -1260,11 +1323,14 @@ mod tests {
             message: String::from("retained prefix"),
         });
         parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
-        let diagnostics = parser.state.diagnostics.as_ptr();
+        let diagnostics = parser.state.diagnostics.get(0).map(core::ptr::from_ref);
         let state = parser.suspend();
         let source = source.append("b").unwrap();
         let mut parser = Parser::resume(&source, state, &mut ids);
-        assert_eq!(parser.state.diagnostics.as_ptr(), diagnostics);
+        assert_eq!(
+            parser.state.diagnostics.get(0).map(core::ptr::from_ref),
+            diagnostics
+        );
         assert_eq!(parser.state.diagnostics[0].diagnostic.id, id);
         parser.bump_bytes_token(1, SyntaxKind::Text).unwrap();
         root.complete(&mut parser, SyntaxKind::Document);

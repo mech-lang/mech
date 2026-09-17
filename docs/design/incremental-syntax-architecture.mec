@@ -1,7 +1,7 @@
 Incremental Syntax Architecture
 ===============================================================================
 
-Status: S7A consumer qualification remains open; S7B contract and baseline started; S6 activation remains gated on S4 completion.
+Status: S0-S7A remains under correction and qualification; S7B B1-B4 implemented; complete qualification and closeout remain open. S6 activation remains gated on S4 completion.
 
 Integration branch: `feature/syntax`.
 
@@ -85,9 +85,12 @@ production callers and removes the retiring parser/lowering paths.
 Streaming suspension is orthogonal to Match/NoMatch/Committed recognition.
 Temporary input exhaustion cannot mutate the live continuation through EOF
 recovery. Preview recovery belongs to a separate view; finality participates in
-cache validity even when the source revision is unchanged. The eventual one-shot
+cache validity even when the source revision is unchanged. The one-shot
 path uses the same canonical recognition/recovery machinery with final input.
-No streaming API or performance qualification is claimed by this B1 checkpoint.
+DocumentStream now owns retained append/advance, provisional journal/typed-node
+views, explicit finite previews, finalization, cancellation, and edit transitions.
+The four baseline growth gates pass with publication and final grammar draining;
+full exact-head qualification and closeout remain B5/B6 obligations.
 No new grammar rows, compatibility trees, or production switches are introduced.
 
 1. Goals

@@ -126,24 +126,24 @@ enum Frame<'g> {
     SeparatedItem(Separated<'g>, bool),
 }
 
-pub(super) enum Progress {
+pub(crate) enum Progress {
     Complete(Attempt),
     NeedsProcessing,
     NeedInput,
     Limited,
 }
 
-pub(super) struct Continuation<'g> {
+pub(crate) struct Continuation<'g> {
     frames: Vec<Frame<'g>>,
     result: Attempt,
-    pub state: GrammarState,
+    pub(super) state: GrammarState,
     pub steps: u64,
     pub child_work: u64,
     pub peak_frames: usize,
 }
 
 impl<'g> Continuation<'g> {
-    pub fn new(expression: &'g GrammarExpression, state: GrammarState) -> Self {
+    pub(super) fn new(expression: &'g GrammarExpression, state: GrammarState) -> Self {
         Self {
             frames: alloc::vec![Frame::Expression(expression)],
             result: Attempt::NoMatch,
@@ -275,7 +275,10 @@ impl<'g> Continuation<'g> {
         input_final: bool,
         allowance: &mut u64,
     ) -> Progress {
-        while !self.frames.is_empty() || parser.state.resource_found.is_some() {
+        while !self.frames.is_empty()
+            || parser.state.resource_found.is_some()
+            || parser.state.tree_cache.pending()
+        {
             if input_final && parser.state.resource_found.is_some() {
                 let before = *allowance;
                 let complete = parser.advance_resource_found(allowance);
@@ -289,6 +292,17 @@ impl<'g> Continuation<'g> {
             }
             if !input_final && parser.is_halted() {
                 return Progress::Limited;
+            }
+            if parser.state.tree_cache.pending() {
+                let before = *allowance;
+                let complete = parser.advance_tree_cache(allowance);
+                self.child_work += before - *allowance;
+                if !complete {
+                    return Progress::NeedsProcessing;
+                }
+                if self.frames.is_empty() {
+                    break;
+                }
             }
             let final_input = input_final || !parser.state.cursor_frontier;
             if *allowance == 0 {

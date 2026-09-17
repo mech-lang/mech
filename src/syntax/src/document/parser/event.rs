@@ -1,15 +1,16 @@
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 
 use crate::document::{
-    BuildError, GreenBuilder, GreenNode, IdGenerator, NodeFlags, NodeId, SyntaxKind, TextRange,
-    TextSnapshot, TokenFlags,
+    BuildError, GreenNode, IdGenerator, NodeFlags, NodeId, SyntaxKind, TextRange, TextSnapshot,
+    TokenFlags,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Event {
     Start {
+        identity: Option<NodeId>,
+        cached: Option<super::tree_cache::CachedNode>,
         kind: SyntaxKind,
         flags: NodeFlags,
     },
@@ -31,36 +32,44 @@ pub struct SinkResult {
 }
 
 pub fn sink(
-    events: &[Event],
+    events: &super::journal::Journal<Event>,
     source: &TextSnapshot,
     ids: &mut IdGenerator,
 ) -> Result<SinkResult, BuildError> {
-    let mut builder = GreenBuilder::new(ids);
-    let mut starts = Vec::new();
-    let mut event_nodes = BTreeMap::new();
-    for (index, event) in events.iter().enumerate() {
-        match event {
-            Event::Start { kind, flags } => {
-                builder.start_node_with_flags(*kind, *flags);
-                starts.push(index);
-            }
-            Event::Token { kind, range, flags } => {
-                let text = source.text(*range).map_err(|_| BuildError::TextTooLarge)?;
-                builder.token_with_flags(*kind, &text, *flags)?;
-            }
-            Event::Reuse { node } => {
-                builder.reuse_node(node.clone())?;
-            }
-            Event::Finish => {
-                let start = starts.pop().ok_or(BuildError::NoOpenNode)?;
-                let node = builder.finish_node()?;
-                event_nodes.insert(start, node.id);
-            }
-            Event::Tombstone => {}
+    let mut sink = super::tree_cache::Sink::new(events.clone(), 0, events.len());
+    loop {
+        let mut allowance = u64::MAX;
+        if sink.advance(source, events, ids, &mut allowance)? {
+            return Ok(sink.finish());
         }
     }
-    Ok(SinkResult {
-        root: builder.finish()?,
-        event_nodes,
-    })
+}
+
+// Debugging the grammar tape excludes materialization scheduling and session
+// identities. Those have dedicated view/identity APIs and qualification.
+impl core::fmt::Debug for Event {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Start { kind, flags, .. } => f
+                .debug_struct("Start")
+                .field("kind", kind)
+                .field("flags", flags)
+                .finish(),
+            Self::Token { kind, range, flags } => f
+                .debug_struct("Token")
+                .field("kind", kind)
+                .field("range", range)
+                .field("flags", flags)
+                .finish(),
+            Self::Reuse { node } => f
+                .debug_struct("Reuse")
+                .field("kind", &node.kind)
+                .field("flags", &node.flags)
+                .field("text_len", &node.text_len)
+                .field("structural_hash", &node.structural_hash)
+                .finish(),
+            Self::Finish => f.write_str("Finish"),
+            Self::Tombstone => f.write_str("Tombstone"),
+        }
+    }
 }

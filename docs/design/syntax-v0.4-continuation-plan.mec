@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S3 and S5 certification complete; S4 semantics and S7A consumer qualification remain open; S6 activation remains gated on S4 completion. S7B contract/baseline started; S8 has not started.
+Status: S0-S3 and S5 certification complete; S4 semantics and S7A consumer qualification remain open. S7B B1-B4 implemented; B5/B6 remain open; S8 has not started. S6 activation remains gated on S4 completion.
 
 Current stack index (names and ordering, not completion):
 

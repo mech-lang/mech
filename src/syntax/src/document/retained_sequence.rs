@@ -7,7 +7,7 @@ pub(crate) trait Measured {
     fn measure(&self) -> usize;
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Node<T> {
     Leaf(T),
     Branch {
@@ -61,6 +61,23 @@ impl<T: Measured> Node<T> {
                 Self::replace_last(right, leaf, allocations),
                 allocations,
             ),
+        }
+    }
+    fn truncate(old: &Arc<Self>, len: usize, allocations: &mut u64) -> Arc<Self> {
+        if len >= old.len() {
+            return old.clone();
+        }
+        let Self::Branch { left, right, .. } = old.as_ref() else {
+            unreachable!("nonempty retained prefix")
+        };
+        if len <= left.len() {
+            Self::truncate(left, len, allocations)
+        } else {
+            Self::branch(
+                left.clone(),
+                Self::truncate(right, len - left.len(), allocations),
+                allocations,
+            )
         }
     }
     fn get(&self, index: usize) -> Option<&T> {
@@ -162,8 +179,103 @@ impl<T: Measured> RetainedSequence<T> {
             root.visit(start, end, 0, &mut f);
         }
     }
+    pub(crate) fn truncated(&self, len: usize) -> (Self, u64) {
+        if len == 0 {
+            return (Self::default(), 0);
+        }
+        let mut allocations = 0;
+        let root = self
+            .root
+            .as_ref()
+            .map(|root| Node::truncate(root, len, &mut allocations));
+        (Self { root }, allocations)
+    }
+    pub(crate) fn into_values(self) -> impl Iterator<Item = T>
+    where
+        T: Clone,
+    {
+        struct Owned<T> {
+            stack: alloc::vec::Vec<Arc<Node<T>>>,
+        }
+        impl<T: Clone> Iterator for Owned<T> {
+            type Item = T;
+            fn next(&mut self) -> Option<T> {
+                while let Some(node) = self.stack.pop() {
+                    match node.as_ref() {
+                        Node::Leaf(value) => return Some(value.clone()),
+                        Node::Branch { left, right, .. } => {
+                            self.stack.push(right.clone());
+                            self.stack.push(left.clone());
+                        }
+                    }
+                }
+                None
+            }
+        }
+        Owned {
+            stack: self.root.into_iter().collect(),
+        }
+    }
+    pub(crate) fn iter_from(&self, mut index: usize) -> impl Iterator<Item = &T> {
+        let mut iter = SequenceIter {
+            stack: [None; usize::BITS as usize + 1],
+            len: 0,
+        };
+        if index < self.len() {
+            let mut node = self.root.as_deref().expect("retained root");
+            loop {
+                match node {
+                    Node::Leaf(_) => {
+                        iter.push(node);
+                        break;
+                    }
+                    Node::Branch { left, right, .. } => {
+                        if index < left.len() {
+                            iter.push(right);
+                            node = left;
+                        } else {
+                            index -= left.len();
+                            node = right;
+                        }
+                    }
+                }
+            }
+        }
+        iter
+    }
     pub(crate) fn node_bytes() -> usize {
         core::mem::size_of::<Node<T>>()
+    }
+}
+// Mutation is restricted to unit-measured journal entries: path copying
+// cannot invalidate cached subtree widths.
+pub(crate) trait UnitMeasured: Measured {}
+impl<T: UnitMeasured + Clone> RetainedSequence<T> {
+    pub(crate) fn get_mut(&mut self, index: usize, allocations: &mut u64) -> Option<&mut T> {
+        fn descend<'a, T: UnitMeasured + Clone>(
+            node: &'a mut Arc<Node<T>>,
+            index: usize,
+            allocations: &mut u64,
+        ) -> Option<&'a mut T> {
+            if Arc::strong_count(node) > 1 {
+                *allocations += 1;
+            }
+            match Arc::make_mut(node) {
+                Node::Leaf(value) => (index == 0).then_some(value),
+                Node::Branch { left, right, .. } => {
+                    if index < left.len() {
+                        descend(left, index, allocations)
+                    } else {
+                        let index = index - left.len();
+                        descend(right, index, allocations)
+                    }
+                }
+            }
+        }
+        if index >= self.len() {
+            return None;
+        }
+        descend(self.root.as_mut()?, index, allocations)
     }
 }
 impl<T: Measured> FromIterator<T> for RetainedSequence<T> {
