@@ -737,6 +737,7 @@ pub(super) fn validate_control_counts(
 }
 
 impl<C> MatchDeclaration<C> {
+    #[cfg(feature = "resident-artifact")]
     pub(crate) fn contains_suspend(&self) -> bool {
         self.arms.iter().any(|arm| {
             arm.guard
