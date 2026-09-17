@@ -97,6 +97,100 @@ impl CanonicalArtifactWriter {
         self.control_value(block.yield_value);
     }
 
+    fn comprehension_value(&mut self, value: super::ComprehensionValue) {
+        match value {
+            super::ComprehensionValue::Constant(id) => {
+                self.u8(0);
+                self.u32(id.get());
+            }
+            super::ComprehensionValue::Input(ordinal) => {
+                self.u8(1);
+                self.u16(ordinal);
+            }
+            super::ComprehensionValue::Local(local) => {
+                self.u8(2);
+                self.u32(local);
+            }
+        }
+    }
+
+    fn collection_pattern(&mut self, pattern: &super::CollectionPattern) {
+        match pattern {
+            super::CollectionPattern::Wildcard => self.u8(0),
+            super::CollectionPattern::Bind { local, schema } => {
+                self.u8(1);
+                self.u32(*local);
+                self.u32(schema.get());
+            }
+            super::CollectionPattern::Equal(value) => {
+                self.u8(2);
+                self.comprehension_value(*value);
+            }
+            super::CollectionPattern::Tuple(items) => {
+                self.u8(3);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.collection_pattern(item);
+                }
+            }
+            super::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                self.u8(4);
+                self.u64(prefix.len() as u64);
+                for item in prefix {
+                    self.collection_pattern(item);
+                }
+                match rest {
+                    None => self.u8(0),
+                    Some(rest) => {
+                        self.u8(1);
+                        self.collection_pattern(rest);
+                    }
+                }
+                self.u64(suffix.len() as u64);
+                for item in suffix {
+                    self.collection_pattern(item);
+                }
+            }
+        }
+    }
+
+    fn comprehension(&mut self, control: &super::ComprehensionDeclaration) {
+        self.u8(match control.kind {
+            super::ComprehensionKind::Matrix => 0,
+            super::ComprehensionKind::Set => 1,
+        });
+        self.u64(control.steps.len() as u64);
+        for step in &control.steps {
+            match step {
+                super::ComprehensionStep::Generator { source, pattern } => {
+                    self.u8(0);
+                    self.comprehension_value(*source);
+                    self.collection_pattern(pattern);
+                }
+                super::ComprehensionStep::Filter(value) => {
+                    self.u8(1);
+                    self.comprehension_value(*value);
+                }
+                super::ComprehensionStep::Operation(operation) => {
+                    self.u8(2);
+                    self.u32(operation.local);
+                    self.operation(&operation.operation);
+                    self.u32(operation.contract.get());
+                    self.u32(operation.schema.get());
+                    self.u64(operation.inputs.len() as u64);
+                    for value in &operation.inputs {
+                        self.comprehension_value(*value);
+                    }
+                }
+            }
+        }
+        self.comprehension_value(control.yield_value);
+    }
+
     fn source(&mut self, source: ArtifactSource) {
         match source {
             ArtifactSource::Constant(constant) => {
@@ -219,6 +313,10 @@ pub(super) fn program_revision(
                         writer.u32(requirement.get());
                     }
                 }
+            }
+            super::ExecutableNodeBody::Comprehension(control) => {
+                writer.u8(2);
+                writer.comprehension(control);
             }
             super::ExecutableNodeBody::Match(control) => {
                 writer.u8(1);

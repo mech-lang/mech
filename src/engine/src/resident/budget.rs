@@ -18,6 +18,94 @@ thread_local! {
     static ACTIVE_PAYLOAD_ADMISSION: std::cell::RefCell<Option<std::rc::Rc<payload::ResidentPayloadAdmission>>> = const { std::cell::RefCell::new(None) };
 }
 
+// Repeated control execution accumulates the costs admitted by the existing
+// kernel budget authority. Each invocation contributes its maximum observed
+// demand once; incremental estimates within that invocation are not summed.
+#[derive(Default)]
+struct ControlWork {
+    compute: u64,
+    comparison: u64,
+}
+
+struct ControlWorkScope {
+    total: std::rc::Rc<std::cell::RefCell<ControlWork>>,
+    observed: ControlWork,
+}
+
+thread_local! {
+    static CONTROL_WORK: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWork>>>> = const { std::cell::RefCell::new(None) };
+    static CONTROL_WORK_SCOPE: std::cell::RefCell<Option<ControlWorkScope>> = const { std::cell::RefCell::new(None) };
+}
+
+pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
+    struct Guard(Option<std::rc::Rc<std::cell::RefCell<ControlWork>>>);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            CONTROL_WORK.with(|active| *active.borrow_mut() = self.0.take());
+        }
+    }
+    let previous = CONTROL_WORK.with(|active| {
+        let mut active = active.borrow_mut();
+        let total = active.clone().unwrap_or_default();
+        active.replace(total)
+    });
+    let _guard = Guard(previous);
+    execute()
+}
+
+struct ControlWorkScopeGuard(Option<ControlWorkScope>);
+
+impl ControlWorkScopeGuard {
+    fn enter() -> Self {
+        let next = CONTROL_WORK
+            .with(|active| active.borrow().clone())
+            .map(|total| ControlWorkScope {
+                total,
+                observed: ControlWork::default(),
+            });
+        Self(CONTROL_WORK_SCOPE.with(|active| active.replace(next)))
+    }
+}
+
+impl Drop for ControlWorkScopeGuard {
+    fn drop(&mut self) {
+        CONTROL_WORK_SCOPE.with(|active| *active.borrow_mut() = self.0.take());
+    }
+}
+
+fn observe_control_work(demand: ResourceDemand) -> Result<(), ResidentKernelError> {
+    CONTROL_WORK_SCOPE.with(|active| {
+        let mut active = active.borrow_mut();
+        let Some(scope) = active.as_mut() else {
+            return Ok(());
+        };
+        let mut total = scope.total.borrow_mut();
+        let compute = total
+            .compute
+            .checked_add(demand.work.compute.saturating_sub(scope.observed.compute))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let comparison = total
+            .comparison
+            .checked_add(
+                demand
+                    .work
+                    .comparison
+                    .saturating_sub(scope.observed.comparison),
+            )
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if compute > mech_core::RESIDENT_MAX_COMPUTE_WORK
+            || comparison > mech_core::RESIDENT_MAX_COMPARISON_WORK
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        total.compute = compute;
+        total.comparison = comparison;
+        scope.observed.compute = scope.observed.compute.max(demand.work.compute);
+        scope.observed.comparison = scope.observed.comparison.max(demand.work.comparison);
+        Ok(())
+    })
+}
+
 pub(crate) fn with_payload_admission<T>(
     admission: Option<std::rc::Rc<payload::ResidentPayloadAdmission>>,
     execute: impl FnOnce() -> T,
@@ -124,6 +212,7 @@ pub(crate) fn with_resident_turn_plan<T>(
 ) -> T {
     let previous = with_active_turn_plan(|active| active.replace(plan.into()));
     let _guard = ActiveTurnPlanGuard(previous);
+    let _work_scope = ControlWorkScopeGuard::enter();
     execute()
 }
 
@@ -327,6 +416,7 @@ impl KernelCostEstimate {
         self,
         final_output: Option<PublishedOutputFootprint>,
     ) -> Result<ResidentBudgetPermit, ResidentKernelError> {
+        observe_control_work(self.demand)?;
         let active = with_active_turn_plan(|plan| plan.clone());
         if let Some(active) = active {
             let fixed = active
@@ -376,6 +466,7 @@ impl KernelCostEstimate {
     // This admits another borrowed measurement step, never allocation or
     // publication. Complete candidate facts still require `turn_plan`.
     fn check_planning_progress(self) -> Result<(), ResidentKernelError> {
+        observe_control_work(self.demand)?;
         let result = with_active_turn_plan(|active| {
             active.as_ref().map(|plan| {
                 check_turn_planning_progress(plan, self.demand)

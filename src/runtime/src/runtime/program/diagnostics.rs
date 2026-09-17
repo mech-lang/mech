@@ -72,6 +72,13 @@ pub(crate) fn activation_failure_for_artifact(
                         mech_engine::ExecutableNodeBody::Operation(operation) =>
                             operation.operation.canonical_name(),
                         mech_engine::ExecutableNodeBody::Match(_) => "Typed match".to_owned(),
+                        mech_engine::ExecutableNodeBody::Comprehension(control) => match control
+                            .kind
+                        {
+                            mech_engine::ComprehensionKind::Matrix =>
+                                "Matrix comprehension".to_owned(),
+                            mech_engine::ComprehensionKind::Set => "Set comprehension".to_owned(),
+                        },
                     },
                 ),
             );

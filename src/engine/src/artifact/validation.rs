@@ -436,7 +436,7 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                     Some(operation.contract),
                 )
             }
-            super::ExecutableNodeBody::Match(control) => {
+            super::ExecutableNodeBody::Match(_) | super::ExecutableNodeBody::Comprehension(_) => {
                 let input_schemas = draft.bindings[inputs.clone()]
                     .iter()
                     .map(|binding| match binding {
@@ -450,23 +450,35 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 else {
                     return Err(ArtifactBuildError::InvalidControl {
                         node: node.node,
-                        reason: "match requires exactly one output",
+                        reason: "control requires exactly one output",
                     });
                 };
                 let output = require_slot(draft, *target)?;
                 if output.role != SlotRole::Derived {
                     return Err(ArtifactBuildError::InvalidControl {
                         node: node.node,
-                        reason: "match output must be an owned derived slot",
+                        reason: "control output must be an owned derived slot",
                     });
                 }
-                super::control::validate_match(
-                    draft,
-                    node.node,
-                    control,
-                    &input_schemas,
-                    output.schema,
-                )?;
+                match &node.body {
+                    super::ExecutableNodeBody::Match(control) => super::control::validate_match(
+                        draft,
+                        node.node,
+                        control,
+                        &input_schemas,
+                        output.schema,
+                    )?,
+                    super::ExecutableNodeBody::Comprehension(control) => {
+                        super::comprehension::validate_comprehension(
+                            draft,
+                            node.node,
+                            control,
+                            &input_schemas,
+                            output.schema,
+                        )?
+                    }
+                    _ => unreachable!(),
+                }
                 (input_schemas, vec![output.schema], None)
             }
         };

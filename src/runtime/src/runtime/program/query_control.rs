@@ -41,6 +41,48 @@ pub(super) fn node_bodies_semantically_equal(
                         && comparison.block(&left.body, &right.body)
                 })
         }
+        (ExecutableNodeBody::Comprehension(left), ExecutableNodeBody::Comprehension(right)) => {
+            left.kind == right.kind
+                && comparison.collection_value(left.yield_value, right.yield_value)
+                && left.steps.len() == right.steps.len()
+                && left.steps.iter().zip(&right.steps).all(|(left, right)| {
+                    use mech_engine::ComprehensionStep;
+                    match (left, right) {
+                        (
+                            ComprehensionStep::Generator {
+                                source: left,
+                                pattern: left_pattern,
+                            },
+                            ComprehensionStep::Generator {
+                                source: right,
+                                pattern: right_pattern,
+                            },
+                        ) => {
+                            comparison.collection_value(*left, *right)
+                                && comparison.collection_pattern(left_pattern, right_pattern)
+                        }
+                        (ComprehensionStep::Filter(left), ComprehensionStep::Filter(right)) => {
+                            comparison.collection_value(*left, *right)
+                        }
+                        (
+                            ComprehensionStep::Operation(left),
+                            ComprehensionStep::Operation(right),
+                        ) => {
+                            left.local == right.local
+                                && left.operation == right.operation
+                                && comparison.schema(left.schema, right.schema)
+                                && comparison.contract(left.contract, right.contract)
+                                && left.inputs.len() == right.inputs.len()
+                                && left
+                                    .inputs
+                                    .iter()
+                                    .zip(&right.inputs)
+                                    .all(|(left, right)| comparison.collection_value(*left, *right))
+                        }
+                        _ => false,
+                    }
+                })
+        }
         _ => false,
     }
 }
@@ -124,6 +166,77 @@ impl Comparison<'_> {
         }
     }
 
+    fn collection_value(
+        &self,
+        left: mech_engine::ComprehensionValue,
+        right: mech_engine::ComprehensionValue,
+    ) -> bool {
+        use mech_engine::ComprehensionValue;
+        match (left, right) {
+            (ComprehensionValue::Constant(left), ComprehensionValue::Constant(right)) => {
+                self.value(ControlValue::Constant(left), ControlValue::Constant(right))
+            }
+            (ComprehensionValue::Input(_), ComprehensionValue::Input(_))
+            | (ComprehensionValue::Local(_), ComprehensionValue::Local(_)) => left == right,
+            _ => false,
+        }
+    }
+
+    fn collection_pattern(
+        &self,
+        left: &mech_engine::CollectionPattern,
+        right: &mech_engine::CollectionPattern,
+    ) -> bool {
+        use mech_engine::CollectionPattern;
+        let fields = |left: &[CollectionPattern], right: &[CollectionPattern]| {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| self.collection_pattern(left, right))
+        };
+        match (left, right) {
+            (CollectionPattern::Wildcard, CollectionPattern::Wildcard) => true,
+            (
+                CollectionPattern::Bind {
+                    local: left,
+                    schema: left_schema,
+                },
+                CollectionPattern::Bind {
+                    local: right,
+                    schema: right_schema,
+                },
+            ) => left == right && self.schema(*left_schema, *right_schema),
+            (CollectionPattern::Equal(left), CollectionPattern::Equal(right)) => {
+                self.collection_value(*left, *right)
+            }
+            (CollectionPattern::Tuple(left), CollectionPattern::Tuple(right)) => {
+                fields(left, right)
+            }
+            (
+                CollectionPattern::Array {
+                    prefix: left_prefix,
+                    rest: left_rest,
+                    suffix: left_suffix,
+                },
+                CollectionPattern::Array {
+                    prefix: right_prefix,
+                    rest: right_rest,
+                    suffix: right_suffix,
+                },
+            ) => {
+                fields(left_prefix, right_prefix)
+                    && fields(left_suffix, right_suffix)
+                    && match (left_rest, right_rest) {
+                        (Some(left), Some(right)) => self.collection_pattern(left, right),
+                        (None, None) => true,
+                        _ => false,
+                    }
+            }
+            _ => false,
+        }
+    }
+
     fn block(&self, left: &ControlBlock, right: &ControlBlock) -> bool {
         left.id == right.id
             && left.parameters.len() == right.parameters.len()
@@ -157,7 +270,8 @@ impl Comparison<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::node_bodies_semantically_equal;
+    use mech_engine::{ExecutableNodeBody, ProgramArtifact};
     use mech_syntax::document::{
         AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
     };
@@ -250,5 +364,55 @@ mod tests {
                 control(&changed)
             ));
         }
+    }
+    #[test]
+    fn collection_reuse_resolves_owning_tables_and_rejects_changed_control() {
+        fn control(artifact: &ProgramArtifact) -> &ExecutableNodeBody {
+            &artifact
+                .nodes()
+                .iter()
+                .find(|node| matches!(node.body, ExecutableNodeBody::Comprehension(_)))
+                .unwrap()
+                .body
+        }
+        let source = "[x + 1 | x <- signal<[f64]:1,3>, x > 0]";
+        let original = compile(source);
+        let mut moved = false;
+        for extra in 3..12 {
+            let shifted = compile(&format!("({extra}u8, ({source}))"));
+            moved |= control(&original) != control(&shifted);
+            assert!(node_bodies_semantically_equal(
+                &original,
+                control(&original),
+                &shifted,
+                control(&shifted)
+            ));
+        }
+        assert!(moved, "exercise artifact-local table identities");
+        for source in [
+            "[x + 2 | x <- signal<[f64]:1,3>, x > 0]",
+            "[x + 1 | x <- signal<[f64]:1,3>, x > 1]",
+            "{x + 1 | x <- signal<[f64]:1,3>, x > 0}",
+            "[x + 1 | x <- signal<[f64]:1,3>, x < 0]",
+        ] {
+            let changed = compile(source);
+            assert!(
+                !node_bodies_semantically_equal(
+                    &original,
+                    control(&original),
+                    &changed,
+                    control(&changed)
+                ),
+                "{source}"
+            );
+        }
+        let structured = compile("[x | (x, 1) <- pairs]");
+        let changed = compile("[x | (x, 2) <- pairs]");
+        assert!(!node_bodies_semantically_equal(
+            &structured,
+            control(&structured),
+            &changed,
+            control(&changed)
+        ));
     }
 }

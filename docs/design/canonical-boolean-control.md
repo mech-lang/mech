@@ -11,7 +11,7 @@ Wildcard-only matches impose no scalar type on an unused scrutinee.
 The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations and yields. Source text and diagnostic strings are not
 execution operands. The artifact uses one tagged node body for ordinary
-operations or scalar matches. The bytecode-v1 graph payload uses revision 3;
+operations, scalar matches, or lexical comprehensions. The bytecode-v1 graph payload uses revision 4;
 all durable fixtures are regenerated with that producer.
 
 Resident activation currently admits Bool, Index and F64 control values. Each
@@ -32,8 +32,24 @@ Runtime reuse compares control structure and resolves schema, contract and
 constant identities in each artifact's own tables. Equal numeric table IDs
 are not evidence that independently compiled blocks mean the same thing.
 
-This is a bounded executable-control increment, not S4 completion. Composite
-patterns, nested executable control, composite match results, executable
-comprehensions and FSM lowering still require their owning S4 implementation.
-Their placeholder graphs or structured unsupported diagnostics do not count
-as executable completion evidence.
+Lexical comprehensions own ordered generators, patterns, pure ordinary calls,
+filters, and a yield in the same artifact. Single-writer local identities enforce
+scope and dominance. Repeated pattern bindings compare values and implement
+joins. Matrix iteration follows canonical row-major order; set construction uses
+the core key relation for deduplication and float normalization. No diagnostic
+qualifier strings or ordinary-operation placeholders participate in execution.
+
+Resident comprehension execution currently supports Bool, Index, and F64
+bindings and yields, scalar patterns, and qualified ordinary kernels. Every
+inner call retains its ordinary contract and physical call-memory identity.
+The owning control accumulates work across calls, so repeated individually
+admissible scans cannot bypass the turn limit. Output growth is admitted before
+allocation. Failed turns preserve published values and can recover on a smaller
+subsequent input. Pattern depth and generator nesting are bounded in artifacts;
+bytecode population limits apply before graph allocation.
+
+This remains an S4 increment. Structured comprehension patterns are typed and
+validated in artifacts, but their resident execution, composite yields, computed
+pattern evaluation blocks, nested control, composite match results, and FSM
+lowering still require implementation. Unsupported cases remain explicit errors
+and do not count as executable completion evidence.
