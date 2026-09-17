@@ -102,6 +102,24 @@ impl TextSnapshot {
         Ok(text)
     }
 
+    /// Compare an exact source range without allocating or copying its text.
+    /// Invalid ranges and UTF-8 boundaries are rejected just as by [`Self::text`].
+    pub(crate) fn text_eq(&self, range: TextRange, expected: &str) -> Result<bool, SourceError> {
+        self.validate_range(range)?;
+        if range.len().to_usize() != expected.len() {
+            return Ok(false);
+        }
+        let expected = expected.as_bytes();
+        let mut offset = 0;
+        let mut matches = true;
+        self.for_each_slice(range, |slice| {
+            let end = offset + slice.len();
+            matches &= slice.as_bytes() == &expected[offset..end];
+            offset = end;
+        });
+        Ok(matches)
+    }
+
     pub fn to_contiguous_string(&self) -> String {
         let mut text = String::with_capacity(self.byte_len.to_usize());
         for piece in self.pieces.iter() {
@@ -283,6 +301,96 @@ impl TextSnapshot {
                     range_in_chunk: TextRange::new(TextSize(local_start), TextSize(local_end)),
                 },
             );
+        }
+    }
+}
+
+#[cfg(all(test, any(feature = "std", not(feature = "no_std"))))]
+mod tests {
+    use super::*;
+    use crate::allocation_probe;
+    use crate::document::{
+        GreenElement, GreenNode, GreenToken, NodeFlags, NodeId, SyntaxKind, SyntaxNode, TokenFlags,
+        TokenId,
+    };
+
+    fn snapshot(text: &str, pieces: bool) -> TextSnapshot {
+        if pieces {
+            text.chars().fold(
+                TextSnapshot::new(DocumentId(91), Revision(0), "").unwrap(),
+                |snapshot, character| snapshot.append(character.to_string()).unwrap(),
+            )
+        } else {
+            TextSnapshot::new(DocumentId(91), Revision(0), text).unwrap()
+        }
+    }
+
+    #[test]
+    fn exact_text_comparison_preserves_range_errors_without_allocating() {
+        let text = "a╭💡e\u{301}┃z\r\n";
+        for pieces in [false, true] {
+            let source = snapshot(text, pieces);
+            assert_eq!(source.piece_count() > 1, pieces);
+            // Include reversed/out-of-bounds ranges, partial code points, and empty
+            // ranges. Validation must precede even an unequal expected byte length.
+            for start in 0..=text.len() as u32 + 1 {
+                for end in 0..=text.len() as u32 + 1 {
+                    let range = TextRange::new(TextSize(start), TextSize(end));
+                    for expected in [
+                        "", "a", "╭", "│", "💡", "╭💡", "e\u{301}", "é", "z\r\n", text,
+                    ] {
+                        let oracle = source.text(range).map(|text| text == expected);
+                        let (actual, allocations, bytes) =
+                            allocation_probe::measured_with_bytes(|| {
+                                core::hint::black_box(source.text_eq(range, expected))
+                            });
+                        assert_eq!(actual, oracle, "{range:?}, {expected:?}, pieces={pieces}");
+                        assert_eq!((allocations, bytes), (0, 0));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn token_text_comparison_preserves_exact_piece_backed_ranges() {
+        let text = "a╭💡┃z";
+        for pieces in [false, true] {
+            let source = snapshot(text, pieces);
+            for (start, end) in [(0, 12), (1, 11), (2, 3), (0, 13), (12, 12)] {
+                let range = TextRange::new(TextSize(start), TextSize(end));
+                let node = SyntaxNode::new_root_at(
+                    Arc::new(GreenNode {
+                        id: NodeId(1),
+                        kind: SyntaxKind::Expression,
+                        text_len: range.len(),
+                        children: Arc::from([GreenElement::Token(GreenToken {
+                            id: TokenId(2),
+                            kind: SyntaxKind::BoxDrawing,
+                            text_len: range.len(),
+                            flags: if range.is_empty() {
+                                TokenFlags::MISSING
+                            } else {
+                                TokenFlags::NONE
+                            },
+                            text_hash: 0,
+                        })]),
+                        flags: NodeFlags::NONE,
+                        structural_hash: 0,
+                    }),
+                    source.clone(),
+                    range.start,
+                );
+                let token = node.tokens().pop().unwrap();
+                for expected in ["", "╭💡┃", "╭💡│", "╭", "xxxxxxxxxx", text] {
+                    let oracle = token.text().map(|text| text == expected);
+                    let (actual, allocations) = allocation_probe::measured(|| {
+                        core::hint::black_box(token.text_eq(expected))
+                    });
+                    assert_eq!(actual, oracle, "{range:?}, {expected:?}, pieces={pieces}");
+                    assert_eq!(allocations, 0);
+                }
+            }
         }
     }
 }

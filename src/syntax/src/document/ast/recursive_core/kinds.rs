@@ -1,8 +1,8 @@
 use alloc::vec::Vec;
 
 use crate::document::{
-    AstNode, IdentifierSyntax, KindAnySyntax, KindAtomSyntax, KindEmptySyntax, SyntaxKind,
-    SyntaxNode, SyntaxToken,
+    AstNode, ExpressionSyntax, IdentifierSyntax, KindAnySyntax, KindAtomSyntax, KindEmptySyntax,
+    SyntaxKind, SyntaxNode, SyntaxToken,
 };
 
 use super::{LiteralSyntax, RangeExpressionSyntax, child, children, direct_token, nth_child};
@@ -190,6 +190,11 @@ impl KindScalarSyntax {
         child(&self.0)
     }
     pub fn constraint(&self) -> Option<RangeExpressionSyntax> {
+        child(&self.0)
+    }
+
+    /// The partial first constraint bound retained when resource limits stop range recognition.
+    pub fn recovered_expression(&self) -> Option<ExpressionSyntax> {
         child(&self.0)
     }
 }

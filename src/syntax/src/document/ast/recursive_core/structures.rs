@@ -37,9 +37,16 @@ recursive_ast_node!(TupleStructSyntax, TupleStruct);
 fn is_box_corner(token: &SyntaxToken, physical: &[&str], allow_missing: bool) -> bool {
     token.kind() == SyntaxKind::BoxDrawing
         && ((allow_missing && token.flags().contains(TokenFlags::MISSING))
-            || token
-                .text()
-                .is_ok_and(|text| physical.contains(&text.as_str())))
+            || physical
+                .iter()
+                .any(|glyph| token.text_eq(glyph) == Ok(true)))
+}
+
+fn is_vertical_box_delimiter(token: &SyntaxToken) -> bool {
+    token.kind() == SyntaxKind::BoxDrawing
+        && ["│", "┃"]
+            .iter()
+            .any(|glyph| token.text_eq(glyph) == Ok(true))
 }
 
 #[derive(Clone, Debug)]
@@ -282,20 +289,24 @@ impl RecordSyntax {
         direct_tokens(&self.0).into_iter().find(|token| {
             matches!(token.kind(), SyntaxKind::LeftBrace | SyntaxKind::Bar)
                 || is_box_corner(token, &["╭", "┌", "┏"], false)
+                || is_vertical_box_delimiter(token)
         })
     }
     pub fn bindings(&self) -> Vec<RecordBindingSyntax> {
         children(&self.0)
     }
     pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
+        let opening = self.opening_delimiter()?;
         direct_tokens(&self.0)
             .into_iter()
-            .filter(|token| {
+            .skip_while(|token| token.id() != opening.id())
+            .skip(1)
+            .find(|token| {
                 token.kind() == SyntaxKind::RightBrace
+                    || token.kind() == SyntaxKind::Bar
                     || is_box_corner(token, &["╯", "┘", "┛"], true)
+                    || is_vertical_box_delimiter(token)
             })
-            .last()
-            .or_else(|| direct_token(&self.0, SyntaxKind::Bar, 1))
     }
 }
 

@@ -140,6 +140,11 @@ impl SyntaxToken {
     pub fn text(&self) -> Result<String, SourceError> {
         self.source.text(self.range())
     }
+
+    /// Compare this token's exact source text without allocating or copying it.
+    pub(crate) fn text_eq(&self, expected: &str) -> Result<bool, SourceError> {
+        self.source.text_eq(self.range(), expected)
+    }
 }
 
 #[derive(Clone, Debug)]
