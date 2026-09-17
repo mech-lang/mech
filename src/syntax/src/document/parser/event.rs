@@ -18,6 +18,9 @@ pub enum Event {
     range: TextRange,
     flags: TokenFlags,
   },
+  Reuse {
+    node: Arc<GreenNode>,
+  },
   Finish,
   Tombstone,
 }
@@ -46,6 +49,9 @@ pub fn sink(
           .text(*range)
           .map_err(|_| BuildError::TextTooLarge)?;
         builder.token_with_flags(*kind, &text, *flags)?;
+      }
+      Event::Reuse { node } => {
+        builder.reuse_node(node.clone())?;
       }
       Event::Finish => {
         let start = starts.pop().ok_or(BuildError::NoOpenNode)?;

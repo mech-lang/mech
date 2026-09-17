@@ -10,12 +10,12 @@ use crate::document::{
     RuleId, SyntaxKind, SyntaxNode, TextRange, TextSnapshot,
 };
 
-use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::super::rule::rules;
+use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::combinator::Attempt;
 use super::{
     control_operators, declarations, imports, kinds, literals, operators, paths,
-    pattern_primitives, source_imports, structure_shell, subscript_primitives,
+    pattern_primitives, recursive_core, source_imports, structure_shell, subscript_primitives,
 };
 
 /// The exact combined Phase 2F direct-rule surface.
@@ -110,11 +110,7 @@ pub struct CanonicalSourceRuleSnapshot {
 
 impl CanonicalSourceRuleSnapshot {
     pub fn syntax(&self) -> SyntaxNode {
-        SyntaxNode::new_root_at(
-            self.root.clone(),
-            self.source.clone(),
-            self.consumed.start,
-        )
+        SyntaxNode::new_root_at(self.root.clone(), self.source.clone(), self.consumed.start)
     }
 
     pub fn is_strictly_clean(&self) -> bool {
@@ -247,8 +243,7 @@ pub fn parse_canonical_phase_2d_rule_for_test(
 ) -> Option<CanonicalSourceRuleSnapshot> {
     operators::supports(rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
-            operators::parse_rule(parser, rule)
-                .expect("Phase 2D support guard accepts this RuleId")
+            operators::parse_rule(parser, rule).expect("Phase 2D support guard accepts this RuleId")
         })
     })
 }
@@ -264,8 +259,7 @@ pub fn parse_canonical_phase_2e_rule_for_test(
 ) -> Option<CanonicalSourceRuleSnapshot> {
     imports::supports(rule).then(|| {
         parse_source_rule_prefix(source, rule, config, |parser| {
-            imports::parse_rule(parser, rule)
-                .expect("Phase 2E support guard accepts this RuleId")
+            imports::parse_rule(parser, rule).expect("Phase 2E support guard accepts this RuleId")
         })
     })
 }
@@ -320,6 +314,22 @@ pub fn parse_canonical_phase_2h_rule_for_test(
         parse_source_rule_prefix(source, rule, config, |parser| {
             structure_shell::parse_rule(parser, rule)
                 .expect("Phase 2H support guard accepts this RuleId")
+        })
+    })
+}
+
+/// Parse one frozen Phase 2I recursive-core rule as a deterministic source
+/// prefix without activating it in the public canonical registry.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2i_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    recursive_core::supports(rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            recursive_core::parse_rule(parser, rule)
+                .expect("Phase 2I support guard accepts this RuleId")
         })
     })
 }
@@ -414,12 +424,8 @@ mod tests {
             );
         }
         assert!(
-            parse_canonical_phase_2c_rule_for_test(
-                source,
-                rules::LITERAL,
-                ParseConfig::default(),
-            )
-            .is_none()
+            parse_canonical_phase_2c_rule_for_test(source, rules::LITERAL, ParseConfig::default(),)
+                .is_none()
         );
     }
 
