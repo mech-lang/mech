@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S5 complete; S6 atomic Phase 2I activation is next.
+Status: S0-S3 complete; S4 semantics and S5 certification remain open.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -30,10 +30,15 @@ component contains 80 of the 211 unported rules. Phase 2I-C recognizes clean
 input for all 80 rules with the canonical event parser, but activates none of
 them. Those rows remain `unported` with no phase assignment.
 
-The component now has local malformed-input recovery, complete typed red-tree
-views, engine-owned source semantics, and canonical certification for all 80
-direct roots. The registry remains inactive until S6 performs the atomic status
-transition.
+The component has local malformed-input recovery and complete typed red-tree
+views. S4 source semantics and S5 certification are implemented in part, with
+comprehension and pattern witnesses now artifact-ready and all source-completion
+behavior tests passing. FSM lowering remains the artifact-certification blocker;
+borrowed tuple, array, and tagged-pattern projection now executes with primitive
+bindings, while composite bindings/yields, computed pattern blocks, nested control,
+and other S4 limits remain open.
+S6 activation remains gated on completion of S4 and S5; the registry remains
+inactive in this stage.
 
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping

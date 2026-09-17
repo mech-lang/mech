@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -7,10 +7,10 @@ use mech_syntax::document::parser::canonical::{
 };
 use mech_syntax::document::parser::{canonical_rule_id, canonical_rule_name, rules};
 use mech_syntax::document::{
-    ArrayPatternSyntax, AstNode, DocumentId, FormulaSyntax, KindSyntax, KindValueSyntax, NodeFlags,
-    ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision, SyntaxKind, SyntaxNode,
-    SyntaxToken, TextRange, TextSize, TextSnapshot, compact_debug_tree, normalize_diagnostics,
-    phase_2i_node_kind, reconstruct_source_range, validate_lossless_range,
+    ArrayPatternSyntax, AstNode, DocumentId, ExpectedSyntax, FormulaSyntax, KindSyntax,
+    KindValueSyntax, NodeFlags, ParseConfig, PatternArrayItemSyntax, RecursiveCoreSyntax, Revision,
+    SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, TextRange, TextSize, TextSnapshot,
+    normalize_diagnostics, phase_2i_node_kind, reconstruct_source_range, validate_lossless_range,
 };
 
 #[derive(Debug)]
@@ -156,25 +156,22 @@ fn find_typed<N: AstNode>(node: &SyntaxNode) -> Option<N> {
     N::cast(node.clone()).or_else(|| node.children().find_map(|child| find_typed(&child)))
 }
 
-fn hash_node<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, value: Option<N>) {
+fn hash_node<N: AstNode>(hash: &mut StableHash, role: &str, value: Option<N>) {
     hash.field(role);
-    hash.field(std::any::type_name::<N>());
     match value {
         Some(value) => {
-            hash.field(&format!("typed:{value:?}"));
-            hash.field(&format!(
-                "some:{:?}:{}:{}:{}",
-                value.syntax().kind(),
-                value.syntax().range().start.0,
-                value.syntax().range().end.0,
-                value.syntax().flags().0,
-            ));
+            hash.field(&value.syntax().text().expect("typed accessor source text"));
+            hash.field("some");
+            hash.field(value.syntax().kind().name());
+            hash.field(&value.syntax().range().start.0.to_string());
+            hash.field(&value.syntax().range().end.0.to_string());
+            hash.field(&value.syntax().flags().0.to_string());
         }
         None => hash.field("none"),
     }
 }
 
-fn hash_nodes<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, values: Vec<N>) {
+fn hash_nodes<N: AstNode>(hash: &mut StableHash, role: &str, values: Vec<N>) {
     hash.field(role);
     hash.field(&values.len().to_string());
     for (index, value) in values.into_iter().enumerate() {
@@ -186,20 +183,21 @@ fn hash_nodes<N: AstNode + std::fmt::Debug>(hash: &mut StableHash, role: &str, v
 fn hash_token(hash: &mut StableHash, role: &str, value: Option<SyntaxToken>) {
     hash.field(role);
     match value {
-        Some(value) => hash.field(&format!(
-            "some:{:?}:{}:{}:{}:{}",
-            value.kind(),
-            value.range().start.0,
-            value.range().end.0,
-            value.flags().0,
-            value.text().expect("clean source token text"),
-        )),
+        Some(value) => {
+            hash.field("some");
+            hash.field(value.kind().name());
+            hash.field(&value.range().start.0.to_string());
+            hash.field(&value.range().end.0.to_string());
+            hash.field(&value.flags().0.to_string());
+            hash.field(&value.text().expect("clean source token text"));
+        }
         None => hash.field("none"),
     }
 }
 
 fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     let mut hash = StableHash::new();
+    hash.field("canonical-typed-access-v2");
     hash.field(rule_name);
     if rule_name == "formula" {
         let view = find_typed::<FormulaSyntax>(node).expect("transparent formula typed view");
@@ -634,44 +632,295 @@ fn typed_access_hash(rule_name: &str, node: &SyntaxNode) -> u64 {
     hash.0
 }
 
+fn range_evidence(range: Option<TextRange>) -> serde_json::Value {
+    serde_json::json!(range.map(|range| [range.start.0, range.end.0]))
+}
+
+fn expected_evidence(expected: &mech_syntax::document::ExpectedSyntax) -> serde_json::Value {
+    match expected {
+        ExpectedSyntax::Token(kind) => serde_json::json!(["token", kind.name()]),
+        ExpectedSyntax::Production(name) => serde_json::json!(["production", name]),
+    }
+}
+
+fn diagnostic_evidence(
+    diagnostic: &mech_syntax::document::NormalizedDiagnostic,
+) -> serde_json::Value {
+    use mech_syntax::document::{DiagnosticPhase, FixApplicability, RecoveryAction, Severity};
+    let phase = match diagnostic.phase {
+        DiagnosticPhase::Syntax => "syntax",
+        DiagnosticPhase::SyntaxValidation => "syntax-validation",
+        DiagnosticPhase::Lowering => "lowering",
+        DiagnosticPhase::Kind => "kind",
+        DiagnosticPhase::Dimension => "dimension",
+        DiagnosticPhase::Effect => "effect",
+        DiagnosticPhase::Coeffect => "coeffect",
+        DiagnosticPhase::Refinement => "refinement",
+        DiagnosticPhase::Liveness => "liveness",
+        DiagnosticPhase::Document => "document",
+        DiagnosticPhase::Runtime => "runtime",
+    };
+    let severity = match diagnostic.severity {
+        Severity::Error => "error",
+        Severity::Warning => "warning",
+        Severity::Information => "information",
+        Severity::Hint => "hint",
+    };
+    let recovery = diagnostic.recovery.as_ref().map(|action| match action {
+        RecoveryAction::Insert { syntax, at } => {
+            serde_json::json!(["insert", expected_evidence(syntax), at.0])
+        }
+        RecoveryAction::Skip { range } => serde_json::json!(["skip", range_evidence(Some(*range))]),
+        RecoveryAction::Abandon { rule, at } => serde_json::json!(["abandon", rule.0, at.0]),
+        RecoveryAction::ResourceLimit { range } => {
+            serde_json::json!(["resource-limit", range_evidence(Some(*range))])
+        }
+    });
+    let fixes = diagnostic
+        .fixes
+        .iter()
+        .map(|fix| {
+            let applicability = match fix.applicability {
+                FixApplicability::MachineApplicable => "machine-applicable",
+                FixApplicability::MaybeIncorrect => "maybe-incorrect",
+                FixApplicability::HasPlaceholders => "has-placeholders",
+            };
+            serde_json::json!([
+                fix.title,
+                applicability,
+                fix.edits
+                    .iter()
+                    .map(|edit| serde_json::json!([range_evidence(Some(edit.delete)), edit.insert]))
+                    .collect::<Vec<_>>()
+            ])
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "code": diagnostic.code.as_str(), "phase": phase, "severity": severity,
+        "rule": diagnostic.rule.map(|rule| rule.0), "context": diagnostic.context.map(|context| context.0),
+        "primary": range_evidence(diagnostic.primary),
+        "expected": diagnostic.expected.iter().map(expected_evidence).collect::<Vec<_>>(),
+        "found": diagnostic.found.as_ref().map(|found| serde_json::json!([found.kind.map(SyntaxKind::name), found.text])),
+        "related": diagnostic.related, "recovery": recovery, "tags": diagnostic.tags.0,
+        "labels": diagnostic.labels.iter().map(|label| serde_json::json!([range_evidence(label.range), label.message])).collect::<Vec<_>>(),
+        "fixes": fixes,
+    })
+}
+
+fn canonical_tree_evidence(node: &SyntaxNode) -> serde_json::Value {
+    let children = node
+        .children_with_tokens()
+        .into_iter()
+        .map(|child| match child {
+            SyntaxElement::Node(node) => canonical_tree_evidence(&node),
+            SyntaxElement::Token(token) => serde_json::json!([
+                "token",
+                token.kind().name(),
+                range_evidence(Some(token.range())),
+                token.flags().0,
+                token.text().unwrap()
+            ]),
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!([
+        "node",
+        node.kind().name(),
+        range_evidence(Some(node.range())),
+        node.flags().0,
+        children
+    ])
+}
+
+fn clean_tree_hash(node: &SyntaxNode) -> u64 {
+    let mut hash = StableHash::new();
+    hash.field("canonical-clean-tree-v2");
+    hash.field(&serde_json::to_string(&canonical_tree_evidence(node)).unwrap());
+    hash.0
+}
+
 fn recovery_snapshot_hash(
     parsed: &mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot,
 ) -> u64 {
     let mut hash = StableHash::new();
-    hash.field(&compact_debug_tree(&parsed.syntax()));
-    for diagnostic in
-        normalize_diagnostics(&parsed.diagnostics, parsed.source.revision(), &parsed.nodes)
-    {
-        hash.field(&format!(
-            "diagnostic:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}:{:?}",
-            diagnostic.code,
-            diagnostic.phase,
-            diagnostic.severity,
-            diagnostic.rule,
-            diagnostic.context,
-            diagnostic.primary,
-            diagnostic.expected,
-            diagnostic.found,
-            diagnostic.related,
-            diagnostic.recovery,
-            diagnostic.tags,
-        ));
-        for label in diagnostic.labels {
-            hash.field(&format!("label:{:?}", label.range));
-        }
-        for fix in diagnostic.fixes {
-            hash.field(&format!("fix:{:?}:{:?}", fix.applicability, fix.edits));
-        }
-    }
+    hash.field("canonical-recovery-v2");
+    hash.field(&serde_json::to_string(&canonical_tree_evidence(&parsed.syntax())).unwrap());
+    let diagnostics =
+        normalize_diagnostics(&parsed.diagnostics, parsed.source.revision(), &parsed.nodes);
+    hash.field(
+        &serde_json::to_string(
+            &diagnostics
+                .iter()
+                .map(diagnostic_evidence)
+                .collect::<Vec<_>>(),
+        )
+        .unwrap(),
+    );
     hash.0
+}
+
+#[test]
+fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes() {
+    use mech_syntax::document::{
+        ExpectedSyntax, FixApplicability, FoundSyntax, NormalizedDiagnosticFix,
+        NormalizedDiagnosticLabel, RecoveryAction, TextEdit,
+    };
+    let parse = |document, revision| {
+        parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(document), Revision(revision), "[1").unwrap(),
+            rules::MATRIX,
+            ParseConfig::default(),
+        )
+        .unwrap()
+    };
+    let first = parse(1, 2);
+    let second = parse(99, 100);
+    assert_eq!(
+        recovery_snapshot_hash(&first),
+        recovery_snapshot_hash(&second)
+    );
+    let mut diagnostic =
+        normalize_diagnostics(&first.diagnostics, first.source.revision(), &first.nodes).remove(0);
+    diagnostic.expected = vec![
+        ExpectedSyntax::Token(SyntaxKind::RightBracket),
+        ExpectedSyntax::Production("expression".into()),
+    ];
+    diagnostic.found = Some(FoundSyntax {
+        kind: Some(SyntaxKind::LeftBracket),
+        text: Some("[".into()),
+    });
+    diagnostic.labels = vec![NormalizedDiagnosticLabel {
+        range: Some(TextRange::empty(TextSize(2))),
+        message: "closing delimiter".into(),
+    }];
+    diagnostic.fixes = vec![NormalizedDiagnosticFix {
+        title: "close matrix".into(),
+        applicability: FixApplicability::MachineApplicable,
+        edits: vec![TextEdit::insert(TextSize(2), "]")],
+    }];
+    diagnostic.recovery = Some(RecoveryAction::Insert {
+        syntax: ExpectedSyntax::Token(SyntaxKind::RightBracket),
+        at: TextSize(2),
+    });
+    let evidence = diagnostic_evidence(&diagnostic);
+    assert_eq!(
+        evidence["expected"][0],
+        serde_json::json!(["token", "RightBracket"])
+    );
+    assert_eq!(evidence["fixes"][0][1], "machine-applicable");
+    for change in 0..8 {
+        let mut changed = diagnostic.clone();
+        match change {
+            0 => changed.code = "syntax/different".into(),
+            1 => changed.primary = Some(TextRange::empty(TextSize(1))),
+            2 => changed.expected.reverse(),
+            3 => changed.found.as_mut().unwrap().text = Some("]".into()),
+            4 => changed.related.push(0),
+            5 => {
+                changed.recovery = Some(RecoveryAction::Skip {
+                    range: TextRange::new(TextSize(0), TextSize(1)),
+                })
+            }
+            6 => changed.fixes[0].edits[0].insert = ")".into(),
+            7 => changed.labels[0].range = None,
+            _ => unreachable!(),
+        }
+        assert_ne!(evidence, diagnostic_evidence(&changed), "change {change}");
+    }
+}
+
+fn assert_certified_inventory<'a>(
+    names: impl IntoIterator<Item = &'a str>,
+    contracts: &BTreeMap<String, (String, String, String, String)>,
+) {
+    let names = names.into_iter().collect::<Vec<_>>();
+    let unique = names.iter().copied().collect::<BTreeSet<_>>();
+    assert_eq!(names.len(), unique.len(), "duplicate certification rule");
+    let expected = contracts
+        .keys()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        unique, expected,
+        "certification must cover the exact inventory"
+    );
+}
+
+#[test]
+fn certification_inventory_rejects_duplicate_missing_and_unknown_rules() {
+    let rows = certification_rows();
+    let contracts = inventory_contracts();
+    let names = rows.iter().map(|row| row.name.as_str()).collect::<Vec<_>>();
+    assert_certified_inventory(names.iter().copied(), &contracts);
+    for case in 0..3 {
+        let mut changed = names.clone();
+        match case {
+            0 => changed[0] = changed[1],
+            1 => {
+                changed.pop();
+            }
+            2 => changed[0] = "not-an-inventory-rule",
+            _ => unreachable!(),
+        }
+        assert!(
+            std::panic::catch_unwind(|| assert_certified_inventory(changed, &contracts)).is_err()
+        );
+    }
+}
+
+#[test]
+fn clean_tree_evidence_covers_flags_and_ignores_snapshot_identity() {
+    use mech_syntax::document::{GreenElement, GreenNode, TokenFlags};
+    use std::sync::Arc;
+    fn change_token(node: &GreenNode) -> GreenNode {
+        let mut changed = node.clone();
+        let mut children = changed.children.to_vec();
+        match &mut children[0] {
+            GreenElement::Node(child) => *child = Arc::new(change_token(child)),
+            GreenElement::Token(token) => token.flags.0 ^= TokenFlags::TRIVIA.0,
+        }
+        changed.children = children.into();
+        changed
+    }
+    let parse = |document, revision| {
+        parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(document), Revision(revision), "[1 2]").unwrap(),
+            rules::MATRIX,
+            ParseConfig::default(),
+        )
+        .unwrap()
+    };
+    let parsed = parse(1, 2);
+    let baseline = clean_tree_hash(&parsed.syntax());
+    assert_eq!(baseline, clean_tree_hash(&parse(9, 10).syntax()));
+    for flag in [NodeFlags::REPARSE_ROOT, NodeFlags::PROVISIONAL] {
+        let mut changed = (*parsed.root).clone();
+        changed.flags.0 ^= flag.0;
+        assert_eq!(changed.structural_hash, parsed.root.structural_hash);
+        assert_ne!(
+            baseline,
+            clean_tree_hash(&SyntaxNode::new_root(
+                Arc::new(changed),
+                parsed.source.clone()
+            ))
+        );
+    }
+    let changed = change_token(&parsed.root);
+    assert_eq!(changed.structural_hash, parsed.root.structural_hash);
+    assert_ne!(
+        baseline,
+        clean_tree_hash(&SyntaxNode::new_root(
+            Arc::new(changed),
+            parsed.source.clone()
+        ))
+    );
 }
 
 #[test]
 fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let rows = certification_rows();
     let contracts = inventory_contracts();
-    assert_eq!(rows.len(), 80);
-    assert_eq!(contracts.len(), rows.len());
+    assert_eq!(contracts.len(), 80);
+    assert_certified_inventory(rows.iter().map(|row| row.name.as_str()), &contracts);
     let mut stale_hashes = Vec::new();
     for row in rows {
         let contract = contracts
@@ -703,10 +952,11 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             "{}",
             row.name
         );
-        if accepted.root.structural_hash != row.clean_tree_hash {
+        let clean_hash = clean_tree_hash(&accepted.syntax());
+        if clean_hash != row.clean_tree_hash {
             stale_hashes.push(format!(
                 "{}\tclean-tree\t{}\t{}",
-                row.name, row.clean_tree_hash, accepted.root.structural_hash
+                row.name, row.clean_tree_hash, clean_hash
             ));
         }
         validate_lossless_range(&accepted.root, &accepted.source, accepted.consumed).unwrap();
@@ -945,6 +1195,7 @@ fn certification_evidence_uses_only_canonical_authorities() {
         "src/syntax/tests/canonical_phase_2i_resource_limits.rs",
         "src/syntax/tests/canonical_phase_2i_certification.rs",
         "src/engine/tests/canonical_phase_2i_semantic_certification.rs",
+        "src/engine/tests/canonical_source_completion.rs",
     ] {
         let path = repository_root().join(relative);
         let evidence = fs::read_to_string(&path).unwrap_or_else(|error| {
@@ -958,6 +1209,42 @@ fn certification_evidence_uses_only_canonical_authorities() {
 }
 
 fn strip_rust_comments(source: &str) -> String {
+    mask_rust_source(source, true)
+}
+
+fn rust_character_end(source: &str, start: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut end = start + 1;
+    if bytes.get(end) == Some(&b'\\') {
+        end += 1;
+        match bytes.get(end)? {
+            b'u' if bytes.get(end + 1) == Some(&b'{') => {
+                end += 2;
+                while bytes
+                    .get(end)
+                    .is_some_and(|byte| byte.is_ascii_hexdigit() || *byte == b'_')
+                {
+                    end += 1;
+                }
+                if bytes.get(end) != Some(&b'}') {
+                    return None;
+                }
+                end += 1;
+            }
+            b'x' => end += 3,
+            _ => end += 1,
+        }
+    } else {
+        let character = source.get(end..)?.chars().next()?;
+        if matches!(character, '\'' | '\n' | '\r') {
+            return None;
+        }
+        end += character.len_utf8();
+    }
+    (bytes.get(end) == Some(&b'\'')).then_some(end + 1)
+}
+
+fn mask_rust_source(source: &str, preserve_literals: bool) -> String {
     let bytes = source.as_bytes();
     let mut output = Vec::with_capacity(bytes.len());
     let mut cursor = 0;
@@ -983,7 +1270,11 @@ fn strip_rust_comments(source: &str) -> String {
                             == Some(&bytes[raw_start + 1..quote])
                     {
                         end += 1 + hashes;
-                        output.extend_from_slice(&bytes[cursor..end]);
+                        if preserve_literals {
+                            output.extend_from_slice(&bytes[cursor..end]);
+                        } else {
+                            output.push(b' ');
+                        }
                         cursor = end;
                         break;
                     }
@@ -993,6 +1284,17 @@ fn strip_rust_comments(source: &str) -> String {
                     continue;
                 }
             }
+        }
+        if bytes[cursor] == b'\''
+            && let Some(end) = rust_character_end(source, cursor)
+        {
+            if preserve_literals {
+                output.extend_from_slice(&bytes[cursor..end]);
+            } else {
+                output.push(b' ');
+            }
+            cursor = end;
+            continue;
         }
         if bytes[cursor] == b'"' {
             let start = cursor;
@@ -1008,7 +1310,11 @@ fn strip_rust_comments(source: &str) -> String {
                     }
                 }
             }
-            output.extend_from_slice(&bytes[start..cursor]);
+            if preserve_literals {
+                output.extend_from_slice(&bytes[start..cursor]);
+            } else {
+                output.push(b' ');
+            }
             continue;
         }
         if bytes.get(cursor..cursor + 2) == Some(b"//") {
@@ -1045,35 +1351,91 @@ fn strip_rust_comments(source: &str) -> String {
     String::from_utf8(output).expect("comment stripping preserves UTF-8 source bytes")
 }
 
-fn assert_canonical_only(path: &Path, evidence: &str) {
-    let uncommented = strip_rust_comments(evidence);
-    let evidence = uncommented.as_str();
-    let mut declaration = None::<String>;
-    for line in evidence.lines().map(str::trim) {
-        let compact_line = line
-            .chars()
-            .filter(|character| !character.is_whitespace())
-            .collect::<String>();
-        if declaration.is_none() && strip_visibility_prefix(&compact_line).starts_with("use") {
-            declaration = Some(String::new());
-        }
-        if let Some(current) = declaration.as_mut() {
-            current.push_str(line);
-            if line.ends_with(';') {
-                let completed = declaration.take().expect("active import declaration");
-                if completed.contains("mech_syntax") || completed.contains(concat!("mech_", "core"))
-                {
-                    assert_allowed_mech_import(path, &completed);
-                }
+fn assert_allowed_qualified_syntax_paths(path: &Path, source: &str) {
+    let code = mask_rust_source(source, false).replace("r#", "");
+    let bytes = code.as_bytes();
+    let mut tokens = Vec::new();
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        let start = cursor;
+        if bytes[cursor].is_ascii_alphabetic() || bytes[cursor] == b'_' {
+            cursor += 1;
+            while cursor < bytes.len()
+                && (bytes[cursor].is_ascii_alphanumeric() || bytes[cursor] == b'_')
+            {
+                cursor += 1;
             }
+            tokens.push(&code[start..cursor]);
+        } else if bytes.get(cursor..cursor + 2) == Some(b"::") {
+            tokens.push("::");
+            cursor += 2;
+        } else {
+            if !bytes[cursor].is_ascii_whitespace() {
+                tokens.push(if bytes[cursor].is_ascii() {
+                    &code[cursor..cursor + 1]
+                } else {
+                    "#"
+                });
+            }
+            cursor += 1;
         }
     }
-    assert!(
-        declaration.is_none(),
-        "unterminated import in {}",
-        path.display()
-    );
+    for (index, token) in tokens.iter().enumerate() {
+        if *token == "use" {
+            let end = tokens[index..]
+                .iter()
+                .position(|token| *token == ";")
+                .map(|offset| index + offset + 1)
+                .expect("terminated Rust import");
+            let declaration = tokens[index..end].join("");
+            if declaration.contains("mech_syntax") || declaration.contains("mech_core") {
+                assert_allowed_mech_import(path, &declaration);
+            }
+        }
+        if *token == "extern" && tokens.get(index + 1) == Some(&"crate") {
+            assert!(
+                !matches!(tokens.get(index + 2), Some(&"mech_syntax" | &"mech_core")),
+                "extern crate aliases are outside canonical evidence"
+            );
+        }
+    }
+    for index in 0..tokens.len().saturating_sub(1) {
+        if tokens[index] != "mech_syntax" || tokens[index + 1] != "::" {
+            continue;
+        }
+        let mut parts = Vec::new();
+        let mut next = index + 2;
+        while next < tokens.len()
+            && tokens[next]
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        {
+            parts.push(tokens[next]);
+            if tokens.get(next + 1) != Some(&"::") {
+                break;
+            }
+            next += 2;
+        }
+        let (module, item) = match parts.as_slice() {
+            ["document"] | ["document", "parser"] | ["document", "parser", "canonical"] => continue,
+            ["document", "parser", "canonical", item, ..] => ("document::parser::canonical", *item),
+            ["document", "parser", item, ..] => ("document::parser", *item),
+            ["document", item, ..] => ("document", *item),
+            _ => panic!(
+                "{} uses a noncanonical qualified syntax path: {}",
+                path.display(),
+                parts.join("::")
+            ),
+        };
+        // Imports and qualified references share exactly one item allowlist.
+        assert_allowed_mech_import(path, &format!("usemech_syntax::{module}::{{{item}}};"));
+    }
+}
 
+fn assert_canonical_only(path: &Path, evidence: &str) {
+    assert_allowed_qualified_syntax_paths(path, evidence);
+    let uncommented = strip_rust_comments(evidence);
+    let evidence = uncommented.as_str();
     let compact = evidence
         .chars()
         .filter(|character| !character.is_whitespace())
@@ -1081,19 +1443,14 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         .replace("r#", "");
     let normalized = compact.replace(['{', '}'], "");
     for forbidden in [
-        concat!("mech_syntax::", "parser"),
-        concat!("mech_syntax::", "parse"),
-        concat!("usemech_syntax", "as"),
-        concat!("mech_syntax::", "{"),
-        concat!("mech_syntax::", "*"),
-        concat!("externcratemech_", "syntax"),
-        concat!("mech_syntax::document::", "lower"),
         concat!("::", "lower"),
-        concat!("document::", "lower::", "legacy"),
         concat!("usemech_", "core"),
         concat!("externcratemech_", "core"),
         concat!("mech_core::", "Program"),
     ] {
+        if behavioral_evidence(path) && forbidden == concat!("usemech_", "core") {
+            continue; // The import parser above checks this file's exact runtime-type allowance.
+        }
         assert!(
             !compact.contains(forbidden) && !normalized.contains(forbidden),
             "{} imports forbidden certification authority {forbidden}",
@@ -1101,6 +1458,10 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
         );
     }
     assert!(!compact.contains(concat!("lower/", "legacy")));
+}
+
+fn behavioral_evidence(path: &Path) -> bool {
+    path.ends_with("src/engine/tests/canonical_source_completion.rs")
 }
 
 fn assert_allowed_mech_import(path: &Path, declaration: &str) {
@@ -1113,6 +1474,46 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .strip_prefix("use::")
         .map(|path| format!("use{path}"))
         .unwrap_or(declaration);
+    if behavioral_evidence(path) && declaration.contains("mech_core") {
+        let allowed = if let Some(items) = declaration
+            .strip_prefix(concat!("usemech_", "core::{"))
+            .and_then(|items| items.strip_suffix("};"))
+        {
+            items
+                .split(',')
+                .filter(|item| !item.is_empty())
+                .all(|item| {
+                    matches!(
+                        item,
+                        "FunctionCatalogBuilder"
+                            | "ReactiveInstanceId"
+                            | "ResidentValueRef"
+                            | "ValueDataDraftasData"
+                    )
+                })
+        } else if let Some(items) = declaration
+            .strip_prefix(concat!("usemech_", "core::snapshot::{"))
+            .and_then(|items| items.strip_suffix("};"))
+        {
+            items
+                .split(',')
+                .filter(|item| !item.is_empty())
+                .all(|item| {
+                    matches!(
+                        item,
+                        "MapEntryDraft" | "NamedValueDraft" | "TableColumnDraft"
+                    )
+                })
+        } else {
+            false
+        };
+        assert!(
+            allowed,
+            "{} imports outside the behavioral runtime-type allowance: {declaration}",
+            path.display()
+        );
+        return;
+    }
     assert!(
         !declaration.contains("mech_core"),
         "{} imports forbidden certification authority mech_core",
@@ -1145,7 +1546,12 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .strip_prefix("usemech_syntax::document::parser::{")
         .and_then(|items| items.strip_suffix("};"))
     {
-        let allowed = ["canonical_rule_id", "canonical_rule_name", "rules"];
+        let allowed = [
+            "canonical_rule_id",
+            "canonical_rule_name",
+            "rules",
+            "MIN_PREFIX_PRESERVING_EVENTS",
+        ];
         items
             .split(',')
             .filter(|item| !item.is_empty())
@@ -1157,6 +1563,15 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
         .and_then(|items| items.strip_suffix("};"))
     {
         let allowed = [
+            "DiagnosticPhase",
+            "FixApplicability",
+            "FoundSyntax",
+            "NormalizedDiagnostic",
+            "NormalizedDiagnosticFix",
+            "NormalizedDiagnosticLabel",
+            "Severity",
+            "SyntaxElement",
+            "TextEdit",
             "ArgumentListSyntax",
             "ArrayPatternSyntax",
             "AstNode",
@@ -1263,6 +1678,69 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         concat!("mech_syntax/* detached path comment */::", "parse(\"1\");"),
         concat!("mech_syntax// detached path comment\n::", "parse(\"1\");"),
         concat!("mech_syntax::r#", "parse(\"1\");"),
+        concat!("mech_syntax::document::", "parse_document(source, config);"),
+        concat!(
+            "::mech_syntax::document::",
+            "parse_syntax(source, root, config);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::",
+            "parse_document(source, config);"
+        ),
+        concat!(
+            "mech_syntax::document/* path gap */::parser::r#",
+            "parse_syntax(source, root, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "parse_fragment(source, FragmentKind::Expression, config);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::",
+            "parse_fragment(source, FragmentKind::VariableDefine, config);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::fragment::",
+            "parse_fragment(source, FragmentKind::Expression, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "DocumentSession::new(source, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "incremental::DocumentSession::new_with_document(document, source, config);"
+        ),
+        concat!(
+            "mech_syntax::document::",
+            "incremental::session::DocumentSession::new(source, config);"
+        ),
+        concat!(
+            "mech_syntax::document/* path gap */::r#incremental::reparse::",
+            "reparse(snapshot, edits, config, ids);"
+        ),
+        concat!(
+            "fn bypass() { use mech_syntax as syntax; ",
+            "syntax::expression(input); }"
+        ),
+        concat!(
+            "fn bypass() { use {::mech_syntax as syntax}; ",
+            "syntax::expression(input); }"
+        ),
+        concat!("let quote = '\"'; mech_syntax::", "expression(input);"),
+        concat!("let slash = '/'; mech_syntax::", "expression(input);"),
+        concat!("mech_syntax::expressions::", "expression(input);"),
+        concat!("mech_syntax::", "expression(input);"),
+        concat!("mech_syntax::", "ParseString::new(&graphemes);"),
+        concat!("mech_syntax::structures::", "matrix(input);"),
+        concat!(
+            "return mech_syntax /* gap */ :: expressions :: ",
+            "expression(input);"
+        ),
+        concat!(
+            "mech_syntax::document::parser::mech::",
+            "parse_expression(context);"
+        ),
         "pub use mech_syntax::document::*; lower_legacy_grammar();",
         "pub(crate) use mech_syntax::document::*; lower_legacy_grammar();",
     ] {
@@ -1277,4 +1755,71 @@ fn canonical_authority_gate_rejects_glob_and_alias_routes() {
         Path::new("fixture.rs"),
         "use ::mech_syntax::document::{AstNode};",
     );
+}
+
+#[test]
+fn typed_access_evidence_ignores_snapshot_identity_but_retains_accessor_text() {
+    let parse = |text, document, revision| {
+        parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(document), Revision(revision), text).unwrap(),
+            canonical_rule_id("var").unwrap(),
+            ParseConfig::default(),
+        )
+        .unwrap()
+    };
+    // Distinct Rust wrapper types expose the same canonical accessor result.
+    #[derive(Clone)]
+    struct Accessor<const LOCATION: usize>(SyntaxNode);
+    impl<const LOCATION: usize> AstNode for Accessor<LOCATION> {
+        fn can_cast(_: mech_syntax::document::SyntaxKind) -> bool {
+            true
+        }
+        fn cast(syntax: SyntaxNode) -> Option<Self> {
+            Some(Self(syntax))
+        }
+        fn syntax(&self) -> &SyntaxNode {
+            &self.0
+        }
+    }
+    let first = parse("alpha", 1, 1);
+    let mut original = StableHash::new();
+    let mut relocated = StableHash::new();
+    hash_node(&mut original, "value", Some(Accessor::<1>(first.syntax())));
+    hash_node(&mut relocated, "value", Some(Accessor::<2>(first.syntax())));
+    assert_eq!(original.0, relocated.0);
+    let same = parse("alpha", 99, 500);
+    let changed = parse("omega", 1, 1);
+    assert_eq!(
+        typed_access_hash("var", &first.syntax()),
+        typed_access_hash("var", &same.syntax())
+    );
+    assert_ne!(
+        typed_access_hash("var", &first.syntax()),
+        typed_access_hash("var", &changed.syntax())
+    );
+}
+
+#[test]
+fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_types() {
+    let path = Path::new("src/engine/tests/canonical_source_completion.rs");
+    assert_canonical_only(
+        path,
+        concat!(
+            "use mech_",
+            "core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft as Data};"
+        ),
+    );
+    for evidence in [
+        "use mech_syntax::document::*;",
+        concat!("use mech_syntax::document::", "lower::*;"),
+        concat!("use mech_", "core::{Program};"),
+        concat!("use mech_", "core::*;"),
+        concat!("use mech_", "core::{FunctionCatalogBuilder, Program};"),
+        concat!("use mech_", "core::snapshot::{Value};"),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| assert_canonical_only(path, evidence)).is_err(),
+            "{evidence}"
+        );
+    }
 }

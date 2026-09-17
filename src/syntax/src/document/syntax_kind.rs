@@ -20,6 +20,11 @@ macro_rules! define_syntax_kinds {
     }
 
     impl SyntaxKind {
+      /// Canonical schema name, independent of Debug formatting and numeric layout.
+      pub const fn name(self) -> &'static str {
+        match self { $( Self::$kind => stringify!($kind), )+ }
+      }
+
       pub const fn is_token(self) -> bool {
         match self {
           $( Self::$kind => syntax_kind_is_token!($category), )+

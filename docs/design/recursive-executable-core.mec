@@ -1,7 +1,7 @@
 Recursive Executable-Core Contract
 ===============================================================================
 
-Status: S2 recursive-core recovery complete; registry inactive.
+Status: S2 recovery and S3 typed views complete; S4 semantics and S5 certification open; registry inactive.
 
 Current canonical progress remains 328 / 539. The component implements clean,
 lossless recognition and local malformed-input recovery for all 80 rules but
@@ -276,10 +276,15 @@ This sequence records the plan used to reach Phase 2I-C. The combined 2I-D and
 compatibility lowering and cross-parser parity with canonical typed syntax,
 engine-owned source semantics, and specification-derived certification.
 
-The component implements clean recognition, local lossless recovery, typed
-views, engine-owned source semantics, and canonical certification for all 80
-mutually recursive productions against the frozen schema. All 80 rules remain
-unactivated until the atomic S6 registry change.
+Clean recognition, local lossless recovery, and typed views cover all 80
+mutually recursive productions against the frozen schema. S4 engine-owned
+source semantics and S5 canonical certification remain partially implemented:
+comprehension and pattern witnesses now produce validated artifacts, and the
+source-completion behavior suite passes. FSM lowering still blocks artifact
+certification. Resident comprehensions now borrow tuple, array, and tagged-pattern
+components for primitive bindings, including repeated-binding checks. Composite
+bindings/yields, computed pattern blocks, and nested control remain unfinished. S6 activation prerequisites are not yet satisfied; the 80-rule
+registry remains inactive on S5 until those gates are complete.
 
 Shared parenthesis, bracket, brace, colon, identifier, and kind prefixes are
 handled without exponential reparsing. Expression-level set and matrix

@@ -8,7 +8,8 @@ use mech_core::{
 };
 use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
-use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
+use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
     AstNode, DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, VariableDefineSyntax,
 };
@@ -121,16 +122,34 @@ fn expected_error_families_also_have_positive_call_and_literal_execution() {
 
 #[test]
 fn table_join_has_real_resident_output_after_artifact_roundtrip() {
-    let expected = Data::Table(
-        vec![TableColumnDraft {
-            name: "a".to_owned(),
-            values: vec![Data::U8(1)].into_boxed_slice(),
-        }]
-        .into_boxed_slice(),
-    );
+    let expected = |right| {
+        Data::Table(
+            vec![
+                TableColumnDraft {
+                    name: "a".to_owned(),
+                    values: vec![Data::U8(1)].into_boxed_slice(),
+                },
+                TableColumnDraft {
+                    name: "left".to_owned(),
+                    values: vec![Data::U8(7)].into_boxed_slice(),
+                },
+                TableColumnDraft {
+                    name: "right".to_owned(),
+                    values: vec![f(right)].into_boxed_slice(),
+                },
+            ]
+            .into_boxed_slice(),
+        )
+    };
+    // Both operands have unmatched rows and distinct payload columns. The
+    // right payload changes after activation, so neither passthrough, a cross
+    // product, nor a cached result can satisfy both expected turns.
     execute(
-        "x := (|a<u8>|1u8|) ⋈ (|a<u8>|1u8|)",
-        [(Vec::new(), expected.clone()), (Vec::new(), expected)],
+        "x := (|a<u8> left<u8>|1u8 7u8|2u8 8u8|) ⋈ (|a<u8> right<f64>|1u8 signal<f64>|3u8 90|)",
+        [
+            (vec![ResidentValueRef::F64(&[3.0])], expected(3.0)),
+            (vec![ResidentValueRef::F64(&[9.0])], expected(9.0)),
+        ],
     );
 }
 
@@ -270,6 +289,58 @@ fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
             &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
             offending,
             "{source}",
+        );
+    }
+}
+
+#[test]
+fn structured_patterns_read_live_components_and_reject_partial_matches() {
+    let tuple = |a, b| Data::Tuple(vec![f(a), f(b)].into_boxed_slice());
+    for (source, inputs, expected) in [
+        (
+            "out := [x + y | (x,y) <- signal<[(f64,f64)]:1,2>]",
+            [
+                vec![tuple(1.0, 2.0), tuple(3.0, 4.0)],
+                vec![tuple(8.0, 2.0), tuple(3.0, 4.0)],
+            ],
+            [vec![3.0, 7.0], vec![10.0, 7.0]],
+        ),
+        (
+            "out := [x | (x,x) <- signal<[(f64,f64)]:1,2>]",
+            [
+                vec![tuple(2.0, 2.0), tuple(3.0, 3.0)],
+                vec![tuple(8.0, 2.0), tuple(3.0, 3.0)],
+            ],
+            [vec![2.0, 3.0], vec![3.0]],
+        ),
+        (
+            "out := [x | [x,x] <- signal<[[f64]:1,2]:1,2>]",
+            [
+                vec![matrix(&[2.0, 2.0]), matrix(&[3.0, 3.0])],
+                vec![matrix(&[8.0, 2.0]), matrix(&[3.0, 3.0])],
+            ],
+            [vec![2.0, 3.0], vec![3.0]],
+        ),
+    ] {
+        let artifact = compile(source).compile_artifact().unwrap();
+        let inputs = inputs.map(|items| {
+            [Some(
+                mech_core::ValueDraft {
+                    schema: artifact.inputs()[0].schema,
+                    shape_values: Box::new([]),
+                    data: Data::Matrix(items.into_boxed_slice()),
+                }
+                .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                    artifact.schemas(),
+                ))
+                .unwrap(),
+            )]
+        });
+        execute(
+            source,
+            inputs.iter().zip(expected).map(|(input, expected)| {
+                (vec![ResidentValueRef::Snapshot(input)], matrix(&expected))
+            }),
         );
     }
 }
