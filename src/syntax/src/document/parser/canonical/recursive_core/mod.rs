@@ -189,7 +189,7 @@ pub(super) fn child_result(
 
 pub(super) fn finish_provisional_marker(parser: &mut Parser<'_>, marker: Marker, kind: SyntaxKind) {
     if parser.is_halted() {
-        marker.complete(parser, kind);
+        marker.complete_with_flags(parser, kind, crate::document::NodeFlags::PROVISIONAL);
     } else {
         marker.abandon(parser);
     }

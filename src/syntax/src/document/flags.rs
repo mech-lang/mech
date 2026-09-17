@@ -46,6 +46,9 @@ impl NodeFlags {
     pub const REPARSE_ROOT: Self = Self(1 << 2);
     pub const CONTAINS_ERROR: Self = Self(1 << 3);
     pub const CONTAINS_MISSING: Self = Self(1 << 4);
+    /// An unselected grammar wrapper retained solely to balance resource finalization.
+    /// This flag is local to the wrapper and is not inherited by its ancestors.
+    pub const PROVISIONAL: Self = Self(1 << 5);
 }
 
 impl TokenFlags {

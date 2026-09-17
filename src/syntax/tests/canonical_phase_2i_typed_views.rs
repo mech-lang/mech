@@ -13,9 +13,8 @@ use mech_syntax::document::{
     LiteralSyntax, LiteralValueSyntax, MapSyntax, MatchArmSyntax, MatrixSyntax, NodeFlags, NodeId,
     ParentheticalExpressionSyntax, ParseConfig, ParseLimits, PatternArrayItemSyntax,
     RangeExpressionSyntax, RangeSubscriptSyntax, RecordSyntax, RecursiveCoreSyntax,
-    RecursiveSyntaxNode, Revision, StructureSyntax, StructureValueSyntax, SubscriptItemSyntax,
-    SyntaxKind, SyntaxNode, TableKindSyntax, TextSize, TextSnapshot, TokenFlags, TokenId,
-    phase_2i_node_kind, text_hash,
+    RecursiveSyntaxNode, Revision, SubscriptItemSyntax, SyntaxKind, SyntaxNode, TableKindSyntax,
+    TextSize, TextSnapshot, TokenFlags, TokenId, phase_2i_node_kind, text_hash,
 };
 
 fn repository_root() -> PathBuf {
@@ -303,13 +302,22 @@ fn typed_roles_follow_parser_boundaries_and_recovery_ownership() {
         ParseConfig::default(),
     )
     .unwrap();
-    let structure =
-        StructureSyntax::cast(find_kind(&recovered.syntax(), SyntaxKind::Structure).unwrap())
-            .unwrap();
-    assert!(matches!(
-        structure.value(),
-        Some(StructureValueSyntax::MatrixComprehension(_))
-    ));
+    assert_eq!(recovered.outcome, CanonicalRuleOutcome::Committed);
+    assert!(find_kind(&recovered.syntax(), SyntaxKind::Structure).is_none());
+    let factor = find_matrix_comprehension_factor(&recovered.syntax())
+        .expect("recovered matrix comprehension keeps its selected factor form");
+    let Some(FactorValueSyntax::MatrixComprehension(comprehension)) = factor.value() else {
+        panic!("recovered factor owns the comprehension directly");
+    };
+    assert!(comprehension.value().is_some());
+    assert_eq!(comprehension.qualifiers().len(), 1);
+    assert!(
+        comprehension
+            .closing_delimiter()
+            .unwrap()
+            .flags()
+            .contains(TokenFlags::MISSING)
+    );
 
     let transposed =
         parse_canonical_phase_2i_rule_for_test(source("x'"), rules::FACTOR, ParseConfig::default())

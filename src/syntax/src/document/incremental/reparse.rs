@@ -399,7 +399,11 @@ fn splice_node(
         return None;
     }
     let explicit = NodeFlags(
-        node.flags.0 & (NodeFlags::ERROR.0 | NodeFlags::MISSING.0 | NodeFlags::REPARSE_ROOT.0),
+        node.flags.0
+            & (NodeFlags::ERROR.0
+                | NodeFlags::MISSING.0
+                | NodeFlags::REPARSE_ROOT.0
+                | NodeFlags::PROVISIONAL.0),
     );
     let flags = propagated_flags(node.kind, explicit, &children);
     let rebuilt = Arc::new(GreenNode {
@@ -703,6 +707,38 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn subtree_splices_preserve_local_provisional_selection_flags() {
+        let mut ids = IdGenerator::new();
+        let mut builder = crate::document::GreenBuilder::new(&mut ids);
+        builder.start_node(SyntaxKind::Kind);
+        builder.start_node_with_flags(SyntaxKind::KindMap, NodeFlags::PROVISIONAL);
+        builder.start_node(SyntaxKind::KindSet);
+        builder.start_node(SyntaxKind::KindScalar);
+        builder.token(SyntaxKind::IdentifierToken, "u8").unwrap();
+        let target = builder.finish_node().unwrap();
+        builder.finish_node().unwrap();
+        builder.finish_node().unwrap();
+        builder.finish_node().unwrap();
+        let root = builder.finish().unwrap();
+        let mut builder = crate::document::GreenBuilder::new(&mut ids);
+        builder.start_node(SyntaxKind::KindScalar);
+        builder.token(SyntaxKind::IdentifierToken, "u16").unwrap();
+        builder.finish_node().unwrap();
+        let replacement = builder.finish().unwrap();
+        let (rebuilt, changed) = splice_node(&root, target.id, replacement, &mut ids).unwrap();
+        assert!(changed);
+        assert!(!rebuilt.flags.contains(NodeFlags::PROVISIONAL));
+        let GreenElement::Node(map) = &rebuilt.children[0] else {
+            panic!("retained map wrapper");
+        };
+        assert!(map.flags.contains(NodeFlags::PROVISIONAL));
+        let GreenElement::Node(set) = &map.children[0] else {
+            panic!("selected set");
+        };
+        assert!(!set.flags.contains(NodeFlags::PROVISIONAL));
+    }
 
     fn absolute_diagnostic(
         ids: &mut IdGenerator,

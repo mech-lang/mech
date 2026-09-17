@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use crate::document::{AstNode, ExpressionSyntax, SyntaxKind, SyntaxToken, VariableDefineSyntax};
 
-use super::{PatternSyntax, child, children, direct_token};
+use super::{MatrixColumnSyntax, MatrixRowSyntax, PatternSyntax, child, children, direct_token};
 
 recursive_ast_node!(ComprehensionQualifierSyntax, ComprehensionQualifier);
 recursive_ast_node!(GeneratorSyntax, Generator);
@@ -62,6 +62,18 @@ impl GeneratorSyntax {
     }
 }
 
+// Resource finalization can retain the provisional matrix row/column around
+// the comprehension body. Read those exact physical owners in the shared tree.
+fn comprehension_body(syntax: &crate::document::SyntaxNode) -> crate::document::SyntaxNode {
+    if syntax.kind() == SyntaxKind::MatrixComprehension
+        && let Some(row) = child::<MatrixRowSyntax>(syntax)
+        && let Some(column) = child::<MatrixColumnSyntax>(row.syntax())
+    {
+        return column.syntax().clone();
+    }
+    syntax.clone()
+}
+
 macro_rules! comprehension_accessors {
     ($name:ident, $open:ident, $close:ident) => {
         impl $name {
@@ -70,19 +82,20 @@ macro_rules! comprehension_accessors {
             }
 
             pub fn value(&self) -> Option<ExpressionSyntax> {
-                child(&self.0)
+                child(&comprehension_body(&self.0))
             }
 
             pub fn bar(&self) -> Option<SyntaxToken> {
-                direct_token(&self.0, SyntaxKind::Bar, 0)
+                direct_token(&comprehension_body(&self.0), SyntaxKind::Bar, 0)
             }
 
             pub fn qualifiers(&self) -> Vec<ComprehensionQualifierSyntax> {
-                children(&self.0)
+                children(&comprehension_body(&self.0))
             }
 
             pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
                 direct_token(&self.0, SyntaxKind::$close, 0)
+                    .or_else(|| direct_token(&comprehension_body(&self.0), SyntaxKind::$close, 0))
             }
         }
     };

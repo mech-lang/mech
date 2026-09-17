@@ -10,7 +10,7 @@ use crate::document::{
 use super::{
     ExpressionBodySyntax, FormulaSyntax, FunctionCallSyntax, LiteralSyntax,
     MatrixComprehensionSyntax, PatternSyntax, SliceSyntax, StructureSyntax, VariableSyntax, child,
-    children, direct_token,
+    children, direct_token, selected_child,
 };
 
 recursive_ast_node!(FactorSyntax, Factor);
@@ -92,7 +92,7 @@ impl AstNode for FactorValueSyntax {
 
 impl FactorSyntax {
     pub fn value(&self) -> Option<FactorValueSyntax> {
-        child(&self.0)
+        selected_child(&self.0)
     }
 
     pub fn transpose(&self) -> Option<SyntaxToken> {

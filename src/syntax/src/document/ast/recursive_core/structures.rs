@@ -6,8 +6,8 @@ use crate::document::{
 };
 
 use super::{
-    KindAnnotationSyntax, MatrixComprehensionSyntax, child, children, direct_token, direct_tokens,
-    nth_child,
+    KindAnnotationSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax, child, children,
+    direct_token, direct_tokens, nth_child, selected_child,
 };
 
 recursive_ast_node!(StructureSyntax, Structure);
@@ -116,21 +116,27 @@ impl AstNode for StructureValueSyntax {
 
 impl StructureSyntax {
     pub fn value(&self) -> Option<StructureValueSyntax> {
-        child(&self.0)
+        selected_child(&self.0)
     }
 }
 
 impl MatrixSyntax {
+    fn role_owner(&self) -> SyntaxNode {
+        child::<MatrixComprehensionSyntax>(&self.0)
+            .map(|owner| owner.syntax().clone())
+            .unwrap_or_else(|| self.0.clone())
+    }
+
     pub fn rows(&self) -> Vec<MatrixRowSyntax> {
-        children(&self.0)
+        children(&self.role_owner())
     }
     pub fn opening_delimiter(&self) -> Option<SyntaxToken> {
-        direct_tokens(&self.0).into_iter().find(|token| {
+        direct_tokens(&self.role_owner()).into_iter().find(|token| {
             token.kind() == SyntaxKind::LeftBracket || is_box_corner(token, &["╭", "┌", "┏"], false)
         })
     }
     pub fn closing_delimiter(&self) -> Option<SyntaxToken> {
-        direct_tokens(&self.0)
+        direct_tokens(&self.role_owner())
             .into_iter()
             .filter(|token| {
                 token.kind() == SyntaxKind::RightBracket
@@ -261,14 +267,23 @@ named_field!(HeaderFieldSyntax);
 named_field!(TableFieldSyntax);
 
 impl MapSyntax {
+    fn role_owner(&self) -> SyntaxNode {
+        child::<SetSyntax>(&self.0)
+            .and_then(|set| child::<SetComprehensionSyntax>(set.syntax()))
+            .map(|owner| owner.syntax().clone())
+            .unwrap_or_else(|| self.0.clone())
+    }
+
     pub fn opening_brace(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::LeftBrace, 0)
+            .or_else(|| direct_token(&self.role_owner(), SyntaxKind::LeftBrace, 0))
     }
     pub fn entries(&self) -> Vec<MapEntrySyntax> {
-        children(&self.0)
+        children(&self.role_owner())
     }
     pub fn closing_brace(&self) -> Option<SyntaxToken> {
         direct_token(&self.0, SyntaxKind::RightBrace, 0)
+            .or_else(|| direct_token(&self.role_owner(), SyntaxKind::RightBrace, 0))
     }
 }
 
