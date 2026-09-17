@@ -1621,6 +1621,30 @@ fn typed_document_executes_only_eval_inline_mech_code() {
         .expect("eval inline Mech must enter document execution");
     assert_eq!(evaluated.source_map().nodes.len(), 1);
     assert_eq!(evaluated.source_map().nodes[0].operation, "math/add");
+
+    let comment = CanonicalSourceFrontend
+        .compile_document(&document("-- result: {1 + 2}\n"))
+        .expect("comment-only evaluated output must compile for presentation");
+    assert!(
+        comment
+            .document_outputs()
+            .iter()
+            .any(|output| { output.kind == mech_engine::SourceDocumentOutputKind::Inline })
+    );
+    assert!(comment.document_outputs().iter().any(|output| {
+        output.kind == mech_engine::SourceDocumentOutputKind::Program && !output.visible
+    }));
+}
+
+#[test]
+fn numbered_compute_section_uses_its_logical_title_as_the_region_name() {
+    let document = document("5. ekf-batch @compute\n--------------------\nanswer := 42\nanswer\n");
+    assert_eq!(
+        CanonicalSourceFrontend
+            .document_compute_regions(&document)
+            .unwrap(),
+        vec![("ekf-batch".to_owned(), mech_core::ComputePlacement::Compute,)]
+    );
 }
 
 #[test]
