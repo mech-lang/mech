@@ -13,7 +13,7 @@ use mech_compute::{
     ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId,
     ComputeProgram, ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
-use mech_core::{MResult, MechError, MechErrorKind, Program};
+use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
     ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
@@ -483,34 +483,6 @@ impl PreparedGpuKernel {
     }
 }
 
-#[cfg(test)]
-fn compile_named_compute_region(
-    document: &MechConfigDocument,
-    tree: &Program,
-    parsing: f64,
-    pointer: PointerInputHandle,
-) -> MResult<PreparedComputeRegion> {
-    let compiler_started = Instant::now();
-    let mut builder = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .host_factory(Box::new(PointerHostFactory::new(pointer)))?;
-    for host in document
-        .hosts
-        .iter()
-        .filter(|host| host.provider != "compute")
-    {
-        builder = builder.host_instance(host.clone());
-    }
-    if let Some(run) = &document.run {
-        for grant in &run.grants {
-            builder = builder.run_resource_grant(grant.clone());
-        }
-    }
-    let mut compiler = builder.build_compiler()?;
-    let catalog_setup = milliseconds(compiler_started);
-    prepare_compute_region(&mut compiler, tree, parsing, catalog_setup)
-}
-
 fn compile_named_compute_document_region(
     document: &MechConfigDocument,
     source: &SourceDocument,
@@ -546,17 +518,6 @@ pub(crate) fn prepare_compute_document_region(
 ) -> MResult<PreparedComputeRegion> {
     let artifact_started = Instant::now();
     let mixed = compiler.compile_mixed_document(document)?;
-    finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
-}
-
-pub(crate) fn prepare_compute_region(
-    compiler: &mut mech_runtime::ProgramCompiler,
-    tree: &Program,
-    parsing: f64,
-    catalog_setup: f64,
-) -> MResult<PreparedComputeRegion> {
-    let artifact_started = Instant::now();
-    let mixed = compiler.compile_mixed_tree(tree)?;
     finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
 }
 
@@ -2294,10 +2255,18 @@ state
     fn compile_fixture(config: &str, source: &str) -> (MechConfigDocument, PreparedComputeRegion) {
         let document =
             parse_config_document("test.mcfg", config, ConfigProfileOptions::default()).unwrap();
-        let tree = mech_syntax::parse(source).unwrap();
+        let source = SourceDocument::parse_resolved(
+            "test:mixed-compute",
+            Revision(0),
+            Arc::<str>::from(source),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        source.index().unwrap();
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let prepared =
+            compile_named_compute_document_region(&document, &source, 0.0, pointer).unwrap();
         (document, prepared)
     }
 
@@ -2381,8 +2350,16 @@ state
         );
         let pointer_index = configured_host_index(&document, "pointer").unwrap();
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
-        let prepared = compile_named_compute_region(&document, &tree, 0.0, pointer).unwrap();
+        let source = SourceDocument::parse_resolved(
+            "test:served-mixed-compute",
+            Revision(0),
+            Arc::<str>::from(SERVED_SOURCE),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        source.index().unwrap();
+        let prepared =
+            compile_named_compute_document_region(&document, &source, 0.0, pointer).unwrap();
         let inputs = initializer_values(&prepared.program, &prepared.initializers).unwrap();
 
         assert_eq!(prepared.region, "particle-field");
