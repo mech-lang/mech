@@ -115,7 +115,7 @@ fn visit_rust_files(path: &Path, files: &mut BTreeSet<PathBuf>) {
     {
         let path = entry.expect("read source-tree entry").path();
         if path.is_dir() {
-            // Each workspace package supplies its own source root. Test module
+            // Each discovered package supplies its own source root. Test module
             // names have no meaning here; only Rust cfg can exclude their code.
             if !path.join("Cargo.toml").is_file() && path.file_name().unwrap() != "target" {
                 visit_rust_files(&path, files);
@@ -135,8 +135,17 @@ struct RustToken<'source> {
 
 #[derive(Debug, Default)]
 struct SourceScan {
-    calls: BTreeMap<String, usize>,
+    call_sites: BTreeMap<String, BTreeSet<usize>>,
     prohibited_aliases: Vec<String>,
+}
+
+impl SourceScan {
+    fn call_counts(&self) -> BTreeMap<String, usize> {
+        self.call_sites
+            .iter()
+            .map(|(caller, sites)| (caller.clone(), sites.len()))
+            .collect()
+    }
 }
 
 fn quoted_literal_end(source: &str, start: usize, quote: u8) -> usize {
@@ -688,26 +697,43 @@ fn module_at(tokens: &[RustToken<'_>], index: usize, file_module: &[String]) -> 
     module
 }
 
-// Return a path relative to mech_syntax, resolving self/super against the
-// declaring Rust module (including #[path] modules supplied by the graph).
+type CrateNames = BTreeMap<String, ParserReexports>;
+
+fn default_crate_names() -> CrateNames {
+    BTreeMap::from([
+        ("mech_syntax".to_owned(), ParserReexports::SyntaxCrate),
+        ("mech".to_owned(), ParserReexports::RootCrate),
+    ])
+}
+
+// The syntax crate exports its parser module in full. The product exports a
+// smaller root surface plus the complete syntax crate under `syntax`.
+fn syntax_root_path(path: &[String], surface: ParserReexports) -> Option<Vec<String>> {
+    match surface {
+        ParserReexports::SyntaxCrate => Some(path.to_vec()),
+        ParserReexports::RootCrate => match path.first().map(String::as_str) {
+            Some("syntax") => Some(path[1..].to_vec()),
+            None | Some("parse" | "parse_mech" | "parser" | "*") => Some(path.to_vec()),
+            _ => None,
+        },
+        ParserReexports::None => None,
+    }
+}
+
+// Resolve external Cargo names and self/super against the declaring Rust
+// module. This preserves crate identity when a dependency is renamed.
 fn syntax_path(
     path: &[String],
     reexports: ParserReexports,
     module: &[String],
+    crate_names: &CrateNames,
 ) -> Option<Vec<String>> {
-    if path.first().is_some_and(|name| name == "mech_syntax") {
-        return Some(path[1..].to_vec());
+    if let Some(surface) = path.first().and_then(|name| crate_names.get(name)) {
+        return syntax_root_path(&path[1..], *surface);
     }
     if reexports == ParserReexports::RootCrate && path.first().is_some_and(|name| name == "syntax")
     {
         return Some(path[1..].to_vec());
-    }
-    if path.first().is_some_and(|name| name == "mech") {
-        let mut resolved = path[1..].to_vec();
-        if resolved.first().is_some_and(|name| name == "syntax") {
-            resolved.remove(0);
-        }
-        return Some(resolved);
     }
     if reexports == ParserReexports::None {
         return None;
@@ -730,12 +756,7 @@ fn syntax_path(
         _ => return None,
     }
     resolved.extend_from_slice(&path[cursor..]);
-    if reexports == ParserReexports::RootCrate
-        && resolved.first().is_some_and(|name| name == "syntax")
-    {
-        resolved.remove(0);
-    }
-    Some(resolved)
+    syntax_root_path(&resolved, reexports)
 }
 
 fn source_entrypoint(name: &str) -> bool {
@@ -751,6 +772,7 @@ fn parser_reference_len(
     reexports: ParserReexports,
     module: &[String],
     imported_parser: bool,
+    crate_names: &CrateNames,
 ) -> Option<usize> {
     // Never reinterpret a suffix of document::parser (or any other path) as
     // the retiring root parser module.
@@ -790,17 +812,66 @@ fn parser_reference_len(
     let resolved = if path.first().is_some_and(|name| name == "parser") && imported_parser {
         Some(path)
     } else {
-        syntax_path(&path, reexports, module)
+        syntax_path(&path, reexports, module, crate_names)
     }?;
     let entry = match resolved.as_slice() {
-        [name] => {
-            matches!(name.as_str(), "parse" | "parse_mech")
-                || reexports == ParserReexports::SyntaxCrate && source_entrypoint(name)
-        }
+        [name] => source_entrypoint(name),
         [parser, name] if parser == "parser" => source_entrypoint(name),
         _ => false,
     };
     entry.then_some(len)
+}
+
+fn opaque_syntax_reference_len(
+    tokens: &[RustToken<'_>],
+    start: usize,
+    reexports: ParserReexports,
+    module: &[String],
+    imported_parser: bool,
+    crate_names: &CrateNames,
+) -> Option<usize> {
+    let mut path = vec![tokens.get(start)?.text.to_owned()];
+    let mut len = 1;
+    loop {
+        if !tokens
+            .get(start + len)
+            .is_some_and(|token| token.text == ":")
+            || !tokens
+                .get(start + len + 1)
+                .is_some_and(|token| token.text == ":")
+        {
+            return None;
+        }
+        if tokens
+            .get(start + len + 2)
+            .is_some_and(|token| token.text == "$")
+            && tokens.get(start + len + 3).is_some_and(|token| {
+                token
+                    .text
+                    .chars()
+                    .next()
+                    .is_some_and(|character| character.is_alphabetic() || character == '_')
+            })
+        {
+            let resolved = if path.first().is_some_and(|name| name == "parser") && imported_parser {
+                Some(path)
+            } else {
+                syntax_path(&path, reexports, module, crate_names)
+            }?;
+            return (resolved.is_empty() || resolved.as_slice() == ["parser"]).then_some(len + 4);
+        }
+        let segment = tokens.get(start + len + 2)?;
+        if !segment
+            .text
+            .chars()
+            .next()
+            .is_some_and(|character| character.is_alphabetic() || character == '_')
+        {
+            return None;
+        }
+        path.push(segment.text.to_owned());
+        len += 3;
+    }
 }
 
 fn source_line(source: &str, offset: usize) -> usize {
@@ -824,13 +895,13 @@ fn flattened_imports(
             flattened_imports(&tree.tree, &path, result);
         }
         syn::UseTree::Name(tree) => {
-            if tree.ident != "self" {
+            if tree.ident != "self" || path.is_empty() {
                 path.push(identifier(&tree.ident));
             }
             result.push((path, None));
         }
         syn::UseTree::Rename(tree) => {
-            if tree.ident != "self" {
+            if tree.ident != "self" || path.is_empty() {
                 path.push(identifier(&tree.ident));
             }
             result.push((path, Some(identifier(&tree.rename))));
@@ -851,31 +922,37 @@ fn imports_retiring_parser(
     import: &[RustToken<'_>],
     reexports: ParserReexports,
     module: &[String],
+    crate_names: &CrateNames,
+    reexport_item: bool,
+    imported_parser: bool,
 ) -> bool {
     let source = compact_rust_header(import) + ";";
     let Ok(item) = syn::parse_str::<syn::ItemUse>(&source) else {
         // Opaque macro bodies can contain generated use trees (`paste!`,
         // metavariables). They cannot introduce an unreviewed syntax import.
-        return import
-            .iter()
-            .any(|token| matches!(token.text, "mech_syntax" | "mech"));
+        return import.iter().any(|token| {
+            crate_names.contains_key(token.text)
+                || imported_parser && token.text == "parser"
+                || (reexports != ParserReexports::None
+                    && matches!(token.text, "crate" | "self" | "super"))
+        });
     };
     let mut imports = Vec::new();
     flattened_imports(&item.tree, &[], &mut imports);
     imports.iter().any(|(path, alias)| {
-        let Some(resolved) = syntax_path(path, reexports, module) else {
+        let resolved = if imported_parser && path.first().is_some_and(|name| name == "parser") {
+            Some(path.clone())
+        } else {
+            syntax_path(path, reexports, module, crate_names)
+        };
+        let Some(resolved) = resolved else {
             return false;
         };
         match resolved.as_slice() {
             [] => alias.is_some(),
-            [name] if name == "*" => path != &["crate".to_owned(), "*".to_owned()],
-            [name]
-                if matches!(name.as_str(), "parse" | "parse_mech")
-                    || reexports == ParserReexports::SyntaxCrate && source_entrypoint(name) =>
-            {
-                true
-            }
-            [name] if name == "parser" => alias.is_some(),
+            [name] if name == "*" => reexport_item || path != &["crate".to_owned(), "*".to_owned()],
+            [name] if source_entrypoint(name) => true,
+            [name] if name == "parser" => reexport_item || alias.is_some(),
             [name, ..] if name == "parser" => true,
             _ => false,
         }
@@ -886,8 +963,9 @@ fn is_declared_root_parser_reexport(
     source_path: &str,
     import: &[RustToken<'_>],
     public_item: bool,
+    root_declaration: bool,
 ) -> bool {
-    if source_path != "src/lib.rs" || !public_item {
+    if source_path != "src/lib.rs" || !public_item || !root_declaration {
         return false;
     }
     let Ok(item) = syn::parse_str::<syn::ItemUse>(&(compact_rust_header(import) + ";")) else {
@@ -906,22 +984,29 @@ fn is_existing_syntax_parser_import(
     source_path: &str,
     import: &[RustToken<'_>],
     public_item: bool,
+    file_top_level: bool,
+    file_module: &[String],
 ) -> bool {
-    matches!(
-        (source_path, public_item),
-        ("src/syntax/src/lib.rs", true) | ("src/syntax/src/base.rs", false)
-    ) && import
-        .iter()
-        .map(|token| token.text)
-        .eq(["use", "crate", ":", ":", "parser", ":", ":", "*"])
+    file_top_level
+        && match (source_path, public_item) {
+            ("src/syntax/src/lib.rs", true) => file_module.is_empty(),
+            ("src/syntax/src/base.rs", false) => file_module == ["base"],
+            _ => false,
+        }
+        && import
+            .iter()
+            .map(|token| token.text)
+            .eq(["use", "crate", ":", ":", "parser", ":", ":", "*"])
 }
 
 fn is_declared_syntax_crate_reexport(
     source_path: &str,
     tokens: &[RustToken<'_>],
     index: usize,
+    root_declaration: bool,
 ) -> bool {
-    source_path == "src/lib.rs"
+    root_declaration
+        && source_path == "src/lib.rs"
         && index > 0
         && tokens[index - 1].text == "pub"
         && tokens
@@ -965,6 +1050,7 @@ fn parser_import_bindings(
     tokens: &[RustToken<'_>],
     reexports: ParserReexports,
     file_module: &[String],
+    crate_names: &CrateNames,
 ) -> Vec<(usize, usize, bool)> {
     let mut bindings = Vec::new();
     let mut blocks = Vec::new();
@@ -992,9 +1078,13 @@ fn parser_import_bindings(
                         .or(path.last())
                         .is_some_and(|name| name == "parser")
                     {
-                        let retiring =
-                            syntax_path(&path, reexports, &module_at(tokens, index, file_module))
-                                .is_some_and(|path| path == ["parser".to_owned()]);
+                        let retiring = syntax_path(
+                            &path,
+                            reexports,
+                            &module_at(tokens, index, file_module),
+                            crate_names,
+                        )
+                        .is_some_and(|path| path == ["parser".to_owned()]);
                         let start = blocks.last().copied().unwrap_or(0);
                         let end = blocks
                             .last()
@@ -1016,7 +1106,45 @@ fn scan_rust_source(source: &str, source_path: &str, reexports: ParserReexports)
         source_path,
         reexports,
         &file_module_path(source_path, reexports),
+        &default_crate_names(),
     )
+}
+
+fn imported_parser_at(bindings: &[(usize, usize, bool)], index: usize, fallback: bool) -> bool {
+    // Conditional imports in the same lexical scope are alternative bindings.
+    // A later canonical alternative cannot hide a possible retiring binding.
+    let scope = bindings
+        .iter()
+        .filter(|(start, end, _)| *start <= index && index < *end)
+        .map(|(start, _, _)| *start)
+        .max();
+    scope.map_or(fallback, |scope| {
+        bindings
+            .iter()
+            .any(|(start, end, retiring)| *start == scope && index < *end && *retiring)
+    })
+}
+
+fn restricted_visibility_before(tokens: &[RustToken<'_>], index: usize) -> bool {
+    if index == 0 || tokens[index - 1].text != ")" {
+        return false;
+    }
+    let mut depth = 0usize;
+    for cursor in (0..index).rev() {
+        match tokens[cursor].text {
+            ")" => depth += 1,
+            "(" => {
+                depth -= 1;
+                if depth == 0 {
+                    return cursor > 0
+                        && tokens[cursor - 1].text == "pub"
+                        && !tokens[cursor - 1].raw;
+                }
+            }
+            _ => {}
+        }
+    }
+    false
 }
 
 fn scan_rust_source_in_module(
@@ -1024,16 +1152,26 @@ fn scan_rust_source_in_module(
     source_path: &str,
     reexports: ParserReexports,
     file_module: &[String],
+    crate_names: &CrateNames,
 ) -> SourceScan {
     let tokens = production_tokens(source);
     let scopes = function_scopes(&tokens);
     let bare_parser = bare_parser_available(&tokens, source_path, reexports);
-    let parser_bindings = parser_import_bindings(&tokens, reexports, file_module);
+    let parser_bindings = parser_import_bindings(&tokens, reexports, file_module, crate_names);
     let mut scan = SourceScan::default();
     let mut imports = Vec::new();
 
+    let mut brace_depth = 0usize;
     for (index, token) in tokens.iter().enumerate() {
+        let file_top_level = brace_depth == 0;
+        let root_declaration = file_top_level && file_module.is_empty();
+        match token.text {
+            "{" => brace_depth += 1,
+            "}" => brace_depth = brace_depth.saturating_sub(1),
+            _ => {}
+        }
         let public_item = index > 0 && tokens[index - 1].text == "pub";
+        let restricted_item = token.text == "use" && restricted_visibility_before(&tokens, index);
         if token.text == "use"
             && !token.raw
             && !tokens.get(index + 1).is_some_and(|token| token.text == "<")
@@ -1044,9 +1182,26 @@ fn scan_rust_source_in_module(
                 .map_or(tokens.len(), |offset| index + offset);
             imports.push(index..end);
             let import = &tokens[index..end];
-            if imports_retiring_parser(import, reexports, &module_at(&tokens, index, file_module))
-                && !is_declared_root_parser_reexport(source_path, import, public_item)
-                && !is_existing_syntax_parser_import(source_path, import, public_item)
+            if imports_retiring_parser(
+                import,
+                reexports,
+                &module_at(&tokens, index, file_module),
+                crate_names,
+                public_item || restricted_item,
+                imported_parser_at(&parser_bindings, index, bare_parser),
+            ) && !is_declared_root_parser_reexport(
+                source_path,
+                import,
+                public_item,
+                root_declaration,
+            ) && (restricted_item
+                || !is_existing_syntax_parser_import(
+                    source_path,
+                    import,
+                    public_item,
+                    file_top_level,
+                    file_module,
+                ))
             {
                 scan.prohibited_aliases.push(format!(
                     "line {} imports or aliases the retiring parser",
@@ -1055,16 +1210,18 @@ fn scan_rust_source_in_module(
             }
         }
         if token.text == "extern"
+            && !token.raw
             && tokens
                 .get(index + 1)
                 .is_some_and(|token| token.text == "crate")
-            && tokens
-                .get(index + 2)
-                .is_some_and(|token| matches!(token.text, "mech_syntax" | "mech"))
+            && tokens.get(index + 2).is_some_and(|token| {
+                crate_names.contains_key(token.text)
+                    || token.text == "self" && reexports != ParserReexports::None
+            })
             && tokens
                 .get(index + 3)
                 .is_some_and(|token| token.text == "as")
-            && !is_declared_syntax_crate_reexport(source_path, &tokens, index)
+            && !is_declared_syntax_crate_reexport(source_path, &tokens, index, root_declaration)
         {
             scan.prohibited_aliases.push(format!(
                 "line {} aliases the mech_syntax crate",
@@ -1075,29 +1232,52 @@ fn scan_rust_source_in_module(
 
     let mut index = 0usize;
     while index < tokens.len() {
-        let bare_reference = bare_parser
-            && (tokens[index].text == "parse"
-                || tokens[index].text == "parse_mech" && source_path != "src/syntax/src/parser.rs")
-            && (index == 0 || !matches!(tokens[index - 1].text, "fn" | "." | ":"));
-        let Some(path_len) = matches!(
+        if let Some(path_len) = opaque_syntax_reference_len(
+            &tokens,
+            index,
+            reexports,
+            &module_at(&tokens, index, file_module),
+            imported_parser_at(&parser_bindings, index, bare_parser),
+            crate_names,
+        ) {
+            scan.prohibited_aliases.push(format!(
+                "line {} constructs an opaque retiring parser reference",
+                source_line(source, tokens[index].offset)
+            ));
+            index += path_len;
+            continue;
+        }
+        let bare_primary = matches!(tokens[index].text, "parse" | "parse_mech")
+            && source_path != "src/syntax/src/parser.rs";
+        let bare_alternate = matches!(
             tokens[index].text,
-            "mech_syntax" | "mech" | "syntax" | "crate" | "self" | "super" | "parser"
-        )
-        .then(|| {
-            parser_reference_len(
-                &tokens,
-                index,
-                reexports,
-                &module_at(&tokens, index, file_module),
-                parser_bindings
-                    .iter()
-                    .filter(|(start, end, _)| *start <= index && index < *end)
-                    .max_by_key(|(start, _, _)| *start)
-                    .map_or(bare_parser, |(_, _, retiring)| *retiring),
-            )
-        })
-        .flatten()
-        .or_else(|| bare_reference.then_some(1)) else {
+            "program" | "mech_code" | "mech_code_alt"
+        ) && matches!(
+            source_path,
+            "src/syntax/src/base.rs" | "src/syntax/src/lib.rs"
+        );
+        let bare_reference = bare_parser
+            && (bare_primary || bare_alternate)
+            && (index == 0 || !matches!(tokens[index - 1].text, "fn" | "." | ":"));
+        let qualified = crate_names.contains_key(tokens[index].text)
+            || matches!(
+                tokens[index].text,
+                "syntax" | "crate" | "self" | "super" | "parser"
+            );
+        let Some(path_len) = qualified
+            .then(|| {
+                parser_reference_len(
+                    &tokens,
+                    index,
+                    reexports,
+                    &module_at(&tokens, index, file_module),
+                    imported_parser_at(&parser_bindings, index, bare_parser),
+                    crate_names,
+                )
+            })
+            .flatten()
+            .or_else(|| bare_reference.then_some(1))
+        else {
             index += 1;
             continue;
         };
@@ -1119,7 +1299,10 @@ fn scan_rust_source_in_module(
                     .filter(|(_, body, end)| *body < index && index < *end)
                     .max_by_key(|(_, body, _)| *body)
                     .map_or("<module>", |(name, _, _)| name.as_str());
-                *scan.calls.entry(caller.to_owned()).or_insert(0) += 1;
+                scan.call_sites
+                    .entry(caller.to_owned())
+                    .or_default()
+                    .insert(reference[0].offset);
             } else {
                 scan.prohibited_aliases.push(format!(
                     "line {} takes or aliases a retiring parser function",
@@ -1132,51 +1315,334 @@ fn scan_rust_source_in_module(
     scan
 }
 
-fn workspace_metadata(root: &Path) -> &'static serde_json::Value {
-    static METADATA: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
-    METADATA.get_or_init(|| {
-        let output = std::process::Command::new(env!("CARGO"))
-            .args([
-                "metadata",
-                "--format-version",
-                "1",
-                "--no-deps",
-                "--offline",
-                "--locked",
-            ])
-            .current_dir(root)
-            .output()
-            .expect("run locked workspace metadata");
+fn cargo_metadata(root: &Path, no_dependencies: bool) -> serde_json::Value {
+    let mut command = std::process::Command::new(env!("CARGO"));
+    command.args([
+        "metadata",
+        "--format-version",
+        "1",
+        "--all-features",
+        "--offline",
+        "--locked",
+    ]);
+    if no_dependencies {
+        command.arg("--no-deps");
+    }
+    let output = command
+        .current_dir(root)
+        .output()
+        .expect("run locked dependency metadata");
+    assert!(
+        output.status.success(),
+        "dependency metadata for {} failed: {}",
+        root.display(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("dependency metadata JSON")
+}
+
+fn manifest_declarations(manifest: &Path) -> serde_json::Value {
+    // Cargo supplies the TOML parser only. Isolate config loading completely:
+    // manifest-relative paths and patch-source matching are handled below,
+    // never by Cargo config precedence or config-relative path rules.
+    let scratch = CensusFixture::new();
+    let output = std::process::Command::new(env!("CARGO"))
+        .env_clear()
+        .env("CARGO_HOME", scratch.0.join("cargo-home"))
+        .current_dir(&scratch.0)
+        .args(["-Z", "unstable-options", "--config"])
+        .arg(manifest)
+        .args(["config", "get", "--format", "json", "--locked", "--offline"])
+        .output()
+        .expect("read manifest declarations with Cargo");
+    assert!(
+        output.status.success(),
+        "Cargo manifest extraction failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("Cargo manifest declaration JSON")
+}
+
+#[derive(Debug)]
+struct LocalPatch {
+    source: String,
+    package: String,
+    manifest: PathBuf,
+}
+
+fn declared_local_patches(root: &Path) -> Vec<LocalPatch> {
+    let declarations = manifest_declarations(&root.join("Cargo.toml"));
+    let mut patches = Vec::new();
+    for (source, entries) in declarations["patch"].as_object().into_iter().flatten() {
+        for (alias, patch) in entries.as_object().expect("patch entries") {
+            let Some(path) = patch["path"].as_str() else {
+                continue;
+            };
+            let manifest = root
+                .join(path)
+                .join("Cargo.toml")
+                .canonicalize()
+                .expect("local patch manifest");
+            if manifest.starts_with(root) {
+                patches.push(LocalPatch {
+                    source: source.clone(),
+                    package: patch["package"].as_str().unwrap_or(alias).to_owned(),
+                    manifest,
+                });
+            }
+        }
+    }
+    patches
+}
+
+fn patch_matches_dependency(patch: &LocalPatch, dependency: &serde_json::Value) -> bool {
+    if dependency["name"].as_str() != Some(patch.package.as_str()) {
+        return false;
+    }
+    let Some(source) = dependency["source"].as_str() else {
+        return false;
+    };
+    if patch.source == "crates-io" {
+        return source == "registry+https://github.com/rust-lang/crates.io-index";
+    }
+    source
+        .strip_prefix("registry+")
+        .is_some_and(|source| source == patch.source)
+        || source
+            .strip_prefix("git+")
+            .is_some_and(|source| source.split(['?', '#']).next() == Some(patch.source.as_str()))
+}
+
+fn include_local_packages(
+    root: &Path,
+    metadata: &serde_json::Value,
+    packages: &mut BTreeMap<PathBuf, serde_json::Value>,
+    pending: &mut Vec<PathBuf>,
+) {
+    // Cargo lists development packages in metadata even when they cannot be
+    // reached by any production build. Traverse its resolved non-dev edges
+    // from workspace packages, retaining external intermediaries along the way.
+    let nodes = metadata["resolve"]["nodes"]
+        .as_array()
+        .expect("Cargo resolve nodes")
+        .iter()
+        .map(|node| (node["id"].as_str().expect("resolved package id"), node))
+        .collect::<BTreeMap<_, _>>();
+    let mut reachable = BTreeSet::new();
+    let mut work = metadata["workspace_members"]
+        .as_array()
+        .expect("workspace members")
+        .iter()
+        .map(|id| id.as_str().expect("workspace package id"))
+        .collect::<Vec<_>>();
+    while let Some(id) = work.pop() {
+        if !reachable.insert(id) {
+            continue;
+        }
+        for dependency in nodes.get(id).expect("workspace dependency resolve node")["deps"]
+            .as_array()
+            .expect("resolved dependencies")
+        {
+            if dependency["dep_kinds"]
+                .as_array()
+                .expect("dependency kinds")
+                .iter()
+                .any(|kind| kind["kind"].as_str() != Some("dev"))
+            {
+                work.push(dependency["pkg"].as_str().expect("resolved dependency id"));
+            }
+        }
+    }
+    for package in metadata["packages"].as_array().expect("Cargo packages") {
+        let manifest = Path::new(package["manifest_path"].as_str().expect("manifest path"))
+            .canonicalize()
+            .expect("canonical package manifest");
+        if reachable.contains(package["id"].as_str().expect("package id"))
+            && manifest.starts_with(root)
+            && !packages.contains_key(&manifest)
+        {
+            pending.push(manifest.clone());
+            packages.insert(manifest, package.clone());
+        }
+    }
+}
+
+fn declared_package(manifest: &Path) -> serde_json::Value {
+    // --no-deps reads inherited declarations without resolving this independent
+    // workspace or creating its lockfile. Only the requested package is part of
+    // this dependency edge; unrelated workspace members do not become callers.
+    cargo_metadata(manifest.parent().expect("package directory"), true)["packages"]
+        .as_array()
+        .expect("Cargo packages")
+        .iter()
+        .find(|package| {
+            Path::new(package["manifest_path"].as_str().expect("manifest path"))
+                .canonicalize()
+                .expect("canonical manifest")
+                == manifest
+        })
+        .unwrap_or_else(|| panic!("Cargo metadata omitted {}", manifest.display()))
+        .clone()
+}
+
+fn cargo_version_matches(name: &str, requirement: &str, version: &str) -> bool {
+    // Cargo remains the version authority. This disposable, fully locked
+    // two-package graph asks only whether the declared requirement admits the
+    // actual candidate version; it cannot resolve or change repository inputs.
+    let scratch = CensusFixture::new();
+    let probe_name = format!("{name}-census-requirement-probe");
+    scratch.write("Cargo.toml", &format!(
+        "[package]\nname = {probe_name:?}\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n[dependencies]\ncandidate = {{ package = {name:?}, version = {requirement:?}, path = \"candidate\" }}\n"
+    ));
+    scratch.write("src/lib.rs", "");
+    scratch.write(
+        "candidate/Cargo.toml",
+        &format!("[package]\nname = {name:?}\nversion = {version:?}\nedition = \"2024\"\n"),
+    );
+    scratch.write("candidate/src/lib.rs", "");
+    let lock = format!(
+        "version = 4\n[[package]]\nname = {probe_name:?}\nversion = \"0.0.0\"\ndependencies = [{name:?}]\n[[package]]\nname = {name:?}\nversion = {version:?}\n"
+    );
+    scratch.write("Cargo.lock", &lock);
+    let output = std::process::Command::new(env!("CARGO"))
+        .env_clear()
+        .env("CARGO_HOME", scratch.0.join("cargo-home"))
+        .env("RUSTC", Path::new(env!("CARGO")).with_file_name("rustc"))
+        .current_dir(&scratch.0)
+        .args(["metadata", "--format-version", "1", "--locked", "--offline"])
+        .output()
+        .expect("Cargo version eligibility probe");
+    assert_eq!(
+        fs::read_to_string(scratch.0.join("Cargo.lock")).unwrap(),
+        lock
+    );
+    if output.status.success() {
+        let metadata: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("probe metadata");
         assert!(
-            output.status.success(),
-            "workspace metadata failed: {}",
-            String::from_utf8_lossy(&output.stderr)
+            metadata["packages"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|package| package["name"] == name && package["version"] == version)
         );
-        serde_json::from_slice(&output.stdout).expect("workspace metadata JSON")
+        true
+    } else {
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            error.contains("failed to select a version for the requirement")
+                && error.contains(name)
+                && error.contains("candidate versions found which didn't match")
+                && error.contains(version),
+            "unexpected Cargo requirement failure: {error}"
+        );
+        false
+    }
+}
+
+fn production_package_metadata(root: &Path) -> Vec<serde_json::Value> {
+    let mut packages = BTreeMap::<PathBuf, serde_json::Value>::new();
+    let mut pending = Vec::new();
+    include_local_packages(
+        root,
+        &cargo_metadata(root, false),
+        &mut packages,
+        &mut pending,
+    );
+    let patches = declared_local_patches(root);
+    let mut declarations = packages.clone();
+    let mut version_matches = BTreeMap::new();
+    while let Some(manifest) = pending.pop() {
+        // Root --all-features does not activate every feature of dependencies
+        // belonging to independent workspaces. Cargo's declaration metadata
+        // includes their inactive optional and target-specific dependencies.
+        let dependencies = packages[&manifest]["dependencies"]
+            .as_array()
+            .expect("package dependencies")
+            .clone();
+        for dependency in dependencies
+            .iter()
+            .filter(|dependency| dependency["kind"].as_str() != Some("dev"))
+        {
+            let mut candidates = Vec::new();
+            if let Some(path) = dependency["path"].as_str() {
+                candidates.push((
+                    Path::new(path)
+                        .join("Cargo.toml")
+                        .canonicalize()
+                        .expect("local dependency manifest"),
+                    false,
+                ));
+            } else {
+                candidates.extend(
+                    patches
+                        .iter()
+                        .filter(|patch| patch_matches_dependency(patch, dependency))
+                        .map(|patch| (patch.manifest.clone(), true)),
+                );
+            }
+            for (manifest, patched) in candidates {
+                if !manifest.starts_with(root) {
+                    continue;
+                }
+                let package = declarations
+                    .entry(manifest.clone())
+                    .or_insert_with(|| declared_package(&manifest));
+                let name = package["name"].as_str().expect("package name");
+                assert_eq!(
+                    Some(name),
+                    dependency["name"].as_str(),
+                    "local dependency package identity"
+                );
+                if patched {
+                    let requirement = dependency["req"].as_str().expect("dependency requirement");
+                    let version = package["version"].as_str().expect("package version");
+                    let key = (name.to_owned(), requirement.to_owned(), version.to_owned());
+                    if !*version_matches
+                        .entry(key)
+                        .or_insert_with(|| cargo_version_matches(name, requirement, version))
+                    {
+                        continue;
+                    }
+                }
+                if !packages.contains_key(&manifest) {
+                    pending.push(manifest.clone());
+                    packages.insert(manifest, package.clone());
+                }
+            }
+        }
+    }
+    packages.into_values().collect()
+}
+
+fn workspace_metadata(root: &Path) -> &'static [serde_json::Value] {
+    static METADATA: std::sync::OnceLock<Vec<serde_json::Value>> = std::sync::OnceLock::new();
+    METADATA.get_or_init(|| production_package_metadata(root))
+}
+
+fn local_packages<'a>(
+    root: &Path,
+    metadata: &'a [serde_json::Value],
+) -> impl Iterator<Item = &'a serde_json::Value> {
+    let root = root.to_owned();
+    metadata.iter().filter(move |package| {
+        Path::new(package["manifest_path"].as_str().expect("manifest path")).starts_with(&root)
     })
 }
 
-fn workspace_source_roots(root: &Path) -> BTreeSet<PathBuf> {
-    workspace_metadata(root)["packages"]
-        .as_array()
-        .expect("workspace packages")
-        .iter()
-        .filter_map(|package| {
-            let source = Path::new(package["manifest_path"].as_str().expect("manifest path"))
-                .parent()
-                .expect("package directory")
-                .join("src");
-            source.is_dir().then_some(source)
-        })
-        .collect()
+fn package_source_roots(package: &serde_json::Value) -> BTreeSet<PathBuf> {
+    let source = Path::new(package["manifest_path"].as_str().expect("manifest path"))
+        .parent()
+        .expect("package directory")
+        .join("src");
+    source.is_dir().then_some(source).into_iter().collect()
 }
 
-fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
-    workspace_metadata(root)["packages"]
+fn package_target_roots(package: &serde_json::Value) -> BTreeSet<PathBuf> {
+    package["targets"]
         .as_array()
-        .expect("workspace packages")
+        .expect("package targets")
         .iter()
-        .flat_map(|package| package["targets"].as_array().expect("package targets"))
         .filter(|target| {
             target["kind"]
                 .as_array()
@@ -1193,11 +1659,113 @@ fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
                                 | "staticlib"
                                 | "proc-macro"
                                 | "bin"
+                                | "custom-build"
                         )
                     )
                 })
         })
         .map(|target| PathBuf::from(target["src_path"].as_str().expect("target source")))
+        .collect()
+}
+
+fn production_targets(package: &serde_json::Value) -> impl Iterator<Item = &serde_json::Value> {
+    package["targets"]
+        .as_array()
+        .expect("package targets")
+        .iter()
+        .filter(|target| {
+            target["kind"]
+                .as_array()
+                .expect("target kinds")
+                .iter()
+                .any(|kind| {
+                    matches!(
+                        kind.as_str(),
+                        Some(
+                            "lib"
+                                | "rlib"
+                                | "dylib"
+                                | "cdylib"
+                                | "staticlib"
+                                | "proc-macro"
+                                | "bin"
+                                | "custom-build"
+                        )
+                    )
+                })
+        })
+}
+
+fn target_is_build_script(target: &serde_json::Value) -> bool {
+    target["kind"]
+        .as_array()
+        .expect("target kinds")
+        .iter()
+        .any(|kind| kind.as_str() == Some("custom-build"))
+}
+
+fn package_crate_names(package: &serde_json::Value) -> CrateNames {
+    // Metadata resolves workspace dependency inheritance, target conditions,
+    // renamed package keys and optional dependencies without source spelling
+    // guesses. Keep every production configuration in the census.
+    package["dependencies"]
+        .as_array()
+        .expect("package dependencies")
+        .iter()
+        .filter(|dependency| dependency["kind"].as_str() != Some("dev"))
+        .filter_map(|dependency| {
+            let surface = match dependency["name"].as_str()? {
+                "mech-syntax" => ParserReexports::SyntaxCrate,
+                "mech" => ParserReexports::RootCrate,
+                _ => return None,
+            };
+            let name = dependency["rename"]
+                .as_str()
+                .or(dependency["name"].as_str())
+                .expect("dependency name");
+            Some((name.replace('-', "_"), surface))
+        })
+        .collect()
+}
+
+fn package_target_crate_names(
+    package: &serde_json::Value,
+    target: &serde_json::Value,
+) -> CrateNames {
+    let build_script = target_is_build_script(target);
+    package["dependencies"]
+        .as_array()
+        .expect("package dependencies")
+        .iter()
+        .filter(|dependency| match dependency["kind"].as_str() {
+            Some("dev") => false,
+            Some("build") => build_script,
+            _ => !build_script,
+        })
+        .filter_map(|dependency| {
+            let surface = match dependency["name"].as_str()? {
+                "mech-syntax" => ParserReexports::SyntaxCrate,
+                "mech" => ParserReexports::RootCrate,
+                _ => return None,
+            };
+            let name = dependency["rename"]
+                .as_str()
+                .or(dependency["name"].as_str())
+                .expect("dependency name");
+            Some((name.replace('-', "_"), surface))
+        })
+        .collect()
+}
+
+fn workspace_source_roots(root: &Path) -> BTreeSet<PathBuf> {
+    local_packages(root, workspace_metadata(root))
+        .flat_map(package_source_roots)
+        .collect()
+}
+
+fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
+    local_packages(root, workspace_metadata(root))
+        .flat_map(package_target_roots)
         .collect()
 }
 
@@ -1236,6 +1804,7 @@ fn conditional_module_paths(
 }
 
 struct ModuleDeclarations<'a> {
+    source_directory: PathBuf,
     directory: PathBuf,
     path_directory: PathBuf,
     exclusions: &'a ProductionExclusions,
@@ -1245,6 +1814,37 @@ struct ModuleDeclarations<'a> {
 }
 
 impl<'ast> Visit<'ast> for ModuleDeclarations<'_> {
+    fn visit_macro(&mut self, invocation: &'ast syn::Macro) {
+        if invocation.path.is_ident("include")
+            && !self
+                .exclusions
+                .ranges
+                .iter()
+                .any(|range| range.contains(&invocation.span().byte_range().start))
+        {
+            let literal = syn::parse2::<syn::LitStr>(invocation.tokens.clone()).unwrap_or_else(
+                |_| {
+                    panic!(
+                        "production include! paths must be string literals so the parser census can follow them"
+                    )
+                },
+            );
+            let path = self.source_directory.join(literal.value());
+            assert!(
+                path.is_file(),
+                "production include! path does not exist: {}",
+                path.display()
+            );
+            self.edges.push((
+                path.canonicalize().expect("included production source"),
+                self.enabled,
+                self.module.clone(),
+                true,
+            ));
+        }
+        syn::visit::visit_macro(self, invocation);
+    }
+
     fn visit_item_mod(&mut self, module: &'ast syn::ItemMod) {
         let enabled = self.enabled
             && !self
@@ -1319,6 +1919,7 @@ fn module_edges(
         parent.join(path.file_stem().expect("module stem"))
     };
     let mut declarations = ModuleDeclarations {
+        source_directory: parent.to_owned(),
         directory,
         path_directory: parent.to_owned(),
         exclusions: &exclusions,
@@ -1436,51 +2037,105 @@ fn parser_reexports(root: &Path, path: &Path) -> ParserReexports {
     ParserReexports::None
 }
 
-fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<String>) {
-    let root = repository_root();
-    let files = production_source_modules(
-        &workspace_source_roots(&root),
-        &production_target_roots(&root),
-    );
-    let mut calls = BTreeMap::new();
-    let mut prohibited_aliases = Vec::new();
-    for (path, modules) in files {
-        let relative = path
-            .strip_prefix(&root)
-            .expect("source path is below repository root")
-            .to_string_lossy()
-            .replace('\\', "/");
-        let source = fs::read_to_string(&path).expect("read Rust source");
-        let mut scan = SourceScan::default();
-        for module in modules {
-            let contextual = scan_rust_source_in_module(
-                &source,
-                &relative,
-                parser_reexports(&root, &path),
-                &module,
-            );
-            scan.prohibited_aliases
-                .extend(contextual.prohibited_aliases);
-            for (caller, count) in contextual.calls {
-                let current = scan.calls.entry(caller).or_insert(0);
-                *current = (*current).max(count);
-            }
-        }
+fn record_source_scan(
+    root: &Path,
+    path: &Path,
+    modules: &BTreeSet<Vec<String>>,
+    reexports: ParserReexports,
+    crate_names: &CrateNames,
+    calls: &mut BTreeMap<(String, String), BTreeSet<usize>>,
+    prohibited_aliases: &mut BTreeSet<String>,
+) {
+    let relative = path
+        .strip_prefix(root)
+        .expect("source path is below repository root")
+        .to_string_lossy()
+        .replace('\\', "/");
+    let source = fs::read_to_string(path).expect("read Rust source");
+    // #[path] and include! source inherits the crate that compiles it, not the
+    // nearest manifest to the physical source file. A shared file is checked
+    // in each compiling crate's namespace; physical calls count once.
+    for module in modules {
+        let scan = scan_rust_source_in_module(&source, &relative, reexports, module, crate_names);
         prohibited_aliases.extend(
             scan.prohibited_aliases
                 .into_iter()
                 .map(|violation| format!("{relative}:{violation}")),
         );
-        for (caller, count) in scan.calls {
-            assert!(
-                calls
-                    .insert((relative.clone(), caller.clone()), count)
-                    .is_none(),
-                "duplicate source/caller scan result for {relative}::{caller}"
+        for (caller, sites) in scan.call_sites {
+            calls
+                .entry((relative.clone(), caller))
+                .or_default()
+                .extend(sites);
+        }
+    }
+}
+
+fn discovered_calls_in_packages(
+    root: &Path,
+    metadata: &[serde_json::Value],
+) -> (BTreeMap<(String, String), usize>, Vec<String>) {
+    let mut calls: BTreeMap<(String, String), BTreeSet<usize>> = BTreeMap::new();
+    let mut prohibited_aliases = BTreeSet::new();
+    for package in local_packages(root, metadata) {
+        let manifest = Path::new(package["manifest_path"].as_str().expect("manifest path"));
+        let reexports = parser_reexports(root, manifest);
+        let mut reached = BTreeSet::new();
+        for target in production_targets(package) {
+            let target_path = PathBuf::from(target["src_path"].as_str().expect("target source"))
+                .canonicalize()
+                .expect("canonical target source");
+            let files = production_source_modules(&BTreeSet::new(), &BTreeSet::from([target_path]));
+            let crate_names = package_target_crate_names(package, target);
+            for (path, modules) in files {
+                reached.insert(path.clone());
+                record_source_scan(
+                    root,
+                    &path,
+                    &modules,
+                    reexports,
+                    &crate_names,
+                    &mut calls,
+                    &mut prohibited_aliases,
+                );
+            }
+        }
+
+        // Keep conservatively scanning orphaned Rust files, but do not rescan
+        // a real target with dependency names that Cargo exposes only to a
+        // different target class.
+        let candidates = production_source_modules(
+            &package_source_roots(package),
+            &package_target_roots(package),
+        );
+        let crate_names = package_crate_names(package);
+        for (path, modules) in candidates {
+            if reached.contains(&path) {
+                continue;
+            }
+            record_source_scan(
+                root,
+                &path,
+                &modules,
+                reexports,
+                &crate_names,
+                &mut calls,
+                &mut prohibited_aliases,
             );
         }
     }
-    (calls, prohibited_aliases)
+    (
+        calls
+            .into_iter()
+            .map(|(caller, sites)| (caller, sites.len()))
+            .collect(),
+        prohibited_aliases.into_iter().collect(),
+    )
+}
+
+fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<String>) {
+    let root = repository_root();
+    discovered_calls_in_packages(&root, workspace_metadata(&root))
 }
 
 #[test]
@@ -1553,7 +2208,7 @@ fn second() {
     let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
     assert!(scan.prohibited_aliases.is_empty());
     assert_eq!(
-        scan.calls,
+        scan.call_counts(),
         BTreeMap::from([("first".to_owned(), 2), ("second".to_owned(), 1)])
     );
 }
@@ -1588,7 +2243,7 @@ fn source_scanner_allows_only_the_declared_root_reexports() {
     let scan = scan_rust_source(source, "src/lib.rs", ParserReexports::RootCrate);
     assert!(scan.prohibited_aliases.is_empty());
     assert_eq!(
-        scan.calls,
+        scan.call_counts(),
         BTreeMap::from([("direct".to_owned(), 2), ("syntax".to_owned(), 2)])
     );
 
@@ -1611,7 +2266,7 @@ fn source_scanner_allows_the_canonical_document_parser_module() {
     let source = "use mech_syntax::document::parser as canonical_parser;";
     let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
     assert!(scan.prohibited_aliases.is_empty());
-    assert!(scan.calls.is_empty());
+    assert!(scan.call_counts().is_empty());
 }
 
 #[test]
@@ -1622,7 +2277,7 @@ fn source_scanner_excludes_test_only_modules_and_items() {
         ParserReexports::None,
     );
     assert_eq!(
-        external.calls,
+        external.call_counts(),
         BTreeMap::from([("after_tests".to_owned(), 1)])
     );
 
@@ -1641,7 +2296,7 @@ fn source_scanner_excludes_test_only_modules_and_items() {
         ParserReexports::None,
     );
     assert_eq!(
-        inline.calls,
+        inline.call_counts(),
         BTreeMap::from([
             ("after_tests".to_owned(), 1),
             ("production_cfg".to_owned(), 1),
@@ -1666,7 +2321,7 @@ fn source_scanner_preserves_cfg_branches_available_without_tests() {
             format!("#[cfg({predicate})] fn production() {{ mech_syntax::parse(\"source\"); }}");
         let scan = scan_rust_source(&source, "fixture.rs", ParserReexports::None);
         assert_eq!(
-            scan.calls,
+            scan.call_counts(),
             BTreeMap::from([("production".to_owned(), 1)]),
             "{predicate}"
         );
@@ -1686,7 +2341,7 @@ fn source_scanner_preserves_cfg_branches_available_without_tests() {
             let source = format!("#[cfg({predicate})] {item}");
             assert!(
                 scan_rust_source(&source, "fixture.rs", ParserReexports::None)
-                    .calls
+                    .call_counts()
                     .is_empty(),
                 "{source}"
             );
@@ -1705,7 +2360,10 @@ fn source_scanner_counts_syntax_crate_root_reexports_in_its_own_sources() {
             path,
             reexports,
         );
-        assert_eq!(scan.calls, BTreeMap::from([("caller".to_owned(), 2)]));
+        assert_eq!(
+            scan.call_counts(),
+            BTreeMap::from([("caller".to_owned(), 2)])
+        );
     }
     for (path, source) in [
         ("src/syntax/src/lib.rs", "pub use crate::parser::*;"),
@@ -1755,7 +2413,7 @@ fn source_scanner_counts_syntax_crate_root_reexports_in_its_own_sources() {
             "src/runtime/src/lib.rs",
             reexports
         )
-        .calls
+        .call_counts()
         .is_empty()
     );
 }
@@ -1771,7 +2429,7 @@ fn enclosing() { fn run() { mech_syntax::parse("nested"); } }
 "#;
     let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
     assert_eq!(
-        scan.calls,
+        scan.call_counts(),
         BTreeMap::from([
             ("impl <'a>View<'a>::compile_source".to_owned(), 1),
             ("one::run".to_owned(), 1),
@@ -1790,24 +2448,28 @@ fn enclosing() { fn run() { mech_syntax::parse("nested"); } }
         );
     let moved = scan_rust_source(&moved, "fixture.rs", ParserReexports::None);
     assert_eq!(
-        scan.calls.values().sum::<usize>(),
-        moved.calls.values().sum::<usize>()
+        scan.call_counts().values().sum::<usize>(),
+        moved.call_counts().values().sum::<usize>()
     );
     assert_ne!(
-        scan.calls, moved.calls,
+        scan.call_counts(),
+        moved.call_counts(),
         "moving a call between methods must invalidate the census"
     );
-    assert_eq!(moved.calls.get("impl Outer::compile_source"), Some(&1));
+    assert_eq!(
+        moved.call_counts().get("impl Outer::compile_source"),
+        Some(&1)
+    );
 
     let same_path = "#[cfg(feature = \"a\")] impl Same { fn run() { mech_syntax::parse(\"one\"); } } #[cfg(not(feature = \"a\"))] impl Same { fn run() { mech_syntax::parse(\"two\"); } }";
     let scan = scan_rust_source(same_path, "fixture.rs", ParserReexports::None);
     assert_eq!(
-        scan.calls.len(),
+        scan.call_counts().len(),
         2,
         "cfg alternatives with identical names remain distinct source owners"
     );
     assert!(
-        scan.calls
+        scan.call_counts()
             .keys()
             .all(|name| name.starts_with("impl Same::run@"))
     );
@@ -1869,7 +2531,7 @@ fn source_scanner_closes_glob_and_root_reexport_call_bypasses() {
         );
         assert!(scan.prohibited_aliases.is_empty(), "{source}");
         assert_eq!(
-            scan.calls,
+            scan.call_counts(),
             BTreeMap::from([("run".to_owned(), 1)]),
             "{source}"
         );
@@ -1886,7 +2548,7 @@ fn source_scanner_closes_glob_and_root_reexport_call_bypasses() {
         ParserReexports::SyntaxCrate,
     );
     assert!(
-        ordinary.calls.is_empty(),
+        ordinary.call_counts().is_empty(),
         "unrelated local callbacks have no root parser binding"
     );
 }
@@ -1901,7 +2563,7 @@ fn source_scanner_requires_cfg_proof_before_excluding_a_tests_module() {
         let source =
             format!("{attribute} mod tests {{ fn run() {{ mech_syntax::parse(\"source\"); }} }}");
         assert_eq!(
-            scan_rust_source(&source, "fixture.rs", ParserReexports::None).calls,
+            scan_rust_source(&source, "fixture.rs", ParserReexports::None).call_counts(),
             BTreeMap::from([("tests::run".to_owned(), 1)]),
             "{source}"
         );
@@ -1909,7 +2571,7 @@ fn source_scanner_requires_cfg_proof_before_excluding_a_tests_module() {
     let source = "#[cfg(test)] mod tests { fn run() { mech_syntax::parse(\"test\"); } }";
     assert!(
         scan_rust_source(source, "fixture.rs", ParserReexports::None)
-            .calls
+            .call_counts()
             .is_empty()
     );
 }
@@ -1985,7 +2647,7 @@ fn source_scanner_resolves_relative_root_parser_paths() {
             path,
             reexports,
         );
-        assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 2)]));
+        assert_eq!(scan.call_counts(), BTreeMap::from([("run".to_owned(), 2)]));
         let scan = scan_rust_source(
             "mod inner { use super::super::parse; fn run() { parse(source); } }",
             path,
@@ -1999,7 +2661,7 @@ fn source_scanner_resolves_relative_root_parser_paths() {
         ParserReexports::RootCrate,
     );
     assert_eq!(
-        scan.calls,
+        scan.call_counts(),
         BTreeMap::from([("inner::run".to_owned(), 1), ("run".to_owned(), 1)])
     );
     for source in [
@@ -2014,7 +2676,7 @@ fn source_scanner_resolves_relative_root_parser_paths() {
             ParserReexports::SyntaxCrate,
         );
         assert!(
-            scan.calls.is_empty() && scan.prohibited_aliases.is_empty(),
+            scan.call_counts().is_empty() && scan.prohibited_aliases.is_empty(),
             "{source}"
         );
     }
@@ -2035,7 +2697,7 @@ fn source_scanner_normalizes_raw_parser_identifiers() {
             ParserReexports::None,
         );
         assert_eq!(
-            scan.calls,
+            scan.call_counts(),
             BTreeMap::from([("run".to_owned(), 1)]),
             "{reference}"
         );
@@ -2065,7 +2727,7 @@ fn source_scanner_normalizes_raw_parser_identifiers() {
         "fixture.rs",
         ParserReexports::None,
     );
-    assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 1)]));
+    assert_eq!(scan.call_counts(), BTreeMap::from([("run".to_owned(), 1)]));
 }
 
 #[test]
@@ -2091,7 +2753,7 @@ fn source_scanner_covers_retiring_source_entrypoints_and_frozen_reexports() {
             ParserReexports::RootCrate,
         );
         assert_eq!(
-            scan.calls,
+            scan.call_counts(),
             BTreeMap::from([("run".to_owned(), 1)]),
             "{reference}"
         );
@@ -2107,7 +2769,7 @@ fn source_scanner_covers_retiring_source_entrypoints_and_frozen_reexports() {
         "src/new.rs",
         ParserReexports::RootCrate,
     );
-    assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 1)]));
+    assert_eq!(scan.call_counts(), BTreeMap::from([("run".to_owned(), 1)]));
     assert!(
         !scan.prohibited_aliases.is_empty(),
         "swapping an inventoried parse call for parse_mech must fail even when the call count is unchanged"
@@ -2124,6 +2786,60 @@ fn source_scanner_covers_retiring_source_entrypoints_and_frozen_reexports() {
 }
 
 #[test]
+fn bare_globs_cover_every_retiring_source_entrypoint() {
+    for source_path in ["src/syntax/src/base.rs", "src/syntax/src/lib.rs"] {
+        for entry in [
+            "parse",
+            "parse_mech",
+            "program",
+            "mech_code",
+            "mech_code_alt",
+        ] {
+            let source = format!("use crate::parser::*; fn run() {{ {entry}(source); }}");
+            let scan = scan_rust_source(&source, source_path, ParserReexports::SyntaxCrate);
+            assert_eq!(
+                scan.call_counts(),
+                BTreeMap::from([("run".to_owned(), 1)]),
+                "{source_path}: {entry}"
+            );
+            if entry != "parse" {
+                assert!(
+                    !scan.prohibited_aliases.is_empty(),
+                    "{source_path}: {entry}"
+                );
+            }
+        }
+    }
+    let scan = scan_rust_source(
+        "fn helper() { program(source); mech_code(source); mech_code_alt(source); }",
+        "src/syntax/src/parser.rs",
+        ParserReexports::SyntaxCrate,
+    );
+    assert!(scan.call_counts().is_empty());
+    assert!(scan.prohibited_aliases.is_empty());
+}
+
+#[test]
+fn macro_generated_parser_paths_are_rejected_conservatively() {
+    for reference in [
+        "mech_syntax::$name",
+        "mech_syntax::parser::$name",
+        "mech::$name",
+        "mech::syntax::$name",
+    ] {
+        let source = format!(
+            "macro_rules! old {{ ($name:ident) => {{ {reference}(source) }} }} old!(parse);"
+        );
+        let scan = scan_rust_source(&source, "fixture.rs", ParserReexports::None);
+        assert!(!scan.prohibited_aliases.is_empty(), "{source}");
+    }
+    let source =
+        "macro_rules! canonical { ($name:ident) => { mech_syntax::document::$name(source) } }";
+    let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
+    assert!(scan.prohibited_aliases.is_empty());
+}
+
+#[test]
 fn source_scanner_cfg_arms_cannot_swallow_production_siblings() {
     for test_arm in [
         "E::A => test_only(),",
@@ -2135,19 +2851,19 @@ fn source_scanner_cfg_arms_cannot_swallow_production_siblings() {
             "fn run(e: E) {{ match e {{ #[cfg(test)] {test_arm} E::B => {{ mech_syntax::parse(source); }} }} }}"
         );
         assert_eq!(
-            scan_rust_source(&source, "fixture.rs", ParserReexports::None).calls,
+            scan_rust_source(&source, "fixture.rs", ParserReexports::None).call_counts(),
             BTreeMap::from([("run".to_owned(), 1)]),
             "{source}"
         );
     }
     let source = "fn run(e: E) { match e { #[cfg(test)] E::A => mech_syntax::parse(test_source), E::B => mech_syntax::parse(source), } }";
     assert_eq!(
-        scan_rust_source(source, "fixture.rs", ParserReexports::None).calls,
+        scan_rust_source(source, "fixture.rs", ParserReexports::None).call_counts(),
         BTreeMap::from([("run".to_owned(), 1)])
     );
     let source = "fn run() { let label = \"◉\"; #[cfg(test)] let hidden = mech_syntax::parse(test_source); mech_syntax::parse(source); }";
     assert_eq!(
-        scan_rust_source(source, "fixture.rs", ParserReexports::None).calls,
+        scan_rust_source(source, "fixture.rs", ParserReexports::None).call_counts(),
         BTreeMap::from([("run".to_owned(), 1)])
     );
 }
@@ -2167,7 +2883,7 @@ fn source_scanner_evaluates_cfg_attr_without_assuming_features() {
         let source = format!("{attribute} fn run() {{ mech_syntax::parse(source); }}");
         assert_eq!(
             scan_rust_source(&source, "fixture.rs", ParserReexports::None)
-                .calls
+                .call_counts()
                 .values()
                 .sum::<usize>(),
             count,
@@ -2178,7 +2894,7 @@ fn source_scanner_evaluates_cfg_attr_without_assuming_features() {
         );
         assert_eq!(
             scan_rust_source(&source, "fixture.rs", ParserReexports::None)
-                .calls
+                .call_counts()
                 .values()
                 .sum::<usize>(),
             count + 1,
@@ -2191,7 +2907,7 @@ fn source_scanner_evaluates_cfg_attr_without_assuming_features() {
             "fixture.rs",
             ParserReexports::None
         )
-        .calls
+        .call_counts()
         .is_empty()
     );
 }
@@ -2218,6 +2934,41 @@ impl CensusFixture {
         fs::write(&path, source).unwrap();
         path
     }
+    fn metadata(&self) -> Vec<serde_json::Value> {
+        let output = std::process::Command::new(env!("CARGO"))
+            .args(["generate-lockfile", "--offline"])
+            .current_dir(&self.0)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        fn manifest_bytes(path: &Path, bytes: &mut BTreeMap<PathBuf, Vec<u8>>) {
+            for entry in fs::read_dir(path).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    manifest_bytes(&path, bytes);
+                } else if matches!(
+                    path.file_name().and_then(|name| name.to_str()),
+                    Some("Cargo.toml" | "Cargo.lock")
+                ) {
+                    bytes.insert(path.clone(), fs::read(&path).unwrap());
+                }
+            }
+        }
+        let mut before = BTreeMap::new();
+        manifest_bytes(&self.0, &mut before);
+        let metadata = production_package_metadata(&self.0);
+        let mut after = BTreeMap::new();
+        manifest_bytes(&self.0, &mut after);
+        assert_eq!(
+            after, before,
+            "discovery changed or created a manifest or lockfile"
+        );
+        metadata
+    }
     fn modules(&self) -> BTreeMap<PathBuf, BTreeSet<Vec<String>>> {
         production_source_modules(
             &BTreeSet::from([self.0.clone()]),
@@ -2229,6 +2980,56 @@ impl Drop for CensusFixture {
     fn drop(&mut self) {
         fs::remove_dir_all(&self.0).unwrap();
     }
+}
+
+#[test]
+fn production_literal_includes_enter_the_consumer_census() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        "[package]\nname = \"consumer\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\nmembers = [\"syntax\"]\n[dependencies]\nmech-syntax = { path = \"syntax\" }\n",
+    );
+    fixture.write("src/lib.rs", "include!(\"legacy.inc\");");
+    fixture.write(
+        "src/legacy.inc",
+        "fn hidden(source: &str) { mech_syntax::parse(source); }",
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &fixture.metadata());
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("src/legacy.inc".to_owned(), "hidden".to_owned()), 1)])
+    );
+    assert!(aliases.is_empty(), "{aliases:?}");
+}
+
+#[test]
+fn build_dependency_aliases_are_scoped_to_build_targets() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        "[package]\nname = \"consumer\"\nversion = \"0.0.0\"\nedition = \"2024\"\nbuild = \"build.rs\"\n[workspace]\nmembers = [\"syntax\"]\n[build-dependencies]\nlegacy = { package = \"mech-syntax\", path = \"syntax\" }\n",
+    );
+    fixture.write(
+        "src/lib.rs",
+        "mod legacy { pub fn parse(_: &str) {} } fn run() { legacy::parse(\"local\"); }",
+    );
+    fixture.write("build.rs", "fn main() { legacy::parse(\"build\"); }");
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &fixture.metadata());
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("build.rs".to_owned(), "main".to_owned()), 1)])
+    );
+    assert!(aliases.is_empty(), "{aliases:?}");
 }
 
 #[test]
@@ -2260,7 +3061,7 @@ fn production_module_graph_requires_cfg_proof_for_tests_paths() {
                     "fixture.rs",
                     ParserReexports::None
                 )
-                .calls
+                .call_counts()
                 .values()
                 .sum::<usize>(),
                 1
@@ -2308,7 +3109,8 @@ fn production_module_graph_follows_path_attributes_and_rust_module_names() {
                 &fs::read_to_string(&renamed).unwrap(),
                 "tests/renamed.rs",
                 ParserReexports::RootCrate,
-                module
+                module,
+                &default_crate_names(),
             )
             .prohibited_aliases
             .is_empty()
@@ -2367,7 +3169,7 @@ fn source_scanner_keeps_retiring_paths_visible_inside_macros() {
     ] {
         let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
         assert!(
-            !scan.calls.is_empty() || !scan.prohibited_aliases.is_empty(),
+            !scan.call_counts().is_empty() || !scan.prohibited_aliases.is_empty(),
             "{source}"
         );
         let scan = scan_rust_source(
@@ -2376,7 +3178,7 @@ fn source_scanner_keeps_retiring_paths_visible_inside_macros() {
             ParserReexports::None,
         );
         assert!(
-            scan.calls.is_empty() && scan.prohibited_aliases.is_empty(),
+            scan.call_counts().is_empty() && scan.prohibited_aliases.is_empty(),
             "{source}"
         );
     }
@@ -2385,7 +3187,7 @@ fn source_scanner_keeps_retiring_paths_visible_inside_macros() {
         "fixture.rs",
         ParserReexports::None,
     );
-    assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 1)]));
+    assert_eq!(scan.call_counts(), BTreeMap::from([("run".to_owned(), 1)]));
 }
 
 #[test]
@@ -2397,7 +3199,7 @@ fn source_scanner_tracks_group_and_relative_parser_module_bindings() {
     ] {
         let scan = scan_rust_source(source, "src/new.rs", ParserReexports::RootCrate);
         assert_eq!(
-            scan.calls,
+            scan.call_counts(),
             BTreeMap::from([("run".to_owned(), 1)]),
             "{source}"
         );
@@ -2407,7 +3209,10 @@ fn source_scanner_tracks_group_and_relative_parser_module_bindings() {
         "src/new.rs",
         ParserReexports::RootCrate,
     );
-    assert_eq!(scan.calls, BTreeMap::from([("retiring".to_owned(), 1)]));
+    assert_eq!(
+        scan.call_counts(),
+        BTreeMap::from([("retiring".to_owned(), 1)])
+    );
     assert!(scan.prohibited_aliases.is_empty());
 }
 
@@ -2440,4 +3245,701 @@ fn path_attributed_files_resolve_descendants_from_their_owned_directory() {
         "#![cfg(test)]\nfn hidden() { mech_syntax::parse(source); }",
     );
     assert!(!fixture.modules().contains_key(&child));
+}
+
+#[test]
+fn new_review_root_alternate_entrypoints_are_guarded() {
+    for entry in ["program", "mech_code", "mech_code_alt"] {
+        for source in [
+            format!("fn run() {{ mech_syntax::{entry}(source); }}"),
+            format!("use mech_syntax::{entry}; fn run() {{ {entry}(source); }}"),
+        ] {
+            let scan = scan_rust_source(&source, "src/consumer.rs", ParserReexports::None);
+            assert!(!scan.prohibited_aliases.is_empty(), "{source}");
+        }
+    }
+}
+
+#[test]
+fn new_review_cargo_dependency_aliases_are_guarded() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+members = ["syntax", "product"]
+[dependencies]
+legacy-syntax = { package = "mech-syntax", path = "syntax" }
+product = { package = "mech", path = "product" }
+"#,
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write(
+        "syntax/src/lib.rs",
+        "pub fn parse(_: &str) {} pub mod document { pub mod parser {} }",
+    );
+    fixture.write(
+        "product/Cargo.toml",
+        "[package]\nname = \"mech\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write("product/src/lib.rs", "");
+    fixture.write(
+        "src/lib.rs",
+        "#[path = \"../syntax/shared.rs\"] mod shared;",
+    );
+    fixture.write(
+        "syntax/shared.rs",
+        "fn run() { legacy_syntax::parse(source); product::parse(source); }",
+    );
+    let metadata = fixture.metadata();
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("syntax/shared.rs".to_owned(), "run".to_owned()), 2)])
+    );
+    assert!(aliases.is_empty(), "{aliases:?}");
+    let package = local_packages(&fixture.0, &metadata)
+        .find(|package| package["name"] == "consumer")
+        .unwrap();
+    let names = package_crate_names(package);
+    for source in [
+        "use legacy_syntax::parse; fn run() { parse(source); }",
+        "extern crate legacy_syntax as old; fn run() { old::parse(source); }",
+        "fn run() { legacy_syntax::program(source); }",
+        "fn run() { product::syntax::mech_code(source); }",
+        "use product::parser as old; fn run() { old::parse(source); }",
+    ] {
+        let scan =
+            scan_rust_source_in_module(source, "src/lib.rs", ParserReexports::None, &[], &names);
+        assert!(!scan.prohibited_aliases.is_empty(), "{source}");
+    }
+    for source in [
+        "use legacy_syntax::document::parser as canonical; fn run() { canonical::parse(source); }",
+        "use product::syntax::document::parser as canonical; fn run() { canonical::parse(source); }",
+        "fn run() { product::program(source); }",
+    ] {
+        let scan =
+            scan_rust_source_in_module(source, "src/lib.rs", ParserReexports::None, &[], &names);
+        assert!(scan.call_counts().is_empty(), "{source}");
+        assert!(scan.prohibited_aliases.is_empty(), "{source}");
+    }
+}
+
+#[test]
+fn new_review_current_crate_aliases_are_guarded() {
+    for (path, reexports) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        let scan = scan_rust_source(
+            "extern crate self as legacy; fn run() { legacy::parse(source); }",
+            path,
+            reexports,
+        );
+        assert!(!scan.prohibited_aliases.is_empty(), "{path}");
+    }
+}
+
+#[test]
+fn new_review_local_production_dependencies_are_discovered() {
+    let root = repository_root();
+    let roots = workspace_source_roots(&root);
+    let targets = production_target_roots(&root);
+    for package in [
+        "math",
+        "compare",
+        "logic",
+        "range",
+        "matrix",
+        "set",
+        "string",
+        "stats",
+        "combinatorics",
+    ] {
+        assert!(
+            roots.contains(&root.join(format!("machines/{package}/src"))),
+            "{package}"
+        );
+        assert!(
+            targets.contains(&root.join(format!("machines/{package}/src/lib.rs"))),
+            "{package}"
+        );
+    }
+}
+
+#[test]
+fn new_review_reexport_exemptions_require_root_declarations() {
+    for (path, reexports, declaration) in [
+        (
+            "src/lib.rs",
+            ParserReexports::RootCrate,
+            "pub use mech_syntax::parse;",
+        ),
+        (
+            "src/lib.rs",
+            ParserReexports::RootCrate,
+            "pub extern crate mech_syntax as syntax;",
+        ),
+        (
+            "src/syntax/src/lib.rs",
+            ParserReexports::SyntaxCrate,
+            "pub use crate::parser::*;",
+        ),
+    ] {
+        let source = format!("mod nested {{ {declaration} fn run() {{ parse(source); }} }}");
+        let scan = scan_rust_source(&source, path, reexports);
+        assert!(!scan.prohibited_aliases.is_empty(), "{path}: {source}");
+    }
+}
+
+#[test]
+fn production_discovery_includes_inactive_optional_local_workspaces() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["machine", "syntax"]
+[dependencies]
+optional-machine = { package = "local-machine", path = "machine", optional = true }
+"#,
+    );
+    fixture.write("src/lib.rs", "");
+    fixture.write(
+        "machine/Cargo.toml",
+        r#"
+[package]
+name = "local-machine"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[dependencies]
+renamed = { package = "mech-syntax", path = "../syntax" }
+"#,
+    );
+    fixture.write(
+        "machine/src/lib.rs",
+        "#[cfg(feature = \"future\")] fn added() { renamed::parse(source); }",
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    let metadata = fixture.metadata();
+    assert_eq!(local_packages(&fixture.0, &metadata).count(), 3);
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("machine/src/lib.rs".to_owned(), "added".to_owned()), 1)])
+    );
+    assert!(aliases.is_empty(), "{aliases:?}");
+}
+
+#[test]
+fn latest_review_standalone_self_aliases_are_guarded() {
+    for (path, reexports) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        for import in ["use self as legacy;", "use {self as legacy};"] {
+            let source = format!(
+                "pub fn parse(_: &str) {{}} {import} fn run(source: &str) {{ legacy::parse(source); }}"
+            );
+            let scan = scan_rust_source(&source, path, reexports);
+            assert!(!scan.prohibited_aliases.is_empty(), "{path}: {source}");
+        }
+    }
+}
+
+#[test]
+fn latest_review_public_crate_globs_cannot_create_parser_namespaces() {
+    for (path, reexports) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        for visibility in ["pub", "pub(crate)", "pub(super)", "pub(in crate)"] {
+            for root in ["crate::*", "crate::{*}", "super::*", "super::{*}"] {
+                let source = format!(
+                    "pub fn parse(_: &str) {{}} mod legacy {{ {visibility} use {root}; }} fn run(source: &str) {{ legacy::parse(source); }}"
+                );
+                let scan = scan_rust_source(&source, path, reexports);
+                assert!(!scan.prohibited_aliases.is_empty(), "{path}: {source}");
+            }
+        }
+        let source = "pub fn parse(_: &str) {} mod local { use crate::*; fn run(source: &str) { parse(source); } }";
+        let scan = scan_rust_source(source, path, reexports);
+        assert!(
+            scan.prohibited_aliases.is_empty(),
+            "{path}: {:?}",
+            scan.prohibited_aliases
+        );
+        assert_eq!(scan.call_counts().values().sum::<usize>(), 1, "{path}");
+    }
+}
+
+#[test]
+fn latest_review_discovery_follows_each_local_workspaces_optional_dependencies() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["first", "second", "leaf", "syntax", "dev-only"]
+[dependencies]
+first = { path = "first" }
+"#,
+    );
+    fixture.write("src/lib.rs", "");
+    for (name, next, feature) in [("first", "second", "future"), ("second", "leaf", "later")] {
+        fixture.write(
+            &format!("{name}/Cargo.toml"),
+            &format!(
+                r#"
+[package]
+name = "{name}"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[features]
+{feature} = ["dep:{next}"]
+[target.'cfg(unix)'.dependencies]
+{next} = {{ path = "../{next}", optional = true }}
+[dev-dependencies]
+dev-only = {{ path = "../dev-only" }}
+"#
+            ),
+        );
+        fixture.write(&format!("{name}/src/lib.rs"), "");
+    }
+    fixture.write(
+        "dev-only/Cargo.toml",
+        "[package]\nname = \"dev-only\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+    fixture.write("dev-only/src/lib.rs", "");
+    fixture.write(
+        "leaf/Cargo.toml",
+        r#"
+[package]
+name = "leaf"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[dependencies]
+renamed = { package = "mech-syntax", path = "../syntax" }
+"#,
+    );
+    fixture.write(
+        "leaf/src/lib.rs",
+        "fn hidden(source: &str) { renamed::parse(source); }",
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    let metadata = fixture.metadata();
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("leaf/src/lib.rs".to_owned(), "hidden".to_owned()), 1)])
+    );
+    assert_eq!(local_packages(&fixture.0, &metadata).count(), 5);
+    assert!(aliases.is_empty(), "{aliases:?}");
+    for name in ["first", "second", "leaf", "syntax", "dev-only"] {
+        assert!(!fixture.0.join(name).join("Cargo.lock").exists(), "{name}");
+    }
+}
+
+#[test]
+fn latest_review_discovery_follows_root_patched_optional_local_dependencies() {
+    for patch_source in ["crates-io", "\"https://example.invalid/not-the-index\""] {
+        let fixture = CensusFixture::new();
+        fixture.write(
+            "Cargo.toml",
+            &r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["first", "leaf", "syntax", "wrong-source", "unused", "incompatible", "prerelease"]
+[dependencies]
+first = { path = "first" }
+[patch.PATCH_SOURCE]
+renamed-patch-entry = { package = "census-patched-leaf", path = "leaf" }
+incompatible = { package = "census-patched-leaf", path = "incompatible" }
+prerelease = { package = "census-patched-leaf", path = "prerelease" }
+unrelated = { package = "census-unrelated", path = "unused" }
+"#
+            .replace("PATCH_SOURCE", patch_source),
+        );
+        fixture.write("src/lib.rs", "");
+        fixture.write(
+            "first/Cargo.toml",
+            r#"
+[package]
+name = "first"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+[features]
+future = ["dep:leaf"]
+[dependencies]
+leaf = { package = "census-patched-leaf", version = "^0.1", optional = true }
+"#,
+        );
+        fixture.write("first/src/lib.rs", "");
+        fixture.write(
+            "leaf/Cargo.toml",
+            r#"
+[package]
+name = "census-patched-leaf"
+version = "0.1.0"
+edition = "2024"
+[workspace]
+[dependencies]
+renamed = { package = "mech-syntax", path = "../syntax" }
+"#,
+        );
+        fixture.write(
+            "leaf/src/lib.rs",
+            "fn hidden(source: &str) { renamed::parse(source); }",
+        );
+        fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n",
+    );
+        fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+        for (directory, name, version) in [
+            ("wrong-source", "census-patched-leaf", "0.1.1"),
+            ("unused", "census-unrelated", "0.0.0"),
+            ("incompatible", "census-patched-leaf", "9.0.0"),
+            ("prerelease", "census-patched-leaf", "0.1.2-alpha.1"),
+        ] {
+            fixture.write(&format!("{directory}/Cargo.toml"), &format!(
+            "[package]\nname = {name:?}\nversion = {version:?}\nedition = \"2024\"\n[workspace]\n[dependencies]\nrenamed = {{ package = \"mech-syntax\", path = \"../syntax\" }}\n"
+        ));
+            fixture.write(
+                &format!("{directory}/src/lib.rs"),
+                "fn unrelated(source: &str) { renamed::parse(source); }",
+            );
+        }
+        let metadata = fixture.metadata();
+        let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+        if patch_source == "crates-io" {
+            assert_eq!(
+                calls,
+                BTreeMap::from([(("leaf/src/lib.rs".to_owned(), "hidden".to_owned()), 1)])
+            );
+            assert_eq!(local_packages(&fixture.0, &metadata).count(), 4);
+        } else {
+            assert!(
+                calls.is_empty(),
+                "a patch for another source must not supply this registry dependency"
+            );
+            assert_eq!(local_packages(&fixture.0, &metadata).count(), 2);
+        }
+        assert!(aliases.is_empty(), "{aliases:?}");
+    }
+}
+
+#[test]
+fn latest_review_local_patch_version_matching_uses_cargo_requirements() {
+    for (requirement, version, expected) in [
+        ("^1.2", "1.3.0", true),
+        (">=1.2, <2", "1.9.7", true),
+        ("~1.2", "1.3.0", false),
+        ("^0.1", "0.2.0", false),
+        ("*", "1.2.3-alpha.1", false),
+        ("^1.2.3-alpha.1", "1.2.3-alpha.2", true),
+        ("^1.2.3-alpha.1", "1.2.4-alpha.1", false),
+    ] {
+        assert_eq!(
+            cargo_version_matches("census-candidate", requirement, version),
+            expected,
+            "{requirement} against {version}"
+        );
+    }
+}
+
+#[test]
+fn latest_review2_unrenamed_parser_modules_cannot_create_exported_namespaces() {
+    for visibility in ["pub", "pub(crate)", "pub(super)", "pub(in crate)"] {
+        for (source_path, surface, origin) in [
+            ("fixture.rs", ParserReexports::None, "mech_syntax::parser"),
+            ("src/lib.rs", ParserReexports::RootCrate, "crate::parser"),
+            ("src/lib.rs", ParserReexports::RootCrate, "super::parser"),
+            (
+                "src/syntax/src/lib.rs",
+                ParserReexports::SyntaxCrate,
+                "crate::parser",
+            ),
+            (
+                "src/syntax/src/lib.rs",
+                ParserReexports::SyntaxCrate,
+                "super::parser",
+            ),
+        ] {
+            let source = format!(
+                "mod legacy {{ {visibility} use {origin}; }} fn run(source: &str) {{ legacy::parser::parse(source); }}"
+            );
+            let scan = scan_rust_source(&source, source_path, surface);
+            assert!(
+                !scan.prohibited_aliases.is_empty(),
+                "{source_path}: {source}"
+            );
+        }
+    }
+    let scan = scan_rust_source(
+        "use mech_syntax::parser; fn run() { parser::parse(source); }",
+        "fixture.rs",
+        ParserReexports::None,
+    );
+    assert!(scan.prohibited_aliases.is_empty());
+    assert_eq!(scan.call_counts(), BTreeMap::from([("run".to_owned(), 1)]));
+}
+
+#[test]
+fn latest_review2_macro_generated_relative_parser_imports_are_guarded() {
+    for (source_path, surface) in [
+        ("src/lib.rs", ParserReexports::RootCrate),
+        ("src/syntax/src/lib.rs", ParserReexports::SyntaxCrate),
+    ] {
+        for import in [
+            "use crate::parse as $alias;",
+            "use self::parse as $alias;",
+            "use super::parse as $alias;",
+            "use $crate::parse as $alias;",
+            "use crate::{parse as $alias};",
+            "use super::parser::{parse as $alias};",
+        ] {
+            let source = format!(
+                "macro_rules! old {{ ($alias:ident) => {{ {import} }} }} fn run() {{ old!(legacy); legacy(source); }}"
+            );
+            let scan = scan_rust_source(&source, source_path, surface);
+            assert!(
+                !scan.prohibited_aliases.is_empty(),
+                "{source_path}: {source}"
+            );
+        }
+    }
+    let scan = scan_rust_source(
+        "macro_rules! unrelated { ($alias:ident) => { use crate::ordinary as $alias; } }",
+        "fixture.rs",
+        ParserReexports::None,
+    );
+    assert!(scan.prohibited_aliases.is_empty());
+}
+
+#[test]
+fn latest_review2_development_only_local_packages_do_not_enter_production_closure() {
+    for dependency_kind in [
+        "dev-dependencies",
+        "dependencies",
+        "build-dependencies",
+        "target.'cfg(windows)'.dev-dependencies",
+    ] {
+        let fixture = CensusFixture::new();
+        fixture.write(
+            "Cargo.toml",
+            &format!(
+                r#"
+[package]
+name = "consumer"
+version = "0.0.0"
+edition = "2024"
+[workspace]
+exclude = ["helper", "leaf", "syntax"]
+[{dependency_kind}]
+helper = {{ path = "helper" }}
+"#
+            ),
+        );
+        fixture.write("src/lib.rs", "");
+        for (directory, dependencies) in [
+            (
+                "helper",
+                "leaf = { path = \"../leaf\" }\nrenamed = { package = \"mech-syntax\", path = \"../syntax\" }",
+            ),
+            (
+                "leaf",
+                "renamed = { package = \"mech-syntax\", path = \"../syntax\" }",
+            ),
+        ] {
+            fixture.write(&format!("{directory}/Cargo.toml"), &format!("[package]\nname = {directory:?}\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n[dependencies]\n{dependencies}\n"));
+            fixture.write(
+                &format!("{directory}/src/lib.rs"),
+                "fn hidden(source: &str) { renamed::parse(source); }",
+            );
+        }
+        fixture.write("syntax/Cargo.toml", "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n");
+        fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+        let metadata = fixture.metadata();
+        let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+        if dependency_kind.contains("dev-dependencies") {
+            assert!(calls.is_empty(), "{dependency_kind}: {calls:?}");
+            assert_eq!(metadata.len(), 1, "{dependency_kind}");
+        } else {
+            assert_eq!(
+                calls,
+                BTreeMap::from([
+                    (("helper/src/lib.rs".to_owned(), "hidden".to_owned()), 1),
+                    (("leaf/src/lib.rs".to_owned(), "hidden".to_owned()), 1),
+                ]),
+                "{dependency_kind}"
+            );
+            assert_eq!(metadata.len(), 4, "{dependency_kind}");
+        }
+        assert!(aliases.is_empty(), "{dependency_kind}: {aliases:?}");
+    }
+}
+
+#[test]
+fn latest_review2_resolved_production_edges_cross_external_packages_without_scanning_them() {
+    for dependency_kind in ["dependencies", "dev-dependencies"] {
+        let fixture = CensusFixture::new();
+        let external = CensusFixture::new();
+        fixture.write("Cargo.toml", &format!("[package]\nname = \"consumer\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\nexclude = [\"leaf\", \"syntax\"]\n[{dependency_kind}]\nbridge = {{ path = {:?} }}\n", external.0.to_str().unwrap()));
+        fixture.write("src/lib.rs", "");
+        external.write("Cargo.toml", &format!("[package]\nname = \"bridge\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n[dependencies]\nleaf = {{ path = {:?} }}\n", fixture.0.join("leaf").to_str().unwrap()));
+        external.write("src/lib.rs", "");
+        fixture.write("leaf/Cargo.toml", "[package]\nname = \"leaf\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n[dependencies]\nrenamed = { package = \"mech-syntax\", path = \"../syntax\" }\n");
+        fixture.write(
+            "leaf/src/lib.rs",
+            "fn hidden(source: &str) { renamed::parse(source); }",
+        );
+        fixture.write("syntax/Cargo.toml", "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n[workspace]\n");
+        fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+        let external_manifest = fs::read(external.0.join("Cargo.toml")).unwrap();
+        let metadata = fixture.metadata();
+        let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+        if dependency_kind == "dependencies" {
+            assert_eq!(
+                calls,
+                BTreeMap::from([(("leaf/src/lib.rs".to_owned(), "hidden".to_owned()), 1)])
+            );
+            assert_eq!(metadata.len(), 3);
+        } else {
+            assert!(calls.is_empty());
+            assert_eq!(metadata.len(), 1);
+        }
+        assert!(aliases.is_empty());
+        assert_eq!(
+            fs::read(external.0.join("Cargo.toml")).unwrap(),
+            external_manifest
+        );
+        assert!(!external.0.join("Cargo.lock").exists());
+    }
+}
+
+#[test]
+fn final_review_build_targets_are_production_sources() {
+    for build in ["build.rs", "tools/generate.rs"] {
+        let fixture = CensusFixture::new();
+        fixture.write("Cargo.toml", &format!("[package]\nname = \"consumer\"\nversion = \"0.0.0\"\nedition = \"2024\"\nbuild = {build:?}\n[workspace]\nmembers = [\"syntax\"]\n[build-dependencies]\nmech-syntax = {{ path = \"syntax\" }}\n"));
+        fixture.write("src/lib.rs", "");
+        fixture.write(
+            "syntax/Cargo.toml",
+            "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+        );
+        fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+        fixture.write(build, "fn main() { mech_syntax::parse(\"source\"); }");
+        let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &fixture.metadata());
+        assert_eq!(
+            calls,
+            BTreeMap::from([((build.to_owned(), "main".to_owned()), 1)])
+        );
+        assert!(aliases.is_empty());
+    }
+}
+
+#[test]
+fn final_review_imported_parser_module_cannot_hide_function_aliases() {
+    for import in [
+        "use parser::parse as old_parse;",
+        "use parser::{parse as old_parse};",
+        "use parser::*;",
+    ] {
+        let source = format!("use mech_syntax::parser; {import} fn run() {{ old_parse(source); }}");
+        let scan = scan_rust_source(&source, "fixture.rs", ParserReexports::None);
+        assert_eq!(scan.prohibited_aliases.len(), 1, "{source}");
+        let canonical = source.replace("mech_syntax::parser", "mech_syntax::document::parser");
+        let scan = scan_rust_source(&canonical, "fixture.rs", ParserReexports::None);
+        assert!(scan.prohibited_aliases.is_empty(), "{canonical}");
+    }
+}
+
+#[test]
+fn final_review_conditional_bindings_retain_every_possible_parser() {
+    for imports in [
+        "#[cfg(feature = \"old\")] use mech_syntax::parser; #[cfg(not(feature = \"old\"))] use mech_syntax::document::parser;",
+        "#[cfg(not(feature = \"old\"))] use mech_syntax::document::parser; #[cfg(feature = \"old\")] use mech_syntax::parser;",
+        "#[cfg(feature = \"old\")] use mech_syntax::{parser}; #[cfg(not(feature = \"old\"))] use mech_syntax::document::{parser};",
+    ] {
+        let source = format!("{imports} fn run() {{ parser::parse(source); }}");
+        let scan = scan_rust_source(&source, "fixture.rs", ParserReexports::None);
+        assert_eq!(
+            scan.call_counts(),
+            BTreeMap::from([("run".to_owned(), 1)]),
+            "{source}"
+        );
+        let alias = format!("{imports} use parser::parse as old_parse;");
+        let scan = scan_rust_source(&alias, "fixture.rs", ParserReexports::None);
+        assert_eq!(scan.prohibited_aliases.len(), 1, "{alias}");
+    }
+}
+
+#[test]
+fn final_review_shared_file_unions_physical_calls_across_package_namespaces() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "Cargo.toml",
+        "[workspace]\nmembers = [\"first\", \"second\", \"syntax\"]\nresolver = \"3\"\n",
+    );
+    fixture.write(
+        "syntax/Cargo.toml",
+        "[package]\nname = \"mech-syntax\"\nversion = \"0.0.0\"\nedition = \"2024\"\n",
+    );
+    fixture.write("syntax/src/lib.rs", "pub fn parse(_: &str) {}");
+    for package in ["first", "second"] {
+        fixture.write(&format!("{package}/Cargo.toml"), &format!("[package]\nname = {package:?}\nversion = \"0.0.0\"\nedition = \"2024\"\n[features]\n{package} = []\n[dependencies]\n{package}-syntax = {{ package = \"mech-syntax\", path = \"../syntax\" }}\n"));
+        fixture.write(
+            &format!("{package}/src/lib.rs"),
+            "#[path = \"../../shared.rs\"] mod shared;",
+        );
+    }
+    fixture.write("shared.rs", "fn run(source: &str) { #[cfg(feature = \"first\")] first_syntax::parse(source); #[cfg(feature = \"second\")] second_syntax::parse(source); }");
+    let metadata = fixture.metadata();
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("shared.rs".to_owned(), "run".to_owned()), 2)])
+    );
+    assert!(aliases.is_empty());
+    fixture.write(
+        "shared.rs",
+        "fn run(source: &str) { first_syntax::parse(source); }",
+    );
+    let (calls, aliases) = discovered_calls_in_packages(&fixture.0, &metadata);
+    assert_eq!(
+        calls,
+        BTreeMap::from([(("shared.rs".to_owned(), "run".to_owned()), 1)])
+    );
+    assert!(aliases.is_empty());
 }
