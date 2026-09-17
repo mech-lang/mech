@@ -3,10 +3,7 @@ use mech_syntax::document::parser::canonical::{
     parse_canonical_base_rule_for_test, parse_canonical_tag_for_test,
 };
 use mech_syntax::document::parser::rules;
-use mech_syntax::document::{
-    DocumentId, ParseConfig, Revision, RuleId, TextRange, TextSize, TextSnapshot,
-};
-use mech_syntax::{ParseResult, ParseString};
+use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextRange, TextSize, TextSnapshot};
 use proptest::prelude::*;
 
 fn piece_snapshot(parts: &[&str]) -> TextSnapshot {
@@ -119,71 +116,6 @@ fn exact_tags_compare_complete_graphemes_across_piece_boundaries() {
     );
     assert!(!prefix.matched);
     assert_eq!(prefix.consumed, TextRange::empty(TextSize::ZERO));
-}
-
-type LegacyParser = for<'source> fn(ParseString<'source>) -> ParseResult<'source, String>;
-
-fn assert_canonical_legacy_extent(parts: &[&str], rule: RuleId, legacy: LegacyParser) {
-    let source = piece_snapshot(parts);
-    let text = parts.concat();
-    let parsed = parse_canonical_base_rule_for_test(source, rule, ParseConfig::default()).unwrap();
-    assert!(parsed.matched, "{:?} did not match {text:?}", rule);
-
-    let graphemes = mech_syntax::graphemes::init_source(&text);
-    let input = ParseString::new(&graphemes);
-    let (_, legacy_text) = legacy(input).expect("legacy lexical contract");
-    assert_eq!(
-        parsed.consumed.len().to_usize(),
-        legacy_text.len(),
-        "{:?} consumed a different grapheme extent for {text:?}",
-        rule
-    );
-    assert_eq!(
-        parsed.source.text(parsed.consumed).unwrap(),
-        legacy_text,
-        "{:?} consumed different source text for {text:?}",
-        rule
-    );
-}
-
-#[test]
-fn canonical_lexical_rules_match_legacy_cross_piece_grapheme_extents() {
-    for parts in [
-        &["e", "\u{301}"][..],
-        &["\u{2764}", "\u{fe0f}"][..],
-        &[
-            "\u{1f468}",
-            "\u{200d}",
-            "\u{1f469}",
-            "\u{200d}",
-            "\u{1f467}",
-            "\u{200d}",
-            "\u{1f466}",
-        ][..],
-        &["\u{1f1fa}", "\u{1f1f8}"][..],
-        &["\r", "\n"][..],
-        &["a", "b"][..],
-    ] {
-        assert_canonical_legacy_extent(parts, rules::ANY, mech_syntax::any);
-    }
-
-    assert_canonical_legacy_extent(&["e", "\u{301}"], rules::ALPHA, mech_syntax::alpha);
-    assert_canonical_legacy_extent(&["1", "\u{20e3}"], rules::DIGIT, mech_syntax::digit);
-    for parts in [
-        &["\u{2764}", "\u{fe0f}"][..],
-        &[
-            "\u{1f468}",
-            "\u{200d}",
-            "\u{1f469}",
-            "\u{200d}",
-            "\u{1f467}",
-            "\u{200d}",
-            "\u{1f466}",
-        ][..],
-        &["\u{1f1fa}", "\u{1f1f8}"][..],
-    ] {
-        assert_canonical_legacy_extent(parts, rules::EMOJI_GRAPHEME, mech_syntax::emoji_grapheme);
-    }
 }
 
 proptest! {

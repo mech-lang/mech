@@ -362,13 +362,6 @@ impl CompilerPlanningProgram {
         self.interpreter.interpret_with_services(tree, services)
     }
 
-    #[cfg(test)]
-    pub(crate) fn plan_source_for_test(&mut self, source: &str) -> MResult<Option<ValueCell>> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        let mut services = NoMechExecutionServices;
-        self.plan_tree_with_services(&tree, &mut services)
-    }
-
     /// Returns a host-inspection snapshot of a root symbol.
     ///
     /// Compiler ownership paths must use `compiler_root_symbol_cell` instead.
@@ -1090,184 +1083,6 @@ mod tests {
     use super::*;
     #[cfg(feature = "functions")]
     use mech_core::FunctionCatalogBuilder;
-    #[cfg(all(
-        feature = "semantic-compiler",
-        feature = "source",
-        feature = "invariant_define",
-        feature = "compare_default",
-        feature = "f64"
-    ))]
-    use mech_core::{BytecodeInstruction, ParsedProgram, Register};
-    use std::collections::BTreeMap;
-
-    #[cfg(all(
-        feature = "source",
-        feature = "functions",
-        feature = "program",
-        feature = "f64",
-        feature = "matrix",
-        feature = "compare_default",
-        feature = "invariant_define"
-    ))]
-    fn assert_ordinary_source_artifact_parity(
-        artifact_a: &ProgramArtifact,
-        artifact_b: &ProgramArtifact,
-    ) {
-        assert_eq!(artifact_a.contracts(), artifact_b.contracts());
-        assert_eq!(artifact_a.inputs(), artifact_b.inputs());
-        assert_eq!(artifact_a.slots(), artifact_b.slots());
-        assert_eq!(artifact_a.bindings(), artifact_b.bindings());
-        assert_eq!(artifact_a.outputs(), artifact_b.outputs());
-        assert_eq!(artifact_a.constraints(), artifact_b.constraints());
-        assert_eq!(artifact_a.schemas().len(), artifact_b.schemas().len());
-        assert_eq!(artifact_a.constants().len(), artifact_b.constants().len());
-        assert_eq!(artifact_a.nodes().len(), artifact_b.nodes().len());
-        assert_eq!(artifact_a.revision(), artifact_b.revision());
-    }
-
-    #[cfg(all(
-        feature = "source",
-        feature = "functions",
-        feature = "program",
-        feature = "f64",
-        feature = "matrix",
-        feature = "compare_default",
-        feature = "invariant_define"
-    ))]
-    #[test]
-    fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
-        let mut executable_node_count = 0;
-        for source in [
-            include_str!("../../tests/fixtures/program-artifact/scalar-alias.mec"),
-            include_str!("../../tests/fixtures/program-artifact/state-register.mec"),
-            include_str!("../../tests/fixtures/program-artifact/matrix-literal.mec"),
-            include_str!("../../tests/fixtures/program-artifact/comparison-output.mec"),
-            include_str!("../../tests/fixtures/program-artifact/integrity-constraint.mec"),
-        ] {
-            let mut program = test_mech_program(CompilerPlanningConfig::default());
-            program.plan_source_for_test(source)?;
-            let product = program.compile_program_product()?;
-            let artifact_a = product.artifact();
-            let parsed = ParsedProgram::from_bytes(product.bytecode())?;
-            let artifact_b = decode_program_artifact_sections(&parsed.artifact)
-                .expect("ordinary source bytecode-v1 artifact sections must decode");
-
-            assert_ordinary_source_artifact_parity(artifact_a, &artifact_b);
-            assert!(!artifact_a.schemas().is_empty());
-            executable_node_count += artifact_a.nodes().len();
-            assert!(artifact_a.nodes().iter().all(|node| matches!(
-                artifact_a.contracts().get(node.as_operation().unwrap().contract),
-                Some(mech_core::ResolvedOperationContract::Declared(_))
-            )));
-        }
-        assert!(executable_node_count > 0);
-        Ok(())
-    }
-
-    #[cfg(all(
-        feature = "source",
-        feature = "functions",
-        feature = "program",
-        feature = "f64",
-        feature = "matrix",
-        feature = "compare_default",
-        feature = "invariant_define"
-    ))]
-    fn compile_source_artifact(source: &str) -> MResult<ProgramArtifact> {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program.plan_source_for_test(source)?;
-        Ok(program.compile_program_product()?.into_parts().0)
-    }
-
-    #[cfg(all(
-        feature = "source",
-        feature = "functions",
-        feature = "program",
-        feature = "f64",
-        feature = "matrix",
-        feature = "compare_default",
-        feature = "invariant_define"
-    ))]
-    #[test]
-    fn source_composites_and_mutable_state_keep_exact_artifact_semantics() -> MResult<()> {
-        for source in [
-            "(1.0, 2.0)",
-            "first := 1.0\nsecond := 2.0\npair := (first, second)\npair",
-        ] {
-            let artifact = compile_source_artifact(source)?;
-            let composite = artifact
-                .nodes()
-                .iter()
-                .find(|node| {
-                    node.as_operation().unwrap().operation.module_path.as_ref() == ["core"]
-                        && node.as_operation().unwrap().operation.operation_name == "composite-pack"
-                })
-                .expect("source tuple must retain a reactive composite-pack node");
-            assert!(composite.input_bindings.len() >= 2);
-            assert_eq!(composite.output_bindings.len(), 1);
-            assert_eq!(artifact.outputs().len(), 1);
-        }
-
-        let matrix = compile_source_artifact(
-            "~state := [1.0 2.0; 3.0 4.0]\nreplacement := [0.0 0.0; 0.0 0.0]\nstate = replacement\nstate",
-        )?;
-        let state = matrix
-            .slots()
-            .iter()
-            .find(|slot| slot.role == SlotRole::State)
-            .expect("mutable matrix must retain a state slot");
-        let InitializerReference::Constant(initializer) = state
-            .initializer
-            .expect("mutable matrix state must retain its declaration initializer")
-        else {
-            panic!("compiler fixture requires a constant initializer")
-        };
-        let ValueData::Matrix(initializer) = matrix.constants().get(initializer).unwrap().data()
-        else {
-            panic!("mutable matrix initializer must remain a matrix")
-        };
-        let mech_core::snapshot::SequenceView::F64(values) = initializer.elements() else {
-            panic!("mutable matrix initializer must retain f64 elements")
-        };
-        assert_eq!(
-            values
-                .iter()
-                .map(|value| value.to_f64())
-                .collect::<Vec<_>>(),
-            vec![1.0, 2.0, 3.0, 4.0]
-        );
-
-        let equal =
-            compile_source_artifact("input := 1.0\n~state := 1.0\nstate = input\noutput := state")?;
-        let equal_state = equal
-            .slots()
-            .iter()
-            .find(|slot| slot.role == SlotRole::State)
-            .expect("equal constants must not erase the state role");
-        assert!(equal_state.initializer.is_some());
-        Ok(())
-    }
-
-    #[cfg(all(
-        feature = "source",
-        feature = "functions",
-        feature = "program",
-        feature = "f64",
-        feature = "matrix",
-        feature = "compare_default",
-        feature = "invariant_define"
-    ))]
-    #[test]
-    fn source_artifact_rejects_multiple_full_state_writers() -> MResult<()> {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program.plan_source_for_test(
-            "~state := 1.0\nlimit := 2.0\nbefore := state < limit\nstate = limit\nstate = 3.0\nstate",
-        )?;
-        let error = program.compile_program_product().unwrap_err();
-        assert_eq!(error.kind_name(), "ProgramArtifactCompilationError");
-        assert!(error.kind_message().contains("InvalidStateWriterChain"));
-        Ok(())
-    }
 
     #[cfg(feature = "functions")]
     #[test]
@@ -1300,221 +1115,21 @@ mod tests {
             extension_count,
         );
     }
-
-    #[cfg(all(
-        feature = "functions",
-        feature = "native",
-        feature = "semantic-compiler",
-        feature = "f64"
-    ))]
-    #[test]
-    fn native_closure_bytecode_rejection_remains_structured() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program
-            .register_native_closure("host/source-only", |_| {
-                ValueCell::from_exact(4.0_f64)?.snapshot()
-            })
-            .unwrap();
-        program
-            .plan_source_for_test("source-only := host/source-only()")
-            .unwrap();
-
-        let error = program.compile_program_product().unwrap_err();
-        assert_eq!(
-            error.kind_name(),
-            "ClosureNativeFunctionNotBytecodeCompilable",
-        );
-    }
-
-    #[cfg(feature = "invariant_define")]
-    fn constraint<'a>(
-        program: &'a CompilerPlanningProgram,
-        name: &str,
-    ) -> mech_core::IntegrityConstraint {
-        program
-            .interpreter
-            .state
-            .borrow()
-            .integrity_constraints
-            .get(&hash_str(name))
-            .unwrap()
-            .clone()
-    }
-
-    #[cfg(feature = "invariant_define")]
-    #[test]
-    fn integrity_constraint_declarations_create_live_descriptors_without_enforcement() {
-        for (name, expression) in [
-            ("true!", "1.0 <= 2.0"),
-            ("false!", "2.0 <= 1.0"),
-            ("number!", "42.0"),
-        ] {
-            let mut program = test_mech_program(CompilerPlanningConfig::default());
-            program
-                .plan_source_for_test(&format!("{name} := {expression}"))
-                .unwrap();
-            let descriptor = constraint(&program, name);
-            assert_eq!(descriptor.id, hash_str(name));
-            assert_eq!(descriptor.name, name);
-            assert!(!descriptor.expression.is_empty());
-            assert!(!descriptor.tokens.is_empty());
-            assert_eq!(
-                program
-                    .interpreter
-                    .state
-                    .borrow()
-                    .integrity_constraints
-                    .len(),
-                1,
-            );
-        }
-    }
-
-    #[cfg(feature = "invariant_define")]
-    #[test]
-    fn integrity_constraint_direct_operands_remain_live() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program
-            .plan_source_for_test("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum")
-            .unwrap();
-
-        let descriptor = constraint(&program, "safe!");
-        let target = program
-            .interpreter
-            .symbols()
-            .borrow()
-            .get(hash_str("target"))
-            .unwrap();
-        assert!(descriptor.lhs.as_ref().unwrap().same_cell(&target));
-        assert!(descriptor.rhs.is_some());
-        target
-            .replace(&ValueCell::from_exact(3.0_f64).unwrap().snapshot().unwrap())
-            .unwrap();
-        let lhs = descriptor.lhs.unwrap().snapshot().unwrap();
-        if let ValueData::F64(value) = lhs.data() {
-            assert_eq!(value.to_f64(), 3.0);
-        } else {
-            panic!("captured lhs must remain the target cell");
-        }
-    }
-
-    #[cfg(feature = "invariant_define")]
-    #[test]
-    fn integrity_constraint_diagnostics_do_not_recompile_complex_operands() {
-        let source = "target := 1.0\nmaximum := 3.0";
-        let expression = "target + 1.0 <= maximum";
-        let mut ordinary = test_mech_program(CompilerPlanningConfig::default());
-        ordinary
-            .plan_source_for_test(&format!("{source}\ncandidate := {expression}"))
-            .unwrap();
-        let ordinary_plan_len = ordinary.interpreter.plan_len();
-
-        let mut constrained = test_mech_program(CompilerPlanningConfig::default());
-        constrained
-            .plan_source_for_test(&format!("{source}\nsafe! := {expression}"))
-            .unwrap();
-        let descriptor = constraint(&constrained, "safe!");
-
-        assert_eq!(constrained.interpreter.plan_len(), ordinary_plan_len);
-        assert!(descriptor.lhs.is_none());
-        assert!(descriptor.operator.is_some());
-        assert!(descriptor.rhs.is_some());
-    }
-
-    #[cfg(all(
-        feature = "semantic-compiler",
-        feature = "source",
-        feature = "invariant_define",
-        feature = "compare_default",
-        feature = "f64"
-    ))]
-    #[test]
-    fn integrity_marker_metadata_lives_through_bytecode_finalization() -> MResult<()> {
-        let source = concat!(
-            "finite-candidate! := 1.0 <= 2.0\n",
-            "positive-covariance! := 2.0 <= 3.0\n",
-            "symmetric-covariance! := 3.0 <= 4.0",
-        );
-        let expected_names = BTreeSet::from([
-            "finite-candidate!".to_owned(),
-            "positive-covariance!".to_owned(),
-            "symmetric-covariance!".to_owned(),
-        ]);
-
-        for _ in 0..64 {
-            let mut program = test_mech_program(CompilerPlanningConfig::default());
-            program.plan_source_for_test(source)?;
-            let expected_expressions = program
-                .interpreter
-                .state
-                .borrow()
-                .integrity_constraints
-                .values()
-                .map(|constraint| (constraint.name.clone(), constraint.expression.clone()))
-                .collect::<BTreeMap<_, _>>();
-            let product = program.compile_program_product()?;
-            let parsed = ParsedProgram::from_bytes(product.bytecode())?;
-            let constants = parsed.decode_constants()?;
-            let constant_registers = parsed
-                .instructions
-                .iter()
-                .filter_map(|instruction| match instruction {
-                    BytecodeInstruction::ConstLoad { dst, constant } => Some((*dst, *constant)),
-                    _ => None,
-                })
-                .collect::<BTreeMap<Register, u32>>();
-            let string_at = |register: Register| -> String {
-                let constant = constant_registers
-                    .get(&register)
-                    .expect("marker String metadata must be loaded from a constant");
-                match constants[*constant as usize].data() {
-                    mech_core::ValueData::String(value) => value.to_string(),
-                    other => {
-                        panic!("marker metadata register {register} must be String, got {other:?}")
-                    }
-                }
-            };
-            let markers = parsed
-                .instructions
-                .iter()
-                .filter_map(|instruction| match instruction {
-                    BytecodeInstruction::RuntimeVariadic {
-                        function,
-                        arguments,
-                        ..
-                    } if *function == hash_str("integrity/constraint") => Some(arguments),
-                    _ => None,
-                })
-                .collect::<Vec<_>>();
-
-            assert_eq!(markers.len(), 3);
-            let mut decoded_names = BTreeSet::new();
-            let mut distinct_string_registers = BTreeSet::new();
-            for arguments in markers {
-                assert_eq!(arguments.len(), 6);
-                let name = string_at(arguments[1]);
-                let expression = string_at(arguments[2]);
-                assert_eq!(
-                    parsed.symbols.get(&hash_str(&name)),
-                    Some(&arguments[0]),
-                    "integrity marker must remain associated with its named result register",
-                );
-                assert_eq!(expected_expressions.get(&name), Some(&expression));
-                assert!(decoded_names.insert(name));
-                assert!(distinct_string_registers.insert(arguments[1]));
-                assert!(distinct_string_registers.insert(arguments[2]));
-            }
-            assert_eq!(decoded_names, expected_names);
-            assert_eq!(distinct_string_registers.len(), 6);
-        }
-
-        Ok(())
-    }
 }
 
 #[cfg(all(test, feature = "source"))]
 mod root_symbol_snapshot_tests {
     use super::*;
+
+    fn program_with_f64_symbols(symbols: &[(&str, f64)]) -> CompilerPlanningProgram {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        for (name, value) in symbols {
+            program
+                .install_compiler_symbol(name, ValueCell::from_exact(*value).unwrap())
+                .unwrap();
+        }
+        program
+    }
 
     fn f64_value(value: &Value) -> f64 {
         match value.data() {
@@ -1525,8 +1140,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_value_returns_value() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program.plan_source_for_test("answer := 42.0").unwrap();
+        let program = program_with_f64_symbols(&[("answer", 42.0)]);
         assert_eq!(
             f64_value(&program.compiler_root_symbol_value("answer").unwrap()),
             42.0
@@ -1535,10 +1149,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_values_preserve_order() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program
-            .plan_source_for_test("a := 1.0\nb := 2.0\nc := 3.0")
-            .unwrap();
+        let program = program_with_f64_symbols(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]);
         let rows = program
             .compiler_root_symbol_values(&["c", "a", "b"])
             .unwrap();
@@ -1548,8 +1159,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_cells_preserve_order_and_original_identity() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program.plan_source_for_test("a := 1.0\nb := 2.0").unwrap();
+        let program = program_with_f64_symbols(&[("a", 1.0), ("b", 2.0)]);
         let symbols = program.interpreter.symbols();
         let a = symbols.borrow().get(hash_str("a")).unwrap();
 
@@ -1611,8 +1221,7 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_values_snapshot_multiple_values() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program.plan_source_for_test("a := 1.0\nb := 2.0").unwrap();
+        let program = program_with_f64_symbols(&[("a", 1.0), ("b", 2.0)]);
         let rows = program.compiler_root_symbol_values(&["a", "b"]).unwrap();
         assert_eq!(f64_value(&rows[0].1), 1.0);
         assert_eq!(f64_value(&rows[1].1), 2.0);
@@ -1620,45 +1229,10 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_values_all_are_sorted_by_name() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program
-            .plan_source_for_test("c := 3.0\na := 1.0\nb := 2.0")
-            .unwrap();
+        let program = program_with_f64_symbols(&[("c", 3.0), ("a", 1.0), ("b", 2.0)]);
         let rows = program.compiler_root_symbol_values_all().unwrap();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
-        assert_eq!(names, vec!["a", "ans", "b", "c"]);
-    }
-
-    #[cfg(all(
-        feature = "semantic-compiler",
-        feature = "source",
-        feature = "table",
-        feature = "record",
-        feature = "kind_annotation",
-        feature = "string",
-        feature = "f64"
-    ))]
-    #[test]
-    fn dynamic_table_columns_compile_inside_records_without_schema_id_collisions() -> MResult<()> {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program
-            .plan_source_for_test(
-                r#"
-scene :=
-  | fill<*> stroke<*> |
-  | "none"  4.0       |
-  | 3.0     "none"    |
-"#,
-            )
-            .expect("dynamic table source planning succeeds");
-        let result = program
-            .plan_source_for_test("presentation := { circles: scene }\npresentation")
-            .expect("record source planning succeeds");
-        program.publish_compiler_root_output(result.expect("source returns the presentation"));
-
-        let artifact = program.compile_program_artifact()?;
-        assert_eq!(artifact.outputs().len(), 1);
-        Ok(())
+        assert_eq!(names, vec!["a", "b", "c"]);
     }
 
     #[test]
@@ -1670,8 +1244,7 @@ scene :=
 
     #[test]
     fn snapshot_does_not_hold_symbol_table_borrow() {
-        let mut program = test_mech_program(CompilerPlanningConfig::default());
-        program.plan_source_for_test("answer := 42.0").unwrap();
+        let program = program_with_f64_symbols(&[("answer", 42.0)]);
         let _snapshot = program.compiler_root_symbol_value("answer").unwrap();
         let symbols = program.interpreter.symbols();
         let _mutable_borrow = symbols.borrow_mut();

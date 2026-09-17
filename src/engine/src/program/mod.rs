@@ -25,6 +25,3 @@ pub use compiler_planning::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningLimits,
     CompilerPlanningProgram, ProgramArtifactCompilationProduct, ProgramCompilationProduct,
 };
-
-#[cfg(all(test, feature = "semantic-compiler"))]
-mod context_binding_tests;

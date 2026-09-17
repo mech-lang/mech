@@ -16,11 +16,6 @@ PHASE_ROOT = "expression"
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
-PRODUCTIONS = (
-    REPOSITORY_ROOT
-    / "docs/design/grammar-audit/productions.tsv"
-)
-
 PORTS = (
     REPOSITORY_ROOT
     / "docs/design/grammar-audit/ports.tsv"
@@ -40,26 +35,6 @@ DEPENDENCIES = (
     REPOSITORY_ROOT
     / "docs/design/grammar-audit/canonical-dependencies.tsv"
 )
-
-PRODUCTION_COLUMNS = [
-    "id",
-    "grammar-name",
-    "module",
-    "rust-function",
-    "classification",
-    "feature-gate",
-    "entry-point",
-    "output-type",
-    "parent-rules",
-    "child-rules",
-    "selection-behavior",
-    "termination",
-    "whitespace",
-    "spec-location",
-    "conformance-cases",
-    "implementation-path",
-    "notes",
-]
 
 PORT_COLUMNS = [
     "grammar-name",
@@ -128,7 +103,6 @@ FORBIDDEN_FAMILIES = {"mechdown", "mika", "repl", "activation", "parser"}
 
 @dataclass(frozen=True)
 class Analysis:
-    productions: dict[str, dict[str, str]]
     ports: dict[str, dict[str, str]]
     graph: dict[str, tuple[str, ...]]
     components: tuple[tuple[str, ...], ...]
@@ -175,31 +149,8 @@ def parse_name_list(
 
 def load_inputs() -> tuple[
     dict[str, dict[str, str]],
-    dict[str, dict[str, str]],
     dict[str, tuple[str, ...]],
 ]:
-    production_rows = read_tsv(PRODUCTIONS, PRODUCTION_COLUMNS)
-    canonical_rows = [
-        row
-        for row in production_rows
-        if row["spec-location"].startswith(
-            "docs/design/specification.mec::"
-        )
-    ]
-    if len(canonical_rows) != EXPECTED_RULES:
-        raise SystemExit(
-            f"expected {EXPECTED_RULES} canonical production rows, "
-            f"found {len(canonical_rows)}"
-        )
-
-    production_names = [row["grammar-name"] for row in canonical_rows]
-    production_ids = [row["id"] for row in canonical_rows]
-    if len(set(production_names)) != EXPECTED_RULES:
-        raise SystemExit("canonical productions contain duplicate grammar names")
-    if len(set(production_ids)) != EXPECTED_RULES:
-        raise SystemExit("canonical productions contain duplicate production IDs")
-    productions = {row["grammar-name"]: row for row in canonical_rows}
-
     port_rows = read_tsv(PORTS, PORT_COLUMNS)
     if len(port_rows) != EXPECTED_RULES:
         raise SystemExit(
@@ -209,13 +160,6 @@ def load_inputs() -> tuple[
     if len(set(port_names)) != EXPECTED_RULES:
         raise SystemExit("ports.tsv contains duplicate grammar-name entries")
     ports = {row["grammar-name"]: row for row in port_rows}
-    if set(productions) != set(ports):
-        missing_ports = sorted(set(productions) - set(ports))
-        unknown_ports = sorted(set(ports) - set(productions))
-        raise SystemExit(
-            "canonical production and port names differ: "
-            f"missing ports={missing_ports}, unknown ports={unknown_ports}"
-        )
 
     for name, row in ports.items():
         status = row["syntax-status"]
@@ -263,12 +207,12 @@ def load_inputs() -> tuple[
         raise SystemExit("canonical-dependencies.tsv must be ordered by grammar-name")
     if len(set(dependency_names)) != EXPECTED_RULES:
         raise SystemExit("canonical-dependencies.tsv contains duplicate grammar names")
-    if set(dependency_names) != set(productions):
-        raise SystemExit("canonical dependency and production name sets differ")
+    if set(dependency_names) != set(ports):
+        raise SystemExit("canonical dependency and port name sets differ")
 
     graph: dict[str, tuple[str, ...]] = {}
     reported_parents: dict[str, tuple[str, ...]] = {}
-    canonical_names = set(productions)
+    canonical_names = set(ports)
     for row in dependency_rows:
         name = row["grammar-name"]
         children = parse_name_list(
@@ -292,7 +236,7 @@ def load_inputs() -> tuple[
     for name in sorted(graph):
         if set(reported_parents[name]) != reversed_graph[name]:
             raise SystemExit(f"{name}: direct-parents does not reverse direct-children")
-    return productions, ports, graph
+    return ports, graph
 
 
 def strongly_connected_components(
@@ -362,7 +306,7 @@ def shortest_dependency_path(
 
 
 def analyze() -> Analysis:
-    productions, ports, graph = load_inputs()
+    ports, graph = load_inputs()
     components = strongly_connected_components(graph)
     component_ids = {
         component: f"SCC-{index:04d}"
@@ -460,7 +404,6 @@ def analyze() -> Analysis:
             active_external_rules.add(child)
 
     return Analysis(
-        productions=productions,
         ports=ports,
         graph=graph,
         components=components,
@@ -563,7 +506,7 @@ def summary(analysis: Analysis) -> str:
     )
     return "\n".join(
         [
-            f"canonical rules: {len(analysis.productions)}",
+            f"canonical rules: {len(analysis.ports)}",
             f"unported rules: {unported_rules}",
             f"inactive SCCs: {len(analysis.inactive_components)}",
             f"recursive inactive SCCs: {recursive_inactive}",

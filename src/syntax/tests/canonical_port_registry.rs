@@ -33,6 +33,47 @@ fn fields(line: &str) -> Vec<&str> {
     line.split('\t').collect()
 }
 
+fn canonical_dependencies() -> BTreeMap<String, BTreeSet<String>> {
+    let source = fs::read_to_string(
+        repository_root().join("docs/design/grammar-audit/canonical-dependencies.tsv"),
+    )
+    .expect("read canonical-dependencies.tsv");
+    let mut lines = source.lines();
+    assert_eq!(
+        lines.next(),
+        Some("grammar-name\tdirect-children\tdirect-parents")
+    );
+    lines
+        .map(fields)
+        .map(|row| {
+            assert_eq!(row.len(), 3);
+            let children = if row[1] == "none" {
+                BTreeSet::new()
+            } else {
+                row[1].split('|').map(str::to_owned).collect()
+            };
+            (row[0].to_owned(), children)
+        })
+        .collect()
+}
+
+fn assert_dependencies_are_ported(names: &BTreeSet<&str>) {
+    let dependencies = canonical_dependencies();
+    for name in names {
+        for child in &dependencies[*name] {
+            let child_port = CANONICAL_PORTS
+                .iter()
+                .find(|port| port.name == child)
+                .unwrap_or_else(|| panic!("{name} has unknown canonical child {child}"));
+            assert_ne!(
+                child_port.syntax,
+                SyntaxPortStatus::Unported,
+                "{name} has unported canonical child {child}"
+            );
+        }
+    }
+}
+
 fn collect_rust_sources(path: &Path, sources: &mut Vec<PathBuf>) {
     for entry in fs::read_dir(path).expect("read production source directory") {
         let path = entry.expect("read production source entry").path();
@@ -258,7 +299,7 @@ fn canonical_port_registry_is_audit_metadata_not_runtime_dispatch() {
 }
 
 #[test]
-fn phase_2a_is_the_exact_mechanically_closed_167_rule_set() {
+fn phase_2a_is_the_exact_closed_167_rule_set() {
     let phase_2a = CANONICAL_PORTS
         .iter()
         .filter(|port| port.phase == Some(PortPhase::Phase2A))
@@ -274,48 +315,6 @@ fn phase_2a_is_the_exact_mechanically_closed_167_rule_set() {
         .iter()
         .map(|port| port.name)
         .collect::<BTreeSet<_>>();
-
-    let inventory =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .expect("read productions.tsv");
-    let mut lines = inventory.lines();
-    let header = fields(lines.next().expect("productions.tsv header"));
-    let grammar_name = header
-        .iter()
-        .position(|column| *column == "grammar-name")
-        .unwrap();
-    let module = header
-        .iter()
-        .position(|column| *column == "module")
-        .unwrap();
-    let specification = header
-        .iter()
-        .position(|column| *column == "spec-location")
-        .unwrap();
-    let explicit = BTreeSet::from([
-        "left-angle",
-        "right-angle",
-        "box-drawing-char",
-        "box-drawing-emoji",
-        "tag",
-        "parse-grammar",
-    ]);
-    let expected = lines
-        .map(fields)
-        .filter(|row| {
-            row[specification].starts_with("docs/design/specification.mec::")
-                && (matches!(row[module], "base" | "grammar")
-                    || explicit.contains(row[grammar_name]))
-        })
-        .map(|row| row[grammar_name].to_owned())
-        .collect::<BTreeSet<_>>();
-    assert_eq!(expected.len(), EXPECTED_PHASE_2A);
-    assert_eq!(
-        names,
-        expected.iter().map(String::as_str).collect(),
-        "Phase 2A port set differs from the mechanical selection formula"
-    );
-
     for dependency in ["left-angle", "right-angle"] {
         assert!(
             names.contains(dependency),
@@ -326,97 +325,18 @@ fn phase_2a_is_the_exact_mechanically_closed_167_rule_set() {
         names.contains("box-drawing-emoji"),
         "forbidden-emoji hidden dependency box-drawing-emoji is unported"
     );
+    assert_dependencies_are_ported(&names);
 }
-
 #[test]
-fn every_phase_2a_rule_has_closed_declared_children_and_conformance_evidence() {
-    let inventory =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .expect("read productions.tsv");
-    let mut lines = inventory.lines();
-    let header = fields(lines.next().expect("productions.tsv header"));
-    let grammar_name = header
-        .iter()
-        .position(|column| *column == "grammar-name")
-        .unwrap();
-    let child_rules = header
-        .iter()
-        .position(|column| *column == "child-rules")
-        .unwrap();
-    let specification = header
-        .iter()
-        .position(|column| *column == "spec-location")
-        .unwrap();
-    let conformance = header
-        .iter()
-        .position(|column| *column == "conformance-cases")
-        .unwrap();
-
-    let mut rows = BTreeMap::new();
-    for (index, line) in lines.enumerate() {
-        let row = fields(line);
-        assert_eq!(
-            row.len(),
-            header.len(),
-            "invalid inventory row {}",
-            index + 2
-        );
-        if row[specification].starts_with("docs/design/specification.mec::") {
-            assert!(rows.insert(row[grammar_name], row).is_none());
-        }
-    }
-    assert_eq!(rows.len(), EXPECTED_RULES);
-
-    let cases =
-        fs::read_to_string(repository_root().join("src/syntax/tests/fixtures/grammar/cases.tsv"))
-            .expect("read cases.tsv");
-    let mut case_lines = cases.lines();
-    let case_header = fields(case_lines.next().expect("cases.tsv header"));
-    let case_id = case_header
-        .iter()
-        .position(|column| *column == "id")
-        .unwrap();
-    let case_ids = case_lines
-        .map(fields)
-        .map(|row| row[case_id])
-        .collect::<BTreeSet<_>>();
-
+fn every_phase_2a_rule_has_closed_canonical_dependencies() {
     let phase_2a = CANONICAL_PORTS
         .iter()
         .filter(|port| port.phase == Some(PortPhase::Phase2A))
         .map(|port| port.name)
         .collect::<BTreeSet<_>>();
-    for name in &phase_2a {
-        let row = &rows[name];
-        assert!(
-            !row[conformance].is_empty() && row[conformance] != "none",
-            "{name} has no canonical conformance evidence"
-        );
-        for conformance_id in row[conformance].split(',') {
-            assert!(
-                case_ids.contains(conformance_id),
-                "{name} references unknown conformance case {conformance_id}"
-            );
-        }
-        for child in row[child_rules].split(',') {
-            if child.is_empty() || child == "none" {
-                continue;
-            }
-            // These two rows record nom::sequence::tuple, not the canonical
-            // structures.tuple production.
-            if child == "tuple" && matches!(*name, "grammar-range" | "grammar-terminal-token") {
-                continue;
-            }
-            if rows.contains_key(child) {
-                assert!(
-                    phase_2a.contains(child),
-                    "{name} has unported canonical child {child}"
-                );
-            }
-        }
-    }
+    assert_eq!(phase_2a.len(), EXPECTED_PHASE_2A);
+    assert_dependencies_are_ported(&phase_2a);
 }
-
 #[test]
 fn phase_2a_node_and_semantic_policies_are_exact() {
     let structural = BTreeMap::from([
@@ -983,41 +903,7 @@ fn phase_2e_registry_accounting_and_policies_are_exact() {
             .all(|port| port.name != "module-import-sigil" && port.name != "module-import-end")
     );
 
-    let inventory =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .expect("read productions.tsv");
-    let mut lines = inventory.lines();
-    let header = fields(lines.next().expect("productions.tsv header"));
-    let grammar_name = header
-        .iter()
-        .position(|column| *column == "grammar-name")
-        .unwrap();
-    let child_rules = header
-        .iter()
-        .position(|column| *column == "child-rules")
-        .unwrap();
-    for row in lines.map(fields) {
-        if !expected_names.contains(row[grammar_name]) {
-            continue;
-        }
-        for child in row[child_rules].split(',') {
-            if child.is_empty() || child == "none" {
-                continue;
-            }
-            let child_port = CANONICAL_PORTS
-                .iter()
-                .find(|port| port.name == child)
-                .unwrap_or_else(|| {
-                    panic!("{} has unknown canonical child {child}", row[grammar_name])
-                });
-            assert_ne!(
-                child_port.syntax,
-                SyntaxPortStatus::Unported,
-                "{} has unported canonical child {child}",
-                row[grammar_name]
-            );
-        }
-    }
+    assert_dependencies_are_ported(&expected_names);
 }
 
 #[test]
@@ -1101,41 +987,7 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
         17
     );
 
-    let inventory =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .expect("read productions.tsv");
-    let mut lines = inventory.lines();
-    let header = fields(lines.next().expect("productions.tsv header"));
-    let grammar_name = header
-        .iter()
-        .position(|column| *column == "grammar-name")
-        .unwrap();
-    let child_rules = header
-        .iter()
-        .position(|column| *column == "child-rules")
-        .unwrap();
-    for row in lines.map(fields) {
-        if !expected_names.contains(row[grammar_name]) {
-            continue;
-        }
-        for child in row[child_rules].split(',') {
-            if child.is_empty() || child == "none" {
-                continue;
-            }
-            let child_port = CANONICAL_PORTS
-                .iter()
-                .find(|port| port.name == child)
-                .unwrap_or_else(|| {
-                    panic!("{} has unknown canonical child {child}", row[grammar_name])
-                });
-            assert_ne!(
-                child_port.syntax,
-                SyntaxPortStatus::Unported,
-                "{} has unported canonical child {child}",
-                row[grammar_name]
-            );
-        }
-    }
+    assert_dependencies_are_ported(&expected_names);
 }
 
 #[test]

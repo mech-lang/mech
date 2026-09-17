@@ -2,7 +2,7 @@
 
 use mech_core::{CanonicalNominalPath, FunctionCatalogBuilder, ReactiveInstanceId};
 use mech_engine::resident::{ActivationFacts, activate};
-use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
+use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_runtime::{
     CanonicalDocumentRenderer, CanonicalRenderScope, CanonicalScopeResults, RuntimeValueSnapshot,
 };
@@ -844,4 +844,255 @@ fn source_body_preserves_front_matter_without_duplicate_framing() {
     assert!(!html.contains("<h1"), "{html}");
     assert!(!html.contains("<article"), "{html}");
     assert!(html.contains("answer"), "{html}");
+}
+
+#[test]
+fn live_body_keeps_inline_and_fence_output_addresses() {
+    let document = document("Result {1 + 2}.\n\n```mech\n40 + 2\n```\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let addresses = program
+        .document_outputs()
+        .iter()
+        .filter(|output| {
+            output.visible && output.kind != mech_engine::SourceDocumentOutputKind::Program
+        })
+        .map(|output| {
+            (
+                program.source_map().outputs[output.output as usize].range,
+                u64::from(output.output),
+            )
+        })
+        .collect::<Vec<_>>();
+    let html = CanonicalDocumentRenderer
+        .format_html_body_live(&document, &addresses)
+        .unwrap();
+    assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    for (_, output_id) in addresses {
+        assert!(html.contains(&format!("id='{output_id}:0'")), "{html}");
+    }
+}
+
+#[test]
+fn browser_source_mounts_match_compiled_canonical_output_anchors() {
+    let document =
+        document("~answer := 41\n\nThe answer is {answer + 1}.\n\n~~~mech\nanswer + 2\n~~~\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let expected_presentation_ids = program
+        .document_outputs()
+        .iter()
+        .filter(|binding| binding.visible && binding.kind != SourceDocumentOutputKind::Program)
+        .map(|binding| {
+            let range = program.source_map().outputs[binding.output as usize].range;
+            mech_runtime::canonical_document_output_id(binding.kind, range)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        mech_runtime::canonical_document_presentation_output_ids(&document).unwrap(),
+        expected_presentation_ids,
+    );
+    for binding in program
+        .document_outputs()
+        .iter()
+        .filter(|binding| binding.visible)
+    {
+        let range = program.source_map().outputs[binding.output as usize].range;
+        let id = mech_runtime::canonical_document_output_id(binding.kind, range);
+        assert!(
+            html.contains(&format!("data-mech-output-address='{id}:0'")),
+            "{binding:?}: {html}"
+        );
+    }
+    assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    assert!(html.contains("class='mech-block-output'"), "{html}");
+    assert!(
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .is_err()
+    );
+}
+
+#[test]
+fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
+    let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&document)
+        .unwrap();
+    for (name, expected) in [
+        ("AUTHOR", "Ada Lovelace"),
+        ("DATE", "July 30, 2026"),
+        ("KICKER", "Announcement"),
+        ("SECTION", "Compatibility"),
+        ("SUMMARY", "Every supported shim slot must render."),
+        ("HERO", "hero.svg"),
+        ("NEXT", "next.html"),
+        ("PREVIOUS", "previous.html"),
+        ("ABSTRACT", "deliberately separate"),
+        ("INTRO", "unsectioned introduction"),
+        ("TOC", "href='#section-1'"),
+        ("TOC", "href='#section-1.1'"),
+        ("SECTION1", "own distinct content"),
+        ("SECTION2", "must not appear"),
+        ("FOOTNOTES", "Fixture footnote body"),
+        ("CITED", "Mech Programming Language"),
+    ] {
+        assert!(
+            slots.get(name).is_some_and(|html| html.contains(expected)),
+            "{name}: {slots:#?}"
+        );
+    }
+    assert!(!slots["SECTION1"].contains("must not appear"));
+    assert!(!slots["CONTENT"].contains("unsectioned introduction"));
+    assert!(!slots["INTRO"].contains("deliberately separate"));
+    assert_eq!(slots["CONTENT"], slots["CONTENTS"]);
+    assert!(slots["INTRO"].contains("{{TITLE}}"));
+    assert!(slots["INTRO"].contains("mech-inline-mech-code"));
+}
+
+#[test]
+fn served_particle_document_formats_its_annotated_compute_heading() {
+    let source = include_str!("../../../examples/gpu-particles/particles.mec");
+    let document = document(source);
+    let slots = CanonicalDocumentRenderer
+        .format_browser_html_slots(&document)
+        .unwrap();
+    assert!(slots["TOC"].contains("particle-field"));
+    assert!(slots["CONTENT"].contains("particle-field"));
+}
+
+#[test]
+fn browser_titles_preserve_lf_and_crlf_source() {
+    for ending in ["\n", "\r\n"] {
+        let source = [
+            "Browser Title",
+            "=============",
+            "section: Examples",
+            "=============",
+            "answer := 42",
+            "The answer is {answer}.",
+            "",
+        ]
+        .join(ending);
+        let document = document(&source);
+        let html = CanonicalDocumentRenderer
+            .format_browser_html(&document)
+            .unwrap();
+        assert!(html.contains("<h1 class='mech-document-title'>Browser Title</h1>"));
+        assert!(html.contains("Examples"));
+        assert!(html.contains("mech-inline-mech-code"));
+    }
+    let source = include_str!("../../../examples/working/fizzbuzz.mec");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document(source))
+        .unwrap();
+    assert!(html.contains("<h1 class='mech-document-title'>Fizz Buzz</h1>"));
+    assert!(html.contains("mech-block-output"));
+}
+
+#[test]
+fn rich_comments_render_markup_and_line_local_ans_in_each_scope() {
+    let body = "answer := 40 + 2 -- **Result** [docs](https://mech-lang.org) `literal` {{answer + 99}}: {ans}, {ans + 1}.\nanswer + 2 // __Next__: {ans}, {ans + 10}.\n";
+    for (source, named) in [
+        (body.to_owned(), false),
+        (format!("~~~mech\n{body}~~~\n"), false),
+        (format!("root := 0\n~~~mech:example\n{body}~~~\n"), true),
+    ] {
+        for document in [document(&source), streamed_document(&source)] {
+            let frontend = CanonicalSourceFrontend;
+            let root = frontend.compile_document(&document).unwrap();
+            let mut results = vec![execute(
+                document.scope_id(),
+                CanonicalRenderScope::Root,
+                &root,
+                91,
+            )];
+            if named {
+                let program = frontend
+                    .compile_named_document_scope(&document, "example")
+                    .unwrap();
+                results.push(execute(
+                    document.scope_id(),
+                    CanonicalRenderScope::Named("example".into()),
+                    &program,
+                    92,
+                ));
+            }
+            let renderer = CanonicalDocumentRenderer;
+            let html = renderer.render_html(&document, &results).unwrap();
+            assert!(
+                html.contains("<strong class='mech-strong'>Result</strong>"),
+                "{html}"
+            );
+            assert!(html.contains("href='https://mech-lang.org'"), "{html}");
+            assert!(
+                html.contains("<u class='mech-underline'>Next</u>"),
+                "{html}"
+            );
+            for value in [42, 43, 44, 54] {
+                assert!(
+                    html.contains(&format!(">{value}</span>")),
+                    "missing {value}: {html}"
+                );
+            }
+            assert!(
+                !html.contains(">141</span>"),
+                "double braces must not execute: {html}"
+            );
+            let text = renderer.render_text(&document, &results).unwrap();
+            assert!(text.contains(": 42, 43."), "{text}");
+            assert!(text.contains(": 44, 54."), "{text}");
+            let browser = renderer.format_browser_html(&document).unwrap();
+            assert_eq!(
+                browser.matches("class='mech-inline-mech-code'").count(),
+                4,
+                "{browser}"
+            );
+        }
+    }
+}
+
+#[test]
+fn inline_ans_in_comments_tracks_live_state_through_source_and_bytecode() {
+    let document = document("~counter := 0\ncounter += 1 -- **Counter** {ans}\ncounter\n");
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let artifact = program.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(93, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for value in [1, 2, 3] {
+            instance.turn(&[]).unwrap();
+            let values = (0..artifact.outputs().len())
+                .map(|output| {
+                    RuntimeValueSnapshot::from_value(instance.copied_output(output).unwrap())
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let results = [CanonicalScopeResults::from_values(
+                document.scope_id(),
+                CanonicalRenderScope::Root,
+                &program,
+                &values,
+            )
+            .unwrap()];
+            let html = CanonicalDocumentRenderer
+                .render_html(&document, &results)
+                .unwrap();
+            assert!(html.contains(&format!("<strong class='mech-strong'>Counter</strong> <span class='mech-value'>{value}</span>")), "{html}");
+        }
+    }
 }

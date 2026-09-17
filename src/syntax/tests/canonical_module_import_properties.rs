@@ -1,13 +1,11 @@
-use mech_syntax::document::ast::ModuleImportSyntax;
 use mech_syntax::document::parser::canonical::{
     CanonicalRuleOutcome, CanonicalSourceRuleSnapshot, parse_canonical_phase_2e_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, NodeFlags, ParseConfig, ParseLimits, RecoveryAction, Revision, RuleId,
-    SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags, compact_debug_tree,
-    lower_legacy_module_import, normalize_diagnostics, reconstruct_source_range, validate_lossless,
-    validate_lossless_range,
+    DocumentId, NodeFlags, ParseConfig, ParseLimits, RecoveryAction, Revision, RuleId, SyntaxKind,
+    TextRange, TextSize, TextSnapshot, TokenFlags, compact_debug_tree, normalize_diagnostics,
+    reconstruct_source_range, validate_lossless, validate_lossless_range,
 };
 use proptest::prelude::*;
 
@@ -49,13 +47,6 @@ fn piece_source(parts: &[&str]) -> TextSnapshot {
 fn parse(source: TextSnapshot, rule: RuleId, config: ParseConfig) -> CanonicalSourceRuleSnapshot {
     parse_canonical_phase_2e_rule_for_test(source, rule, config)
         .unwrap_or_else(|| panic!("{rule:?} is not a Phase 2E direct rule"))
-}
-
-fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
-    if root.kind() == kind {
-        return Some(root.clone());
-    }
-    root.children().find_map(|child| find_node(&child, kind))
 }
 
 fn assert_diagnostic_ranges_are_bounded(parsed: &CanonicalSourceRuleSnapshot) {
@@ -184,12 +175,6 @@ fn token_signature(
         .collect()
 }
 
-fn lowered_module_import(parsed: &CanonicalSourceRuleSnapshot) -> mech_core::nodes::ModuleImport {
-    let node = find_node(&parsed.syntax(), SyntaxKind::ModuleImport).unwrap();
-    let syntax = ModuleImportSyntax::cast(node).unwrap();
-    lower_legacy_module_import(&syntax).unwrap()
-}
-
 proptest! {
   #![proptest_config(ProptestConfig {
     cases: 64,
@@ -304,11 +289,6 @@ fn contiguous_and_piece_backed_module_import_sources_agree() {
                 contiguous.source.revision(),
                 &contiguous.nodes,
             ),
-            "{rule:?} on {text:?}",
-        );
-        assert_eq!(
-            lowered_module_import(&piece_backed),
-            lowered_module_import(&contiguous),
             "{rule:?} on {text:?}",
         );
     }

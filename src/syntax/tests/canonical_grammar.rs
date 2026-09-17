@@ -1,8 +1,7 @@
-use mech_core::{Grammar, GrammarExpression, Token};
 use mech_syntax::document::parser::Cursor;
 use mech_syntax::document::{
     DocumentId, ParseConfig, ParseRequestError, ParseRoot, ParserImplementation, Revision,
-    SyntaxKind, TextSize, TextSnapshot, TokenFlags, lower_legacy_grammar, parse_canonical_grammar,
+    SyntaxKind, SyntaxNode, TextSize, TextSnapshot, TokenFlags, parse_canonical_grammar,
     parse_syntax, reconstruct_source, validate_lossless,
 };
 
@@ -23,73 +22,19 @@ fn parse(text: &str) -> mech_syntax::document::SyntaxSnapshot {
     parse_canonical_grammar(source(text), ParseConfig::default())
 }
 
-fn token_text(token: &Token) -> String {
-    token.chars.iter().collect()
-}
-
-fn expression_shape(expression: &GrammarExpression) -> String {
-    match expression {
-        GrammarExpression::Choice(items) => format!(
-            "choice({})",
-            items
-                .iter()
-                .map(expression_shape)
-                .collect::<Vec<_>>()
-                .join(",")
-        ),
-        GrammarExpression::Definition(identifier) => {
-            format!("definition({})", token_text(&identifier.name))
-        }
-        GrammarExpression::Group(item) => {
-            format!("group({})", expression_shape(item))
-        }
-        GrammarExpression::List(first, second) => format!(
-            "list({},{})",
-            expression_shape(first),
-            expression_shape(second)
-        ),
-        GrammarExpression::Not(item) => {
-            format!("not({})", expression_shape(item))
-        }
-        GrammarExpression::Optional(item) => {
-            format!("optional({})", expression_shape(item))
-        }
-        GrammarExpression::Peek(item) => {
-            format!("peek({})", expression_shape(item))
-        }
-        GrammarExpression::Repeat0(item) => {
-            format!("repeat0({})", expression_shape(item))
-        }
-        GrammarExpression::Repeat1(item) => {
-            format!("repeat1({})", expression_shape(item))
-        }
-        GrammarExpression::Range(start, end) => {
-            format!("range({},{})", token_text(start), token_text(end))
-        }
-        GrammarExpression::Sequence(items) => format!(
-            "sequence({})",
-            items
-                .iter()
-                .map(expression_shape)
-                .collect::<Vec<_>>()
-                .join(",")
-        ),
-        GrammarExpression::Terminal(token) => {
-            format!("terminal({})", token_text(token))
-        }
+fn nodes_of_kind(root: &SyntaxNode, kind: SyntaxKind) -> Vec<SyntaxNode> {
+    let mut nodes = Vec::new();
+    if root.kind() == kind {
+        nodes.push(root.clone());
     }
-}
-
-fn grammar_shape(grammar: &Grammar) -> Vec<(String, String)> {
-    grammar
-        .rules
-        .iter()
-        .map(|rule| (token_text(&rule.name.name), expression_shape(&rule.expr)))
-        .collect()
+    for child in root.children() {
+        nodes.extend(nodes_of_kind(&child, kind));
+    }
+    nodes
 }
 
 #[test]
-fn canonical_grammar_lowers_to_every_legacy_expression_variant() {
+fn canonical_grammar_represents_every_expression_variant() {
     let text = concat!(
         "definition := name;",
         "terminal := \"a\";",
@@ -117,11 +62,6 @@ fn canonical_grammar_lowers_to_every_legacy_expression_variant() {
         text
     );
 
-    let canonical = lower_legacy_grammar(&snapshot).unwrap();
-    let legacy = mech_syntax::parse_grammar(text).unwrap();
-    assert_eq!(grammar_shape(&canonical), grammar_shape(&legacy));
-    assert_eq!(canonical.rules.len(), 13);
-
     let root = snapshot.syntax();
     assert_eq!(root.kind(), SyntaxKind::GrammarDocument);
     let grammar = root.first_child(SyntaxKind::Grammar).unwrap();
@@ -132,6 +72,23 @@ fn canonical_grammar_lowers_to_every_legacy_expression_variant() {
             .count(),
         13
     );
+    for (kind, expected) in [
+        (SyntaxKind::GrammarDefinition, 10),
+        (SyntaxKind::GrammarRepeat0, 1),
+        (SyntaxKind::GrammarRepeat1, 1),
+        (SyntaxKind::GrammarOptional, 1),
+        (SyntaxKind::GrammarNot, 1),
+        (SyntaxKind::GrammarList, 1),
+        (SyntaxKind::GrammarRange, 1),
+        (SyntaxKind::GrammarGroup, 1),
+    ] {
+        assert_eq!(
+            nodes_of_kind(&root, kind).len(),
+            expected,
+            "wrong count for {kind:?}"
+        );
+    }
+    assert_eq!(nodes_of_kind(&root, SyntaxKind::GrammarPeek).len(), 2);
     let synthetic = root
         .tokens()
         .into_iter()
@@ -145,7 +102,7 @@ fn canonical_grammar_lowers_to_every_legacy_expression_variant() {
 }
 
 #[test]
-fn grammar_filtering_is_lossless_and_matches_legacy_values() {
+fn grammar_filtering_is_lossless_and_preserves_canonical_values() {
     let text = concat!(
         "r u l e : = \"a b\" ;",
         "r a n g e := \"a\" . . \"z\";",
@@ -174,16 +131,24 @@ fn grammar_filtering_is_lossless_and_matches_legacy_values() {
             .all(|token| token.flags().contains(TokenFlags::TRIVIA))
     );
 
-    let canonical = lower_legacy_grammar(&snapshot).unwrap();
-    let legacy = mech_syntax::parse_grammar(text).unwrap();
-    assert_eq!(grammar_shape(&canonical), grammar_shape(&legacy));
-    assert_eq!(token_text(&canonical.rules[0].name.name), "rule");
-    assert_eq!(expression_shape(&canonical.rules[0].expr), "terminal(ab)");
-    assert_eq!(token_text(&canonical.rules[2].name.name), "e\u{301}");
-    assert_eq!(
-        expression_shape(&canonical.rules[3].expr),
-        "terminal(a\u{00a0}\u{2009}b)"
-    );
+    let root = snapshot.syntax();
+    let identifiers = nodes_of_kind(&root, SyntaxKind::GrammarIdentifier)
+        .into_iter()
+        .map(|node| {
+            node.text()
+                .unwrap()
+                .chars()
+                .filter(|ch| !ch.is_whitespace())
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(identifiers, ["rule", "range", "e\u{301}", "wide"]);
+    let terminals = nodes_of_kind(&root, SyntaxKind::GrammarTerminalToken)
+        .into_iter()
+        .map(|node| node.text().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(terminals[0], "\"a b\"");
+    assert_eq!(terminals[4], "\"a\u{00a0}\u{2009}b\"");
 }
 
 #[test]
@@ -212,12 +177,11 @@ fn grammar_literals_respect_graphemes_across_piece_boundaries() {
         text
     );
 
-    let canonical = lower_legacy_grammar(&snapshot).unwrap();
-    let legacy = mech_syntax::parse_grammar(text).unwrap();
-    assert_eq!(grammar_shape(&canonical), grammar_shape(&legacy));
+    let terminals = nodes_of_kind(&snapshot.syntax(), SyntaxKind::GrammarTerminalToken);
+    assert_eq!(terminals.len(), 1);
     assert_eq!(
-        expression_shape(&canonical.rules[0].expr),
-        "terminal(e\u{301}b\u{2764}\u{fe0f})"
+        terminals[0].text().unwrap(),
+        "\"e\u{301}b\u{2764}\u{fe0f}\""
     );
 }
 
@@ -229,8 +193,6 @@ fn clustered_quote_is_not_accepted_as_a_grammar_delimiter() {
         ParseConfig::default(),
     );
     assert!(!snapshot.diagnostics.is_empty());
-    assert!(lower_legacy_grammar(&snapshot).is_err());
-    assert!(mech_syntax::parse_grammar(text).is_err());
     validate_lossless(&snapshot.root, &snapshot.source).unwrap();
     assert_eq!(
         reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
@@ -273,13 +235,9 @@ fn clustered_quote_inside_a_terminal_remains_whole_content() {
         text
     );
 
-    let canonical = lower_legacy_grammar(&snapshot).unwrap();
-    let legacy = mech_syntax::parse_grammar(text).unwrap();
-    assert_eq!(grammar_shape(&canonical), grammar_shape(&legacy));
-    assert_eq!(
-        expression_shape(&canonical.rules[0].expr),
-        "terminal(a\"\u{301}b)"
-    );
+    let terminals = nodes_of_kind(&snapshot.syntax(), SyntaxKind::GrammarTerminalToken);
+    assert_eq!(terminals.len(), 1);
+    assert_eq!(terminals[0].text().unwrap(), "\"a\"\u{301}b\"");
 
     let clustered = snapshot
         .syntax()

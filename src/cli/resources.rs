@@ -186,8 +186,8 @@ pub(crate) struct LoadedStylesheets {
     pub local_paths: Vec<PathBuf>,
 }
 
-pub(crate) fn html_style_sheets(page: String) -> mech_syntax::formatter::HtmlStyleSheets {
-    mech_syntax::formatter::HtmlStyleSheets {
+pub(crate) fn html_style_sheets(page: String) -> crate::canonical_presentation::HtmlStyleSheets {
+    crate::canonical_presentation::HtmlStyleSheets {
         palette: PALETTE_STYLESHEET.to_string(),
         source: MECH_SOURCE_STYLESHEET.to_string(),
         mechdown: MECHDOWN_STYLESHEET.to_string(),
