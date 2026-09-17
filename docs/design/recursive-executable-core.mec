@@ -2,13 +2,15 @@ Recursive Executable-Core Contract
 ===============================================================================
 
 Status: S2 recovery, S3 typed views, and the S5 certification implementation
-complete; S4 semantic completion open; S6 registry activation implemented,
+complete; S4 semantic completion open; the S6 registry candidate is staged,
 pending S4 qualification.
 
-Current canonical progress is 408 / 539. The component implements clean,
-lossless recognition, local malformed-input recovery, typed access, source
-semantics, and canonical certification for all 80 rules. All 80 productions are
-active as Phase 2I. The generated implementation boundary remains one strongly
+Current qualified canonical progress is 328 / 539. The component implements
+clean, lossless recognition, local malformed-input recovery, typed access,
+source semantics, and canonical certification for all 80 rules. This unmerged
+branch stages those 80 productions as one Phase 2I registry candidate, bringing
+the target inventory to 408 / 539; it does not activate them while S4 remains
+incomplete. The generated implementation boundary remains one strongly
 connected component.
 `docs/design/syntax-v0.4-continuation-plan.mec` is the current delivery plan
 after the R1-R6 integration rebase.
@@ -38,8 +40,13 @@ inventory, retiring implementation provenance, and audit notes. Its current
 metadata. They are not normative EBNF dependency edges and do not define the
 canonical recursive closure.
 
-`docs/design/grammar-audit/ports.tsv` defines canonical syntax and semantic
-certification status. The recursive-core component is the exact Phase 2I set:
+`docs/design/grammar-audit/ports.tsv` defines rule-level canonical syntax and
+source-semantic disposition evidence. It is audit metadata, not parser or
+runtime dispatch, and its `certified` semantic status is distinct from the
+milestone-level behavior-demonstration gate. Its separate `activation-status`
+keeps all 80 Phase 2I rows at `candidate` until the completion record reports
+every required behavior as demonstrated. The recursive-core component is the
+exact Phase 2I candidate set:
 it starts at `expression`, follows the generated canonical dependencies, and
 contains one complete strongly connected component.
 
@@ -67,10 +74,11 @@ parser, typed-syntax, validation, certification, or source-semantic modules.
 The dependency extractor does not inspect old Rust parser calls. The canonical
 grammar graph is the only dependency authority.
 
-3. Atomic activation
+3. Atomic activation candidate
 -------------------------------------------------------------------------------
 
-S6 assigned every generated member to Phase 2I only after the complete closure:
+The S6 candidate assigns every generated member to Phase 2I only after the
+complete rule-level closure:
 
 ```text
 parses
@@ -82,8 +90,11 @@ passes ambiguity tests
 passes resource-limit tests
 ```
 
-S6 of `docs/design/syntax-v0.4-continuation-plan.mec` activated the complete
-reviewed closure atomically. No partial registry state exists.
+S6 of `docs/design/syntax-v0.4-continuation-plan.mec` stages the complete
+reviewed closure atomically. No partial candidate registry state exists. The
+transition remains inactive until the separate S4 behavior-completion gate and
+S6 integration qualification pass. A direct registry-to-completion test rejects
+an `active` Phase 2I row while any required behavior remains incomplete.
 
 4. Module design
 -------------------------------------------------------------------------------
@@ -140,8 +151,9 @@ framework, or one monolithic `recursive_core.rs` module.
 
 Phase 2I-C created the parser directory above and implemented the complete clean
 recognizer. S2 added bounded local recovery, S3 added the typed syntax surface,
-S4 added engine-owned source semantics, and S5 closed their certification
-matrix. S6 activates all 80 recursive rules as one atomic registry component.
+S4 owns engine source-semantic completion, and S5 closed the certification
+implementation. S6 stages all 80 recursive rules as one atomic registry
+candidate; qualification and activation wait for the S4 behavior gate.
 Canonical document-root completion remains the S7 milestone; product cutover
 and removal are reserved for S8.
 
@@ -286,8 +298,8 @@ components for primitive bindings, including repeated-binding checks. Compound
 match results and nested match bodies and guards execute through typed control and
 ordinary construction providers. S4 still owns composite comprehension bindings
 and yields, computed pattern blocks, composition with nested comprehensions, and
-the FSM resident continuation owner. S6 implements atomic activation of all 80
-rules here, but its qualification remains gated on S4 completion. The
+the FSM resident continuation owner. S6 stages the atomic 80-row activation
+candidate here, but it remains inactive and unqualified until S4 completes. The
 machine-checked `grammar-audit/phase-2i-semantic-completion.tsv` record
 distinguishes artifact readiness from behavior demonstrated on a named target.
 The FSM artifact row is accepted, but its resident-runtime row is intentionally

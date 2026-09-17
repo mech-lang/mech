@@ -1,8 +1,8 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S3 and the S5 certification implementation complete; S4 semantic
-completion remains open.
+Status: S0-S3 and the S5 certification implementation complete; the S6
+candidate registry is staged; S4 semantic completion remains open.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -17,18 +17,23 @@ the atomic product cutover have independent gates.
 1. Current state
 -------------------------------------------------------------------------------
 
-The canonical inventory contains exactly 539 rules:
+The canonical inventory contains exactly 539 rules. Qualified progress and the
+unmerged S6 candidate are distinct:
 
 ```text
-canonical syntax certified 408
+canonical syntax qualified 328
+staged Phase 2I candidate   80
 not yet implemented        131
-                           ---
-total                      539
+                            ---
+total                       539
 ```
 
-The completed phases cover 408 / 539 rules. The generated Phase 2I recursive
-component contains 80 rules and is active in this branch's implementation.
-Activation qualification remains blocked by the open S4 gate.
+The completed, qualified phases cover 328 / 539 rules. This unmerged branch
+materializes the exact 80-row Phase 2I registry candidate, which would bring
+the inventory to 408 / 539 after qualification. The registry is audit metadata:
+neither parser nor runtime dispatch reads it, and the public root matrix is
+unchanged. The candidate is not an active or qualified S6 transition while the
+S4 gate remains open.
 
 The component has local malformed-input recovery and complete typed red-tree
 views. The S5 certification implementation is complete: comprehension, pattern, and FSM witnesses
@@ -40,8 +45,8 @@ and matches support compound results and nested match bodies and guards.
 Comprehension composite bindings/yields, computed pattern blocks, composition
 with nested comprehensions, the FSM resident continuation owner, and other S4
 limits remain open. FSM continuations follow the next-eligible internally
-scheduled turn contract in the normative specification. S6 implements atomic
-registry activation here, but its qualification remains gated on S4 completion.
+scheduled turn contract in the normative specification. S6 stages the atomic
+registry transition here, but it is not active or qualified until S4 completes.
 The machine-checked `grammar-audit/phase-2i-semantic-completion.tsv` record keeps
 artifact readiness distinct from behavior demonstrated on a named target, so
 the FSM artifact cannot satisfy its unavailable resident-runtime obligation.
@@ -294,9 +299,14 @@ Exit gate:
 - the semantic completion record prevents required unavailable or unfinished behavior from satisfying S6; and
 - no test imports the old parser to establish an expected result.
 
-Passing S5 freezes the certification implementation. All 80 registry rows remain
-inactive until every S6-required completion row is `behavior-demonstrated` and S4
-is complete.
+Passing S5 freezes the certification implementation. A draft S6 branch may
+materialize the exact candidate transition for review, but those rows remain
+inactive in the accepted milestone state until every S6-required completion row
+is `behavior-demonstrated` and S4 is complete. The generated `certified`
+semantic status records a rule-level source-semantic disposition; it is not the
+milestone-level behavior-demonstration gate. The separate generated
+`activation-status` is `candidate` for all 80 rows, and a direct registry test
+requires it to remain so while any required completion row is unfinished.
 
 S6. Atomic Phase 2I activation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -305,9 +315,12 @@ Update `ports.tsv` for all 80 rules in one change and regenerate the canonical
 port registry. Each member becomes Phase 2I with certified syntax, typed views,
 recovery, and source-semantic disposition.
 
-The registry now exposes `semantic-status` and the single `certified` syntax
-state for implemented rules. Existing closed phases are classified from their
-canonical evidence, and Phase 2I is assigned as one complete component.
+The candidate registry exposes `semantic-status`, `activation-status`, and the
+single `certified` syntax state for implemented rules. Existing closed phases
+are classified from their canonical evidence, and the candidate assigns Phase
+2I as one complete component. This generated audit metadata does not itself
+activate a parser root or runtime path. The registry-to-completion assertion
+permits `active` only when every S6-required row is `behavior-demonstrated`.
 
 Expected inventory after activation:
 

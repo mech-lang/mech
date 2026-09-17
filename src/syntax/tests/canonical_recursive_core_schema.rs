@@ -8,9 +8,9 @@ const SCHEMA_HEADER: &str =
     "grammar-name\tparser-module\temission-policy\tsyntax-kind\tkind-origin\tnotes";
 const PHASE_HEADER: &str = "grammar-name\tfamily\tcomponent-id\tcomponent-size\t\
                             recursive-component\tsame-component-children\tclosure-children\t\
-                            certified-external-children";
+                            active-external-children";
 const PORTS_HEADER: &str = "grammar-name\tfamily\tsyntax-status\tsemantic-status\t\
-                            node-policy\tphase\tnotes";
+                            activation-status\tnode-policy\tphase\tnotes";
 
 const PHASE_2I_NEW_KINDS: &[SyntaxKind] = &[
     SyntaxKind::Literal,
@@ -100,6 +100,7 @@ struct SchemaRow {
 struct PortRow {
     syntax: String,
     semantic: String,
+    activation: String,
     policy: String,
     phase: String,
 }
@@ -172,15 +173,16 @@ fn ports() -> BTreeMap<String, PortRow> {
     let mut rows = BTreeMap::new();
     for (index, line) in lines.enumerate() {
         let row = fields(line);
-        assert_eq!(row.len(), 7, "invalid ports row {}", index + 2);
+        assert_eq!(row.len(), 8, "invalid ports row {}", index + 2);
         assert!(
             rows.insert(
                 row[0].to_owned(),
                 PortRow {
                     syntax: row[2].to_owned(),
                     semantic: row[3].to_owned(),
-                    policy: row[4].to_owned(),
-                    phase: row[5].to_owned(),
+                    activation: row[4].to_owned(),
+                    policy: row[5].to_owned(),
+                    phase: row[6].to_owned(),
                 },
             )
             .is_none()
@@ -370,6 +372,7 @@ fn recursive_core_port_status_matches_the_certified_schema() {
         let port = &ports[name];
         assert_eq!(port.syntax, "certified", "syntax status for {name}");
         assert_eq!(port.semantic, "certified", "semantic status for {name}");
+        assert_eq!(port.activation, "candidate", "activation status for {name}");
         let expected_policy = if schema.policy == "transparent" {
             "transparent".to_owned()
         } else {

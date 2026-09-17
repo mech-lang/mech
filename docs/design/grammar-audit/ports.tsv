@@ -1,540 +1,540 @@
-grammar-name	family	syntax-status	semantic-status	node-policy	phase	notes
-absolute-source-import-specifier	statements	certified	certified	node:AbsoluteSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-abstract-el	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-abstract-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-activation-arm	activation	unported	pending	undecided		Deferred beyond Phase 2A.
-activation-scope	activation	unported	pending	undecided		Deferred beyond Phase 2A.
-add	expressions	certified	certified	node:AddOperation	2D	Phase 2D closed expression-operator layer
-add-assign-operator	statements	certified	certified	node:AddAssignOperation	2G	Phase 2G closed executable primitive layer
-add-sub-operator	expressions	certified	certified	node:AddSubOperator	2D	Phase 2D closed expression-operator layer
-aliased-item-import	imports	certified	certified	node:AliasedItemImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-alignment-separator	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-alpha	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-alpha-token	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-alphanumeric	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-ampersand	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-and	expressions	certified	certified	node:AndOperation	2D	Phase 2D closed expression-operator layer
-any	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-any-token	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-apostrophe	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-argument-list	functions	certified	certified	node:ArgumentList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-assign-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-asterisk	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-async-transition-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-at	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-atom	literals	certified	certified	node:AtomLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-backslash	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-bar	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-bare-source-import-specifier	statements	certified	certified	node:BareSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-binary-literal	literals	certified	certified	node:BinaryLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-binding	structures	certified	certified	node:RecordBinding	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-blank-line	mechdown	certified	syntax-only	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
-body	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-boolean	literals	certified	syntax-only	token	2C	Phase 2C closed literal, path, and primitive kind island
-box-bl	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-bl-bold	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-bl-round	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-br	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-br-bold	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-br-round	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-cross	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-drawing-char	structures	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
-box-drawing-emoji	structures	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
-box-horz	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-t-bottom	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-t-left	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-t-right	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-t-top	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-tl	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-tl-bold	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-tl-round	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-tr	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-tr-bold	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-tr-round	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-vert	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-box-vert-bold	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-brace-subscript	expressions	certified	certified	node:BraceSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-bracket-subscript	expressions	certified	certified	node:BracketSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-call-arg	functions	certified	certified	node:CallArgument	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-call-arg-with-binding	functions	certified	certified	node:BoundCallArgument	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-caret	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-carriage-return	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-carriage-return-new-line	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-cd-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-center-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-check-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-check-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-check-mark	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-checked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-citation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-clc-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-clear-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-code-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-code-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-code-terminal	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-codeblock-sigil	mechdown	certified	syntax-only	transparent	2B	Phase 2B closed Mechdown grammar island
-colon	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-comma	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-comment	statements	certified	syntax-only	node:Comment	2B	rich comment semantics wait for the complete paragraph-element grammar
-comment-sigil	statements	certified	syntax-only	transparent	2B	Phase 2B closed Mechdown grammar island
-comparison-operator	expressions	certified	certified	node:ComparisonOperator	2D	Phase 2D closed expression-operator layer
-complement	expressions	certified	certified	node:ComplementOperation	2D	Phase 2D closed expression-operator layer
-complex-number	literals	certified	certified	node:ComplexNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-comprehension-qualifier	expressions	certified	certified	node:ComprehensionQualifier	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-context-address-path	expressions	certified	certified	node:ContextAddressPath	2C	Phase 2C closed literal, path, and primitive kind island
-context-address-path-token	expressions	certified	syntax-only	token	2C	Phase 2C closed literal, path, and primitive kind island
-context-base-context	statements	certified	certified	node:ContextBaseContext	2F	Phase 2F closed source, export, and context declaration layer
-context-base-resource-uri	statements	certified	certified	node:ContextBaseResourceUri	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-declaration	statements	certified	certified	node:ContextCapabilityDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-path	statements	certified	certified	node:ContextCapabilityPath	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-path-token	statements	certified	syntax-only	token	2F	Phase 2F closed source, export, and context declaration layer
-context-capability-scope	statements	certified	certified	node:ContextCapabilityScope	2F	Phase 2F closed source, export, and context declaration layer
-context-declaration	statements	certified	certified	node:ContextDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-context-import-alias-segment	imports	certified	certified	node:ContextImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-context-send	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-cross	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-cross-product	expressions	certified	certified	node:CrossProductOperation	2D	Phase 2D closed expression-operator layer
-dash	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-decimal-literal	literals	certified	certified	node:DecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-define-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-difference	expressions	certified	certified	node:DifferenceOperation	2D	Phase 2D closed expression-operator layer
-digit	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-digit-sequence	base	certified	certified	node:DigitSequence	2A	Phase 2A canonical base closure
-digit-token	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-div-assign-operator	statements	certified	certified	node:DivAssignOperation	2G	Phase 2G closed executable primitive layer
-divide	expressions	certified	certified	node:DivideOperation	2D	Phase 2D closed expression-operator layer
-docs-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-dollar	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-dot-product	expressions	certified	certified	node:DotProductOperation	2D	Phase 2D closed expression-operator layer
-dot-subscript	expressions	certified	certified	node:DotSubscript	2G	Phase 2G closed executable primitive layer
-dot-subscript-int	expressions	certified	certified	node:DotSubscriptInt	2G	Phase 2G closed executable primitive layer
-element-of	expressions	certified	certified	node:ElementOfOperation	2D	Phase 2D closed expression-operator layer
-emoji	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-emoji-grapheme	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-emphasis	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-emphasis-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-empty	literals	certified	certified	node:EmptyLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-empty-map	structures	certified	certified	node:EmptyMap	2H	Phase 2H closed structure shell
-empty-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-empty-set	structures	certified	certified	node:EmptySet	2H	Phase 2H closed structure shell
-english-false-literal	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-english-true-literal	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-enum-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-enum-separator	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-enum-variant	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-enum-variant-inline-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-enum-variant-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-equal	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-equal-to	expressions	certified	certified	node:EqualToOperation	2D	Phase 2D closed expression-operator layer
-equation	mechdown	certified	certified	node:Equation	2B	Phase 2B closed Mechdown grammar island
-equation-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-error-alt-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-error-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-error-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-escaped-char	base	certified	certified	node:EscapedCharacter	2A	Phase 2A canonical base closure
-eval-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-exclamation	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-exp-assign-operator	statements	certified	certified	node:ExpAssignOperation	2G	Phase 2G closed executable primitive layer
-export-declaration	statements	certified	certified	node:ExportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-expression	expressions	certified	certified	node:Expression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-factor	expressions	certified	certified	node:Factor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-false-literal	literals	certified	syntax-only	token	2C	Phase 2C closed literal, path, and primitive kind island
-fancy-table	structures	certified	certified	node:FancyTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-fancy-table-header	structures	certified	certified	node:FancyTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-field	structures	certified	certified	node:TableField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-figure-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-figures	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-figures-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-float	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-float-decimal-start	literals	certified	certified	node:FloatDecimalStart	2C	Phase 2C closed literal, path, and primitive kind island
-float-full	literals	certified	certified	node:FloatFull	2C	Phase 2C closed literal, path, and primitive kind island
-float-left	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-float-literal	literals	certified	certified	node:FloatLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-float-right	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-float-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-footnote	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-footnote-prefix	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-footnote-reference	mechdown	certified	certified	node:FootnoteReference	2B	Phase 2B closed Mechdown grammar island
-forbidden-emoji	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-formula	expressions	certified	certified	transparent	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-formula-subscript	expressions	certified	certified	node:FormulaSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-args	state_machines	certified	certified	node:FsmArguments	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-async-transition	state_machines	certified	certified	node:FsmAsyncTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-block-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-comment-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-declare	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-guard	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-guard-arm	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-implementation	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-instance	state_machines	certified	certified	node:FsmInstance	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-output	state_machines	certified	certified	node:FsmOutput	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-pipe	state_machines	certified	certified	node:FsmPipe	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-fsm-specification	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-state-definition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-state-definition-variables	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-state-transition	state_machines	certified	certified	node:FsmStateTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-fsm-statement-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-transition	state_machines	unported	pending	undecided		Deferred beyond Phase 2A.
-fsm-value	state_machines	certified	certified	node:FsmValue	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-full-join	expressions	certified	certified	node:FullJoinOperation	2D	Phase 2D closed expression-operator layer
-function-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-call	functions	certified	certified	node:FunctionCall	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-function-define	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-define-match-arms	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-define-statements	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-match-arm	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-out-arg	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-function-out-args	functions	unported	pending	undecided		Deferred beyond Phase 2A.
-gen-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-generator	expressions	certified	certified	node:Generator	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-generator-arrow	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-generator-arrow-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-grammar	grammar	certified	certified	node:Grammar	2A	Phase 2A grammar metalanguage
-grammar-definition	grammar	certified	certified	node:GrammarDefinition	2A	Phase 2A grammar metalanguage
-grammar-expression	grammar	certified	certified	node:GrammarExpression	2A	Phase 2A grammar metalanguage
-grammar-factor	grammar	certified	certified	node:GrammarFactor	2A	Phase 2A grammar metalanguage
-grammar-group	grammar	certified	certified	node:GrammarGroup	2A	Phase 2A grammar metalanguage
-grammar-identifier	grammar	certified	certified	node:GrammarIdentifier	2A	Phase 2A grammar metalanguage
-grammar-list	grammar	certified	certified	node:GrammarList	2A	Phase 2A grammar metalanguage
-grammar-not	grammar	certified	certified	node:GrammarNot	2A	Phase 2A grammar metalanguage
-grammar-optional	grammar	certified	certified	node:GrammarOptional	2A	Phase 2A grammar metalanguage
-grammar-peek	grammar	certified	certified	node:GrammarPeek	2A	Phase 2A grammar metalanguage
-grammar-range	grammar	certified	certified	node:GrammarRange	2A	Phase 2A grammar metalanguage
-grammar-repeat0	grammar	certified	certified	node:GrammarRepeat0	2A	Phase 2A grammar metalanguage
-grammar-repeat1	grammar	certified	certified	node:GrammarRepeat1	2A	Phase 2A grammar metalanguage
-grammar-rule	grammar	certified	certified	node:GrammarRule	2A	Phase 2A grammar metalanguage
-grammar-term	grammar	certified	certified	node:GrammarTerm	2A	Phase 2A grammar metalanguage
-grammar-terminal	grammar	certified	certified	node:GrammarTerminal	2A	Phase 2A grammar metalanguage
-grammar-terminal-token	grammar	certified	certified	node:GrammarTerminalToken	2A	Phase 2A grammar metalanguage
-grave	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-grave-codeblock-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-greater-than	expressions	certified	certified	node:GreaterThanOperation	2D	Phase 2D closed expression-operator layer
-greater-than-equal	expressions	certified	certified	node:GreaterThanEqualOperation	2D	Phase 2D closed expression-operator layer
-grouping-symbol	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-guard-operator	state_machines	certified	syntax-only	transparent	2G	Phase 2G closed executable primitive layer
-hashtag	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-header-field	structures	certified	certified	node:HeaderField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-help-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-hexadecimal-literal	literals	certified	certified	node:HexadecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-highlight	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-highlight-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-http-prefix	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-hyperlink	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-idea-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-idea-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-identifier	base	certified	certified	node:Identifier	2A	Phase 2A canonical base closure
-identifier-path-segment	base	certified	certified	node:IdentifierPathSegment	2A	Phase 2A canonical base closure
-identifier-path-segment-emoji	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-identifier-symbol	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-img	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-img-prefix	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-import-alias-operator	imports	certified	syntax-only	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-declaration	statements	certified	certified	node:ImportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
-import-group-item	imports	certified	certified	node:ImportGroupItem	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-group-items	imports	certified	certified	node:ImportGroupItems	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-group-separator	imports	certified	syntax-only	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
-import-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure; renamed by IMPORT-001
-info-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-info-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-inline-code	mechdown	certified	certified	node:InlineCode	2B	Phase 2B closed Mechdown grammar island
-inline-equation	mechdown	certified	certified	node:InlineEquation	2B	Phase 2B closed Mechdown grammar island
-inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-inline-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-inline-table	structures	certified	certified	node:InlineTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-inline-table-header	structures	certified	certified	node:InlineTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-inline-table-row	structures	certified	certified	node:InlineTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-integer-literal	literals	certified	certified	node:IntegerLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-intersection	expressions	certified	certified	node:IntersectionOperation	2D	Phase 2D closed expression-operator layer
-invariant-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-join	expressions	certified	certified	node:JoinOperation	2D	Phase 2D closed expression-operator layer
-kind	literals	certified	certified	node:Kind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-annotation	literals	certified	certified	node:KindAnnotation	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-any	literals	certified	certified	node:KindAny	2C	Phase 2C closed literal, path, and primitive kind island
-kind-atom	literals	certified	certified	node:KindAtom	2C	Phase 2C closed literal, path, and primitive kind island
-kind-define	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-kind-empty	literals	certified	certified	node:KindEmpty	2C	Phase 2C closed literal, path, and primitive kind island
-kind-kind	literals	certified	certified	node:KindKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-map	literals	certified	certified	node:KindMap	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-matrix	literals	certified	certified	node:KindMatrix	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-record	literals	certified	certified	node:KindRecord	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-scalar	literals	certified	certified	node:KindScalar	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-set	literals	certified	certified	node:KindSet	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-table	literals	certified	certified	node:TableKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-tuple	literals	certified	certified	node:KindTuple	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-kind-with-option	literals	certified	certified	node:KindWithOption	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-l1	expressions	certified	certified	node:LogicExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l2	expressions	certified	certified	node:ComparisonExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l3	expressions	certified	certified	node:AdditiveExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l4	expressions	certified	certified	node:MultiplicativeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l5	expressions	certified	certified	node:PowerExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l6	expressions	certified	certified	node:TableExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-l7	expressions	certified	certified	node:SetExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-left-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-left-angle	literals	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
-left-angle1	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-left-angle2	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-left-anti-join	expressions	certified	certified	node:LeftAntiJoinOperation	2D	Phase 2D closed expression-operator layer
-left-brace	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-left-bracket	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-left-join	expressions	certified	certified	node:LeftJoinOperation	2D	Phase 2D closed expression-operator layer
-left-parenthesis	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-left-semi-join	expressions	certified	certified	node:LeftSemiJoinOperation	2D	Phase 2D closed expression-operator layer
-less-than	expressions	certified	certified	node:LessThanOperation	2D	Phase 2D closed expression-operator layer
-less-than-equal	expressions	certified	certified	node:LessThanEqualOperation	2D	Phase 2D closed expression-operator layer
-list-separator	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-literal	literals	certified	certified	node:Literal	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-load-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-logic-operator	expressions	certified	certified	node:LogicOperator	2D	Phase 2D closed expression-operator layer
-ls-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-map	structures	certified	certified	node:Map	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-mapping	structures	certified	certified	node:MapEntry	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-arm	expressions	certified	certified	node:MatchArm	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-match-expression	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-matrix	structures	certified	certified	node:Matrix	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-matrix-column	structures	certified	certified	node:MatrixColumn	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-matrix-comprehension	expressions	certified	certified	node:MatrixComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-matrix-end	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-matrix-multiply	expressions	certified	certified	node:MatrixMultiplyOperation	2D	Phase 2D closed expression-operator layer
-matrix-operator	expressions	certified	certified	node:MatrixOperator	2D	Phase 2D closed expression-operator layer
-matrix-row	structures	certified	certified	node:MatrixRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-matrix-solve	expressions	certified	certified	node:MatrixSolveOperation	2D	Phase 2D closed expression-operator layer
-matrix-start	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-mech-code	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-mech-code-alt	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-no-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-row	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-mechdown-table-with-header	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-micro-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-arm-left	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-arm-right	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-expression-inner	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-eye-left	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-eye-right	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-nose	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-section	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-mika-section-close	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-mika-section-open	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-mini-mika	mika	unported	pending	undecided		Deferred beyond Phase 2A.
-module-export-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-module-import	imports	certified	certified	node:ModuleImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-alias	imports	certified	certified	node:ModuleImportAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-alias-path	imports	certified	certified	node:ModuleImportAliasPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-alias-segment	imports	certified	certified	node:ModuleImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-context-alias	imports	certified	certified	node:ModuleImportContextAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-intrinsic-segment	imports	certified	certified	node:ModuleImportIntrinsicSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-name-segment	imports	certified	certified	node:ModuleImportNameSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-path	imports	certified	certified	node:ModuleImportPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-path-segment	imports	certified	certified	node:ModuleImportPathSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-import-value-alias	imports	certified	certified	node:ModuleImportValueAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-only-import	imports	certified	certified	node:ModuleOnlyImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-root	imports	certified	certified	node:ModuleRoot	2E	Phase 2E corrected module-import closure (IMPORT-001)
-module-suffix-import	imports	certified	certified	node:ModuleSuffixImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
-modulus	expressions	certified	certified	node:ModulusOperation	2D	Phase 2D closed expression-operator layer
-mul-assign-operator	statements	certified	certified	node:MulAssignOperation	2G	Phase 2G closed executable primitive layer
-mul-div-operator	expressions	certified	certified	node:MulDivOperator	2D	Phase 2D closed expression-operator layer
-multiply	expressions	certified	certified	node:MultiplyOperation	2D	Phase 2D closed expression-operator layer
-nbsp	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-negate	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-negate-factor	expressions	certified	certified	node:NegateFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-new-line	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-new-line-char	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-newline-indent	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-no-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-not	expressions	certified	certified	node:NotOperation	2D	Phase 2D closed expression-operator layer
-not-element-of	expressions	certified	certified	node:NotElementOfOperation	2D	Phase 2D closed expression-operator layer
-not-equal	expressions	certified	certified	node:NotEqualOperation	2D	Phase 2D closed expression-operator layer
-not-factor	expressions	certified	certified	node:NotFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-not-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-number	literals	certified	certified	node:Number	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-octal-literal	literals	certified	certified	node:OctalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-op-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-op-assign-operator	statements	certified	certified	node:OpAssignOperator	2G	Phase 2G closed executable primitive layer
-option-map	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-option-mapping	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-option-value	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-or	expressions	certified	certified	node:OrOperation	2D	Phase 2D closed expression-operator layer
-ordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-ordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-output-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-output-operator-a	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-output-operator-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-paragraph-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-paragraph-newline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-paragraph-text	mechdown	certified	certified	node:ParagraphText	2B	Phase 2B closed Mechdown grammar island
-parenthetical-term	expressions	certified	certified	node:ParentheticalExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-parse	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-parse-grammar	parser	certified	certified	root:GrammarDocument	2A	Phase 2A explicit dependency closure
-parse-mech	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-parse-repl-command	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-pattern	patterns	certified	certified	node:Pattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-array	patterns	certified	certified	node:ArrayPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-array-item	patterns	certified	certified	transparent	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-array-token	patterns	certified	certified	node:ArrayPatternElement	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-atom-struct	patterns	certified	certified	node:AtomStructPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-tuple	patterns	certified	certified	node:TuplePattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-pattern-tuple-struct	patterns	certified	certified	node:TupleStructPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
-percent	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-period	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-plan-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-plus	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-power	expressions	certified	certified	node:PowerOperation	2D	Phase 2D closed expression-operator layer
-power-operator	expressions	certified	certified	node:PowerOperator	2D	Phase 2D closed expression-operator layer
-prefixed-context-path	expressions	certified	certified	node:PrefixedContextPath	2C	Phase 2C closed literal, path, and primitive kind island
-profile-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-program	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-prompt	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-prompt-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-proper-subset	expressions	certified	certified	node:ProperSubsetOperation	2D	Phase 2D closed expression-operator layer
-proper-superset	expressions	certified	certified	node:ProperSupersetOperation	2D	Phase 2D closed expression-operator layer
-punctuation	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-question	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-question-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-question-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-quit-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-quote	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-quote-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-quote-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-range-exclusive	expressions	certified	certified	node:RangeExclusiveOperation	2D	Phase 2D closed expression-operator layer
-range-expression	expressions	certified	certified	node:RangeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-range-inclusive	expressions	certified	certified	node:RangeInclusiveOperation	2D	Phase 2D closed expression-operator layer
-range-operator	expressions	certified	certified	node:RangeOperator	2D	Phase 2D closed expression-operator layer
-range-subscript	expressions	certified	certified	node:RangeSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-rational-literal	literals	certified	certified	node:RationalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-raw-hyperlink	mechdown	certified	certified	node:RawHyperlink	2B	Phase 2B closed Mechdown grammar island
-raw-string	literals	certified	certified	node:RawString	2C	Phase 2C closed literal, path, and primitive kind island
-raw-subtract	expressions	certified	certified	node:RawSubtractOperation	2D	Phase 2D closed expression-operator layer
-raw-text	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-real-number	literals	certified	certified	node:RealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-record	structures	certified	certified	node:Record	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-reference	mechdown	certified	certified	node:Reference	2B	Phase 2B closed Mechdown grammar island
-regular-table	structures	certified	certified	node:RegularTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-relative-source-import-specifier	statements	certified	certified	node:RelativeSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-repl-identifier	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-right-alignment	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-right-angle	literals	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
-right-angle1	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-right-angle2	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-right-brace	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-right-bracket	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-right-join	expressions	certified	certified	node:RightJoinOperation	2D	Phase 2D closed expression-operator layer
-right-parenthesis	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-row-separator	structures	certified	certified	node:TableRowSeparator	2H	Phase 2H closed structure shell
-save-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-scientific-literal	literals	certified	certified	node:ScientificLiteral	2C	Phase 2C syntax port; typed scientific exponents preserve their suffix and lower deterministically while the retired parser exponent branch crashes.
-section	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-section-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-section-reference	mechdown	certified	certified	node:SectionReference	2B	Phase 2B closed Mechdown grammar island
-section-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-select-all	expressions	certified	certified	node:SelectAllSubscript	2G	Phase 2G closed executable primitive layer
-semicolon	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-send-operator	statements	certified	syntax-only	transparent	2G	Phase 2G closed executable primitive layer
-set	structures	certified	certified	node:Set	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-set-comprehension	expressions	certified	certified	node:SetComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-set-operator	expressions	certified	certified	node:SetOperator	2D	Phase 2D closed expression-operator layer
-slash	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-slice	expressions	certified	certified	node:Slice	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-slice-ref	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-source-import-specifier	statements	certified	certified	node:SourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-source-import-tail	statements	certified	certified	node:SourceImportTail	2F	Phase 2F closed source, export, and context declaration layer
-source-import-uri-scheme	statements	certified	certified	node:SourceImportUriScheme	2F	Phase 2F closed source, export, and context declaration layer
-source-mec-path	statements	certified	certified	node:SourceMecPath	2F	Phase 2F closed source, export, and context declaration layer
-source-mec-path-wildcard-suffix	statements	certified	syntax-only	transparent	2F	Phase 2F closed source, export, and context declaration layer
-source-path-component	statements	certified	certified	node:SourcePathComponent	2F	Phase 2F closed source, export, and context declaration layer
-source-path-component-token	statements	certified	syntax-only	token	2F	Phase 2F closed source, export, and context declaration layer
-space	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-space-tab	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-space-tab0	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-space-tab1	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-spaced-subtract	expressions	certified	certified	node:SpacedSubtractOperation	2D	Phase 2D closed expression-operator layer
-spread-operator	patterns	certified	syntax-only	transparent	2G	Phase 2G closed executable primitive layer
-spread-operator-a	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-spread-operator-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-statement	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-statement-separator	expressions	certified	syntax-only	transparent	2G	Phase 2G closed executable primitive layer
-step-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-strict-equal	expressions	certified	certified	node:StrictEqualOperation	2D	Phase 2D closed expression-operator layer
-strict-not-equal	expressions	certified	certified	node:StrictNotEqualOperation	2D	Phase 2D closed expression-operator layer
-strike-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-strikethrough	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-string	literals	certified	certified	node:StringLiteral	2C	Phase 2C closed literal, path, and primitive kind island
-strong	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-strong-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-structure	structures	certified	certified	node:Structure	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-sub-assign-operator	statements	certified	certified	node:SubAssignOperation	2G	Phase 2G closed executable primitive layer
-sublist	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-subscript	expressions	certified	certified	node:SubscriptList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-subset	expressions	certified	certified	node:SubsetOperation	2D	Phase 2D closed expression-operator layer
-subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-subtract	expressions	certified	certified	node:SubtractOperation	2D	Phase 2D closed expression-operator layer
-success-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-success-check-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-success-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-superset	expressions	certified	certified	node:SupersetOperation	2D	Phase 2D closed expression-operator layer
-swizzle-subscript	expressions	certified	certified	node:SwizzleSubscript	2G	Phase 2G closed executable primitive layer
-symbol	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-symbols-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-symmetric-difference	expressions	certified	certified	node:SymmetricDifferenceOperation	2D	Phase 2D closed expression-operator layer
-synth-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-tab	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-table	structures	certified	certified	node:Table	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-table-column	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-table-end	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-table-header	structures	certified	certified	node:TableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-table-horz	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-table-operator	expressions	certified	certified	node:TableOperator	2D	Phase 2D closed expression-operator layer
-table-row	structures	certified	certified	node:TableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-table-row2	structures	certified	certified	node:FancyTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
-table-separator	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-table-start	structures	certified	syntax-only	token	2H	Phase 2H closed structure shell
-table-top	structures	certified	syntax-only	transparent	2H	Phase 2H closed structure shell
-tag	parser	certified	syntax-only	token	2A	Phase 2A explicit dependency closure
-text	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-thematic-break	mechdown	certified	certified	node:ThematicBreak	2B	Phase 2B closed Mechdown grammar island
-thin-space	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-tilde	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-tilde-codeblock-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-title	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-title-front-matter	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-transition-operator	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-transition-operator-a	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-transition-operator-u	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-transpose	expressions	certified	syntax-only	transparent	2D	Phase 2D closed expression-operator layer
-true-literal	literals	certified	syntax-only	token	2C	Phase 2C closed literal, path, and primitive kind island
-tuple	structures	certified	certified	node:Tuple	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-tuple-destructure	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-tuple-struct	structures	certified	certified	node:TupleStruct	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-typed-integer	literals	certified	certified	node:TypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
-ul-subtitle	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-unchecked-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-underline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-underline-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-underscore	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-underscore-digit	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-union-op	expressions	certified	certified	node:UnionOperation	2D	Phase 2D closed expression-operator layer
-unordered-list	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-unordered-list-item	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-untyped-integer	literals	certified	certified	node:UntypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
-untyped-real-number	literals	certified	certified	node:UntypedRealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
-uri-scheme-part	statements	certified	syntax-only	token	2F	Phase 2F closed source, export, and context declaration layer
-uri-source-import-specifier	statements	certified	certified	node:UriSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
-utf8-string	literals	certified	certified	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
-var	expressions	certified	certified	node:Variable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-variable-assign	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-variable-define	statements	certified	certified	node:VariableDefine	2I	Phase 2I canonical recursive core; semantic disposition: executable.
-warning-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-warning-sigil	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-whitespace	base	certified	syntax-only	token	2A	Phase 2A canonical base closure
-whitespace0	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-whitespace1	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-whos-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
-wildcard	patterns	certified	certified	node:WildcardPattern	2G	Phase 2G closed executable primitive layer
-ws0e	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-ws1e	base	certified	syntax-only	transparent	2A	Phase 2A canonical base closure
-xor	expressions	certified	certified	node:XorOperation	2D	Phase 2D closed expression-operator layer
+grammar-name	family	syntax-status	semantic-status	activation-status	node-policy	phase	notes
+absolute-source-import-specifier	statements	certified	certified	active	node:AbsoluteSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
+abstract-el	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+abstract-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+activation-arm	activation	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+activation-scope	activation	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+add	expressions	certified	certified	active	node:AddOperation	2D	Phase 2D closed expression-operator layer
+add-assign-operator	statements	certified	certified	active	node:AddAssignOperation	2G	Phase 2G closed executable primitive layer
+add-sub-operator	expressions	certified	certified	active	node:AddSubOperator	2D	Phase 2D closed expression-operator layer
+aliased-item-import	imports	certified	certified	active	node:AliasedItemImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
+alignment-separator	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+alpha	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+alpha-token	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+alphanumeric	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+ampersand	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+and	expressions	certified	certified	active	node:AndOperation	2D	Phase 2D closed expression-operator layer
+any	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+any-token	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+apostrophe	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+argument-list	functions	certified	certified	candidate	node:ArgumentList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+assign-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+asterisk	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+async-transition-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+at	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+atom	literals	certified	certified	active	node:AtomLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+backslash	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+bar	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+bare-source-import-specifier	statements	certified	certified	active	node:BareSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
+binary-literal	literals	certified	certified	active	node:BinaryLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+binding	structures	certified	certified	candidate	node:RecordBinding	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+blank-line	mechdown	certified	syntax-only	active	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
+body	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+boolean	literals	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
+box-bl	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-bl-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-bl-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-br	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-br-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-br-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-cross	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-drawing-char	structures	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
+box-drawing-emoji	structures	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
+box-horz	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-t-bottom	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-t-left	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-t-right	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-t-top	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-tl	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-tl-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-tl-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-tr	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-tr-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-tr-round	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-vert	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+box-vert-bold	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+brace-subscript	expressions	certified	certified	candidate	node:BraceSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+bracket-subscript	expressions	certified	certified	candidate	node:BracketSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+call-arg	functions	certified	certified	candidate	node:CallArgument	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+call-arg-with-binding	functions	certified	certified	candidate	node:BoundCallArgument	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+caret	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+carriage-return	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+carriage-return-new-line	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+cd-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+center-alignment	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+check-list	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+check-list-item	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+check-mark	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+checked-item	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+citation	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+clc-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+clear-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+code-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+code-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+code-terminal	parser	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+codeblock-sigil	mechdown	certified	syntax-only	active	transparent	2B	Phase 2B closed Mechdown grammar island
+colon	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+comma	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+comment	statements	certified	syntax-only	active	node:Comment	2B	rich comment semantics wait for the complete paragraph-element grammar
+comment-sigil	statements	certified	syntax-only	active	transparent	2B	Phase 2B closed Mechdown grammar island
+comparison-operator	expressions	certified	certified	active	node:ComparisonOperator	2D	Phase 2D closed expression-operator layer
+complement	expressions	certified	certified	active	node:ComplementOperation	2D	Phase 2D closed expression-operator layer
+complex-number	literals	certified	certified	active	node:ComplexNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+comprehension-qualifier	expressions	certified	certified	candidate	node:ComprehensionQualifier	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+context-address-path	expressions	certified	certified	active	node:ContextAddressPath	2C	Phase 2C closed literal, path, and primitive kind island
+context-address-path-token	expressions	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
+context-base-context	statements	certified	certified	active	node:ContextBaseContext	2F	Phase 2F closed source, export, and context declaration layer
+context-base-resource-uri	statements	certified	certified	active	node:ContextBaseResourceUri	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-declaration	statements	certified	certified	active	node:ContextCapabilityDeclaration	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-path	statements	certified	certified	active	node:ContextCapabilityPath	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-path-token	statements	certified	syntax-only	active	token	2F	Phase 2F closed source, export, and context declaration layer
+context-capability-scope	statements	certified	certified	active	node:ContextCapabilityScope	2F	Phase 2F closed source, export, and context declaration layer
+context-declaration	statements	certified	certified	active	node:ContextDeclaration	2F	Phase 2F closed source, export, and context declaration layer
+context-import-alias-segment	imports	certified	certified	active	node:ContextImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+context-send	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+cross	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+cross-product	expressions	certified	certified	active	node:CrossProductOperation	2D	Phase 2D closed expression-operator layer
+dash	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+decimal-literal	literals	certified	certified	active	node:DecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+define-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+difference	expressions	certified	certified	active	node:DifferenceOperation	2D	Phase 2D closed expression-operator layer
+digit	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+digit-sequence	base	certified	certified	active	node:DigitSequence	2A	Phase 2A canonical base closure
+digit-token	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+div-assign-operator	statements	certified	certified	active	node:DivAssignOperation	2G	Phase 2G closed executable primitive layer
+divide	expressions	certified	certified	active	node:DivideOperation	2D	Phase 2D closed expression-operator layer
+docs-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+dollar	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+dot-product	expressions	certified	certified	active	node:DotProductOperation	2D	Phase 2D closed expression-operator layer
+dot-subscript	expressions	certified	certified	active	node:DotSubscript	2G	Phase 2G closed executable primitive layer
+dot-subscript-int	expressions	certified	certified	active	node:DotSubscriptInt	2G	Phase 2G closed executable primitive layer
+element-of	expressions	certified	certified	active	node:ElementOfOperation	2D	Phase 2D closed expression-operator layer
+emoji	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+emoji-grapheme	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+emphasis	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+emphasis-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+empty	literals	certified	certified	active	node:EmptyLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+empty-map	structures	certified	certified	active	node:EmptyMap	2H	Phase 2H closed structure shell
+empty-paragraph	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+empty-set	structures	certified	certified	active	node:EmptySet	2H	Phase 2H closed structure shell
+english-false-literal	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+english-true-literal	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+enum-define	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+enum-separator	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+enum-variant	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+enum-variant-inline-kind	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+enum-variant-kind	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+equal	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+equal-to	expressions	certified	certified	active	node:EqualToOperation	2D	Phase 2D closed expression-operator layer
+equation	mechdown	certified	certified	active	node:Equation	2B	Phase 2B closed Mechdown grammar island
+equation-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+error-alt-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+error-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+error-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+escaped-char	base	certified	certified	active	node:EscapedCharacter	2A	Phase 2A canonical base closure
+eval-inline-mech-code	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+exclamation	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+exp-assign-operator	statements	certified	certified	active	node:ExpAssignOperation	2G	Phase 2G closed executable primitive layer
+export-declaration	statements	certified	certified	active	node:ExportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
+expression	expressions	certified	certified	candidate	node:Expression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+factor	expressions	certified	certified	candidate	node:Factor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+false-literal	literals	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
+fancy-table	structures	certified	certified	candidate	node:FancyTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+fancy-table-header	structures	certified	certified	candidate	node:FancyTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+field	structures	certified	certified	candidate	node:TableField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+figure-item	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+figures	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+figures-row	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+float	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+float-decimal-start	literals	certified	certified	active	node:FloatDecimalStart	2C	Phase 2C closed literal, path, and primitive kind island
+float-full	literals	certified	certified	active	node:FloatFull	2C	Phase 2C closed literal, path, and primitive kind island
+float-left	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+float-literal	literals	certified	certified	active	node:FloatLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+float-right	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+float-sigil	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+footnote	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+footnote-prefix	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+footnote-reference	mechdown	certified	certified	active	node:FootnoteReference	2B	Phase 2B closed Mechdown grammar island
+forbidden-emoji	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+formula	expressions	certified	certified	candidate	transparent	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+formula-subscript	expressions	certified	certified	candidate	node:FormulaSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+fsm	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-args	state_machines	certified	certified	candidate	node:FsmArguments	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+fsm-arm	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-async-transition	state_machines	certified	certified	candidate	node:FsmAsyncTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+fsm-block-transition	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-comment-arm	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-declare	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-guard	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-guard-arm	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-implementation	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-instance	state_machines	certified	certified	candidate	node:FsmInstance	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+fsm-output	state_machines	certified	certified	candidate	node:FsmOutput	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+fsm-pipe	state_machines	certified	certified	candidate	node:FsmPipe	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+fsm-specification	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-state-definition	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-state-definition-variables	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-state-transition	state_machines	certified	certified	candidate	node:FsmStateTransition	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+fsm-statement-transition	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-transition	state_machines	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+fsm-value	state_machines	certified	certified	candidate	node:FsmValue	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+full-join	expressions	certified	certified	active	node:FullJoinOperation	2D	Phase 2D closed expression-operator layer
+function-arg	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+function-call	functions	certified	certified	candidate	node:FunctionCall	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+function-define	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+function-define-match-arms	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+function-define-statements	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+function-match-arm	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+function-out-arg	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+function-out-args	functions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+gen-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+generator	expressions	certified	certified	candidate	node:Generator	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+generator-arrow	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+generator-arrow-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+grammar	grammar	certified	certified	active	node:Grammar	2A	Phase 2A grammar metalanguage
+grammar-definition	grammar	certified	certified	active	node:GrammarDefinition	2A	Phase 2A grammar metalanguage
+grammar-expression	grammar	certified	certified	active	node:GrammarExpression	2A	Phase 2A grammar metalanguage
+grammar-factor	grammar	certified	certified	active	node:GrammarFactor	2A	Phase 2A grammar metalanguage
+grammar-group	grammar	certified	certified	active	node:GrammarGroup	2A	Phase 2A grammar metalanguage
+grammar-identifier	grammar	certified	certified	active	node:GrammarIdentifier	2A	Phase 2A grammar metalanguage
+grammar-list	grammar	certified	certified	active	node:GrammarList	2A	Phase 2A grammar metalanguage
+grammar-not	grammar	certified	certified	active	node:GrammarNot	2A	Phase 2A grammar metalanguage
+grammar-optional	grammar	certified	certified	active	node:GrammarOptional	2A	Phase 2A grammar metalanguage
+grammar-peek	grammar	certified	certified	active	node:GrammarPeek	2A	Phase 2A grammar metalanguage
+grammar-range	grammar	certified	certified	active	node:GrammarRange	2A	Phase 2A grammar metalanguage
+grammar-repeat0	grammar	certified	certified	active	node:GrammarRepeat0	2A	Phase 2A grammar metalanguage
+grammar-repeat1	grammar	certified	certified	active	node:GrammarRepeat1	2A	Phase 2A grammar metalanguage
+grammar-rule	grammar	certified	certified	active	node:GrammarRule	2A	Phase 2A grammar metalanguage
+grammar-term	grammar	certified	certified	active	node:GrammarTerm	2A	Phase 2A grammar metalanguage
+grammar-terminal	grammar	certified	certified	active	node:GrammarTerminal	2A	Phase 2A grammar metalanguage
+grammar-terminal-token	grammar	certified	certified	active	node:GrammarTerminalToken	2A	Phase 2A grammar metalanguage
+grave	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+grave-codeblock-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+greater-than	expressions	certified	certified	active	node:GreaterThanOperation	2D	Phase 2D closed expression-operator layer
+greater-than-equal	expressions	certified	certified	active	node:GreaterThanEqualOperation	2D	Phase 2D closed expression-operator layer
+grouping-symbol	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+guard-operator	state_machines	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
+hashtag	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+header-field	structures	certified	certified	candidate	node:HeaderField	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+help-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+hexadecimal-literal	literals	certified	certified	active	node:HexadecimalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+highlight	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+highlight-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+http-prefix	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+hyperlink	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+idea-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+idea-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+identifier	base	certified	certified	active	node:Identifier	2A	Phase 2A canonical base closure
+identifier-path-segment	base	certified	certified	active	node:IdentifierPathSegment	2A	Phase 2A canonical base closure
+identifier-path-segment-emoji	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+identifier-symbol	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+img	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+img-prefix	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+import-alias-operator	imports	certified	syntax-only	active	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-declaration	statements	certified	certified	active	node:ImportDeclaration	2F	Phase 2F closed source, export, and context declaration layer
+import-group-item	imports	certified	certified	active	node:ImportGroupItem	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-group-items	imports	certified	certified	active	node:ImportGroupItems	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-group-separator	imports	certified	syntax-only	active	transparent	2E	Phase 2E corrected module-import closure (IMPORT-001)
+import-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure; renamed by IMPORT-001
+info-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+info-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+inline-code	mechdown	certified	certified	active	node:InlineCode	2B	Phase 2B closed Mechdown grammar island
+inline-equation	mechdown	certified	certified	active	node:InlineEquation	2B	Phase 2B closed Mechdown grammar island
+inline-mech-code	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+inline-paragraph	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+inline-table	structures	certified	certified	candidate	node:InlineTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+inline-table-header	structures	certified	certified	candidate	node:InlineTableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+inline-table-row	structures	certified	certified	candidate	node:InlineTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+integer-literal	literals	certified	certified	active	node:IntegerLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+intersection	expressions	certified	certified	active	node:IntersectionOperation	2D	Phase 2D closed expression-operator layer
+invariant-define	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+join	expressions	certified	certified	active	node:JoinOperation	2D	Phase 2D closed expression-operator layer
+kind	literals	certified	certified	candidate	node:Kind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-annotation	literals	certified	certified	candidate	node:KindAnnotation	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-any	literals	certified	certified	active	node:KindAny	2C	Phase 2C closed literal, path, and primitive kind island
+kind-atom	literals	certified	certified	active	node:KindAtom	2C	Phase 2C closed literal, path, and primitive kind island
+kind-define	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+kind-empty	literals	certified	certified	active	node:KindEmpty	2C	Phase 2C closed literal, path, and primitive kind island
+kind-kind	literals	certified	certified	candidate	node:KindKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-map	literals	certified	certified	candidate	node:KindMap	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-matrix	literals	certified	certified	candidate	node:KindMatrix	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-record	literals	certified	certified	candidate	node:KindRecord	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-scalar	literals	certified	certified	candidate	node:KindScalar	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-set	literals	certified	certified	candidate	node:KindSet	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-table	literals	certified	certified	candidate	node:TableKind	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-tuple	literals	certified	certified	candidate	node:KindTuple	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+kind-with-option	literals	certified	certified	candidate	node:KindWithOption	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+l1	expressions	certified	certified	candidate	node:LogicExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+l2	expressions	certified	certified	candidate	node:ComparisonExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+l3	expressions	certified	certified	candidate	node:AdditiveExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+l4	expressions	certified	certified	candidate	node:MultiplicativeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+l5	expressions	certified	certified	candidate	node:PowerExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+l6	expressions	certified	certified	candidate	node:TableExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+l7	expressions	certified	certified	candidate	node:SetExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+left-alignment	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+left-angle	literals	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
+left-angle1	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+left-angle2	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+left-anti-join	expressions	certified	certified	active	node:LeftAntiJoinOperation	2D	Phase 2D closed expression-operator layer
+left-brace	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+left-bracket	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+left-join	expressions	certified	certified	active	node:LeftJoinOperation	2D	Phase 2D closed expression-operator layer
+left-parenthesis	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+left-semi-join	expressions	certified	certified	active	node:LeftSemiJoinOperation	2D	Phase 2D closed expression-operator layer
+less-than	expressions	certified	certified	active	node:LessThanOperation	2D	Phase 2D closed expression-operator layer
+less-than-equal	expressions	certified	certified	active	node:LessThanEqualOperation	2D	Phase 2D closed expression-operator layer
+list-separator	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+literal	literals	certified	certified	candidate	node:Literal	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+load-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+logic-operator	expressions	certified	certified	active	node:LogicOperator	2D	Phase 2D closed expression-operator layer
+ls-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+map	structures	certified	certified	candidate	node:Map	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+mapping	structures	certified	certified	candidate	node:MapEntry	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+match-arm	expressions	certified	certified	candidate	node:MatchArm	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+match-expression	expressions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+matrix	structures	certified	certified	candidate	node:Matrix	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+matrix-column	structures	certified	certified	candidate	node:MatrixColumn	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+matrix-comprehension	expressions	certified	certified	candidate	node:MatrixComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+matrix-end	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
+matrix-multiply	expressions	certified	certified	active	node:MatrixMultiplyOperation	2D	Phase 2D closed expression-operator layer
+matrix-operator	expressions	certified	certified	active	node:MatrixOperator	2D	Phase 2D closed expression-operator layer
+matrix-row	structures	certified	certified	candidate	node:MatrixRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+matrix-solve	expressions	certified	certified	active	node:MatrixSolveOperation	2D	Phase 2D closed expression-operator layer
+matrix-start	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
+mech-code	parser	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mech-code-alt	parser	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mechdown-list	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mechdown-table	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mechdown-table-header	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mechdown-table-no-header	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mechdown-table-row	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mechdown-table-with-header	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+micro-mika	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-arm-left	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-arm-right	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-expression-inner	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-eye-left	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-eye-right	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-nose	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-section	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+mika-section-close	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+mika-section-open	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+mini-mika	mika	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+module-export-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+module-import	imports	certified	certified	active	node:ModuleImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-alias	imports	certified	certified	active	node:ModuleImportAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-alias-path	imports	certified	certified	active	node:ModuleImportAliasPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-alias-segment	imports	certified	certified	active	node:ModuleImportAliasSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-context-alias	imports	certified	certified	active	node:ModuleImportContextAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-intrinsic-segment	imports	certified	certified	active	node:ModuleImportIntrinsicSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-name-segment	imports	certified	certified	active	node:ModuleImportNameSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-path	imports	certified	certified	active	node:ModuleImportPath	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-path-segment	imports	certified	certified	active	node:ModuleImportPathSegment	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-import-value-alias	imports	certified	certified	active	node:ModuleImportValueAlias	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-only-import	imports	certified	certified	active	node:ModuleOnlyImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-root	imports	certified	certified	active	node:ModuleRoot	2E	Phase 2E corrected module-import closure (IMPORT-001)
+module-suffix-import	imports	certified	certified	active	node:ModuleSuffixImport	2E	Phase 2E corrected module-import closure (IMPORT-001)
+modulus	expressions	certified	certified	active	node:ModulusOperation	2D	Phase 2D closed expression-operator layer
+mul-assign-operator	statements	certified	certified	active	node:MulAssignOperation	2G	Phase 2G closed executable primitive layer
+mul-div-operator	expressions	certified	certified	active	node:MulDivOperator	2D	Phase 2D closed expression-operator layer
+multiply	expressions	certified	certified	active	node:MultiplyOperation	2D	Phase 2D closed expression-operator layer
+nbsp	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+negate	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+negate-factor	expressions	certified	certified	candidate	node:NegateFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+new-line	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+new-line-char	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+newline-indent	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+no-alignment	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+not	expressions	certified	certified	active	node:NotOperation	2D	Phase 2D closed expression-operator layer
+not-element-of	expressions	certified	certified	active	node:NotElementOfOperation	2D	Phase 2D closed expression-operator layer
+not-equal	expressions	certified	certified	active	node:NotEqualOperation	2D	Phase 2D closed expression-operator layer
+not-factor	expressions	certified	certified	candidate	node:NotFactor	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+not-mech-code	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+number	literals	certified	certified	active	node:Number	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+octal-literal	literals	certified	certified	active	node:OctalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+op-assign	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+op-assign-operator	statements	certified	certified	active	node:OpAssignOperator	2G	Phase 2G closed executable primitive layer
+option-map	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+option-mapping	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+option-value	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+or	expressions	certified	certified	active	node:OrOperation	2D	Phase 2D closed expression-operator layer
+ordered-list	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+ordered-list-item	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+output-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+output-operator-a	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+output-operator-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+paragraph	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+paragraph-element	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+paragraph-newline	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+paragraph-text	mechdown	certified	certified	active	node:ParagraphText	2B	Phase 2B closed Mechdown grammar island
+parenthetical-term	expressions	certified	certified	candidate	node:ParentheticalExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+parse	parser	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+parse-grammar	parser	certified	certified	active	root:GrammarDocument	2A	Phase 2A explicit dependency closure
+parse-mech	parser	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+parse-repl-command	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+pattern	patterns	certified	certified	candidate	node:Pattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+pattern-array	patterns	certified	certified	candidate	node:ArrayPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+pattern-array-item	patterns	certified	certified	candidate	transparent	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+pattern-array-token	patterns	certified	certified	candidate	node:ArrayPatternElement	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+pattern-atom-struct	patterns	certified	certified	candidate	node:AtomStructPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+pattern-tuple	patterns	certified	certified	candidate	node:TuplePattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+pattern-tuple-struct	patterns	certified	certified	candidate	node:TupleStructPattern	2I	Phase 2I canonical recursive core; semantic disposition: compile-time.
+percent	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+period	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+plan-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+plus	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+power	expressions	certified	certified	active	node:PowerOperation	2D	Phase 2D closed expression-operator layer
+power-operator	expressions	certified	certified	active	node:PowerOperator	2D	Phase 2D closed expression-operator layer
+prefixed-context-path	expressions	certified	certified	active	node:PrefixedContextPath	2C	Phase 2C closed literal, path, and primitive kind island
+profile-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+program	parser	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+prompt	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+prompt-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+proper-subset	expressions	certified	certified	active	node:ProperSubsetOperation	2D	Phase 2D closed expression-operator layer
+proper-superset	expressions	certified	certified	active	node:ProperSupersetOperation	2D	Phase 2D closed expression-operator layer
+punctuation	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+question	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+question-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+question-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+quit-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+quote	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+quote-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+quote-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+range-exclusive	expressions	certified	certified	active	node:RangeExclusiveOperation	2D	Phase 2D closed expression-operator layer
+range-expression	expressions	certified	certified	candidate	node:RangeExpression	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+range-inclusive	expressions	certified	certified	active	node:RangeInclusiveOperation	2D	Phase 2D closed expression-operator layer
+range-operator	expressions	certified	certified	active	node:RangeOperator	2D	Phase 2D closed expression-operator layer
+range-subscript	expressions	certified	certified	candidate	node:RangeSubscript	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+rational-literal	literals	certified	certified	active	node:RationalLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+raw-hyperlink	mechdown	certified	certified	active	node:RawHyperlink	2B	Phase 2B closed Mechdown grammar island
+raw-string	literals	certified	certified	active	node:RawString	2C	Phase 2C closed literal, path, and primitive kind island
+raw-subtract	expressions	certified	certified	active	node:RawSubtractOperation	2D	Phase 2D closed expression-operator layer
+raw-text	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+real-number	literals	certified	certified	active	node:RealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+record	structures	certified	certified	candidate	node:Record	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+reference	mechdown	certified	certified	active	node:Reference	2B	Phase 2B closed Mechdown grammar island
+regular-table	structures	certified	certified	candidate	node:RegularTable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+relative-source-import-specifier	statements	certified	certified	active	node:RelativeSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
+repl-identifier	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+right-alignment	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+right-angle	literals	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
+right-angle1	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+right-angle2	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+right-brace	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+right-bracket	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+right-join	expressions	certified	certified	active	node:RightJoinOperation	2D	Phase 2D closed expression-operator layer
+right-parenthesis	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+row-separator	structures	certified	certified	active	node:TableRowSeparator	2H	Phase 2H closed structure shell
+save-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+scientific-literal	literals	certified	certified	active	node:ScientificLiteral	2C	Phase 2C syntax port; typed scientific exponents preserve their suffix and lower deterministically while the retired parser exponent branch crashes.
+section	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+section-element	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+section-reference	mechdown	certified	certified	active	node:SectionReference	2B	Phase 2B closed Mechdown grammar island
+section-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+select-all	expressions	certified	certified	active	node:SelectAllSubscript	2G	Phase 2G closed executable primitive layer
+semicolon	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+send-operator	statements	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
+set	structures	certified	certified	candidate	node:Set	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+set-comprehension	expressions	certified	certified	candidate	node:SetComprehension	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+set-operator	expressions	certified	certified	active	node:SetOperator	2D	Phase 2D closed expression-operator layer
+slash	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+slice	expressions	certified	certified	candidate	node:Slice	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+slice-ref	expressions	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+source-import-specifier	statements	certified	certified	active	node:SourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
+source-import-tail	statements	certified	certified	active	node:SourceImportTail	2F	Phase 2F closed source, export, and context declaration layer
+source-import-uri-scheme	statements	certified	certified	active	node:SourceImportUriScheme	2F	Phase 2F closed source, export, and context declaration layer
+source-mec-path	statements	certified	certified	active	node:SourceMecPath	2F	Phase 2F closed source, export, and context declaration layer
+source-mec-path-wildcard-suffix	statements	certified	syntax-only	active	transparent	2F	Phase 2F closed source, export, and context declaration layer
+source-path-component	statements	certified	certified	active	node:SourcePathComponent	2F	Phase 2F closed source, export, and context declaration layer
+source-path-component-token	statements	certified	syntax-only	active	token	2F	Phase 2F closed source, export, and context declaration layer
+space	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+space-tab	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+space-tab0	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+space-tab1	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+spaced-subtract	expressions	certified	certified	active	node:SpacedSubtractOperation	2D	Phase 2D closed expression-operator layer
+spread-operator	patterns	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
+spread-operator-a	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+spread-operator-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+statement	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+statement-separator	expressions	certified	syntax-only	active	transparent	2G	Phase 2G closed executable primitive layer
+step-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+strict-equal	expressions	certified	certified	active	node:StrictEqualOperation	2D	Phase 2D closed expression-operator layer
+strict-not-equal	expressions	certified	certified	active	node:StrictNotEqualOperation	2D	Phase 2D closed expression-operator layer
+strike-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+strikethrough	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+string	literals	certified	certified	active	node:StringLiteral	2C	Phase 2C closed literal, path, and primitive kind island
+strong	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+strong-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+structure	structures	certified	certified	candidate	node:Structure	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+sub-assign-operator	statements	certified	certified	active	node:SubAssignOperation	2G	Phase 2G closed executable primitive layer
+sublist	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+subscript	expressions	certified	certified	candidate	node:SubscriptList	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+subset	expressions	certified	certified	active	node:SubsetOperation	2D	Phase 2D closed expression-operator layer
+subtitle	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+subtract	expressions	certified	certified	active	node:SubtractOperation	2D	Phase 2D closed expression-operator layer
+success-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+success-check-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+success-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+superset	expressions	certified	certified	active	node:SupersetOperation	2D	Phase 2D closed expression-operator layer
+swizzle-subscript	expressions	certified	certified	active	node:SwizzleSubscript	2G	Phase 2G closed executable primitive layer
+symbol	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+symbols-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+symmetric-difference	expressions	certified	certified	active	node:SymmetricDifferenceOperation	2D	Phase 2D closed expression-operator layer
+synth-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+tab	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+table	structures	certified	certified	candidate	node:Table	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+table-column	structures	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+table-end	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
+table-header	structures	certified	certified	candidate	node:TableHeader	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+table-horz	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
+table-operator	expressions	certified	certified	active	node:TableOperator	2D	Phase 2D closed expression-operator layer
+table-row	structures	certified	certified	candidate	node:TableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+table-row2	structures	certified	certified	candidate	node:FancyTableRow	2I	Phase 2I canonical recursive core; semantic disposition: structural.
+table-separator	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
+table-start	structures	certified	syntax-only	active	token	2H	Phase 2H closed structure shell
+table-top	structures	certified	syntax-only	active	transparent	2H	Phase 2H closed structure shell
+tag	parser	certified	syntax-only	active	token	2A	Phase 2A explicit dependency closure
+text	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+thematic-break	mechdown	certified	certified	active	node:ThematicBreak	2B	Phase 2B closed Mechdown grammar island
+thin-space	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+tilde	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+tilde-codeblock-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+title	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+title-front-matter	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+transition-operator	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+transition-operator-a	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+transition-operator-u	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+transpose	expressions	certified	syntax-only	active	transparent	2D	Phase 2D closed expression-operator layer
+true-literal	literals	certified	syntax-only	active	token	2C	Phase 2C closed literal, path, and primitive kind island
+tuple	structures	certified	certified	candidate	node:Tuple	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+tuple-destructure	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+tuple-struct	structures	certified	certified	candidate	node:TupleStruct	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+typed-integer	literals	certified	certified	active	node:TypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
+ul-subtitle	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+unchecked-item	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+underline	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+underline-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+underscore	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+underscore-digit	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+union-op	expressions	certified	certified	active	node:UnionOperation	2D	Phase 2D closed expression-operator layer
+unordered-list	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+unordered-list-item	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+untyped-integer	literals	certified	certified	active	node:UntypedInteger	2C	Phase 2C closed literal, path, and primitive kind island
+untyped-real-number	literals	certified	certified	active	node:UntypedRealNumber	2C	Phase 2C canonical syntax and semantic certification; scientific-exponent selection follows the specification.
+uri-scheme-part	statements	certified	syntax-only	active	token	2F	Phase 2F closed source, export, and context declaration layer
+uri-source-import-specifier	statements	certified	certified	active	node:UriSourceImportSpecifier	2F	Phase 2F closed source, export, and context declaration layer
+utf8-string	literals	certified	certified	active	node:Utf8String	2C	Phase 2C closed literal, path, and primitive kind island
+var	expressions	certified	certified	candidate	node:Variable	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+variable-assign	statements	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+variable-define	statements	certified	certified	candidate	node:VariableDefine	2I	Phase 2I canonical recursive core; semantic disposition: executable.
+warning-block	mechdown	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+warning-sigil	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+whitespace	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
+whitespace0	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+whitespace1	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+whos-rpl	repl	unported	pending	inactive	undecided		Deferred beyond Phase 2A.
+wildcard	patterns	certified	certified	active	node:WildcardPattern	2G	Phase 2G closed executable primitive layer
+ws0e	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+ws1e	base	certified	syntax-only	active	transparent	2A	Phase 2A canonical base closure
+xor	expressions	certified	certified	active	node:XorOperation	2D	Phase 2D closed expression-operator layer
