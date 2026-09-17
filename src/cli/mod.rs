@@ -2,6 +2,8 @@
 pub mod app;
 #[cfg(feature = "bundle_web")]
 pub mod bundle_web;
+#[cfg(any(feature = "formatter", feature = "run"))]
+pub mod canonical_source;
 #[cfg(any(feature = "serve", feature = "run"))]
 pub mod capabilities;
 #[cfg(feature = "cli_core")]

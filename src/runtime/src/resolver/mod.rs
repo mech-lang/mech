@@ -40,6 +40,7 @@ use crate::capability::CapabilityRequest;
 pub mod ast;
 #[cfg(feature = "source")]
 mod canonical_handoff;
+#[cfg(feature = "source")]
 mod document;
 #[cfg(feature = "source")]
 pub use document::{SourceDocument, SourceDocumentIndexError};
@@ -235,6 +236,11 @@ pub struct ResolvedSource {
     pub name: String,
     pub canonical_uri: String,
     pub source: MechSourceCode,
+    /// Resolver-owned canonical revision. This is the source/syntax authority
+    /// prepared for product compilation, indexing, rendering, and diagnostics.
+    #[cfg(feature = "source")]
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub source_document: Option<SourceDocument>,
     /// Canonical syntax tree parsed while resolving textual Mech source.
     ///
     /// Source text remains authoritative for identity and host presentation;
@@ -262,6 +268,8 @@ impl ResolvedSource {
             name: name.into(),
             canonical_uri: canonical_uri.into(),
             source,
+            #[cfg(feature = "source")]
+            source_document: None,
             syntax_tree: None,
             kind: SourceKind::Unknown("".to_string()),
             imports: Vec::new(),
@@ -279,12 +287,113 @@ impl ResolvedSource {
         self
     }
 
+    /// Attach the canonical revision only when it retains the exact same raw
+    /// source. This prevents a resolver record from publishing two source
+    /// authorities with different bytes.
+    #[cfg(feature = "source")]
+    pub fn with_source_document(mut self, document: SourceDocument) -> MResult<Self> {
+        match &self.source {
+            MechSourceCode::String(source)
+                if source.as_str() == document.source().to_contiguous_string() => {}
+            MechSourceCode::String(_) => {
+                return invalid_resolved_source(
+                    "source_document",
+                    "must retain the exact resolved source bytes",
+                );
+            }
+            _ => {
+                return invalid_resolved_source(
+                    "source_document",
+                    "is only valid for textual Mech source",
+                );
+            }
+        }
+        self.source_document = Some(document);
+        Ok(self)
+    }
+
+    #[cfg(feature = "source")]
+    pub fn source_document(&self) -> Option<&SourceDocument> {
+        self.source_document.as_ref()
+    }
+
+    /// Admit the retained canonical authority without consulting a cached or
+    /// reparsed legacy tree. Invalid documents remain retained for diagnostics
+    /// but cannot publish resolver facts through this boundary.
+    #[cfg(feature = "source")]
+    pub fn canonical_document_index(&self) -> MResult<crate::CanonicalDocumentIndex> {
+        self.source_document
+            .as_ref()
+            .ok_or_else(|| {
+                MechError::new(
+                    InvalidResolvedSourceError {
+                        field: "source_document",
+                        reason: "is required for canonical admission",
+                    },
+                    None,
+                )
+            })?
+            .index()
+            .map_err(|error| MechError::new(error, None))
+    }
+
+    /// Populate the resolver handoff solely from the retained canonical
+    /// document. The legacy Program cache is neither read nor manufactured.
+    #[cfg(feature = "source")]
+    pub fn admit_canonical_document(mut self) -> MResult<Self> {
+        let index = self.canonical_document_index()?;
+        let root = index.root;
+        let imports = root.all_imports();
+        let referrer = self.canonical_uri.clone();
+        self.dependencies = imports
+            .iter()
+            .map(|import| source_request_for_import(import, Some(&referrer)))
+            .collect();
+        self.exports = root.all_exports();
+        self.contexts = root.all_contexts();
+        self.address_references = root.all_address_references();
+        self.scopes = root.module_scopes();
+        self.imports = imports;
+        self.syntax_tree = None;
+        Ok(self)
+    }
+
+    /// Parse and retain this record's exact textual source under its canonical
+    /// URI. This is the normal adoption point for product paths that construct
+    /// `ResolvedSource` directly rather than through a resolver.
+    #[cfg(feature = "source")]
+    pub fn retain_source_document(
+        self,
+        revision: mech_syntax::document::Revision,
+        config: mech_syntax::document::ParseConfig,
+    ) -> MResult<Self> {
+        let MechSourceCode::String(source) = &self.source else {
+            return invalid_resolved_source("source_document", "requires textual Mech source");
+        };
+        let document =
+            SourceDocument::parse_resolved(&self.canonical_uri, revision, source.as_str(), config)
+                .map_err(|_| {
+                    MechError::new(
+                        InvalidResolvedSourceError {
+                            field: "source",
+                            reason: "exceeds the canonical retained-source range",
+                        },
+                        None,
+                    )
+                })?;
+        self.with_source_document(document)
+    }
+
     /// Replace the authoritative source and invalidate every projection that
     /// was derived from its previous contents.
     ///
     /// Resolvers may cache a parsed tree alongside textual source. Replacing
     /// the source invalidates that cache and every declaration index.
     pub fn replace_source(&mut self, source: MechSourceCode) {
+        #[cfg(feature = "source")]
+        {
+            self.source_document = None;
+        }
         self.syntax_tree = None;
         self.source = source;
         self.clear_source_projections();
@@ -359,6 +468,26 @@ impl ResolvedSource {
 
         if self.canonical_uri.trim().is_empty() {
             return invalid_resolved_source("canonical_uri", "must not be empty");
+        }
+
+        #[cfg(feature = "source")]
+        if let Some(document) = &self.source_document {
+            match &self.source {
+                MechSourceCode::String(source)
+                    if source.as_str() == document.source().to_contiguous_string() => {}
+                MechSourceCode::String(_) => {
+                    return invalid_resolved_source(
+                        "source_document",
+                        "does not match the resolved source bytes",
+                    );
+                }
+                _ => {
+                    return invalid_resolved_source(
+                        "source_document",
+                        "requires textual Mech source",
+                    );
+                }
+            }
         }
 
         for import in &self.imports {

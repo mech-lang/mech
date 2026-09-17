@@ -333,6 +333,8 @@ impl RuntimeBuilder {
             capability_kernel: self.capability_kernel,
             #[cfg(feature = "source")]
             source_resolver: self.source_resolver,
+            #[cfg(feature = "source")]
+            source_revisions: HashMap::new(),
             host_registry: self.host_registry,
             host_policy: self.host_policy,
             scheduler: self.scheduler,

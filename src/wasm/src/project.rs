@@ -1,4 +1,6 @@
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
+#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
+use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
@@ -22,9 +24,11 @@ use mech_engine::{
     insert_root_document_program_output_capture, root_document_inline_eval_count,
     root_document_output_ids, root_document_program_output_id,
 };
+#[cfg(feature = "browser_host_scene")]
+use mech_runtime::MechEvent;
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
-    MechConfigDocument, MechEvent, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
+    MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
     ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
     SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
@@ -368,12 +372,14 @@ pub(crate) struct WasmDocumentBootstrap {
     served: Option<ServedDocumentBootstrap>,
 }
 
+#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 #[derive(Clone, Default)]
 struct Staged<T> {
     active: T,
     pending: Option<T>,
 }
 
+#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 impl<T> Staged<T> {
     fn stage(&mut self, value: T) {
         self.pending = Some(value);
@@ -743,6 +749,7 @@ fn build_document_repl_runtime_for_tree(
 
     let resolver = document_source_resolver(candidate_tree, source)?;
 
+    #[cfg(feature = "served_project_authority")]
     match bootstrap.served.as_ref() {
         None => {
             builder = builder
@@ -772,6 +779,12 @@ fn build_document_repl_runtime_for_tree(
                 builder = builder.run_resource_grant(grant);
             }
         }
+    }
+    #[cfg(not(feature = "served_project_authority"))]
+    {
+        builder = builder
+            .config(mech_runtime::RuntimeConfig::new("wasm-document-repl"))
+            .source_resolver(resolver);
     }
 
     let runtime = builder
@@ -2026,18 +2039,6 @@ fn build_runtime_from_authority(
     builder.build().map_err(to_js_error)
 }
 
-#[cfg(not(feature = "served_project_authority"))]
-fn build_runtime_from_authority(
-    _document: &MechConfigDocument,
-    _authority: &(),
-    _source_resolver: InMemorySourceResolver,
-    #[cfg(feature = "browser_host_scene")] _scenes: BrowserSceneRegistry,
-) -> Result<MechRuntime, JsValue> {
-    Err(js_error(
-        "served project authority support was not compiled into this WASM artifact",
-    ))
-}
-
 fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
     let mut providers = BTreeMap::new();
     #[cfg(feature = "browser_host_dom")]
@@ -2201,44 +2202,30 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
         .map_err(|error| js_error(format!("invalid served host config: {error}")))
 }
 
+#[cfg(feature = "served_project_authority")]
 fn validate_served_authority(
     document: &MechConfigDocument,
-    #[cfg(feature = "served_project_authority")] authority: &BrowserRuntimeInjectionConfig,
-    #[cfg(not(feature = "served_project_authority"))] _authority: &(),
+    authority: &BrowserRuntimeInjectionConfig,
 ) -> mech_core::MResult<()> {
-    #[cfg(not(feature = "served_project_authority"))]
-    {
-        return Err(MechError::new(
-            ProjectError {
-                message:
-                    "served project authority support was not compiled into this WASM artifact"
-                        .into(),
-            },
-            None,
-        ));
-    }
-    #[cfg(feature = "served_project_authority")]
-    {
-        for required in &document.hosts {
-            if !authority
-                .hosts
-                .iter()
-                .any(|host| host.name == required.name && host.provider == required.provider)
-            {
-                return Err(MechError::new(
-                    ProjectError {
-                        message: format!(
-                            "served project requires host `{}` provider `{}`, but server authority did not grant it",
-                            required.name, required.provider
-                        ),
-                    },
-                    None,
-                ));
-            }
+    for required in &document.hosts {
+        if !authority
+            .hosts
+            .iter()
+            .any(|host| host.name == required.name && host.provider == required.provider)
+        {
+            return Err(MechError::new(
+                ProjectError {
+                    message: format!(
+                        "served project requires host `{}` provider `{}`, but server authority did not grant it",
+                        required.name, required.provider
+                    ),
+                },
+                None,
+            ));
         }
-        validate_required_grants(document, authority)?;
-        Ok(())
     }
+    validate_required_grants(document, authority)?;
+    Ok(())
 }
 
 #[cfg(feature = "served_project_authority")]

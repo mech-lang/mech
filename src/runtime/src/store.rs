@@ -26,6 +26,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Program};
 
+#[cfg(feature = "source")]
+use crate::SourceDocument;
 use crate::capability::{Capability, CapabilityRequest};
 use crate::context::ResourceBudgetExceededError;
 use crate::effect::RuntimeEffectRecord;
@@ -220,6 +222,9 @@ pub struct ModuleVersionRecord {
     pub module: ModuleId,
     pub version: u64,
     pub source: Option<MechSourceCode>,
+    #[cfg(feature = "source")]
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub source_document: Option<SourceDocument>,
     /// Parsed form of `source`, cached for in-process compiler and host reuse.
     #[cfg_attr(feature = "serde", serde(skip))]
     pub syntax_tree: Option<Arc<Program>>,
@@ -259,6 +264,8 @@ impl ModuleVersionRecord {
             module,
             version,
             source: None,
+            #[cfg(feature = "source")]
+            source_document: None,
             syntax_tree: None,
             bytecode: None,
             exports: Vec::new(),
@@ -274,6 +281,12 @@ impl ModuleVersionRecord {
 
     pub fn with_source(mut self, source: MechSourceCode) -> Self {
         self.source = Some(source);
+        self
+    }
+
+    #[cfg(feature = "source")]
+    pub fn with_source_document(mut self, source_document: Option<SourceDocument>) -> Self {
+        self.source_document = source_document;
         self
     }
 
