@@ -2,15 +2,15 @@
 
 ## Live landing checkpoint — 2026-09-17
 
-**Candidate:** `codex/syntax-s8r24-index-ranges` /
-`d1a9ce64e9d3ddf3816ac246cad98c5821bc3934`, published as draft #882 on
-R23 `c42c4ccd90aff19919268a8e9f7f87469fe5ab8d`. This is the current accumulated
-implementation head through R24. The designated landing branch remains
+**Candidate:** `codex/syntax-s8r02-numeric-targets` /
+`876c434f5d1b517bd187ebe20afbcabe66e57241`, published as draft #883 on
+R24 `d1a9ce64e9d3ddf3816ac246cad98c5821bc3934`. This is the current accumulated
+implementation head through R02. The designated landing branch remains
 `codex/syntax-s8c-cutover`; it is deliberately not treated as current or
 qualified until the remaining accepted corrections are incorporated and it is
 rebuilt from this stack.
 
-**Completed:** 22 numbered correction boundaries are published: R01, R03-R05,
+**Completed:** 23 numbered correction boundaries are published: R01-R05,
 R07-R14, and R16-R25. R25 remains owned by the separate review worker. R08 now
 owns runtime-sized promoted assignment inputs without introducing a second
 dense-access implementation; R07 remains the single generalized dense-to-
@@ -27,30 +27,36 @@ and the full `resident_external_test_support` runtime profile: 682/682 tests,
 including the 4,096-turn product N-body and public N-body viewer probes. R24's
 Index range source/decoded acceptance executes 3/3 tests and passes exact
 endpoint, increment, overflow, and live-endpoint boundaries. No canceled or
-zero-test command is counted as passing evidence.
+zero-test command is counted as passing evidence. R02 closes all 25 G02 target
+cells through the shared canonical snapshot arithmetic, reduction, and matrix-
+product owners. Its focused source/decoded suite passes 4/4 and canonical
+document state passes 104/104; full-feature and reduced resident engine checks
+also pass. The broader engine unit profile now compiles after repairing one
+accumulated test fixture and passes 442/444. Its two failures remain assigned to
+the comprehension component-addressability and selected-match budget owners;
+they are not counted as R02 success.
 
-**Remaining:** implement the accepted v0.4 R02 numeric target capabilities,
-R06 constant/computed fixed-population mask activation facts, and R26 canonical
-compute lowering. R15 interval/constrained units remains deferred to post-v0.4
-in issue #865. Required slice reviews and focused CI remain open. After the
-three implementation owners are accepted, rebuild the designated C candidate,
+**Remaining:** implement the accepted v0.4 R06 constant/computed fixed-
+population mask activation facts and R26 canonical compute lowering. R15
+interval/constrained units remains deferred to post-v0.4 in issue #865. Required
+slice reviews and focused CI remain open. Resolve the two newly executable
+accumulated engine-unit failures in their existing owners. After the two
+implementation owners are accepted, rebuild the designated C candidate,
 run product probes after each coherent batch, hold one exact C SHA for full
 qualification, fix failures in their owners, complete protected review/merge,
 and verify the landed target.
 
-**Current action:** start R02 from the published R24 head. Use the finite G02
-target cells as acceptance tests for the four physical capability families:
-C32 arithmetic/reductions/updates, numeric power, complex/rational matrix
-multiplication, and f32 special-binary broadcast. Preserve current target-
-rejection tests separately while converting each required positive witness to
-execution through its physical owner.
+**Current action:** start R06 from exact R02. Implement constant and computed
+fixed-population logical-mask activation facts in the existing shape-fact owner,
+then execute its source/decoded mask cells without weakening live-mask
+revalidation or publication atomicity.
 
-**Next action:** create the R02 branch on exact R24, run the G02 witnesses to
-record the current grouped failures, implement the first shared physical owner,
-and execute direct plus decoded acceptance before publishing the review slice.
-Then continue the remaining G02 families without opening replacement PRs.
+**Next action:** recover the finite G17 witnesses and existing mask review
+contracts, establish the exact R06 failure baseline on `876c434f5`, implement
+the shared activation-fact correction, and publish focused direct plus decoded
+acceptance on top of #883. R26 follows R06.
 
-**External blocker:** none for R02, R06, R26, routine testing, rebasing, review
+**External blocker:** none for R06, R26, routine testing, rebasing, review
 response, or integration. No unresolved language decision is being requested.
 
 **Status:** Checkpoint—not complete.
