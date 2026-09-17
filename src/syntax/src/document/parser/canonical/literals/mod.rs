@@ -1,6 +1,6 @@
 //! Canonical literal and number leaf productions.
 //!
-//! The direct leaves originated in Phase 2C. The active enclosing `literal`
+//! The direct leaves originated in Phase 2C. The candidate enclosing `literal`
 //! production composes them with recursive kinds in `recursive_core::literals`.
 
 use alloc::string::String;

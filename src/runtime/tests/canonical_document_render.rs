@@ -7,8 +7,8 @@ use mech_runtime::{
     CanonicalDocumentRenderer, CanonicalRenderScope, CanonicalScopeResults, RuntimeValueSnapshot,
 };
 use mech_syntax::document::{
-    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
-    parse_canonical_document,
+    AstNode, DocumentId, DocumentStream, DocumentSyntax, ParseConfig, Revision, StreamProgress,
+    TextSnapshot, parse_canonical_document,
 };
 
 fn document(source: &str) -> DocumentSyntax {
@@ -18,6 +18,25 @@ fn document(source: &str) -> DocumentSyntax {
     );
     assert!(parsed.diagnostics.is_empty(), "{:#?}", parsed.diagnostics);
     DocumentSyntax::cast(parsed.syntax()).unwrap()
+}
+
+fn streamed_document(source: &str) -> DocumentSyntax {
+    let mut stream = DocumentStream::new(DocumentId(0x57d), ParseConfig::default());
+    for character in source.chars() {
+        let mut update = stream.append(&character.to_string(), 19).unwrap();
+        while update.progress == StreamProgress::NeedsProcessing {
+            update = stream.advance(19);
+        }
+        assert_eq!(update.progress, StreamProgress::NeedInput);
+    }
+    let mut update = stream.finish(19);
+    while update.progress == StreamProgress::NeedsProcessing {
+        update = stream.advance(19);
+    }
+    assert_eq!(update.progress, StreamProgress::Finished);
+    let snapshot = stream.materialize().unwrap();
+    assert!(snapshot.is_strictly_clean());
+    DocumentSyntax::cast(snapshot.syntax()).unwrap()
 }
 
 fn execute(
@@ -43,6 +62,31 @@ fn execute(
         })
         .collect::<Vec<_>>();
     CanonicalScopeResults::from_values(owner, scope, program, &values).unwrap()
+}
+
+#[test]
+fn finalized_streams_feed_execution_and_complete_document_rendering() {
+    let source = "Streamed Report\n===============\nanswer := 40 + 2\nThe answer is {answer}.\n";
+    let document = streamed_document(source);
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let results = [execute(
+        document.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        826,
+    )];
+    let renderer = CanonicalDocumentRenderer;
+    let html = renderer.render_html(&document, &results).unwrap();
+    assert!(
+        html.contains("<h1 class='mech-document-title'>Streamed Report</h1>"),
+        "{html}"
+    );
+    assert!(html.contains("The answer is <span"), "{html}");
+    assert!(html.contains(">42</span>"), "{html}");
+    assert!(!html.contains("{answer}"), "{html}");
+    let text = renderer.render_text(&document, &results).unwrap();
+    assert!(text.contains("Streamed Report"), "{text}");
+    assert!(text.contains("The answer is 42."), "{text}");
 }
 
 #[test]

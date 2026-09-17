@@ -43,6 +43,16 @@ fn finalized_streams_match_one_shot_at_every_scalar_cut() {
         "x := [1,+,2]\n",
         "```mech\nx := [1,\n",
         "╭◉╮\n(◉ ◯ ◉)\n",
+        include_str!("fixtures/grammar/accepted/mixed-document.mec"),
+        include_str!("fixtures/grammar/accepted/mechdown-inline.mec"),
+        include_str!("fixtures/grammar/accepted/mechdown-unordered.mec"),
+        include_str!("fixtures/grammar/accepted/mechdown-ordered.mec"),
+        include_str!("fixtures/grammar/accepted/footnote.mec"),
+        include_str!("fixtures/grammar/accepted/citation.mec"),
+        include_str!("fixtures/grammar/accepted/figures.mec"),
+        include_str!("fixtures/grammar/accepted/float.mec"),
+        include_str!("fixtures/grammar/accepted/mechdown-prompt.mec"),
+        include_str!("fixtures/grammar/accepted/mechdown-equation.mec"),
     ] {
         for at in text
             .char_indices()

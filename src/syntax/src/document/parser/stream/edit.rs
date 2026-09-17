@@ -36,13 +36,25 @@ impl DocumentStream {
             .apply_edits(edits)
             .map_err(StreamError::Source)?;
         self.work.full_document_restarts += 1;
-        // Arbitrary edits rebuild source descriptors and the line index. Charge
-        // a documented bound: bytes plus at most 64 storage steps per piece or
-        // line entry. This is separate from measured append allocations.
-        self.work.edit_restart_work += u64::from(source.byte_len().0)
-            + 64 * (self.source.piece_count()
-                + source.piece_count()
-                + source.line_index().line_count()) as u64;
+        // Arbitrary edits rebuild source descriptors and the line index. The
+        // implementation may traverse old descriptors once per edit range, so
+        // conservatively charge that multiplicity rather than presenting a
+        // multi-edit rebuild as a single linear pass. This is separate from the
+        // measured append allocation path.
+        let descriptors = self
+            .source
+            .piece_count()
+            .saturating_add(source.piece_count())
+            .saturating_add(self.source.line_index().line_count())
+            .saturating_add(source.line_index().line_count())
+            .saturating_add(edits.len()) as u64;
+        let edit_passes = edits.len().saturating_add(1) as u64;
+        self.work.edit_restart_work =
+            self.work
+                .edit_restart_work
+                .saturating_add(u64::from(source.byte_len().0).saturating_add(
+                    64_u64.saturating_mul(descriptors.saturating_mul(edit_passes)),
+                ));
         self.work_base = self.work;
         self.source = source.without_lookup_work();
         self.parser_source = source;
@@ -70,9 +82,13 @@ impl DocumentStream {
         source: TextSnapshot,
         ids: IdGenerator,
         config: ParseConfig,
+        interpretation: u64,
     ) -> Self {
         let mut stream = Self::from_source(source, config, StreamLimits::default());
         stream.ids = ids;
+        stream.interpretation = interpretation;
+        // This fresh parse issues new nodes, including without any source edit.
+        stream.invalidate();
         stream.work.full_document_restarts = 1;
         stream.progress = StreamProgress::NeedsProcessing;
         stream
@@ -97,7 +113,12 @@ impl DocumentStream {
             }
         };
         Ok((
-            DocumentSession::from_stream_parts(snapshot, self.ids, self.config),
+            DocumentSession::from_stream_parts(
+                snapshot,
+                self.ids,
+                self.config,
+                self.interpretation,
+            ),
             self.work,
         ))
     }

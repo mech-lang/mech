@@ -431,3 +431,96 @@ fn many_same_line_occurrences_share_the_batched_location_projection() {
         reference.reference.target == "env" && reference.reference.name == "VALUE"
     }));
 }
+
+#[test]
+fn finalized_streams_preserve_configured_scopes_import_spans_and_grapheme_columns() {
+    use mech_syntax::document::{DocumentStream, StreamProgress};
+    let source = "  +> ./lib.mec\r\n\r\n```mechworker{output: false, label: \"a\\n\"}\r\n+> @env := cli/env\r\nx := \"é👩‍💻\" + @env/HOME\r\n```\r\n\r\n```mech:worker\r\n<+ x\r\n```\r\n";
+    let expected = index(source);
+    let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    for ch in source.chars() {
+        let mut progress = stream.append(&ch.to_string(), 19).unwrap().progress;
+        for _ in 0..100_000 {
+            if progress != StreamProgress::NeedsProcessing {
+                break;
+            }
+            progress = stream.advance(19).progress;
+        }
+        assert_eq!(progress, StreamProgress::NeedInput);
+    }
+    let mut progress = stream.finish(19).progress;
+    for _ in 0..100_000 {
+        if progress != StreamProgress::NeedsProcessing {
+            break;
+        }
+        progress = stream.advance(19).progress;
+    }
+    assert_eq!(progress, StreamProgress::Finished);
+    let snapshot = stream.materialize().unwrap();
+    assert!(snapshot.is_strictly_clean());
+    let actual =
+        SourceIndex::from_document(&DocumentSyntax::cast(snapshot.syntax()).unwrap()).unwrap();
+    assert_eq!(actual, expected);
+}
+
+fn streamed_document(source: &str) -> DocumentSyntax {
+    use mech_syntax::document::{DocumentStream, StreamProgress};
+    let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    for ch in source.chars() {
+        let mut progress = stream.append(&ch.to_string(), 19).unwrap().progress;
+        while progress == StreamProgress::NeedsProcessing {
+            progress = stream.advance(19).progress;
+        }
+        assert_eq!(progress, StreamProgress::NeedInput);
+    }
+    let mut progress = stream.finish(19).progress;
+    while progress == StreamProgress::NeedsProcessing {
+        progress = stream.advance(19).progress;
+    }
+    assert_eq!(progress, StreamProgress::Finished);
+    let snapshot = stream.materialize().unwrap();
+    assert!(snapshot.is_strictly_clean());
+    DocumentSyntax::cast(snapshot.syntax()).unwrap()
+}
+
+#[test]
+fn finalized_streams_mika_indexes_share_retained_owners_and_keep_local_resolution_separate() {
+    use mech_runtime::resolver::CanonicalDocumentIndex;
+    let source = "+> ./root.mec\n\n~∘~⸢+> ./child.mec\nx := @env/HOME\n\n╭◉╮⸢+> ./nested.mec\ny := @nested/VALUE\n⸥\n\n```mechworker{output: false}\n+> ./worker.mec\nz := @worker/VALUE\n```\n⸥\n";
+    let document = streamed_document(source);
+    let index = CanonicalDocumentIndex::from_document(&document).unwrap();
+    let owners = document.mika_scopes();
+    assert_eq!(index.owner, document.scope_id());
+    assert_eq!(index.mika.len(), 2);
+    assert_eq!(index.root.imports.len(), 1);
+    assert!(index.root.address_references.is_empty());
+    for (child, owner) in index.mika.iter().zip(&owners) {
+        assert_eq!(child.owner.section.scope_id(), owner.section.scope_id());
+        assert_eq!(child.owner.parent, owner.parent);
+    }
+    assert_eq!(index.mika[0].index.imports.len(), 2);
+    assert_eq!(index.mika[1].index.imports.len(), 1);
+    assert_eq!(
+        index.mika[0].index.program_address_references()[0].target,
+        "env"
+    );
+    assert_eq!(
+        index.mika[1].index.program_address_references()[0].target,
+        "nested"
+    );
+    let scope = SourceScope::Interpreter(index.mika[0].index.interpreter_scopes()[0].clone());
+    assert_eq!(
+        index.mika[0].index.address_references_for_scope(&scope)[0].target,
+        "worker"
+    );
+    let resolver = InMemorySourceResolver::new().with_string("app/child.mec", "value := 42\n");
+    let import = &index.mika[0].index.program_imports()[0];
+    let resolved = resolver
+        .resolve(&source_request_for_import(
+            import,
+            Some("memory:app/main.mec"),
+        ))
+        .unwrap()
+        .unwrap();
+    assert_eq!(resolved.canonical_uri, "memory:app/child.mec");
+}

@@ -6,11 +6,15 @@ use mech_syntax::document::{
     SyntaxSnapshot, normalize_diagnostics, parse_canonical_document, reconstruct_source,
     validate_lossless,
 };
+#[path = "support/stream_mirror.rs"]
+mod stream_mirror;
+use stream_mirror::Mirror;
 #[derive(Debug, Default)]
 struct Work {
     accepted_bytes: u64,
     accounted: u64,
     views: u64,
+    consumer: Mirror,
 }
 impl Work {
     fn accounted_work(&self) -> u64 {
@@ -55,10 +59,18 @@ fn uncapped(snapshot: &SyntaxSnapshot, config: ParseConfig) {
 
 fn append(session: &mut DocumentStream, chunk: &str, views: bool, work: &mut Work) {
     let before = session.work();
+    let consumer_before = work.consumer.work();
     let mut update = session.append(chunk, 65_536).unwrap();
-    while update.progress == StreamProgress::NeedsProcessing {
+    loop {
+        if views {
+            work.consumer.apply(&update);
+        }
+        if update.progress != StreamProgress::NeedsProcessing {
+            break;
+        }
         update = session.advance(65_536);
     }
+    work.accounted += work.consumer.work() - consumer_before;
     assert_eq!(update.progress, StreamProgress::NeedInput);
     work.accepted_bytes += chunk.len() as u64;
     if views {
@@ -79,19 +91,38 @@ fn append(session: &mut DocumentStream, chunk: &str, views: bool, work: &mut Wor
     work.accounted += session.work().total() - before.total();
 }
 
-fn final_equivalence(session: &mut DocumentStream, source: &str, clean: bool) -> u64 {
+fn final_equivalence(
+    session: &mut DocumentStream,
+    source: &str,
+    clean: bool,
+    config: ParseConfig,
+    consumer: Option<&mut Mirror>,
+) -> u64 {
+    let mut consumer = consumer;
+    let consumer_before = consumer.as_ref().map_or(0, |mirror| mirror.work());
     let before = session.work().total();
     let mut update = session.finish(65_536);
-    while update.progress == StreamProgress::NeedsProcessing {
+    loop {
+        if let Some(consumer) = consumer.as_mut() {
+            consumer.apply(&update);
+        }
+        if update.progress != StreamProgress::NeedsProcessing {
+            break;
+        }
         update = session.advance(65_536);
     }
     assert_eq!(update.progress, StreamProgress::Finished);
-    let finish_work = session.work().total() - before;
+    if let Some(consumer) = consumer.as_ref() {
+        consumer.assert_matches(&update.view);
+    }
+    let finish_work = session.work().total() - before
+        + consumer.as_ref().map_or(0, |mirror| mirror.work())
+        - consumer_before;
     let actual = session.materialize().unwrap();
-    uncapped(&actual, ParseConfig::default());
+    uncapped(&actual, config);
     assert_eq!(actual.source.byte_len().to_usize(), source.len());
-    let expected = parse_canonical_document(actual.source.clone(), ParseConfig::default());
-    uncapped(&expected, ParseConfig::default());
+    let expected = parse_canonical_document(actual.source.clone(), config);
+    uncapped(&expected, config);
     same_tree(&actual.root, &expected.root);
     validate_lossless(&actual.root, &actual.source).unwrap();
     assert_eq!(
@@ -113,12 +144,30 @@ fn final_equivalence(session: &mut DocumentStream, source: &str, clean: bool) ->
 }
 
 fn workload(source: &str, views: bool, clean: bool) -> Work {
-    let mut session = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    workload_with_config(
+        source,
+        views,
+        clean,
+        ParseConfig::default(),
+        Default::default(),
+        8,
+    )
+}
+
+fn workload_with_config(
+    source: &str,
+    views: bool,
+    clean: bool,
+    config: ParseConfig,
+    limits: mech_syntax::document::StreamLimits,
+    chunk_bytes: usize,
+) -> Work {
+    let mut session = DocumentStream::with_limits(DocumentId(826), config, limits);
     let mut work = Work::default();
     let mut history = Vec::new();
     let mut start = 0;
     while start < source.len() {
-        let mut end = (start + 8).min(source.len());
+        let mut end = (start + chunk_bytes).min(source.len());
         while !source.is_char_boundary(end) {
             end -= 1;
         }
@@ -134,7 +183,15 @@ fn workload(source: &str, views: bool, clean: bool) -> Work {
     }
     // Explicit full export/differential validation happens once after ingestion;
     // it is not included in this baseline's ordinary-publication accounting.
-    work.accounted += final_equivalence(&mut session, source, clean);
+    work.accounted += final_equivalence(
+        &mut session,
+        source,
+        clean,
+        config,
+        views.then_some(&mut work.consumer),
+    );
+    assert!(session.work().parser_work < limits.max_parser_work);
+    assert_eq!(session.work().source_bytes_copied, source.len() as u64);
     assert_eq!(work.accepted_bytes as usize, source.len());
     work
 }
@@ -145,7 +202,18 @@ fn growth(family: &str, make_source: impl Fn(usize) -> String) {
         let mut previous = None;
         for n in [64, 128, 256, 512] {
             let work = workload(&make_source(n), views, family != "malformed-tail");
-            eprintln!("S7B_STREAM family={family} n={n} normal_views={views} {work:?}");
+            eprintln!(
+                "S7B_STREAM family={family} n={n} normal_views={views} bytes={} accounted={} consumer_read={} logical_removed={} updates={} consumer_work={} ranges_adopted={} ranges_removed={} range_visits={}",
+                work.accepted_bytes,
+                work.accounted,
+                work.consumer.records_read,
+                work.consumer.records_removed,
+                work.consumer.updates,
+                work.consumer.work(),
+                work.consumer.ranges_adopted,
+                work.consumer.ranges_removed,
+                work.consumer.range_visits
+            );
             if let Some(previous) = previous {
                 if work.accounted_work() > previous * 3 {
                     failures.push((views, n, previous, work.accounted_work()));
@@ -186,11 +254,23 @@ fn small_append_cost_is_independent_of_settled_prefix() {
         let prefix = "A settled paragraph.\n\n".repeat(n);
         let mut session = DocumentStream::new(DocumentId(826), ParseConfig::default());
         let mut warmup = Work::default();
-        append(&mut session, &prefix, false, &mut warmup);
-        let mut work = Work::default();
+        append(&mut session, &prefix, true, &mut warmup);
+        let mut work = Work {
+            consumer: warmup.consumer,
+            ..Work::default()
+        };
         append(&mut session, "Next.\n", true, &mut work);
-        final_equivalence(&mut session, &(prefix + "Next.\n"), true);
-        eprintln!("S7B_STREAM family=settled n={n} {work:?}");
+        final_equivalence(
+            &mut session,
+            &(prefix + "Next.\n"),
+            true,
+            ParseConfig::default(),
+            Some(&mut work.consumer),
+        );
+        eprintln!(
+            "S7B_STREAM family=settled n={n} accounted={}",
+            work.accounted
+        );
         costs.push(work.accounted_work());
     }
     assert!(
@@ -220,4 +300,129 @@ fn malformed_tail_and_late_brace_selection_have_bounded_cumulative_work() {
     growth("late-brace", |n| {
         format!("x := {{\"{}\": 1}}\n", "a".repeat(n))
     });
+}
+
+// Explicitly scale well beyond the historical ~1 KiB token/fence cases. These
+// limits are identical for every size and cover both streaming and its oracle.
+fn large_config() -> (ParseConfig, mech_syntax::document::StreamLimits) {
+    use mech_syntax::document::{ParseLimits, StreamLimits};
+    (
+        ParseConfig {
+            limits: ParseLimits {
+                max_nesting: 256,
+                max_diagnostics: 65_536,
+                max_events: 16_000_000,
+                max_recovery_bytes: 8_000_000,
+                fuel: 1_000_000_000,
+            },
+        },
+        StreamLimits {
+            max_source_bytes: 1_000_000,
+            max_parser_work: 2_000_000_000,
+        },
+    )
+}
+fn large_growth(family: &str, make_source: impl Fn(usize) -> String, clean: bool) {
+    let (config, limits) = large_config();
+    eprintln!(
+        "S7B_LARGE_CONFIG family={family} config={config:?} session={limits:?} chunk_bytes=64 allowance=65536"
+    );
+    let mut previous: Option<(u64, u64)> = None;
+    for n in [8_192, 16_384, 32_768, 65_536] {
+        let source = make_source(n);
+        let work = workload_with_config(&source, true, clean, config, limits, 64);
+        eprintln!(
+            "S7B_LARGE family={family} n={n} bytes={} accounted={} consumer_read={} logical_removed={} updates={} consumer_work={} ranges_adopted={} ranges_removed={} range_visits={}",
+            work.accepted_bytes,
+            work.accounted,
+            work.consumer.records_read,
+            work.consumer.records_removed,
+            work.consumer.updates,
+            work.consumer.work(),
+            work.consumer.ranges_adopted,
+            work.consumer.ranges_removed,
+            work.consumer.range_visits
+        );
+        if let Some((total, consumer)) = previous {
+            assert!(
+                work.accounted <= total * 3,
+                "{family}: total growth {total} -> {}",
+                work.accounted
+            );
+            assert!(
+                work.consumer.work() <= consumer * 3,
+                "{family}: consumer growth {consumer} -> {}",
+                work.consumer.work()
+            );
+        }
+        previous = Some((work.accounted, work.consumer.work()));
+    }
+}
+#[test]
+fn large_generated_mech_consumes_every_delta() {
+    large_growth("mech", |n| "x := 1\n".repeat(n / 7), true);
+}
+#[test]
+fn large_mixed_documents_consume_every_delta() {
+    let unit = "A settled paragraph.\n\n```mech\nx := 1\n```\n\n";
+    large_growth("mixed", |n| unit.repeat(n / unit.len()), true);
+}
+#[test]
+fn large_unfinished_tokens_and_late_selection_consume_every_delta() {
+    large_growth("string", |n| format!("x := \"{}\"\n", "a".repeat(n)), true);
+    large_growth(
+        "late-brace",
+        |n| format!("x := {{\"{}\": 1}}\n", "a".repeat(n)),
+        true,
+    );
+    large_growth("prose", |n| format!("A {}.\n", "word ".repeat(n / 5)), true);
+}
+#[test]
+fn large_executable_fences_consume_every_delta() {
+    large_growth(
+        "executable-fence",
+        |n| format!("```mech\n{}\n```\n", "x := 1\n".repeat(n / 7)),
+        true,
+    );
+}
+#[test]
+fn large_malformed_tails_consume_every_delta() {
+    large_growth(
+        "malformed-tail",
+        |n| format!("x := \"{}", "a".repeat(n)),
+        false,
+    );
+}
+#[test]
+fn large_settled_prefix_does_not_increase_small_append_work() {
+    let (config, limits) = large_config();
+    let mut costs = Vec::new();
+    for n in [8_192, 16_384, 32_768, 65_536] {
+        let prefix = "A settled paragraph.\n\n".repeat(n / 22);
+        let mut session = DocumentStream::with_limits(DocumentId(826), config, limits);
+        let mut warmup = Work::default();
+        append(&mut session, &prefix, true, &mut warmup);
+        let mut work = Work {
+            consumer: warmup.consumer,
+            ..Work::default()
+        };
+        let before = work.consumer.work();
+        append(&mut session, "Next.\n", true, &mut work);
+        work.consumer.assert_matches(&session.view());
+        eprintln!(
+            "S7B_LARGE family=settled n={n} bytes={} accounted={} consumer={}",
+            prefix.len(),
+            work.accounted,
+            work.consumer.work() - before
+        );
+        costs.push(work.accounted);
+        final_equivalence(
+            &mut session,
+            &(prefix + "Next.\n"),
+            true,
+            config,
+            Some(&mut work.consumer),
+        );
+    }
+    assert!(costs[3] <= costs[0] * 3, "settled prefix costs: {costs:?}");
 }

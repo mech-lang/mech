@@ -1,0 +1,565 @@
+{
+  "implementation_commit": "f33df6d8fdebbe670f2f05067ceb54891f835b26",
+  "toolchain": "nightly-2026-03-03",
+  "profile": "mech-syntax --no-default-features --features full",
+  "command": "cargo +nightly-2026-03-03 test --locked --offline -p mech-syntax --no-default-features --features full --test document_streaming_complexity --test document_streaming_lifecycle -- --nocapture",
+  "result": {
+    "complexity": {
+      "passed": 7,
+      "failed": 0
+    },
+    "lifecycle": {
+      "passed": 8,
+      "failed": 0
+    }
+  },
+  "scope": "Measured current implementation immediately before B5 amendment; B6 adds documentation. This focused record is not full CI qualification. Final exact-head matrix and review evidence are published on PR #826.",
+  "work_definition": "StreamWork::total delta over append/advance/final grammar draining and normal publication, plus actual completed-node journal lookup steps; materialize/export excluded and separately reported. Historical normal views retained.",
+  "growth_gate": "N=64,128,256,512; at most 3x charged work per doubling; settled six-byte append at most 3x across eightfold retained prefix",
+  "samples": [
+    {
+      "family": "fence",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 85,
+      "accounted_work": 71730,
+      "views": 0
+    },
+    {
+      "family": "malformed-tail",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 70,
+      "accounted_work": 76905,
+      "views": 0
+    },
+    {
+      "family": "combining",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 137,
+      "accounted_work": 200368,
+      "views": 0
+    },
+    {
+      "family": "fence",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 157,
+      "accounted_work": 95845,
+      "views": 0
+    },
+    {
+      "family": "malformed-tail",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 134,
+      "accounted_work": 106019,
+      "views": 0
+    },
+    {
+      "family": "string",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 72,
+      "accounted_work": 198467,
+      "views": 0
+    },
+    {
+      "family": "combining",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 265,
+      "accounted_work": 239432,
+      "views": 0
+    },
+    {
+      "family": "fence",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 301,
+      "accounted_work": 146431,
+      "views": 0
+    },
+    {
+      "family": "malformed-tail",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 262,
+      "accounted_work": 166849,
+      "views": 0
+    },
+    {
+      "family": "string",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 136,
+      "accounted_work": 264070,
+      "views": 0
+    },
+    {
+      "family": "combining",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 521,
+      "accounted_work": 309488,
+      "views": 0
+    },
+    {
+      "family": "fence",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 589,
+      "accounted_work": 255110,
+      "views": 0
+    },
+    {
+      "family": "malformed-tail",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 518,
+      "accounted_work": 297983,
+      "views": 0
+    },
+    {
+      "family": "fence",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 85,
+      "accounted_work": 72368,
+      "views": 11
+    },
+    {
+      "family": "malformed-tail",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 70,
+      "accounted_work": 77423,
+      "views": 9
+    },
+    {
+      "family": "string",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 264,
+      "accounted_work": 394171,
+      "views": 0
+    },
+    {
+      "family": "fence",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 157,
+      "accounted_work": 97063,
+      "views": 20
+    },
+    {
+      "family": "combining",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 1033,
+      "accounted_work": 447400,
+      "views": 0
+    },
+    {
+      "family": "malformed-tail",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 134,
+      "accounted_work": 107066,
+      "views": 17
+    },
+    {
+      "family": "fence",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 301,
+      "accounted_work": 148866,
+      "views": 38
+    },
+    {
+      "family": "combining",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 137,
+      "accounted_work": 201129,
+      "views": 18
+    },
+    {
+      "family": "malformed-tail",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 262,
+      "accounted_work": 169017,
+      "views": 33
+    },
+    {
+      "family": "fence",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 589,
+      "accounted_work": 260122,
+      "views": 74
+    },
+    {
+      "family": "combining",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 265,
+      "accounted_work": 240865,
+      "views": 34
+    },
+    {
+      "family": "malformed-tail",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 518,
+      "accounted_work": 302520,
+      "views": 65
+    },
+    {
+      "family": "string",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 520,
+      "accounted_work": 665705,
+      "views": 0
+    },
+    {
+      "family": "combining",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 521,
+      "accounted_work": 312265,
+      "views": 66
+    },
+    {
+      "family": "string",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 72,
+      "accounted_work": 198988,
+      "views": 9
+    },
+    {
+      "family": "late-brace",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 77,
+      "accounted_work": 389532,
+      "views": 0
+    },
+    {
+      "family": "combining",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 1033,
+      "accounted_work": 452865,
+      "views": 130
+    },
+    {
+      "family": "string",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 136,
+      "accounted_work": 265119,
+      "views": 17
+    },
+    {
+      "family": "nested",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 79,
+      "accounted_work": 2130382,
+      "views": 0
+    },
+    {
+      "family": "regional",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 136,
+      "accounted_work": 235300,
+      "views": 0
+    },
+    {
+      "family": "string",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 264,
+      "accounted_work": 396339,
+      "views": 33
+    },
+    {
+      "family": "regional",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 264,
+      "accounted_work": 315313,
+      "views": 0
+    },
+    {
+      "family": "late-brace",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 141,
+      "accounted_work": 462237,
+      "views": 0
+    },
+    {
+      "family": "executable-fence",
+      "n": 64,
+      "normal_views": false,
+      "accepted_bytes": 69,
+      "accounted_work": 3454842,
+      "views": 0
+    },
+    {
+      "family": "regional",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 520,
+      "accounted_work": 475956,
+      "views": 0
+    },
+    {
+      "family": "string",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 520,
+      "accounted_work": 670241,
+      "views": 65
+    },
+    {
+      "family": "late-brace",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 269,
+      "accounted_work": 595711,
+      "views": 0
+    },
+    {
+      "family": "regional",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 1032,
+      "accounted_work": 804421,
+      "views": 0
+    },
+    {
+      "family": "late-brace",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 525,
+      "accounted_work": 870582,
+      "views": 0
+    },
+    {
+      "family": "regional",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 136,
+      "accounted_work": 236172,
+      "views": 18
+    },
+    {
+      "family": "regional",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 264,
+      "accounted_work": 317064,
+      "views": 34
+    },
+    {
+      "family": "late-brace",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 77,
+      "accounted_work": 390108,
+      "views": 10
+    },
+    {
+      "family": "regional",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 520,
+      "accounted_work": 479595,
+      "views": 66
+    },
+    {
+      "family": "late-brace",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 141,
+      "accounted_work": 463341,
+      "views": 18
+    },
+    {
+      "family": "late-brace",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 269,
+      "accounted_work": 597935,
+      "views": 34
+    },
+    {
+      "family": "regional",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 1032,
+      "accounted_work": 812092,
+      "views": 130
+    },
+    {
+      "family": "late-brace",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 525,
+      "accounted_work": 875174,
+      "views": 66
+    },
+    {
+      "family": "nested",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 143,
+      "accounted_work": 4461235,
+      "views": 0
+    },
+    {
+      "family": "settled",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 6,
+      "accounted_work": 23205,
+      "views": 1
+    },
+    {
+      "family": "executable-fence",
+      "n": 128,
+      "normal_views": false,
+      "accepted_bytes": 125,
+      "accounted_work": 7166247,
+      "views": 0
+    },
+    {
+      "family": "nested",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 271,
+      "accounted_work": 9666008,
+      "views": 0
+    },
+    {
+      "family": "executable-fence",
+      "n": 256,
+      "normal_views": false,
+      "accepted_bytes": 237,
+      "accounted_work": 15957342,
+      "views": 0
+    },
+    {
+      "family": "settled",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 6,
+      "accounted_work": 23273,
+      "views": 1
+    },
+    {
+      "family": "nested",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 527,
+      "accounted_work": 21170995,
+      "views": 0
+    },
+    {
+      "family": "nested",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 79,
+      "accounted_work": 2130960,
+      "views": 10
+    },
+    {
+      "family": "nested",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 143,
+      "accounted_work": 4462341,
+      "views": 18
+    },
+    {
+      "family": "nested",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 271,
+      "accounted_work": 9668234,
+      "views": 34
+    },
+    {
+      "family": "executable-fence",
+      "n": 512,
+      "normal_views": false,
+      "accepted_bytes": 461,
+      "accounted_work": 35583953,
+      "views": 0
+    },
+    {
+      "family": "executable-fence",
+      "n": 64,
+      "normal_views": true,
+      "accepted_bytes": 69,
+      "accounted_work": 3455517,
+      "views": 9
+    },
+    {
+      "family": "nested",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 527,
+      "accounted_work": 21175589,
+      "views": 66
+    },
+    {
+      "family": "executable-fence",
+      "n": 128,
+      "normal_views": true,
+      "accepted_bytes": 125,
+      "accounted_work": 7167511,
+      "views": 16
+    },
+    {
+      "family": "settled",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 6,
+      "accounted_work": 23341,
+      "views": 1
+    },
+    {
+      "family": "executable-fence",
+      "n": 256,
+      "normal_views": true,
+      "accepted_bytes": 237,
+      "accounted_work": 15959869,
+      "views": 30
+    },
+    {
+      "family": "executable-fence",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 461,
+      "accounted_work": 35589094,
+      "views": 58
+    },
+    {
+      "family": "settled",
+      "n": 512,
+      "normal_views": true,
+      "accepted_bytes": 6,
+      "accounted_work": 23409,
+      "views": 1
+    }
+  ]
+}

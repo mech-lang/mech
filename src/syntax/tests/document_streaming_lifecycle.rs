@@ -85,6 +85,12 @@ fn cancellation_and_source_capacity_preserve_every_accepted_byte() {
     let update = stream.cancel();
     assert_eq!(update.progress, StreamProgress::Cancelled);
     assert_eq!(update.view.source.to_contiguous_string(), "x := \"abc");
+    let identity = stream.identity();
+    let work = stream.work();
+    let repeated = stream.cancel();
+    assert_eq!(repeated.progress, StreamProgress::Cancelled);
+    assert_eq!(repeated.view.identity, identity);
+    assert_eq!(stream.work(), work);
     assert_eq!(
         stream.append("", 1).unwrap_err(),
         StreamError::Closed(StreamState::Cancelled)
@@ -103,6 +109,36 @@ fn historical_event_and_diagnostic_views_are_immutable() {
     assert_eq!(format!("{:?}", old.events().collect::<Vec<_>>()), events);
     assert_eq!(old.source.to_contiguous_string(), source);
     assert_eq!(old.identity.state, StreamState::Open);
+}
+
+#[test]
+fn unchanged_session_roundtrip_does_not_reuse_stream_identity() {
+    let session =
+        DocumentSession::new_with_document(DocumentId(826), "x := 1\n", ParseConfig::default());
+    let mut first = session.into_stream();
+    assert_eq!(first.finish(u64::MAX).progress, StreamProgress::Finished);
+    let first_snapshot = first.materialize().unwrap();
+    let first_identity = first.identity();
+    let (mut session, _) = first.into_session().unwrap();
+    let mut previous_identity = first_identity;
+    let mut previous_root = first_snapshot.root.id;
+
+    for _ in 0..3 {
+        let mut next = session.into_stream();
+        assert!(next.identity().interpretation > previous_identity.interpretation);
+        assert_eq!(next.finish(u64::MAX).progress, StreamProgress::Finished);
+        let snapshot = next.materialize().unwrap();
+        assert_eq!(first_snapshot.document, snapshot.document);
+        assert_eq!(first_snapshot.revision, snapshot.revision);
+        assert_eq!(snapshot.source.to_contiguous_string(), "x := 1\n");
+        assert_ne!(first_snapshot.root.id, snapshot.root.id);
+        assert_ne!(first_identity, next.identity());
+        assert_ne!(previous_root, snapshot.root.id);
+        assert!(next.identity().interpretation > previous_identity.interpretation);
+        previous_identity = next.identity();
+        previous_root = snapshot.root.id;
+        session = next.into_session().unwrap().0;
+    }
 }
 
 #[test]
