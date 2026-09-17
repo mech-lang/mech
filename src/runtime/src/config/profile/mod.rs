@@ -1,6 +1,8 @@
 #[cfg(feature = "source")]
 mod analyze;
 #[cfg(feature = "source")]
+mod canonical;
+#[cfg(feature = "source")]
 mod compile;
 mod error;
 mod eval;
@@ -15,6 +17,8 @@ use self::analyze::ConfigAnalyzer;
 #[cfg(feature = "source")]
 use self::compile::ConfigCompiler;
 pub use self::error::InvalidConfigField;
+#[cfg(feature = "source")]
+pub use self::error::InvalidConfigSyntax;
 #[cfg(feature = "source")]
 use self::error::*;
 #[cfg(feature = "source")]
@@ -70,4 +74,29 @@ pub fn parse_config_document(
     ConfigAnalyzer::new().analyze(&ir)?;
     let value = ConfigEvaluator::new(options).evaluate(&ir)?;
     ConfigLowerer::new().lower(source_name.into(), value)
+}
+
+/// Compile retained canonical configuration through the existing restricted IR,
+/// analyzer, evaluator and field lowering. No source parse or general evaluator
+/// is introduced at this boundary. The shipping text route switches in S8C.
+#[cfg(feature = "source")]
+pub fn compile_config_document(
+    source_name: impl Into<String>,
+    source: &crate::resolver::SourceDocument,
+    options: ConfigProfileOptions,
+) -> MResult<MechConfigDocument> {
+    let source_name = source_name.into();
+    if !source.is_strictly_clean() {
+        return Err(mech_core::MechError::new(
+            InvalidConfigSyntax {
+                source_name,
+                source: source.clone(),
+            },
+            None,
+        ));
+    }
+    let ir = canonical::compile(&source.document(), &options)?;
+    ConfigAnalyzer::new().analyze(&ir)?;
+    let value = ConfigEvaluator::new(options).evaluate(&ir)?;
+    ConfigLowerer::new().lower(source_name, value)
 }
