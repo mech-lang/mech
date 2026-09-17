@@ -62,16 +62,39 @@ impl NativeApplicationBuilder {
             &self.environment.host_catalog,
             request.target.as_deref(),
         )?;
-        program.validate_runtime_contracts_with(
-            &self.environment.function_catalog,
-            &mut native_resolver,
-        )?;
-        let runtime_functions = analysis::analyze_runtime_functions(
-            &program,
-            &self.environment.function_catalog,
-            request.instruction_type_bindings.as_deref(),
-            request.instruction_type_binding_requirements.as_deref(),
-        )?;
+        let artifact_program = if program.artifact.is_empty() {
+            program.validate_runtime_contracts_with(
+                &self.environment.function_catalog,
+                &mut native_resolver,
+            )?;
+            false
+        } else {
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
+                .map_err(|error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeProgramArtifactInvalid {
+                            reason: format!("{error:?}"),
+                        },
+                        None,
+                    )
+                })?;
+            analysis::artifact::plan_artifact_external_contracts(
+                &artifact,
+                &self.environment.function_catalog,
+                &mut native_resolver,
+            )?;
+            true
+        };
+        let runtime_functions = if artifact_program {
+            Vec::new()
+        } else {
+            analysis::analyze_runtime_functions(
+                &program,
+                &self.environment.function_catalog,
+                request.instruction_type_bindings.as_deref(),
+                request.instruction_type_binding_requirements.as_deref(),
+            )?
+        };
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;
         }
