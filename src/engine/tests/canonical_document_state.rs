@@ -2868,6 +2868,17 @@ fn closed_comprehension_scalar_initializer_runs_once_before_state_turns() {
 }
 
 #[test]
+fn activation_derived_range_endpoints_initialize_runtime_shaped_state() {
+    variable_matrix_turns(
+        "start := (true ? | true => 1 | false => 2)\nvalues := start..=3\n~state := values\nstate\n",
+        &[
+            (None, (1, 3), &[1.0, 2.0, 3.0]),
+            (None, (1, 3), &[1.0, 2.0, 3.0]),
+        ],
+    );
+}
+
+#[test]
 fn runtime_shaped_selection_resolves_complete_result_geometry() {
     for (selection, expected_shape, expected_values) in [
         ("a[1,:]", (1, 2), &[3.0, 4.0][..]),
