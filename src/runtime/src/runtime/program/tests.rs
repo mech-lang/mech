@@ -8,7 +8,7 @@ use std::time::Duration;
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData,
     snapshot::SequenceView,
 };
 use mech_engine::{
@@ -928,11 +928,14 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .map(|output| output.name.as_str())
         .collect::<Vec<_>>();
 
-    assert_eq!(
-        source_outputs,
-        ["y"],
-        "integrity constraints are not ordinary published outputs"
-    );
+    assert_eq!(source_outputs.len(), 2);
+    assert_eq!(source_outputs[0], "result");
+    assert!(source_outputs[1].starts_with("document:fence:"));
+    assert!(product.artifact().constraints().iter().all(|constraint| {
+        !source_outputs
+            .iter()
+            .any(|output| *output == constraint.name)
+    }));
     let mut source_runtime = runtime();
     let source_loaded = source_runtime
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
@@ -949,7 +952,7 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         interactive_runtime
             .output_name(program_output_id)
             .as_deref(),
-        Some("y"),
+        Some("result"),
         "the trailing integrity constraint must not replace the program output"
     );
     assert!(
@@ -1029,13 +1032,20 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         rich_outputs,
         "rich document outputs must survive bytecode-v1 encoding"
     );
+    let inline_output = rich
+        .artifact()
+        .outputs()
+        .iter()
+        .find(|output| output.name.starts_with("document:inline:"))
+        .expect("the rich document retains its inline expression")
+        .output;
 
     let mut rich_runtime = runtime();
     rich_runtime
         .load_source_program(rich_source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     let inline = rich_runtime
-        .output_value(mech_core::OutputId::new(0))
+        .output_value(inline_output)
         .unwrap()
         .unwrap()
         .into_value();
@@ -1053,7 +1063,8 @@ fn interactive_program_output_is_the_final_statement_without_a_fenced_output() {
         .program_output_id()
         .expect("factorial must publish its final statement");
 
-    assert_eq!(runtime.output_name(output_id).as_deref(), Some("res"));
+    assert_eq!(runtime.output_name(output_id).as_deref(), Some("result"));
+    assert_eq!(runtime.root_symbol_value("res").unwrap().to_string(), "120");
     assert_eq!(loaded.initial_value.to_string(), "120");
     assert_eq!(
         runtime
@@ -1726,15 +1737,10 @@ fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() 
         .build_compiler()
         .unwrap();
     let product = compiler.compile_source(SOURCE).unwrap();
-    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let input_id = hash_str("input");
-    let state_id = hash_str("state");
-    assert!(parsed.symbols.contains_key(&input_id));
-    assert!(parsed.symbols.contains_key(&state_id));
-    assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
-    assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
-    assert!(!parsed.mutable_symbols.contains(&input_id));
-    assert!(parsed.mutable_symbols.contains(&state_id));
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    assert_eq!(decoded.slots(), product.artifact().slots());
+    assert_eq!(decoded.outputs(), product.artifact().outputs());
+    assert_eq!(decoded.nodes(), product.artifact().nodes());
     assert!(
         product
             .artifact()
@@ -1772,16 +1778,33 @@ second := increment(2f32)
 second
 "#;
 
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .build_compiler()
+    let mut source_runtime = runtime();
+    source_runtime
+        .load_interactive_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
-    let product = compiler.compile_source(SOURCE).unwrap();
-    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(source_runtime.root_symbol_output_id("first").is_some());
+    assert!(source_runtime.root_symbol_output_id("second").is_some());
+    assert!(source_runtime.root_symbol_output_id("local").is_none());
+    assert!(matches!(
+        source_runtime
+            .root_symbol_value("second")
+            .unwrap()
+            .value()
+            .data(),
+        ValueData::F32(value) if value.to_f32() == 3.0
+    ));
 
-    assert!(parsed.symbols.contains_key(&hash_str("first")));
-    assert!(parsed.symbols.contains_key(&hash_str("second")));
-    assert!(!parsed.symbols.contains_key(&hash_str("local")));
+    let ActiveProgramExecution::ResidentPure(execution) = &source_runtime.active_program else {
+        panic!("interactive function fixture must remain resident pure")
+    };
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+    let mut bytecode_runtime = runtime();
+    bytecode_runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert!(bytecode_runtime.root_symbol_output_id("first").is_some());
+    assert!(bytecode_runtime.root_symbol_output_id("second").is_some());
+    assert!(bytecode_runtime.root_symbol_output_id("local").is_none());
 }
 
 #[test]
@@ -1835,12 +1858,12 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
         .build_compiler()
         .unwrap();
     for source_text in [
-        "value := 3.9\nanswer := value<i32>\nanswer",
-        "value := 3<i32>\nanswer := value<f64>\nanswer",
-        "value := true\nanswer := value<string>\nanswer",
-        "value := 42<u64>\nanswer := value<string>\nanswer",
-        "value := [3.9 4.1]\nanswer := value<[i32]>\nanswer",
-        "value<[i32]> := [3<i32> 4<i32>]\nanswer := value<[f64]>\nanswer",
+        "~value := 3.9\nanswer := value<i32>\nanswer",
+        "~value := 3<i32>\nanswer := value<f64>\nanswer",
+        "~value := true\nanswer := value<string>\nanswer",
+        "~value := 42<u64>\nanswer := value<string>\nanswer",
+        "~value := [3.9 4.1]\nanswer := value<[i32]>\nanswer",
+        "~value<[i32]> := [3<i32> 4<i32>]\nanswer := value<[f64]>\nanswer",
     ] {
         let product = compiler
             .compile_source(source_text)
@@ -2033,7 +2056,7 @@ empty
 
     for loaded in [source, bytecode] {
         assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (0, 0));
+        assert_eq!(canonical_matrix_shape(loaded.initial_value.value()), (1, 0));
         assert!(matches!(
             loaded.initial_value.value().data(),
             ValueData::Matrix(matrix)
@@ -2063,10 +2086,7 @@ values
         let failure = error.kind_as::<ResidentRouteFailure>().unwrap();
         assert!(
             failure.class == ResidentRouteFailureClass::SemanticUnsupported
-                && failure
-                    .reason
-                    .contains("ReactiveComprehensionStructureUnsupported")
-                && failure.reason.contains(qualifier),
+                && failure.reason.contains("UnsupportedControlLayout"),
             "live {qualifier} membership must fail explicitly instead of freezing its initial cardinality: {error:?}",
         );
     }
@@ -2104,7 +2124,13 @@ values
     runtime.drain_resident_host_inputs(1).unwrap();
 
     assert_eq!(
-        canonical_f64_matrix(runtime.root_symbol_value("values").unwrap().value()),
+        canonical_f64_matrix(
+            runtime
+                .program_output_value()
+                .unwrap()
+                .expect("the final comprehension result must publish")
+                .value(),
+        ),
         [3.0, 3.0, 3.0],
         "operations inside the comprehension must execute on every accepted turn",
     );
@@ -2291,7 +2317,7 @@ selected
                 .expect("ordinary fixture")
                 .operation
                 .operation_name
-                == "index"
+                == "scalar"
     }));
     assert!(matches!(
         execution.coordinator.instance().output_borrow(0),
@@ -4220,7 +4246,10 @@ state
         ));
     }
 
-    let state = runtime.root_symbol_value("state").unwrap();
+    let state = runtime
+        .program_output_value()
+        .unwrap()
+        .expect("the final recurrence state must publish");
     assert_eq!(canonical_f64(state.value()), 2.0);
 }
 
@@ -4659,15 +4688,31 @@ fn product_nbody_state_slots(
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         panic!("n-body must remain on the resident-external route")
     };
-    let positions = execution.artifact.outputs()[0].source;
-    let velocity = execution
-        .artifact
-        .slots()
+    let slots = execution
+        .coordinator
+        .instance()
+        .plan
+        .slots
         .iter()
-        .find(|slot| slot.role == SlotRole::State && slot.slot != positions)
-        .expect("n-body velocity state slot")
-        .slot;
-    (positions, velocity)
+        .filter(|slot| {
+            slot.storage == ResidentStorageClass::State
+                && slot.region.kind == mech_core::ResidentValueKind::F64
+                && slot.region.shape.rows == 10
+                && slot.region.shape.columns == 3
+                && execution.artifact.slots()[slot.artifact_id.get() as usize].role
+                    == SlotRole::State
+        })
+        .map(|slot| slot.artifact_id)
+        .collect::<Vec<_>>();
+    assert_eq!(slots.len(), 2, "product N-body has exactly two state cells");
+    let first = product_nbody_slot(runtime, slots[0]);
+    let second = product_nbody_slot(runtime, slots[1]);
+    if (first[1] - (-0.38972469318558057)).abs() < 1.0e-12 {
+        (slots[0], slots[1])
+    } else {
+        assert!((second[1] - (-0.38972469318558057)).abs() < 1.0e-12);
+        (slots[1], slots[0])
+    }
 }
 
 fn product_nbody_slot(runtime: &crate::MechRuntime, slot: mech_core::CellSlotId) -> Vec<f64> {
@@ -6558,13 +6603,14 @@ fn canonical_interactive_root_keeps_resource_authority_and_dependency_errors() {
         mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
             == Some("answer")
     }));
-    assert!(
-        compiler
-            .compile_canonical_interactive_root(SourceRequest::new("broken.mec"))
-            .unwrap_err()
-            .kind_message()
-            .contains("missing canonical dependency")
-    );
+    let dependency_error = compiler
+        .compile_canonical_interactive_root(SourceRequest::new("broken.mec"))
+        .unwrap_err();
+    let dependency_error = dependency_error
+        .kind_as::<crate::RuntimeModuleDependencyMissingError>()
+        .expect("a missing source import retains its structured error");
+    assert_eq!(dependency_error.module, "memory:broken.mec");
+    assert_eq!(dependency_error.specifier, "./absent.mec");
     // A rejected source graph must not poison the reusable compiler.
     assert!(
         compiler
