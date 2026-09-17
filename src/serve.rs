@@ -4304,7 +4304,6 @@ mod tests {
                     path: Some(root.join("missing.mec")),
                     source: None,
                     source_document: None,
-                    syntax_tree: None,
                     module_version: None,
                     content_hash: 0,
                     modified_time: None,
