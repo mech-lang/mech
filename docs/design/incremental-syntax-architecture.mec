@@ -1,7 +1,7 @@
 Incremental Syntax Architecture
 ===============================================================================
 
-Status: S7 document implementation is under qualification; S6 activation remains gated on S4 completion.
+Status: S7A consumer qualification remains open; S7B contract and baseline started; S6 activation remains gated on S4 completion.
 
 Integration branch: `feature/syntax`.
 
@@ -70,6 +70,25 @@ The current Nom source path remains inventoried throughout pre-cutover
 qualification. The final cutover removes that path atomically; this
 architecture does not introduce a compatibility lowering layer or selectable
 fallback.
+
+Retained streaming delivery boundary
+-------------------------------------------------------------------------------
+
+The current stack is S0 -> S1 -> S2 -> S3 -> S4 -> S5 -> S6 -> S7A -> S7B -> S8.
+S7A (#825) owns the complete canonical document root, recovery, typed consumers,
+and correct arbitrary edits. Its current append path performs a full canonical
+reparse and identity reconciliation; ID reuse does not certify streaming cost.
+S7B owns resumable append processing and efficient retained publication. Its
+contract and qualification are in `canonical-document-streaming.mec`. S8 changes
+production callers and removes the retiring parser/lowering paths.
+
+Streaming suspension is orthogonal to Match/NoMatch/Committed recognition.
+Temporary input exhaustion cannot mutate the live continuation through EOF
+recovery. Preview recovery belongs to a separate view; finality participates in
+cache validity even when the source revision is unchanged. The eventual one-shot
+path uses the same canonical recognition/recovery machinery with final input.
+No streaming API or performance qualification is claimed by this B1 checkpoint.
+No new grammar rows, compatibility trees, or production switches are introduced.
 
 1. Goals
 -------------------------------------------------------------------------------

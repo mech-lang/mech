@@ -1,7 +1,22 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S3 and the S5 certification implementation complete; S6 activation is gated on S4 completion; S7 consumer qualification remains open. S8 has not started.
+Status: S0-S3 and S5 certification complete; S4 semantics and S7A consumer qualification remain open; S6 activation remains gated on S4 completion. S7B contract/baseline started; S8 has not started.
+
+Current stack index (names and ordering, not completion):
+
+```text
+S0 -> S1 -> S2 -> S3 -> S4 -> S5 -> S6 -> S7A -> S7B -> S8
+```
+
+S0 #812 -> integration/v0.4; S1 #818 -> S0; S2 #820 -> S1; S3 #821 -> S2;
+S4 #822 -> S3; S5 #823 -> S4; S6 #824 -> S5; S7A #825 -> S6;
+S7B #826 `codex/syntax-s7b-streaming` -> S7A `codex/syntax-s7-document-root`.
+S7A keeps its existing branch, base, review history, document semantics, recovery,
+typed-consumer, and editing obligations. S7B owns retained streaming only. S8
+owns coordinated production cutover/removal. S7B starts as a draft while S7A is
+corrected; its acceptance requires the completed S7A base. Historical stage names
+and qualification records below are preserved.
 
 Historical planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -339,7 +354,7 @@ Exit gate:
 - generated registries and inventory tests pass; and
 - the public root matrix is unchanged.
 
-S7. Complete the canonical document root
+S7A. Complete the canonical document root
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Regenerate dependency and SCC reports after Phase 2I activation. The 131 rows
@@ -386,6 +401,33 @@ Implementation record:
   source order, rejects recovered syntax, and returns an explicit error for
   executable document units whose engine behavior is not implemented; and
 - product callers remain unchanged for the coordinated S8 source-path cutover.
+
+S7B. Canonical retained-document streaming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Make progressively supplied canonical documents resumable without routine
+whole-prefix parsing, source copying, or metadata rebuilding. The lifecycle,
+provisional/final cache boundary, resource ownership, counters, and acceptance
+matrix are specified in `docs/design/canonical-document-streaming.mec`.
+
+One draft PR contains B1 contract/baseline, B2 append storage/scanners,
+B3 canonical continuations, B4 snapshots/sessions, B5 qualification, and
+B6 closeout/S8 handoff. Recognition, recovery, and typed syntax retain their
+existing authority. No grammar productions are added: coverage stays 520/539.
+Shared parser changes belong to S7B; S2/S3 remain frozen. Unfinished S7A semantics
+and consumers remain S7A work; production callers remain S8 work.
+
+Exit gate:
+
+- finalized streamed syntax, tokens, flags, diagnostics, and typed roles match
+  canonical one-shot parsing and the frozen S7A fixture reference;
+- long tokens, nested expressions, and fenced bodies retain unfinished work;
+- source, trees, indexes, diagnostics, and normal publication meet measured
+  cumulative growth bounds, including retained historical snapshots;
+- append/advance/preview/finish/cancel and edit transitions obey explicit limits;
+- full/base integration targets, reduced features, affected native/WASM and
+  semantic consumers, and architecture/generator checks pass at the final head;
+- no failed acceptance case is hidden by a skip, cap, fallback, or reclassification.
 
 S8. Atomic product cutover and removal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -434,8 +476,9 @@ Each milestone runs the checks that prove its local gate:
 - formatting, static architecture, module layout, and warning policy; and
 - focused recovery, typed-view, semantic, ambiguity, or complexity suites.
 
-S6 and S8 require the full integration workflow because they change an
-authoritative registry or the shipping source path. S8 also requires static
+S6, S7B, and S8 require the full integration workflow because they change an
+authoritative registry, shared parser execution/session machinery, or the shipping
+source path. S8 also requires static
 native and WASM source distributions plus the end-to-end compiler/runtime
 canaries used by `integration/v0.4`.
 
