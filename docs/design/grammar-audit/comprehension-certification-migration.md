@@ -101,6 +101,34 @@ for declared FSM continuations. `Suspend` preserves the enclosing state schema;
 operation outside its owning match or with malformed inputs. Revision 11 remains
 rejected without a compatibility reader.
 
+## S8 corrective graph recertification
+
+R23 recertifies the 51 artifact-bearing Phase 2I witnesses after the accepted
+corrective stack advanced the extracted graph payload from revision 6 through
+revision 13:
+
+| Revision | Owner | Reviewed representation change |
+| --- | --- | --- |
+| 7 | R10 | Canonical structural match patterns and their typed recursive bindings. |
+| 8 | R11 | Recursive match/comprehension operation bodies and canonical block ownership. |
+| 9 | R13 | Nominal enum patterns with exact variant ordinals and optional payload patterns. |
+| 10 | R16 | Explicit partial dispatch for pattern-bodied functions. |
+| 11 | R17 | Typed lexical `Recur` operations for bounded resident calls. |
+| 12 | R18 | Typed lexical `Suspend` and `Publish` continuation operations. |
+| 13 | R19 | Activation bodies, exhaustive trigger ownership and typed sampled-input equality. |
+
+The semantic fingerprint deliberately includes the complete artifact bytecode,
+so every artifact-bearing row changes when the required graph revision changes,
+including rows whose own source graph uses only ordinary operations. The refresh
+does not replace behavioral acceptance: before hashing, every row must still
+produce exactly one mapped output, retain one contract entry per source node,
+compile a validated artifact, preserve its canonical schemas/constants/source
+anchors and include its slot-shape ownership. The neighboring certification
+tests separately retain compound-kind schemas, contextual error anchors, linear
+gathers, whole-selection identity and non-wire shape/slot sensitivity. The new
+control, nominal-kind and continuation behavior remains covered in its R10-R19
+owner suites; R23 changes no source, disposition or required outcome cell.
+
 ## Complete syntax evidence
 
 Clean-tree fingerprints use canonical-clean-tree-v2: an explicit traversal
