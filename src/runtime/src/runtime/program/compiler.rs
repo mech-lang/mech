@@ -14,10 +14,11 @@ use mech_compute::{
     ComputeInitializerSet, ComputeRegionInterface, ComputeValue, TensorLayout,
     build_compute_region_interface,
 };
+#[cfg(feature = "compute")]
+use mech_core::OperationContractDeclaration;
 use mech_core::{
     ApplicationRequirement, ExecutionResourceRequest, MResult, MechError, MechErrorKind,
-    ModuleManifestCatalog, OperationContractDeclaration, ReactiveInstanceId, ResourceIntent, Value,
-    ValueCell,
+    ModuleManifestCatalog, ReactiveInstanceId, ResourceIntent, Value, ValueCell,
 };
 use mech_engine::__resident::activate_external;
 #[cfg(feature = "compute")]
@@ -45,11 +46,6 @@ use crate::{
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
-
-#[cfg(not(feature = "compute"))]
-type ComputeRegionInterface = ();
-#[cfg(not(feature = "compute"))]
-type ComputeValue = ();
 
 fn canonical_frontend(document: &SourceDocument) -> CanonicalSourceFrontend {
     document
@@ -2508,6 +2504,7 @@ fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaBody
     schema.closed_body(value.shape())
 }
 
+#[cfg(feature = "compute")]
 fn is_compute_kernel_base(base_uri: &str) -> bool {
     base_uri
         .strip_prefix("compute://")
