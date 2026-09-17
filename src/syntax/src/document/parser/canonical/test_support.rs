@@ -13,7 +13,7 @@ use crate::document::{
 use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::super::rule::rules;
 use super::combinator::Attempt;
-use super::{kinds, literals, paths};
+use super::{kinds, literals, operators, paths};
 
 /// A narrow prefix snapshot used to exercise canonical source productions.
 #[derive(Clone, Debug)]
@@ -154,6 +154,23 @@ pub fn parse_canonical_phase_2c_rule_for_test(
     })
 }
 
+/// Parse one exact Phase 2D operator production as a deterministic source
+/// prefix. This hidden surface deliberately exposes only the closed operator
+/// layer; it does not introduce a production parser root.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2d_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    operators::supports(rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            operators::parse_rule(parser, rule)
+                .expect("Phase 2D support guard accepts this RuleId")
+        })
+    })
+}
+
 fn is_phase_2c_rule(rule: RuleId) -> bool {
     matches!(
         rule,
@@ -247,6 +264,31 @@ mod tests {
             parse_canonical_phase_2c_rule_for_test(
                 source,
                 rules::LITERAL,
+                ParseConfig::default(),
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn phase_2d_helper_accepts_exactly_the_closed_53_rule_set() {
+        let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+        assert_eq!(operators::PHASE_2D_OPERATOR_RULES.len(), 53);
+        for rule in operators::PHASE_2D_OPERATOR_RULES {
+            assert!(
+                parse_canonical_phase_2d_rule_for_test(
+                    source.clone(),
+                    *rule,
+                    ParseConfig::default(),
+                )
+                .is_some(),
+                "{rule:?}"
+            );
+        }
+        assert!(
+            parse_canonical_phase_2d_rule_for_test(
+                source,
+                rules::EXPRESSION,
                 ParseConfig::default(),
             )
             .is_none()

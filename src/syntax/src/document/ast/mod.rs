@@ -4,6 +4,7 @@ pub mod kinds;
 pub mod literals;
 pub mod mech;
 pub mod mechdown;
+pub mod operators;
 pub mod paths;
 
 pub use crate::document::red::{
@@ -14,4 +15,5 @@ pub use grammar::*;
 pub use kinds::*;
 pub use literals::*;
 pub use mechdown::*;
+pub use operators::*;
 pub use paths::*;
