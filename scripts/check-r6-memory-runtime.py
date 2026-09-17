@@ -1338,14 +1338,16 @@ def failures(root: Path) -> list[str]:
     resident_planner = rust_code(
         sources.get("src/engine/src/memory_planner/resident.rs", "")
     )
-    effect_payload_paths = list(
-        function_bodies(resident_planner, "plan_resident_effect_payload")
-    )
+    saved_value_paths = list(function_bodies(resident_planner, "plan_resident_saved_value"))
+    for entry in ["plan_resident_effect_payload", "plan_resident_rmw_previous"]:
+        paths = list(function_bodies(resident_planner, entry))
+        if not paths or "plan_resident_saved_value(" not in paths[0]:
+            found.append(f"Resident saved-value entry {entry} bypasses its shared planner")
     if (
-        not effect_payload_paths
-        or "slot: Some(resident_planned_slot(kind))" not in effect_payload_paths[0]
+        not saved_value_paths
+        or "slot: Some(resident_planned_slot(kind))" not in saved_value_paths[0]
     ):
-        found.append("Resident effect payload omits its typed arena slot")
+        found.append("Resident saved value omits its typed arena slot")
     if reactive is None or not re.search(r"\bManagedProgramMemory\b", reactive):
         found.append("ReactiveInstance does not retain its managed program realization")
     if re.search(r"\b[A-Za-z_][A-Za-z0-9_]*\.state\.clone\s*\(", resident):

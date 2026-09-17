@@ -21,6 +21,59 @@ impl DocumentSyntax {
         self.syntax().children().find_map(BodySyntax::cast)
     }
 
+    /// Whether this clean document contains executable source syntax.
+    ///
+    /// This is a source-classification query, not target-capability validation.
+    /// It excludes comments, displayed inline code, Mika-local source, and
+    /// disabled/inert fences. Evaluated inline expressions and named Mech
+    /// scopes count as source. Consumers still perform semantic validation.
+    pub fn contains_executable_source(&self) -> bool {
+        use crate::document::{CodeFenceScope, NodeFlags};
+        if self.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return false;
+        }
+        let mut pending = alloc::vec![self.syntax().clone()];
+        while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+            ) {
+                continue;
+            }
+            if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+                if matches!(
+                    fence.info().map(|info| info.scope),
+                    Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
+                ) && let Some(body) = fence.mech_code()
+                {
+                    pending.push(body.syntax().clone());
+                }
+                continue;
+            }
+            if EvalInlineMechCodeSyntax::cast(node.clone()).is_some() {
+                return true;
+            }
+            if let Some(code) = MechCodeSyntax::cast(node.clone()) {
+                if code
+                    .items()
+                    .iter()
+                    .filter_map(MechCodeAltSyntax::value)
+                    .any(|item| !matches!(item.kind(), SyntaxKind::Comment))
+                {
+                    return true;
+                }
+                continue;
+            }
+            pending.extend(node.children());
+        }
+        false
+    }
+
     pub fn sections(&self) -> Vec<SectionSyntax> {
         let mut sections = Vec::new();
         collect_sections(self.syntax(), &mut sections);
@@ -106,6 +159,34 @@ impl CodeBlockSyntax {
         let text = self.syntax().source().text(self.info_range()?).ok()?;
         let info = text.split_once('{').map_or(text.as_str(), |(info, _)| info);
         Some(CodeFenceInfo::from_info_string(info))
+    }
+
+    pub fn presentation(&self) -> Option<crate::document::CodeFencePresentation> {
+        use crate::document::NodeFlags;
+        if self.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return None;
+        }
+        let mut presentation = crate::document::CodeFencePresentation::default();
+        if let Some(options) = self.options() {
+            for mapping in options.mappings() {
+                let key = mapping.key()?.syntax().text().ok()?;
+                let value = mapping.value()?.decoded_text()?;
+                if key == "output" {
+                    presentation.show_output = !matches!(
+                        value.trim().to_ascii_lowercase().as_str(),
+                        "false" | "no" | "off" | "0"
+                    );
+                } else {
+                    presentation.styles.push((key, value));
+                }
+            }
+        }
+        Some(presentation)
     }
 
     pub fn options(&self) -> Option<OptionMapSyntax> {
@@ -194,5 +275,43 @@ fn collect_sections(node: &SyntaxNode, output: &mut Vec<SectionSyntax>) {
         } else if child.kind() == SyntaxKind::Body {
             collect_sections(&child, output);
         }
+    }
+}
+
+impl OptionMapSyntax {
+    pub fn mappings(&self) -> Vec<crate::document::OptionMappingSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(crate::document::OptionMappingSyntax::cast)
+            .collect()
+    }
+}
+
+impl crate::document::OptionMappingSyntax {
+    pub fn key(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+    pub fn value(&self) -> Option<crate::document::OptionValueSyntax> {
+        self.syntax()
+            .children()
+            .find_map(crate::document::OptionValueSyntax::cast)
+    }
+}
+
+impl crate::document::OptionValueSyntax {
+    pub fn decoded_text(&self) -> Option<alloc::string::String> {
+        if let Some(string) = self
+            .syntax()
+            .children()
+            .find_map(crate::document::StringLiteralSyntax::cast)
+        {
+            return string.decoded_text();
+        }
+        self.syntax()
+            .children()
+            .find_map(IdentifierSyntax::cast)?
+            .syntax()
+            .text()
+            .ok()
     }
 }

@@ -637,14 +637,50 @@ pub fn plan_resident_effect_payload(
     kind: ResidentValueKind,
     elements: u64,
 ) -> Result<usize, MemoryPlanError> {
+    plan_resident_saved_value(
+        plan,
+        position,
+        kind,
+        elements,
+        1,
+        MemoryObjectOwner::NodeInput { node, port: 0 },
+    )
+}
+
+/// Plan the prior derived RMW output used for final change detection.
+pub fn plan_resident_rmw_previous(
+    plan: &mut ProgramMemoryPlan,
+    node: mech_core::NodeId,
+    position: u32,
+    kind: ResidentValueKind,
+    elements: u64,
+) -> Result<usize, MemoryPlanError> {
+    plan_resident_saved_value(
+        plan,
+        position,
+        kind,
+        elements,
+        2,
+        MemoryObjectOwner::TransactionStage { node, output: 0 },
+    )
+}
+
+fn plan_resident_saved_value(
+    plan: &mut ProgramMemoryPlan,
+    position: u32,
+    kind: ResidentValueKind,
+    elements: u64,
+    buffer: u8,
+    owner: MemoryObjectOwner,
+) -> Result<usize, MemoryPlanError> {
     let target = TargetMemoryProfile::current_resident_cpu()?;
     let slot = resident_slot_layout(&target, kind);
     let bytes = elements
         .checked_mul(slot.bytes)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "resident effect payload bytes",
+            field: "resident saved-value payload bytes",
         })?;
-    let key = (PlannedValueClass::Scratch, kind, 1);
+    let key = (PlannedValueClass::Scratch, kind, buffer);
     let arena_id = resident_arena_id(key)?;
     let mut arenas = plan.arenas.to_vec();
     let arena_index = match arenas.iter().position(|arena| arena.id == arena_id) {
@@ -665,17 +701,17 @@ pub fn plan_resident_effect_payload(
     let end = offset_bytes
         .checked_add(bytes)
         .ok_or(MemoryPlanError::ArithmeticOverflow {
-            field: "resident effect arena capacity",
+            field: "resident saved-value arena capacity",
         })?;
     let id = MemoryObjectId::new(u32::try_from(plan.allocations.len()).map_err(|_| {
         MemoryPlanError::ArithmeticOverflow {
-            field: "resident effect memory-object id",
+            field: "resident saved-value memory-object id",
         }
     })?);
     let (first, last) = super::schedule_points(position)?;
     let allocation = AllocationPlan {
         id,
-        owner: MemoryObjectOwner::NodeInput { node, port: 0 },
+        owner: owner.clone(),
         role: AllocationRole::Scratch,
         slot: Some(resident_planned_slot(kind)),
         space: MemorySpace::ResidentCpu,
@@ -701,12 +737,12 @@ pub fn plan_resident_effect_payload(
     plan.arenas = arenas.into_boxed_slice();
     plan.peak.turn_peak_bytes = plan.peak.turn_peak_bytes.checked_add(bytes).ok_or(
         MemoryPlanError::ArithmeticOverflow {
-            field: "resident effect turn peak",
+            field: "resident saved-value turn peak",
         },
     )?;
     let mut violations = plan.budget_violations.to_vec();
     violations.extend(mech_core::evaluate_aggregate_memory_budget(
-        MemoryObjectOwner::NodeInput { node, port: 0 },
+        owner,
         allocation_demand(
             plan.allocations
                 .last()

@@ -3331,12 +3331,13 @@ fn validate_snapshot_access_geometry(
             _ => return Err(ResidentKernelBindError::UnsupportedLayout),
         }
     } else {
-        if source_dimensions.is_some() || selection_mode.is_some() || output_dimensions.is_some() {
+        if source_dimensions.is_some() || selection_mode.is_some() {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
+        let (rows, columns) = output_dimensions.unwrap_or((1, 1));
         ResolvedAccessGeometry {
-            logical_output_rows: 1,
-            logical_output_columns: 1,
+            logical_output_rows: rows,
+            logical_output_columns: columns,
         }
     };
     let physical_shape_supported = if request.output.kind == ResidentValueKind::Snapshot {
@@ -4752,6 +4753,16 @@ fn bind_snapshot_access_mode(
     if !output_supported {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    // A record/tuple/map selection can return a matrix. Its exact selected
+    // schema was checked above; preserve that geometry in dense output storage.
+    let output_dimensions = if source_dimensions.is_none()
+        && table_rows.is_none()
+        && matches!(output_schema.body(), SchemaBody::Matrix { .. })
+    {
+        Some(declared_matrix_dimensions(request, &request.output)?)
+    } else {
+        output_dimensions
+    };
     let output_geometry = validate_snapshot_access_geometry(
         request,
         source_dimensions,

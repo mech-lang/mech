@@ -224,6 +224,18 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document(document)
     }
+
+    /// Compile the ordered fences belonging to one named interpreter scope.
+    /// Root statements and other named scopes do not enter its binding environment.
+    /// The resulting artifact owns its own state and fence output bindings.
+    pub fn compile_named_document_scope(
+        &self,
+        document: &DocumentSyntax,
+        name: &str,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_named_document_scope(document, name)
+    }
 }
 
 fn collect_pattern_bindings(
@@ -2965,8 +2977,7 @@ impl SemanticBuilder {
         let value = self.required(literal.value(), literal.syntax(), "a literal value")?;
         match value {
             LiteralValueSyntax::String(value) => {
-                let source = node_text(value.syntax())?;
-                let decoded = decode_string(&source).ok_or_else(|| SourceSemanticError {
+                let decoded = value.decoded_text().ok_or_else(|| SourceSemanticError {
                     code: "source-semantics/invalid-string-literal",
                     message: "canonical string could not be decoded".to_owned(),
                     anchor: SourceSemanticAnchor::for_node(value.syntax()),
@@ -4176,14 +4187,21 @@ impl SemanticBuilder {
                 ));
             }
         };
-        let selectors = selectors
+        let selectors = self.subscript_values(&selectors)?;
+        self.select_values(source, selectors, item.syntax())
+    }
+
+    fn subscript_values(
+        &mut self,
+        selectors: &[SubscriptValueSyntax],
+    ) -> Result<Vec<Option<PendingValue>>, SourceSemanticError> {
+        selectors
             .iter()
             .map(|selector| match selector {
                 SubscriptValueSyntax::SelectAll(_) => Ok(None),
                 _ => self.subscript_value(selector).map(Some),
             })
-            .collect::<Result<Vec<_>, _>>()?;
-        self.select_values(source, selectors, item.syntax())
+            .collect()
     }
 
     fn select_field(
@@ -6288,48 +6306,6 @@ fn wrap_optional_number(
             }),
         )
     })
-}
-
-fn decode_string(source: &str) -> Option<String> {
-    if source.starts_with("\"\"\"") && source.ends_with("\"\"\"") && source.len() >= 6 {
-        return Some(source[3..source.len() - 3].to_owned());
-    }
-    let body = source.strip_prefix('"')?.strip_suffix('"')?;
-    let mut output = String::with_capacity(body.len());
-    let mut chars = body.chars().peekable();
-    while let Some(character) = chars.next() {
-        if character != '\\' {
-            output.push(character);
-            continue;
-        }
-        let escaped = chars.next()?;
-        output.push(match escaped {
-            '0' => '\0',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            '\\' => '\\',
-            '"' => '"',
-            'u' if chars.peek() == Some(&'{') => {
-                chars.next();
-                let mut digits = String::new();
-                loop {
-                    let next = chars.next()?;
-                    if next == '}' {
-                        break;
-                    }
-                    if !next.is_ascii_hexdigit() || digits.len() == 6 {
-                        return None;
-                    }
-                    digits.push(next);
-                }
-                let scalar = u32::from_str_radix(&digits, 16).ok()?;
-                char::from_u32(scalar)?
-            }
-            other => other,
-        });
-    }
-    Some(output)
 }
 
 fn node_text(node: &SyntaxNode) -> Result<String, SourceSemanticError> {

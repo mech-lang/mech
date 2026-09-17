@@ -164,7 +164,8 @@ fn deferred_presentation_does_not_change_executable_statement_visibility() {
 }
 
 #[test]
-fn undocumented_mech_prefix_suffixes_cannot_promote_code_into_root_scope() {
+fn colonless_named_and_disabled_fences_do_not_execute_in_root_scope() {
+    use mech_engine::SourceDocumentOutputKind::Program;
     for info in [
         "mechanics",
         "mechdisabled",
@@ -173,20 +174,6 @@ fn undocumented_mech_prefix_suffixes_cannot_promote_code_into_root_scope() {
         "🤖child",
     ] {
         let source = format!("~answer := 0\n~~~{info}\nanswer += 100\n~~~\nanswer\n");
-        let parsed = parse_canonical_document(
-            TextSnapshot::new(DocumentId(0x574), Revision(7), source.clone()).unwrap(),
-            ParseConfig::default(),
-        );
-        assert!(parsed.diagnostics.is_empty(), "{info}");
-        let error = CanonicalSourceFrontend
-            .compile_document(&DocumentSyntax::cast(parsed.syntax()).unwrap())
-            .err()
-            .expect("undocumented scope must be rejected before executing code");
-        assert_eq!(error.code, "source-semantics/unsupported-fence-info");
-        assert_eq!(error.anchor.document, DocumentId(0x574));
-        assert_eq!(
-            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
-            info
-        );
+        rendered_turns(&source, &[&[(Program, "0")], &[(Program, "0")]]);
     }
 }

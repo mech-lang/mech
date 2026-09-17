@@ -1,5 +1,6 @@
 //! Typed syntax views for the closed Phase 2C literal and number productions.
 
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use crate::document::red::IdentifierSyntax;
@@ -101,6 +102,20 @@ impl AtomLiteralSyntax {
 }
 
 impl StringLiteralSyntax {
+    /// Decode the retained canonical string spelling without reparsing it.
+    pub fn decoded_text(&self) -> Option<String> {
+        use crate::document::NodeFlags;
+        if self.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return None;
+        }
+        decode_string(&self.syntax().text().ok()?)
+    }
+
     pub fn utf8(&self) -> Option<Utf8StringSyntax> {
         child(&self.0)
     }
@@ -304,4 +319,46 @@ impl DigitSequenceSyntax {
     pub fn tokens(&self) -> Vec<SyntaxToken> {
         self.0.tokens()
     }
+}
+
+fn decode_string(source: &str) -> Option<String> {
+    if source.starts_with("\"\"\"") && source.ends_with("\"\"\"") && source.len() >= 6 {
+        return Some(source[3..source.len() - 3].to_string());
+    }
+    let body = source.strip_prefix('"')?.strip_suffix('"')?;
+    let mut output = String::with_capacity(body.len());
+    let mut chars = body.chars().peekable();
+    while let Some(character) = chars.next() {
+        if character != '\\' {
+            output.push(character);
+            continue;
+        }
+        let escaped = chars.next()?;
+        output.push(match escaped {
+            '0' => '\0',
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            '\\' => '\\',
+            '"' => '"',
+            'u' if chars.peek() == Some(&'{') => {
+                chars.next();
+                let mut digits = String::new();
+                loop {
+                    let next = chars.next()?;
+                    if next == '}' {
+                        break;
+                    }
+                    if !next.is_ascii_hexdigit() || digits.len() == 6 {
+                        return None;
+                    }
+                    digits.push(next);
+                }
+                let scalar = u32::from_str_radix(&digits, 16).ok()?;
+                char::from_u32(scalar)?
+            }
+            other => other,
+        });
+    }
+    Some(output)
 }

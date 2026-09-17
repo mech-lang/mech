@@ -7,7 +7,6 @@ pub enum CodeFenceScope {
     Root,
     Disabled,
     Named(String),
-    UnsupportedInfo(String),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -19,36 +18,36 @@ pub struct CodeFenceInfo {
 impl CodeFenceInfo {
     pub fn from_info_string(info: &str) -> Self {
         let info = info.trim();
-        let suffix = ["mech", "mec", "🤖"]
+        if !["mech", "mec", "🤖"]
             .into_iter()
-            .find_map(|prefix| info.strip_prefix(prefix));
-        let Some(suffix) = suffix else {
+            .any(|prefix| info.starts_with(prefix))
+        {
             return Self {
                 scope: CodeFenceScope::Inert,
                 hidden: false,
             };
-        };
-        let suffix = suffix.trim();
-        if !suffix.is_empty() && !suffix.starts_with(':') {
-            return Self {
-                scope: CodeFenceScope::UnsupportedInfo(info.to_string()),
-                hidden: false,
-            };
         }
-        match suffix.strip_prefix(':').map(str::trim) {
-            Some("disabled") => Self {
+        // The document selection contract permits a namespace without a colon
+        // and removes repeated language prefixes in this fixed order.
+        let suffix = info
+            .trim_start_matches("mech")
+            .trim_start_matches("mec")
+            .trim_start_matches("🤖");
+        let suffix = suffix.strip_prefix(':').unwrap_or(suffix).trim();
+        match suffix {
+            "disabled" => Self {
                 scope: CodeFenceScope::Disabled,
                 hidden: false,
             },
-            Some("hidden") => Self {
+            "hidden" => Self {
                 scope: CodeFenceScope::Root,
                 hidden: true,
             },
-            Some("") | None => Self {
+            "" => Self {
                 scope: CodeFenceScope::Root,
                 hidden: false,
             },
-            Some(name) => Self {
+            name => Self {
                 scope: CodeFenceScope::Named(name.to_string()),
                 hidden: false,
             },
@@ -57,5 +56,21 @@ impl CodeFenceInfo {
 
     pub fn is_mech(&self) -> bool {
         !matches!(self.scope, CodeFenceScope::Inert)
+    }
+}
+
+/// Presentation settings owned by a canonical code fence.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CodeFencePresentation {
+    pub show_output: bool,
+    pub styles: alloc::vec::Vec<(String, String)>,
+}
+
+impl Default for CodeFencePresentation {
+    fn default() -> Self {
+        Self {
+            show_output: true,
+            styles: alloc::vec::Vec::new(),
+        }
     }
 }
