@@ -389,6 +389,7 @@ struct SnapshotAggregateAssignPlan {
 
 #[derive(Clone, Debug)]
 struct MatrixSelectionAssignPlan {
+    arithmetic: Option<SemanticArithmetic>,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
     mode: ResolvedSelectionMode,
     rows: usize,
@@ -580,6 +581,34 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "single-element",
         bind_single_element_assign,
     )?;
+    macro_rules! compound_selection {
+        ($name:literal, $operation:literal) => {
+            for (selection, factory) in [
+                (
+                    "indexed-axis",
+                    bind_compound_selection::<0, $operation> as mech_core::ResidentKernelFactory,
+                ),
+                ("indexed-rows", bind_compound_selection::<1, $operation>),
+                ("indexed-columns", bind_compound_selection::<2, $operation>),
+                (
+                    "indexed-rectangle",
+                    bind_compound_selection::<3, $operation>,
+                ),
+            ] {
+                register_canonical_finalize(
+                    builder,
+                    &["core", "assign", selection],
+                    $name,
+                    factory,
+                )?;
+            }
+        };
+    }
+    compound_selection!("add", 0);
+    compound_selection!("sub", 1);
+    compound_selection!("mul", 2);
+    compound_selection!("div", 3);
+    compound_selection!("pow", 5);
     register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
     register_no_additional_scratch(
         builder,
@@ -3024,6 +3053,68 @@ fn bind_matrix_constructor(
     .with_snapshot_schemas(request.schemas.clone()))
 }
 
+fn bind_compound_selection<const MODE: u8, const OPERATION: u64>(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let arithmetic = SemanticArithmetic::from_parameter(OPERATION)
+        .ok_or(ResidentKernelBindError::InvalidParameters)?;
+    let schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Matrix { element, .. } = schema.body() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if !snapshot_arithmetic_element_supported(arithmetic, element) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if MODE == 0 {
+        return Ok(bind_indexed_assign(request)?.with_retained_state(Arc::new(arithmetic)));
+    }
+    let (region, selection) = match MODE {
+        1 => (
+            RegionPolicy::IndexedAxis { axis: 0 },
+            ResolvedSelectionMode::Rows,
+        ),
+        2 => (
+            RegionPolicy::IndexedAxis { axis: 1 },
+            ResolvedSelectionMode::Columns,
+        ),
+        3 => (
+            RegionPolicy::RectangularRegion,
+            ResolvedSelectionMode::Rectangle,
+        ),
+        _ => return Err(ResidentKernelBindError::InvalidParameters),
+    };
+    let kernel = bind_matrix_selection_assign(request, region, selection)?;
+    let mut plan = kernel
+        .retained_state::<MatrixSelectionAssignPlan>()
+        .ok_or(ResidentKernelBindError::InvalidParameters)?
+        .clone();
+    plan.arithmetic = Some(arithmetic);
+    // Numeric positional selectors consume the RHS in selection order even
+    // when that shape happens to equal the entire base matrix shape.
+    if plan.source_routing == ResolvedSourceRouting::Positional
+        && request.inputs[2..]
+            .iter()
+            .all(|selector| selector.kind != ResidentValueKind::Bool)
+    {
+        plan.source_routing = ResolvedSourceRouting::CompactSelectionOrder;
+    }
+    Ok(kernel.with_retained_state(Arc::new(plan)))
+}
+
+fn compound_f64(arithmetic: SemanticArithmetic, left: f64, right: f64) -> f64 {
+    match arithmetic {
+        SemanticArithmetic::Add => left + right,
+        SemanticArithmetic::Subtract => left - right,
+        SemanticArithmetic::Multiply => left * right,
+        SemanticArithmetic::Divide => left / right,
+        SemanticArithmetic::Remainder => left % right,
+        SemanticArithmetic::Power => left.powf(right),
+    }
+}
+
 fn bind_indexed_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -3804,6 +3895,7 @@ fn bind_matrix_selection_assign(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let plan = MatrixSelectionAssignPlan {
+        arithmetic: None,
         selectors: selectors
             .iter()
             .map(|selector| SnapshotAccessSelectorLayout {
@@ -6164,7 +6256,12 @@ fn indexed_assign(
             }
             let mut changed = false;
             positions.try_for_each(|ordinal, position| {
-                let next = source[source_index(ordinal, position)];
+                let incoming = source[source_index(ordinal, position)];
+                let next = kernel
+                    .retained_state::<SemanticArithmetic>()
+                    .map_or(incoming, |arithmetic| {
+                        compound_f64(*arithmetic, output[position], incoming)
+                    });
                 changed |= output[position].to_bits() != next.to_bits();
                 output[position] = next;
                 Ok::<(), ResidentKernelError>(())
@@ -6586,7 +6683,13 @@ fn indexed_assign_snapshot(
             ResolvedSourceRouting::CompactSelectionOrder => ordinal,
         };
         let destination = canonical_index(position);
-        next[destination] = source[source_index].clone();
+        let incoming = source[source_index].clone();
+        next[destination] = match kernel.retained_state::<SemanticArithmetic>() {
+            Some(arithmetic) => {
+                numeric_arithmetic(*arithmetic, next[destination].clone(), incoming)?
+            }
+            None => incoming,
+        };
         Ok::<(), ResidentKernelError>(())
     })?;
     let next = finalize_snapshot_data_with_work_budget(
@@ -6740,6 +6843,7 @@ fn assign_dense_matrix_selection<T: Clone>(
     selected_columns: &[usize],
     plan: &MatrixSelectionAssignPlan,
     changed: impl Fn(&T, &T) -> bool,
+    update: impl Fn(&T, &T) -> Result<T, ResidentKernelError>,
 ) -> Result<bool, ResidentKernelError> {
     let output_len = plan
         .rows
@@ -6805,8 +6909,9 @@ fn assign_dense_matrix_selection<T: Clone>(
                 }
             };
             let incoming = &source[source_index];
-            output_changed |= changed(&target[destination], incoming);
-            target[destination] = incoming.clone();
+            let next = update(&target[destination], incoming)?;
+            output_changed |= changed(&target[destination], &next);
+            target[destination] = next;
             ordinal += 1;
         }
     }
@@ -7345,6 +7450,7 @@ fn indexed_assign_matrix_selection(
                 &selected_columns,
                 plan,
                 |left, right| left != right,
+                |_, right| Ok(right.clone()),
             )
         }
         (ResidentValueRef::Index(source), ResidentValueMut::Index(target)) => {
@@ -7355,6 +7461,7 @@ fn indexed_assign_matrix_selection(
                 &selected_columns,
                 plan,
                 |left, right| left != right,
+                |_, right| Ok(right.clone()),
             )
         }
         (ResidentValueRef::F64(source), ResidentValueMut::F64(target)) => {
@@ -7365,6 +7472,11 @@ fn indexed_assign_matrix_selection(
                 &selected_columns,
                 plan,
                 |left, right| left.to_bits() != right.to_bits(),
+                |left, right| {
+                    Ok(plan
+                        .arithmetic
+                        .map_or(*right, |arithmetic| compound_f64(arithmetic, *left, *right)))
+                },
             )
         }
         (ResidentValueRef::String(source), ResidentValueMut::String(target)) => {
@@ -7375,6 +7487,7 @@ fn indexed_assign_matrix_selection(
                 &selected_columns,
                 plan,
                 |left, right| left != right,
+                |_, right| Ok(right.clone()),
             )
         }
         (ResidentValueRef::Snapshot([Some(source)]), ResidentValueMut::Snapshot([target])) => {
@@ -7417,10 +7530,16 @@ fn indexed_assign_matrix_selection(
                         ResolvedSourceRouting::Positional => destination,
                         ResolvedSourceRouting::CompactSelectionOrder => ordinal,
                     };
-                    next[destination] = source
+                    let incoming = source
                         .get(source_index)
                         .ok_or(ResidentKernelError::InvalidShape)?
                         .clone();
+                    next[destination] = match plan.arithmetic {
+                        Some(arithmetic) => {
+                            numeric_arithmetic(arithmetic, next[destination].clone(), incoming)?
+                        }
+                        None => incoming,
+                    };
                     ordinal = ordinal
                         .checked_add(1)
                         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -16444,6 +16563,7 @@ mod tests {
             .instantiate_shape(Box::new([]))
             .unwrap();
         let plan = MatrixSelectionAssignPlan {
+            arithmetic: None,
             selectors: vec![SnapshotAccessSelectorLayout {
                 schema: *selector_schema,
                 shape: selector_shape,
@@ -16482,6 +16602,7 @@ mod tests {
     fn string_matrix_scalar_broadcast_charges_every_materialized_clone() {
         let (schemas, _) = test_schema_table([SchemaBody::String]);
         let plan = MatrixSelectionAssignPlan {
+            arithmetic: None,
             selectors: Box::new([]),
             mode: ResolvedSelectionMode::Whole,
             rows: 1,
@@ -16514,6 +16635,7 @@ mod tests {
             .instantiate_shape(Box::new([]))
             .unwrap();
         let plan = MatrixSelectionAssignPlan {
+            arithmetic: None,
             selectors: vec![SnapshotAccessSelectorLayout {
                 schema: selector_schema,
                 shape: selector_shape,
@@ -16559,6 +16681,7 @@ mod tests {
             .instantiate_shape(Box::new([]))
             .unwrap();
         let plan = MatrixSelectionAssignPlan {
+            arithmetic: None,
             selectors: vec![SnapshotAccessSelectorLayout {
                 schema: selector_schema,
                 shape: selector_shape,
@@ -16700,6 +16823,7 @@ mod tests {
             unreachable!()
         };
         let plan = MatrixSelectionAssignPlan {
+            arithmetic: None,
             selectors: Box::new([]),
             mode: ResolvedSelectionMode::Whole,
             rows: 2,
@@ -16774,6 +16898,7 @@ mod tests {
             unreachable!()
         };
         let plan = MatrixSelectionAssignPlan {
+            arithmetic: None,
             selectors: Box::new([]),
             mode: ResolvedSelectionMode::Whole,
             rows: 1,
