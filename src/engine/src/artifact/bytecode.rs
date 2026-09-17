@@ -2460,7 +2460,8 @@ fn preflight_control_graph(
                     limits: self.limits,
                     field,
                     depth: self.depth + 1,
-                    control_depth: self.control_depth + usize::from(key == "Match"),
+                    control_depth: self.control_depth
+                        + usize::from(matches!(key.as_str(), "Match" | "Comprehension")),
                 })?;
             }
             Ok(())
@@ -2502,5 +2503,30 @@ mod control_preflight_tests {
         assert!(preflight_control_graph(bytes, &limits).is_err());
         assert!(preflight_control_graph(bytes, &ArtifactDecodeLimits::default()).is_ok());
         assert!(serde_json::from_slice::<WireComprehensionStep>(bytes).is_err());
+    }
+
+    #[test]
+    fn nested_comprehension_tags_are_bounded_before_typed_allocation() {
+        let nested = |depth| {
+            let mut value = "0".to_owned();
+            for _ in 0..depth {
+                value = format!(r#"{{"Comprehension":{value}}}"#);
+            }
+            value
+        };
+        assert!(
+            preflight_control_graph(
+                nested(super::super::MAX_CONTROL_DEPTH).as_bytes(),
+                &ArtifactDecodeLimits::default(),
+            )
+            .is_ok()
+        );
+        assert!(
+            preflight_control_graph(
+                nested(super::super::MAX_CONTROL_DEPTH + 1).as_bytes(),
+                &ArtifactDecodeLimits::default(),
+            )
+            .is_err()
+        );
     }
 }

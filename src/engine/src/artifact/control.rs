@@ -590,6 +590,61 @@ fn match_counts<C>(root: &MatchDeclaration<C>) -> Option<[usize; 5]> {
     control_counts(ControlRef::Match(root))
 }
 
+fn validate_control_depth<C>(
+    root: ControlRef<'_, C>,
+    node: mech_core::NodeId,
+) -> Result<(), super::ArtifactBuildError> {
+    let invalid = || super::ArtifactBuildError::InvalidControl {
+        node,
+        reason: "control graph nesting limit",
+    };
+    let mut pending = vec![(root, 1usize)];
+    while let Some((control, depth)) = pending.pop() {
+        if depth > MAX_CONTROL_DEPTH {
+            return Err(invalid());
+        }
+        let nested_depth = depth.checked_add(1).ok_or_else(invalid)?;
+        match control {
+            ControlRef::Match(control) => {
+                for operation in control
+                    .arms
+                    .iter()
+                    .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+                    .flat_map(|block| block.operations.iter())
+                {
+                    match &operation.body {
+                        ControlOperationBody::Match(nested) => {
+                            pending.push((ControlRef::Match(nested), nested_depth));
+                        }
+                        ControlOperationBody::Comprehension(nested) => {
+                            pending.push((ControlRef::Comprehension(nested), nested_depth));
+                        }
+                        ControlOperationBody::Operation { .. } => {}
+                    }
+                }
+            }
+            ControlRef::Comprehension(control) => {
+                for operation in control.steps.iter().filter_map(|step| match step {
+                    super::ComprehensionStep::Operation(operation) => Some(operation),
+                    super::ComprehensionStep::Generator { .. }
+                    | super::ComprehensionStep::Filter(_) => None,
+                }) {
+                    match &operation.body {
+                        ControlOperationBody::Match(nested) => {
+                            pending.push((ControlRef::Match(nested), nested_depth));
+                        }
+                        ControlOperationBody::Comprehension(nested) => {
+                            pending.push((ControlRef::Comprehension(nested), nested_depth));
+                        }
+                        ControlOperationBody::Operation { .. } => {}
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn validate_control_counts(
     draft: &super::ProgramArtifactDraft,
 ) -> Result<(), super::ArtifactBuildError> {
@@ -651,27 +706,7 @@ impl<C> MatchDeclaration<C> {
         &self,
         node: mech_core::NodeId,
     ) -> Result<(), super::ArtifactBuildError> {
-        let mut pending = vec![(self, 1)];
-        while let Some((control, depth)) = pending.pop() {
-            if depth > MAX_CONTROL_DEPTH {
-                return Err(super::ArtifactBuildError::InvalidControl {
-                    node,
-                    reason: "control graph nesting limit",
-                });
-            }
-            for block in control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            {
-                for operation in &block.operations {
-                    if let ControlOperationBody::Match(nested) = &operation.body {
-                        pending.push((nested, depth + 1));
-                    }
-                }
-            }
-        }
-        Ok(())
+        validate_control_depth(ControlRef::Match(self), node)
     }
 
     pub(super) fn map_contracts<D, E>(
@@ -737,6 +772,15 @@ impl<C> MatchDeclaration<C> {
                 })
                 .collect::<Result<Box<[_]>, E>>()?,
         })
+    }
+}
+
+impl<C> super::ComprehensionDeclaration<C> {
+    pub(super) fn validate_depth(
+        &self,
+        node: mech_core::NodeId,
+    ) -> Result<(), super::ArtifactBuildError> {
+        validate_control_depth(ControlRef::Comprehension(self), node)
     }
 }
 

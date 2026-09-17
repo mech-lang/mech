@@ -500,6 +500,7 @@ pub(super) fn bind_inner(
     (
         Box<[ActivatedCollectionStep]>,
         Box<[ResidentRegion]>,
+        Box<[ResidentReadLocation]>,
         ResidentReadLocation,
         SchemaId,
         mech_core::CallMemoryPlan,
@@ -669,23 +670,30 @@ pub(super) fn bind_inner(
                                 output_schema: output.schema,
                                 steps: Box::new([]),
                                 locals: Box::new([]),
+                                schema_reads: Box::new([]),
                                 yield_value: ResidentReadLocation::Scratch(output.region),
                                 yield_schema: output.schema,
                             },
                         )));
-                        let (nested_steps, nested_locals, yielded, yield_schema, memory) =
-                            bind_inner(
-                                artifact,
-                                catalog,
-                                owner,
-                                nested,
-                                &input_sources,
-                                output_slot,
-                                layout,
-                                steps,
-                                reads,
-                                calls,
-                            )?;
+                        let (
+                            nested_steps,
+                            nested_locals,
+                            nested_schema_reads,
+                            yielded,
+                            yield_schema,
+                            memory,
+                        ) = bind_inner(
+                            artifact,
+                            catalog,
+                            owner,
+                            nested,
+                            &input_sources,
+                            output_slot,
+                            layout,
+                            steps,
+                            reads,
+                            calls,
+                        )?;
                         let ActivatedTurnStep::Comprehension(prepared) =
                             &mut steps[index.get() as usize]
                         else {
@@ -695,6 +703,7 @@ pub(super) fn bind_inner(
                             .expect("unpublished nested collection plan");
                         prepared.steps = nested_steps;
                         prepared.locals = nested_locals;
+                        prepared.schema_reads = nested_schema_reads;
                         prepared.yield_value = yielded;
                         prepared.yield_schema = yield_schema;
                         calls.push((
@@ -1229,6 +1238,7 @@ mod tests {
         let peer = mech_core::ConstantId::new(5);
         let yielded = mech_core::ConstantId::new(7);
         let control = crate::ComprehensionDeclaration {
+            id: crate::ControlBlockId(0),
             kind: crate::ComprehensionKind::Matrix,
             steps: vec![crate::ComprehensionStep::Generator {
                 source: crate::ComprehensionValue::Constant(generator),
