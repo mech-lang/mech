@@ -691,6 +691,7 @@ mod tests {
     const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
   static fromServedDocuments() {}
   static supportsServedAuthority() { return true; }
+  static supportsServedDocumentResolutions() { return true; }
 }
 export default async function init() {}
 "#;

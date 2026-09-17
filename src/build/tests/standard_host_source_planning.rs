@@ -554,3 +554,58 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
     assert!(plan.runtime_functions.is_empty());
     assert_eq!(plan.hosts.len(), 1);
 }
+
+#[test]
+fn canonical_artifact_drives_native_value_and_resident_features() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let source = "~value<f64> := 42\nconverted<u8> := value\nmatrix<[f32]:2,3> := [1f32 2f32 3f32; 4f32 5f32 6f32]\n(converted, matrix)";
+    let product = compiler.compile_canonical_source(source).unwrap();
+    assert!(
+        product
+            .artifact()
+            .operation_references()
+            .iter()
+            .any(|operation| operation.canonical_name() == "convert/kind")
+    );
+
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: None,
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-artifact-features".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+
+    for feature in ["convert", "f32", "f64", "matrix2x3", "tuple", "u8"] {
+        assert!(
+            plan.engine_features.iter().any(|actual| actual == feature),
+            "missing engine feature {feature}: {:?}",
+            plan.engine_features
+        );
+    }
+    for feature in ["f32", "f64", "matrix2x3", "tuple", "u8"] {
+        assert!(
+            plan.core_features.iter().any(|actual| actual == feature),
+            "missing core feature {feature}: {:?}",
+            plan.core_features
+        );
+    }
+}
