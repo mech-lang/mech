@@ -220,18 +220,6 @@
     {
       "directive": "allow",
       "expires_release": "0.5.0",
-      "expiry_condition": "Remove when statement variants can no longer be unified independently across runtime dependencies.",
-      "introduced_release": "0.4.0",
-      "lint": "unreachable_patterns",
-      "occurrences": 1,
-      "owner": "Runtime config profile",
-      "path": "src/runtime/src/config/profile/compile.rs",
-      "production_or_test": "production",
-      "reason": "dependency feature unification can expose statement variants disabled in this runtime profile"
-    },
-    {
-      "directive": "allow",
-      "expires_release": "0.5.0",
       "expiry_condition": "Remove when matrix storage features can no longer be unified independently across runtime dependencies.",
       "introduced_release": "0.4.0",
       "lint": "unreachable_patterns",
@@ -288,6 +276,18 @@
       "path": "src/runtime/src/store.rs",
       "production_or_test": "test",
       "reason": "used by source-enabled transaction regression profiles"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when each canonical source helper is colocated with its only selecting integration test.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Standard-library canonical source tests",
+      "path": "src/stdlib/tests/support/mod.rs",
+      "production_or_test": "test",
+      "reason": "shared canonical source helpers are selected by focused integration tests"
     },
     {
       "directive": "allow",
