@@ -63,6 +63,7 @@ pub struct ResolvedSlot {
     pub schema: SchemaId,
     pub schema_key: SchemaKey,
     pub shape: ShapeInstance,
+    pub activation_fixed_shape: bool,
     pub storage: ResidentStorageClass,
     pub region: ResidentRegion,
 }
@@ -3554,6 +3555,7 @@ fn build_layout(
             declaration.clone(),
             schema.key(),
             shape,
+            activation_fixed,
             storage,
             kind,
             resident_shape,
@@ -3645,6 +3647,7 @@ fn build_layout(
                 },
                 schema.key(),
                 shape,
+                true,
                 ResidentStorageClass::Scratch,
                 kind,
                 resident_shape,
@@ -3678,7 +3681,16 @@ fn build_layout(
     let slots = slot_layouts
         .into_iter()
         .map(
-            |(declaration, schema_key, shape, storage, kind, resident_shape, len)| {
+            |(
+                declaration,
+                schema_key,
+                shape,
+                activation_fixed_shape,
+                storage,
+                kind,
+                resident_shape,
+                len,
+            )| {
                 Ok(ResolvedSlot {
                     artifact_id: declaration.slot,
                     role: declaration.role,
@@ -3686,6 +3698,7 @@ fn build_layout(
                     schema: declaration.schema,
                     schema_key,
                     shape,
+                    activation_fixed_shape,
                     storage,
                     region: ResidentRegion {
                         kind,
@@ -5484,6 +5497,7 @@ fn source_port_layout(
                 kind: region.kind,
                 shape: region.shape,
                 shape_instance: value.shape().clone(),
+                activation_fixed_shape: true,
                 resolved_selector: resident_resolved_selector(value),
             })
         }
@@ -5502,6 +5516,7 @@ fn slot_port_layout(slot: &ResolvedSlot) -> ResidentPortLayout {
         kind: slot.region.kind,
         shape: slot.region.shape,
         shape_instance: slot.shape.clone(),
+        activation_fixed_shape: slot.activation_fixed_shape,
         resolved_selector: None,
     }
 }
@@ -6281,6 +6296,7 @@ fn bind_control_block(
                     schema_id: value.schema(),
                     schema_key: value.schema_key(),
                     shape_instance: value.shape().clone(),
+                    activation_fixed_shape: true,
                     resolved_selector: None,
                 })
             }
