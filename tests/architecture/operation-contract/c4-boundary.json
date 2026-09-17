@@ -36,7 +36,7 @@
     "ProgramArtifact": "contracts: OperationContractTable",
     "NodeDeclaration": "body: ExecutableNodeBody",
     "OperationNodeBody": "contract: OperationContractId",
-    "ControlOperation": "contract: C",
+    "ControlOperation": "body: ControlOperationBody",
     "IntegrityConstraintDeclaration": "contract: OperationContractId"
   },
   "bytecode_section": "ArtifactOperationContracts",

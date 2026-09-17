@@ -529,7 +529,7 @@ impl ProgramArtifactDraft {
                         reason: "control has no ordinary root contract",
                     });
                 }
-                let handles = control.map_contracts(|block, operation| {
+                let handles = control.map_contracts(|block, operation, declaration| {
                     let inputs = operation
                         .inputs
                         .iter()
@@ -563,7 +563,7 @@ impl ProgramArtifactDraft {
                         })
                         .collect::<Result<Vec<_>, _>>()?;
                     Ok::<_, ArtifactBuildError>(builder.insert(resolve_declared_contract(
-                        &operation.contract,
+                        declaration,
                         inputs,
                         vec![operation.schema],
                     )?)?)
@@ -709,8 +709,8 @@ impl ProgramArtifactDraft {
                     *control = control_handles
                         .remove(&node.node)
                         .expect("compiler control handles")
-                        .map_contracts(|_, operation| {
-                            Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
+                        .map_contracts(|_, _, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
                         })?;
                 }
                 (ExecutableNodeBody::Comprehension(control), None) => {

@@ -3,6 +3,7 @@
 #[path = "comprehension_execution.rs"]
 mod comprehension_execution;
 
+use crate::resident::budget;
 use core::ops::Range;
 use core::sync::atomic::Ordering;
 
@@ -1454,7 +1455,19 @@ impl ReactiveInstance {
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Match(_)
         ) {
-            return self.execute_match_expression(node_index, before_epoch, working_epoch, probe);
+            let result = budget::with_control_work_budget(|| {
+                self.execute_match_expression(node_index, before_epoch, working_epoch, probe)
+            });
+            let ActivatedTurnStep::Match(control) = &self.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            // The selected yield has been copied into its enclosing result.
+            // No block-local payload survives success, failure or a later abort.
+            for region in &control.locals {
+                self.workspace.scratch.discard_payload_write(*region);
+            }
+            return result;
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -1514,13 +1527,8 @@ impl ReactiveInstance {
             let guard = arm.guard.clone();
             let body = arm.body.clone();
             if let Some(guard) = guard {
-                for kernel in guard.kernels {
-                    self.execute_kernel(
-                        ActivatedNodeIndex(kernel),
-                        before_epoch,
-                        working_epoch,
-                        probe,
-                    )?;
+                for step in guard.steps.iter().copied() {
+                    self.execute_step(step, before_epoch, working_epoch, probe)?;
                 }
                 match self.read_location(guard.yield_value, working_epoch) {
                     Some(ResidentValueRef::Bool([1])) => {}
@@ -1528,30 +1536,71 @@ impl ReactiveInstance {
                     _ => return Err(fail()),
                 }
             }
-            for kernel in body.kernels {
+            for step in body.steps.iter().copied() {
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
-                self.execute_kernel(
-                    ActivatedNodeIndex(kernel),
-                    before_epoch,
-                    working_epoch,
-                    probe,
-                )?;
+                self.execute_step(step, before_epoch, working_epoch, probe)?;
             }
-            let before = scalar_token(self.workspace.scratch.read(write.region));
-            let value = self
-                .read_location(body.yield_value, working_epoch)
-                .and_then(scalar_token)
-                .ok_or_else(fail)?;
-            match self.workspace.scratch.write(write.region) {
-                ResidentValueMut::Bool([output]) => *output = u8::from(value != 0),
-                ResidentValueMut::Index([output]) => *output = value,
-                ResidentValueMut::F64([output]) => *output = f64::from_bits(value),
-                _ => return Err(fail()),
-            }
+            let unchanged = match body.yield_value {
+                ResidentReadLocation::Constant(region) => regions_equal(
+                    &self.workspace.scratch,
+                    write.region,
+                    &self.activation,
+                    region,
+                ),
+                ResidentReadLocation::Input(region) => regions_equal(
+                    &self.workspace.scratch,
+                    write.region,
+                    &self.workspace.input,
+                    region,
+                ),
+                ResidentReadLocation::State { slot, region } => {
+                    let buffer = self.state.select_buffer(slot, working_epoch);
+                    regions_equal(
+                        &self.workspace.scratch,
+                        write.region,
+                        &self.state.buffers[buffer],
+                        region,
+                    )
+                }
+                ResidentReadLocation::Scratch(region) => regions_equal(
+                    &self.workspace.scratch,
+                    write.region,
+                    &self.workspace.scratch,
+                    region,
+                ),
+            };
+            // Publish the selected value through the same managed copy path used
+            // for ordinary resident state. Composite construction remains in its
+            // existing bound kernel; no sibling branch is evaluated here.
+            let copied = match body.yield_value {
+                ResidentReadLocation::Constant(region) => {
+                    self.workspace
+                        .scratch
+                        .copy_region_from(write.region, &self.activation, region)
+                }
+                ResidentReadLocation::Input(region) => self.workspace.scratch.copy_region_from(
+                    write.region,
+                    &self.workspace.input,
+                    region,
+                ),
+                ResidentReadLocation::State { slot, region } => {
+                    let buffer = self.state.select_buffer(slot, working_epoch);
+                    self.workspace.scratch.copy_region_from(
+                        write.region,
+                        &self.state.buffers[buffer],
+                        region,
+                    )
+                }
+                ResidentReadLocation::Scratch(region) => self
+                    .workspace
+                    .scratch
+                    .copy_region_within(write.region, region),
+            };
+            copied.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
             let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
             set_bit(&mut self.workspace.initialized_output_bits, index);
-            return Ok(!initialized || before != Some(value));
+            return Ok(!initialized || !unchanged);
         }
         Err(fail())
     }
@@ -2884,8 +2933,15 @@ mod tests {
     use mech_core::ResidentShape;
 
     #[cfg(feature = "source")]
-    #[test]
-    fn control_locals_retain_distinct_certified_turn_call_plans() {
+    fn source_instance(source: &str) -> ReactiveInstance {
+        source_instance_with_budget(source, None)
+    }
+
+    #[cfg(feature = "source")]
+    fn source_instance_with_budget(
+        source: &str,
+        budget: Option<mech_core::ManagedMemoryBudget>,
+    ) -> ReactiveInstance {
         use mech_syntax::document::parser::{
             canonical::parse_canonical_phase_2i_rule_for_test, rules,
         };
@@ -2895,7 +2951,6 @@ mod tests {
         fn expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(expression))
         }
-        let source = "flag<bool> ? | true => signal<f64> + 1 | false => signal<f64> * 2";
         let parsed = parse_canonical_phase_2i_rule_for_test(
             TextSnapshot::new(DocumentId(822), Revision(1), source).unwrap(),
             rules::EXPRESSION,
@@ -2910,13 +2965,24 @@ mod tests {
             .unwrap();
         let mut catalog = mech_core::FunctionCatalogBuilder::new();
         crate::install_intrinsic_resident(&mut catalog).unwrap();
-        let instance = crate::resident::activate(
+        crate::resident::activate_with_options(
             mech_core::ReactiveInstanceId::new(822, 1),
             &artifact,
             &catalog.build().unwrap(),
             &crate::resident::ActivationFacts::default(),
+            crate::resident::ResidentActivationOptions {
+                memory_budget: budget,
+                ..Default::default()
+            },
         )
-        .unwrap();
+        .unwrap()
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn control_locals_retain_distinct_certified_turn_call_plans() {
+        let instance =
+            source_instance("flag<bool> ? | true => signal<f64> + 1 | false => signal<f64> * 2");
         let mut locals = 0;
         for (index, step) in instance.plan.steps.iter().enumerate() {
             let ActivatedTurnStep::Kernel(kernel) = step else {
@@ -2934,6 +3000,183 @@ mod tests {
             assert_eq!(call.outputs.len(), 1);
         }
         assert_eq!(locals, 2);
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn match_payload_locals_are_released_after_commit_failure_and_abort() {
+        for source in [
+            "(values<[f64]:1,2>, flag<bool> ? | true => ((signal<f64>, true), 1) | false => ((signal, false), values[index<f64>]))",
+            "(values<[f64]:1,2>, flag<bool> ? | true => (signal<f64> ? | * => ((signal, true), 1)) | false => (signal ? | * => ((signal, false), values[index<f64>])))",
+        ] {
+            for managed in [false, true] {
+                let mut instance = source_instance_with_budget(
+                    source,
+                    managed.then(|| mech_core::ManagedMemoryBudget::new(1024 * 1024)),
+                );
+                let slots = instance
+                    .plan
+                    .inputs
+                    .iter()
+                    .map(|input| input.slot)
+                    .collect::<Vec<_>>();
+                let inputs = |flag, index| {
+                    [
+                        CapturedSignalInput {
+                            slot: slots[0],
+                            value: ResidentValueRef::F64(&[1.0, 2.0]),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[1],
+                            value: ResidentValueRef::Bool(flag),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[2],
+                            value: ResidentValueRef::F64(&[7.0]),
+                        },
+                        CapturedSignalInput {
+                            slot: slots[3],
+                            value: ResidentValueRef::F64(index),
+                        },
+                    ]
+                };
+                let released = |instance: &ReactiveInstance| {
+                    let mut payloads = 0;
+                    for step in &instance.plan.steps {
+                        let ActivatedTurnStep::Match(control) = step else {
+                            continue;
+                        };
+                        for region in &control.locals {
+                            if let ResidentValueRef::Snapshot(values) =
+                                instance.workspace.scratch.read(*region)
+                            {
+                                payloads += 1;
+                                assert!(
+                                    values.iter().all(Option::is_none),
+                                    "match local retained a payload"
+                                );
+                            }
+                        }
+                    }
+                    assert!(
+                        payloads >= 4,
+                        "both arms must construct managed local payloads"
+                    );
+                };
+                instance.turn(&inputs(&[1], &[3.0])).unwrap();
+                released(&instance);
+                let epoch = instance.published_epoch();
+                let output = instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap();
+                assert!(instance.turn(&inputs(&[0], &[3.0])).is_err());
+                released(&instance);
+                assert_eq!(instance.published_epoch(), epoch);
+                instance
+                    .prepare_turn(&inputs(&[0], &[2.0]))
+                    .unwrap()
+                    .abort();
+                released(&instance);
+                assert_eq!(instance.published_epoch(), epoch);
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    output
+                );
+                instance.turn(&inputs(&[0], &[2.0])).unwrap();
+                released(&instance);
+            }
+        }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn selected_match_calls_share_a_budget_that_resets_each_turn() {
+        fn metered(
+            kernel: &mech_core::BoundResidentKernel,
+            inputs: &dyn ResidentKernelInputs,
+            output: ResidentValueMut<'_>,
+        ) -> Result<bool, ResidentKernelError> {
+            // A cheap executor with a declared workload exercises real control
+            // admission without allocating a maximum-sized numerical fixture.
+            budget::ResidentBudgetMeter::default().charge_compute_work(kernel.parameters()[0])?;
+            let ResidentValueMut::F64(output) = output else {
+                unreachable!()
+            };
+            output[0] = inputs.f64(0).unwrap()[0] + 1.0;
+            Ok(true)
+        }
+        for source in [
+            "flag<bool> ? | true => math/neg(signal<f64>) + 1 | false => signal",
+            "flag<bool> ? | true => (signal<f64> ? | item => math/neg(item)) + 1 | false => signal",
+        ] {
+            let mut instance = source_instance(source);
+            let slots = instance
+                .plan
+                .inputs
+                .iter()
+                .map(|input| input.slot)
+                .collect::<Vec<_>>();
+            let inputs = |flag| {
+                [
+                    CapturedSignalInput {
+                        slot: slots[0],
+                        value: ResidentValueRef::Bool(flag),
+                    },
+                    CapturedSignalInput {
+                        slot: slots[1],
+                        value: ResidentValueRef::F64(&[7.0]),
+                    },
+                ]
+            };
+            let install = |instance: &mut ReactiveInstance, work| {
+                let mut calls = 0;
+                for step in &mut instance.plan.steps {
+                    if let ActivatedTurnStep::Kernel(kernel) = step {
+                        kernel.kernel =
+                            mech_core::BoundResidentKernel::new(metered, Box::new([work]));
+                        calls += 1;
+                    }
+                }
+                assert_eq!(calls, 2);
+            };
+            install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2 + 1);
+            instance.turn(&inputs(&[0])).unwrap();
+            let epoch = instance.published_epoch();
+            assert!(matches!(
+                instance.turn(&inputs(&[1])),
+                Err(ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ));
+            assert_eq!(instance.published_epoch(), epoch);
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(7.0))
+            );
+            install(&mut instance, mech_core::RESIDENT_MAX_COMPUTE_WORK / 2);
+            for _ in 0..2 {
+                instance.turn(&inputs(&[1])).unwrap();
+                assert_eq!(
+                    instance
+                        .copied_output(0)
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(9.0))
+                );
+            }
+        }
     }
 
     fn state_arena() -> StateArena {

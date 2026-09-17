@@ -16,30 +16,30 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-# Source fixtures were regenerated for graph payload revision 4; their only wire
+# Source fixtures were regenerated for graph payload revision 5; their only wire
 # changes in that migration are the graph revision and checksum.
-EXPECTED_MANIFEST_SHA256 = "8a77697e826c2b70f5eda8c3a3156da004d0e9bf4bfbf0d29d1dbb7bb11d18d9"
+EXPECTED_MANIFEST_SHA256 = "a735136fa8b2ac6fdeccfb67bb80041c561975b369e6d271bfcb505122b122ce"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
-    "literal-f64.mecb": "5e6b720236ec3c32fc76f23f6e8910bec5b23059b343e2bb99bc595d3a69f6a0",
-    "scalar-add-f64.mecb": "3e41cee3e225d38a61c08fae9aeda62c3bd83a94e8a314efaf556c0cd5bf2e92",
-    "fixed-matrix-add-f64.mecb": "44cba17252c0f75d229fdfc82cda57187bf573e6e1cf8b8d0005797fdf3a63c4",
-    "dynamic-matrix-add-f64.mecb": "f918c8529f3725206e102555466d576f494d529b74d5d2238292fad625538c1d",
-    "variadic-horzcat-f64.mecb": "465651e8271b8b4978580c0c530bdbc214ddcc49ac2f61a95c1fa1bed46a4783",
-    "string.mecb": "9ec1741385ec93f080f8c483dacb87cc8acb7af0a4b23af20d8d296eeec72b4b",
-    "unary.mecb": "e7ce7a437bf81806234e070607673a2fb4446c935ef1d447c1afa48697d8c475",
-    "ternary.mecb": "dc0af9b719622724f5f131033672d326dc2ad6aad9c7d1b4e6811f170e2773f9",
-    "quaternary.mecb": "6e961ede34bb8f9fb4bd1972b55d2e0ec8043ba7b5642bdc0c2d7632e6ceb38e",
-    "named-module-operation.mecb": "5cc29e1e097008361c767f1a45d497877fab7af387d742b85150aa2287beb678",
-    "cli-stdout.mecb": "5b447181341e7f414f2c97fd55f631cb2f807df264ad9288d7d26e6fd168b13c",
-    "console.mecb": "df8c0a2b5c369487a1cee92123d7605179c2e64cce0d0333ac0f07b3e653748e",
-    "time.mecb": "15bf49b6eff184c7d164fe98f5177957adb64e36dc8a76fc89d6cb6456e032b3",
-    "timer.mecb": "a3a60f67c3d4482e25bfb6c6271414729fec865d303c7209b4da41fa991a7339",
-    "scene.mecb": "f1cd9d1e9678f5b300a0526a6b1e8fb6102f6a24a05be9f3fbc9a96aa7fda171",
-    "robot-arm.mecb": "8933382e06c229663116e17108097d145e3e09e5a21dbe05767dedf850330fea",
-    "synthetic-live-read.mecb": "32ed27f0c87ee072390a1875fa8fa6835e9be200e241e786011c79c9bbe52ca6",
+    "literal-f64.mecb": "e6c9a32267f2dffd6a61f1d3dad40dcfbc545f8875e8cf38f18f6333c7ee1643",
+    "scalar-add-f64.mecb": "a64aaab0fb3a3ccefb2ab974ed742293e56b9f7765ec762cea157ab824cf8d84",
+    "fixed-matrix-add-f64.mecb": "ad84086609d82f95ae3a0c68659e485bd7276a2d4456d07fbe42928a328945d4",
+    "dynamic-matrix-add-f64.mecb": "5931cbf64fc1cbe366c1f8b1eb48ca13de373be4ddbc9dd566687b1033ae5d63",
+    "variadic-horzcat-f64.mecb": "20c81b64a46d67154a212e8051b7a93ffb14aeab7f0ae2b0c5833eab4ec07049",
+    "string.mecb": "2ac3f9584d2016deec3676069f7bf3b7b510a5fb806525d8bc3392f90a8fad92",
+    "unary.mecb": "249361a9bb96fde7d2cedbbda9195addb1332958e862d554f5330bce22f48295",
+    "ternary.mecb": "c0fe85afed9356cb69333c7f6cd0912c965310f87b21460b0655e6d466741c02",
+    "quaternary.mecb": "af04321c1c1684d4ca3ea5f2b05983a5384c7c7a5dad58862a1238ebad5c0458",
+    "named-module-operation.mecb": "927f7f21abd55180c8413625eb264b367d8a571b6a44d46aa50c630fc81a67ab",
+    "cli-stdout.mecb": "ec492c0d5ce522872f1db27a2220ff4d448ab39a739165b000484faf86cb4d83",
+    "console.mecb": "ff31929fb841ac4ac30628e9b2cb94adde5fba43c01402f3385f6447b74524cb",
+    "time.mecb": "cab9b20cfbf0fb7831c7383e89538fd986f2a6f80a47c738cc35d9b9e123ed4a",
+    "timer.mecb": "0f11c277c19104efe56738e5e9e91aabda8ede6bb9fda31519c4e4c113f320cb",
+    "scene.mecb": "1d1106577bc222ddfacbab2082296b592880463fb190c5c3d63b4a1fd1bafe31",
+    "robot-arm.mecb": "61e6262a5d95e31d102d73e8ef1b76b111cd62ba271ae12dc12e3f95c9fc3344",
+    "synthetic-live-read.mecb": "bd800c7468c42f4f3c28eb13cf7f972c6bd7d5f7aee1205b14fd5824c4652f6c",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",

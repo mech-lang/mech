@@ -467,7 +467,8 @@ fn compile_source_program_with_metadata(
                     })?)
                 }
                 SourceNodeBody::Match(control) => {
-                    crate::ExecutableNodeBody::Match(control.map_contracts(|_, _| {
+                    control.validate_depth(node)?;
+                    crate::ExecutableNodeBody::Match(control.map_contracts(|_, _, _| {
                         Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
                     })?)
                 }

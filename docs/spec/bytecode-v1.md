@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:4,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:5,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 4)
+### Typed graph bodies (graph revision 5)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 4 and typed bodies; earlier graph representations
+The decoder requires revision 5 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -436,18 +436,26 @@ An arm has `pattern`, `guard`, and `body`. Patterns are `{"Literal":constant_id}
 Literal constants must have the scrutinee's exact schema. A guard is a block or null. A block has
 `id`, `parameters`, `operations`, and `yield_value`. Parameters are
 `[capture_ordinal_or_null,schema_id]`; null denotes the bound scrutinee.
-Each local operation has `node`, `operation`, `contract`, `inputs`, and `schema`.
+Each local operation has `node`, `body`, `inputs`, and `schema`. Its body is
+`{"Operation":{"operation":id,"contract":id}}` or a recursively owned `Match`
+declaration with the same fields as a root match. Nested scrutinee and capture
+ordinals address that local operation's inputs; descendant blocks cannot directly
+reference enclosing block locals.
 Values are externally tagged `Constant(id)`, `Parameter {block,ordinal}`, or
-`Local {block,node}`. Block and local IDs are dense within their owning scope.
+`Local {block,node}`. Block IDs are dense preorder identities within the root match, including nested
+blocks. Local IDs are dense within their own block.
 Global schema, constant, operation, and contract IDs refer to the enclosing
 artifact tables.
 
-Finalization checks scope and dominance, exact scalar schemas, pure ordinary
+Finalization checks scope and dominance, closed value schemas, pure ordinary
 operation contracts, Boolean guard yields, identical arm result schemas, and
 an unguarded wildcard/binding or coverage of both Boolean values. It rejects cross-block references
 and undeclared captures. Decoder admission counts nested control arrays before
 allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
-and 262,144 operands across the artifact. Existing section and aggregate byte
+and 262,144 operands across the artifact. Match nesting is limited to eight
+declarations on a path, checked before source-graph contract mapping and before
+wire arrays are allocated. Literal comparison still requires a scalar scrutinee.
+Existing section and aggregate byte
 limits also apply. Every control field participates in the artifact revision.
 
 A collection body is `{"Comprehension":{"kind":0_or_1,"steps":[...],"yield_value":value}}`.

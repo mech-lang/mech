@@ -3980,6 +3980,63 @@ expression, so bare `~> { ... }` is not an activation. In an FSM, `~>`
 introduces an asynchronous value transition, while a braced FSM transition is
 introduced only by `->`.
 
+FSM continuation semantics:
+
+An FSM `~>` records a continuation and yields. The continuation becomes eligible
+on the next reactive turn after the current turn commits. The scheduler requests
+that turn internally when needed; an external event is not required. This rule
+applies to FSM transitions. Activation-scope uses of `~>` keep their own contract.
+
+Transaction and scheduling boundaries:
+
+Reaching a yield prepares the next machine state and continuation together with
+the turn's other writes. Commit publishes them atomically. Failure or discard
+publishes neither, and creates no durable wakeup. A continuation committed by an
+earlier turn remains available if an attempted resume fails or is discarded.
+
+A continuation cannot resume in the turn that creates it, including another
+fixed-point pass of that turn. Each committed yield crosses a distinct turn
+boundary. Two consecutive yields therefore require two later turns. Eligibility
+does not promise a wall-clock delay or bypass other runnable work.
+
+Captured values and input reads:
+
+Invocation arguments are evaluated when the invocation starts. Arguments, machine
+state, and lexical bindings live at a yield survive by value in managed canonical
+storage owned by that machine instance. Their identity and lifetime are explicit
+in typed executable control; temporary scratch slots are not continuation state.
+
+An expression after resumption that reads an external input observes the input
+capture of the resumed turn. A lexical binding made before the yield retains its
+earlier value. Publication retains the last committed output until an output
+transition produces another value; an instance with no output has no invented
+default output.
+
+Lifetime and bounded work:
+
+Reset or replacement invalidates the instance generation and all continuations
+from that generation. A queued wakeup checks generation before executing. The
+scheduler coalesces pending wakeups for one continuation and resumes an instance
+at most once per reactive turn.
+
+Transition evaluation uses the existing turn work budgets. Internally requested
+turns also consume a bounded scheduler drain budget and interleave with other
+runnable work. Exhausting the drain budget leaves pending work for a later drain;
+it must not spin synchronously until an asynchronous chain terminates.
+
+Ownership and acceptance:
+
+The artifact owns typed transitions, continuation identities, value bindings and
+their schemas. Resident execution owns prepared and committed machine state; the
+scheduler owns eligibility and wakeups. Diagnostic source text is not executable
+state, and an ordinary operation contract cannot stand in for these semantics.
+
+Required execution cases are: one yield without external input; consecutive
+yields crossing distinct turns; failure and discard without advancement; reset
+and replacement rejecting stale continuations; earlier bindings versus resumed
+input reads; and bounded fair progress for a repeated asynchronous chain. Verify
+results and publication behavior after artifact roundtrip, including retries.
+
 Selection rule:
 `mech-code-alt` uses `alt_best`: all canonical candidates run from the same
 post-whitespace cursor and the longest successful parse wins, with canonical

@@ -33,7 +33,7 @@
         "ProgramArtifact": { "const": "contracts: OperationContractTable" },
         "NodeDeclaration": { "const": "body: ExecutableNodeBody" },
         "OperationNodeBody": { "const": "contract: OperationContractId" },
-        "ControlOperation": { "const": "contract: C" },
+        "ControlOperation": { "const": "body: ControlOperationBody" },
         "IntegrityConstraintDeclaration": { "const": "contract: OperationContractId" }
       }
     },
