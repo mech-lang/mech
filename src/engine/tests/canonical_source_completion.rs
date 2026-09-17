@@ -108,6 +108,33 @@ fn promoted_arithmetic_executes_with_live_operands() {
 }
 
 #[test]
+fn expected_error_families_also_have_positive_call_and_literal_execution() {
+    execute(
+        "x := math/add(signal<f64>, 2)",
+        [
+            (vec![ResidentValueRef::F64(&[1.0])], f(3.0)),
+            (vec![ResidentValueRef::F64(&[7.0])], f(9.0)),
+        ],
+    );
+    execute("x := 1", [(Vec::new(), f(1.0)), (Vec::new(), f(1.0))]);
+}
+
+#[test]
+fn table_join_has_real_resident_output_after_artifact_roundtrip() {
+    let expected = Data::Table(
+        vec![TableColumnDraft {
+            name: "a".to_owned(),
+            values: vec![Data::U8(1)].into_boxed_slice(),
+        }]
+        .into_boxed_slice(),
+    );
+    execute(
+        "x := (|a<u8>|1u8|) ⋈ (|a<u8>|1u8|)",
+        [(Vec::new(), expected.clone()), (Vec::new(), expected)],
+    );
+}
+
+#[test]
 fn nested_structured_values_execute_and_preserve_field_column_and_key_order() {
     for value in [3.0, 7.0] {
         let input = [value];
@@ -219,11 +246,16 @@ fn mutable_definition_publishes_its_resolved_initial_state() {
 
 #[test]
 fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
-    for (source, expected) in [
-        ("x := _", "source-semantics/unresolved-empty-expression"),
+    for (source, expected, offending) in [
         (
-            "x := nonexistent_function(1)",
+            "x := _",
+            "source-semantics/unresolved-empty-expression",
+            "_",
+        ),
+        (
+            "x := not-declared(1)",
             "source-semantics/unknown-function",
+            "not-declared",
         ),
     ] {
         let syntax = definition(source);
@@ -233,7 +265,11 @@ fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
             .expect("invalid source cannot become a placeholder executable node");
         assert_eq!(error.code, expected, "{source}");
         assert_eq!(error.anchor.document, DocumentId(0x555));
-        assert!(error.anchor.range.start < error.anchor.range.end);
-        assert!(error.anchor.range.end <= syntax.syntax().range().end);
+        assert_eq!(error.anchor.revision, Revision(1));
+        assert_eq!(
+            &source[error.anchor.range.start.0 as usize..error.anchor.range.end.0 as usize],
+            offending,
+            "{source}",
+        );
     }
 }
