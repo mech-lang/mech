@@ -1253,6 +1253,20 @@
           "--features",
           "full_compiler,full_source,resident-artifact",
           "--lib",
+          "artifact::control::tests"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--lib",
           "rejected_structural_arm_releases_its_payload_bindings_before_fallthrough"
         ],
         [
