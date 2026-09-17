@@ -1,17 +1,24 @@
-use alloc::sync::Arc;
+use super::retained_sequence::{Measured, RetainedSequence};
+use alloc::vec::Vec;
 
 use super::edit::{TextEdit, TextSize};
 use super::source::{Piece, TextSnapshot};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LineIndex {
-    starts: Arc<[TextSize]>,
+    starts: RetainedSequence<TextSize>,
+}
+
+impl Measured for TextSize {
+    fn measure(&self) -> usize {
+        1
+    }
 }
 
 impl Default for LineIndex {
     fn default() -> Self {
         Self {
-            starts: Arc::from([TextSize::ZERO]),
+            starts: [TextSize::ZERO].into_iter().collect(),
         }
     }
 }
@@ -26,7 +33,7 @@ impl LineIndex {
             &mut starts,
         );
         Self {
-            starts: starts.into(),
+            starts: starts.into_iter().collect(),
         }
     }
 
@@ -85,7 +92,7 @@ impl LineIndex {
         debug_assert!(starts.windows(2).all(|pair| pair[0].0 < pair[1].0));
         debug_assert!(starts.iter().all(|start| start.0 <= new_len.0));
         Self {
-            starts: starts.into(),
+            starts: starts.into_iter().collect(),
         }
     }
 
@@ -93,8 +100,51 @@ impl LineIndex {
         self.starts.len()
     }
 
-    pub fn line_starts(&self) -> &[TextSize] {
-        &self.starts
+    /// Explicit full export of line starts. Ordinary line lookup and append
+    /// share retained storage and do not materialize this vector.
+    pub fn line_starts(&self) -> Vec<TextSize> {
+        self.starts.iter().copied().collect()
+    }
+
+    pub(crate) fn appended(&self, old_len: TextSize, old_ends_cr: bool, text: &str) -> (Self, u64) {
+        let mut starts = self.starts.clone();
+        let mut allocations = 0;
+        let bytes = text.as_bytes();
+        let mut offset = 0;
+        // The preceding standalone CR already published a line start. A split
+        // CRLF shifts that final start by one byte, preserving old snapshots.
+        if old_ends_cr && bytes.first() == Some(&b'\n') {
+            let (updated, count) = starts.replacing_last(old_len + TextSize(1));
+            starts = updated;
+            allocations += count;
+            offset = 1;
+        }
+        while offset < bytes.len() {
+            let newline = match bytes[offset] {
+                b'\r' if bytes.get(offset + 1) == Some(&b'\n') => {
+                    offset += 2;
+                    true
+                }
+                b'\r' | b'\n' => {
+                    offset += 1;
+                    true
+                }
+                _ => {
+                    offset += 1;
+                    false
+                }
+            };
+            if newline {
+                let (updated, count) = starts.appended(old_len + TextSize(offset as u32));
+                starts = updated;
+                allocations += count;
+            }
+        }
+        (Self { starts }, allocations)
+    }
+
+    pub(crate) fn storage_node_bytes() -> usize {
+        RetainedSequence::<TextSize>::node_bytes()
     }
 
     pub fn line_start(&self, line: usize) -> Option<TextSize> {
@@ -102,10 +152,17 @@ impl LineIndex {
     }
 
     pub fn line_of(&self, offset: TextSize) -> usize {
-        match self.starts.binary_search_by_key(&offset.0, |start| start.0) {
-            Ok(line) => line,
-            Err(next) => next.saturating_sub(1),
+        let mut low = 0;
+        let mut high = self.starts.len();
+        while low < high {
+            let middle = low + (high - low) / 2;
+            if self.starts[middle].0 <= offset.0 {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
         }
+        low.saturating_sub(1)
     }
 
     pub fn line_and_byte_column(&self, offset: TextSize) -> (usize, TextSize) {
