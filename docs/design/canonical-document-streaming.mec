@@ -1,8 +1,11 @@
 Canonical Retained-Document Streaming — S7B
 ===============================================================================
 
-Status: B1 contract and baseline; B2 retained append storage and scanners.
-Canonical continuations, session publication, and streaming acceptance remain open.
+Status: B1/B2 committed. B3 grammar ownership implemented; B4 publication follows.
+All 80 recursive rules and all document combinators retain open-input state.
+Document/fence recovery and physical/filtered found-syntax classification use
+owned continuations. Snapshot publication, remaining materialization accounting,
+and the complete B5/B6 qualification and closeout remain open.
 Baseline: S7A PR #825, 34cb58ad3e676723d7161ae52906395cdfaa83c0.
 Branch: codex/syntax-s7b-streaming, targeting codex/syntax-s7-document-root.
 
@@ -166,13 +169,344 @@ finish, and linear scanner work for growing long combined literals. Canonical
 cursor reads use this scanner with final input; parent token/rule phases still
 need conversion before ordinary document sessions can suspend on source input.
 
-B2 delimiter scanner
+B3 parser-state ownership checkpoint
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Delimiter search retains literal probes and grapheme traversal across input
-frontiers and work yields. Its partition and growth tests live with the scanner;
-B3 attaches it to the production fence owner. The scalar/byte counters expose
-scanner work; full source-index and session accounting remain qualification work.
+ParserState owns the event buffer, live markers, canonical rule stack, diagnostics,
+covered range, nesting, remaining fuel, and resource-finalization state independently
+of borrowed input and the ID generator. Ordinary one-shot construction/finalization
+uses this same ownership boundary. Suspension moves the buffers; it does not clone,
+finalize, rewind, or replenish them. Resume extends only explicit input-frontier
+bounds. A fixed embedded range remains fixed even when its end coincided with the
+previous source end; its separate outer context may continue growing.
+
+Absolute diagnostic ranges in an accepted append-only prefix remain valid. Snapshot
+export binds their revision while already visiting diagnostics, rather than scanning
+all old diagnostics on every resume. Tests preserve diagnostic IDs, labels, buffer
+identity, open markers/rules, and nonrefundable work across input growth. Edits must
+invalidate this private live state; grammar frames and the public streaming owner
+are still required before exposing resumable document parsing.
+
+B3 canonical document-frame checkpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The generated DocumentRule/GrammarExpression descriptions now execute through
+owned rule entry/exit, sequence, choice/best-choice, optional/lookahead, repetition,
+and separated-item phases. Each phase retains the original checkpoint, commitment,
+selected alternative, fence state, marker/rule scope, and child position. Ordinary
+one-shot document parsing drives this same implementation with final input. The
+previous recursive combinator interpreter is removed, not retained as an alternate.
+
+A scheduling allowance can yield between transitions without unwinding phases or
+losing ParserState. Qualification resumes all 112 accepted document-rule witnesses
+one transition at a time and compares their events and parser accounting with
+uninterrupted execution. Focused cases additionally exercise zero-progress loops,
+alternative selection, trailing separators, and hard-fuel recovery at every yield.
+The new module participates in canonical parser isolation checks.
+
+This checkpoint establishes grammar-phase ownership, not a finished input-stream
+API. Token-specific phases, ordinary recursive-core calls, fence-body scanning,
+resource/fairness accounting inside those calls, and temporary EOF handling still
+need integration. The internal allowance counts document-frame transitions and converted child
+work; it does not bound an unconverted ordinary child-rule call.
+
+B2/B3 canonical base-rule phases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The 149 canonical base-rule entries now run owned phases for fixed literals,
+Unicode graphemes/classification, whitespace, identifiers/path segments, digit
+sequences, alternatives, and escapes. Their former recursive driver is removed.
+The existing fixed-terminal specification and base-rule selections remain the
+recognition authority. Unicode escapes accumulate checked scalar values while
+scanning rather than allocating and parsing the complete growing digit range.
+Failed candidates still rewind to the canonical one-grapheme escape fallback.
+
+Document frames retain base continuations and literal scans under the same
+scheduling allowance. Completed scans publish tokens in separately scheduled
+phases. Ordinary recursive-core rules and other unconverted document children
+still need conversion; this checkpoint does not expose a document stream API.
+
+Tests split base-rule sources at every scalar boundary and into scalar chunks,
+yield after each unit of scanner/frame work, and compare events, consumed bytes,
+and parser resources across fuel budgets. Once fuel is exhausted, the input owner
+stops accepting chunks: the Limited result retains open owners before resource
+finalization, then draining sealed input matches one-shot parsing of that exact
+accepted prefix. Repeated limited polls neither advance nor refund work. Growing
+identifiers, whitespace, and Unicode escape digits retain linear scanner/frame
+work at N, 2N, 4N, and 8N. These counters still exclude storage-index traversal and
+publication; the end-to-end B1 performance gates remain required and failing.
+
+B2/B3 string candidate and recovery phases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Raw and UTF-8 strings now retain opening/closing quote counts, base-rule body
+continuations, delimiter probes, candidate checkpoints, markers, and recovery
+phases. The ordinary string entry points use this same execution path. An open
+raw candidate remains pending until success or a stable failure; only then may
+the STRING owner select its canonical UTF-8 candidate. Final EOF runs the existing
+rule-owned missing-closer diagnostics and opening labels. Recovery may replay a
+failed final candidate once; that scanner/frame work is counted, not refunded.
+
+Every scalar cut and scalar-at-a-time tests compare events, diagnostic content,
+consumed bytes, and parser resources, including incomplete triple delimiters,
+Unicode/CRLF bodies, malformed escapes, and hard-fuel accepted-prefix outcomes.
+N, 2N, 4N, and 8N tests include final candidate replay for growing closed/unclosed
+bodies. Document frames retain direct string owners under their shared allowance;
+strings reached through an unconverted recursive-core parent still require that
+parent's owned continuation before document append can suspend through it.
+
+The repository corpus inventory records this design document as a planning
+artifact under the same canonical-specification policy as the continuation plan.
+It is not a raw-parser fixture. Existing source fixtures and all four failing
+positive end-to-end streaming acceptance cases remain in their original gates.
+
+B2/B3 comment and paragraph phases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Comments retain leading spacing, the canonical two-spelling sigil selection,
+and raw ANY_TOKEN body children until a physical newline or final EOF. Paragraph
+text retains exact exclusion probes, its definition-operator lookahead, and TEXT
+child continuations. Both ordinary entry points execute the retained phases;
+the former growing loops are removed. A proven definition-lookahead whitespace
+range is shared across subsequent TEXT children, so consuming a long settled
+space run does not rescan the remainder from every character. Open lookahead
+retains its inspected frontier and waits for enough input to decide :=.
+
+Every scalar cut and scalar chunks compare exact events, normalized diagnostic
+content, consumed source, and resource outcomes. N through 8N tests cover growing
+comments, leading comment spacing, and positive/negative/end-of-input definition
+lookahead after long whitespace, counting both append and one-shot work. Direct
+Document child phases retain these continuations under their common allowance.
+Other Mechdown and recursive-core parent conversions remain required.
+
+B2/B3 fence scanner and embedded-scope phases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fence delimiter search retains its literal probes and Unicode traversal across
+input frontiers and bounded work yields. Document frames own the scan checkpoint,
+charged grapheme advances, bounded MECH_CODE child, fallback/recovery selection,
+and cursor restoration. The previous recursive fence helper and borrowed cursor
+closure are removed. Borrow-free scope records restore fixed enclosing bounds or
+the current source frontier correctly after suspension/append, including resource
+remainders whose physical cursor extends beyond an embedded consume bound.
+
+Delimiter tests compare every scalar partition with independent contiguous
+Unicode search and measure N through 8N unfinished bodies/combined graphemes.
+Existing one-shot document/fence/recovery behavior still uses delimiter discovery
+before bounded body interpretation. Efficient finite-prefix preview of an open
+fence requires retained body interpretation/publication work in B4; this scanner
+checkpoint alone does not qualify ordinary previews or end-to-end streaming.
+
+B3 operator continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All 53 canonical expression-operator rules now retain their ordered alternatives,
+node markers, leading/trailing spacing, and negative lookahead checkpoints.
+Comment-sigil, matrix-multiply, and generator-arrow guards retain their child
+continuations without refunding probe work. Literal operator atoms retain Unicode
+boundary checks under the same allowance. Ordinary operator entry points drain
+these same phases; the former synchronous operator helpers are removed.
+
+Direct document children own the operator continuation. Qualification covers every
+operator rule and spelling, overlapping prefixes, Unicode spacing and combining
+marks, every scalar cut, scalar chunks, and hard-fuel outcomes. N through 8N
+leading/trailing spacing tests require linear work for both incremental and
+one-shot execution. Recursive expression parents still require retained phases;
+this operator conversion does not yet provide an end-to-end document stream.
+
+B3 context-path and primitive-kind continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Context path tokens, repeated paths, @context/path prefixes, and primitive
+any/empty/atom kinds retain their token choices, prefix stages, and repetitions.
+Ordinary entry points and direct document children use those same continuations.
+Unicode identifiers, incomplete prefixes, repeated underscores, input partitions,
+and per-call yields share the base scanner and cumulative parser fuel.
+
+Failed candidates let their transaction discard provisional markers. This also
+handles a child that already finalized a hard-limit source remainder: rejecting
+an enclosing incomplete context prefix preserves the child/remainder instead of
+attempting to abandon a resource-finalizing marker. Direct public prefix tests
+cover fuel 0 through 64 and four event capacities; resumed tests compare exact
+accepted-prefix events, diagnostics, and resource outcomes. Growing context names,
+paths, primitive atom names, and underscore kinds have N through 8N work gates.
+
+B3 Mechdown leaf continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The remaining ten closed Mechdown leaves retain codeblock sigil selection, fence
+rejection for inline code, hyperlink prefix probes, inline/block body children,
+reference alternatives, line whitespace, and final recovery. Comment and prose
+owners remain shared with their existing retained phases. Ordinary entry points
+and document child frames drain the same implementation. There is no second
+streaming grammar or fallback to the removed synchronous body loops.
+
+Literal delimiter probes and base children yield under the shared allowance.
+Temporary input exhaustion retains the live body instead of inserting closing
+syntax or missing-content diagnostics. Physical newline boundaries still trigger
+the same canonical recovery, and line rules still require a physical newline.
+All scalar partitions and low-fuel cases preserve canonical events/diagnostics;
+N through 8N gates cover open/closed bodies, references, and growing line spacing.
+These leaf guarantees do not yet qualify ordinary document previews or the
+remaining recursive expression parents.
+
+B3 numeric and primitive-literal continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All 21 non-string literal entries retain ordered candidates, optional signs,
+scientific and imaginary markers, typed suffixes, based-number payloads, and
+candidate-specific recovery policy. A complex-number candidate retains its
+nonrecovering untyped-real children; only the canonical selected real-number
+owner may insert missing based payloads. Direct string entries continue to use
+the existing retained string owner. The former recursive numeric driver and
+its separate candidate helpers are removed.
+
+Ordinary and document-child parsing use the same phases. Input-cut and low-fuel
+qualification covers every entry, including late suffixes, invalid payloads,
+Unicode identifiers/digits, and failed complex candidates. N through 8N work
+gates include final candidate replay, long numeric payloads, typed identifiers,
+empty literals, and atoms, with complete accepted source and no resource caps.
+This qualifies these leaf continuations, not end-to-end document publication.
+
+B3 closed control, pattern, and subscript continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The fifteen closed control/pattern/subscript rules use shared retained primitive
+phases for spacing, ordered assignment choices, transparent terminals, wildcard
+and spread selection, identifier/integer subscripts, and repeated swizzle tails.
+Each comma-plus-identifier swizzle tail owns its checkpoint until it either
+completes or leaves the physical comma for its enclosing grammar owner. Integer
+subscripts own the retained numeric continuation under the same work allowance.
+The original synchronous primitive bodies are removed.
+
+Partition/resource tests cover all fifteen rules, Unicode identifiers, split
+operators/CRLF, and incomplete swizzle tails. N through 8N gates exercise growing
+swizzles, identifiers, integers, and control whitespace, preserving complete
+source and the specified trailing-comma ownership. Recursive statement, pattern,
+and subscript parents remain separate continuation work.
+
+B3 structure-shell continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ten closed structure-shell rules retain matrix/table delimiter choices,
+table separator spacing, physical-newline table tops, row-border lookahead and
+space runs, and empty map/set children. Repeated border items retain their
+checkpoints and base children; an optional empty-set marker uses the numeric
+literal continuation under the same allowance. Ordinary and direct document
+entry points use these phases, replacing the synchronous shell loops.
+
+All scalar cuts and low-fuel outcomes cover round/square/bold box delimiters,
+separator lookahead across long spaces, split CRLF, combining characters, and
+incomplete empty collections. N through 8N gates include both successful and
+failed table tops, row space lookahead, borders, and empty collection contents.
+The complete matrix/table/map/set owners still require recursive continuations.
+
+B3 declaration continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The eight export/context declaration rules retain URI alternatives, capability
+path tokens, wildcard validation, and optional capability-group checkpoints.
+Path validation visits one byte per phase without copying the candidate text.
+A group keeps its separator and whole-group rollback boundaries across yields;
+incomplete or invalid suffixes preserve the canonical declaration prefix.
+Ordinary and direct document entry points drain the same retained phases.
+
+All input cuts and low-fuel outcomes cover the eight rules, URI prefixes,
+Unicode and CRLF boundaries, wildcard placement, and group rollback. N through
+8N gates cover long names, spacing, URI components, valid and invalid paths,
+and complete or rejected capability groups. These tests compare complete
+accepted source, events, diagnostics, consumption, and parser resource stats.
+Import and recursive-core continuations remain unfinished B3 work.
+
+B3 source-import continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All thirteen source-import rules retain ordered relative/absolute/URI/bare
+selection, component and URI-tail scanning, slash-pair rollback, and optional
+wildcard suffixes. The maximal file-path check visits one byte per phase;
+declaration wildcard validation visits one scalar per phase and builds physical
+wildcard labels incrementally. Neither check copies the whole candidate text.
+Unicode trailing whitespace is trimmed only for wildcard validation, preserving
+the syntax range and exact diagnostic anchors. Resource finalization discards
+unselected wrappers while retaining their finalized children and source.
+
+All cuts and low-fuel tests cover the thirteen rules. N through 8N gates cover
+paths, URI tails and schemes, ordered fallback, Unicode trailing whitespace, and
+multiple wildcard labels. Public regressions check exact Unicode ranges and
+lossless results across fuel/event limits. Module-import and recursive-core
+owners, shared recovery scheduling, and complete document EOF remain B3 work.
+
+B3 shared error-skip and physical context probes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Shared skip-error recovery now owns scalar consumption, byte-limit decisions,
+error markers, fence/subtitle lookahead, and found-text materialization across
+appends and work yields. Ordinary recovery drains this same implementation.
+Physical context boundary helpers likewise drain the shared resumable probes;
+the prior synchronous context-scanning bodies are removed. A failed fence probe
+retains the indentation range it ruled out, avoiding repeated scans from each
+following space. Error text is materialized one scalar per phase.
+
+Partition tests cover all three recovery classes, split CRLF and fence prefixes,
+subtitle decisions, exact stop offsets, and diagnostic content. Recovery-byte
+and event limits remain cumulative. N through 8N gates cover indentation,
+subtitle lookahead, and Unicode error text. These are phase-work checks;
+complete storage/export accounting remains B5 work.
+
+B3 module-import continuations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All nineteen module-import rules retain intrinsic/name selection, alias paths,
+transactional separator/item pairs, group commitment, required-target recovery,
+and the top-level context-alias recovery path. The invalid slash continuation
+uses the shared resumable skip-error owner. Direct and document entry points
+share these phases; the former synchronous module-import bodies are removed.
+
+Input-cut and low-fuel tests cover every rule, incomplete pairs, local recovery,
+Unicode and CRLF, and malformed context aliases. N through 8N gates cover paths,
+groups, alias operators, ordered fallback, and context-alias error tails. Public
+regressions preserve lossless trees across fuel/event exhaustion inside nested
+recovery owners.
+
+B3 physical found-syntax and missing-node recovery
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Physical found-syntax classification now retains the shared terminal-table
+iteration, literal and Unicode scanners, longest-match selection, and scalar
+text export. Ordinary physical classification drains that same owner. Shared
+missing-node recovery retains marker completion, classification, and diagnostic
+publication; module imports use it under the same scheduling allowance. A fixed
+non-name with sufficient physical lookahead can recover before final EOF.
+
+All fixed-terminal spellings and Unicode input cuts compare exact found syntax.
+N through 8N tests cover long combining and ZWJ clusters including text export.
+Module-import partition and resource regressions pass through the retained
+missing owner, and an explicit open-input regression prevents final-EOF gating
+from returning to physical missing-name recovery.
+
+Filtered grammar diagnostic classification retains its separate lexical
+contract and still drains at final input. Its continuation, recursive-core
+owners, the remaining recovery routines, and complete document EOF scheduling
+remain unfinished B3 work.
+
+B3 precedence-phase ownership
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The seven precedence levels now retain their transaction, marker, selected
+operator, pair count, operand boundary, and commitment across work yields.
+Seeded formulas drain the same level owner, including conditional chain nodes
+and completion of remaining outer markers after resource exhaustion. Operator
+selection uses the existing retained operators and preserves the level-four
+multiply/divide then matrix-operator ordering. The synchronous level loops are
+removed. Operator-restart recovery preserves its selected operator and rejected
+trivia lookahead policy.
+
+Scheduling tests compare all seven direct levels across input partitions and
+low fuel. Factor bodies and operand-restart recovery are still synchronous
+children and wait for final input; their internal work is not bounded by these
+precedence phase counters. This is recursive-core ownership groundwork, not
+qualification of streaming expressions. Those children, the rest of the
+recursive core, and document EOF scheduling remain B3 implementation work.
 
 5. Limits and deterministic accounting
 -------------------------------------------------------------------------------
@@ -248,12 +582,22 @@ missing accounting; this table does not certify any streaming implementation.
 7. Qualification and internal checkpoints
 -------------------------------------------------------------------------------
 
-B1: contract, scope/stack index, measured S7A failing performance baselines.
-B2: amortized append storage and resumable scanners with accurate counters.
-B3: canonical frames, alternatives, final EOF, and existing recovery integration.
-B4: normal snapshots/deltas, indexes, identity, finality, edit/stream transition.
-B5: full correctness/resource/complexity/consumer and CI qualification.
-B6: exact-head closeout, API limits and supported bounds, S8 handoff.
+The single S7B PR uses these six canonical commits. While a checkpoint remains
+in progress, implementation fixes amend that commit. Later checkpoints receive
+commits when their deliverables exist; commit presence alone is not closeout.
+
+B1 — Contract and baseline: document lifecycle, provisional/final behavior,
+scope, metrics, and failing streaming-performance tests against S7A.
+B2 — Append storage and scanners: efficient source append, resumable lexical
+scanning, boundary tests, and accurate counters.
+B3 — Canonical continuations: grammar suspension/resumption, alternative
+ownership, final EOF handling, and shared recovery integration.
+B4 — Snapshots and sessions: efficient normal publication, diagnostic deltas,
+identity handling, previews, and edit/stream transitions.
+B5 — Complete qualification: partition tests, malformed/resource tests,
+adversarial complexity, typed-consumer canaries, and CI execution.
+B6 — Closeout and S8 handoff: exact-head results, API documentation, supported
+performance claims, and production integration instructions.
 
 Begin B2/B3 with the three different unfinished families, not only independent
 terminated statements. Keep all checkpoints in this single draft PR.
@@ -289,6 +633,85 @@ grammar, reduced/no-std, architecture/generator, affected native/WASM, and compl
 accumulated-stack consumers. Attribute results to exact heads/merge candidates.
 Do not refresh grammar rows, generated files, or certification hashes for naming.
 
+B3 recursive atom and recovery ownership
+
+Formula, factor, unary, literal, variable, and annotation-prefix entry points now
+drain retained owners in ordinary parsing as well. Ordered literal children,
+variable candidate/comparison rollback, factor stem selection, unary nesting,
+and transpose suffixes retain their marker/transaction state across scheduling.
+The nested structure/call/slice and kind-interior children still require final
+input; these are explicit remaining B3 work, not qualified streaming families.
+
+Balanced abandonment now owns its delimiter stack, ordinary/raw quote state,
+escapes, canonical annotation lookahead, and incremental found-text export.
+Required-production and closer recovery share this owner and missing-node
+publication. Operator restart probes retain their child continuation, checkpoint,
+last result, and proven non-operator trivia range. The synchronous abandonment
+and required-production implementations were removed. Closing-set callbacks,
+nesting-limit scanning, filtered found classification, and full document EOF
+scheduling remain to be converted.
+
+New all-cut and one-unit scheduling regressions cover recursive atoms, balanced
+recovery, required-production lookahead, low fuel, and cumulative recovery/event
+limits. N/2N/4N/8N recovery tests include scanning and diagnostic text export.
+A nested-expression stack overflow exposed an oversized inline recovery child;
+that child is now heap-owned and the unchanged nested-complexity test passes.
+These checks do not replace B5's complete end-to-end publication qualification.
+
+B3 recursive kind and nesting-recovery ownership
+
+All eleven recursive kind entries now share retained owners. Ordered primitive
+choice, annotation candidates, optional suffixes, matrix cardinality, tuple and
+table fields, and shared brace record/map/set selection retain child state and
+rollback points. Parameterized TAG matching uses the shared retained literal
+scanner. A scalar-kind range still delegates to the unconverted range parent;
+this remaining child prevents claiming full recursive-family qualification.
+
+Nesting-limit recovery retains its parentheses depth, comment-prefix checks,
+subtitle/fence context probes, missing-node publication, and skipped-text export.
+Ordinary parsing drains the same owner; no synchronous nesting scanner remains.
+All-cut tests cover source, fuel, recovery/event allowances, and error boundaries.
+N/2N/4N/8N kind-list, nested-kind, and nesting-recovery cases consume the complete
+source and include their retained scanner/export work. They do not establish
+B4's normal snapshot-publication complexity or complete B5 qualification.
+
+B3 range and structure-prefix ownership
+
+Range expressions retain their initial formula, both operator/bound pairs,
+required-bound recovery, and transaction. Parenthetical terms retain their
+opening, nested formula, whitespace, closer, and shared recovery. Scalar-kind
+ranges now call this owner rather than a final-input body.
+
+Table alternatives, their physical opening prefixes, record openers, and matrix
+openers now retain canonical wrappers and discriminator facts. Ordinary table,
+record, and matrix entry points drain the same prefix owners. Their interiors
+and the other structure-selection bodies remain explicit unfinished B3 children.
+This lets ordinary scalar factors reject unrelated structure alternatives and
+advance long formula chains before final EOF. A cursor-progress regression
+verifies this behavior directly; scalar formula/string/number N/2N/4N/8N tests
+check retained work while consuming the complete source.
+
+The recursive dispatcher outlines range/parenthetical transitions so additional
+state does not enlarge unrelated nested call paths. The unchanged native nested
+complexity regression passes. Focused qualification for this checkpoint contains
+370 tests across 25 targets, plus no-std and architecture/generator checks.
+
+B3 expression and postfix ownership
+
+Expressions retain formula/range/match selection and discriminator facts. Calls,
+bound arguments, argument lists (including FSM arguments), slices, and subscript
+lists retain children, separators, nesting, and required-value/closer recovery.
+Expression range bounds share the range owner with direct range expressions.
+An established low-budget rejected bound-argument case (`x+1`, fuel 1) now lets
+its transaction discard provisional markers after child resource finalization.
+
+Open-input regressions verify cursor progress through completed operands,
+arguments, and indices. Long N/2N/4N/8N scalar expression/call/slice cases include
+retained grammar work; shorter separate cursor checks isolate temporary-EOF
+behavior. Explicit structure-expression selection and match/FSM-value bodies
+still contain final-input children. Full document EOF scheduling and B4–B6 remain
+unfinished; these local results do not establish end-to-end streaming acceptance.
+
 8. Closeout and S8 handoff
 -------------------------------------------------------------------------------
 
@@ -299,3 +722,61 @@ final-head qualification all pass. Known failing acceptance cannot be relabelled
 S8 uses append/advance for arriving text, provisional views for tools, and finish
 at the consumer's explicit completion boundary. Only finalized validated syntax
 is handed to semantic consumers. Production migration/removal stays in S8.
+
+B3 pattern, qualifier, and collection ownership
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Definitions retain the physically recognized definition-operator fact. FSM pipes,
+instances, transitions, and argument lists share the recursive owners. Patterns
+retain wildcard and spread/rest facts across nested children; array validation
+folds those facts and token cardinality into constant-size state instead of
+collecting and rescanning a token list. FSM value exclusion consumes those facts.
+Match arms retain optional guard candidates and required output recovery.
+Comprehension qualifiers preserve actual generator/let recognition independently
+of recovery, including a missing source after a physically recognized arrow.
+
+Tuple/set bodies, parenthesis selection, bindings, mappings, and record bodies
+now retain their children and recovery phases. A parenthesis candidate keeps its
+first expression while choosing tuple or parenthetical roles. Binding candidates
+retain value checkpoints for the existing clean-subtree reuse path; mapping
+lookahead retains quotes, raw triples, delimiters, and annotation probes. Shared
+closer recovery supports canonical table/matrix shells as well as base tokens.
+Table headers and ordinary/framed row owners retain separator candidates and
+empty-row recovery. Their enclosing table bodies remain the next conversion.
+
+Ordinary entry points drain these same owners. Obsolete synchronous bodies and
+fact/recovery adapters were removed as their last callers moved. Input-cut tests
+cover clean, malformed, and resource-limited paths. N/2N/4N/8N owner tests cover
+growing pattern arrays, tuples, mapping lists, parenthesized formulas, and binding
+strings. These are owner-level results, not the four end-to-end publication gates.
+The shared dispatcher passes boxed phases without unpacking them on unrelated
+recursive paths, and lexical children are boxed. The unchanged nested complexity
+test passes without increasing its thread-stack limit.
+
+B3 document-frontier and recursive ownership checkpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Every frozen Phase 2I rule now has a canonical continuation. Shared bracket,
+brace, inline-table, matrix-row, and table-body selection retains the same
+alternative and recovery policy as ordinary parsing. No final-only recursive
+child bridge remains. The isolation inventory covers every moved owner module.
+
+Document combinators accept open input and retain Mika literal parts, leading
+comment probes, required items, missing fence closers, nesting recovery, root
+fallback, and abandonment. The executable-fence delimiter scanner feeds known
+safe prefixes into a retained Mech-code child; only a found closer or final input
+seals that child. Header classification scans a bounded prefix under its allowance
+and shares CodeFenceInfo's language-prefix table. Filtered grammar diagnostics
+feed the same found-syntax classifier after incremental scalar filtering.
+Resource diagnostic classification is deferred into a retained child rather than
+performing a potentially long grapheme scan inside marker completion.
+
+The full library and the document fence/incremental/isolation targets pass
+199 tests at this ownership checkpoint. Earlier all-recursive qualification
+passed 380 tests across 25 targets. Arbitrary document cuts include executable
+and inert fences, malformed inline code, comments, headings, and Mika, with
+one-transition suspension and low fuel. Filtered diagnostic cuts separately
+exercise ignored trivia inside operators, combining clusters, and joined emoji.
+These are ownership results, not end-to-end streaming qualification. B4 must
+replace eager publication and account for retained tree/cache materialization;
+B5 must run the final full matrix and turn all four B1 performance gates green.
