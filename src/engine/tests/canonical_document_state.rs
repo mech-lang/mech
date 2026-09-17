@@ -2906,15 +2906,17 @@ fn runtime_shaped_matrix_can_be_wrapped_in_an_option() {
 
 #[test]
 fn activation_match_compares_snapshot_backed_scalar_literals() {
-    closed_matrix_turns(
+    for source in [
         "selected := (1u8 ? | 1u8 => 2u8 | * => 3u8)\n~state := selected\nstate\n",
-        |actual| {
+        "selected := (-0.0<f32> ? | 0.0<f32> => 2u8 | * => 3u8)\n~state := selected\nstate\n",
+    ] {
+        closed_matrix_turns(source, |actual| {
             assert_eq!(
                 actual.canonical_data_draft().unwrap(),
                 mech_core::ValueDataDraft::U8(2)
             );
-        },
-    );
+        });
+    }
 }
 
 #[test]
