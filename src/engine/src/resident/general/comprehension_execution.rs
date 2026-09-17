@@ -365,14 +365,15 @@ impl PatternItem {
         &self,
         peer: ResidentValueRef<'_>,
         schemas: &mech_core::SchemaTable,
-    ) -> Option<bool> {
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<Option<bool>, ResidentKernelError> {
         let Some(data) = self.data() else {
             // An absent Dynamic value is a valid value of the generator's
             // layout, but it cannot equal a present scalar/snapshot peer.
             // Reserve `None` for genuinely unsupported equality layouts.
-            return matches!(self, Self::Dynamic(_)).then_some(false);
+            return Ok(matches!(self, Self::Dynamic(_)).then_some(false));
         };
-        match peer {
+        Ok(match peer {
             ResidentValueRef::Bool([peer]) => {
                 Some(matches!(data, ValueDataDraft::Bool(value) if value == &(*peer != 0)))
             }
@@ -383,26 +384,39 @@ impl PatternItem {
                 Some(matches!(data, ValueDataDraft::F64(value) if value.to_f64() == *peer))
             }
             ResidentValueRef::String([peer]) => {
+                if let ValueDataDraft::String(value) = data {
+                    meter.charge_comparison_work(budget::checked_u64(
+                        value.len().max(peer.len()),
+                    )?)?;
+                }
                 Some(matches!(data, ValueDataDraft::String(value) if value == peer))
             }
             ResidentValueRef::Snapshot([Some(peer)]) => {
-                let schema = self.concrete_schema()?;
-                let entry = schemas.entry(schema)?;
+                let Some(schema) = self.concrete_schema() else {
+                    return Ok(None);
+                };
+                let Some(entry) = schemas.entry(schema) else {
+                    return Ok(None);
+                };
                 if entry.key() != peer.schema_key() {
-                    return Some(false);
+                    return Ok(Some(false));
                 }
-                draft_leaf_language_eq(data, peer.data())
+                draft_leaf_language_eq(data, peer.data(), meter)?
             }
             _ => None,
-        }
+        })
     }
 }
 
-fn draft_leaf_language_eq(draft: &ValueDataDraft, value: &ValueData) -> Option<bool> {
+fn draft_leaf_language_eq(
+    draft: &ValueDataDraft,
+    value: &ValueData,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<Option<bool>, ResidentKernelError> {
     macro_rules! ordinary {
         ($variant:ident) => {
             if let (ValueDataDraft::$variant(left), ValueData::$variant(right)) = (draft, value) {
-                return Some(left == right);
+                return Ok(Some(left == right));
             }
         };
     }
@@ -419,7 +433,7 @@ fn draft_leaf_language_eq(draft: &ValueDataDraft, value: &ValueData) -> Option<b
     ordinary!(Bool);
     ordinary!(Id);
     ordinary!(Index);
-    match (draft, value) {
+    Ok(match (draft, value) {
         (ValueDataDraft::F32(left), ValueData::F32(right)) => Some(left.to_f32() == right.to_f32()),
         (ValueDataDraft::F64(left), ValueData::F64(right)) => Some(left.to_f64() == right.to_f64()),
         (ValueDataDraft::Complex32(left), ValueData::Complex32(right)) => Some(
@@ -438,11 +452,12 @@ fn draft_leaf_language_eq(draft: &ValueDataDraft, value: &ValueData) -> Option<b
             ValueData::Rational64(right),
         ) => Some(*numerator == right.numerator() && *denominator == right.denominator()),
         (ValueDataDraft::String(left), ValueData::String(right)) => {
+            meter.charge_comparison_work(budget::checked_u64(left.len().max(right.len()))?)?;
             Some(left.as_str() == right.as_ref())
         }
         (ValueDataDraft::Atom, ValueData::Atom) => Some(true),
         _ => None,
-    }
+    })
 }
 
 fn sequence_item(
@@ -923,6 +938,37 @@ fn draft_capacity_overlap_bytes(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+fn comprehension_nested_live_demand(
+    count: usize,
+    current_capacity: usize,
+    footprint: ValueFootprint,
+    shape_parameter_count: usize,
+    schema_arena_bytes: u64,
+    published_output_bytes: u64,
+    live_locals: ValueFootprint,
+    meter: ResidentBudgetMeter,
+) -> Result<(u64, u64), ResidentKernelError> {
+    let live_draft_bytes = snapshot_draft_bytes(count, footprint, shape_parameter_count)?
+        .checked_add(draft_capacity_overlap_bytes(count, current_capacity)?)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let live_bytes = meter
+        .estimate()
+        .temporary_bytes()
+        .checked_add(schema_arena_bytes)
+        .and_then(|bytes| bytes.checked_add(published_output_bytes))
+        .and_then(|bytes| bytes.checked_add(live_draft_bytes))
+        .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let live_nodes = meter
+        .estimate()
+        .retained_nodes()
+        .checked_add(footprint.node_count)
+        .and_then(|nodes| nodes.checked_add(live_locals.node_count))
+        .and_then(|nodes| nodes.checked_add(u64::from(count > 0)))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((live_bytes, live_nodes))
+}
+
 fn admit_output(
     count: usize,
     current_capacity: usize,
@@ -930,6 +976,7 @@ fn admit_output(
     shape_parameter_count: usize,
     schema_arena_bytes: u64,
     live_locals: ValueFootprint,
+    published_output_bytes: u64,
     meter: ResidentBudgetMeter,
 ) -> Result<(), ResidentKernelError> {
     let (temporary, output) = snapshot_workspace(count, footprint, shape_parameter_count)?;
@@ -939,6 +986,7 @@ fn admit_output(
         .checked_add(live_locals.retained_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?
         .checked_add(schema_arena_bytes)
+        .and_then(|bytes| bytes.checked_add(published_output_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output = output
         .checked_add(schema_arena_bytes)
@@ -976,6 +1024,7 @@ fn admit_draft_shrink(
     shape_parameter_count: usize,
     schema_arena_bytes: u64,
     live_locals: ValueFootprint,
+    published_output_bytes: u64,
     meter: ResidentBudgetMeter,
 ) -> Result<(), ResidentKernelError> {
     if count == current_capacity {
@@ -991,6 +1040,7 @@ fn admit_draft_shrink(
         .checked_add(old_backing)
         .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
         .and_then(|bytes| bytes.checked_add(schema_arena_bytes))
+        .and_then(|bytes| bytes.checked_add(published_output_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let retained_nodes = meter
         .estimate()
@@ -1019,6 +1069,7 @@ fn admit_set_draft(
     shape_parameter_count: usize,
     schema_arena_bytes: u64,
     live_locals: ValueFootprint,
+    published_output_bytes: u64,
     meter: ResidentBudgetMeter,
 ) -> Result<(), ResidentKernelError> {
     let temporary = snapshot_draft_bytes(count, footprint, shape_parameter_count)?
@@ -1026,6 +1077,7 @@ fn admit_set_draft(
         .ok_or(ResidentKernelError::InvalidShape)?
         .checked_add(schema_arena_bytes)
         .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
+        .and_then(|bytes| bytes.checked_add(published_output_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let retained_nodes = meter
         .estimate()
@@ -1109,18 +1161,23 @@ fn admit_item_clone(
     retained: ValueFootprint,
     retained_shape_parameter_count: usize,
     schema_arena_bytes: u64,
+    live_locals: ValueFootprint,
+    published_output_bytes: u64,
     meter: ResidentBudgetMeter,
 ) -> Result<(), ResidentKernelError> {
     let item_temporary = item_clone_bytes(item)?;
     let temporary = snapshot_draft_bytes(retained_count, retained, retained_shape_parameter_count)?
         .checked_add(item_temporary)
         .and_then(|bytes| bytes.checked_add(schema_arena_bytes))
+        .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
+        .and_then(|bytes| bytes.checked_add(published_output_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let retained_nodes = meter
         .estimate()
         .retained_nodes()
         .checked_add(retained.node_count)
         .and_then(|nodes| nodes.checked_add(item.node_count))
+        .and_then(|nodes| nodes.checked_add(live_locals.node_count))
         .and_then(|nodes| nodes.checked_add(u64::from(retained_count > 0)))
         .ok_or(ResidentKernelError::InvalidShape)?;
     PreparedKernel::new(
@@ -1180,6 +1237,7 @@ fn admit_pattern_binding_finalization(
     retained: ValueFootprint,
     retained_shape_parameter_count: usize,
     schema_arena_bytes: u64,
+    published_output_bytes: u64,
     schemas: &mech_core::SchemaTable,
     meter: ResidentBudgetMeter,
 ) -> Result<(), ResidentKernelError> {
@@ -1203,6 +1261,7 @@ fn admit_pattern_binding_finalization(
         .and_then(|bytes| bytes.checked_add(previous_binding.retained_bytes))
         .and_then(|bytes| bytes.checked_add(other_live_locals.retained_bytes))
         .and_then(|bytes| bytes.checked_add(schema_arena_bytes))
+        .and_then(|bytes| bytes.checked_add(published_output_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let retained_nodes = meter
         .estimate()
@@ -1358,7 +1417,42 @@ fn visit_value_schema_owners(
 
 struct SchemaOwnerRoots {
     owner: Arc<mech_core::SchemaTable>,
-    roots: Vec<SchemaId>,
+    root_start: usize,
+    root_len: usize,
+    root_capacity: usize,
+}
+
+impl SchemaOwnerRoots {
+    fn roots<'a>(&self, storage: &'a [SchemaId]) -> &'a [SchemaId] {
+        &storage[self.root_start..self.root_start + self.root_len]
+    }
+
+    fn insert_root(
+        &mut self,
+        storage: &mut [SchemaId],
+        root: SchemaId,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<(), ResidentKernelError> {
+        let end = self
+            .root_start
+            .checked_add(self.root_capacity)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if end > storage.len() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        for candidate in &storage[self.root_start..self.root_start + self.root_len] {
+            meter.charge_comparison_work(1)?;
+            if *candidate == root {
+                return Ok(());
+            }
+        }
+        if self.root_len == self.root_capacity {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        storage[self.root_start + self.root_len] = root;
+        self.root_len += 1;
+        Ok(())
+    }
 }
 
 fn distinct_schema_owner_footprint(
@@ -1396,6 +1490,146 @@ fn same_schema_arena_contents(
         }
     }
     Ok(true)
+}
+
+fn component_closure_is_addressable(
+    owner: &mech_core::SchemaTable,
+    root: SchemaId,
+    plan: &mech_core::SchemaTable,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<bool, ResidentKernelError> {
+    fn contains_schema(
+        plan: &mech_core::SchemaTable,
+        key: mech_core::SchemaKey,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<bool, ResidentKernelError> {
+        for entry in plan.entries() {
+            meter.charge_comparison_work(1)?;
+            if entry.key() == key {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    fn visit_body(
+        parent: &mech_core::Schema,
+        body: &SchemaBody,
+        plan: &mech_core::SchemaTable,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<bool, ResidentKernelError> {
+        meter.charge_compute_work(1)?;
+        let mut visit_child = |child: &SchemaBody| {
+            let schema = parent
+                .canonical_component_schema(child)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            if !contains_schema(plan, schema.key(), meter)? {
+                return Ok(false);
+            }
+            visit_body(parent, child, plan, meter)
+        };
+        match body {
+            SchemaBody::Enum { variants, .. } => {
+                for child in variants
+                    .iter()
+                    .filter_map(|variant| variant.payload.as_ref())
+                {
+                    if !visit_child(child)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            SchemaBody::Option(child)
+            | SchemaBody::Matrix { element: child, .. }
+            | SchemaBody::Set { element: child, .. } => {
+                if !visit_child(child)? {
+                    return Ok(false);
+                }
+            }
+            SchemaBody::Tuple(children) => {
+                for child in children {
+                    if !visit_child(child)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            SchemaBody::Record(fields)
+            | SchemaBody::Table {
+                columns: fields, ..
+            } => {
+                for field in fields {
+                    if !visit_child(&field.schema)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            SchemaBody::Map { key, value, .. } => {
+                if !visit_child(key)? || !visit_child(value)? {
+                    return Ok(false);
+                }
+            }
+            SchemaBody::Dynamic
+            | SchemaBody::Bool
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+            | SchemaBody::String
+            | SchemaBody::Id
+            | SchemaBody::Index
+            | SchemaBody::Atom(_)
+            | SchemaBody::ReifiedType => {}
+        }
+        Ok(true)
+    }
+
+    let root = owner.get(root).ok_or(ResidentKernelError::InvalidInput)?;
+    if !contains_schema(plan, root.key(), meter)? {
+        return Ok(false);
+    }
+    visit_body(root, root.body(), plan, meter)
+}
+
+fn schema_root_requires_import(
+    owner: &Arc<mech_core::SchemaTable>,
+    root: SchemaId,
+    nested_dynamic: bool,
+    plan: &Arc<mech_core::SchemaTable>,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<bool, ResidentKernelError> {
+    if !same_schema_arena_contents(owner, plan, meter)? {
+        return Ok(true);
+    }
+    if !nested_dynamic {
+        return Ok(false);
+    }
+    // Computing canonical component keys transiently materializes each child
+    // schema. Bound that inspection from the root before constructing any of
+    // those values; a component-closed plan then avoids the much larger arena
+    // clone and merge while an incomplete plan still falls through safely.
+    let remaining = meter.estimate().remaining_incremental_work()?;
+    let closure_budget = SnapshotCanonicalizationBudget::new(remaining);
+    let (_, construction_bytes, closure_nodes) = owner
+        .component_closure_bounds_for_roots_with_budget(&[root], &closure_budget)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    meter.charge_comparison_work(closure_budget.consumed())?;
+    let retained_nodes = meter
+        .estimate()
+        .retained_nodes()
+        .checked_add(closure_nodes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes: construction_bytes,
+            retained_nodes,
+            ..meter.estimate()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(!component_closure_is_addressable(owner, root, plan, meter)?)
 }
 
 fn collection_canonicalization_work(
@@ -1501,10 +1735,14 @@ impl ReactiveInstance {
                     value,
                     false,
                     meter,
-                    &mut |owner, _, nested_dynamic, meter| {
-                        if nested_dynamic
-                            || !same_schema_arena_contents(owner, &self.plan.schemas, meter)?
-                        {
+                    &mut |owner, root, nested_dynamic, meter| {
+                        if schema_root_requires_import(
+                            owner,
+                            root,
+                            nested_dynamic,
+                            &self.plan.schemas,
+                            meter,
+                        )? {
                             root_occurrences = root_occurrences
                                 .checked_add(1)
                                 .ok_or(ResidentKernelError::InvalidShape)?;
@@ -1548,6 +1786,9 @@ impl ReactiveInstance {
         owners
             .try_reserve_exact(owner_capacity)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
+        // Count every relevant root per owner before allocating root storage.
+        // The subsequent fixed segments never grow, so no replacement buffer
+        // can overlap the prior allocation during discovery.
         for location in captured_reads() {
             let Some(ResidentValueRef::Snapshot(values)) = self.read_location(location, working)
             else {
@@ -1559,9 +1800,13 @@ impl ReactiveInstance {
                     false,
                     meter,
                     &mut |owner, root, nested_dynamic, meter| {
-                        if !nested_dynamic
-                            && same_schema_arena_contents(owner, &self.plan.schemas, meter)?
-                        {
+                        if !schema_root_requires_import(
+                            owner,
+                            root,
+                            nested_dynamic,
+                            &self.plan.schemas,
+                            meter,
+                        )? {
                             return Ok(());
                         }
                         let mut owner_index = None;
@@ -1577,27 +1822,68 @@ impl ReactiveInstance {
                             None => {
                                 owners.push(SchemaOwnerRoots {
                                     owner: Arc::clone(owner),
-                                    roots: Vec::new(),
+                                    root_start: 0,
+                                    root_len: 0,
+                                    root_capacity: 0,
                                 });
                                 owners.len() - 1
                             }
                         };
-                        let mut present = false;
-                        for existing in &owners[owner_index].roots {
+                        owners[owner_index].root_capacity = owners[owner_index]
+                            .root_capacity
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        Ok(())
+                    },
+                )?;
+            }
+        }
+
+        let mut root_storage_len = 0_usize;
+        for owner in &mut owners {
+            owner.root_start = root_storage_len;
+            root_storage_len = root_storage_len
+                .checked_add(owner.root_capacity)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        if root_storage_len != owner_capacity {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let mut roots = Vec::new();
+        roots
+            .try_reserve_exact(root_storage_len)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+        roots.resize(root_storage_len, SchemaId::new(0));
+        for location in captured_reads() {
+            let Some(ResidentValueRef::Snapshot(values)) = self.read_location(location, working)
+            else {
+                continue;
+            };
+            for value in values.iter().flatten() {
+                visit_value_schema_roots(
+                    value,
+                    false,
+                    meter,
+                    &mut |owner, root, nested_dynamic, meter| {
+                        if !schema_root_requires_import(
+                            owner,
+                            root,
+                            nested_dynamic,
+                            &self.plan.schemas,
+                            meter,
+                        )? {
+                            return Ok(());
+                        }
+                        let mut owner_index = None;
+                        for (index, existing) in owners.iter().enumerate() {
                             meter.charge_comparison_work(1)?;
-                            if *existing == root {
-                                present = true;
+                            if Arc::ptr_eq(&existing.owner, owner) {
+                                owner_index = Some(index);
                                 break;
                             }
                         }
-                        if !present {
-                            owners[owner_index]
-                                .roots
-                                .try_reserve_exact(1)
-                                .map_err(|_| ResidentKernelError::InvalidShape)?;
-                            owners[owner_index].roots.push(root);
-                        }
-                        Ok(())
+                        let owner_index = owner_index.ok_or(ResidentKernelError::InvalidShape)?;
+                        owners[owner_index].insert_root(&mut roots, root, meter)
                     },
                 )?;
             }
@@ -1622,7 +1908,10 @@ impl ReactiveInstance {
             let closure_budget = SnapshotCanonicalizationBudget::new(remaining);
             let (owner_allocation, owner_construction, owner_nodes) = owner
                 .owner
-                .component_closure_bounds_for_roots_with_budget(&owner.roots, &closure_budget)
+                .component_closure_bounds_for_roots_with_budget(
+                    owner.roots(&roots),
+                    &closure_budget,
+                )
                 .ok_or(ResidentKernelError::InvalidShape)?;
             meter.charge_comparison_work(closure_budget.consumed())?;
             scan_work = owner_nodes
@@ -1697,10 +1986,10 @@ impl ReactiveInstance {
         // meter after the one-time construction admission succeeds.
         meter.charge_retained_nodes(retained_nodes)?;
         let mut merged = self.plan.schemas.as_ref().clone();
-        for owner in owners {
+        for owner in &owners {
             let closed = owner
                 .owner
-                .component_closure_for_roots(&owner.roots)
+                .component_closure_for_roots(owner.roots(&roots))
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
             merged = merged
                 .extend_preserving_ids(&closed)
@@ -1754,6 +2043,21 @@ impl ReactiveInstance {
         let (schemas, schema_arena_bytes) = self
             .comprehension_schema_arena(control, working, &mut meter)
             .map_err(fail)?;
+        let published_output_footprint = {
+            let target = if control.write.storage == ResidentStorageClass::Constant {
+                &self.activation
+            } else {
+                &self.workspace.scratch
+            };
+            match target.read(control.write.region) {
+                ResidentValueRef::Snapshot([Some(current)]) => {
+                    budget::published_canonical_footprint(&mut meter, current, &schemas)
+                        .map_err(fail)?
+                }
+                ResidentValueRef::Snapshot(_) => ValueFootprint::zero(),
+                _ => return Err(fail(ResidentKernelError::InvalidOutput)),
+            }
+        };
         let mut values = Vec::new();
         let mut footprint = ValueFootprint::zero();
         let mut nested_finalization_work = 0_u64;
@@ -1766,6 +2070,7 @@ impl ReactiveInstance {
             &mut meter,
             &schemas,
             schema_arena_bytes,
+            published_output_footprint.retained_bytes,
             before,
             working,
             probe,
@@ -1807,6 +2112,7 @@ impl ReactiveInstance {
                             schema.dimension_parameters().len(),
                             schema_arena_bytes,
                             live_locals,
+                            published_output_footprint.retained_bytes,
                             meter,
                         )
                         .map_err(fail)?;
@@ -1855,6 +2161,7 @@ impl ReactiveInstance {
                     schema.dimension_parameters().len(),
                     schema_arena_bytes,
                     live_locals,
+                    published_output_footprint.retained_bytes,
                     meter,
                 )
                 .map_err(fail)?;
@@ -1872,13 +2179,10 @@ impl ReactiveInstance {
             &self.workspace.scratch
         };
         if let ResidentValueRef::Snapshot([Some(current)]) = target.read(control.write.region) {
-            let current_footprint =
-                budget::published_canonical_footprint(&mut meter, current, &schemas)
-                    .map_err(fail)?;
             let equality_work = budget::projected_language_equality_work(
                 &schemas,
                 current,
-                current_footprint,
+                published_output_footprint,
                 control.output_schema,
                 shape_values.len(),
                 candidate_footprint,
@@ -1897,6 +2201,7 @@ impl ReactiveInstance {
             shape_values.len(),
             schema_arena_bytes,
             live_locals,
+            published_output_footprint.retained_bytes,
             meter,
         )
         .map_err(fail)?;
@@ -1943,6 +2248,7 @@ impl ReactiveInstance {
 
     fn collection_pattern_item(
         &self,
+        locals: &[ResidentRegion],
         source: ResidentReadLocation,
         element_schema: SchemaId,
         element: &SchemaBody,
@@ -1954,6 +2260,7 @@ impl ReactiveInstance {
         retained_shape_parameter_count: usize,
         schemas: &Arc<mech_core::SchemaTable>,
         schema_arena_bytes: u64,
+        published_output_bytes: u64,
         working: InstanceEpoch,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<(PatternItem, ValueFootprint, ValueFootprint), ResidentKernelError> {
@@ -1961,12 +2268,15 @@ impl ReactiveInstance {
             .read_location(source, working)
             .ok_or(ResidentKernelError::InvalidInput)?;
         let footprint = collection_item_footprint(value, region(source), element, ordinal, meter)?;
+        let live_locals = self.comprehension_live_local_footprint(locals, None, schemas, meter)?;
         admit_item_clone(
             footprint,
             retained_count,
             retained_footprint,
             retained_shape_parameter_count,
             schema_arena_bytes,
+            live_locals,
+            published_output_bytes,
             *meter,
         )?;
         let remaining = meter.estimate().remaining_incremental_work()?;
@@ -2021,6 +2331,7 @@ impl ReactiveInstance {
         retained_shape_parameter_count: usize,
         schemas: &Arc<mech_core::SchemaTable>,
         schema_arena_bytes: u64,
+        published_output_bytes: u64,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<bool, ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel { node, error };
@@ -2124,6 +2435,7 @@ impl ReactiveInstance {
                     retained_footprint,
                     retained_shape_parameter_count,
                     schema_arena_bytes,
+                    published_output_bytes,
                     schemas,
                     *meter,
                 )
@@ -2187,6 +2499,7 @@ impl ReactiveInstance {
         retained_shape_parameter_count: usize,
         schemas: &Arc<mech_core::SchemaTable>,
         schema_arena_bytes: u64,
+        published_output_bytes: u64,
         working: InstanceEpoch,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<bool, ResidentExecutionError> {
@@ -2199,6 +2512,7 @@ impl ReactiveInstance {
             } => {
                 let (item, selected_footprint, concrete_footprint) = self
                     .collection_pattern_item(
+                        locals,
                         source,
                         element_schema,
                         element,
@@ -2210,6 +2524,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )
@@ -2229,6 +2544,7 @@ impl ReactiveInstance {
                     retained_shape_parameter_count,
                     schemas,
                     schema_arena_bytes,
+                    published_output_bytes,
                     meter,
                 )
             }
@@ -2236,6 +2552,7 @@ impl ReactiveInstance {
                 meter.charge_comparison_work(1).map_err(fail)?;
                 let (item, _, _) = self
                     .collection_pattern_item(
+                        locals,
                         source,
                         element_schema,
                         element,
@@ -2247,6 +2564,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )
@@ -2254,12 +2572,14 @@ impl ReactiveInstance {
                 let peer = self
                     .read_location(*peer, working)
                     .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                item.equals_resident(peer, schemas)
+                item.equals_resident(peer, schemas, meter)
+                    .map_err(fail)?
                     .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
             }
             crate::CollectionPattern::Tuple(items) => {
                 let Some(count) = self
                     .collection_pattern_item(
+                        locals,
                         source,
                         element_schema,
                         element,
@@ -2271,6 +2591,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )
@@ -2302,6 +2623,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )? {
@@ -2317,6 +2639,7 @@ impl ReactiveInstance {
             } => {
                 let Some(count) = self
                     .collection_pattern_item(
+                        locals,
                         source,
                         element_schema,
                         element,
@@ -2328,6 +2651,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )
@@ -2363,6 +2687,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )? {
@@ -2396,6 +2721,7 @@ impl ReactiveInstance {
                         retained_shape_parameter_count,
                         schemas,
                         schema_arena_bytes,
+                        published_output_bytes,
                         working,
                         meter,
                     )? {
@@ -2417,6 +2743,7 @@ impl ReactiveInstance {
         meter: &mut ResidentBudgetMeter,
         schemas: &Arc<mech_core::SchemaTable>,
         schema_arena_bytes: u64,
+        published_output_bytes: u64,
         before: InstanceEpoch,
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
@@ -2430,13 +2757,27 @@ impl ReactiveInstance {
             match &control.steps[position] {
                 ActivatedCollectionStep::Operation { node, work } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
-                    self.execute_kernel_with_live_demand(
-                        *node,
-                        before,
-                        working,
-                        probe,
+                    let live_locals = self
+                        .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
+                        .map_err(fail)?;
+                    let shape_parameter_count = schemas
+                        .get(control.output_schema)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?
+                        .dimension_parameters()
+                        .len();
+                    let (live_bytes, live_nodes) = comprehension_nested_live_demand(
+                        values.len(),
+                        values.capacity(),
+                        *footprint,
+                        shape_parameter_count,
                         schema_arena_bytes,
-                        meter.estimate().retained_nodes(),
+                        published_output_bytes,
+                        live_locals,
+                        *meter,
+                    )
+                    .map_err(fail)?;
+                    self.execute_kernel_with_live_demand(
+                        *node, before, working, probe, live_bytes, live_nodes,
                     )?;
                 }
                 ActivatedCollectionStep::Filter(source) => {
@@ -2496,6 +2837,7 @@ impl ReactiveInstance {
                             retained_shape_parameter_count,
                             schemas,
                             schema_arena_bytes,
+                            published_output_bytes,
                             working,
                             meter,
                         )?;
@@ -2509,6 +2851,7 @@ impl ReactiveInstance {
                                 meter,
                                 schemas,
                                 schema_arena_bytes,
+                                published_output_bytes,
                                 before,
                                 working,
                                 probe,
@@ -2556,6 +2899,7 @@ impl ReactiveInstance {
                 retained_shape_parameter_count,
                 schema_arena_bytes,
                 live_locals,
+                published_output_bytes,
                 *meter,
             ),
             crate::ComprehensionKind::Set => admit_set_draft(
@@ -2565,6 +2909,7 @@ impl ReactiveInstance {
                 retained_shape_parameter_count,
                 schema_arena_bytes,
                 live_locals,
+                published_output_bytes,
                 *meter,
             ),
         }
@@ -2766,6 +3111,8 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 0,
+                ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default()
             )
             .is_ok(),
@@ -2780,6 +3127,7 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 ValueFootprint::zero(),
+                0,
                 0,
                 0,
                 &schemas,
@@ -2957,6 +3305,7 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 0,
+                0,
                 &schemas,
                 ResidentBudgetMeter::default(),
             )
@@ -2972,6 +3321,7 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 ValueFootprint::zero(),
+                0,
                 0,
                 0,
                 &schemas,
@@ -3308,12 +3658,20 @@ mod tests {
 
         let lane = [Some(peer)];
         assert_eq!(
-            matching.equals_resident(ResidentValueRef::Snapshot(&lane), &schemas),
-            Some(true)
+            matching.equals_resident(
+                ResidentValueRef::Snapshot(&lane),
+                &schemas,
+                &mut ResidentBudgetMeter::default(),
+            ),
+            Ok(Some(true))
         );
         assert_eq!(
-            distinct.equals_resident(ResidentValueRef::Snapshot(&lane), &schemas),
-            Some(false)
+            distinct.equals_resident(
+                ResidentValueRef::Snapshot(&lane),
+                &schemas,
+                &mut ResidentBudgetMeter::default(),
+            ),
+            Ok(Some(false))
         );
     }
 
@@ -3323,8 +3681,78 @@ mod tests {
         let item = PatternItem::Dynamic(None);
         let peer = [7_u64];
         assert_eq!(
-            item.equals_resident(ResidentValueRef::Index(&peer), &schemas),
-            Some(false),
+            item.equals_resident(
+                ResidentValueRef::Index(&peer),
+                &schemas,
+                &mut ResidentBudgetMeter::default(),
+            ),
+            Ok(Some(false)),
+        );
+    }
+
+    #[test]
+    fn string_pattern_equality_charges_every_compared_byte() {
+        let payload = "pattern-byte".repeat(128);
+        let native_item = PatternItem::new(ValueDataDraft::String(payload.clone()));
+        let native_peer = [payload.clone()];
+        let mut native_meter = ResidentBudgetMeter::default();
+        assert_eq!(
+            native_item
+                .equals_resident(
+                    ResidentValueRef::String(&native_peer),
+                    &SchemaTableBuilder::new().finish().unwrap().table,
+                    &mut native_meter,
+                )
+                .unwrap(),
+            Some(true),
+        );
+        assert_eq!(
+            native_meter.estimate().comparison_work(),
+            payload.len() as u64,
+        );
+
+        let mut builder = SchemaTableBuilder::new();
+        let string = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::String,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let string = build.resolve(string).unwrap();
+        let schemas = Arc::new(build.table);
+        let peer = ValueDraft {
+            schema: string,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::String(payload.clone()),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        let snapshot_item = PatternItem::component(
+            string,
+            SchemaBody::String,
+            Box::new([]),
+            ValueDataDraft::String(payload.clone()),
+        );
+        let lane = [Some(peer)];
+        let mut snapshot_meter = ResidentBudgetMeter::default();
+        assert_eq!(
+            snapshot_item
+                .equals_resident(
+                    ResidentValueRef::Snapshot(&lane),
+                    &schemas,
+                    &mut snapshot_meter,
+                )
+                .unwrap(),
+            Some(true),
+        );
+        assert_eq!(
+            snapshot_meter.estimate().comparison_work(),
+            payload.len() as u64,
         );
     }
 
@@ -3742,6 +4170,8 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 0,
+                ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default()
             )
             .is_ok(),
@@ -3753,9 +4183,93 @@ mod tests {
             node_count: 1,
         };
         assert!(
-            admit_item_clone(item, 1, retained, 0, 0, ResidentBudgetMeter::default()).is_err(),
+            admit_item_clone(
+                item,
+                1,
+                retained,
+                0,
+                0,
+                ValueFootprint::zero(),
+                0,
+                ResidentBudgetMeter::default()
+            )
+            .is_err(),
             "the retained draft and current clone overlap above the temporary limit"
         );
+    }
+
+    #[test]
+    fn item_clone_admission_counts_live_bindings_and_published_output() {
+        let item = ValueFootprint {
+            encoded_bytes: 5 * 1024 * 1024,
+            retained_bytes: 5 * 1024 * 1024,
+            node_count: 1,
+        };
+        let live_binding = ValueFootprint {
+            encoded_bytes: 0,
+            retained_bytes: 12 * 1024 * 1024,
+            node_count: 1,
+        };
+        assert!(
+            admit_item_clone(
+                item,
+                0,
+                ValueFootprint::zero(),
+                0,
+                0,
+                live_binding,
+                0,
+                ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "a prior structural binding remains live while the selected item is cloned",
+        );
+        assert!(
+            admit_item_clone(
+                item,
+                0,
+                ValueFootprint::zero(),
+                0,
+                0,
+                ValueFootprint::zero(),
+                12 * 1024 * 1024,
+                ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "the published comprehension result remains live while the selected item is cloned",
+        );
+    }
+
+    #[test]
+    fn nested_operation_demand_includes_every_live_comprehension_allocation() {
+        let retained = ValueFootprint {
+            encoded_bytes: 2 * 1024 * 1024,
+            retained_bytes: 2 * 1024 * 1024,
+            node_count: 3,
+        };
+        let locals = ValueFootprint {
+            encoded_bytes: 0,
+            retained_bytes: 3 * 1024 * 1024,
+            node_count: 5,
+        };
+        let mut meter = ResidentBudgetMeter::default();
+        meter.charge_temporary_bytes(1024 * 1024).unwrap();
+        meter.charge_retained_nodes(7).unwrap();
+        let draft = snapshot_draft_bytes(1, retained, 0).unwrap()
+            + draft_capacity_overlap_bytes(1, 1).unwrap();
+        let (bytes, nodes) = comprehension_nested_live_demand(
+            1,
+            1,
+            retained,
+            0,
+            2 * 1024 * 1024,
+            4 * 1024 * 1024,
+            locals,
+            meter,
+        )
+        .unwrap();
+        assert_eq!(bytes, draft + 10 * 1024 * 1024);
+        assert_eq!(nodes, 7 + 3 + 5 + 1);
     }
 
     #[test]
@@ -3774,6 +4288,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_err(),
@@ -3798,6 +4313,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_ok(),
@@ -3810,6 +4326,29 @@ mod tests {
         let two = snapshot_workspace(1, ValueFootprint::zero(), 2).unwrap().0;
         let three = snapshot_workspace(1, ValueFootprint::zero(), 3).unwrap().0;
         assert!(three > two);
+    }
+
+    #[test]
+    fn output_admission_counts_the_published_value_during_replacement() {
+        let footprint = ValueFootprint {
+            encoded_bytes: 4 * 1024 * 1024,
+            retained_bytes: 4 * 1024 * 1024,
+            node_count: 1,
+        };
+        assert!(
+            admit_output(
+                1,
+                1,
+                footprint,
+                0,
+                0,
+                ValueFootprint::zero(),
+                9 * 1024 * 1024,
+                ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "the current publication overlaps the mutable draft and immutable replacement",
+        );
     }
 
     #[test]
@@ -3827,6 +4366,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_ok(),
@@ -3844,6 +4384,7 @@ mod tests {
                     retained_bytes: 8 * 1024 * 1024,
                     node_count: 1,
                 },
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_err(),
@@ -3866,6 +4407,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_ok(),
@@ -3883,6 +4425,7 @@ mod tests {
                     retained_bytes: 12 * 1024 * 1024,
                     node_count: 1,
                 },
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_err(),
@@ -3964,6 +4507,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_ok(),
@@ -3977,6 +4521,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_err(),
@@ -3990,6 +4535,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_ok(),
@@ -4009,6 +4555,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_err(),
@@ -4033,6 +4580,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_err(),
@@ -4046,6 +4594,7 @@ mod tests {
                 0,
                 0,
                 ValueFootprint::zero(),
+                0,
                 ResidentBudgetMeter::default(),
             )
             .is_ok(),
@@ -4085,6 +4634,7 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 0,
+                0,
                 &schemas,
                 ResidentBudgetMeter::default(),
             )
@@ -4103,6 +4653,7 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 ValueFootprint::zero(),
+                0,
                 0,
                 0,
                 &schemas,
@@ -4124,6 +4675,7 @@ mod tests {
                 },
                 0,
                 ValueFootprint::zero(),
+                0,
                 0,
                 0,
                 &schemas,
@@ -4156,6 +4708,84 @@ mod tests {
                 .unwrap();
         let owner = value.schemas().expect("finalized binding retains schemas");
         assert!(std::sync::Arc::ptr_eq(&owner, &schemas));
+    }
+
+    #[test]
+    fn local_dynamic_roots_reuse_a_component_closed_plan() {
+        let mut builder = SchemaTableBuilder::new();
+        let tuple = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let sparse = Arc::new(build.table);
+        assert!(
+            schema_root_requires_import(
+                &sparse,
+                tuple,
+                true,
+                &sparse,
+                &mut ResidentBudgetMeter::default(),
+            )
+            .unwrap(),
+            "a local Dynamic root with missing component entries still needs closure",
+        );
+        let closed = Arc::new(
+            sparse
+                .extend_with_component_closure_preserving_ids()
+                .unwrap(),
+        );
+        assert!(
+            !schema_root_requires_import(
+                &closed,
+                tuple,
+                true,
+                &closed,
+                &mut ResidentBudgetMeter::default(),
+            )
+            .unwrap(),
+            "a source-built component-closed plan needs no redundant clone or merge",
+        );
+    }
+
+    #[test]
+    fn schema_root_segments_deduplicate_without_growing() {
+        let owner = Arc::new(SchemaTableBuilder::new().finish().unwrap().table);
+        let mut state = SchemaOwnerRoots {
+            owner,
+            root_start: 0,
+            root_len: 0,
+            root_capacity: 2,
+        };
+        let mut storage = vec![SchemaId::new(0); 2];
+        let allocation = storage.as_ptr();
+        let mut meter = ResidentBudgetMeter::default();
+        state
+            .insert_root(&mut storage, SchemaId::new(7), &mut meter)
+            .unwrap();
+        state
+            .insert_root(&mut storage, SchemaId::new(7), &mut meter)
+            .unwrap();
+        state
+            .insert_root(&mut storage, SchemaId::new(9), &mut meter)
+            .unwrap();
+        assert_eq!(state.roots(&storage), [SchemaId::new(7), SchemaId::new(9)]);
+        assert_eq!(storage.as_ptr(), allocation);
+        assert!(
+            state
+                .insert_root(&mut storage, SchemaId::new(11), &mut meter)
+                .is_err(),
+            "fixed root storage fails closed instead of reallocating",
+        );
     }
 
     #[test]
