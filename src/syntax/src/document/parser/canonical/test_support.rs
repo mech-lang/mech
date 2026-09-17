@@ -11,7 +11,9 @@ use crate::document::{
 };
 
 use super::super::{LexicalMode, ParseConfig, Parser, sink};
+use super::super::rule::rules;
 use super::combinator::Attempt;
+use super::{kinds, literals, paths};
 
 /// A narrow prefix snapshot used to exercise canonical source productions.
 #[derive(Clone, Debug)]
@@ -101,5 +103,153 @@ pub(crate) fn parse_source_rule_prefix(
         stats,
         matched,
         consumed,
+    }
+}
+
+/// Parse one exact Phase 2C production as a deterministic source prefix.
+///
+/// This hidden test surface deliberately exposes only the selected closed
+/// island. It is not a production parser root and does not dispatch any
+/// enclosing literal, kind, variable, expression, or document production.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2c_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    is_phase_2c_rule(rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| match rule {
+            rules::EMPTY => literals::parse_empty(parser),
+            rules::ATOM => literals::parse_atom(parser),
+            rules::STRING => literals::parse_string(parser),
+            rules::UTF8_STRING => literals::parse_utf8_string(parser),
+            rules::RAW_STRING => literals::parse_raw_string(parser),
+            rules::BOOLEAN => literals::parse_boolean(parser),
+            rules::TRUE_LITERAL => literals::parse_true_literal(parser),
+            rules::FALSE_LITERAL => literals::parse_false_literal(parser),
+            rules::NUMBER => literals::parse_number(parser),
+            rules::COMPLEX_NUMBER => literals::parse_complex_number(parser),
+            rules::REAL_NUMBER => literals::parse_real_number(parser),
+            rules::UNTYPED_REAL_NUMBER => literals::parse_untyped_real_number(parser),
+            rules::RATIONAL_LITERAL => literals::parse_rational_literal(parser),
+            rules::SCIENTIFIC_LITERAL => literals::parse_scientific_literal(parser),
+            rules::FLOAT_DECIMAL_START => literals::parse_float_decimal_start(parser),
+            rules::FLOAT_FULL => literals::parse_float_full(parser),
+            rules::FLOAT_LITERAL => literals::parse_float_literal(parser),
+            rules::INTEGER_LITERAL => literals::parse_integer_literal(parser),
+            rules::TYPED_INTEGER => literals::parse_typed_integer(parser),
+            rules::UNTYPED_INTEGER => literals::parse_untyped_integer(parser),
+            rules::DECIMAL_LITERAL => literals::parse_decimal_literal(parser),
+            rules::HEXADECIMAL_LITERAL => literals::parse_hexadecimal_literal(parser),
+            rules::OCTAL_LITERAL => literals::parse_octal_literal(parser),
+            rules::BINARY_LITERAL => literals::parse_binary_literal(parser),
+            rules::CONTEXT_ADDRESS_PATH_TOKEN => paths::parse_context_address_path_token(parser),
+            rules::CONTEXT_ADDRESS_PATH => paths::parse_context_address_path(parser),
+            rules::PREFIXED_CONTEXT_PATH => paths::parse_prefixed_context_path(parser),
+            rules::KIND_ANY => kinds::parse_kind_any(parser),
+            rules::KIND_EMPTY => kinds::parse_kind_empty(parser),
+            rules::KIND_ATOM => kinds::parse_kind_atom(parser),
+            _ => unreachable!("Phase 2C support guard rejects every other RuleId"),
+        })
+    })
+}
+
+fn is_phase_2c_rule(rule: RuleId) -> bool {
+    matches!(
+        rule,
+        rules::EMPTY
+            | rules::ATOM
+            | rules::STRING
+            | rules::UTF8_STRING
+            | rules::RAW_STRING
+            | rules::BOOLEAN
+            | rules::TRUE_LITERAL
+            | rules::FALSE_LITERAL
+            | rules::NUMBER
+            | rules::COMPLEX_NUMBER
+            | rules::REAL_NUMBER
+            | rules::UNTYPED_REAL_NUMBER
+            | rules::RATIONAL_LITERAL
+            | rules::SCIENTIFIC_LITERAL
+            | rules::FLOAT_DECIMAL_START
+            | rules::FLOAT_FULL
+            | rules::FLOAT_LITERAL
+            | rules::INTEGER_LITERAL
+            | rules::TYPED_INTEGER
+            | rules::UNTYPED_INTEGER
+            | rules::DECIMAL_LITERAL
+            | rules::HEXADECIMAL_LITERAL
+            | rules::OCTAL_LITERAL
+            | rules::BINARY_LITERAL
+            | rules::CONTEXT_ADDRESS_PATH_TOKEN
+            | rules::CONTEXT_ADDRESS_PATH
+            | rules::PREFIXED_CONTEXT_PATH
+            | rules::KIND_ANY
+            | rules::KIND_EMPTY
+            | rules::KIND_ATOM
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::document::{DocumentId, Revision};
+
+    use super::*;
+
+    #[test]
+    fn phase_2c_helper_accepts_exactly_the_closed_30_rule_set() {
+        let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+        let phase_rules = [
+            rules::EMPTY,
+            rules::ATOM,
+            rules::STRING,
+            rules::UTF8_STRING,
+            rules::RAW_STRING,
+            rules::BOOLEAN,
+            rules::TRUE_LITERAL,
+            rules::FALSE_LITERAL,
+            rules::NUMBER,
+            rules::COMPLEX_NUMBER,
+            rules::REAL_NUMBER,
+            rules::UNTYPED_REAL_NUMBER,
+            rules::RATIONAL_LITERAL,
+            rules::SCIENTIFIC_LITERAL,
+            rules::FLOAT_DECIMAL_START,
+            rules::FLOAT_FULL,
+            rules::FLOAT_LITERAL,
+            rules::INTEGER_LITERAL,
+            rules::TYPED_INTEGER,
+            rules::UNTYPED_INTEGER,
+            rules::DECIMAL_LITERAL,
+            rules::HEXADECIMAL_LITERAL,
+            rules::OCTAL_LITERAL,
+            rules::BINARY_LITERAL,
+            rules::CONTEXT_ADDRESS_PATH_TOKEN,
+            rules::CONTEXT_ADDRESS_PATH,
+            rules::PREFIXED_CONTEXT_PATH,
+            rules::KIND_ANY,
+            rules::KIND_EMPTY,
+            rules::KIND_ATOM,
+        ];
+        assert_eq!(phase_rules.len(), 30);
+        for rule in phase_rules {
+            assert!(
+                parse_canonical_phase_2c_rule_for_test(
+                    source.clone(),
+                    rule,
+                    ParseConfig::default(),
+                )
+                .is_some(),
+                "{rule:?}"
+            );
+        }
+        assert!(
+            parse_canonical_phase_2c_rule_for_test(
+                source,
+                rules::LITERAL,
+                ParseConfig::default(),
+            )
+            .is_none()
+        );
     }
 }

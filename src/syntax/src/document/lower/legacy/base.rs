@@ -3,23 +3,9 @@ use alloc::vec::Vec;
 
 use mech_core::{Identifier as LegacyIdentifier, Token as LegacyToken, TokenKind};
 
-use crate::document::{
-    Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticStore, DiagnosticTags,
-    IdGenerator, NodeFlags, Severity, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken,
-    TokenFlags,
-};
+use crate::document::{DiagnosticStore, SyntaxKind, SyntaxNode};
 
-use super::source;
-
-const INVALID_NODE_FLAGS: NodeFlags = NodeFlags(
-    NodeFlags::ERROR.0
-        | NodeFlags::MISSING.0
-        | NodeFlags::CONTAINS_ERROR.0
-        | NodeFlags::CONTAINS_MISSING.0,
-);
-const INVALID_TOKEN_FLAGS: TokenFlags = TokenFlags(
-    TokenFlags::SYNTHETIC.0 | TokenFlags::MISSING.0 | TokenFlags::ERROR.0 | TokenFlags::TRIVIA.0,
-);
+use super::common;
 
 /// Lowers a lossless canonical `escaped-char` node to its legacy token value.
 ///
@@ -27,77 +13,8 @@ const INVALID_TOKEN_FLAGS: TokenFlags = TokenFlags(
 /// lowering uses the value token's physical range and applies the legacy
 /// `n`/`t`/`r` character mapping.
 pub fn lower_legacy_escaped_character(syntax: &SyntaxNode) -> Result<LegacyToken, DiagnosticStore> {
-    let lowered = (|| {
-        if syntax.kind() != SyntaxKind::EscapedCharacter
-            || syntax.flags().intersects(INVALID_NODE_FLAGS)
-        {
-            return Err(String::from(
-                "expected an error-free canonical escaped-character node",
-            ));
-        }
-
-        let mut tokens = Vec::new();
-        for element in syntax.children_with_tokens() {
-            match element {
-                SyntaxElement::Node(_) => {
-                    return Err(String::from(
-                        "escaped-character syntax cannot contain child nodes",
-                    ));
-                }
-                SyntaxElement::Token(token) => tokens.push(token),
-            }
-        }
-        if tokens.len() != 2
-            || tokens[0].kind() != SyntaxKind::Backslash
-            || tokens[1].kind() != SyntaxKind::EscapedChar
-            || tokens
-                .iter()
-                .any(|token| token.flags().intersects(INVALID_TOKEN_FLAGS))
-        {
-            return Err(String::from(
-                "escaped-character syntax requires one backslash and one value token",
-            ));
-        }
-
-        let backslash = tokens[0]
-            .text()
-            .map_err(|_| String::from("cannot read escaped-character backslash"))?;
-        if backslash != "\\" {
-            return Err(String::from(
-                "escaped-character syntax has an invalid backslash token",
-            ));
-        }
-
-        lower_escaped_value(syntax, &tokens[1])
-    })();
-
-    lowered.map_err(|message| {
-        failure_store(syntax, "lowering/invalid-escaped-character-syntax", message)
-    })
-}
-
-fn lower_escaped_value(syntax: &SyntaxNode, value: &SyntaxToken) -> Result<LegacyToken, String> {
-    let text = value
-        .text()
-        .map_err(|_| String::from("cannot read escaped-character value"))?;
-    if text.is_empty() {
-        return Err(String::from("escaped-character value cannot be empty"));
-    }
-    let chars = text
-        .chars()
-        .map(|character| match character {
-            'n' => '\n',
-            't' => '\t',
-            'r' => '\r',
-            other => other,
-        })
-        .collect();
-    let src_range = source::source_range(syntax.source(), value.range())
-        .ok_or_else(|| String::from("cannot convert escaped-character source range"))?;
-    Ok(LegacyToken {
-        kind: TokenKind::EscapedChar,
-        chars,
-        src_range,
+    common::lower_escaped_character_node(syntax).map_err(|message| {
+        common::failure_store(syntax, "lowering/invalid-escaped-character-syntax", message)
     })
 }
 
@@ -110,8 +27,8 @@ pub fn lower_legacy_digit_sequence(
     syntax: &SyntaxNode,
 ) -> Result<Vec<LegacyToken>, DiagnosticStore> {
     let lowered = (|| {
-        validate_node(syntax, SyntaxKind::DigitSequence, "digit-sequence")?;
-        let tokens = direct_tokens(syntax, "digit-sequence")?;
+        common::validate_node(syntax, SyntaxKind::DigitSequence, "digit-sequence")?;
+        let tokens = common::direct_tokens(syntax, "digit-sequence")?;
         if tokens.is_empty() {
             return Err(String::from(
                 "digit-sequence syntax requires at least one digit token",
@@ -131,7 +48,11 @@ pub fn lower_legacy_digit_sequence(
                             "digit-sequence contains an invalid digit token",
                         ));
                     }
-                    digits.push(lower_token(syntax, token, TokenKind::Digit)?);
+                    digits.push(common::lower_syntax_token(
+                        syntax,
+                        token,
+                        TokenKind::Digit,
+                    )?);
                     previous_was_underscore = false;
                 }
                 SyntaxKind::Underscore
@@ -163,7 +84,9 @@ pub fn lower_legacy_digit_sequence(
     })();
 
     lowered
-        .map_err(|message| failure_store(syntax, "lowering/invalid-digit-sequence-syntax", message))
+        .map_err(|message| {
+            common::failure_store(syntax, "lowering/invalid-digit-sequence-syntax", message)
+        })
 }
 
 /// Lowers a lossless canonical `identifier` node to the merged legacy
@@ -176,7 +99,7 @@ pub fn lower_legacy_identifier(syntax: &SyntaxNode) -> Result<LegacyIdentifier, 
         is_identifier_first,
         is_identifier_rest,
     )
-    .map_err(|message| failure_store(syntax, "lowering/invalid-identifier-syntax", message))
+    .map_err(|message| common::failure_store(syntax, "lowering/invalid-identifier-syntax", message))
 }
 
 /// Lowers a lossless canonical `identifier-path-segment` node to the merged
@@ -192,7 +115,7 @@ pub fn lower_legacy_identifier_path_segment(
         is_path_segment_rest,
     )
     .map_err(|message| {
-        failure_store(
+        common::failure_store(
             syntax,
             "lowering/invalid-identifier-path-segment-syntax",
             message,
@@ -207,8 +130,8 @@ fn lower_identifier(
     valid_first: impl Fn(SyntaxKind) -> bool,
     valid_rest: impl Fn(SyntaxKind) -> bool,
 ) -> Result<LegacyIdentifier, String> {
-    validate_node(syntax, expected_kind, name)?;
-    let tokens = direct_tokens(syntax, name)?;
+    common::validate_node(syntax, expected_kind, name)?;
+    let tokens = common::direct_tokens(syntax, name)?;
     let Some(first) = tokens.first() else {
         return Err(String::from(
             "identifier syntax requires at least one value token",
@@ -245,8 +168,7 @@ fn lower_identifier(
         .last()
         .expect("a first token always has a last token");
     let physical = crate::document::TextRange::new(first.range().start, last.range().end);
-    let src_range = source::source_range(syntax.source(), physical)
-        .ok_or_else(|| String::from("cannot convert identifier source range"))?;
+    let src_range = common::source_range_for_range(syntax, physical)?;
     Ok(LegacyIdentifier {
         name: LegacyToken {
             kind: TokenKind::Identifier,
@@ -285,74 +207,4 @@ fn is_path_segment_first(kind: SyntaxKind) -> bool {
 
 fn is_path_segment_rest(kind: SyntaxKind) -> bool {
     is_path_segment_first(kind) || matches!(kind, SyntaxKind::Digit | SyntaxKind::Dash)
-}
-
-fn validate_node(syntax: &SyntaxNode, expected_kind: SyntaxKind, name: &str) -> Result<(), String> {
-    if syntax.kind() != expected_kind || syntax.flags().intersects(INVALID_NODE_FLAGS) {
-        return Err(alloc::format!(
-            "expected an error-free canonical {name} node"
-        ));
-    }
-    Ok(())
-}
-
-fn direct_tokens(syntax: &SyntaxNode, name: &str) -> Result<Vec<SyntaxToken>, String> {
-    let mut tokens = Vec::new();
-    for element in syntax.children_with_tokens() {
-        match element {
-            SyntaxElement::Node(_) => {
-                return Err(alloc::format!("{name} syntax cannot contain child nodes"));
-            }
-            SyntaxElement::Token(token) => {
-                if token.flags().intersects(INVALID_TOKEN_FLAGS) {
-                    return Err(alloc::format!("{name} syntax contains an invalid token"));
-                }
-                tokens.push(token);
-            }
-        }
-    }
-    Ok(tokens)
-}
-
-fn lower_token(
-    syntax: &SyntaxNode,
-    token: &SyntaxToken,
-    kind: TokenKind,
-) -> Result<LegacyToken, String> {
-    let text = token
-        .text()
-        .map_err(|_| String::from("cannot read canonical token source"))?;
-    let src_range = source::source_range(syntax.source(), token.range())
-        .ok_or_else(|| String::from("cannot convert canonical token source range"))?;
-    Ok(LegacyToken {
-        kind,
-        chars: text.chars().collect(),
-        src_range,
-    })
-}
-
-fn failure_store(syntax: &SyntaxNode, code: &'static str, message: String) -> DiagnosticStore {
-    let mut ids = IdGenerator::new();
-    let mut diagnostics = DiagnosticStore::new(syntax.source().revision());
-    diagnostics.push(Diagnostic {
-        id: ids.diagnostic(),
-        code: DiagnosticCode::from(code),
-        phase: DiagnosticPhase::Lowering,
-        severity: Severity::Error,
-        rule: None,
-        context: None,
-        primary: DiagnosticAnchor::Absolute {
-            revision: syntax.source().revision(),
-            range: syntax.range(),
-        },
-        labels: Vec::new(),
-        expected: Vec::new(),
-        found: None,
-        fixes: Vec::new(),
-        related: Vec::new(),
-        recovery: None,
-        tags: DiagnosticTags::NONE,
-        message,
-    });
-    diagnostics
 }

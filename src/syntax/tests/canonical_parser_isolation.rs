@@ -12,9 +12,14 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "ports.rs",
   "mechdown.rs",
   "statements.rs",
+  "test_support.rs",
+  "literals.rs",
+  "paths.rs",
+  "kinds.rs",
 ];
 
 const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
+const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &["literals.rs", "paths.rs", "kinds.rs"];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -416,6 +421,53 @@ fn canonical_phase_2b_sources_are_present_and_directly_isolated() {
 }
 
 #[test]
+fn canonical_phase_2c_sources_are_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2C_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in ["nom", "CoverageStore", "CoverageGap", "UnportedInline"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not depend on {forbidden}"
+      );
+    }
+    assert!(
+      !contains_token_sequence(&source, &["crate", "::", "parse"]),
+      "{relative} must not invoke the legacy public parser"
+    );
+    for path in [
+      &["super", "::", "super", "::", "document"][..],
+      &["super", "::", "super", "::", "mech"][..],
+      &["super", "::", "super", "::", "mechdown"][..],
+      &["crate", "::", "document", "::", "parser", "::", "document"][..],
+      &["crate", "::", "document", "::", "parser", "::", "mech"][..],
+      &["crate", "::", "document", "::", "parser", "::", "mechdown"][..],
+      &["crate", "::", "literals"][..],
+      &["crate", "::", "expressions"][..],
+      &["crate", "::", "document", "::", "incremental"][..],
+    ] {
+      assert!(
+        !contains_token_sequence(&source, path),
+        "{relative} must not import or call a deferred parser module"
+      );
+    }
+    for forbidden in ["to_contiguous_string", "full_range", "graphemes"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not materialize or globally segment source through {forbidden}"
+      );
+    }
+  }
+}
+
+#[test]
 fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
   let canonical = canonical_root();
   let expected = [
@@ -443,6 +495,119 @@ fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
       contains_token_sequence(body, &["rules", "::", rule]),
       "{file}::{function} does not bind rules::{rule}"
     );
+  }
+}
+
+#[test]
+fn phase_2c_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    ("literals.rs", "parse_empty", "EMPTY"),
+    ("literals.rs", "parse_atom", "ATOM"),
+    ("literals.rs", "parse_string", "STRING"),
+    ("literals.rs", "parse_utf8_string", "UTF8_STRING"),
+    ("literals.rs", "parse_raw_string", "RAW_STRING"),
+    ("literals.rs", "parse_boolean", "BOOLEAN"),
+    ("literals.rs", "parse_true_literal", "TRUE_LITERAL"),
+    ("literals.rs", "parse_false_literal", "FALSE_LITERAL"),
+    ("literals.rs", "parse_number", "NUMBER"),
+    ("literals.rs", "parse_complex_number", "COMPLEX_NUMBER"),
+    ("literals.rs", "parse_real_number", "REAL_NUMBER"),
+    (
+      "literals.rs",
+      "parse_untyped_real_number",
+      "UNTYPED_REAL_NUMBER",
+    ),
+    ("literals.rs", "parse_rational_literal", "RATIONAL_LITERAL"),
+    (
+      "literals.rs",
+      "parse_scientific_literal",
+      "SCIENTIFIC_LITERAL",
+    ),
+    (
+      "literals.rs",
+      "parse_float_decimal_start",
+      "FLOAT_DECIMAL_START",
+    ),
+    ("literals.rs", "parse_float_full", "FLOAT_FULL"),
+    ("literals.rs", "parse_float_literal", "FLOAT_LITERAL"),
+    ("literals.rs", "parse_integer_literal", "INTEGER_LITERAL"),
+    ("literals.rs", "parse_typed_integer", "TYPED_INTEGER"),
+    ("literals.rs", "parse_untyped_integer", "UNTYPED_INTEGER"),
+    ("literals.rs", "parse_decimal_literal", "DECIMAL_LITERAL"),
+    (
+      "literals.rs",
+      "parse_hexadecimal_literal",
+      "HEXADECIMAL_LITERAL",
+    ),
+    ("literals.rs", "parse_octal_literal", "OCTAL_LITERAL"),
+    ("literals.rs", "parse_binary_literal", "BINARY_LITERAL"),
+    (
+      "paths.rs",
+      "parse_context_address_path_token",
+      "CONTEXT_ADDRESS_PATH_TOKEN",
+    ),
+    (
+      "paths.rs",
+      "parse_context_address_path",
+      "CONTEXT_ADDRESS_PATH",
+    ),
+    (
+      "paths.rs",
+      "parse_prefixed_context_path",
+      "PREFIXED_CONTEXT_PATH",
+    ),
+    ("kinds.rs", "parse_kind_any", "KIND_ANY"),
+    ("kinds.rs", "parse_kind_empty", "KIND_EMPTY"),
+    ("kinds.rs", "parse_kind_atom", "KIND_ATOM"),
+  ];
+  assert_eq!(expected.len(), 30);
+
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
+  }
+}
+
+#[test]
+fn phase_2c_sources_do_not_reference_unported_recursive_parent_rules() {
+  let canonical = canonical_root();
+  let unported_parents = [
+    "LITERAL",
+    "VAR",
+    "KIND",
+    "KIND_ANNOTATION",
+    "KIND_WITH_OPTION",
+    "KIND_KIND",
+    "KIND_TABLE",
+    "KIND_SET",
+    "KIND_MAP",
+    "KIND_RECORD",
+    "KIND_MATRIX",
+    "KIND_TUPLE",
+    "KIND_SCALAR",
+    "RANGE_EXPRESSION",
+    "FORMULA",
+    "FACTOR",
+    "EXPRESSION",
+  ];
+
+  for relative in PHASE_2C_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    for rule in unported_parents {
+      assert!(
+        !contains_token_sequence(&source, &["rules", "::", rule]),
+        "{relative} must not claim the unported rules::{rule} parent"
+      );
+    }
   }
 }
 

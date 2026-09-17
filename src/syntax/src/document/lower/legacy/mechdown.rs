@@ -9,19 +9,11 @@ use crate::document::ast::mechdown::{
     ThematicBreakSyntax,
 };
 use crate::document::{
-    AstNode, Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticPhase, DiagnosticStore,
-    DiagnosticTags, IdGenerator, NodeFlags, Severity, SyntaxElement, SyntaxKind, SyntaxNode,
-    SyntaxToken, TokenFlags,
+    AstNode, DiagnosticStore, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, TokenFlags,
 };
 
-use super::source;
+use super::common;
 
-const INVALID_NODE_FLAGS: NodeFlags = NodeFlags(
-    NodeFlags::ERROR.0
-        | NodeFlags::MISSING.0
-        | NodeFlags::CONTAINS_ERROR.0
-        | NodeFlags::CONTAINS_MISSING.0,
-);
 const INVALID_TOKEN_FLAGS: TokenFlags = TokenFlags(TokenFlags::MISSING.0 | TokenFlags::ERROR.0);
 
 pub fn lower_legacy_inline_code(
@@ -219,14 +211,12 @@ fn lower_value<T>(
     name: &str,
     lower: impl FnOnce(&SyntaxNode) -> Result<T, String>,
 ) -> Result<T, DiagnosticStore> {
-    if syntax.flags().intersects(INVALID_NODE_FLAGS) {
-        return Err(failure_store(
-            syntax,
-            name,
-            alloc::format!("{name} compatibility lowering requires error-free syntax"),
-        ));
-    }
-    lower(syntax).map_err(|message| failure_store(syntax, name, message))
+    common::validate_clean_node(syntax, name).map_err(|message| {
+        common::failure_store(syntax, &alloc::format!("lowering/invalid-{name}-syntax"), message)
+    })?;
+    lower(syntax).map_err(|message| {
+        common::failure_store(syntax, &alloc::format!("lowering/invalid-{name}-syntax"), message)
+    })
 }
 
 fn direct_elements(syntax: &SyntaxNode) -> Result<Vec<SyntaxElement>, String> {
@@ -305,43 +295,7 @@ fn lower_element(syntax: &SyntaxNode, element: &SyntaxElement) -> Result<LegacyT
 }
 
 fn lower_escaped_character(node: &SyntaxNode) -> Result<LegacyToken, String> {
-    if node.flags().intersects(INVALID_NODE_FLAGS) {
-        return Err(String::from("escaped-character content is not error-free"));
-    }
-    let elements = node.children_with_tokens();
-    if elements.len() != 2 {
-        return Err(String::from(
-            "escaped-character content requires two tokens",
-        ));
-    }
-    require_token(node, &elements[0], SyntaxKind::Backslash, "\\")?;
-    let value = direct_token(&elements[1])
-        .ok_or_else(|| String::from("escaped-character value must be a token"))?;
-    validate_token(value)?;
-    if value.kind() != SyntaxKind::EscapedChar {
-        return Err(String::from(
-            "escaped-character content has an invalid value token",
-        ));
-    }
-    let text = value
-        .text()
-        .map_err(|_| String::from("cannot read escaped-character value"))?;
-    let chars = text
-        .chars()
-        .map(|character| match character {
-            'n' => '\n',
-            't' => '\t',
-            'r' => '\r',
-            other => other,
-        })
-        .collect();
-    let src_range = source::source_range(node.source(), value.range())
-        .ok_or_else(|| String::from("cannot convert escaped-character source range"))?;
-    Ok(LegacyToken {
-        kind: TokenKind::EscapedChar,
-        chars,
-        src_range,
-    })
+    common::lower_escaped_character_node(node)
 }
 
 fn lower_token(syntax: &SyntaxNode, token: &SyntaxToken) -> Result<LegacyToken, String> {
@@ -352,16 +306,7 @@ fn lower_token(syntax: &SyntaxNode, token: &SyntaxToken) -> Result<LegacyToken, 
             token.kind()
         )
     })?;
-    let text = token
-        .text()
-        .map_err(|_| String::from("cannot read canonical token source"))?;
-    let src_range = source::source_range(syntax.source(), token.range())
-        .ok_or_else(|| String::from("cannot convert canonical token source range"))?;
-    Ok(LegacyToken {
-        kind,
-        chars: text.chars().collect(),
-        src_range,
-    })
+    common::lower_syntax_token(syntax, token, kind)
 }
 
 fn validate_token(token: &SyntaxToken) -> Result<(), String> {
@@ -374,7 +319,7 @@ fn validate_token(token: &SyntaxToken) -> Result<(), String> {
 }
 
 fn merge_tokens(tokens: &mut Vec<LegacyToken>, description: &str) -> Result<LegacyToken, String> {
-    LegacyToken::merge_tokens(tokens).ok_or_else(|| alloc::format!("{description} cannot be empty"))
+    common::merge_legacy_tokens(tokens, description)
 }
 
 fn legacy_kind(kind: SyntaxKind) -> Option<TokenKind> {
@@ -463,30 +408,4 @@ fn legacy_kind(kind: SyntaxKind) -> Option<TokenKind> {
         SyntaxKind::Whitespace => TokenKind::Space,
         _ => return None,
     })
-}
-
-fn failure_store(syntax: &SyntaxNode, name: &str, message: String) -> DiagnosticStore {
-    let mut ids = IdGenerator::new();
-    let mut diagnostics = DiagnosticStore::new(syntax.source().revision());
-    diagnostics.push(Diagnostic {
-        id: ids.diagnostic(),
-        code: DiagnosticCode::from(alloc::format!("lowering/invalid-{name}-syntax").as_str()),
-        phase: DiagnosticPhase::Lowering,
-        severity: Severity::Error,
-        rule: None,
-        context: None,
-        primary: DiagnosticAnchor::Absolute {
-            revision: syntax.source().revision(),
-            range: syntax.range(),
-        },
-        labels: Vec::new(),
-        expected: Vec::new(),
-        found: None,
-        fixes: Vec::new(),
-        related: Vec::new(),
-        recovery: None,
-        tags: DiagnosticTags::NONE,
-        message,
-    });
-    diagnostics
 }
