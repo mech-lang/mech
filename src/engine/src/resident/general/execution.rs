@@ -1838,8 +1838,15 @@ impl ReactiveInstance {
                         }
                     }
                     ChangeDetectionPolicy::ExactScalar => {
-                        before_scalar
-                            != scalar_token(self.workspace.scratch.read(node.write.region))
+                        match (
+                            before_scalar,
+                            scalar_token(self.workspace.scratch.read(node.write.region)),
+                        ) {
+                            (Some(before), Some(after)) => before != after,
+                            // Non-scalar snapshots have no fixed scalar token;
+                            // their maintained kernel compares the typed value.
+                            _ => kernel_changed,
+                        }
                     }
                     ChangeDetectionPolicy::AlwaysChanged => true,
                     ChangeDetectionPolicy::SemanticHash => unreachable!(
@@ -2921,15 +2928,51 @@ fn rmw_outputs_equal(
     regions_equal(left, left_region, right, right_region)
 }
 
-fn scalar_token(value: ResidentValueRef<'_>) -> Option<u64> {
-    match value {
-        ResidentValueRef::Bool([value]) => Some(u64::from(*value)),
-        ResidentValueRef::Index([value]) => Some(*value),
-        ResidentValueRef::F64([value]) => Some(value.to_bits()),
-        ResidentValueRef::String([value]) => Some(hash_string(value)),
-        ResidentValueRef::Snapshot(_) => None,
-        _ => None,
-    }
+fn scalar_token(value: ResidentValueRef<'_>) -> Option<(u8, u128, u128)> {
+    use mech_core::ValueData;
+    let data = match value {
+        ResidentValueRef::Bool([value]) => return Some((0, u128::from(*value), 0)),
+        ResidentValueRef::Index([value]) => return Some((1, u128::from(*value), 0)),
+        ResidentValueRef::F64([value]) => return Some((2, u128::from(value.to_bits()), 0)),
+        ResidentValueRef::String([value]) => return Some((3, u128::from(hash_string(value)), 0)),
+        ResidentValueRef::Snapshot([Some(value)]) => value.data(),
+        _ => return None,
+    };
+    // Preserve all scalar bits: narrowing i128/u128 or hashing a snapshot
+    // would make distinct values indistinguishable to ExactScalar propagation.
+    Some(match data {
+        ValueData::U8(value) => (4, u128::from(*value), 0),
+        ValueData::U16(value) => (5, u128::from(*value), 0),
+        ValueData::U32(value) => (6, u128::from(*value), 0),
+        ValueData::U64(value) => (7, u128::from(*value), 0),
+        ValueData::U128(value) => (8, *value, 0),
+        ValueData::I8(value) => (9, *value as u128, 0),
+        ValueData::I16(value) => (10, *value as u128, 0),
+        ValueData::I32(value) => (11, *value as u128, 0),
+        ValueData::I64(value) => (12, *value as u128, 0),
+        ValueData::I128(value) => (13, *value as u128, 0),
+        ValueData::F32(value) => (14, u128::from(value.bits()), 0),
+        ValueData::F64(value) => (15, u128::from(value.bits()), 0),
+        ValueData::Complex32(value) => (
+            16,
+            u128::from(value.real().bits()),
+            u128::from(value.imaginary().bits()),
+        ),
+        ValueData::Complex64(value) => (
+            17,
+            u128::from(value.real().bits()),
+            u128::from(value.imaginary().bits()),
+        ),
+        ValueData::Rational64(value) => (
+            18,
+            value.numerator() as u128,
+            u128::from(value.denominator()),
+        ),
+        ValueData::Bool(value) => (19, u128::from(*value), 0),
+        ValueData::Id(value) => (20, u128::from(*value), 0),
+        ValueData::Index(value) => (21, u128::from(*value), 0),
+        _ => return None,
+    })
 }
 
 fn region_bytes(region: ResidentRegion) -> usize {
