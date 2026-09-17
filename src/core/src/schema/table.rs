@@ -1245,7 +1245,8 @@ fn component_closure_cost_for_roots_with_budget(
 impl SchemaBody {
     /// Heap layout bound reused by canonical body closure. Closing dimensions
     /// only replaces expressions with constants, so it cannot exceed a clone.
-    pub(crate) fn clone_allocation_bound_bytes(&self) -> Option<u64> {
+    #[doc(hidden)]
+    pub fn clone_allocation_bound_bytes(&self) -> Option<u64> {
         body_clone_heap_bytes(self)
     }
 }
