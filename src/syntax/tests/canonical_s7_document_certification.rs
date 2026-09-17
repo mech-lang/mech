@@ -183,12 +183,21 @@ fn s7_dispositions_cover_the_exact_remaining_inventory() {
 
     let ports =
         fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv")).unwrap();
-    let remaining_at_s7 = ports
-        .lines()
-        .skip(1)
+    let mut port_lines = ports.lines();
+    let columns = port_lines.next().unwrap().split('\t').collect::<Vec<_>>();
+    let phase = columns
+        .iter()
+        .position(|column| *column == "phase")
+        .unwrap();
+    let status = columns
+        .iter()
+        .position(|column| *column == "syntax-status")
+        .unwrap();
+    let remaining_at_s7 = port_lines
         .filter_map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
-            (fields[5] == "S7" || fields[2] == "unported").then_some(fields[0])
+            assert_eq!(fields.len(), columns.len());
+            (fields[phase] == "S7" || fields[status] == "unported").then_some(fields[0])
         })
         .collect::<BTreeSet<_>>();
     assert_eq!(disposition_names, remaining_at_s7);

@@ -380,10 +380,16 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_language_census_prefetches_before_offline_metadata_tests(self):
         block = job_block(FULL, "cargo-language")
-        self.assertLess(
-            block.index("cargo fetch --locked"),
-            block.index("cargo test -p mech-syntax --tests"),
-        )
+        fetch = "cargo fetch --locked"
+        self.assertIn(fetch, block)
+        for profile in ("full", "base"):
+            command = (
+                "cargo +nightly-2026-03-03 test --locked -p mech-syntax "
+                f"--tests --no-default-features --features {profile}"
+            )
+            with self.subTest(profile=profile):
+                self.assertIn(command, block)
+                self.assertLess(block.index(fetch), block.index(command))
         self.assertNotIn("continue-on-error", block)
 
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):

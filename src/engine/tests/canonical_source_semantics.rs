@@ -104,14 +104,72 @@ fn typed_document_rejects_recovered_source_before_semantics() {
 }
 
 #[test]
-fn typed_document_rejects_unimplemented_executable_units() {
+fn typed_document_rejects_an_assignment_without_a_mutable_definition() {
     let document = document("answer += 1\n");
     let error = match CanonicalSourceFrontend.compile_document(&document) {
-        Ok(_) => panic!("unsupported document unit must not be skipped"),
+        Ok(_) => panic!("assignment without a mutable target must not be skipped"),
         Err(error) => error,
     };
-    assert_eq!(error.code, "source-semantics/unsupported-document-unit");
-    assert!(error.message.contains("OpAssign"));
+    assert_eq!(error.code, "source-semantics/unknown-assignment-target");
+    assert!(error.message.contains("answer"));
+}
+
+#[test]
+fn ordering_document_state_writers_preserves_semantic_node_references() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~answer := 0\nanswer += 1\nmatched := answer ? | *, true => 1 | * => 2\n",
+        ))
+        .unwrap();
+    let writer = compiled.program().states[0].producer_node as usize;
+    assert_eq!(writer, compiled.program().nodes.len() - 1);
+    assert_eq!(
+        compiled.program().nodes[writer].outputs.as_ref(),
+        &[mech_engine::SourceNodeOutput::State(0)]
+    );
+    let (index, node) = compiled
+        .program()
+        .nodes
+        .iter()
+        .enumerate()
+        .find(|(_, node)| matches!(node.body, mech_engine::SourceNodeBody::Match(_)))
+        .unwrap();
+    let mech_engine::SourceNodeBody::Match(control) = &node.body else {
+        unreachable!()
+    };
+    assert_eq!(control.arms.len(), 2);
+    assert!(usize::from(control.scrutinee) < node.inputs.len());
+    assert_eq!(compiled.source_map().nodes[index].role, "match");
+    compiled.compile_artifact().unwrap();
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~answer := 0\nanswer += 1\n[answer + x | x <- [1 2]]\n",
+        ))
+        .unwrap();
+    let (index, node) = compiled
+        .program()
+        .nodes
+        .iter()
+        .enumerate()
+        .find(|(_, node)| matches!(node.body, mech_engine::SourceNodeBody::Comprehension(_)))
+        .unwrap();
+    let mech_engine::SourceNodeBody::Comprehension(control) = &node.body else {
+        unreachable!()
+    };
+    assert_eq!(
+        control
+            .steps
+            .iter()
+            .filter(|step| matches!(step, mech_engine::ComprehensionStep::Generator { .. }))
+            .count(),
+        1
+    );
+    assert!(
+        !node.inputs.is_empty(),
+        "the collection captures the current state candidate"
+    );
+    assert_eq!(compiled.source_map().nodes[index].role, "comprehension");
+    compiled.compile_artifact().unwrap();
 }
 
 #[test]
@@ -156,18 +214,15 @@ fn canonical_document_fixture_corpus_has_an_explicit_engine_disposition() {
     let cases = [
         ("compiler.mec", Ok(())),
         ("config.mec", Ok(())),
-        (
-            "document.mec",
-            Err("source-semantics/unsupported-document-unit"),
-        ),
+        ("document.mec", Ok(())),
         ("empty.mec", Err("source-semantics/empty-document")),
         ("executable.mec", Ok(())),
+        ("interactive.mec", Ok(())),
+        ("malformed.mec", Err("source-semantics/recovered-syntax")),
         (
-            "interactive.mec",
+            "resolver-index.mec",
             Err("source-semantics/unsupported-document-unit"),
         ),
-        ("malformed.mec", Err("source-semantics/recovered-syntax")),
-        ("resolver-index.mec", Err("source-semantics/empty-document")),
         ("wasm-document.mec", Ok(())),
     ];
     for (name, expected) in cases {
