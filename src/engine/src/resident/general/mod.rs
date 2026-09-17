@@ -13,6 +13,9 @@ use core::ops::Range;
 use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+use mech_core::snapshot::{
+    schema_data_language_eq, schema_data_partial_cmp, schema_data_snapshot_eq,
+};
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
     CallMemoryPlanningRequest, CardinalitySpec, CellSlotId, ChangeDetectionPolicy, ConstantId,
@@ -3206,6 +3209,144 @@ fn logical_selector_population(
     }
 }
 
+struct ConstantComparisonOperand<'a> {
+    element: &'a SchemaBody,
+    rows: usize,
+    columns: usize,
+    values: Vec<mech_core::ValueData>,
+}
+
+fn constant_comparison_operand<'a>(
+    artifact: &'a ProgramArtifact,
+    node: NodeId,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
+    let ArtifactSource::Constant(id) = source else {
+        return Ok(None);
+    };
+    let value = artifact
+        .constants()
+        .get(id)
+        .ok_or(ResidentActivationError::InvalidDependency { node })?;
+    let schema = artifact
+        .schemas()
+        .entry(value.schema())
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?
+        .schema();
+    let (element, rows, columns, values) = match (schema.body(), value.data()) {
+        (SchemaBody::Matrix { element, .. }, mech_core::ValueData::Matrix(matrix)) => {
+            let extents = source_extents(artifact, source, facts)?;
+            let [rows, columns] = extents.as_ref() else {
+                return Ok(None);
+            };
+            let rows =
+                usize::try_from(*rows).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let columns = usize::try_from(*columns)
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let values = matrix.elements().to_values();
+            if rows.checked_mul(columns) != Some(values.len()) {
+                return Ok(None);
+            }
+            (element.as_ref(), rows, columns, values)
+        }
+        (body, data) => (body, 1, 1, vec![data.clone()]),
+    };
+    Ok(Some(ConstantComparisonOperand {
+        element,
+        rows,
+        columns,
+        values,
+    }))
+}
+
+fn closed_comparison_population(
+    artifact: &ProgramArtifact,
+    node: NodeId,
+    facts: &ActivationFacts,
+) -> Result<Option<u64>, ResidentActivationError> {
+    // Activation planning may inspect closed constant comparisons, but it must
+    // never execute arbitrary turn-dependent nodes to guess a live population.
+    let operation = artifact
+        .nodes()
+        .get(node.get() as usize)
+        .and_then(|node| node.as_operation())
+        .ok_or(ResidentActivationError::InvalidDependency { node })?;
+    if operation.operation.module_path.as_ref() != ["compare"] {
+        return Ok(None);
+    }
+    let inputs = node_inputs(artifact, node)?;
+    let [left, right] = inputs.as_slice() else {
+        return Ok(None);
+    };
+    let Some(left) = constant_comparison_operand(artifact, node, *left, facts)? else {
+        return Ok(None);
+    };
+    let Some(right) = constant_comparison_operand(artifact, node, *right, facts)? else {
+        return Ok(None);
+    };
+    if left.element != right.element {
+        return Ok(None);
+    }
+    let broadcast_axis = |left, right| {
+        if left == right {
+            Some(left)
+        } else if left == 1 {
+            Some(right)
+        } else if right == 1 {
+            Some(left)
+        } else {
+            None
+        }
+    };
+    let Some(rows) = broadcast_axis(left.rows, right.rows) else {
+        return Ok(None);
+    };
+    let Some(columns) = broadcast_axis(left.columns, right.columns) else {
+        return Ok(None);
+    };
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    if output_len > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+        return Ok(None);
+    }
+    let element = left.element;
+    let compare = |left: &mech_core::ValueData, right: &mech_core::ValueData| {
+        let order = || schema_data_partial_cmp(element, left, right);
+        Some(match operation.operation.operation_name.as_str() {
+            "eq" => schema_data_language_eq(element, left, right),
+            "neq" => !schema_data_language_eq(element, left, right),
+            "seq" => schema_data_snapshot_eq(element, left, right),
+            "sneq" => !schema_data_snapshot_eq(element, left, right),
+            "lt" => order() == Some(std::cmp::Ordering::Less),
+            "lte" => matches!(
+                order(),
+                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+            ),
+            "gt" => order() == Some(std::cmp::Ordering::Greater),
+            "gte" => matches!(
+                order(),
+                Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
+            ),
+            _ => return None,
+        })
+    };
+    let mut population = 0_u64;
+    for row in 0..rows {
+        for column in 0..columns {
+            let left_index = (row % left.rows) * left.columns + column % left.columns;
+            let right_index = (row % right.rows) * right.columns + column % right.columns;
+            if compare(&left.values[left_index], &right.values[right_index]).unwrap_or(false) {
+                population = population
+                    .checked_add(1)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            }
+        }
+    }
+    Ok(Some(population))
+}
+
 fn complete_activation_shape_facts(
     artifact: &ProgramArtifact,
     supplied: &ActivationFacts,
@@ -3226,6 +3367,11 @@ fn complete_activation_shape_facts(
             continue;
         }
         let output = node_output_slot(artifact, node.node)?;
+        if class == NodeClass::Activation
+            && let Some(population) = closed_comparison_population(artifact, node.node, &facts)?
+        {
+            logical_populations.insert(ArtifactSource::Slot(output), population);
+        }
         if node.operation.module_path.as_ref() == ["matrix"]
             && matches!(
                 node.operation.operation_name.as_str(),
