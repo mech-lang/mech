@@ -384,11 +384,43 @@ impl BindingRelocation<'_> {
             match &mut arm.pattern {
                 crate::MatchPattern::Literal(id) => self.constant(id),
                 crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {}
+                crate::MatchPattern::Structural(pattern) => self.match_structural_pattern(pattern),
             }
             if let Some(guard) = &mut arm.guard {
                 self.block(guard);
             }
             self.block(&mut arm.body);
+        }
+    }
+
+    fn match_structural_pattern(
+        &self,
+        pattern: &mut crate::CollectionPattern<mech_core::SchemaId, crate::MatchPatternValue>,
+    ) {
+        match pattern {
+            crate::CollectionPattern::Wildcard => {}
+            crate::CollectionPattern::Bind { schema, .. } => self.schema(schema),
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Literal(id)) => {
+                self.constant(id)
+            }
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Binding(_)) => {}
+            crate::CollectionPattern::Tuple(items) => {
+                for item in items {
+                    self.match_structural_pattern(item);
+                }
+            }
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                for item in prefix.iter_mut().chain(suffix.iter_mut()) {
+                    self.match_structural_pattern(item);
+                }
+                if let Some(rest) = rest {
+                    self.match_structural_pattern(rest);
+                }
+            }
         }
     }
 
