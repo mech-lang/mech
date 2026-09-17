@@ -71,7 +71,7 @@ clc-rpl	none	parse-repl-command
 clear-rpl	none	parse-repl-command
 code-block	any|codeblock-sigil|left-brace|new-line|option-map|space-tab0|text|whitespace0	section-element
 code-rpl	none	parse-repl-command
-code-terminal	comment|mika-section-close|new-line|right-brace|semicolon|space-tab0|whitespace0	fsm-block-transition|mech-code
+code-terminal	comment|mika-section-close|new-line|right-brace|semicolon|space-tab0|whitespace0	fsm-block-transition|mech-code|not-mech-code
 codeblock-sigil	grave-codeblock-sigil|tilde-codeblock-sigil	code-block
 colon	none	atom|binding|call-arg-with-binding|center-alignment|citation|context-capability-declaration|empty-map|enum-variant|footnote|identifier-path-segment-emoji|import-alias-operator|kind-atom|kind-map|kind-matrix|kind-scalar|kind-set|kind-table|left-alignment|mapping|option-mapping|parse-repl-command|pattern-atom-struct|punctuation|right-alignment|select-all|title-front-matter|tuple-struct
 comma	none	binding|grammar-list|grammar-term|identifier-path-segment-emoji|list-separator|mapping|matrix-column|option-mapping|punctuation|swizzle-subscript|table-column
@@ -136,7 +136,7 @@ eval-inline-mech-code	expression|left-brace|right-brace|whitespace0	paragraph-el
 exclamation	none	invariant-define|not|punctuation
 exp-assign-operator	whitespace0	op-assign-operator
 export-declaration	identifier|module-export-sigil|whitespace0|whitespace1	statement
-expression	formula|fsm-pipe|match-arm|matrix-comprehension|period|question|range-expression|set-comprehension|whitespace0	activation-arm|activation-scope|binding|call-arg|call-arg-with-binding|comprehension-qualifier|context-send|eval-inline-mech-code|function-match-arm|generator|inline-table-row|invariant-define|mapping|match-arm|matrix-column|matrix-comprehension|mech-code-alt|op-assign|pattern|set|set-comprehension|table-column|table-row|table-row2|tuple|tuple-destructure|tuple-struct|variable-assign|variable-define
+expression	formula|fsm-pipe|match-arm|matrix-comprehension|period|question|range-expression|set-comprehension|whitespace0	activation-arm|activation-scope|binding|call-arg|call-arg-with-binding|comprehension-qualifier|context-send|eval-inline-mech-code|function-match-arm|generator|inline-table-row|invariant-define|mapping|match-arm|matrix-column|matrix-comprehension|mech-code-alt|not-mech-code|op-assign|pattern|set|set-comprehension|table-column|table-row|table-row2|tuple|tuple-destructure|tuple-struct|variable-assign|variable-define
 factor	function-call|literal|matrix-comprehension|negate-factor|not-factor|parenthetical-term|slice|structure|transpose|var	l7|match-expression|negate-factor|not-factor
 false-literal	cross|english-false-literal	boolean
 fancy-table	fancy-table-header|new-line|row-separator|table-row2|table-separator|table-top	table
@@ -224,7 +224,7 @@ http-prefix	none	paragraph-text|raw-hyperlink
 hyperlink	inline-paragraph|left-bracket|left-parenthesis|right-bracket|right-parenthesis|text	paragraph-element
 idea-block	idea-sigil|paragraph-newline|space-tab0	not-mech-code|section-element
 idea-sigil	none	idea-block|paragraph
-identifier	alpha-token|digit-token|emoji|identifier-symbol	atom|binding|call-arg-with-binding|context-base-context|context-capability-declaration|context-declaration|dot-subscript|enum-define|enum-variant|export-declaration|field|fsm|fsm-implementation|fsm-instance|fsm-specification|function-arg|function-call|function-define|header-field|invariant-define|kind-atom|kind-define|kind-record|kind-scalar|kind-table|option-mapping|option-value|pattern-atom-struct|pattern-tuple-struct|slice|slice-ref|swizzle-subscript|title-front-matter|tuple-destructure|tuple-struct|typed-integer|var
+identifier	alpha-token|digit-token|emoji|identifier-symbol	atom|binding|call-arg-with-binding|context-base-context|context-capability-declaration|context-declaration|dot-subscript|enum-define|enum-variant|export-declaration|field|fsm|fsm-implementation|fsm-instance|fsm-specification|function-arg|function-call|function-define|header-field|invariant-define|kind-atom|kind-define|kind-record|kind-scalar|kind-table|option-mapping|option-value|pattern-atom-struct|pattern-tuple-struct|slice|slice-ref|swizzle-subscript|title-front-matter|tuple-destructure|tuple-struct|typed-integer|ul-subtitle|var
 identifier-path-segment	alpha-token|dash|digit-token|identifier-path-segment-emoji	module-import-alias-segment|module-import-name-segment|module-root|prefixed-context-path
 identifier-path-segment-emoji	asterisk|colon|comma|emoji|equal|left-brace|new-line|right-brace|slash|space|tab|underscore	identifier-path-segment
 identifier-symbol	ampersand|asterisk|backslash|caret|dash|dollar|hashtag|percent|plus|slash|tilde	identifier
@@ -350,7 +350,7 @@ not	exclamation|negate	not-factor
 not-element-of	ws0e	set-operator
 not-equal	ws0e	comparison-operator
 not-factor	factor|not	factor
-not-mech-code	error-block|float|footnote|idea-block|img|info-block|mechdown-list|micro-mika|mika-section-close|mini-mika|question-block|success-block|warning-block	mech-code
+not-mech-code	code-terminal|error-block|expression|float|footnote|idea-block|img|info-block|mechdown-list|micro-mika|mika-section-close|mini-mika|question-block|subtitle|success-block|warning-block	mech-code
 number	complex-number|real-number	literal|ordered-list-item
 octal-literal	digit-sequence	real-number|untyped-real-number
 op-assign	define-operator|expression|op-assign-operator|slice-ref	statement
@@ -451,7 +451,7 @@ source-path-component-token	alpha-token|dash|digit-token|percent|period|undersco
 space	none	identifier-path-segment-emoji|raw-hyperlink|raw-text|space-tab|text|unordered-list-item|whitespace
 space-tab	nbsp|space|tab|thin-space	comment|newline-indent|row-separator|space-tab0|space-tab1|ws0e|ws1e
 space-tab0	space-tab	abstract-el|alignment-separator|blank-line|code-block|code-terminal|error-block|figures-row|float|generator|idea-block|import-alias-operator|info-block|inline-table|inline-table-header|inline-table-row|matrix-column|matrix-comprehension|matrix-row|mechdown-table-header|mechdown-table-row|module-import|parenthetical-term|prompt|question-block|quote-block|row-separator|set-comprehension|subtitle|success-block|table-column|table-header|table-row|table-row2|table-separator|thematic-break|title-front-matter|ul-subtitle|warning-block
-space-tab1	space-tab	import-declaration|inline-table-header|kind-table|mechdown-table-row|table-header|table-row
+space-tab1	space-tab	import-declaration|inline-table-header|kind-table|mechdown-table-row|table-header|table-row|ul-subtitle
 spaced-subtract	raw-subtract|ws1e	subtract
 spread-operator	spread-operator-a|spread-operator-u	pattern-array-token
 spread-operator-a	whitespace0	spread-operator
@@ -471,7 +471,7 @@ sub-assign-operator	whitespace0	op-assign-operator
 sublist	check-list|ordered-list|unordered-list	check-list|ordered-list|unordered-list
 subscript	brace-subscript|bracket-subscript|dot-subscript|dot-subscript-int|swizzle-subscript	slice|slice-ref
 subset	ws0e	set-operator
-subtitle	alpha|digit|error-sigil|info-sigil|left-parenthesis|paragraph-newline|period|right-parenthesis|space-tab0|whitespace0	section-element
+subtitle	alpha|digit|error-sigil|info-sigil|left-parenthesis|paragraph-newline|period|right-parenthesis|space-tab0|whitespace0	not-mech-code|section-element
 subtract	raw-subtract|spaced-subtract	add-sub-operator
 success-block	float-sigil|paragraph-newline|space-tab0|success-check-sigil|success-sigil	not-mech-code|section-element
 success-check-sigil	none	success-block
@@ -495,7 +495,7 @@ table-separator	bar|box-vert|box-vert-bold|space-tab0	fancy-table|fancy-table-he
 table-start	box-tl|box-tl-bold|box-tl-round|left-brace|table-separator	record|table-top
 table-top	box-drawing-char|new-line|table-start	fancy-table
 tag	none	none
-text	alpha-token|digit-token|emoji|escaped-char|forbidden-emoji|grouping-symbol|punctuation|space|symbol|tab	code-block|equation|footnote|footnote-reference|hyperlink|img|inline-code|inline-equation|paragraph-text|raw-hyperlink|title|utf8-string
+text	alpha-token|digit-token|emoji|escaped-char|forbidden-emoji|grouping-symbol|punctuation|space|symbol|tab	code-block|equation|footnote|footnote-reference|hyperlink|img|inline-code|inline-equation|paragraph-text|raw-hyperlink|title|ul-subtitle|utf8-string
 thematic-break	asterisk|new-line|space-tab0	section-element
 thin-space	none	forbidden-emoji|space-tab
 tilde	none	identifier-symbol|paragraph-text|strikethrough|symbol|variable-define
@@ -511,7 +511,7 @@ tuple	expression|left-parenthesis|list-separator|right-parenthesis|whitespace0	s
 tuple-destructure	define-operator|expression|identifier|left-parenthesis|list-separator|right-parenthesis	statement
 tuple-struct	colon|expression|identifier|left-parenthesis|right-parenthesis|whitespace0	structure
 typed-integer	digit-sequence|identifier	integer-literal
-ul-subtitle	alpha-token|dash|digit-token|new-line|paragraph-newline|period|space-tab0|whitespace0	section
+ul-subtitle	alpha-token|dash|digit-token|identifier|new-line|paragraph-newline|period|space-tab0|space-tab1|text|whitespace0	section
 unchecked-item	dash|left-bracket|paragraph-newline|right-bracket|whitespace0	check-list-item
 underline	paragraph-element|underscore	paragraph-element
 underline-sigil	none	none

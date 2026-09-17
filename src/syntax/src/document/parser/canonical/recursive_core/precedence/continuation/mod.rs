@@ -1045,8 +1045,15 @@ impl Continuation {
                             return Progress::NeedInput;
                         }
                         let call = local && parser.cursor().starts_with("(");
+                        // A standalone period terminates a function body. It
+                        // selects a slice only when an adjacent field/ordinal
+                        // can follow; a split trailing dot still suspends above.
                         let slice = (parser.cursor().starts_with(".")
-                            && !parser.cursor().starts_with(".."))
+                            && !parser.cursor().starts_with("..")
+                            && parser
+                                .cursor()
+                                .byte_at(1)
+                                .is_some_and(|next| !next.is_ascii_whitespace()))
                             || parser.cursor().starts_with("[")
                             || parser.cursor().starts_with("{");
                         parser.rewind(stem);

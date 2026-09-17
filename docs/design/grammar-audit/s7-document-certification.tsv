@@ -104,7 +104,7 @@ success-block	"(+)>x\n"	node:SuccessBlock	syntax-only	docs/design/specification.
 title	"x\n="	node:Title	syntax-only	docs/design/specification.mec::title
 title-front-matter	"="	node:TitleFrontMatter	syntax-only	docs/design/specification.mec::title-front-matter
 tuple-destructure	"(x):=1 + 2"	node:TupleDestructure	syntax-only	docs/design/specification.mec::tuple-destructure
-ul-subtitle	"1.x\n-\n"	node:UlSubtitle	syntax-only	docs/design/specification.mec::ul-subtitle
+ul-subtitle	"1. x\n-\n"	node:UlSubtitle	syntax-only	docs/design/specification.mec::ul-subtitle
 unchecked-item	"-[]x\n"	node:UncheckedItem	syntax-only	docs/design/specification.mec::unchecked-item
 underline	"_x_"	node:Underline	syntax-only	docs/design/specification.mec::underline
 unordered-list	"- x\n"	node:UnorderedList	syntax-only	docs/design/specification.mec::unordered-list

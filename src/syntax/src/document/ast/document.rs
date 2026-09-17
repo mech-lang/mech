@@ -9,7 +9,7 @@ use crate::document::{
     ExpressionSyntax, MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax,
     OptionMapSyntax, ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
     SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax,
-    UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
+    TupleDestructureSyntax, UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
 };
 
 impl DocumentSyntax {
@@ -352,5 +352,18 @@ impl crate::document::OptionValueSyntax {
             .syntax()
             .text()
             .ok()
+    }
+}
+
+impl TupleDestructureSyntax {
+    pub fn names(&self) -> Vec<IdentifierSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(IdentifierSyntax::cast)
+            .collect()
+    }
+
+    pub fn value(&self) -> Option<ExpressionSyntax> {
+        self.syntax().children().find_map(ExpressionSyntax::cast)
     }
 }
