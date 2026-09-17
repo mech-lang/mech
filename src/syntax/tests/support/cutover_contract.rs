@@ -27,6 +27,8 @@ fn removal_state(
         ("delete-path" | "replace-surface" | "retain-verified", "inventoried") if exists => {
             Ok(false)
         }
+        // Routing may move during preparation; it does not close deletion evidence.
+        ("replace-surface", "routed") if exists => Ok(false),
         ("delete-path", "removed") if !exists => {
             evidence(sha, result)?;
             Ok(true)
@@ -41,6 +43,52 @@ fn removal_state(
             "invalid removal action/status/path state: {action}/{status}, exists={exists}"
         )),
     }
+}
+
+pub(super) fn routed_parser_consumers() -> std::collections::BTreeSet<String> {
+    rows(
+        &fs::read_to_string(
+            repository_root().join("docs/design/grammar-audit/s8-removal-manifest.tsv"),
+        )
+        .unwrap(),
+        REMOVAL_HEADER,
+    )
+    .into_iter()
+    .filter_map(|row| {
+        if row[1] == "route" && matches!(row[9].as_str(), "routed" | "replaced") {
+            assert_eq!(row[12], "replace-surface");
+            Some(row[0].strip_prefix("route:").unwrap().to_owned())
+        } else {
+            None
+        }
+    })
+    .collect()
+}
+
+#[test]
+fn routed_consumers_do_not_claim_deletion_qualification() {
+    assert_eq!(
+        removal_state(
+            "replace-surface",
+            true,
+            "routed",
+            "pending",
+            "not yet qualified"
+        ),
+        Ok(false)
+    );
+    assert!(
+        removal_state(
+            "delete-path",
+            true,
+            "routed",
+            "pending",
+            "not yet qualified"
+        )
+        .is_err()
+    );
+    let manifest = BTreeMap::from([("route:example".to_owned(), false)]);
+    assert!(dependencies("demonstrated", "route:example", &manifest).is_err());
 }
 
 fn dependencies(

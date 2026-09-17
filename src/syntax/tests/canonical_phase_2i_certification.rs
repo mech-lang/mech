@@ -1545,11 +1545,14 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
                         matches!(
                             item,
                             "ChangeDetectionPolicy"
+                                | "DimensionExpr"
                                 | "FunctionCatalogBuilder"
                                 | "IntegerWidth"
                                 | "OutputConstruction"
                                 | "ReactiveInstanceId"
                                 | "SchemaBody"
+                                | "SchemaDraft"
+                                | "SchemaTableBuilder"
                                 | "ShapeRule"
                                 | "ValueData"
                         )
@@ -1563,19 +1566,22 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
                         )
                     }
                 })
-        } else if !source_semantic_evidence(path)
-            && let Some(items) = declaration
-                .strip_prefix(concat!("usemech_", "core::snapshot::{"))
-                .and_then(|items| items.strip_suffix("};"))
+        } else if let Some(items) = declaration
+            .strip_prefix(concat!("usemech_", "core::snapshot::{"))
+            .and_then(|items| items.strip_suffix("};"))
         {
             items
                 .split(',')
                 .filter(|item| !item.is_empty())
-                .all(|item| {
-                    matches!(
+                .all(|item| match source_semantic_evidence(path) {
+                    true => matches!(
+                        item,
+                        "SnapshotValidationContext" | "ValueDataDraft" | "ValueDraft"
+                    ),
+                    false => matches!(
                         item,
                         "MapEntryDraft" | "NamedValueDraft" | "TableColumnDraft"
-                    )
+                    ),
                 })
         } else {
             false
@@ -1912,13 +1918,21 @@ fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_type
         semantic_path,
         concat!(
             "use mech_",
-            "core::{ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, OutputConstruction, ReactiveInstanceId, SchemaBody, ShapeRule, ValueData};"
+            "core::{ChangeDetectionPolicy, DimensionExpr, FunctionCatalogBuilder, IntegerWidth, OutputConstruction, ReactiveInstanceId, SchemaBody, SchemaDraft, SchemaTableBuilder, ShapeRule, ValueData};"
+        ),
+    );
+    assert_canonical_only(
+        semantic_path,
+        concat!(
+            "use mech_",
+            "core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};"
         ),
     );
     for evidence in [
         concat!("use mech_", "core::{Program};"),
         concat!("use mech_", "core::*;"),
         concat!("use mech_", "core::{SchemaBody, Program};"),
+        concat!("use mech_", "core::snapshot::{Value};"),
     ] {
         assert!(
             std::panic::catch_unwind(|| assert_canonical_only(semantic_path, evidence)).is_err(),
