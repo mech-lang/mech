@@ -3943,3 +3943,6 @@ fn final_review_shared_file_unions_physical_calls_across_package_namespaces() {
     );
     assert!(aliases.is_empty());
 }
+
+#[path = "support/cutover_contract.rs"]
+mod cutover_contract;

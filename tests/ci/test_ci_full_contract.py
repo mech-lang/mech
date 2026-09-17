@@ -121,6 +121,22 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="skipped"))
         self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="failure"))
 
+    def test_docs_only_gate_accepts_successful_browser_skip_verification(self):
+        block = job_block(CI, "pr-gate")
+        script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "skipped")
+        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success")
+        def accepts(**changes):
+            return subprocess.run(["/bin/bash", "-e", "-c", script],
+                env=environment | changes, capture_output=True).returncode == 0
+        self.assertTrue(accepts())
+        for result in ("failure", "cancelled", "skipped", ""):
+            with self.subTest(result=result):
+                self.assertFalse(accepts(BROWSER_RESULT=result))
+        self.assertFalse(accepts(STATIC_RESULT="failure"))
+        self.assertFalse(accepts(FULL_REQUIRED="true"))
+        self.assertTrue(accepts(FULL_REQUIRED="true", FULL_RESULT="success", NATIVE_PLAN_RESULT="success"))
+
     def test_architecture_mutations_are_bounded_parallel_exact_head_shards(self):
         normal = job_block(CI, "static-mutations")
         full = job_block(FULL, "architecture-mutations")
