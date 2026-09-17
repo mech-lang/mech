@@ -278,7 +278,9 @@ fn has_retiring_reference(source: &str) -> bool {
             path[0].text == "mech_syntax"
                 && path[1].text == ":"
                 && path[2].text == ":"
-                && matches!(path[3].text, "parse" | "parser" | "formatter")
+                // Root grammar exports (including types and parser functions)
+                // retire together; the canonical API lives under document.
+                && path[3].text != "document"
         })
 }
 
@@ -424,6 +426,22 @@ fn supplemental_scan_covers_grouped_exports_and_typed_program_handoffs() {
         assert!(
             !has_retiring_reference(source),
             "misclassified retained owner: {source}"
+        );
+    }
+}
+
+#[test]
+fn supplemental_scan_covers_direct_grammar_exports() {
+    for source in [
+        "fn check() { mech_syntax::empty(input); }",
+        "fn check() { mech_syntax::identifier(input); }",
+        "fn check() { mech_syntax::module_import(input); }",
+        "fn check(input: mech_syntax::ParseString) {}",
+        "fn check() { mech_syntax :: r#empty(input); }",
+    ] {
+        assert!(
+            has_retiring_reference(source),
+            "missed retiring export: {source}"
         );
     }
 }

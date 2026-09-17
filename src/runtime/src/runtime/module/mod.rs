@@ -472,6 +472,11 @@ impl MechRuntime {
         }
 
         self.enforce_source_limits(context, &resolved.source)?;
+        resolved.validate()?;
+        #[cfg(feature = "source")]
+        if let Some(document) = resolved.source_document() {
+            self.validate_source_revision(module_id(&resolved.canonical_uri), document)?;
+        }
 
         let canonical_uri = resolved.canonical_uri.clone();
 
@@ -768,9 +773,6 @@ impl MechRuntime {
                 runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
             },
         )?;
-        #[cfg(feature = "source")]
-        self.source_revisions
-            .insert(canonical_uri.to_owned(), revision);
         Ok(version)
     }
 
@@ -822,9 +824,44 @@ impl MechRuntime {
                 runtime.build_module_from_resolved_source_in_transaction(context, resolved, options)
             },
         )?;
-        self.source_revisions
-            .insert(canonical_uri.to_owned(), revision);
         Ok(version)
+    }
+
+    #[cfg(feature = "source")]
+    pub(in crate::runtime) fn validate_source_revision(
+        &self,
+        module: ModuleId,
+        document: &crate::SourceDocument,
+    ) -> MResult<()> {
+        let revision = document.source().revision();
+        let documents = self.store.module_source_documents(module)?;
+        let committed = documents
+            .iter()
+            .filter(|known| known.source().revision() == revision);
+        let pending = self.active_transactions.values().flat_map(|transaction| {
+            transaction.modules.version_puts().filter_map(|version| {
+                if version.module != module {
+                    return None;
+                }
+                version
+                    .source_document
+                    .as_ref()
+                    .filter(|known| known.source().revision() == revision)
+            })
+        });
+        if committed.chain(pending).any(|known| known != document) {
+            return Err(MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "store_resolved_module_source",
+                    reason: format!(
+                        "source revision {} for module {module} already identifies another document",
+                        revision.0
+                    ),
+                },
+                None,
+            ));
+        }
+        Ok(())
     }
 
     #[cfg(feature = "source")]
@@ -832,7 +869,24 @@ impl MechRuntime {
         &self,
         canonical_uri: &str,
     ) -> MResult<mech_syntax::document::Revision> {
-        let Some(previous) = self.source_revisions.get(canonical_uri) else {
+        let module = module_id(canonical_uri);
+        // The durable store is the committed authority, including after reopening
+        // a populated store. Pending journals reserve revisions until commit/abort.
+        let previous = self
+            .store
+            .module_source_documents(module)?
+            .iter()
+            .map(|document| document.source().revision())
+            .chain(self.active_transactions.values().flat_map(|transaction| {
+                transaction.modules.version_puts().filter_map(|version| {
+                    (version.module == module)
+                        .then_some(version.source_document.as_ref())
+                        .flatten()
+                        .map(|document| document.source().revision())
+                })
+            }))
+            .max();
+        let Some(previous) = previous else {
             return Ok(mech_syntax::document::Revision(0));
         };
         previous

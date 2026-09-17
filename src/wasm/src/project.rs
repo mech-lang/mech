@@ -870,6 +870,7 @@ fn js_value_to_mech_error(error: JsValue) -> MechError {
     )
 }
 
+#[cfg(any(test, feature = "served_project_authority"))]
 fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
     for candidate in std::iter::once("repl".to_string()).chain(
         std::iter::once("repl-console".to_string())

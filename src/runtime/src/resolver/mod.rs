@@ -292,6 +292,7 @@ impl ResolvedSource {
     /// authorities with different bytes.
     #[cfg(feature = "source")]
     pub fn with_source_document(mut self, document: SourceDocument) -> MResult<Self> {
+        self.validate_document_owner(&document)?;
         match &self.source {
             MechSourceCode::String(source)
                 if source.as_str() == document.source().to_contiguous_string() => {}
@@ -310,6 +311,17 @@ impl ResolvedSource {
         }
         self.source_document = Some(document);
         Ok(self)
+    }
+
+    #[cfg(feature = "source")]
+    fn validate_document_owner(&self, document: &SourceDocument) -> MResult<()> {
+        if document.source().document().0 != mech_core::hash_str(&self.canonical_uri) {
+            return invalid_resolved_source(
+                "source_document",
+                "document owner does not match the canonical URI",
+            );
+        }
+        Ok(())
     }
 
     #[cfg(feature = "source")]
@@ -472,6 +484,7 @@ impl ResolvedSource {
 
         #[cfg(feature = "source")]
         if let Some(document) = &self.source_document {
+            self.validate_document_owner(document)?;
             match &self.source {
                 MechSourceCode::String(source)
                     if source.as_str() == document.source().to_contiguous_string() => {}

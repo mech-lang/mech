@@ -187,9 +187,17 @@ impl MechErrorKind for InMemorySourceResolutionTargetMissing {
     }
 }
 
+#[cfg(feature = "source")]
+type SourceRevisionHistory = HashMap<String, BTreeMap<Revision, SourceDocument>>;
+
+/// Clones have independent source entries but share accepted revision history.
+/// Removing or clearing entries does not release their document identities.
 #[derive(Clone, Debug, Default)]
 pub struct InMemorySourceResolver {
     sources: HashMap<String, ResolvedSource>,
+    // Accepted identity history outlives entry deletion and is shared by clones.
+    #[cfg(feature = "source")]
+    source_revisions: std::sync::Arc<std::sync::Mutex<SourceRevisionHistory>>,
     aliases: HashMap<String, String>,
     resolutions: HashMap<InMemoryResolutionKey, String>,
 }
@@ -205,10 +213,85 @@ impl InMemorySourceResolver {
         source: ResolvedSource,
     ) -> MResult<()> {
         let specifier = specifier.into();
-
         source.validate()?;
-
+        #[cfg(feature = "source")]
+        {
+            let mut history = self
+                .source_revisions
+                .lock()
+                .map_err(|_| Self::revision_error("revision history is unavailable"))?;
+            Self::remember_source_revision(&mut history, &source)?;
+        }
         self.sources.insert(specifier, source);
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    fn revision_error(reason: &'static str) -> MechError {
+        MechError::new(
+            super::InvalidResolvedSourceError {
+                field: "source_document.revision",
+                reason,
+            },
+            None,
+        )
+    }
+
+    #[cfg(feature = "source")]
+    fn remember_source_revision(
+        history: &mut SourceRevisionHistory,
+        source: &ResolvedSource,
+    ) -> MResult<()> {
+        if let Some(document) = source.source_document() {
+            let revisions = history.entry(source.canonical_uri.clone()).or_default();
+            let revision = document.source().revision();
+            if revisions
+                .get(&revision)
+                .is_some_and(|known| known != document)
+            {
+                return Err(Self::revision_error(
+                    "revision already identifies another document",
+                ));
+            }
+            revisions
+                .entry(revision)
+                .or_insert_with(|| document.clone());
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    fn insert_prepared_string(
+        &mut self,
+        specifier: String,
+        source: String,
+        admit: impl FnOnce(ResolvedSource) -> MResult<ResolvedSource>,
+    ) -> MResult<()> {
+        let uri = Self::default_canonical_uri(&specifier);
+        let shared_history = self.source_revisions.clone();
+        // Selection, candidate admission and publication are one operation across
+        // clones. Failed admission leaves both the entry and history unchanged.
+        let mut history = shared_history
+            .lock()
+            .map_err(|_| Self::revision_error("revision history is unavailable"))?;
+        let revision = match history
+            .get(&uri)
+            .and_then(|revisions| revisions.last_key_value())
+        {
+            None => Revision(0),
+            Some((previous, _)) => previous
+                .0
+                .checked_add(1)
+                .map(Revision)
+                .ok_or_else(|| Self::revision_error("revision identity is exhausted"))?,
+        };
+        let resolved = ResolvedSource::new(specifier.clone(), uri, MechSourceCode::String(source))
+            .with_kind(SourceKind::Mech)
+            .retain_source_document(revision, ParseConfig::default())?;
+        let resolved = admit(resolved)?;
+        resolved.validate()?;
+        Self::remember_source_revision(&mut history, &resolved)?;
+        self.sources.insert(specifier, resolved);
         Ok(())
     }
 
@@ -219,39 +302,26 @@ impl InMemorySourceResolver {
     ) -> MResult<()> {
         let specifier = specifier.into();
         let source = source.into();
-
-        let resolved = ResolvedSource::new(
-            specifier.clone(),
-            Self::default_canonical_uri(&specifier),
-            MechSourceCode::String(source.clone()),
-        )
-        .with_kind(SourceKind::Mech);
-
         #[cfg(feature = "source")]
-        let resolved = {
-            let revision = self.next_document_revision(&specifier)?;
-            let document = SourceDocument::parse_resolved(
-                &resolved.canonical_uri,
-                revision,
-                source.as_str(),
-                ParseConfig::default(),
+        {
+            self.insert_prepared_string(specifier, source, |resolved| {
+                let MechSourceCode::String(source) = &resolved.source else {
+                    unreachable!()
+                };
+                let tree = mech_syntax::parser::parse(source.trim())?;
+                Ok(resolved.with_syntax_tree(tree))
+            })
+        }
+        #[cfg(not(feature = "source"))]
+        self.insert_source(
+            specifier.clone(),
+            ResolvedSource::new(
+                specifier.clone(),
+                Self::default_canonical_uri(&specifier),
+                MechSourceCode::String(source),
             )
-            .map_err(|_| {
-                MechError::new(
-                    super::InvalidResolvedSourceError {
-                        field: "source",
-                        reason: "exceeds the canonical retained-source range",
-                    },
-                    None,
-                )
-            })?;
-            let syntax_tree = mech_syntax::parser::parse(source.trim())?;
-            resolved
-                .with_source_document(document)?
-                .with_syntax_tree(syntax_tree)
-        };
-
-        self.insert_source(specifier, resolved)
+            .with_kind(SourceKind::Mech),
+        )
     }
 
     /// Insert one strictly admitted canonical revision without constructing a
@@ -263,141 +333,49 @@ impl InMemorySourceResolver {
         specifier: impl Into<String>,
         source: impl Into<String>,
     ) -> MResult<()> {
-        let specifier = specifier.into();
-        let source = source.into();
-        let resolved = ResolvedSource::new(
-            specifier.clone(),
-            Self::default_canonical_uri(&specifier),
-            MechSourceCode::String(source.clone()),
+        self.insert_prepared_string(
+            specifier.into(),
+            source.into(),
+            ResolvedSource::admit_canonical_document,
         )
-        .with_kind(SourceKind::Mech);
-        let document = SourceDocument::parse_resolved(
-            &resolved.canonical_uri,
-            self.next_document_revision(&specifier)?,
-            source,
-            ParseConfig::default(),
-        )
-        .map_err(|_| {
-            MechError::new(
-                super::InvalidResolvedSourceError {
-                    field: "source",
-                    reason: "exceeds the canonical retained-source range",
-                },
-                None,
-            )
-        })?;
-        let resolved = resolved
-            .with_source_document(document)?
-            .admit_canonical_document()?;
-        self.insert_source(specifier, resolved)
-    }
-
-    #[cfg(feature = "source")]
-    fn next_document_revision(&self, specifier: &str) -> MResult<Revision> {
-        let Some(previous) = self
-            .sources
-            .get(specifier)
-            .and_then(ResolvedSource::source_document)
-        else {
-            return Ok(Revision(0));
-        };
-        previous
-            .source()
-            .revision()
-            .0
-            .checked_add(1)
-            .map(Revision)
-            .ok_or_else(|| {
-                MechError::new(
-                    super::InvalidResolvedSourceError {
-                        field: "source_document.revision",
-                        reason: "revision identity is exhausted",
-                    },
-                    None,
-                )
-            })
     }
 
     pub fn with_string(mut self, specifier: impl Into<String>, source: impl Into<String>) -> Self {
         let specifier = specifier.into();
         let source = source.into();
-        let resolved = ResolvedSource::new(
-            specifier.clone(),
-            Self::default_canonical_uri(&specifier),
-            MechSourceCode::String(source.clone()),
-        )
-        .with_kind(SourceKind::Mech);
-
-        // The builder cannot return a parse error without breaking its fluent
-        // API. Preserve malformed source in its canonical diagnostic owner; a
-        // legacy tree remains only a temporary projection when that parser also
-        // accepts the source.
         #[cfg(feature = "source")]
-        let resolved = {
-            let revision = match self.next_document_revision(&specifier) {
-                Ok(revision) => revision,
-                Err(_) => return self,
+        let result = self.insert_prepared_string(specifier, source, |resolved| {
+            // This infallible builder retains malformed source for diagnostics.
+            // The shipping parser projection remains frozen until cutover.
+            let MechSourceCode::String(source) = &resolved.source else {
+                unreachable!()
             };
-            let resolved = match SourceDocument::parse_resolved(
-                &resolved.canonical_uri,
-                revision,
-                source.as_str(),
-                ParseConfig::default(),
-            ) {
-                Ok(document) => resolved
-                    .with_source_document(document)
-                    .expect("resolver-created document retains the same source bytes"),
-                Err(_) => resolved,
-            };
-            if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
-                resolved.with_syntax_tree(syntax_tree)
+            if let Ok(tree) = mech_syntax::parser::parse(source.trim()) {
+                Ok(resolved.with_syntax_tree(tree))
             } else {
-                resolved
+                Ok(resolved)
             }
-        };
-
-        if self.insert_source(specifier, resolved).is_err() {
-            // Preserve the established infallible-builder contract: invalid
-            // entries are left absent and can be reported by later resolution.
+        });
+        #[cfg(not(feature = "source"))]
+        let result = self.insert_string(specifier, source);
+        if result.is_err() {
             return self;
         }
         self
     }
 
     /// Retain one canonical revision for later diagnostics without claiming
-    /// that it has passed strict admission. This preserves the infallible
-    /// builder shape while keeping every legacy projection absent.
+    /// strict admission. Rejected identity allocation preserves the old entry.
     #[cfg(feature = "source")]
     pub fn with_canonical_string(
         mut self,
         specifier: impl Into<String>,
         source: impl Into<String>,
     ) -> Self {
-        let specifier = specifier.into();
-        let source = source.into();
-        let resolved = ResolvedSource::new(
-            specifier.clone(),
-            Self::default_canonical_uri(&specifier),
-            MechSourceCode::String(source.clone()),
-        )
-        .with_kind(SourceKind::Mech);
-        let revision = match self.next_document_revision(&specifier) {
-            Ok(revision) => revision,
-            Err(_) => return self,
-        };
-        let document = match SourceDocument::parse_resolved(
-            &resolved.canonical_uri,
-            revision,
-            source,
-            ParseConfig::default(),
-        ) {
-            Ok(document) => document,
-            Err(_) => return self,
-        };
-        let resolved = resolved
-            .with_source_document(document)
-            .expect("resolver-created document retains the same source bytes");
-        if self.insert_source(specifier, resolved).is_err() {
+        if self
+            .insert_prepared_string(specifier.into(), source.into(), Ok)
+            .is_err()
+        {
             return self;
         }
         self
@@ -629,6 +607,122 @@ impl MutableSourceResolver for InMemorySourceResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "source")]
+    #[cfg(feature = "source")]
+    #[test]
+    fn cloned_resolvers_allocate_concurrent_revisions_atomically() {
+        let resolver =
+            InMemorySourceResolver::new().with_canonical_string("main.mec", "value := 0\n");
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(8));
+        let handles = (1..=8)
+            .map(|value| {
+                let mut resolver = resolver.clone();
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    barrier.wait();
+                    let text = format!("value := {value}\n");
+                    resolver.insert_canonical_string("main.mec", &text).unwrap();
+                    let resolved = resolver
+                        .resolve(&SourceRequest::new("main.mec"))
+                        .unwrap()
+                        .unwrap();
+                    let document = resolved.source_document().unwrap();
+                    assert_eq!(document.source().to_contiguous_string(), text);
+                    document.source().revision()
+                })
+            })
+            .collect::<Vec<_>>();
+        let mut revisions = handles
+            .into_iter()
+            .map(|handle| handle.join().unwrap())
+            .collect::<Vec<_>>();
+        revisions.sort();
+        assert_eq!(revisions, (1..=8).map(Revision).collect::<Vec<_>>());
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn incoming_memory_documents_reserve_uri_history_and_reject_identity_aliases() {
+        let uri = "memory:main.mec";
+        let original = ResolvedSource::new(
+            "main.mec",
+            uri,
+            MechSourceCode::String("value := 1\n".into()),
+        )
+        .with_kind(SourceKind::Mech)
+        .retain_source_document(Revision(7), ParseConfig::default())
+        .unwrap();
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_source("different-entry", original.clone())
+            .unwrap();
+        resolver.clear();
+        let conflicting = ResolvedSource::new(
+            "main.mec",
+            uri,
+            MechSourceCode::String("value := 2\n".into()),
+        )
+        .with_kind(SourceKind::Mech)
+        .retain_source_document(Revision(7), ParseConfig::default())
+        .unwrap();
+        assert!(resolver.insert_source("main.mec", conflicting).is_err());
+        resolver.insert_source("historical", original).unwrap();
+        let shipping = resolver.clone().with_string("main.mec", "value := 3\n");
+        let canonical = resolver.with_canonical_string("main.mec", "value := [\n");
+        for (resolver, revision) in [(shipping, 8), (canonical, 9)] {
+            let resolved = resolver
+                .resolve(&SourceRequest::new("main.mec"))
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                resolved.source_document().unwrap().source().revision(),
+                Revision(revision)
+            );
+        }
+    }
+
+    #[test]
+    fn revision_history_survives_deletion_and_diverging_clones() {
+        for canonical in [false, true] {
+            let mut resolver = InMemorySourceResolver::new();
+            let insert = |resolver: &mut InMemorySourceResolver, value| {
+                let source = format!("value := {value}\n");
+                if canonical {
+                    resolver.insert_canonical_string("main.mec", source)
+                } else {
+                    resolver.insert_string("main.mec", source)
+                }
+                .unwrap();
+                resolver
+                    .resolve(&SourceRequest::new("main.mec"))
+                    .unwrap()
+                    .unwrap()
+            };
+            let first = insert(&mut resolver, 0);
+            resolver.remove("main.mec");
+            let second = insert(&mut resolver, 1);
+            resolver.clear();
+            let third = insert(&mut resolver, 2);
+            let mut clone = resolver.clone();
+            let fourth = insert(&mut resolver, 3);
+            let fifth = insert(&mut clone, 4);
+            for (revision, resolved) in [first, second, third, fourth, fifth].iter().enumerate() {
+                assert_eq!(
+                    resolved.source_document().unwrap().source().revision(),
+                    Revision(revision as u64)
+                );
+                assert_eq!(
+                    resolved
+                        .source_document()
+                        .unwrap()
+                        .source()
+                        .to_contiguous_string(),
+                    format!("value := {revision}\n")
+                );
+            }
+        }
+    }
 
     #[test]
     fn resolves_inserted_string() {

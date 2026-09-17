@@ -244,6 +244,21 @@ fn validate_module_versions(
         {
             return not_found("module", version.module.to_string());
         }
+        #[cfg(feature = "source")]
+        {
+            let module = store
+                .modules
+                .get(&version.module)
+                .or_else(|| modules.iter().find(|module| module.id == version.module))
+                .expect("module existence checked above");
+            version.validate_source_owner(&module.name)?;
+            version.validate_source_revisions(
+                store
+                    .module_versions
+                    .values()
+                    .chain(staged_versions.values().copied()),
+            )?;
+        }
         for dependency in version
             .dependencies
             .iter()

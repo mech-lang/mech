@@ -149,17 +149,6 @@ impl CanonicalDocumentRenderer {
         let mut code = Vec::new();
         let mut pending = vec![document.syntax().clone()];
         while let Some(node) = pending.pop() {
-            if matches!(
-                node.kind(),
-                SyntaxKind::CodeBlock
-                    | SyntaxKind::Paragraph
-                    | SyntaxKind::InlineParagraph
-                    | SyntaxKind::EvalInlineMechCode
-                    | SyntaxKind::InlineMechCode
-                    | SyntaxKind::MikaSection
-            ) {
-                return Ok(None);
-            }
             if let Some(mech_code) = MechCodeSyntax::cast(node.clone()) {
                 code.extend(
                     mech_code
@@ -169,7 +158,18 @@ impl CanonicalDocumentRenderer {
                 );
                 continue;
             }
-            pending.extend(node.children());
+            match node.kind() {
+                SyntaxKind::Document
+                | SyntaxKind::Body
+                | SyntaxKind::Section
+                | SyntaxKind::SectionElement => {
+                    pending.extend(node.children());
+                }
+                SyntaxKind::Comment | SyntaxKind::BlankLine => {}
+                // Only root code and trivia belong to a REPL submission. This
+                // excludes every heading and other document presentation owner.
+                _ => return Ok(None),
+            }
         }
         if code.is_empty() {
             return Ok(None);
