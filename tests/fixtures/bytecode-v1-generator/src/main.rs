@@ -159,7 +159,7 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
         compile_source(&source_compiler, "standard", LITERAL_SOURCE)?;
     let (scalar, scalar_functions) = compile_source(&source_compiler, "standard", SCALAR_SOURCE)?;
     let (structural_match, structural_match_functions) =
-        compile_source(&source_compiler, "standard", STRUCTURAL_MATCH_SOURCE)?;
+        compile_source(&source_compiler, "structural-match", STRUCTURAL_MATCH_SOURCE)?;
     let (fixed, fixed_runtime_functions) = compile_fixed_source(FIXED_MATRIX_SOURCE)?;
     let (dynamic, dynamic_functions) =
         compile_source(&source_compiler, "standard", DYNAMIC_MATRIX_SOURCE)?;

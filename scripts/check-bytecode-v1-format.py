@@ -18,13 +18,14 @@ MANIFEST = CORPUS / "manifest.json"
 # Native-build plans have their own content-addressed contract and are excluded.
 # Source fixtures were regenerated for graph payload revision 7; their only wire
 # changes in that migration are the graph revision and checksum.
-EXPECTED_MANIFEST_SHA256 = "4f6616a736a44c51fd23ce1402a82463eb5c4f6caeb043d144387a095cf74e8d"
+EXPECTED_MANIFEST_SHA256 = "4baf9b24b1c82fa7c79ee3efbd4e8d125aca35ef122bb9181148259f8671399f"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
     "literal-f64.mecb": "a40b80ff0fab0d3a480b8c23f13eec9759fc604ff3f4ca74ee05279b62f9a3ee",
     "scalar-add-f64.mecb": "dc2ec6633e660d2be8af19c4e8fcaedb920f3be2cc315d2588bf04125e0e828b",
+    "structural-match.mecb": "0c5d1ca80c42425831ac79c9266fc2174fcfb624d23d41600c34a82a67cda92b",
     "fixed-matrix-add-f64.mecb": "310463b08585e144884fc79ff29bfb97b4b615634a1e015c4fe33aeac8f1ff59",
     "dynamic-matrix-add-f64.mecb": "b07849cef75893d0d019dcbda7ae0c9f0cf2d83c416ee52cd5e35340ca6655fc",
     "variadic-horzcat-f64.mecb": "ea2243c3dff395736da4bd69724ba28608d92666c1220f03c06e885967f789ac",
@@ -47,6 +48,7 @@ EXPECTED_FILES = [
     "canonical-composites.mecb",
     "literal-f64.mecb",
     "scalar-add-f64.mecb",
+    "structural-match.mecb",
     "fixed-matrix-add-f64.mecb",
     "dynamic-matrix-add-f64.mecb",
     "variadic-horzcat-f64.mecb",
@@ -90,6 +92,7 @@ EXPECTED_SOURCE_FILES = [
     "scalar-add.mec",
     "scene.mec",
     "string.mec",
+    "structural-match.mec",
     "synthetic-live-read.mec",
     "ternary.mec",
     "time.mec",
@@ -929,14 +932,20 @@ def validate_fixture(entry: dict[str, object]) -> None:
         decoded_requirements == entry.get("application_requirements"),
         f"{name}: decoded requirements disagree with manifest",
     )
-    decoded_runtime_ids, _ = decode_instructions(
-        section_payloads[4],
-        int(sections[4]["item_count"]),
-        register_count,
-        int(sections[1]["item_count"]),
-        decoded_requirements,
-        name,
-    )
+    if sections[4]["item_count"] == 0 and all(artifact_present):
+        # Canonical artifact-only fixtures need no compatibility instruction
+        # stream; their executable graph lives in the revisioned artifact
+        # sections validated by the Rust contract suite.
+        decoded_runtime_ids = set()
+    else:
+        decoded_runtime_ids, _ = decode_instructions(
+            section_payloads[4],
+            int(sections[4]["item_count"]),
+            register_count,
+            int(sections[1]["item_count"]),
+            decoded_requirements,
+            name,
+        )
 
     runtime_ids = entry.get("runtime_function_ids")
     require(isinstance(runtime_ids, list), f"{name}: runtime function metadata is missing")
