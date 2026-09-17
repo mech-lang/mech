@@ -99,8 +99,8 @@ mod tests {
 
   #[test]
   fn generated_canonical_inventory_is_exact_and_collision_free() {
-    assert_eq!(CANONICAL_RULE_COUNT, 540);
-    assert_eq!(CANONICAL_RULES.len(), 540);
+    assert_eq!(CANONICAL_RULE_COUNT, 539);
+    assert_eq!(CANONICAL_RULES.len(), 539);
 
     let mut names = BTreeSet::new();
     let mut hashes = BTreeMap::new();

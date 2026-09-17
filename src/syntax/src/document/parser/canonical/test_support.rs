@@ -13,7 +13,25 @@ use crate::document::{
 use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::super::rule::rules;
 use super::combinator::Attempt;
-use super::{kinds, literals, operators, paths};
+use super::{imports, kinds, literals, operators, paths};
+
+/// The exact direct-rule outcome, including local committed recovery.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CanonicalRuleOutcome {
+    NoMatch,
+    Matched,
+    Committed,
+}
+
+impl From<Attempt> for CanonicalRuleOutcome {
+    fn from(value: Attempt) -> Self {
+        match value {
+            Attempt::NoMatch => Self::NoMatch,
+            Attempt::Matched => Self::Matched,
+            Attempt::Committed => Self::Committed,
+        }
+    }
+}
 
 /// A narrow prefix snapshot used to exercise canonical source productions.
 #[derive(Clone, Debug)]
@@ -24,6 +42,7 @@ pub struct CanonicalSourceRuleSnapshot {
     pub diagnostics: DiagnosticStore,
     pub nodes: NodeIndex,
     pub stats: ParseStats,
+    pub outcome: CanonicalRuleOutcome,
     pub matched: bool,
     pub consumed: TextRange,
 }
@@ -38,7 +57,7 @@ impl CanonicalSourceRuleSnapshot {
     }
 
     pub fn is_strictly_clean(&self) -> bool {
-        self.matched
+        self.outcome == CanonicalRuleOutcome::Matched
             && self.diagnostics.is_empty()
             && !self.root.flags.intersects(
                 NodeFlags::ERROR
@@ -70,7 +89,8 @@ pub(crate) fn parse_source_rule_prefix(
     parser.set_resource_rule(rule);
     let fragment = parser.start();
     let start = parser.offset();
-    let matched = parse(&mut parser).accepted();
+    let outcome = parse(&mut parser);
+    let matched = outcome.accepted();
     let end = parser.offset();
     fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
     let output = parser.finish();
@@ -101,6 +121,7 @@ pub(crate) fn parse_source_rule_prefix(
         diagnostics,
         nodes,
         stats,
+        outcome: outcome.into(),
         matched,
         consumed,
     }
@@ -167,6 +188,23 @@ pub fn parse_canonical_phase_2d_rule_for_test(
         parse_source_rule_prefix(source, rule, config, |parser| {
             operators::parse_rule(parser, rule)
                 .expect("Phase 2D support guard accepts this RuleId")
+        })
+    })
+}
+
+/// Parse one exact Phase 2E module-import production as a deterministic
+/// source prefix. This hidden surface exposes only the closed module-import
+/// layer and deliberately does not introduce an import parser root.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2e_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    imports::supports(rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            imports::parse_rule(parser, rule)
+                .expect("Phase 2E support guard accepts this RuleId")
         })
     })
 }
@@ -289,6 +327,31 @@ mod tests {
             parse_canonical_phase_2d_rule_for_test(
                 source,
                 rules::EXPRESSION,
+                ParseConfig::default(),
+            )
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn phase_2e_helper_accepts_exactly_the_closed_19_rule_set() {
+        let source = TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+        assert_eq!(imports::PHASE_2E_IMPORT_RULES.len(), 19);
+        for rule in imports::PHASE_2E_IMPORT_RULES {
+            assert!(
+                parse_canonical_phase_2e_rule_for_test(
+                    source.clone(),
+                    *rule,
+                    ParseConfig::default(),
+                )
+                .is_some(),
+                "{rule:?}"
+            );
+        }
+        assert!(
+            parse_canonical_phase_2e_rule_for_test(
+                source,
+                rules::IMPORT_DECLARATION,
                 ParseConfig::default(),
             )
             .is_none()

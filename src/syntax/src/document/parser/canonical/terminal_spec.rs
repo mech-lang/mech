@@ -127,7 +127,7 @@ fixed_terminal_specs! {
   MIKA_SECTION_OPEN => ("⸢", MikaSectionOpen, Exact);
   MIKA_SECTION_CLOSE => ("⸥", MikaSectionClose, Exact);
   PROMPT_SIGIL => (">:", PromptSigil, Exact);
-  MODULE_IMPORT_SIGIL => ("+>", ModuleImportSigil, Exact);
+  IMPORT_SIGIL => ("+>", ModuleImportSigil, Exact);
   MODULE_EXPORT_SIGIL => ("<+", ModuleExportSigil, Exact);
   ASSIGN_OPERATOR => ("=", AssignOperator, Whitespace0Both);
   ASYNC_TRANSITION_OPERATOR => ("~>", AsyncTransitionOperator, Whitespace0Both);

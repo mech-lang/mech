@@ -17,11 +17,13 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "paths.rs",
   "kinds.rs",
   "operators.rs",
+  "imports.rs",
 ];
 
 const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
 const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &["literals.rs", "paths.rs", "kinds.rs"];
 const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &["operators.rs"];
+const PHASE_2E_PRODUCTION_SOURCES: &[&str] = &["imports.rs"];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -555,6 +557,102 @@ fn canonical_phase_2d_operator_source_is_present_and_directly_isolated() {
 }
 
 #[test]
+fn canonical_phase_2e_import_source_is_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2E_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in ["nom", "CoverageStore", "CoverageGap", "UnportedInline"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not depend on {forbidden}"
+      );
+    }
+    assert!(
+      !contains_token_sequence(&source, &["crate", "::", "parse"]),
+      "{relative} must not invoke the legacy public parser"
+    );
+    for path in [
+      &["super", "::", "super", "::", "document"][..],
+      &["super", "::", "super", "::", "mech"][..],
+      &["super", "::", "super", "::", "mechdown"][..],
+      &["super", "::", "super", "::", "imports"][..],
+      &["super", "::", "super", "::", "statements"][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "document",
+      ][..],
+      &["crate", "::", "document", "::", "parser", "::", "mech"][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "mechdown",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "imports",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "statements",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "structures",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "patterns",
+      ][..],
+      &[
+        "crate", "::", "document", "::", "parser", "::", "functions",
+      ][..],
+      &[
+        "crate",
+        "::",
+        "document",
+        "::",
+        "parser",
+        "::",
+        "state_machines",
+      ][..],
+      &["crate", "::", "expressions"][..],
+      &["crate", "::", "structures"][..],
+      &["crate", "::", "patterns"][..],
+      &["crate", "::", "functions"][..],
+      &["crate", "::", "state_machines"][..],
+      &["crate", "::", "document", "::", "incremental"][..],
+    ] {
+      assert!(
+        !contains_token_sequence(&source, path),
+        "{relative} must not import or call a deferred parser module"
+      );
+    }
+    for forbidden in ["to_contiguous_string", "full_range", "graphemes"] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not materialize or globally segment source through {forbidden}"
+      );
+    }
+    for rule in [
+      "MODULE_IMPORT_SIGIL",
+      "MODULE_IMPORT_END",
+      "IMPORT_DECLARATION",
+      "SOURCE_IMPORT_SPECIFIER",
+      "STATEMENT",
+      "MECH_CODE_ALT",
+      "MECH_CODE",
+      "CODE_TERMINAL",
+      "EXPRESSION",
+    ] {
+      assert!(
+        !contains_token_sequence(&source, &["rules", "::", rule]),
+        "{relative} must not claim deferred rules::{rule}"
+      );
+    }
+  }
+}
+
+#[test]
 fn phase_2b_entry_points_bind_their_exact_generated_rule_ids() {
   let canonical = canonical_root();
   let expected = [
@@ -733,6 +831,96 @@ fn phase_2d_entry_points_bind_their_exact_generated_rule_ids() {
     ),
   ];
   assert_eq!(expected.len(), 53);
+
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
+  }
+}
+
+#[test]
+fn phase_2e_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    (
+      "imports.rs",
+      "parse_module_import_name_segment",
+      "MODULE_IMPORT_NAME_SEGMENT",
+    ),
+    (
+      "imports.rs",
+      "parse_module_import_intrinsic_segment",
+      "MODULE_IMPORT_INTRINSIC_SEGMENT",
+    ),
+    (
+      "imports.rs",
+      "parse_module_import_path_segment",
+      "MODULE_IMPORT_PATH_SEGMENT",
+    ),
+    ("imports.rs", "parse_module_import_path", "MODULE_IMPORT_PATH"),
+    (
+      "imports.rs",
+      "parse_module_import_alias_segment",
+      "MODULE_IMPORT_ALIAS_SEGMENT",
+    ),
+    (
+      "imports.rs",
+      "parse_module_import_alias_path",
+      "MODULE_IMPORT_ALIAS_PATH",
+    ),
+    (
+      "imports.rs",
+      "parse_module_import_value_alias",
+      "MODULE_IMPORT_VALUE_ALIAS",
+    ),
+    (
+      "imports.rs",
+      "parse_context_import_alias_segment",
+      "CONTEXT_IMPORT_ALIAS_SEGMENT",
+    ),
+    (
+      "imports.rs",
+      "parse_module_import_context_alias",
+      "MODULE_IMPORT_CONTEXT_ALIAS",
+    ),
+    (
+      "imports.rs",
+      "parse_module_import_alias",
+      "MODULE_IMPORT_ALIAS",
+    ),
+    ("imports.rs", "parse_module_root", "MODULE_ROOT"),
+    (
+      "imports.rs",
+      "parse_import_alias_operator",
+      "IMPORT_ALIAS_OPERATOR",
+    ),
+    (
+      "imports.rs",
+      "parse_import_group_separator",
+      "IMPORT_GROUP_SEPARATOR",
+    ),
+    ("imports.rs", "parse_import_group_item", "IMPORT_GROUP_ITEM"),
+    ("imports.rs", "parse_import_group_items", "IMPORT_GROUP_ITEMS"),
+    (
+      "imports.rs",
+      "parse_aliased_item_import",
+      "ALIASED_ITEM_IMPORT",
+    ),
+    (
+      "imports.rs",
+      "parse_module_suffix_import",
+      "MODULE_SUFFIX_IMPORT",
+    ),
+    ("imports.rs", "parse_module_only_import", "MODULE_ONLY_IMPORT"),
+    ("imports.rs", "parse_module_import", "MODULE_IMPORT"),
+  ];
+  assert_eq!(expected.len(), 19);
 
   for (file, function, rule) in expected {
     let path = canonical.join(file);

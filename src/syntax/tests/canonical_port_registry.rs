@@ -7,13 +7,14 @@ use mech_syntax::document::parser::{
     LoweringPortStatus, NodePolicy, PortPhase, RuleFamily, SyntaxPortStatus, canonical_rule_id,
 };
 
-const EXPECTED_RULES: usize = 540;
+const EXPECTED_RULES: usize = 539;
 const EXPECTED_PHASE_2A: usize = 167;
 const EXPECTED_PHASE_2B: usize = 13;
 const EXPECTED_PHASE_2C: usize = 30;
 const EXPECTED_PHASE_2D: usize = 53;
-const EXPECTED_PORTED: usize = 263;
-const EXPECTED_UNPORTED: usize = 277;
+const EXPECTED_PHASE_2E: usize = 19;
+const EXPECTED_PORTED: usize = 282;
+const EXPECTED_UNPORTED: usize = 257;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -76,6 +77,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
         Some(PortPhase::Phase2B) => "2B",
         Some(PortPhase::Phase2C) => "2C",
         Some(PortPhase::Phase2D) => "2D",
+        Some(PortPhase::Phase2E) => "2E",
     }
 }
 
@@ -460,7 +462,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.syntax == SyntaxPortStatus::ParityVerified)
             .count(),
-        258
+        277
     );
     assert_eq!(
         CANONICAL_PORTS
@@ -500,9 +502,16 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         ported
             .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2E))
+            .count(),
+        EXPECTED_PHASE_2E
+    );
+    assert_eq!(
+        ported
+            .iter()
             .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
             .count(),
-        104
+        121
     );
     assert_eq!(
         ported
@@ -516,7 +525,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
             .count(),
-        153
+        155
     );
 }
 
@@ -748,6 +757,143 @@ fn phase_2d_registry_accounting_and_policies_are_exact() {
             .count(),
         1
     );
+}
+
+#[test]
+fn phase_2e_registry_accounting_and_policies_are_exact() {
+    let node_policies = [
+        ("aliased-item-import", "AliasedItemImport"),
+        ("context-import-alias-segment", "ContextImportAliasSegment"),
+        ("import-group-item", "ImportGroupItem"),
+        ("import-group-items", "ImportGroupItems"),
+        ("module-import", "ModuleImport"),
+        ("module-import-alias", "ModuleImportAlias"),
+        ("module-import-alias-path", "ModuleImportAliasPath"),
+        ("module-import-alias-segment", "ModuleImportAliasSegment"),
+        ("module-import-context-alias", "ModuleImportContextAlias"),
+        (
+            "module-import-intrinsic-segment",
+            "ModuleImportIntrinsicSegment",
+        ),
+        ("module-import-name-segment", "ModuleImportNameSegment"),
+        ("module-import-path", "ModuleImportPath"),
+        ("module-import-path-segment", "ModuleImportPathSegment"),
+        ("module-import-value-alias", "ModuleImportValueAlias"),
+        ("module-only-import", "ModuleOnlyImport"),
+        ("module-root", "ModuleRoot"),
+        ("module-suffix-import", "ModuleSuffixImport"),
+    ];
+    let transparent = BTreeSet::from(["import-alias-operator", "import-group-separator"]);
+    let expected_names = node_policies
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(transparent.iter().copied())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(node_policies.len(), 17);
+    assert_eq!(transparent.len(), 2);
+    assert_eq!(expected_names.len(), EXPECTED_PHASE_2E);
+
+    let phase_2e = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2E))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2e.len(), EXPECTED_PHASE_2E);
+    assert_eq!(
+        phase_2e
+            .iter()
+            .map(|port| port.name)
+            .collect::<BTreeSet<_>>(),
+        expected_names
+    );
+
+    for port in &phase_2e {
+        assert_eq!(
+            port.syntax,
+            SyntaxPortStatus::ParityVerified,
+            "{}",
+            port.name
+        );
+        if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
+            assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
+            assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
+        } else {
+            assert!(transparent.contains(port.name), "{}", port.name);
+            assert_eq!(port.node_policy, NodePolicy::Transparent);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        }
+    }
+
+    assert_eq!(
+        phase_2e
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
+            .count(),
+        17
+    );
+    assert_eq!(
+        phase_2e
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::Pending)
+            .count(),
+        0
+    );
+    assert_eq!(
+        phase_2e
+            .iter()
+            .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
+            .count(),
+        2
+    );
+
+    let import_sigil = CANONICAL_PORTS
+        .iter()
+        .find(|port| port.name == "import-sigil")
+        .expect("import-sigil port");
+    assert_eq!(import_sigil.phase, Some(PortPhase::Phase2A));
+    assert_eq!(import_sigil.syntax, SyntaxPortStatus::ParityVerified);
+    assert_eq!(import_sigil.lowering, LoweringPortStatus::NotApplicable);
+    assert_eq!(import_sigil.node_policy, NodePolicy::Token);
+    assert!(
+        CANONICAL_PORTS
+            .iter()
+            .all(|port| port.name != "module-import-sigil" && port.name != "module-import-end")
+    );
+
+    let inventory =
+        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
+            .expect("read productions.tsv");
+    let mut lines = inventory.lines();
+    let header = fields(lines.next().expect("productions.tsv header"));
+    let grammar_name = header
+        .iter()
+        .position(|column| *column == "grammar-name")
+        .unwrap();
+    let child_rules = header
+        .iter()
+        .position(|column| *column == "child-rules")
+        .unwrap();
+    for row in lines.map(fields) {
+        if !expected_names.contains(row[grammar_name]) {
+            continue;
+        }
+        for child in row[child_rules].split(',') {
+            if child.is_empty() || child == "none" {
+                continue;
+            }
+            let child_port = CANONICAL_PORTS
+                .iter()
+                .find(|port| port.name == child)
+                .unwrap_or_else(|| {
+                    panic!("{} has unknown canonical child {child}", row[grammar_name])
+                });
+            assert_ne!(
+                child_port.syntax,
+                SyntaxPortStatus::Unported,
+                "{} has unported canonical child {child}",
+                row[grammar_name]
+            );
+        }
+    }
 }
 
 #[test]

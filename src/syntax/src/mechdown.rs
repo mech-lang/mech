@@ -1443,10 +1443,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
                 new_input = input;
                 continue;
             }
-            Err(_) => {
-                // not mech code, try section_element
-                //return Err(e);
-            }
+      Err(Failure(e)) => return Err(Failure(e)),
+      Err(_) => {}
         }
 
         match section_element(new_input.clone()) {
