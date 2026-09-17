@@ -2,53 +2,50 @@
 
 ## Live landing checkpoint — 2026-09-17
 
-**Candidate:** `codex/syntax-s8r26-canonical-compute-lowering` /
-`45eeb5dbb8e43c8b44057cef335c94e19867f402`, published as draft #885 on
-R06 `8a2878f5796448055c6bb31adf5afa1a96871175`. This is the current accumulated
-implementation head through R26, excluding separately owned R25. The designated
-landing branch remains `codex/syntax-s8c-cutover`; it must be rebuilt with the
-accepted R25 and R26 heads before it becomes the qualification candidate.
+**Candidate:** `codex/syntax-s8c-cutover` /
+`3b7a9a0d74d05d49724038bd3e042e5f48080027`, published as draft #830 on
+R26 `45eeb5dbb8e43c8b44057cef335c94e19867f402`. This is the designated combined
+qualification candidate for the complete R01–R26 correction stack and targets
+`integration/v0.4` through the protected stacked path.
 
-**Completed:** all 25 v0.4 correction boundaries are implemented and published;
-R15 constrained/interval units remains explicitly deferred to post-v0.4 issue
-#865. R26 removes the `matrix/multiply` compatibility identity from the artifact,
-maintained contract, resident registry, and matrix provider; canonical
-`matrix/matmul` is the single owner. The fixed-shape lowerer now owns static range
-selectors, same-representation conversions, tuple-member forwarding, and the
-shipped EKF's derived fixed-shape graph. The elementwise planner reuses state-write
-storage when a canonical tuple publication is exactly a recurrence update, keeping
-the shipped particle kernel inside the guaranteed WebGPU storage-buffer budget.
-The maintained EKF and particle product oracles now enter through retained source
-documents rather than deleted tree APIs.
+**Completed:** the four review findings on preceding C `71ff3eec6` are fixed,
+answered, and resolved. Static publication and WASM share the retained
+`BrowserDocumentPayload` / `fromServedDocuments` contract; encoded transport
+routes preserve logical document specifiers; comment-only evaluated rich output
+retains a non-visible fallback; and document mounts retain their captured output
+identity after console submissions. The preceding owner failures are corrected:
+direct comment semicolons, ordered-root scope reuse, and numbered compute-region
+names now have exact regressions.
 
-Exact R26 evidence passes the shipped source/decoded EKF witness 1/1, the maintained
-CPU/WebGPU EKF matrix 22/22, the maintained CPU/WebGPU particle matrix 30/30, native
-GPU library tests 50/50, canonical document state 104/104, canonical source review
-31/31, and the core type-system catalog 26/26. Formatting and diff checks pass. The
-full-distribution numeric-capability probe fails at the pre-existing
-`matrix/dot`/`r64` expectation on both R26 and its unchanged R06 parent, before the
-matmul assertion; it is recorded as accumulated qualification debt and is not
-counted as R26 success. No canceled or zero-test command is counted as evidence.
+Canonical native planning now consumes artifact requirements directly, validates
+resource ownership and write payloads through the trusted providers, and avoids a
+synthetic turn for read-only artifacts. Exact local evidence passes 397 root
+compute-enabled tests, 128 syntax tests, 682 runtime tests, seven canonical host
+planning tests, one fixed document-mount test, and three served-document tests.
+Time and timer reads, scene writes, and the robot custom send build and execute as
+generated native applications. The first eleven native graph generation cases
+also passed before the now-corrected read-only planning failure. Formatting,
+patch integrity, resident-routing, warning-policy, interactive-architecture,
+compiler-planning-quarantine, and unsafe-boundary checks pass. The PR has zero
+current unresolved review threads.
 
-**Remaining:** obtain focused review for R26 #885 and preserve the separately owned
-R25 review boundary. Assemble exact R25 and R26 into the designated C candidate,
-run the configured deleted-parser CPU/WebGPU product probes on that head, and fix
-any combined failure in its owner. Resolve the two accumulated engine-unit failures
-in their existing owners and reconcile the inherited full-distribution
-`matrix/dot`/`r64` contract expectation. Then hold one exact C SHA for full
-qualification, complete protected review/merge, and verify the landed target.
+**Remaining:** obtain review of exact C `3b7a9a0d7` and complete protected CI on
+that SHA. The local machine has no Node or Chrome executable, so the JavaScript
+bootstrap and browser product probes remain assigned to CI. Inspect every actual
+failed job, fix genuine failures in their owner, propagate the changed candidate,
+and requalify it. Once exact-head review and qualification are clean, merge the
+stack through the protected path and verify the landed target.
 
-**Current action:** assemble the accepted R25 and R26 implementation heads into
-`codex/syntax-s8c-cutover` without changing their review diffs, then run the
-single-lane CPU EKF probe followed by the maintained CPU/WebGPU product matrix.
+**Current action:** request review of the published exact C head and monitor the
+new CI run, prioritizing the early native plan and browser compute/product jobs
+that failed on the preceding head.
 
-**Next action:** inspect the current remote R25 and C ancestry, rebuild C onto the
-accepted correction chain plus R26, publish the exact C SHA, and record the first
-combined product result before advancing any other correction.
+**Next action:** inspect the first completed exact-head jobs. If a genuine failure
+appears, add its reproducer and fix it once in the owning C correction; otherwise
+continue through full qualification and protected merge verification.
 
-**External blocker:** none for routine integration, testing, review response, or
-rebasing. R25 remains assigned to its separate owner, but its published head is
-available for assembly. No unresolved language decision is being requested.
+**External blocker:** none for review, CI triage, routine fixes, rebasing, or the
+established protected merge path.
 
 **Status:** Checkpoint—not complete.
 
