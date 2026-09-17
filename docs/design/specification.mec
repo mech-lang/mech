@@ -2194,9 +2194,13 @@ mika-arm-right := "∞C" | "─‹" | "⌣‹" | "⌐·" | "◡-" | "ᗑ" | "ᕤ
 (11.2.2) Nose terminals
 
 ```ebnf:historical
-mika-nose := "⦿" | "◯" | "⊕" | "∘" | "⦾" | "⊖" | "⦵"
+mika-nose := "◉" | "⦿" | "◯" | "⊕" | "∘" | "⦾" | "⊖" | "⦵"
            | "⊗" | "⏺" | "⍜" | "⬢" | "⬟" | "⬣" | "⎔" ;
 ```
+
+Mika glyph roles are positional. `◉` is the nose in the Idle MicroMika
+`╭◉╮`, and it is an eye on each side of the `◯` nose in the Wired MiniMika
+`(◉◯◉)`.
 
 (11.2.3) Named MicroMika forms
 
@@ -2211,7 +2215,7 @@ The platform includes the following canonical MicroMika forms:
 - `╭⦿─‹` (GripperRight)
 - `⌣⦿╮` (GestureLeft)
 - `╭⦿⌣` (GestureRight)
-- `╭⦿╮` (Idle)
+- `╭◉╮` (Idle)
 - `⸸⦿ᗢ` (Knight)
 - `·¬⦿⌐·` (Matrix)
 - `⸸⦿ᗑ` (OneWing)
@@ -3522,7 +3526,8 @@ section-element := mechdown-list
                  | idea-block
                  | paragraph ;
 section := ?ul-subtitle,
-           *(mika | mech-code | (section-element, *blank-line)) ;
+           *(¬ul-subtitle, ¬mika-section-close,
+             (mika | mech-code | (section-element, *blank-line))) ;
 body := whitespace0, *section ;
 
 mika-section := mika-section-open, section, mika-section-close ;
@@ -3608,7 +3613,8 @@ mika-eye-right := "ˆ"
                 | "ᗩ"
                 | "¬"
                 | "◉" ;
-mika-nose := "⦿"
+mika-nose := "◉"
+           | "⦿"
            | "◯"
            | "⊕"
            | "∘"

@@ -84,7 +84,7 @@ complete rule-level closure:
 parses
 recovers
 exposes typed syntax
-has a source-semantic disposition
+implements its specified semantic behavior
 passes canonical conformance
 passes ambiguity tests
 passes resource-limit tests
@@ -263,11 +263,12 @@ semantic reconstruction.
 9. Root boundary
 -------------------------------------------------------------------------------
 
-Phase 2I adds no public parser root. The public root surface remains:
+Phase 2I itself added no public parser root. S7 extends the current canonical
+root surface to:
 
 ```text
-Prototype + Document
 Canonical + Grammar
+Canonical + Document
 ```
 
 This is the complete current parser-root API.
@@ -312,5 +313,5 @@ comprehensions are not factor forms. Complete record candidates may fall
 through to maps, and that selection remains measured-linear for nested
 record-looking maps. Matrix nodes retain leading whitespace, physical newlines,
 and box borders. Every recursive repetition propagates a committed child
-without discarding its diagnostic or parent structure. No public parser root is
-added.
+without discarding its diagnostic or parent structure. The component remains
+independent of the canonical document root added by S7.

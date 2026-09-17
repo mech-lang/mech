@@ -240,24 +240,50 @@ fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<SyntaxNode>,
 ) -> Result<(), SourceSemanticError> {
-    match node.kind() {
-        SyntaxKind::VariableDefine | SyntaxKind::Expression => output.push(node.clone()),
-        SyntaxKind::Document
-        | SyntaxKind::Body
-        | SyntaxKind::Section
-        | SyntaxKind::SectionElement
-        | SyntaxKind::MechItem => {
-            for child in node.children() {
-                collect_document_units(&child, output)?;
-            }
-        }
-        _ => {
-            return Err(SourceSemanticError {
-                code: "source-semantics/unsupported-document-unit",
-                message: format!("the S4 document subset does not support {:?}", node.kind()),
-                anchor: SourceSemanticAnchor::for_node(node),
-            });
-        }
+    if matches!(
+        node.kind(),
+        SyntaxKind::InlineMechCode | SyntaxKind::MikaSection
+    ) {
+        return Ok(());
+    }
+    if matches!(
+        node.kind(),
+        SyntaxKind::VariableDefine | SyntaxKind::Expression
+    ) {
+        output.push(node.clone());
+        return Ok(());
+    }
+    if matches!(
+        node.kind(),
+        SyntaxKind::ActivationScope
+            | SyntaxKind::ContextDeclaration
+            | SyntaxKind::ContextSend
+            | SyntaxKind::EnumDefine
+            | SyntaxKind::ExportDeclaration
+            | SyntaxKind::Fsm
+            | SyntaxKind::FsmDeclare
+            | SyntaxKind::FsmImplementation
+            | SyntaxKind::FsmSpecification
+            | SyntaxKind::FunctionDefine
+            | SyntaxKind::InvariantDefine
+            | SyntaxKind::ImportDeclaration
+            | SyntaxKind::KindDefine
+            | SyntaxKind::ModuleImport
+            | SyntaxKind::OpAssign
+            | SyntaxKind::TupleDestructure
+            | SyntaxKind::VariableAssign
+    ) {
+        return Err(SourceSemanticError {
+            code: "source-semantics/unsupported-document-unit",
+            message: format!(
+                "canonical document unit {:?} has no engine semantic implementation",
+                node.kind()
+            ),
+            anchor: SourceSemanticAnchor::for_node(node),
+        });
+    }
+    for child in node.children() {
+        collect_document_units(&child, output)?;
     }
     Ok(())
 }
