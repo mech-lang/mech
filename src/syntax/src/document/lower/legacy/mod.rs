@@ -1,5 +1,6 @@
 mod base;
 mod common;
+mod control_operators;
 mod declarations;
 mod grammar;
 mod imports;
@@ -8,8 +9,10 @@ mod literals;
 mod mechdown;
 mod operators;
 mod paths;
+mod pattern_primitives;
 mod source;
 mod source_imports;
+mod subscript_primitives;
 
 pub use base::{
     lower_legacy_digit_sequence, lower_legacy_escaped_character, lower_legacy_identifier,
@@ -20,6 +23,12 @@ pub use declarations::{
     lower_legacy_context_capability_scope, lower_legacy_context_declaration,
     lower_legacy_export_declaration,
 };
+pub use control_operators::{
+    lower_legacy_add_assign_operation, lower_legacy_div_assign_operation,
+    lower_legacy_exp_assign_operation, lower_legacy_mul_assign_operation,
+    lower_legacy_op_assign_operator, lower_legacy_sub_assign_operation,
+};
+pub(crate) use control_operators::{lower_phase_2g_control_value, LegacyControlValue};
 pub(crate) use declarations::{lower_phase_2f_declaration_value, LegacyDeclarationValue};
 pub use grammar::lower_legacy_grammar;
 pub use imports::{
@@ -49,5 +58,14 @@ pub use operators::{
 pub(crate) use operators::{lower_phase_2d_operator_value, LegacyOperatorValue};
 pub(crate) use imports::{lower_phase_2e_module_import_value, LegacyModuleImportValue};
 pub use paths::{lower_legacy_context_address_path, lower_legacy_prefixed_context_path};
+pub use pattern_primitives::lower_legacy_wildcard_pattern;
+pub(crate) use pattern_primitives::{lower_phase_2g_pattern_value, LegacyPatternPrimitiveValue};
 pub use source_imports::{lower_legacy_import_declaration, lower_legacy_source_import_specifier};
 pub(crate) use source_imports::{lower_phase_2f_source_import_value, LegacySourceImportValue};
+pub use subscript_primitives::{
+    lower_legacy_dot_subscript, lower_legacy_dot_subscript_int,
+    lower_legacy_select_all_subscript, lower_legacy_swizzle_subscript,
+};
+pub(crate) use subscript_primitives::{
+    lower_phase_2g_subscript_value, LegacySubscriptPrimitiveValue,
+};

@@ -13,7 +13,10 @@ use crate::document::{
 use super::super::{LexicalMode, ParseConfig, Parser, sink};
 use super::super::rule::rules;
 use super::combinator::Attempt;
-use super::{declarations, imports, kinds, literals, operators, paths, source_imports};
+use super::{
+    control_operators, declarations, imports, kinds, literals, operators, paths,
+    pattern_primitives, source_imports, subscript_primitives,
+};
 
 /// The exact combined Phase 2F direct-rule surface.
 pub(crate) const PHASE_2F_RULES: &[RuleId; 21] = &[
@@ -38,6 +41,25 @@ pub(crate) const PHASE_2F_RULES: &[RuleId; 21] = &[
     rules::CONTEXT_CAPABILITY_PATH_TOKEN,
     rules::CONTEXT_CAPABILITY_PATH,
     rules::CONTEXT_CAPABILITY_SCOPE,
+];
+
+/// The exact combined Phase 2G direct executable-primitive surface.
+pub(crate) const PHASE_2G_RULES: &[RuleId; 15] = &[
+    rules::STATEMENT_SEPARATOR,
+    rules::SELECT_ALL,
+    rules::SWIZZLE_SUBSCRIPT,
+    rules::DOT_SUBSCRIPT,
+    rules::DOT_SUBSCRIPT_INT,
+    rules::WILDCARD,
+    rules::SPREAD_OPERATOR,
+    rules::OP_ASSIGN_OPERATOR,
+    rules::ADD_ASSIGN_OPERATOR,
+    rules::SUB_ASSIGN_OPERATOR,
+    rules::MUL_ASSIGN_OPERATOR,
+    rules::DIV_ASSIGN_OPERATOR,
+    rules::EXP_ASSIGN_OPERATOR,
+    rules::SEND_OPERATOR,
+    rules::GUARD_OPERATOR,
 ];
 
 /// The exact direct-rule outcome, including local committed recovery.
@@ -248,6 +270,25 @@ pub fn parse_canonical_phase_2f_rule_for_test(
             source_imports::parse_rule(parser, rule)
                 .or_else(|| declarations::parse_rule(parser, rule))
                 .expect("Phase 2F support guard accepts this RuleId")
+        })
+    })
+}
+
+/// Parse one exact Phase 2G executable primitive as a deterministic source
+/// prefix. This hidden surface deliberately does not introduce a subscript,
+/// pattern, statement, expression, state-machine, or document root.
+#[doc(hidden)]
+pub fn parse_canonical_phase_2g_rule_for_test(
+    source: TextSnapshot,
+    rule: RuleId,
+    config: ParseConfig,
+) -> Option<CanonicalSourceRuleSnapshot> {
+    PHASE_2G_RULES.contains(&rule).then(|| {
+        parse_source_rule_prefix(source, rule, config, |parser| {
+            subscript_primitives::parse_rule(parser, rule)
+                .or_else(|| pattern_primitives::parse_rule(parser, rule))
+                .or_else(|| control_operators::parse_rule(parser, rule))
+                .expect("Phase 2G support guard accepts this RuleId")
         })
     })
 }

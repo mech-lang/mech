@@ -14,8 +14,9 @@ const EXPECTED_PHASE_2C: usize = 30;
 const EXPECTED_PHASE_2D: usize = 53;
 const EXPECTED_PHASE_2E: usize = 19;
 const EXPECTED_PHASE_2F: usize = 21;
-const EXPECTED_PORTED: usize = 303;
-const EXPECTED_UNPORTED: usize = 236;
+const EXPECTED_PHASE_2G: usize = 15;
+const EXPECTED_PORTED: usize = 318;
+const EXPECTED_UNPORTED: usize = 221;
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -80,6 +81,7 @@ fn phase_name(phase: Option<PortPhase>) -> &'static str {
         Some(PortPhase::Phase2D) => "2D",
         Some(PortPhase::Phase2E) => "2E",
         Some(PortPhase::Phase2F) => "2F",
+        Some(PortPhase::Phase2G) => "2G",
     }
 }
 
@@ -464,7 +466,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.syntax == SyntaxPortStatus::ParityVerified)
             .count(),
-        298
+        313
     );
     assert_eq!(
         CANONICAL_PORTS
@@ -518,9 +520,16 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
     assert_eq!(
         ported
             .iter()
+            .filter(|port| port.phase == Some(PortPhase::Phase2G))
+            .count(),
+        EXPECTED_PHASE_2G
+    );
+    assert_eq!(
+        ported
+            .iter()
             .filter(|port| port.lowering == LoweringPortStatus::ParityVerified)
             .count(),
-        138
+        149
     );
     assert_eq!(
         ported
@@ -534,7 +543,7 @@ fn phase_2b_registry_accounting_and_policies_are_exact() {
             .iter()
             .filter(|port| port.lowering == LoweringPortStatus::NotApplicable)
             .count(),
-        159
+        163
     );
 }
 
@@ -1022,6 +1031,61 @@ fn phase_2f_registry_accounting_and_policies_are_exact() {
 }
 
 #[test]
+fn phase_2g_registry_accounting_and_policies_are_exact() {
+    let node_policies = [
+        ("select-all", "SelectAllSubscript"),
+        ("swizzle-subscript", "SwizzleSubscript"),
+        ("dot-subscript", "DotSubscript"),
+        ("dot-subscript-int", "DotSubscriptInt"),
+        ("wildcard", "WildcardPattern"),
+        ("op-assign-operator", "OpAssignOperator"),
+        ("add-assign-operator", "AddAssignOperation"),
+        ("sub-assign-operator", "SubAssignOperation"),
+        ("mul-assign-operator", "MulAssignOperation"),
+        ("div-assign-operator", "DivAssignOperation"),
+        ("exp-assign-operator", "ExpAssignOperation"),
+    ];
+    let transparent = BTreeSet::from([
+        "statement-separator",
+        "spread-operator",
+        "send-operator",
+        "guard-operator",
+    ]);
+    let expected_names = node_policies
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(transparent.iter().copied())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(node_policies.len(), 11);
+    assert_eq!(transparent.len(), 4);
+    assert_eq!(expected_names.len(), EXPECTED_PHASE_2G);
+
+    let phase_2g = CANONICAL_PORTS
+        .iter()
+        .filter(|port| port.phase == Some(PortPhase::Phase2G))
+        .collect::<Vec<_>>();
+    assert_eq!(phase_2g.len(), EXPECTED_PHASE_2G);
+    assert_eq!(
+        phase_2g
+            .iter()
+            .map(|port| port.name)
+            .collect::<BTreeSet<_>>(),
+        expected_names,
+    );
+    for port in phase_2g {
+        assert_eq!(port.syntax, SyntaxPortStatus::ParityVerified, "{}", port.name);
+        if let Some((_, kind)) = node_policies.iter().find(|(name, _)| *name == port.name) {
+            assert_eq!(policy_name(port.node_policy), format!("node:{kind}"));
+            assert_eq!(port.lowering, LoweringPortStatus::ParityVerified);
+        } else {
+            assert!(transparent.contains(port.name), "{}", port.name);
+            assert_eq!(port.node_policy, NodePolicy::Transparent);
+            assert_eq!(port.lowering, LoweringPortStatus::NotApplicable);
+        }
+    }
+}
+
+#[test]
 fn phase_2c_closed_dependencies_are_all_already_ported() {
     let dependencies: &[(&str, &[&str])] = &[
         ("empty", &["underscore"]),
@@ -1247,15 +1311,54 @@ fn phase_2d_expression_and_related_parent_rules_remain_unported() {
         "range-subscript",
         "fsm-pipe",
         "fsm-instance",
-        "statement-separator",
-        "select-all",
-        "guard-operator",
-        "op-assign-operator",
-        "send-operator",
     ];
-    assert_eq!(deferred.len(), 56);
+    assert_eq!(deferred.len(), 51);
 
     for name in deferred {
+        let port = CANONICAL_PORTS
+            .iter()
+            .find(|port| port.name == name)
+            .unwrap_or_else(|| panic!("missing canonical port entry {name}"));
+        assert_eq!(port.syntax, SyntaxPortStatus::Unported, "{name}");
+        assert_eq!(port.phase, None, "{name}");
+        assert_eq!(port.node_policy, NodePolicy::Undecided, "{name}");
+        assert_eq!(port.lowering, LoweringPortStatus::Pending, "{name}");
+    }
+}
+
+#[test]
+fn phase_2g_parent_rules_remain_unported() {
+    for name in [
+        "subscript",
+        "bracket-subscript",
+        "brace-subscript",
+        "formula-subscript",
+        "range-subscript",
+        "slice",
+        "slice-ref",
+        "pattern",
+        "pattern-array",
+        "pattern-array-item",
+        "pattern-array-token",
+        "pattern-tuple",
+        "pattern-tuple-struct",
+        "pattern-atom-struct",
+        "context-send",
+        "op-assign",
+        "variable-assign",
+        "variable-define",
+        "tuple-destructure",
+        "statement",
+        "match-arm",
+        "match-expression",
+        "fsm-guard",
+        "fsm-state-definition",
+        "fsm-transition",
+        "activation-arm",
+        "formula",
+        "factor",
+        "expression",
+    ] {
         let port = CANONICAL_PORTS
             .iter()
             .find(|port| port.name == name)

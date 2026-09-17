@@ -20,6 +20,9 @@ const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
   "imports.rs",
   "source_imports.rs",
   "declarations.rs",
+  "subscript_primitives.rs",
+  "pattern_primitives.rs",
+  "control_operators.rs",
 ];
 
 const PHASE_2B_PRODUCTION_SOURCES: &[&str] = &["mechdown.rs", "statements.rs"];
@@ -27,6 +30,11 @@ const PHASE_2C_PRODUCTION_SOURCES: &[&str] = &["literals.rs", "paths.rs", "kinds
 const PHASE_2D_PRODUCTION_SOURCES: &[&str] = &["operators.rs"];
 const PHASE_2E_PRODUCTION_SOURCES: &[&str] = &["imports.rs"];
 const PHASE_2F_PRODUCTION_SOURCES: &[&str] = &["source_imports.rs", "declarations.rs"];
+const PHASE_2G_PRODUCTION_SOURCES: &[&str] = &[
+  "subscript_primitives.rs",
+  "pattern_primitives.rs",
+  "control_operators.rs",
+];
 
 fn canonical_root() -> PathBuf {
   PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -736,6 +744,108 @@ fn phase_2f_entry_points_bind_their_exact_generated_rule_ids() {
     ("declarations.rs", "parse_context_capability_scope", "CONTEXT_CAPABILITY_SCOPE"),
   ];
   assert_eq!(expected.len(), 21);
+  for (file, function, rule) in expected {
+    let path = canonical.join(file);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let body = named_function_body(&source, function);
+    assert!(
+      contains_token_sequence(body, &["rules", "::", rule]),
+      "{file}::{function} does not bind rules::{rule}"
+    );
+  }
+}
+
+#[test]
+fn canonical_phase_2g_sources_are_present_and_directly_isolated() {
+  let canonical = canonical_root();
+  for relative in PHASE_2G_PRODUCTION_SOURCES {
+    let path = canonical.join(relative);
+    let source = fs::read_to_string(&path)
+      .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    assert!(
+      executable_violations(&source).is_empty(),
+      "{relative} has a prototype dependency: {:?}",
+      executable_violations(&source)
+    );
+    for forbidden in [
+      "nom",
+      "CoverageStore",
+      "CoverageGap",
+      "UnportedInline",
+      "to_contiguous_string",
+      "full_range",
+      "graphemes",
+    ] {
+      assert!(
+        !contains_token(&source, forbidden),
+        "{relative} must not depend on {forbidden}"
+      );
+    }
+    assert!(
+      !contains_token_sequence(&source, &["crate", "::", "parse"]),
+      "{relative} must not invoke the legacy public parser"
+    );
+    for rule in [
+      "SUBSCRIPT",
+      "BRACKET_SUBSCRIPT",
+      "BRACE_SUBSCRIPT",
+      "FORMULA_SUBSCRIPT",
+      "RANGE_SUBSCRIPT",
+      "SLICE",
+      "SLICE_REF",
+      "PATTERN",
+      "PATTERN_ARRAY",
+      "PATTERN_ARRAY_ITEM",
+      "PATTERN_ARRAY_TOKEN",
+      "PATTERN_TUPLE",
+      "PATTERN_TUPLE_STRUCT",
+      "PATTERN_ATOM_STRUCT",
+      "CONTEXT_SEND",
+      "OP_ASSIGN",
+      "VARIABLE_ASSIGN",
+      "VARIABLE_DEFINE",
+      "TUPLE_DESTRUCTURE",
+      "STATEMENT",
+      "MATCH_ARM",
+      "MATCH_EXPRESSION",
+      "FSM_GUARD",
+      "FSM_STATE_DEFINITION",
+      "FSM_TRANSITION",
+      "ACTIVATION_ARM",
+      "FORMULA",
+      "FACTOR",
+      "EXPRESSION",
+    ] {
+      assert!(
+        !contains_token_sequence(&source, &["rules", "::", rule]),
+        "{relative} must not claim the unported rules::{rule} parent"
+      );
+    }
+  }
+}
+
+#[test]
+fn phase_2g_entry_points_bind_their_exact_generated_rule_ids() {
+  let canonical = canonical_root();
+  let expected = [
+    ("subscript_primitives.rs", "parse_select_all", "SELECT_ALL"),
+    ("subscript_primitives.rs", "parse_swizzle_subscript", "SWIZZLE_SUBSCRIPT"),
+    ("subscript_primitives.rs", "parse_dot_subscript", "DOT_SUBSCRIPT"),
+    ("subscript_primitives.rs", "parse_dot_subscript_int", "DOT_SUBSCRIPT_INT"),
+    ("pattern_primitives.rs", "parse_wildcard", "WILDCARD"),
+    ("pattern_primitives.rs", "parse_spread_operator", "SPREAD_OPERATOR"),
+    ("control_operators.rs", "parse_statement_separator", "STATEMENT_SEPARATOR"),
+    ("control_operators.rs", "parse_op_assign_operator", "OP_ASSIGN_OPERATOR"),
+    ("control_operators.rs", "parse_add_assign_operator", "ADD_ASSIGN_OPERATOR"),
+    ("control_operators.rs", "parse_sub_assign_operator", "SUB_ASSIGN_OPERATOR"),
+    ("control_operators.rs", "parse_mul_assign_operator", "MUL_ASSIGN_OPERATOR"),
+    ("control_operators.rs", "parse_div_assign_operator", "DIV_ASSIGN_OPERATOR"),
+    ("control_operators.rs", "parse_exp_assign_operator", "EXP_ASSIGN_OPERATOR"),
+    ("control_operators.rs", "parse_send_operator", "SEND_OPERATOR"),
+    ("control_operators.rs", "parse_guard_operator", "GUARD_OPERATOR"),
+  ];
+  assert_eq!(expected.len(), 15);
   for (file, function, rule) in expected {
     let path = canonical.join(file);
     let source = fs::read_to_string(&path)

@@ -310,6 +310,20 @@ define_syntax_kinds! {
   ContextCapabilityDeclaration => node,
   ContextCapabilityPath => node,
   ContextCapabilityScope => node,
+
+  // Phase 2G closed executable primitives. Keep this append-only: persisted
+  // green-tree discriminants depend on every preceding kind.
+  SelectAllSubscript => node,
+  SwizzleSubscript => node,
+  DotSubscript => node,
+  DotSubscriptInt => node,
+  WildcardPattern => node,
+  OpAssignOperator => node,
+  AddAssignOperation => node,
+  SubAssignOperation => node,
+  MulAssignOperation => node,
+  DivAssignOperation => node,
+  ExpAssignOperation => node,
 }
 
 #[cfg(test)]
@@ -499,6 +513,27 @@ mod tests {
     ];
     for (offset, kind) in appended.into_iter().enumerate() {
       assert_eq!(kind as u16, 237 + offset as u16);
+      assert!(!kind.is_token());
+    }
+  }
+
+  #[test]
+  fn phase_2g_executable_primitive_kinds_are_append_only() {
+    let appended = [
+      SyntaxKind::SelectAllSubscript,
+      SyntaxKind::SwizzleSubscript,
+      SyntaxKind::DotSubscript,
+      SyntaxKind::DotSubscriptInt,
+      SyntaxKind::WildcardPattern,
+      SyntaxKind::OpAssignOperator,
+      SyntaxKind::AddAssignOperation,
+      SyntaxKind::SubAssignOperation,
+      SyntaxKind::MulAssignOperation,
+      SyntaxKind::DivAssignOperation,
+      SyntaxKind::ExpAssignOperation,
+    ];
+    for (offset, kind) in appended.into_iter().enumerate() {
+      assert_eq!(kind as u16, 254 + offset as u16);
       assert!(!kind.is_token());
     }
   }
