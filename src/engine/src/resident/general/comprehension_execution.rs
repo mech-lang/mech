@@ -1382,6 +1382,79 @@ impl PatternItem {
         }
     }
 
+    fn binding_resolution_workspace(
+        &self,
+        binding_schema: SchemaId,
+        source_shape_values: &[u64],
+        schemas: &SchemaTable,
+    ) -> Result<u64, ResidentKernelError> {
+        let binding = schemas
+            .get(binding_schema)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        let shape_bytes = budget::checked_u64(
+            binding
+                .dimension_parameters()
+                .len()
+                .max(source_shape_values.len()),
+        )?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+        let mut workspace = schemas
+            .clone_allocation_bound_bytes()
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    binding
+                        .body()
+                        .clone_allocation_bound_bytes()?
+                        .checked_mul(3)?,
+                )
+            })
+            .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let (body, shape_values, extra_schemas) = match self {
+            Self::Component {
+                body, shape_values, ..
+            } => (Some(body), shape_values.len(), None),
+            Self::SourceComponent {
+                body,
+                shape_values,
+                context,
+                ..
+            } => (
+                Some(body),
+                shape_values.len(),
+                Some(context.binding_schemas.as_ref()),
+            ),
+            Self::Plain(_) | Self::Dynamic(_) => (None, 0, None),
+        };
+        if let Some(extra_schemas) = extra_schemas {
+            workspace = workspace
+                .checked_add(
+                    extra_schemas
+                        .clone_allocation_bound_bytes()
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        if let Some(body) = body {
+            workspace = workspace
+                .checked_add(
+                    body.clone_allocation_bound_bytes()
+                        .and_then(|bytes| bytes.checked_mul(2))
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .and_then(|bytes| {
+                    bytes.checked_add(
+                        (shape_values as u64)
+                            .checked_mul(core::mem::size_of::<u64>() as u64)?
+                            .checked_mul(2)?,
+                    )
+                })
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        Ok(workspace)
+    }
+
     pub(super) fn into_binding(
         self,
         binding_schema: SchemaId,
@@ -1971,6 +2044,53 @@ fn descended_collection_item_footprint(
     let footprint = budget::measure_canonical_data_footprint(&mut selected_meter, &body, data)?;
     meter.charge_comparison_work(selected_meter.estimate().comparison_work())?;
     Ok(footprint)
+}
+
+fn admit_generator_schema_workspace(
+    workspace: u64,
+    live_bytes: u64,
+    live_nodes: u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(), ResidentKernelError> {
+    let temporary_bytes = live_bytes
+        .checked_add(workspace)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    meter.charge_compute_work(workspace)?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes,
+            retained_nodes: live_nodes,
+            ..meter.estimate()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
+fn schema_shape_resolution_workspace(
+    schema: &Schema,
+    schemas: &SchemaTable,
+    observed_shape_values: usize,
+) -> Result<u64, ResidentKernelError> {
+    let body_bytes = schema
+        .body()
+        .clone_allocation_bound_bytes()
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let shape_bytes = budget::checked_u64(
+        schema
+            .dimension_parameters()
+            .len()
+            .max(observed_shape_values),
+    )?
+    .checked_mul(core::mem::size_of::<u64>() as u64)
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    schemas
+        .clone_allocation_bound_bytes()
+        .and_then(|bytes| bytes.checked_add(body_bytes.checked_mul(3)?))
+        .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
+        .ok_or(ResidentKernelError::InvalidShape)
 }
 
 fn generator_shape_values(
@@ -3617,6 +3737,39 @@ impl ReactiveInstance {
         let schema = schemas
             .get(control.output_schema)
             .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+        let shape_workspace = schema_shape_resolution_workspace(
+            schema,
+            &schemas,
+            schema.dimension_parameters().len(),
+        )
+        .map_err(fail)?;
+        let live_bytes =
+            snapshot_draft_bytes(draft_count, footprint, schema.dimension_parameters().len())
+                .and_then(|bytes| {
+                    bytes
+                        .checked_add(draft_capacity_overlap_bytes(draft_count, draft_capacity)?)
+                        .ok_or(ResidentKernelError::InvalidShape)
+                })
+                .and_then(|bytes| {
+                    bytes
+                        .checked_add(schema_arena_bytes)
+                        .ok_or(ResidentKernelError::InvalidShape)
+                })
+                .and_then(|bytes| {
+                    bytes
+                        .checked_add(live_locals.retained_bytes)
+                        .ok_or(ResidentKernelError::InvalidShape)
+                })
+                .map_err(fail)?;
+        let live_nodes = meter
+            .estimate()
+            .retained_nodes()
+            .checked_add(footprint.node_count)
+            .and_then(|nodes| nodes.checked_add(live_locals.node_count))
+            .and_then(|nodes| nodes.checked_add(u64::from(draft_count > 0)))
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        admit_generator_schema_workspace(shape_workspace, live_bytes, live_nodes, &mut meter)
+            .map_err(fail)?;
         let (count, footprint, shape_values, data) = match control.kind {
             crate::ComprehensionKind::Matrix => {
                 let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
@@ -3860,6 +4013,46 @@ impl ReactiveInstance {
         meter: &mut ResidentBudgetMeter,
     ) -> Result<bool, ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel { node, error };
+        let binding_workspace = item
+            .binding_resolution_workspace(binding.schema, source_shape_values, schemas)
+            .map_err(fail)?;
+        let live_locals = self
+            .comprehension_live_local_footprint(locals, None, schemas, meter)
+            .map_err(fail)?;
+        let live_item = selected_footprint
+            .checked_add(concrete_footprint)
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        let live_bytes = snapshot_draft_bytes(
+            retained_count,
+            retained_footprint,
+            retained_shape_parameter_count,
+        )
+        .and_then(|bytes| {
+            bytes
+                .checked_add(item_clone_bytes(live_item)?)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })
+        .and_then(|bytes| {
+            bytes
+                .checked_add(schema_arena_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })
+        .and_then(|bytes| {
+            bytes
+                .checked_add(live_locals.retained_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })
+        .map_err(fail)?;
+        let live_nodes = meter
+            .estimate()
+            .retained_nodes()
+            .checked_add(retained_footprint.node_count)
+            .and_then(|nodes| nodes.checked_add(live_item.node_count))
+            .and_then(|nodes| nodes.checked_add(live_locals.node_count))
+            .and_then(|nodes| nodes.checked_add(u64::from(retained_count > 0)))
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        admit_generator_schema_workspace(binding_workspace, live_bytes, live_nodes, meter)
+            .map_err(fail)?;
         let Some(PatternBindingItem {
             shape_values,
             data,
