@@ -28,6 +28,17 @@ pub fn configured_browser_compiler_builder(
     Ok(builder)
 }
 
+/// Compile the browser's admitted coordinator through the canonical root graph.
+pub(crate) fn compile_browser_document_bundle(
+    compiler: &mut mech_runtime::ProgramCompiler,
+    uri: &str,
+    document: &mech_runtime::SourceDocument,
+) -> MResult<mech_runtime::CanonicalProgramBundle> {
+    let product =
+        compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))?;
+    mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product)
+}
+
 #[derive(Clone, Debug)]
 struct OfflineDom;
 impl mech_browser::BrowserDomBackend for OfflineDom {

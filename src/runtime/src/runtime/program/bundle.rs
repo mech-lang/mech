@@ -283,8 +283,8 @@ mod tests {
         old_envelope.version = 1;
         assert!(old_envelope.validate(Some(source)).is_err());
 
-        let legacy = mech_syntax::parser::parse(source.trim())?;
-        let legacy = mech_core::nodes::compress_and_encode(&legacy).unwrap();
+        let retired_tree_payload = vec!["retired", "syntax", "tree"];
+        let legacy = mech_core::nodes::compress_and_encode(&retired_tree_payload).unwrap();
         let error = CanonicalProgramBundle::decode(&legacy, Some(source)).unwrap_err();
         assert!(error.display_message().contains("retired AST"));
         Ok(())

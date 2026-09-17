@@ -583,6 +583,17 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         options.config_shim_at_root,
     );
 
+    if let Some(loaded) = &options.loaded_config
+        && let Some(run) = &loaded.document.run
+    {
+        server.set_compilation_roots(
+            run.paths
+                .iter()
+                .map(|path| crate::resolve_config_path(&loaded.base_dir, path))
+                .collect(),
+        )?;
+    }
+
     server.set_resource_backing_paths(
         html_shim_backing_paths,
         stylesheet_backing_paths,

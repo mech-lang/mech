@@ -1118,7 +1118,7 @@ fn missing_variable_error(missing: &[String]) -> MechError {
 }
 
 fn executable_submission(source: &str) -> (String, bool) {
-    let Some(terminal) = mech_syntax::submission_terminal(source) else {
+    let Some(terminal) = mech_syntax::document::submission_terminal(source) else {
         return (source.to_string(), false);
     };
     if !terminal.suppresses_value {
@@ -1130,7 +1130,8 @@ fn executable_submission(source: &str) -> (String, bool) {
 }
 
 fn submission_suppresses_value(source: &str) -> bool {
-    mech_syntax::submission_terminal(source).is_some_and(|terminal| terminal.suppresses_value)
+    mech_syntax::document::submission_terminal(source)
+        .is_some_and(|terminal| terminal.suppresses_value)
 }
 
 #[derive(Debug, Default)]

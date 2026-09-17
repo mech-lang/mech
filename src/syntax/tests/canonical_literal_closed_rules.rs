@@ -9,25 +9,6 @@ fn source(text: &str) -> TextSnapshot {
     TextSnapshot::new(DocumentId(920), Revision(0), text).unwrap()
 }
 
-fn legacy_extent<Output>(
-    input: &str,
-    parser: for<'source> fn(
-        mech_syntax::ParseString<'source>,
-    ) -> mech_syntax::ParseResult<'source, Output>,
-) -> Option<TextSize> {
-    let graphemes = mech_syntax::graphemes::init_tag(input);
-    parser(mech_syntax::ParseString::new(&graphemes))
-        .ok()
-        .map(|(remaining, _)| {
-            TextSize(
-                graphemes[..remaining.cursor]
-                    .iter()
-                    .map(|grapheme| grapheme.len() as u32)
-                    .sum(),
-            )
-        })
-}
-
 fn parse(
     text: &str,
     rule: RuleId,
@@ -120,26 +101,16 @@ fn ordered_number_selection_retains_the_required_syntax_shapes() {
 }
 
 #[test]
-fn rational_selection_matches_legacy_greedy_typed_integer_behavior() {
+fn rational_selection_preserves_the_canonical_greedy_typed_integer_behavior() {
     let plain = parse("1/2", rules::RATIONAL_LITERAL);
     assert!(plain.is_strictly_clean());
     assert_eq!(plain.consumed.end, plain.source.byte_len());
     assert!(find_node(&plain.syntax(), SyntaxKind::RationalLiteral).is_some());
-    assert_eq!(
-        plain.matched.then_some(plain.consumed.end),
-        legacy_extent("1/2", mech_syntax::rational_literal),
-    );
 
     let typed_components = parse("1u8/2u16", rules::RATIONAL_LITERAL);
     assert!(!typed_components.matched);
     assert!(typed_components.diagnostics.is_empty());
     assert_eq!(typed_components.consumed, TextRange::empty(TextSize::ZERO),);
-    assert_eq!(
-        typed_components
-            .matched
-            .then_some(typed_components.consumed.end),
-        legacy_extent("1u8/2u16", mech_syntax::rational_literal),
-    );
 
     for input in ["1u8/2u16", "1foo/2"] {
         let number = parse(input, rules::NUMBER);
@@ -152,11 +123,6 @@ fn rational_selection_matches_legacy_greedy_typed_integer_behavior() {
         assert!(
             find_node(&number.syntax(), SyntaxKind::RationalLiteral).is_none(),
             "{input:?} must not choose rational-literal",
-        );
-        assert_eq!(
-            number.matched.then_some(number.consumed.end),
-            legacy_extent(input, mech_syntax::number),
-            "{input:?}",
         );
     }
 }

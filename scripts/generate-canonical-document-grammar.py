@@ -15,7 +15,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SPECIFICATION = ROOT / "docs/design/specification.mec"
 PORTS = ROOT / "docs/design/grammar-audit/ports.tsv"
-PRODUCTIONS = ROOT / "docs/design/grammar-audit/productions.tsv"
 DEPENDENCIES = ROOT / "docs/design/grammar-audit/canonical-dependencies.tsv"
 OUTPUT = (
     ROOT
@@ -88,13 +87,15 @@ def document_rules() -> list[str]:
 
 
 def rule_feature_gates() -> dict[str, str]:
-    with PRODUCTIONS.open(newline="", encoding="utf-8") as source:
+    with PORTS.open(newline="", encoding="utf-8") as source:
         rows = csv.DictReader(source, delimiter="\t")
-        return {
-            row["grammar-name"]: row["feature-gate"]
+        gates = {
+            row["grammar-name"]: "mika"
             for row in rows
-            if row["feature-gate"] != "always"
+            if row["family"] == "mika"
         }
+    gates["invariant-define"] = "invariant_define"
+    return gates
 
 
 def grammar_definitions() -> dict[str, str]:
