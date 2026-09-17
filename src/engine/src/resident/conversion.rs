@@ -237,8 +237,31 @@ fn resolve_live_matrix_conversion_shape(
     if target_schema.body() != &plan.target {
         return Err(ResidentKernelError::InvalidOutput);
     }
-    let shape = mech_core::shape_for_resolved_extents(target_schema, &[rows, columns])
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let shape = match target_schema.body() {
+        SchemaBody::Matrix { .. } => {
+            mech_core::shape_for_resolved_extents(target_schema, &[rows, columns])
+        }
+        SchemaBody::Option(payload) => {
+            let SchemaBody::Matrix { element, .. } = payload.as_ref() else {
+                return Err(ResidentKernelError::InvalidOutput);
+            };
+            let actual = SchemaBody::Option(Box::new(SchemaBody::Matrix {
+                element: element.clone(),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            }));
+            mech_core::shape_for_schema_components(
+                target_schema,
+                &[(target_schema.body(), actual)],
+                None,
+            )
+        }
+        _ => return Err(ResidentKernelError::InvalidOutput),
+    }
+    .map_err(|_| ResidentKernelError::InvalidShape)?;
     Ok((shape, count))
 }
 
@@ -607,13 +630,19 @@ fn bind_conversion(
         .schemas
         .get(request.output.schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let resolve_live_matrix_shape = !wrap_present
-        && input.kind == ResidentValueKind::Snapshot
+    let target_is_matrix = match target_schema.body() {
+        SchemaBody::Matrix { dimensions, .. } => dimensions.len() == 2,
+        SchemaBody::Option(payload) if wrap_present => {
+            matches!(payload.as_ref(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
+        }
+        _ => false,
+    };
+    let resolve_live_matrix_shape = input.kind == ResidentValueKind::Snapshot
         && request.output.kind == ResidentValueKind::Snapshot
         && input.shape == mech_core::ResidentShape::SCALAR
         && request.output.shape == mech_core::ResidentShape::SCALAR
         && matches!(source_schema.body(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
-        && matches!(target_schema.body(), SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2);
+        && target_is_matrix;
     if !resolve_live_matrix_shape
         && (!layout_matches_schema(input.kind, source_schema.body())
             || !layout_matches_schema(request.output.kind, target_schema.body()))
@@ -938,7 +967,12 @@ fn execute_kind_conversion(
         .then(|| resolve_live_matrix_conversion_shape(kernel, input, plan))
         .transpose()?;
     if let Some((_, output_elements)) = &live_shape {
-        preflight_live_matrix_conversion(kernel, input, &output, *output_elements, &plan.target)?;
+        let live_target = match (&plan.target, plan.wrap_present) {
+            (SchemaBody::Option(payload), true) => payload.as_ref(),
+            (target, false) => target,
+            _ => return Err(ResidentKernelError::InvalidOutput),
+        };
+        preflight_live_matrix_conversion(kernel, input, &output, *output_elements, live_target)?;
     } else {
         preflight_string_conversion(kernel, input, &output, &plan.target)?;
     }

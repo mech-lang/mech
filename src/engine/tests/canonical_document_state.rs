@@ -2879,6 +2879,45 @@ fn activation_derived_range_endpoints_initialize_runtime_shaped_state() {
 }
 
 #[test]
+fn runtime_shaped_matrix_can_be_wrapped_in_an_option() {
+    use mech_core::{
+        ValueDataDraft,
+        snapshot::{F64Bits, OptionDraft},
+    };
+
+    closed_matrix_turns(
+        "values := [x | x <- [1 2 3]]\nwrapped<[f64]?> := values\nwrapped\n",
+        |actual| {
+            assert_eq!(
+                actual.canonical_data_draft().unwrap(),
+                ValueDataDraft::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(ValueDataDraft::Matrix(
+                        [1.0, 2.0, 3.0]
+                            .into_iter()
+                            .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                            .collect(),
+                    ))),
+                })
+            );
+        },
+    );
+}
+
+#[test]
+fn activation_match_compares_snapshot_backed_scalar_literals() {
+    closed_matrix_turns(
+        "selected := (1u8 ? | 1u8 => 2u8 | * => 3u8)\n~state := selected\nstate\n",
+        |actual| {
+            assert_eq!(
+                actual.canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::U8(2)
+            );
+        },
+    );
+}
+
+#[test]
 fn runtime_shaped_selection_resolves_complete_result_geometry() {
     for (selection, expected_shape, expected_values) in [
         ("a[1,:]", (1, 2), &[3.0, 4.0][..]),
