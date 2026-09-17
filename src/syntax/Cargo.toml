@@ -176,6 +176,8 @@ tabled = { version = "0.20.0", default-features = false, features = ["std"] }
 paste = "1.0.15"
 
 [dev-dependencies]
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+syn = { version = "3.0.3", features = ["full", "visit"] }
 proptest = { version = "1.7.0", default-features = false, features = ["std"] }
 serde_json = "1.0.149"
 

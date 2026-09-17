@@ -123,7 +123,9 @@ The artifacts have distinct responsibilities:
   ambiguities, and required behavioral investigations.
 - `source-parser-consumers.tsv` inventories every production call into the Nom
   source path as an atomic-cutover removal target and assigns its final
-  canonical consumer boundary.
+  canonical consumer boundary. Its source scanner binds each call to the exact
+  enclosing function and rejects imports, globs, renames, and function-value
+  aliases that could bypass the census.
 - `source-parser-consumer-fixtures.tsv` freezes specification-derived document
   expectations shared by those consumer contracts without executing the old
   parser as an oracle.

@@ -1,14 +1,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use syn::parse::Parser;
+use syn::spanned::Spanned;
+use syn::visit::Visit;
 
 const CONSUMER_HEADER: &str = "consumer-id\tpackage\tsource-path\tcaller-symbol\tcall-count\t\
 feature-gate\tinput-policy\tfailure-policy\tcurrent-result-use\tcanonical-target\t\
 cutover-action\tfixture-id\tnotes";
 const FIXTURE_HEADER: &str = "fixture-id\tsource-path\tcanonical-root\tcanonical-outcome\t\
 consumer-contracts\tnotes";
-const EXPECTED_CONSUMERS: usize = 25;
-const EXPECTED_PRODUCTION_CALLS: usize = 27;
+const EXPECTED_CONSUMERS: usize = 27;
+const EXPECTED_PRODUCTION_CALLS: usize = 29;
 const EXPECTED_FIXTURES: usize = 9;
 
 #[derive(Debug)]
@@ -36,7 +39,10 @@ struct FixtureRow {
 }
 
 fn repository_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("repository root")
 }
 
 fn fields(line: &str) -> Vec<&str> {
@@ -103,67 +109,1378 @@ fn fixtures() -> BTreeMap<String, FixtureRow> {
     rows
 }
 
-fn visit_rust_files(path: &Path, files: &mut Vec<PathBuf>) {
+fn visit_rust_files(path: &Path, files: &mut BTreeSet<PathBuf>) {
     for entry in
         fs::read_dir(path).unwrap_or_else(|error| panic!("read {}: {error}", path.display()))
     {
         let path = entry.expect("read source-tree entry").path();
         if path.is_dir() {
-            if path.file_name().and_then(|name| name.to_str()) != Some("tests") {
+            // Each workspace package supplies its own source root. Test module
+            // names have no meaning here; only Rust cfg can exclude their code.
+            if !path.join("Cargo.toml").is_file() && path.file_name().unwrap() != "target" {
                 visit_rust_files(&path, files);
             }
-        } else if path.extension().and_then(|extension| extension.to_str()) == Some("rs")
-            && path.file_name().and_then(|name| name.to_str()) != Some("tests.rs")
+        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            files.insert(path.canonicalize().expect("canonical source path"));
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RustToken<'source> {
+    text: &'source str,
+    offset: usize,
+    raw: bool,
+}
+
+#[derive(Debug, Default)]
+struct SourceScan {
+    calls: BTreeMap<String, usize>,
+    prohibited_aliases: Vec<String>,
+}
+
+fn quoted_literal_end(source: &str, start: usize, quote: u8) -> usize {
+    let bytes = source.as_bytes();
+    let mut cursor = start + 1;
+    while cursor < bytes.len() {
+        match bytes[cursor] {
+            b'\\' => cursor = (cursor + 2).min(bytes.len()),
+            found if found == quote => return cursor + 1,
+            _ => cursor += 1,
+        }
+    }
+    bytes.len()
+}
+
+fn character_literal_end(source: &str, start: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut cursor = start + 1;
+    if bytes.get(cursor) == Some(&b'\\') {
+        cursor += 1;
+        match bytes.get(cursor).copied() {
+            Some(b'u') if bytes.get(cursor + 1) == Some(&b'{') => {
+                cursor += 2;
+                while cursor < bytes.len() && bytes[cursor] != b'}' {
+                    cursor += 1;
+                }
+                cursor = (cursor + 1).min(bytes.len());
+            }
+            Some(_) => cursor += 1,
+            None => return None,
+        }
+    } else {
+        let character = source.get(cursor..)?.chars().next()?;
+        cursor += character.len_utf8();
+    }
+    (bytes.get(cursor) == Some(&b'\'')).then_some(cursor + 1)
+}
+
+fn raw_string_end(source: &str, start: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut delimiter = if bytes.get(start..start + 2) == Some(b"br")
+        || bytes.get(start..start + 2) == Some(b"cr")
+    {
+        start + 2
+    } else if bytes.get(start) == Some(&b'r') {
+        start + 1
+    } else {
+        return None;
+    };
+    while bytes.get(delimiter) == Some(&b'#') {
+        delimiter += 1;
+    }
+    if bytes.get(delimiter) != Some(&b'"') {
+        return None;
+    }
+    let hashes = delimiter
+        - if bytes.get(start) == Some(&b'r') {
+            start + 1
+        } else {
+            start + 2
+        };
+    let mut cursor = delimiter + 1;
+    while cursor < bytes.len() {
+        if bytes[cursor] == b'"'
+            && bytes
+                .get(cursor + 1..cursor + 1 + hashes)
+                .is_some_and(|suffix| suffix.iter().all(|byte| *byte == b'#'))
         {
-            files.push(path);
+            return Some(cursor + 1 + hashes);
         }
+        cursor += 1;
+    }
+    Some(bytes.len())
+}
+
+fn rust_tokens(source: &str) -> Vec<RustToken<'_>> {
+    let bytes = source.as_bytes();
+    let mut tokens = Vec::new();
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        if bytes[cursor].is_ascii_whitespace() {
+            cursor += 1;
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"//") {
+            cursor += 2;
+            while cursor < bytes.len() && bytes[cursor] != b'\n' {
+                cursor += 1;
+            }
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+            cursor += 2;
+            let mut depth = 1usize;
+            while cursor < bytes.len() && depth > 0 {
+                if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+                    depth += 1;
+                    cursor += 2;
+                } else if bytes.get(cursor..cursor + 2) == Some(b"*/") {
+                    depth -= 1;
+                    cursor += 2;
+                } else {
+                    cursor += 1;
+                }
+            }
+            continue;
+        }
+        if let Some(end) = raw_string_end(source, cursor) {
+            cursor = end;
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"b\"")
+            || bytes.get(cursor..cursor + 2) == Some(b"c\"")
+        {
+            cursor = quoted_literal_end(source, cursor + 1, b'"');
+            continue;
+        }
+        if bytes.get(cursor) == Some(&b'"') {
+            cursor = quoted_literal_end(source, cursor, b'"');
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"b'")
+            && let Some(end) = character_literal_end(source, cursor + 1)
+        {
+            cursor = end;
+            continue;
+        }
+        if bytes.get(cursor) == Some(&b'\'')
+            && let Some(end) = character_literal_end(source, cursor)
+        {
+            cursor = end;
+            continue;
+        }
+        let mut raw_identifier = false;
+        // Raw identifiers denote the same Rust name as their ordinary spelling.
+        if bytes.get(cursor..cursor + 2) == Some(b"r#")
+            && bytes
+                .get(cursor + 2)
+                .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
+        {
+            cursor += 2;
+            raw_identifier = true;
+        }
+        if bytes[cursor].is_ascii_alphabetic() || bytes[cursor] == b'_' {
+            let start = cursor;
+            cursor += 1;
+            while cursor < bytes.len()
+                && (bytes[cursor].is_ascii_alphanumeric() || bytes[cursor] == b'_')
+            {
+                cursor += 1;
+            }
+            tokens.push(RustToken {
+                text: &source[start..cursor],
+                offset: start,
+                raw: raw_identifier,
+            });
+            continue;
+        }
+        let width = source[cursor..]
+            .chars()
+            .next()
+            .expect("cursor is inside source")
+            .len_utf8();
+        tokens.push(RustToken {
+            text: &source[cursor..cursor + width],
+            offset: cursor,
+            raw: false,
+        });
+        cursor += width;
+    }
+    tokens
+}
+
+fn matching_delimiter(
+    tokens: &[RustToken<'_>],
+    start: usize,
+    open: &str,
+    close: &str,
+) -> Option<usize> {
+    let mut depth = 0usize;
+    for (index, token) in tokens.iter().enumerate().skip(start) {
+        if token.text == open {
+            depth += 1;
+        } else if token.text == close {
+            depth = depth.checked_sub(1)?;
+            if depth == 0 {
+                return Some(index);
+            }
+        }
+    }
+    None
+}
+
+fn cfg_predicate(meta: &syn::Meta) -> Option<bool> {
+    if matches!(meta, syn::Meta::Path(path) if path.is_ident("test")) {
+        return Some(false);
+    }
+    let syn::Meta::List(list) = meta else {
+        return None;
+    };
+    let arguments = syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated
+        .parse2(list.tokens.clone())
+        .expect("valid Rust cfg predicate");
+    let values = arguments.iter().map(cfg_predicate).collect::<Vec<_>>();
+    if list.path.is_ident("not") && values.len() == 1 {
+        return values[0].map(|value| !value);
+    }
+    if list.path.is_ident("all") {
+        if values.contains(&Some(false)) {
+            return Some(false);
+        }
+        if values.iter().all(|value| *value == Some(true)) {
+            return Some(true);
+        }
+    }
+    if list.path.is_ident("any") {
+        if values.contains(&Some(true)) {
+            return Some(true);
+        }
+        if values.iter().all(|value| *value == Some(false)) {
+            return Some(false);
+        }
+    }
+    None
+}
+
+fn meta_excludes_production(meta: &syn::Meta) -> bool {
+    let syn::Meta::List(list) = meta else {
+        return false;
+    };
+    let arguments = || {
+        syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated
+            .parse2(list.tokens.clone())
+            .expect("valid Rust conditional attribute")
+    };
+    if list.path.is_ident("cfg") {
+        let arguments = arguments();
+        return arguments.len() == 1 && cfg_predicate(&arguments[0]) == Some(false);
+    }
+    if list.path.is_ident("cfg_attr") {
+        let arguments = arguments();
+        // An unknown feature/target may leave the attribute unapplied. Only
+        // attributes certainly applied without tests prove an exclusion.
+        return arguments
+            .first()
+            .is_some_and(|condition| cfg_predicate(condition) == Some(true))
+            && arguments.iter().skip(1).any(meta_excludes_production);
+    }
+    false
+}
+
+fn excludes_production(attrs: &[syn::Attribute]) -> bool {
+    attrs
+        .iter()
+        .any(|attribute| meta_excludes_production(&attribute.meta))
+}
+
+#[derive(Default)]
+struct ProductionExclusions {
+    ranges: Vec<std::ops::Range<usize>>,
+}
+
+impl ProductionExclusions {
+    fn exclude(&mut self, attrs: &[syn::Attribute], span: proc_macro2::Span) -> bool {
+        if !excludes_production(attrs) {
+            return false;
+        }
+        self.ranges.push(span.byte_range());
+        true
     }
 }
 
-fn production_prefix(source: &str) -> &str {
-    ["\nmod tests {", "\nmod tests;"]
+// Rust supplies the exact extent of each annotated construct. In particular,
+// a cfg-disabled match arm ends at its own comma, never at the next arm's body.
+macro_rules! visit_conditional_nodes {
+    ($($method:ident: $node:ident),* $(,)?) => { $(
+        fn $method(&mut self, node: &'ast syn::$node) {
+            if !self.exclude(&node.attrs, node.span()) {
+                syn::visit::$method(self, node);
+            }
+        }
+    )* };
+}
+
+impl<'ast> Visit<'ast> for ProductionExclusions {
+    visit_conditional_nodes! {
+        visit_file: File,
+        visit_item_const: ItemConst, visit_item_enum: ItemEnum,
+        visit_item_extern_crate: ItemExternCrate, visit_item_fn: ItemFn,
+        visit_item_foreign_mod: ItemForeignMod, visit_item_impl: ItemImpl,
+        visit_item_macro: ItemMacro, visit_item_mod: ItemMod,
+        visit_item_static: ItemStatic, visit_item_struct: ItemStruct,
+        visit_item_trait: ItemTrait, visit_item_trait_alias: ItemTraitAlias,
+        visit_item_type: ItemType, visit_item_union: ItemUnion, visit_item_use: ItemUse,
+        visit_impl_item_const: ImplItemConst, visit_impl_item_fn: ImplItemFn,
+        visit_impl_item_macro: ImplItemMacro, visit_impl_item_type: ImplItemType,
+        visit_trait_item_const: TraitItemConst, visit_trait_item_fn: TraitItemFn,
+        visit_trait_item_macro: TraitItemMacro, visit_trait_item_type: TraitItemType,
+        visit_foreign_item_fn: ForeignItemFn, visit_foreign_item_macro: ForeignItemMacro,
+        visit_foreign_item_static: ForeignItemStatic, visit_foreign_item_type: ForeignItemType,
+        visit_arm: Arm, visit_local: Local, visit_field: Field,
+        visit_field_value: FieldValue, visit_variant: Variant, visit_stmt_macro: StmtMacro,
+        visit_expr_array: ExprArray,
+        visit_expr_assign: ExprAssign,
+        visit_expr_async: ExprAsync,
+        visit_expr_await: ExprAwait,
+        visit_expr_binary: ExprBinary,
+        visit_expr_block: ExprBlock,
+        visit_expr_break: ExprBreak,
+        visit_expr_call: ExprCall,
+        visit_expr_cast: ExprCast,
+        visit_expr_closure: ExprClosure,
+        visit_expr_const: ExprConst,
+        visit_expr_continue: ExprContinue,
+        visit_expr_field: ExprField,
+        visit_expr_for_loop: ExprForLoop,
+        visit_expr_group: ExprGroup,
+        visit_expr_if: ExprIf,
+        visit_expr_index: ExprIndex,
+        visit_expr_infer: ExprInfer,
+        visit_expr_let: ExprLet,
+        visit_expr_lit: ExprLit,
+        visit_expr_loop: ExprLoop,
+        visit_expr_macro: ExprMacro,
+        visit_expr_match: ExprMatch,
+        visit_expr_method_call: ExprMethodCall,
+        visit_expr_paren: ExprParen,
+        visit_expr_path: ExprPath,
+        visit_expr_range: ExprRange,
+        visit_expr_raw_addr: ExprRawAddr,
+        visit_expr_reference: ExprReference,
+        visit_expr_repeat: ExprRepeat,
+        visit_expr_return: ExprReturn,
+        visit_expr_struct: ExprStruct,
+        visit_expr_try: ExprTry,
+        visit_expr_try_block: ExprTryBlock,
+        visit_expr_tuple: ExprTuple,
+        visit_expr_unary: ExprUnary,
+        visit_expr_unsafe: ExprUnsafe,
+        visit_expr_while: ExprWhile,
+        visit_expr_yield: ExprYield,
+    }
+}
+
+fn parsed_rust(source: &str) -> syn::File {
+    syn::parse_file(source)
+        .unwrap_or_else(|error| panic!("census cannot parse Rust source: {error}"))
+}
+
+fn production_exclusions(file: &syn::File) -> ProductionExclusions {
+    let mut exclusions = ProductionExclusions::default();
+    exclusions.visit_file(file);
+    exclusions
+}
+
+fn production_tokens(source: &str) -> Vec<RustToken<'_>> {
+    let exclusions = production_exclusions(&parsed_rust(source));
+    rust_tokens(source)
         .into_iter()
-        .filter_map(|marker| source.find(marker))
-        .min()
-        .map_or(source, |end| &source[..end])
+        .filter(|token| {
+            !exclusions
+                .ranges
+                .iter()
+                .any(|range| range.contains(&token.offset))
+        })
+        .collect()
 }
 
-fn test_only_parse_calls(path: &str, source: &str) -> usize {
-    match path {
-        "src/engine/src/program/compiler_planning.rs" => {
-            assert!(source.contains("#[cfg(test)]\n    pub(crate) fn plan_source_for_test"));
-            1
+fn raw_function_scopes(tokens: &[RustToken<'_>]) -> Vec<(String, usize, usize)> {
+    let mut scopes = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if token.text != "fn" || token.raw {
+            continue;
         }
-        "src/engine/src/structures.rs" => {
-            assert!(source.contains("fn wildcard_table_column_uses_the_canonical_dynamic_schema"));
-            1
+        let Some(name) = tokens.get(index + 1) else {
+            continue;
+        };
+        if !name
+            .text
+            .as_bytes()
+            .first()
+            .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'_')
+        {
+            continue;
         }
-        _ => 0,
+        let Some(parameters) = tokens
+            .iter()
+            .enumerate()
+            .skip(index + 2)
+            .find_map(|(position, token)| match token.text {
+                "(" => Some(Some(position)),
+                ";" | "{" => Some(None),
+                _ => None,
+            })
+            .flatten()
+        else {
+            continue;
+        };
+        let Some(parameters_end) = matching_delimiter(tokens, parameters, "(", ")") else {
+            continue;
+        };
+        let Some(body) = tokens
+            .iter()
+            .enumerate()
+            .skip(parameters_end + 1)
+            .find_map(|(position, token)| match token.text {
+                "{" => Some(Some(position)),
+                ";" => Some(None),
+                _ => None,
+            })
+            .flatten()
+        else {
+            continue;
+        };
+        if let Some(body_end) = matching_delimiter(tokens, body, "{", "}") {
+            scopes.push((name.text.to_owned(), body, body_end));
+        }
+    }
+    scopes
+}
+
+fn compact_rust_header(tokens: &[RustToken<'_>]) -> String {
+    let mut header = String::new();
+    let word_character = |character: char| character.is_ascii_alphanumeric() || character == '_';
+    for token in tokens {
+        if header.chars().next_back().is_some_and(word_character)
+            && token.text.chars().next().is_some_and(word_character)
+        {
+            header.push(' ');
+        }
+        header.push_str(token.text);
+    }
+    header
+}
+
+/// Include lexical modules, impl headers, traits, and containing functions in
+/// each caller key. Identically named methods are separate removal contracts.
+fn function_scopes(tokens: &[RustToken<'_>]) -> Vec<(String, usize, usize)> {
+    let functions = raw_function_scopes(tokens);
+    let mut contexts = functions.clone();
+    for (index, token) in tokens.iter().enumerate() {
+        if !matches!(token.text, "mod" | "impl" | "trait") {
+            continue;
+        }
+        if token.text == "impl"
+            && index > 0
+            && !matches!(
+                tokens[index - 1].text,
+                "{" | "}" | ";" | "]" | "unsafe" | "default"
+            )
+        {
+            continue;
+        }
+        let Some(body) = tokens
+            .iter()
+            .enumerate()
+            .skip(index + 2)
+            .find_map(|(position, token)| match token.text {
+                "{" => Some(Some(position)),
+                ";" => Some(None),
+                _ => None,
+            })
+            .flatten()
+        else {
+            continue;
+        };
+        let Some(end) = matching_delimiter(tokens, body, "{", "}") else {
+            continue;
+        };
+        let label = match token.text {
+            "impl" => format!("impl {}", compact_rust_header(&tokens[index + 1..body])),
+            "trait" => format!("trait {}", tokens[index + 1].text),
+            _ => tokens[index + 1].text.to_owned(),
+        };
+        contexts.push((label, body, end));
+    }
+    let mut qualified = functions
+        .into_iter()
+        .map(|(name, body, end)| {
+            let mut parents = contexts
+                .iter()
+                .filter(|(_, outer_body, outer_end)| *outer_body < body && end < *outer_end)
+                .collect::<Vec<_>>();
+            parents.sort_by_key(|(_, body, _)| *body);
+            let name = parents
+                .into_iter()
+                .map(|(name, _, _)| name.as_str())
+                .chain([name.as_str()])
+                .collect::<Vec<_>>()
+                .join("::");
+            (name, body, end)
+        })
+        .collect::<Vec<_>>();
+    let mut counts = BTreeMap::new();
+    for (name, _, _) in &qualified {
+        *counts.entry(name.clone()).or_insert(0) += 1;
+    }
+    for (name, body, _) in &mut qualified {
+        if counts[name] > 1 {
+            // Mutually exclusive cfg implementations may share a full path.
+            // A physical source position still prevents their counts merging.
+            *name = format!("{name}@{}", tokens[*body].offset);
+        }
+    }
+    qualified
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ParserReexports {
+    None,
+    RootCrate,
+    SyntaxCrate,
+}
+
+fn file_module_path(source_path: &str, reexports: ParserReexports) -> Vec<String> {
+    let path = if reexports == ParserReexports::SyntaxCrate {
+        source_path
+            .strip_prefix("src/syntax/src/")
+            .unwrap_or(source_path)
+    } else {
+        source_path.strip_prefix("src/").unwrap_or(source_path)
+    };
+    let mut parts = path
+        .trim_end_matches(".rs")
+        .split('/')
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    if parts
+        .last()
+        .is_some_and(|name| matches!(name.as_str(), "lib" | "main" | "mod"))
+    {
+        parts.pop();
+    }
+    parts
+}
+
+fn module_at(tokens: &[RustToken<'_>], index: usize, file_module: &[String]) -> Vec<String> {
+    let mut module = file_module.to_vec();
+    for cursor in 0..index {
+        if tokens[cursor].text == "mod"
+            && tokens
+                .get(cursor + 2)
+                .is_some_and(|token| token.text == "{")
+            && matching_delimiter(tokens, cursor + 2, "{", "}").is_some_and(|end| index < end)
+        {
+            module.push(tokens[cursor + 1].text.to_owned());
+        }
+    }
+    module
+}
+
+// Return a path relative to mech_syntax, resolving self/super against the
+// declaring Rust module (including #[path] modules supplied by the graph).
+fn syntax_path(
+    path: &[String],
+    reexports: ParserReexports,
+    module: &[String],
+) -> Option<Vec<String>> {
+    if path.first().is_some_and(|name| name == "mech_syntax") {
+        return Some(path[1..].to_vec());
+    }
+    if reexports == ParserReexports::RootCrate && path.first().is_some_and(|name| name == "syntax")
+    {
+        return Some(path[1..].to_vec());
+    }
+    if path.first().is_some_and(|name| name == "mech") {
+        let mut resolved = path[1..].to_vec();
+        if resolved.first().is_some_and(|name| name == "syntax") {
+            resolved.remove(0);
+        }
+        return Some(resolved);
+    }
+    if reexports == ParserReexports::None {
+        return None;
+    }
+    let mut resolved = Vec::new();
+    let mut cursor = 0;
+    match path.first()?.as_str() {
+        "crate" => cursor = 1,
+        "self" => {
+            resolved = module.to_vec();
+            cursor = 1;
+        }
+        "super" => {
+            resolved = module.to_vec();
+            while path.get(cursor).is_some_and(|name| name == "super") {
+                resolved.pop()?;
+                cursor += 1;
+            }
+        }
+        _ => return None,
+    }
+    resolved.extend_from_slice(&path[cursor..]);
+    if reexports == ParserReexports::RootCrate
+        && resolved.first().is_some_and(|name| name == "syntax")
+    {
+        resolved.remove(0);
+    }
+    Some(resolved)
+}
+
+fn source_entrypoint(name: &str) -> bool {
+    matches!(
+        name,
+        "parse" | "parse_mech" | "program" | "mech_code" | "mech_code_alt"
+    )
+}
+
+fn parser_reference_len(
+    tokens: &[RustToken<'_>],
+    start: usize,
+    reexports: ParserReexports,
+    module: &[String],
+    imported_parser: bool,
+) -> Option<usize> {
+    // Never reinterpret a suffix of document::parser (or any other path) as
+    // the retiring root parser module.
+    if start > 0 && tokens[start - 1].text == ":" && start > 1 && tokens[start - 2].text != ":" {
+        return None;
+    }
+    if start >= 3
+        && tokens[start - 1].text == ":"
+        && tokens[start - 2].text == ":"
+        && tokens[start - 3]
+            .text
+            .chars()
+            .next()
+            .is_some_and(|ch| ch.is_alphanumeric() || ch == '_')
+    {
+        return None;
+    }
+    let mut path = vec![tokens[start].text.to_owned()];
+    let mut len = 1;
+    while tokens
+        .get(start + len)
+        .is_some_and(|token| token.text == ":")
+        && tokens
+            .get(start + len + 1)
+            .is_some_and(|token| token.text == ":")
+        && tokens.get(start + len + 2).is_some_and(|token| {
+            token
+                .text
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_alphabetic() || ch == '_')
+        })
+    {
+        path.push(tokens[start + len + 2].text.to_owned());
+        len += 3;
+    }
+    let resolved = if path.first().is_some_and(|name| name == "parser") && imported_parser {
+        Some(path)
+    } else {
+        syntax_path(&path, reexports, module)
+    }?;
+    let entry = match resolved.as_slice() {
+        [name] => {
+            matches!(name.as_str(), "parse" | "parse_mech")
+                || reexports == ParserReexports::SyntaxCrate && source_entrypoint(name)
+        }
+        [parser, name] if parser == "parser" => source_entrypoint(name),
+        _ => false,
+    };
+    entry.then_some(len)
+}
+
+fn source_line(source: &str, offset: usize) -> usize {
+    source[..offset]
+        .bytes()
+        .filter(|byte| *byte == b'\n')
+        .count()
+        + 1
+}
+
+fn flattened_imports(
+    tree: &syn::UseTree,
+    prefix: &[String],
+    result: &mut Vec<(Vec<String>, Option<String>)>,
+) {
+    let identifier = |name: &syn::Ident| name.to_string().trim_start_matches("r#").to_owned();
+    let mut path = prefix.to_vec();
+    match tree {
+        syn::UseTree::Path(tree) => {
+            path.push(identifier(&tree.ident));
+            flattened_imports(&tree.tree, &path, result);
+        }
+        syn::UseTree::Name(tree) => {
+            if tree.ident != "self" {
+                path.push(identifier(&tree.ident));
+            }
+            result.push((path, None));
+        }
+        syn::UseTree::Rename(tree) => {
+            if tree.ident != "self" {
+                path.push(identifier(&tree.ident));
+            }
+            result.push((path, Some(identifier(&tree.rename))));
+        }
+        syn::UseTree::Glob(_) => {
+            path.push("*".to_owned());
+            result.push((path, None));
+        }
+        syn::UseTree::Group(tree) => {
+            for tree in &tree.items {
+                flattened_imports(tree, &path, result);
+            }
+        }
     }
 }
 
-fn discovered_production_calls() -> BTreeMap<String, usize> {
+fn imports_retiring_parser(
+    import: &[RustToken<'_>],
+    reexports: ParserReexports,
+    module: &[String],
+) -> bool {
+    let source = compact_rust_header(import) + ";";
+    let Ok(item) = syn::parse_str::<syn::ItemUse>(&source) else {
+        // Opaque macro bodies can contain generated use trees (`paste!`,
+        // metavariables). They cannot introduce an unreviewed syntax import.
+        return import
+            .iter()
+            .any(|token| matches!(token.text, "mech_syntax" | "mech"));
+    };
+    let mut imports = Vec::new();
+    flattened_imports(&item.tree, &[], &mut imports);
+    imports.iter().any(|(path, alias)| {
+        let Some(resolved) = syntax_path(path, reexports, module) else {
+            return false;
+        };
+        match resolved.as_slice() {
+            [] => alias.is_some(),
+            [name] if name == "*" => path != &["crate".to_owned(), "*".to_owned()],
+            [name]
+                if matches!(name.as_str(), "parse" | "parse_mech")
+                    || reexports == ParserReexports::SyntaxCrate && source_entrypoint(name) =>
+            {
+                true
+            }
+            [name] if name == "parser" => alias.is_some(),
+            [name, ..] if name == "parser" => true,
+            _ => false,
+        }
+    })
+}
+
+fn is_declared_root_parser_reexport(
+    source_path: &str,
+    import: &[RustToken<'_>],
+    public_item: bool,
+) -> bool {
+    if source_path != "src/lib.rs" || !public_item {
+        return false;
+    }
+    let Ok(item) = syn::parse_str::<syn::ItemUse>(&(compact_rust_header(import) + ";")) else {
+        return false;
+    };
+    let mut imports = Vec::new();
+    flattened_imports(&item.tree, &[], &mut imports);
+    imports.iter().all(|(path, alias)| alias.is_none() && matches!(path.as_slice(), [root, name]
+        if root == "mech_syntax" && matches!(name.as_str(),
+            "ParseError" | "ParseErrorDetail" | "ParseResult" | "ParseString" | "ParserErrorContext" |
+            "ParserErrorReport" | "SubmissionTerminal" | "TextFormatter" | "alt_best" | "graphemes" |
+            "parse" | "parse_grammar" | "parse_mech" | "parser" | "submission_terminal")))
+}
+
+fn is_existing_syntax_parser_import(
+    source_path: &str,
+    import: &[RustToken<'_>],
+    public_item: bool,
+) -> bool {
+    matches!(
+        (source_path, public_item),
+        ("src/syntax/src/lib.rs", true) | ("src/syntax/src/base.rs", false)
+    ) && import
+        .iter()
+        .map(|token| token.text)
+        .eq(["use", "crate", ":", ":", "parser", ":", ":", "*"])
+}
+
+fn is_declared_syntax_crate_reexport(
+    source_path: &str,
+    tokens: &[RustToken<'_>],
+    index: usize,
+) -> bool {
+    source_path == "src/lib.rs"
+        && index > 0
+        && tokens[index - 1].text == "pub"
+        && tokens
+            .get(index)
+            .is_some_and(|token| token.text == "extern")
+        && tokens
+            .get(index + 1)
+            .is_some_and(|token| token.text == "crate")
+        && tokens
+            .get(index + 2)
+            .is_some_and(|token| token.text == "mech_syntax")
+        && tokens
+            .get(index + 3)
+            .is_some_and(|token| token.text == "as")
+        && tokens
+            .get(index + 4)
+            .is_some_and(|token| token.text == "syntax")
+        && tokens.get(index + 5).is_some_and(|token| token.text == ";")
+}
+
+fn bare_parser_available(
+    tokens: &[RustToken<'_>],
+    source_path: &str,
+    reexports: ParserReexports,
+) -> bool {
+    if reexports == ParserReexports::None {
+        return false;
+    }
+    matches!(
+        source_path,
+        "src/lib.rs" | "src/syntax/src/lib.rs" | "src/syntax/src/base.rs"
+    ) || tokens.windows(6).any(|tokens| {
+        tokens
+            .iter()
+            .map(|token| token.text)
+            .eq(["use", "crate", ":", ":", "*", ";"])
+    })
+}
+
+fn parser_import_bindings(
+    tokens: &[RustToken<'_>],
+    reexports: ParserReexports,
+    file_module: &[String],
+) -> Vec<(usize, usize, bool)> {
+    let mut bindings = Vec::new();
+    let mut blocks = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        match token.text {
+            "{" => blocks.push(index),
+            "}" => {
+                blocks.pop();
+            }
+            "use" if !token.raw => {
+                let end = tokens[index..]
+                    .iter()
+                    .position(|token| token.text == ";")
+                    .map_or(tokens.len(), |length| index + length);
+                let Ok(item) = syn::parse_str::<syn::ItemUse>(
+                    &(compact_rust_header(&tokens[index..end]) + ";"),
+                ) else {
+                    continue;
+                };
+                let mut imports = Vec::new();
+                flattened_imports(&item.tree, &[], &mut imports);
+                for (path, alias) in imports {
+                    if alias
+                        .as_ref()
+                        .or(path.last())
+                        .is_some_and(|name| name == "parser")
+                    {
+                        let retiring =
+                            syntax_path(&path, reexports, &module_at(tokens, index, file_module))
+                                .is_some_and(|path| path == ["parser".to_owned()]);
+                        let start = blocks.last().copied().unwrap_or(0);
+                        let end = blocks
+                            .last()
+                            .and_then(|start| matching_delimiter(tokens, *start, "{", "}"))
+                            .unwrap_or(tokens.len());
+                        bindings.push((start, end, retiring));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    bindings
+}
+
+fn scan_rust_source(source: &str, source_path: &str, reexports: ParserReexports) -> SourceScan {
+    scan_rust_source_in_module(
+        source,
+        source_path,
+        reexports,
+        &file_module_path(source_path, reexports),
+    )
+}
+
+fn scan_rust_source_in_module(
+    source: &str,
+    source_path: &str,
+    reexports: ParserReexports,
+    file_module: &[String],
+) -> SourceScan {
+    let tokens = production_tokens(source);
+    let scopes = function_scopes(&tokens);
+    let bare_parser = bare_parser_available(&tokens, source_path, reexports);
+    let parser_bindings = parser_import_bindings(&tokens, reexports, file_module);
+    let mut scan = SourceScan::default();
+    let mut imports = Vec::new();
+
+    for (index, token) in tokens.iter().enumerate() {
+        let public_item = index > 0 && tokens[index - 1].text == "pub";
+        if token.text == "use"
+            && !token.raw
+            && !tokens.get(index + 1).is_some_and(|token| token.text == "<")
+        {
+            let end = tokens[index..]
+                .iter()
+                .position(|token| token.text == ";")
+                .map_or(tokens.len(), |offset| index + offset);
+            imports.push(index..end);
+            let import = &tokens[index..end];
+            if imports_retiring_parser(import, reexports, &module_at(&tokens, index, file_module))
+                && !is_declared_root_parser_reexport(source_path, import, public_item)
+                && !is_existing_syntax_parser_import(source_path, import, public_item)
+            {
+                scan.prohibited_aliases.push(format!(
+                    "line {} imports or aliases the retiring parser",
+                    source_line(source, token.offset)
+                ));
+            }
+        }
+        if token.text == "extern"
+            && tokens
+                .get(index + 1)
+                .is_some_and(|token| token.text == "crate")
+            && tokens
+                .get(index + 2)
+                .is_some_and(|token| matches!(token.text, "mech_syntax" | "mech"))
+            && tokens
+                .get(index + 3)
+                .is_some_and(|token| token.text == "as")
+            && !is_declared_syntax_crate_reexport(source_path, &tokens, index)
+        {
+            scan.prohibited_aliases.push(format!(
+                "line {} aliases the mech_syntax crate",
+                source_line(source, token.offset)
+            ));
+        }
+    }
+
+    let mut index = 0usize;
+    while index < tokens.len() {
+        let bare_reference = bare_parser
+            && (tokens[index].text == "parse"
+                || tokens[index].text == "parse_mech" && source_path != "src/syntax/src/parser.rs")
+            && (index == 0 || !matches!(tokens[index - 1].text, "fn" | "." | ":"));
+        let Some(path_len) = matches!(
+            tokens[index].text,
+            "mech_syntax" | "mech" | "syntax" | "crate" | "self" | "super" | "parser"
+        )
+        .then(|| {
+            parser_reference_len(
+                &tokens,
+                index,
+                reexports,
+                &module_at(&tokens, index, file_module),
+                parser_bindings
+                    .iter()
+                    .filter(|(start, end, _)| *start <= index && index < *end)
+                    .max_by_key(|(start, _, _)| *start)
+                    .map_or(bare_parser, |(_, _, retiring)| *retiring),
+            )
+        })
+        .flatten()
+        .or_else(|| bare_reference.then_some(1)) else {
+            index += 1;
+            continue;
+        };
+        let reference = &tokens[index..index + path_len];
+        let is_import = imports.iter().any(|range| range.contains(&index));
+        if !is_import {
+            if reference.last().is_some_and(|token| token.text != "parse") {
+                scan.prohibited_aliases.push(format!(
+                    "line {} uses an alternate retiring source entrypoint",
+                    source_line(source, reference[0].offset)
+                ));
+            }
+            if tokens
+                .get(index + path_len)
+                .is_some_and(|token| token.text == "(")
+            {
+                let caller = scopes
+                    .iter()
+                    .filter(|(_, body, end)| *body < index && index < *end)
+                    .max_by_key(|(_, body, _)| *body)
+                    .map_or("<module>", |(name, _, _)| name.as_str());
+                *scan.calls.entry(caller.to_owned()).or_insert(0) += 1;
+            } else {
+                scan.prohibited_aliases.push(format!(
+                    "line {} takes or aliases a retiring parser function",
+                    source_line(source, reference[0].offset)
+                ));
+            }
+        }
+        index += path_len;
+    }
+    scan
+}
+
+fn workspace_metadata(root: &Path) -> &'static serde_json::Value {
+    static METADATA: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
+    METADATA.get_or_init(|| {
+        let output = std::process::Command::new(env!("CARGO"))
+            .args([
+                "metadata",
+                "--format-version",
+                "1",
+                "--no-deps",
+                "--offline",
+                "--locked",
+            ])
+            .current_dir(root)
+            .output()
+            .expect("run locked workspace metadata");
+        assert!(
+            output.status.success(),
+            "workspace metadata failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        serde_json::from_slice(&output.stdout).expect("workspace metadata JSON")
+    })
+}
+
+fn workspace_source_roots(root: &Path) -> BTreeSet<PathBuf> {
+    workspace_metadata(root)["packages"]
+        .as_array()
+        .expect("workspace packages")
+        .iter()
+        .filter_map(|package| {
+            let source = Path::new(package["manifest_path"].as_str().expect("manifest path"))
+                .parent()
+                .expect("package directory")
+                .join("src");
+            source.is_dir().then_some(source)
+        })
+        .collect()
+}
+
+fn production_target_roots(root: &Path) -> BTreeSet<PathBuf> {
+    workspace_metadata(root)["packages"]
+        .as_array()
+        .expect("workspace packages")
+        .iter()
+        .flat_map(|package| package["targets"].as_array().expect("package targets"))
+        .filter(|target| {
+            target["kind"]
+                .as_array()
+                .expect("target kinds")
+                .iter()
+                .any(|kind| {
+                    matches!(
+                        kind.as_str(),
+                        Some(
+                            "lib"
+                                | "rlib"
+                                | "dylib"
+                                | "cdylib"
+                                | "staticlib"
+                                | "proc-macro"
+                                | "bin"
+                        )
+                    )
+                })
+        })
+        .map(|target| PathBuf::from(target["src_path"].as_str().expect("target source")))
+        .collect()
+}
+
+fn conditional_module_paths(
+    meta: &syn::Meta,
+    definite: bool,
+    possible: bool,
+    paths: &mut Vec<(String, bool, bool)>,
+) {
+    if let syn::Meta::NameValue(value) = meta
+        && value.path.is_ident("path")
+        && let syn::Expr::Lit(value) = &value.value
+        && let syn::Lit::Str(value) = &value.lit
+    {
+        paths.push((value.value(), definite, possible));
+    } else if let syn::Meta::List(list) = meta
+        && list.path.is_ident("cfg_attr")
+    {
+        let arguments = syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated
+            .parse2(list.tokens.clone())
+            .expect("valid module cfg_attr");
+        if let Some(condition) = arguments.first() {
+            let enabled = cfg_predicate(condition);
+            for nested in arguments.iter().skip(1) {
+                // Keep disabled alternatives as graph edges, so a named test
+                // path cannot be mistaken for an unreferenced production file.
+                conditional_module_paths(
+                    nested,
+                    definite && enabled == Some(true),
+                    possible && enabled != Some(false),
+                    paths,
+                );
+            }
+        }
+    }
+}
+
+struct ModuleDeclarations<'a> {
+    directory: PathBuf,
+    path_directory: PathBuf,
+    exclusions: &'a ProductionExclusions,
+    module: Vec<String>,
+    enabled: bool,
+    edges: Vec<(PathBuf, bool, Vec<String>, bool)>,
+}
+
+impl<'ast> Visit<'ast> for ModuleDeclarations<'_> {
+    fn visit_item_mod(&mut self, module: &'ast syn::ItemMod) {
+        let enabled = self.enabled
+            && !self
+                .exclusions
+                .ranges
+                .iter()
+                .any(|range| range.contains(&module.span().byte_range().start));
+        let mut paths = Vec::new();
+        for attribute in &module.attrs {
+            conditional_module_paths(&attribute.meta, true, true, &mut paths);
+        }
+        let definite_path = paths.iter().any(|(_, definite, _)| *definite);
+        let name = module.ident.to_string();
+        let name = name.strip_prefix("r#").unwrap_or(&name);
+        self.module.push(name.to_owned());
+        if module.content.is_some() {
+            let saved_enabled = self.enabled;
+            let saved_directory = self.directory.clone();
+            let saved_path_directory = self.path_directory.clone();
+            let mut directories = paths
+                .iter()
+                .map(|(path, _, possible)| (self.directory.join(path), *possible))
+                .collect::<Vec<_>>();
+            if !definite_path {
+                directories.push((self.directory.join(name), true));
+            }
+            for (directory, possible) in directories {
+                self.enabled = enabled && possible;
+                self.directory = directory.clone();
+                self.path_directory = directory;
+                syn::visit::visit_item_mod(self, module);
+            }
+            self.enabled = saved_enabled;
+            self.directory = saved_directory;
+            self.path_directory = saved_path_directory;
+        } else {
+            let mut candidates = paths
+                .iter()
+                .map(|(path, _, possible)| (self.path_directory.join(path), true, *possible))
+                .collect::<Vec<_>>();
+            if !definite_path {
+                candidates.extend([
+                    (self.directory.join(format!("{name}.rs")), false, true),
+                    (self.directory.join(name).join("mod.rs"), false, true),
+                ]);
+            }
+            for (path, owns_parent, possible) in candidates {
+                if path.is_file() {
+                    self.edges.push((
+                        path.canonicalize().expect("module path"),
+                        enabled && possible,
+                        self.module.clone(),
+                        owns_parent,
+                    ));
+                }
+            }
+        }
+        self.module.pop();
+    }
+}
+
+fn module_edges(
+    path: &Path,
+    file: &syn::File,
+    crate_root: bool,
+) -> Vec<(PathBuf, bool, Vec<String>, bool)> {
+    let exclusions = production_exclusions(file);
+    let parent = path.parent().expect("source directory");
+    let directory = if crate_root || path.file_name().is_some_and(|name| name == "mod.rs") {
+        parent.to_owned()
+    } else {
+        parent.join(path.file_stem().expect("module stem"))
+    };
+    let mut declarations = ModuleDeclarations {
+        directory,
+        path_directory: parent.to_owned(),
+        exclusions: &exclusions,
+        module: Vec::new(),
+        enabled: true,
+        edges: Vec::new(),
+    };
+    declarations.visit_file(file);
+    declarations.edges
+}
+
+fn production_source_modules(
+    roots: &BTreeSet<PathBuf>,
+    targets: &BTreeSet<PathBuf>,
+) -> BTreeMap<PathBuf, BTreeSet<Vec<String>>> {
+    let mut files = targets.clone();
+    for root in roots {
+        visit_rust_files(root, &mut files);
+    }
+    let mut graph = BTreeMap::new();
+    let mut file_disabled = BTreeSet::new();
+    let mut queue = files.iter().cloned().collect::<Vec<_>>();
+    while let Some(path) = queue.pop() {
+        let source = fs::read_to_string(&path).expect("read Rust module");
+        let file = syn::parse_file(&source).unwrap_or_else(|error| {
+            panic!(
+                "census cannot parse {} at {:?}: {error}",
+                path.display(),
+                error.span().start()
+            )
+        });
+        if excludes_production(&file.attrs) {
+            file_disabled.insert(path.clone());
+        }
+        for owns_parent in [false, true] {
+            let edges = module_edges(&path, &file, owns_parent);
+            for (child, _, _, _) in &edges {
+                if files.insert(child.clone()) {
+                    queue.push(child.clone());
+                }
+            }
+            graph.insert((path.clone(), owns_parent), edges);
+        }
+    }
+    let referenced = graph
+        .values()
+        .flatten()
+        .map(|(path, _, _, _)| path.clone())
+        .collect::<BTreeSet<_>>();
+    // Unreferenced source files are scanned conservatively. Exclusion requires
+    // an actual cfg-disabled declaring path, never a tests.rs/tests basename.
+    let mut queue = targets
+        .iter()
+        .chain(files.difference(&referenced))
+        .map(|path| {
+            (
+                path.clone(),
+                Vec::new(),
+                BTreeSet::new(),
+                targets.contains(path),
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut production: BTreeMap<PathBuf, BTreeSet<Vec<String>>> = BTreeMap::new();
+    let mut visited = BTreeSet::new();
+    while let Some((path, module, mut ancestry, owns_parent)) = queue.pop() {
+        if file_disabled.contains(&path) {
+            continue;
+        }
+        assert!(
+            ancestry.insert(path.clone()),
+            "cyclic Rust modules at {}",
+            path.display()
+        );
+        if !visited.insert((path.clone(), module.clone(), owns_parent)) {
+            continue;
+        }
+        production
+            .entry(path.clone())
+            .or_default()
+            .insert(module.clone());
+        for (child, enabled, suffix, child_owns_parent) in &graph[&(path, owns_parent)] {
+            if *enabled {
+                let mut child_module = module.clone();
+                child_module.extend(suffix.iter().cloned());
+                queue.push((
+                    child.clone(),
+                    child_module,
+                    ancestry.clone(),
+                    *child_owns_parent,
+                ));
+            }
+        }
+    }
+    production
+}
+
+fn parser_reexports(root: &Path, path: &Path) -> ParserReexports {
+    let mut directory = path.parent();
+    while let Some(candidate) = directory {
+        if candidate.join("Cargo.toml").is_file() {
+            return if candidate == root {
+                ParserReexports::RootCrate
+            } else if candidate == root.join("src/syntax") {
+                ParserReexports::SyntaxCrate
+            } else {
+                ParserReexports::None
+            };
+        }
+        if candidate == root {
+            break;
+        }
+        directory = candidate.parent();
+    }
+    ParserReexports::None
+}
+
+fn discovered_production_calls() -> (BTreeMap<(String, String), usize>, Vec<String>) {
     let root = repository_root();
-    let mut files = Vec::new();
-    visit_rust_files(&root.join("src"), &mut files);
+    let files = production_source_modules(
+        &workspace_source_roots(&root),
+        &production_target_roots(&root),
+    );
     let mut calls = BTreeMap::new();
-    for path in files {
+    let mut prohibited_aliases = Vec::new();
+    for (path, modules) in files {
         let relative = path
             .strip_prefix(&root)
             .expect("source path is below repository root")
             .to_string_lossy()
             .replace('\\', "/");
         let source = fs::read_to_string(&path).expect("read Rust source");
-        let prefix = production_prefix(&source);
-        let count = prefix.matches("parser::parse(").count();
-        let count = count
-            .checked_sub(test_only_parse_calls(&relative, prefix))
-            .expect("test-only parse count exceeds file count");
-        if count > 0 {
-            calls.insert(relative, count);
+        let mut scan = SourceScan::default();
+        for module in modules {
+            let contextual = scan_rust_source_in_module(
+                &source,
+                &relative,
+                parser_reexports(&root, &path),
+                &module,
+            );
+            scan.prohibited_aliases
+                .extend(contextual.prohibited_aliases);
+            for (caller, count) in contextual.calls {
+                let current = scan.calls.entry(caller).or_insert(0);
+                *current = (*current).max(count);
+            }
+        }
+        prohibited_aliases.extend(
+            scan.prohibited_aliases
+                .into_iter()
+                .map(|violation| format!("{relative}:{violation}")),
+        );
+        for (caller, count) in scan.calls {
+            assert!(
+                calls
+                    .insert((relative.clone(), caller.clone()), count)
+                    .is_none(),
+                "duplicate source/caller scan result for {relative}::{caller}"
+            );
         }
     }
-    calls
+    (calls, prohibited_aliases)
 }
 
 #[test]
@@ -175,7 +1492,9 @@ fn production_parser_callers_are_exactly_inventoried() {
         let source = fs::read_to_string(repository_root().join(&row.source_path))
             .unwrap_or_else(|error| panic!("read consumer source for {id}: {error}"));
         assert!(
-            source.contains(&format!("fn {}", row.caller)),
+            function_scopes(&production_tokens(&source))
+                .iter()
+                .any(|(caller, _, _)| caller == &row.caller),
             "missing caller {} for {id}",
             row.caller
         );
@@ -197,11 +1516,411 @@ fn production_parser_callers_are_exactly_inventoried() {
                 && !row.cutover_action.contains("compat"),
             "noncanonical cutover target for {id}"
         );
-        *expected.entry(row.source_path.clone()).or_insert(0usize) += row.calls;
+        assert!(
+            expected
+                .insert((row.source_path.clone(), row.caller.clone()), row.calls)
+                .is_none(),
+            "duplicate source/caller contract for {id}"
+        );
         total += row.calls;
     }
     assert_eq!(total, EXPECTED_PRODUCTION_CALLS);
-    assert_eq!(discovered_production_calls(), expected);
+    let (discovered, prohibited_aliases) = discovered_production_calls();
+    assert!(
+        prohibited_aliases.is_empty(),
+        "production parser aliases are prohibited: {prohibited_aliases:#?}"
+    );
+    assert_eq!(discovered, expected);
+}
+
+#[test]
+fn source_scanner_binds_each_call_to_its_enclosing_function() {
+    let source = r##"
+use mech_syntax::parser;
+fn first() {
+    let _ = "mech_syntax::parse(ignored)";
+    let _ = r#"parser::parse(ignored)"#;
+    // mech_syntax::parser::parse(ignored)
+    mech_syntax::parse("one");
+    parser::parse("two");
+}
+
+fn second() {
+    /* parser::parse(ignored) */
+    mech_syntax::parser::parse("three");
+}
+"##;
+    let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
+    assert!(scan.prohibited_aliases.is_empty());
+    assert_eq!(
+        scan.calls,
+        BTreeMap::from([("first".to_owned(), 2), ("second".to_owned(), 1)])
+    );
+}
+
+#[test]
+fn source_scanner_rejects_every_parser_alias_shape() {
+    for source in [
+        "use mech_syntax::parse;\nfn run() { parse(\"source\"); }",
+        "use mech_syntax::parser::parse as parse_source;\nfn run() { parse_source(\"source\"); }",
+        "use mech_syntax::parser as old_parser;\nfn run() { old_parser::parse(\"source\"); }",
+        "use mech_syntax::parser::*;\nfn run() { parse(\"source\"); }",
+        "use mech_syntax as syntax;\nfn run() { syntax::parse(\"source\"); }",
+        "extern crate mech_syntax as syntax;\nfn run() { syntax::parse(\"source\"); }",
+        "fn run() { let parse_source = mech_syntax::parse; parse_source(\"source\"); }",
+        "use mech_syntax::parser;\nfn run() { let parse_source = parser::parse; parse_source(\"source\"); }",
+    ] {
+        assert!(
+            !scan_rust_source(source, "fixture.rs", ParserReexports::None)
+                .prohibited_aliases
+                .is_empty(),
+            "alias escaped the parser census: {source}"
+        );
+    }
+}
+
+#[test]
+fn source_scanner_allows_only_the_declared_root_reexports() {
+    let source = "pub extern crate mech_syntax as syntax;\n\
+                  pub use mech_syntax::{parse, parser};\n\
+                  fn direct() { crate::parse(\"one\"); crate::parser::parse(\"two\"); }\n\
+                  fn syntax() { crate::syntax::parse(\"three\"); crate::syntax::parser::parse(\"four\"); }";
+    let scan = scan_rust_source(source, "src/lib.rs", ParserReexports::RootCrate);
+    assert!(scan.prohibited_aliases.is_empty());
+    assert_eq!(
+        scan.calls,
+        BTreeMap::from([("direct".to_owned(), 2), ("syntax".to_owned(), 2)])
+    );
+
+    for path in ["fixture.rs", "src/lib.rs"] {
+        let alias = scan_rust_source(
+            "pub use mech_syntax::parse as old_parse;\nfn run() { old_parse(\"source\"); }",
+            path,
+            if path == "src/lib.rs" {
+                ParserReexports::RootCrate
+            } else {
+                ParserReexports::None
+            },
+        );
+        assert!(!alias.prohibited_aliases.is_empty(), "{path}");
+    }
+}
+
+#[test]
+fn source_scanner_allows_the_canonical_document_parser_module() {
+    let source = "use mech_syntax::document::parser as canonical_parser;";
+    let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
+    assert!(scan.prohibited_aliases.is_empty());
+    assert!(scan.calls.is_empty());
+}
+
+#[test]
+fn source_scanner_excludes_test_only_modules_and_items() {
+    let external = scan_rust_source(
+        "mod tests;\nfn after_tests() { mech_syntax::parse(\"source\"); }",
+        "fixture.rs",
+        ParserReexports::None,
+    );
+    assert_eq!(
+        external.calls,
+        BTreeMap::from([("after_tests".to_owned(), 1)])
+    );
+
+    let inline = scan_rust_source(
+        "#[cfg(test)] mod tests { fn ignored() { mech_syntax::parse(\"test\"); } }\n\
+         #[cfg(all(test, target_arch = \"wasm32\"))]\n\
+         mod browser_tests { fn ignored_too() { mech_syntax::parse(\"test\"); } }\n\
+         #[cfg(test)]\n\
+         fn ignored_helper() { mech_syntax::parse(\"test\"); }\n\
+         #[cfg(test)]\n\
+         impl Fixture { fn ignored_method() { mech_syntax::parse(\"test\"); } }\n\
+         #[cfg(not(test))]\n\
+         fn production_cfg() { mech_syntax::parse(\"source\"); }\n\
+         fn after_tests() { mech_syntax::parse(\"source\"); }",
+        "fixture.rs",
+        ParserReexports::None,
+    );
+    assert_eq!(
+        inline.calls,
+        BTreeMap::from([
+            ("after_tests".to_owned(), 1),
+            ("production_cfg".to_owned(), 1),
+        ])
+    );
+}
+
+#[test]
+fn source_scanner_preserves_cfg_branches_available_without_tests() {
+    for predicate in [
+        "not(test)",
+        "all(not(test), feature = \"source\")",
+        "all(feature = \"source\", not(test))",
+        "all(not(test), any(feature = \"source\", target_arch = \"wasm32\"))",
+        "any(test, feature = \"source\")",
+        "not(all(not(test), feature = \"source\"))",
+        "not(not(not(test)))",
+        "all()",
+        "test = \"yes\"",
+    ] {
+        let source =
+            format!("#[cfg({predicate})] fn production() {{ mech_syntax::parse(\"source\"); }}");
+        let scan = scan_rust_source(&source, "fixture.rs", ParserReexports::None);
+        assert_eq!(
+            scan.calls,
+            BTreeMap::from([("production".to_owned(), 1)]),
+            "{predicate}"
+        );
+    }
+    for predicate in [
+        "test",
+        "all(test, feature = \"source\")",
+        "not(not(test))",
+        "any(test, all(test, feature = \"source\"))",
+        "not(any(not(test), feature = \"source\"))",
+    ] {
+        for item in [
+            "fn helper() { mech_syntax::parse(\"test\"); }",
+            "impl Fixture { fn method() { mech_syntax::parse(\"test\"); } }",
+            "mod nested { fn helper() { mech_syntax::parse(\"test\"); } }",
+        ] {
+            let source = format!("#[cfg({predicate})] {item}");
+            assert!(
+                scan_rust_source(&source, "fixture.rs", ParserReexports::None)
+                    .calls
+                    .is_empty(),
+                "{source}"
+            );
+        }
+    }
+}
+
+#[test]
+fn source_scanner_counts_syntax_crate_root_reexports_in_its_own_sources() {
+    let root = repository_root();
+    for path in ["src/syntax/src/lib.rs", "src/syntax/src/document/mod.rs"] {
+        let reexports = parser_reexports(&root, &root.join(path));
+        assert_eq!(reexports, ParserReexports::SyntaxCrate, "{path}");
+        let scan = scan_rust_source(
+            "fn caller() { crate::parse(\"one\"); crate::parser::parse(\"two\"); }",
+            path,
+            reexports,
+        );
+        assert_eq!(scan.calls, BTreeMap::from([("caller".to_owned(), 2)]));
+    }
+    for (path, source) in [
+        ("src/syntax/src/lib.rs", "pub use crate::parser::*;"),
+        ("src/syntax/src/base.rs", "use crate::parser::*;"),
+    ] {
+        assert!(
+            scan_rust_source(source, path, ParserReexports::SyntaxCrate)
+                .prohibited_aliases
+                .is_empty()
+        );
+        assert!(
+            !scan_rust_source(
+                source,
+                "src/syntax/src/new_caller.rs",
+                ParserReexports::SyntaxCrate
+            )
+            .prohibited_aliases
+            .is_empty()
+        );
+    }
+    for source in [
+        "use crate::parse as old; fn caller() { old(\"source\"); }",
+        "use crate::{parse as old}; fn caller() { old(\"source\"); }",
+        "use crate::parser as old; fn caller() { old::parse(\"source\"); }",
+        "fn caller() { let old = crate::parse; old(\"source\"); }",
+    ] {
+        assert!(
+            !scan_rust_source(
+                source,
+                "src/syntax/src/lib.rs",
+                ParserReexports::SyntaxCrate
+            )
+            .prohibited_aliases
+            .is_empty(),
+            "{source}"
+        );
+    }
+    assert_eq!(
+        parser_reexports(&root, &root.join("src/lib.rs")),
+        ParserReexports::RootCrate
+    );
+    let reexports = parser_reexports(&root, &root.join("src/runtime/src/lib.rs"));
+    assert_eq!(reexports, ParserReexports::None);
+    assert!(
+        scan_rust_source(
+            "fn caller() { crate::parse(\"unrelated\"); }",
+            "src/runtime/src/lib.rs",
+            reexports
+        )
+        .calls
+        .is_empty()
+    );
+}
+
+#[test]
+fn source_scanner_distinguishes_method_module_and_nested_function_owners() {
+    let source = r#"
+impl Outer { fn compile_source() {} }
+impl<'a> View<'a> { fn compile_source() { mech_syntax::parse("source"); } }
+mod one { fn run() { mech_syntax::parse("one"); } }
+mod two { fn run() { mech_syntax::parse("two"); } }
+fn enclosing() { fn run() { mech_syntax::parse("nested"); } }
+"#;
+    let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
+    assert_eq!(
+        scan.calls,
+        BTreeMap::from([
+            ("impl <'a>View<'a>::compile_source".to_owned(), 1),
+            ("one::run".to_owned(), 1),
+            ("two::run".to_owned(), 1),
+            ("enclosing::run".to_owned(), 1),
+        ])
+    );
+    let moved = source
+        .replace(
+            "impl Outer { fn compile_source() {} }",
+            "impl Outer { fn compile_source() { mech_syntax::parse(\"source\"); } }",
+        )
+        .replace(
+            "impl<'a> View<'a> { fn compile_source() { mech_syntax::parse(\"source\"); } }",
+            "impl<'a> View<'a> { fn compile_source() {} }",
+        );
+    let moved = scan_rust_source(&moved, "fixture.rs", ParserReexports::None);
+    assert_eq!(
+        scan.calls.values().sum::<usize>(),
+        moved.calls.values().sum::<usize>()
+    );
+    assert_ne!(
+        scan.calls, moved.calls,
+        "moving a call between methods must invalidate the census"
+    );
+    assert_eq!(moved.calls.get("impl Outer::compile_source"), Some(&1));
+
+    let same_path = "#[cfg(feature = \"a\")] impl Same { fn run() { mech_syntax::parse(\"one\"); } } #[cfg(not(feature = \"a\"))] impl Same { fn run() { mech_syntax::parse(\"two\"); } }";
+    let scan = scan_rust_source(same_path, "fixture.rs", ParserReexports::None);
+    assert_eq!(
+        scan.calls.len(),
+        2,
+        "cfg alternatives with identical names remain distinct source owners"
+    );
+    assert!(
+        scan.calls
+            .keys()
+            .all(|name| name.starts_with("impl Same::run@"))
+    );
+}
+
+#[test]
+fn source_scanner_closes_glob_and_root_reexport_call_bypasses() {
+    for (source, reexports) in [
+        (
+            "use mech_syntax::*; fn run() { parse(\"source\"); }",
+            ParserReexports::None,
+        ),
+        (
+            "use mech_syntax::{*}; fn run() { parse(\"source\"); }",
+            ParserReexports::None,
+        ),
+        (
+            "use crate::{syntax as old}; fn run() { old::parse(\"source\"); }",
+            ParserReexports::RootCrate,
+        ),
+        (
+            "use crate::{syntax::{parse as old}}; fn run() { old(\"source\"); }",
+            ParserReexports::RootCrate,
+        ),
+    ] {
+        assert!(
+            !scan_rust_source(source, "fixture.rs", reexports)
+                .prohibited_aliases
+                .is_empty(),
+            "{source}"
+        );
+    }
+    for (source, path, reexports) in [
+        (
+            "pub use mech_syntax::{parse, parser};",
+            "src/lib.rs",
+            ParserReexports::RootCrate,
+        ),
+        (
+            "pub use crate::parser::*;",
+            "src/syntax/src/lib.rs",
+            ParserReexports::SyntaxCrate,
+        ),
+        (
+            "use crate::parser::*;",
+            "src/syntax/src/base.rs",
+            ParserReexports::SyntaxCrate,
+        ),
+        (
+            "use crate::*;",
+            "src/syntax/src/example.rs",
+            ParserReexports::SyntaxCrate,
+        ),
+    ] {
+        let scan = scan_rust_source(
+            &format!("{source} fn run() {{ parse(\"source\"); }}"),
+            path,
+            reexports,
+        );
+        assert!(scan.prohibited_aliases.is_empty(), "{source}");
+        assert_eq!(
+            scan.calls,
+            BTreeMap::from([("run".to_owned(), 1)]),
+            "{source}"
+        );
+        let alias = scan_rust_source(
+            &format!("{source} fn run() {{ let alias = parse; alias(\"source\"); }}"),
+            path,
+            reexports,
+        );
+        assert!(!alias.prohibited_aliases.is_empty(), "{source}");
+    }
+    let ordinary = scan_rust_source(
+        "fn run() { parse(\"canonical helper\"); }",
+        "src/syntax/src/document/parser/canonical.rs",
+        ParserReexports::SyntaxCrate,
+    );
+    assert!(
+        ordinary.calls.is_empty(),
+        "unrelated local callbacks have no root parser binding"
+    );
+}
+
+#[test]
+fn source_scanner_requires_cfg_proof_before_excluding_a_tests_module() {
+    for attribute in [
+        "",
+        "#[cfg(not(test))]",
+        "#[cfg(all(not(test), feature = \"source\"))]",
+    ] {
+        let source =
+            format!("{attribute} mod tests {{ fn run() {{ mech_syntax::parse(\"source\"); }} }}");
+        assert_eq!(
+            scan_rust_source(&source, "fixture.rs", ParserReexports::None).calls,
+            BTreeMap::from([("tests::run".to_owned(), 1)]),
+            "{source}"
+        );
+    }
+    let source = "#[cfg(test)] mod tests { fn run() { mech_syntax::parse(\"test\"); } }";
+    assert!(
+        scan_rust_source(source, "fixture.rs", ParserReexports::None)
+            .calls
+            .is_empty()
+    );
+}
+
+#[test]
+fn production_scan_roots_follow_the_workspace_members() {
+    let root = repository_root();
+    let roots = workspace_source_roots(&root);
+    assert!(roots.contains(&root.join("src")));
+    assert!(roots.contains(&root.join("hosts/gpu/src")));
+    assert!(roots.contains(&root.join("tests/fixtures/native-live-host/src")));
 }
 
 #[test]
@@ -235,4 +1954,490 @@ fn frozen_fixtures_define_canonical_document_expectations() {
             "missing canonical fixture {id}"
         );
     }
+}
+
+#[test]
+fn source_scanner_resolves_relative_root_parser_paths() {
+    for (path, reexports) in [
+        ("src/new_consumer.rs", ParserReexports::RootCrate),
+        (
+            "src/syntax/src/new_consumer.rs",
+            ParserReexports::SyntaxCrate,
+        ),
+    ] {
+        for import in [
+            "use super::parse;",
+            "use super::parse as old;",
+            "use super::{parse as old};",
+            "use super::parser::parse_mech;",
+            "use super::parser as old;",
+            "use super::*;",
+        ] {
+            let scan = scan_rust_source(
+                &format!("{import} fn run() {{ parse(source); }}"),
+                path,
+                reexports,
+            );
+            assert!(!scan.prohibited_aliases.is_empty(), "{path}: {import}");
+        }
+        let scan = scan_rust_source(
+            "fn run() { super::parse(source); super::parser::parse_mech(input); }",
+            path,
+            reexports,
+        );
+        assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 2)]));
+        let scan = scan_rust_source(
+            "mod inner { use super::super::parse; fn run() { parse(source); } }",
+            path,
+            reexports,
+        );
+        assert!(!scan.prohibited_aliases.is_empty());
+    }
+    let scan = scan_rust_source(
+        "mod inner { fn run() { super::parse(source); } } fn run() { self::parse(source); }",
+        "src/lib.rs",
+        ParserReexports::RootCrate,
+    );
+    assert_eq!(
+        scan.calls,
+        BTreeMap::from([("inner::run".to_owned(), 1), ("run".to_owned(), 1)])
+    );
+    for source in [
+        "use super::parse; fn run() { parse(source); }",
+        "fn run() { self::parse(source); super::parse(source); }",
+        "use mech_syntax::document::parser; fn run() { parser::parse(source); }",
+        "fn run() { mech_syntax::document::parser::parse(source); }",
+    ] {
+        let scan = scan_rust_source(
+            source,
+            "src/syntax/src/document/helper.rs",
+            ParserReexports::SyntaxCrate,
+        );
+        assert!(
+            scan.calls.is_empty() && scan.prohibited_aliases.is_empty(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn source_scanner_normalizes_raw_parser_identifiers() {
+    for reference in [
+        "mech_syntax::r#parse",
+        "r#mech_syntax::parse",
+        "::r#mech_syntax::r#parser::r#parse",
+        "mech_syntax::parser::r#parse_mech",
+        "mech_syntax::r#parse_mech",
+    ] {
+        let scan = scan_rust_source(
+            &format!("fn run() {{ {reference}(source); }}"),
+            "fixture.rs",
+            ParserReexports::None,
+        );
+        assert_eq!(
+            scan.calls,
+            BTreeMap::from([("run".to_owned(), 1)]),
+            "{reference}"
+        );
+        let scan = scan_rust_source(
+            &format!("fn run() {{ let old = {reference}; old(source); }}"),
+            "fixture.rs",
+            ParserReexports::None,
+        );
+        assert!(!scan.prohibited_aliases.is_empty(), "{reference}");
+    }
+    for import in [
+        "use mech_syntax::r#parse;",
+        "use r#mech_syntax::{r#parse as old};",
+        "use mech_syntax::r#parser::r#parse_mech;",
+    ] {
+        let scan = scan_rust_source(import, "fixture.rs", ParserReexports::None);
+        assert!(!scan.prohibited_aliases.is_empty(), "{import}");
+    }
+    let scan = scan_rust_source(
+        "use super::r#parse;",
+        "src/new.rs",
+        ParserReexports::RootCrate,
+    );
+    assert!(!scan.prohibited_aliases.is_empty());
+    let scan = scan_rust_source(
+        "struct Holder { r#use: u8 } fn run() { mech_syntax::r#parse(source); }",
+        "fixture.rs",
+        ParserReexports::None,
+    );
+    assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 1)]));
+}
+
+#[test]
+fn source_scanner_covers_retiring_source_entrypoints_and_frozen_reexports() {
+    for reference in [
+        "mech_syntax::parse_mech",
+        "mech_syntax::parser::parse_mech",
+        "mech_syntax::parser::program",
+        "mech_syntax::parser::mech_code",
+        "mech_syntax::parser::mech_code_alt",
+        "syntax::parse_mech",
+        "syntax::parser::parse_mech",
+        "mech::parse_mech",
+        "mech::syntax::parse_mech",
+        "mech::parser::parse_mech",
+        "crate::parse_mech",
+        "crate::syntax::parse_mech",
+        "crate::syntax::parser::parse_mech",
+    ] {
+        let scan = scan_rust_source(
+            &format!("fn run() {{ {reference}(source); }}"),
+            "src/new.rs",
+            ParserReexports::RootCrate,
+        );
+        assert_eq!(
+            scan.calls,
+            BTreeMap::from([("run".to_owned(), 1)]),
+            "{reference}"
+        );
+        let scan = scan_rust_source(
+            &format!("use {reference} as old; fn run() {{ old(source); }}"),
+            "src/new.rs",
+            ParserReexports::RootCrate,
+        );
+        assert!(!scan.prohibited_aliases.is_empty(), "{reference}");
+    }
+    let scan = scan_rust_source(
+        "use crate::*; fn run() { parse_mech(source); }",
+        "src/new.rs",
+        ParserReexports::RootCrate,
+    );
+    assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 1)]));
+    assert!(
+        !scan.prohibited_aliases.is_empty(),
+        "swapping an inventoried parse call for parse_mech must fail even when the call count is unchanged"
+    );
+    let scan = scan_rust_source(
+        "pub use mech_syntax::{parser::program}; fn run() { program(source); }",
+        "src/lib.rs",
+        ParserReexports::RootCrate,
+    );
+    assert!(
+        !scan.prohibited_aliases.is_empty(),
+        "a new nested export is not a frozen declaration"
+    );
+}
+
+#[test]
+fn source_scanner_cfg_arms_cannot_swallow_production_siblings() {
+    for test_arm in [
+        "E::A => test_only(),",
+        "E::A => { test_only() }",
+        "E::A { value } if predicate(value) => test_only(),",
+        "E::A => (|x| { x })(test_only()),",
+    ] {
+        let source = format!(
+            "fn run(e: E) {{ match e {{ #[cfg(test)] {test_arm} E::B => {{ mech_syntax::parse(source); }} }} }}"
+        );
+        assert_eq!(
+            scan_rust_source(&source, "fixture.rs", ParserReexports::None).calls,
+            BTreeMap::from([("run".to_owned(), 1)]),
+            "{source}"
+        );
+    }
+    let source = "fn run(e: E) { match e { #[cfg(test)] E::A => mech_syntax::parse(test_source), E::B => mech_syntax::parse(source), } }";
+    assert_eq!(
+        scan_rust_source(source, "fixture.rs", ParserReexports::None).calls,
+        BTreeMap::from([("run".to_owned(), 1)])
+    );
+    let source = "fn run() { let label = \"◉\"; #[cfg(test)] let hidden = mech_syntax::parse(test_source); mech_syntax::parse(source); }";
+    assert_eq!(
+        scan_rust_source(source, "fixture.rs", ParserReexports::None).calls,
+        BTreeMap::from([("run".to_owned(), 1)])
+    );
+}
+
+#[test]
+fn source_scanner_evaluates_cfg_attr_without_assuming_features() {
+    for (attribute, count) in [
+        ("#[cfg_attr(not(test), cfg(test))]", 0),
+        ("#[cfg_attr(not(test), cfg_attr(not(test), cfg(test)))]", 0),
+        ("#[cfg_attr(test, cfg(test))]", 1),
+        ("#[cfg_attr(feature = \"source\", cfg(test))]", 1),
+        (
+            "#[cfg_attr(not(test), cfg(any(test, feature = \"source\")))]",
+            1,
+        ),
+    ] {
+        let source = format!("{attribute} fn run() {{ mech_syntax::parse(source); }}");
+        assert_eq!(
+            scan_rust_source(&source, "fixture.rs", ParserReexports::None)
+                .calls
+                .values()
+                .sum::<usize>(),
+            count,
+            "{attribute}"
+        );
+        let source = format!(
+            "fn run(e: E) {{ match e {{ {attribute} E::A => mech_syntax::parse(first), E::B => mech_syntax::parse(second), }} }}"
+        );
+        assert_eq!(
+            scan_rust_source(&source, "fixture.rs", ParserReexports::None)
+                .calls
+                .values()
+                .sum::<usize>(),
+            count + 1,
+            "{attribute}"
+        );
+    }
+    assert!(
+        scan_rust_source(
+            "#![cfg_attr(not(test), cfg(test))]\nfn run() { mech_syntax::parse(source); }",
+            "fixture.rs",
+            ParserReexports::None
+        )
+        .calls
+        .is_empty()
+    );
+}
+
+struct CensusFixture(PathBuf);
+impl CensusFixture {
+    fn new() -> Self {
+        static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let root = std::env::temp_dir().join(format!(
+            "mech-census-{}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+            NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        Self(root.canonicalize().unwrap())
+    }
+    fn write(&self, path: &str, source: &str) -> PathBuf {
+        let path = self.0.join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, source).unwrap();
+        path
+    }
+    fn modules(&self) -> BTreeMap<PathBuf, BTreeSet<Vec<String>>> {
+        production_source_modules(
+            &BTreeSet::from([self.0.clone()]),
+            &BTreeSet::from([self.0.join("lib.rs")]),
+        )
+    }
+}
+impl Drop for CensusFixture {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.0).unwrap();
+    }
+}
+
+#[test]
+fn production_module_graph_requires_cfg_proof_for_tests_paths() {
+    let fixture = CensusFixture::new();
+    let tests = fixture.write(
+        "tests.rs",
+        "#[path = \"tests/nested.rs\"] mod nested; fn run() { mech_syntax::parse(source); }",
+    );
+    let nested = fixture.write(
+        "tests/nested.rs",
+        "fn run() { mech_syntax::parse(source); }",
+    );
+    for attribute in [
+        "",
+        "#[cfg(not(test))]",
+        "#[cfg(any(test, feature = \"source\"))]",
+    ] {
+        fixture.write("lib.rs", &format!("{attribute} mod tests;"));
+        let modules = fixture.modules();
+        assert!(
+            modules.contains_key(&tests) && modules.contains_key(&nested),
+            "{attribute}"
+        );
+        for path in [&tests, &nested] {
+            assert_eq!(
+                scan_rust_source(
+                    &fs::read_to_string(path).unwrap(),
+                    "fixture.rs",
+                    ParserReexports::None
+                )
+                .calls
+                .values()
+                .sum::<usize>(),
+                1
+            );
+        }
+    }
+    for attribute in ["#[cfg(test)]", "#[cfg_attr(not(test), cfg(test))]"] {
+        fixture.write("lib.rs", &format!("{attribute} mod tests;"));
+        let modules = fixture.modules();
+        assert!(
+            !modules.contains_key(&tests) && !modules.contains_key(&nested),
+            "{attribute}"
+        );
+    }
+    fixture.write(
+        "lib.rs",
+        "#[cfg(test)] mod tests; #[path = \"tests.rs\"] mod production;",
+    );
+    let modules = fixture.modules();
+    assert!(
+        modules.contains_key(&tests) && modules.contains_key(&nested),
+        "a production declaration overrides another test-only declaration"
+    );
+}
+
+#[test]
+fn production_module_graph_follows_path_attributes_and_rust_module_names() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "lib.rs",
+        "#[path = \"tests/renamed.rs\"] mod public_module;",
+    );
+    let renamed = fixture.write(
+        "tests/renamed.rs",
+        "use super::parse; fn run() { parse(source); }",
+    );
+    let modules = fixture.modules();
+    assert_eq!(
+        modules[&renamed],
+        BTreeSet::from([vec!["public_module".to_owned()]])
+    );
+    for module in &modules[&renamed] {
+        assert!(
+            !scan_rust_source_in_module(
+                &fs::read_to_string(&renamed).unwrap(),
+                "tests/renamed.rs",
+                ParserReexports::RootCrate,
+                module
+            )
+            .prohibited_aliases
+            .is_empty()
+        );
+    }
+    fixture.write(
+        "lib.rs",
+        "#[cfg(test)] #[path = \"tests/renamed.rs\"] mod test_only;",
+    );
+    assert!(!fixture.modules().contains_key(&renamed));
+    fixture.write(
+        "lib.rs",
+        "#[cfg_attr(not(test), path = \"tests/renamed.rs\")] mod public_module;",
+    );
+    assert!(fixture.modules().contains_key(&renamed));
+    fixture.write(
+        "lib.rs",
+        "#[cfg_attr(feature = \"source\", path = \"tests/renamed.rs\")] mod public_module;",
+    );
+    let default = fixture.write(
+        "public_module.rs",
+        "fn run() { mech_syntax::parse(source); }",
+    );
+    let modules = fixture.modules();
+    assert!(
+        modules.contains_key(&renamed) && modules.contains_key(&default),
+        "unknown feature paths remain production possibilities"
+    );
+    fixture.write(
+        "lib.rs",
+        "#[cfg_attr(test, path = \"tests/renamed.rs\")] mod public_module;",
+    );
+    let modules = fixture.modules();
+    assert!(
+        !modules.contains_key(&renamed) && modules.contains_key(&default),
+        "a proven test-only path is not an orphan production seed"
+    );
+    fixture.write(
+        "lib.rs",
+        "mod nested { #[path = \"../tests/renamed.rs\"] mod redirected; }",
+    );
+    fs::create_dir_all(fixture.0.join("nested")).unwrap();
+    assert_eq!(
+        fixture.modules()[&renamed],
+        BTreeSet::from([vec!["nested".to_owned(), "redirected".to_owned()]])
+    );
+}
+
+#[test]
+fn source_scanner_keeps_retiring_paths_visible_inside_macros() {
+    for source in [
+        "macro_rules! old { () => { fn run() { mech_syntax::parse(source); } }; }",
+        "fn run() { invoke!({ mech_syntax::parse(source) }); }",
+        "macro_rules! old { () => { use mech_syntax::parse as hidden; }; }",
+        "macro_rules! old { ($name:ident) => { use mech_syntax::$name; }; }",
+    ] {
+        let scan = scan_rust_source(source, "fixture.rs", ParserReexports::None);
+        assert!(
+            !scan.calls.is_empty() || !scan.prohibited_aliases.is_empty(),
+            "{source}"
+        );
+        let scan = scan_rust_source(
+            &format!("#[cfg(test)] mod tests {{ {source} }}"),
+            "fixture.rs",
+            ParserReexports::None,
+        );
+        assert!(
+            scan.calls.is_empty() && scan.prohibited_aliases.is_empty(),
+            "{source}"
+        );
+    }
+    let scan = scan_rust_source(
+        "mod tests { #![cfg(test)] fn hidden() { mech_syntax::parse(source); } } fn run() { mech_syntax::parse(source); }",
+        "fixture.rs",
+        ParserReexports::None,
+    );
+    assert_eq!(scan.calls, BTreeMap::from([("run".to_owned(), 1)]));
+}
+
+#[test]
+fn source_scanner_tracks_group_and_relative_parser_module_bindings() {
+    for source in [
+        "use mech_syntax::{parser}; fn run() { parser::parse(source); }",
+        "use super::parser; fn run() { parser::parse(source); }",
+        "use super::{parser}; fn run() { parser::parse(source); }",
+    ] {
+        let scan = scan_rust_source(source, "src/new.rs", ParserReexports::RootCrate);
+        assert_eq!(
+            scan.calls,
+            BTreeMap::from([("run".to_owned(), 1)]),
+            "{source}"
+        );
+    }
+    let scan = scan_rust_source(
+        "use mech_syntax::parser; fn retiring() { parser::parse(source); } mod canonical { use mech_syntax::document::parser; fn run() { parser::parse(source); } }",
+        "src/new.rs",
+        ParserReexports::RootCrate,
+    );
+    assert_eq!(scan.calls, BTreeMap::from([("retiring".to_owned(), 1)]));
+    assert!(scan.prohibited_aliases.is_empty());
+}
+
+#[test]
+fn path_attributed_files_resolve_descendants_from_their_owned_directory() {
+    let fixture = CensusFixture::new();
+    fixture.write(
+        "lib.rs",
+        "#[path = \"tests/renamed.rs\"] mod public_module;",
+    );
+    fixture.write("tests/renamed.rs", "mod nested;");
+    let child = fixture.write("tests/nested.rs", "use super::super::parse;");
+    assert_eq!(
+        fixture.modules()[&child],
+        BTreeSet::from([vec!["public_module".to_owned(), "nested".to_owned()]])
+    );
+    fixture.write(
+        "lib.rs",
+        "#[cfg(test)] #[path = \"tests/renamed.rs\"] mod test_only;",
+    );
+    assert!(!fixture.modules().contains_key(&child));
+    fixture.write("lib.rs", "mod tests;");
+    fixture.write("tests.rs", "mod nested;");
+    assert_eq!(
+        fixture.modules()[&child],
+        BTreeSet::from([vec!["tests".to_owned(), "nested".to_owned()]])
+    );
+    fixture.write(
+        "tests/nested.rs",
+        "#![cfg(test)]\nfn hidden() { mech_syntax::parse(source); }",
+    );
+    assert!(!fixture.modules().contains_key(&child));
 }
