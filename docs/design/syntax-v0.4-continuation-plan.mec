@@ -35,8 +35,10 @@ views. S4 source semantics and S5 certification are implemented in part, with
 comprehension and pattern witnesses now artifact-ready and all source-completion
 behavior tests passing. FSM lowering remains the artifact-certification blocker;
 borrowed tuple, array, and tagged-pattern projection now executes with primitive
-bindings, while composite bindings/yields, computed pattern blocks, nested control,
-and other S4 limits remain open.
+bindings. Matches support compound results and nested match bodies/guards.
+Comprehension composite bindings/yields, computed pattern blocks, and composition
+with nested comprehensions remain open. FSM continuations follow the next eligible
+internally scheduled turn contract in the normative specification.
 S6 activation remains gated on completion of S4 and S5; the registry remains
 inactive in this stage.
 

@@ -22,11 +22,24 @@ These artifact witnesses do not establish resident support for every structured
 pattern. S4 executes borrowed tuple, array, and tagged-pattern projections with
 primitive Bool/Index/F64 bindings and yields. Live matrix/set inputs, repeated
 bindings, generator/filter/join behavior, normalization, work admission, and failed
-publication recovery have execution regressions. Composite bindings/yields,
-composite construction inside control, computed pattern blocks, nested control,
-and FSM lowering remain unfinished. The FSM witness retains its required
+publication recovery have execution regressions. Compound match results and nested
+match bodies/guards now use the same ordinary construction and memory providers.
+Comprehension composite bindings/yields, computed pattern blocks, composition with
+nested comprehensions, and FSM lowering remain unfinished. The FSM witness retains its required
 executable outcome; the completion gate continues to fail until that implementation
 exists.
+
+## Nested-match graph revision
+
+Graph payload revision 5 gives each match-local operation a typed body, permitting
+recursive match declarations without an ordinary-call contract on control nodes.
+The 50 existing artifact-ready semantic witnesses were captured with both
+producers and compared section by section. For every witness, the graph revision
+changed from 4 to 5 and every other section payload remained byte-identical. Only
+those 50 semantic hashes changed; sources, dispositions and required outcomes did
+not. Positive compound-match, nested-match and exact table-join behavior remains
+in the completion suite. FSM remains a required executable witness and continues
+to fail until its typed implementation exists.
 
 ## Complete syntax evidence
 
