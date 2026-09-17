@@ -259,8 +259,19 @@ fn preflight_live_matrix_conversion(
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
     let mut meter = super::budget::ResidentBudgetMeter::default();
-    let input_footprint =
-        super::budget::measure_canonical_value_footprint(&mut meter, value, schemas)?;
+    let input_footprint = match value.data() {
+        mech_core::ValueData::Matrix(matrix)
+            if !matches!(
+                matrix.elements(),
+                SequenceView::Values(_) | SequenceView::String(_)
+            ) =>
+        {
+            value
+                .retained_footprint(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?
+        }
+        _ => super::budget::measure_canonical_value_footprint(&mut meter, value, schemas)?,
+    };
     let current_footprint = values
         .first()
         .and_then(|value| value.as_ref())
@@ -309,54 +320,67 @@ fn preflight_live_matrix_conversion(
     )?;
     let current_bytes = current_footprint.map_or(0, |footprint| footprint.retained_bytes);
     let current_nodes = current_footprint.map_or(0, |footprint| footprint.node_count);
+    // Canonical fixed-width matrices retain one Value wrapper, one Matrix
+    // body, and one packed sequence regardless of their population. String
+    // sequences additionally retain one owned node per element.
+    let candidate_nodes = if fixed_width.is_some() {
+        3
+    } else if target_element == &SchemaBody::String {
+        output_elements_u64
+            .checked_add(3)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        input_footprint.node_count
+    };
     // Fixed-width canonical primitives compare and finalize once per logical
     // element. Their retained byte width is storage, not additional
     // comparison work. Variable-width payloads still charge every retained
     // byte because equality must inspect that population.
     let variable_width_payload = fixed_width.is_none();
-    let publication_work = output_elements_u64
-        .checked_add(if variable_width_payload {
-            current_bytes
-        } else {
-            0
-        })
-        .and_then(|work| {
-            work.checked_add(if variable_width_payload {
-                output_payload
+    let publication_work = if current_footprint.is_some() {
+        output_elements_u64
+            .checked_add(if variable_width_payload {
+                current_bytes
             } else {
                 0
             })
-        })
-        .ok_or(ResidentKernelError::InvalidShape)?;
+            .and_then(|work| {
+                work.checked_add(if variable_width_payload {
+                    output_payload
+                } else {
+                    0
+                })
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        0
+    };
     let measured = meter.estimate();
-    super::budget::PreparedKernel::new(
-        (),
-        super::budget::resident_cost! {
-            comparison_work: measured.comparison_work()
-                .checked_add(publication_work)
-                .ok_or(ResidentKernelError::InvalidShape)?,
-            compute_work: measured.compute_work()
-                .checked_add(output_elements_u64)
-                .and_then(|work| work.checked_add(publication_work))
-                .ok_or(ResidentKernelError::InvalidShape)?,
-            output_elements,
-            output_bytes: output_payload,
-            temporary_bytes: input_footprint.retained_bytes
-                .checked_add(draft_bytes)
-                .and_then(|bytes| bytes.checked_add(output_payload))
-                .and_then(|bytes| bytes.checked_add(current_bytes))
-                .ok_or(ResidentKernelError::InvalidShape)?,
-            cloned_bytes: input_footprint.retained_bytes,
-            retained_nodes: input_footprint.node_count
-                .checked_add(current_nodes)
-                .and_then(|nodes| nodes.checked_add(output_elements_u64))
-                .and_then(|nodes| nodes.checked_add(6))
-                .ok_or(ResidentKernelError::InvalidShape)?,
-            ..super::budget::KernelCostEstimate::default()
-        },
-    )
-    .admit()?
-    .into_plan();
+    let cost = super::budget::resident_cost! {
+        comparison_work: measured.comparison_work()
+            .checked_add(publication_work)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        compute_work: measured.compute_work()
+            .checked_add(output_elements_u64)
+            .and_then(|work| work.checked_add(publication_work))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        output_elements,
+        output_bytes: output_payload,
+        temporary_bytes: input_footprint.retained_bytes
+            .checked_add(draft_bytes)
+            .and_then(|bytes| bytes.checked_add(output_payload))
+            .and_then(|bytes| bytes.checked_add(current_bytes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        cloned_bytes: input_footprint.retained_bytes,
+        retained_nodes: input_footprint.node_count
+            .checked_add(current_nodes)
+            .and_then(|nodes| nodes.checked_add(candidate_nodes))
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        ..super::budget::KernelCostEstimate::default()
+    };
+    super::budget::PreparedKernel::new((), cost)
+        .admit()?
+        .into_plan();
     Ok(())
 }
 
@@ -1350,7 +1374,7 @@ mod tests {
 
     #[test]
     fn live_fixed_width_matrix_conversion_charges_work_per_element() {
-        let length = 8_000;
+        let length = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as usize;
         let matrix = |element| {
             SchemaDraft {
                 dimension_parameters: Box::new([]),
