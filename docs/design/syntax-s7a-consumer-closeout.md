@@ -7,8 +7,8 @@ replacement and removal step; unfinished consumer behavior below belongs to S7A.
 
 | Consumer | Demonstrated canonical behavior | Remaining completion work |
 | --- | --- | --- |
-| Document execution | Root and named-fence scope execution, repeated named-fence bindings, typed fence presentation options (output suppression preserves execution), retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration and Mika-scope execution still need their canonical owners and implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
-| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | Mika-local scopes need their document owner. The index returns an anchored error for these instead of publishing incomplete facts. Configured fence options use the same typed presentation owner as execution. Resolver facts alone do not implement declaration execution. |
+| Document execution | Root, Mika-local and named-fence scope execution, repeated named-fence bindings within each local owner, typed fence presentation options (output suppression preserves execution), retained mutable state, whole and indexed assignment, compound assignment, nested record/tuple/matrix updates, serial statement versions, candidate discard and failed-turn rollback. Bytecode round-trip and resident execution are exercised by `canonical_document_state`. | Declaration execution still needs its implemented handoffs; the document collector's explicit unsupported-unit errors are not completion. |
+| Indexing and resolution | `SourceIndex::from_document` projects imports, aliases/groups, exports, context capabilities and addressed references into the existing resolver facts. Root and repeated named fences retain their scopes. Tests exercise dependency resolution, conflict validation, nested reads and reindexing edited snapshots. | CanonicalDocumentIndex projects separate root/named indexes for each retained Mika owner and preserves lexical parent identities. Configured fence options use the same typed presentation owner as execution. Resolved bindings still require the declaration compiler handoff. Resolver facts alone do not implement declaration execution. |
 | Rendering and classification | Typed fence classification distinguishes root, named, hidden, disabled and inert fences. `DocumentSyntax::contains_executable_source` classifies canonical source while excluding display-only code, comments and recovered documents. `canonical_document_outputs` checks actual inline/fence result bindings and formatted values. | Complete formatter/HTML consumer behavior and child-scope presentation still require qualification. Excluding display-only code from execution is not a complete rendering implementation. |
 | Editing | Canonical document sessions and edit-versus-fresh-parse tests preserve source, diagnostics, structural equivalence and unaffected identity. Indexing tests consume edited snapshots with updated scopes and positions. | Keep these regressions in the final-head qualification. S7B's resumable streaming optimization is a separate paused stage. |
 
@@ -58,3 +58,14 @@ The targeted validation passed 17 document-state tests, 46 source-review tests,
 22 syntax fence/classification/edit/import/literal tests. The five canonical
 registry/grammar generator checks passed. These focused results do not replace
 final-head Full CI or complete the remaining consumer handoffs.
+
+Mika-local execution/indexing now share retained DocumentScopeId owners. Tests
+exercise parent/sibling/nested state isolation, named scopes within a Mika owner,
+local dependency resolution, and rejection of a missing section closer. A Mika
+face after executable code now ends the Mech-code run through the canonical
+not-mech-code grammar rule, preserving the section owner's Mika precedence.
+This adds no grammar rule or activation: 539 total rows and the 80 Phase 2I
+candidates remain unchanged. Focused validation passed 19 document-state,
+46 source-review, 26 source-semantics, 14 resolver-index, 6 document-output,
+and 15 document-root/scope tests. Full document rendering and usable declaration
+bindings remain separate completion gates.

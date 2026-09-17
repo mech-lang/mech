@@ -2,7 +2,7 @@
 #[path = "canonical_index.rs"]
 mod canonical;
 #[cfg(feature = "source")]
-pub use canonical::CanonicalSourceIndexError;
+pub use canonical::{CanonicalDocumentIndex, CanonicalMikaIndex, CanonicalSourceIndexError};
 
 use mech_core::{
     ActivationArmBody, ActivationBody, ComprehensionQualifier, ContextBase, ContextCapabilityScope,

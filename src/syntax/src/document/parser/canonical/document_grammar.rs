@@ -1201,6 +1201,8 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::NOT_MECH_CODE,
         expression: GrammarExpression::Choice(&[
+            GrammarExpression::Rule(rules::MICRO_MIKA),
+            GrammarExpression::Rule(rules::MINI_MIKA),
             GrammarExpression::Rule(rules::QUESTION_BLOCK),
             GrammarExpression::Rule(rules::INFO_BLOCK),
             GrammarExpression::Rule(rules::SUCCESS_BLOCK),

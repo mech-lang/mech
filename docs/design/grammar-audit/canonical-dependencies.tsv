@@ -309,7 +309,7 @@ mechdown-table-header	alignment-separator|bar|inline-paragraph|space-tab0|whites
 mechdown-table-no-header	mechdown-table-row	mechdown-table
 mechdown-table-row	bar|empty-paragraph|inline-paragraph|space-tab0|space-tab1|whitespace0	mechdown-table-no-header|mechdown-table-with-header
 mechdown-table-with-header	mechdown-table-header|mechdown-table-row	mechdown-table
-micro-mika	mika-arm-left|mika-arm-right|mika-nose	mika
+micro-mika	mika-arm-left|mika-arm-right|mika-nose	mika|not-mech-code
 mika	micro-mika|mika-section|mini-mika|whitespace0	section
 mika-arm-left	none	micro-mika|mini-mika
 mika-arm-right	none	micro-mika|mini-mika
@@ -320,7 +320,7 @@ mika-nose	none	micro-mika|mika-expression-inner
 mika-section	mika-section-close|mika-section-open|section	mika
 mika-section-close	none	code-terminal|forbidden-emoji|mika-section|not-mech-code|paragraph|paragraph-text|section
 mika-section-open	none	forbidden-emoji|mika-section|paragraph-text
-mini-mika	left-parenthesis|mika-arm-left|mika-arm-right|mika-expression-inner|right-parenthesis	mika
+mini-mika	left-parenthesis|mika-arm-left|mika-arm-right|mika-expression-inner|right-parenthesis	mika|not-mech-code
 module-export-sigil	none	export-declaration
 module-import	aliased-item-import|import-sigil|module-only-import|module-suffix-import|space-tab0|whitespace0	mech-code-alt
 module-import-alias	module-import-context-alias|module-import-value-alias	aliased-item-import
@@ -350,7 +350,7 @@ not	exclamation|negate	not-factor
 not-element-of	ws0e	set-operator
 not-equal	ws0e	comparison-operator
 not-factor	factor|not	factor
-not-mech-code	error-block|float|idea-block|img|info-block|mika-section-close|question-block|success-block|warning-block	mech-code
+not-mech-code	error-block|float|idea-block|img|info-block|micro-mika|mika-section-close|mini-mika|question-block|success-block|warning-block	mech-code
 number	complex-number|real-number	literal|ordered-list-item
 octal-literal	digit-sequence	real-number|untyped-real-number
 op-assign	define-operator|expression|op-assign-operator|slice-ref	statement

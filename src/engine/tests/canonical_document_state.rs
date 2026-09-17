@@ -667,3 +667,55 @@ fn colonless_named_fences_execute_and_share_state_with_colon_spelling() {
         );
     }
 }
+
+#[test]
+fn mika_bodies_execute_independently_of_parent_sibling_and_nested_state() {
+    let source = "~counter := 100\ncounter += 10\ncounter\n\n~∘~⸢~counter := 0\ncounter += 1\ncounter\n\n╭◉╮⸢~counter := 20\ncounter += 2\ncounter\n⸥\n⸥\n\n~∘~⸢~counter := 40\ncounter += 4\ncounter\n⸥\n";
+    let document = document(source);
+    compiled_turns(
+        CanonicalSourceFrontend.compile_document(&document).unwrap(),
+        source,
+        &[110.0, 120.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+    let scopes = document.mika_scopes();
+    assert_eq!(scopes.len(), 3);
+    for (scope, expected) in scopes.iter().zip([[1.0, 2.0], [22.0, 24.0], [44.0, 48.0]]) {
+        let program = CanonicalSourceFrontend
+            .compile_mika_section(&scope.section)
+            .unwrap();
+        compiled_turns(
+            program,
+            source,
+            &expected,
+            mech_engine::SourceDocumentOutputKind::Program,
+        );
+    }
+}
+
+#[test]
+fn mika_named_fences_share_only_their_local_owner_and_keep_output_options() {
+    let source = "```mech:worker\n~counter := 100\ncounter += 10\ncounter\n```\n\n~∘~⸢```mechworker{output: false}\n~counter := 0\ncounter += 1\ncounter\n```\n\n```mech:worker\ncounter += 2\ncounter\n```\n⸥\n";
+    let document = document(source);
+    let root = CanonicalSourceFrontend
+        .compile_named_document_scope(&document, "worker")
+        .unwrap();
+    compiled_turns(
+        root,
+        source,
+        &[110.0, 120.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+    let scopes = document.mika_scopes();
+    assert_eq!(scopes.len(), 1);
+    let local = CanonicalSourceFrontend
+        .compile_named_mika_scope(&scopes[0].section, "worker")
+        .unwrap();
+    assert_eq!(local.document_outputs().len(), 2);
+    compiled_turns(
+        local,
+        source,
+        &[3.0, 6.0],
+        mech_engine::SourceDocumentOutputKind::Program,
+    );
+}

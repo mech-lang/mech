@@ -53,7 +53,27 @@ impl SourceIndex {
     /// dependencies. Named fences share the same interpreter scope by name.
     /// Invalid syntax or unsupported scope configuration fails before publication.
     pub fn from_document(document: &DocumentSyntax) -> Result<Self> {
-        let root = document.syntax();
+        Self::from_local_owner(document.syntax())
+    }
+
+    /// Index only this Mika's lexical body. Nested Mika owners have separate indexes.
+    pub fn from_mika_section(section: &mech_syntax::document::MikaSectionSyntax) -> Result<Self> {
+        if section.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return Err(error(
+                section.syntax(),
+                "cannot index a Mika section containing syntax errors",
+            ));
+        }
+        let body = required(section.body(), section.syntax())?;
+        Self::from_local_owner(body.syntax())
+    }
+
+    fn from_local_owner(root: &SyntaxNode) -> Result<Self> {
         if root.flags().intersects(
             NodeFlags::ERROR
                 | NodeFlags::MISSING
@@ -73,16 +93,13 @@ impl SourceIndex {
                 continue;
             }
             if node.kind() == SyntaxKind::MikaSection {
-                return Err(error(
-                    &node,
-                    "Mika scope indexing requires its document owner",
-                ));
+                continue;
             }
             if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
                 let info = required(fence.info(), &node)?;
                 let scope = match info.scope {
                     CodeFenceScope::Inert | CodeFenceScope::Disabled => continue,
-                    CodeFenceScope::Root => SourceScope::Program,
+                    CodeFenceScope::Root => scope.clone(),
                     CodeFenceScope::Named(name) => {
                         let interpreter = SourceInterpreterId {
                             namespace: mech_core::hash_str(&name),
@@ -121,18 +138,28 @@ impl SourceIndex {
                 continue;
             }
             if let Some(export) = ExportDeclarationSyntax::cast(node.clone()) {
-                let name = text(required(export.name(), &node)?.syntax())?;
+                let name = required(export.name(), &node)?;
+                let occurrence = range(name.syntax())?;
+                let name = text(name.syntax())?;
                 index.push_export(
                     scope,
                     index.declarations.len(),
-                    Some(range(&node)?),
+                    Some(occurrence),
                     SourceExportDeclaration { name },
                 );
                 continue;
             }
             if let Some(context) = ContextDeclarationSyntax::cast(node.clone()) {
-                let name = text(required(context.name(), &node)?.syntax())?;
-                let base = match required(context.base(), &node)? {
+                let name = required(context.name(), &node)?;
+                let base = required(context.base(), &node)?;
+                // Resolver occurrences span semantic roles, excluding the leading
+                // @/whitespace and trailing capability delimiters or trivia.
+                let mut occurrence = SourceRange {
+                    start: range(name.syntax())?.start,
+                    end: range(base.syntax())?.end,
+                };
+                let name = text(name.syntax())?;
+                let base = match base {
                     CanonicalContextBaseSyntax::Context(base) => SourceContextBase::Context(text(
                         required(base.name(), base.syntax())?.syntax(),
                     )?),
@@ -144,6 +171,7 @@ impl SourceIndex {
                 for cap in context.capabilities() {
                     let operation = text(required(cap.operation(), cap.syntax())?.syntax())?;
                     let cap_scope = required(cap.scope(), cap.syntax())?;
+                    occurrence.end = range(cap_scope.syntax())?.end;
                     let scope = match required(cap_scope.selected(), cap_scope.syntax())? {
                         CanonicalContextCapabilityScopeSyntax::Wildcard(_) => {
                             SourceContextCapabilityScope::Wildcard
@@ -157,7 +185,7 @@ impl SourceIndex {
                 index.push_context(
                     scope,
                     index.declarations.len(),
-                    Some(range(&node)?),
+                    Some(occurrence),
                     SourceContextDeclaration {
                         name,
                         base,
@@ -294,4 +322,38 @@ fn range(node: &SyntaxNode) -> Result<SourceRange> {
         start: location(node.range().start)?,
         end: location(node.range().end)?,
     })
+}
+
+/// Complete resolver projection for a document and its lexical Mika owners.
+/// Each local owner has an independent root/named scope namespace.
+#[derive(Clone, Debug)]
+pub struct CanonicalDocumentIndex {
+    pub owner: mech_syntax::document::DocumentScopeId,
+    pub root: SourceIndex,
+    pub mika: Vec<CanonicalMikaIndex>,
+}
+
+#[derive(Clone, Debug)]
+pub struct CanonicalMikaIndex {
+    pub owner: mech_syntax::document::MikaDocumentScope,
+    pub index: SourceIndex,
+}
+
+impl CanonicalDocumentIndex {
+    pub fn from_document(document: &DocumentSyntax) -> Result<Self> {
+        let root = SourceIndex::from_document(document)?;
+        let mika = document
+            .mika_scopes()
+            .into_iter()
+            .map(|owner| {
+                let index = SourceIndex::from_mika_section(&owner.section)?;
+                Ok(CanonicalMikaIndex { owner, index })
+            })
+            .collect::<Result<_>>()?;
+        Ok(Self {
+            owner: document.scope_id(),
+            root,
+            mika,
+        })
+    }
 }

@@ -3494,7 +3494,9 @@ citation := left-bracket, +alphanumeric, right-bracket, colon,
 float-sigil := float-left
              | float-right ;
 float := float-sigil, space-tab0, section-element ;
-not-mech-code := question-block
+not-mech-code := micro-mika
+               | mini-mika
+               | question-block
                | info-block
                | success-block
                | warning-block

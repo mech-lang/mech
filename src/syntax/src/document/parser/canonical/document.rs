@@ -1,10 +1,10 @@
 //! Canonical document grammar interpreter.
 
-use crate::document::{ExpectedSyntax, NodeFlags, RuleId, SyntaxKind};
+use crate::document::{ExpectedSyntax, NodeFlags, RuleId, SyntaxKind, TokenFlags};
 
-use super::super::Parser;
 use super::super::recovery;
 use super::super::rule::rules;
+use super::super::{Event, Parser};
 use super::combinator::Attempt;
 use super::document_grammar::{
     DOCUMENT_RULE_COUNT, DOCUMENT_RULES, DocumentRule, GrammarExpression,
@@ -154,10 +154,19 @@ fn comment_wins_at_mech_item_boundary(parser: &mut Parser<'_>) -> bool {
         parser.rewind(checkpoint);
         return true;
     }
-    let expression = parse_any_rule(parser, rules::EXPRESSION);
-    let complete_expression = expression == Attempt::Committed
-        || expression == Attempt::Matched
-            && parse_any_rule(parser, rules::CODE_TERMINAL).accepted();
+    let complete_expression = parser.without_consuming_recovery(|parser| {
+        let expression = parse_any_rule(parser, rules::EXPRESSION);
+        // Only zero-width repairs may keep a committed expression ahead of the
+        // comment. Retained error text from any candidate still disqualifies it.
+        let recovered_source = expression == Attempt::Committed
+            && parser.events[checkpoint.events..].iter().any(|event| {
+                matches!(event, Event::Token { range, flags, .. }
+                    if !range.is_empty() && flags.contains(TokenFlags::ERROR))
+            });
+        expression.accepted()
+            && !recovered_source
+            && parse_any_rule(parser, rules::CODE_TERMINAL) == Attempt::Matched
+    });
     parser.rewind(checkpoint);
     !complete_expression
 }

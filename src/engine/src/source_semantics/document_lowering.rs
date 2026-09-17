@@ -30,10 +30,17 @@ pub(super) fn compile_named_document_scope(
     document: &DocumentSyntax,
     name: &str,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    let anchor = SourceSemanticAnchor::for_node(document.syntax());
+    compile_named_scope(document.syntax(), name)
+}
+
+fn compile_named_scope(
+    root: &SyntaxNode,
+    name: &str,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(root);
     let mut units = Vec::new();
     let mut inline = Vec::new();
-    let mut pending = vec![document.syntax().clone()];
+    let mut pending = vec![root.clone()];
     while let Some(node) = pending.pop() {
         if matches!(
             node.kind(),
@@ -61,6 +68,23 @@ pub(super) fn compile_named_document_scope(
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
+    compile_collected_document(anchor, units, inline)
+}
+
+pub(super) fn compile_mika_section(
+    section: &mech_syntax::document::MikaSectionSyntax,
+    name: Option<&str>,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(section.syntax());
+    let body = section
+        .body()
+        .ok_or_else(|| internal(anchor, "Mika section has no retained body".to_owned()))?;
+    if let Some(name) = name {
+        return compile_named_scope(body.syntax(), name);
+    }
+    let mut units = Vec::new();
+    let mut inline = Vec::new();
+    collect_document_units(body.syntax(), &mut units, &mut inline)?;
     compile_collected_document(anchor, units, inline)
 }
 

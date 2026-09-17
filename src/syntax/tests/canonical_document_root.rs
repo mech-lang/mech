@@ -406,3 +406,73 @@ fn repeated_document_units_remain_measured_linear() {
         );
     }
 }
+
+#[test]
+fn committed_negation_must_reach_a_terminal_before_displacing_a_comment() {
+    for text in ["--- heading\n", "---- heading\n", "  --- heading\r\n"] {
+        let parsed = parse_canonical_document(source(text), ParseConfig::default());
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text:?}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 1);
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Expression), 0);
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+            text
+        );
+    }
+    for (text, clean) in [("---x\n", true), ("--x +\n", false)] {
+        let parsed = parse_canonical_document(source(text), ParseConfig::default());
+        assert_eq!(parsed.is_strictly_clean(), clean);
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 0);
+        assert!(count(&parsed.syntax(), SyntaxKind::NegateFactor) >= 2);
+    }
+}
+
+#[test]
+fn comment_arbitration_does_not_spend_the_recovery_budget() {
+    for (limit, copies) in [(0, 4), (1, 32), (65_536, 10_000)] {
+        let text = "--- heading\n".repeat(copies);
+        let config = ParseConfig {
+            limits: ParseLimits {
+                max_recovery_bytes: limit,
+                fuel: 100_000_000,
+                ..ParseLimits::default()
+            },
+        };
+        let parsed = parse_canonical_document(source(&text), config);
+        assert!(
+            parsed.is_strictly_clean(),
+            "limit={limit}, copies={copies}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.stats.recovery_bytes, 0);
+        assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), copies);
+        validate_lossless(&parsed.root, &parsed.source).unwrap();
+        assert_eq!(
+            reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+            text
+        );
+    }
+    // The probe's scoped policy must not disable real recovery on later code.
+    let parsed =
+        parse_canonical_document(source("--- heading\nx := [1,,2]\n"), ParseConfig::default());
+    assert!(!parsed.is_strictly_clean());
+    assert!(parsed.stats.recovery_bytes > 0);
+    assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 1);
+    let parsed = parse_canonical_document(
+        source("--x +\n"),
+        ParseConfig {
+            limits: ParseLimits {
+                max_recovery_bytes: 0,
+                ..ParseLimits::default()
+            },
+        },
+    );
+    assert!(!parsed.is_strictly_clean());
+    assert_eq!(count(&parsed.syntax(), SyntaxKind::Comment), 0);
+    assert_eq!(parsed.stats.recovery_bytes, 0);
+}
