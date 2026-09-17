@@ -56,6 +56,12 @@ fn collection_len(value: ResidentValueRef<'_>) -> Option<usize> {
     }
 }
 
+fn allocation_capacity_bytes<T>(capacity: usize) -> Result<u64, ResidentKernelError> {
+    budget::checked_u64(capacity)?
+        .checked_mul(core::mem::size_of::<T>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 fn completed_set_shape_values(
     schema: &mech_core::Schema,
     data: &ValueDataDraft,
@@ -92,7 +98,8 @@ pub(super) struct SourceSchemaContext {
     owner: Arc<SchemaTable>,
     schemas: Arc<SchemaTable>,
     projections: StructuralProjectionTable,
-    schema_index: Arc<[(SchemaKey, SchemaId)]>,
+    binding_schemas: Arc<SchemaTable>,
+    binding_schema_index: Arc<[(SchemaKey, SchemaId)]>,
 }
 
 pub(super) struct PatternBindingItem {
@@ -416,32 +423,47 @@ fn source_schema_contexts(
     value: &mech_core::snapshot::Value,
 ) -> Option<(Arc<SourceSchemaContext>, Arc<[Arc<SourceSchemaContext>]>)> {
     let root_owner = value.schemas()?;
-    let mut owners = Vec::new();
     let mut discovery_meter = ResidentBudgetMeter::default();
-    visit_value_schema_owners(value, &mut discovery_meter, &mut |owner, _| {
-        if !owners.iter().any(|candidate| Arc::ptr_eq(candidate, owner)) {
-            owners.push(Arc::clone(owner));
-        }
-        Ok(())
-    })
-    .ok()?;
-    let contexts = owners
+    // The same admitted collector is used by the preflight and by actual
+    // context construction. It stores every occurrence once, sorts by Arc
+    // identity, and deduplicates before any owner closure is built.
+    let owners = distinct_source_owners(value, &mut discovery_meter).ok()?;
+    let projected = owners
+        .owners
         .into_iter()
         .map(|owner| {
             let (schemas, projections) = structural_projection_schema_context(&owner).ok()?;
-            let schema_index = source_schema_index(&schemas).ok()?;
-            Some(Arc::new(SourceSchemaContext {
+            Some((owner, schemas, projections))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let root_index = projected
+        .iter()
+        .position(|(owner, _, _)| Arc::ptr_eq(owner, &root_owner))?;
+    // Preserve the root owner's ordinals, then append every independently
+    // owned nested schema by canonical key. Drafts rebound into this arena can
+    // finalize a whole composite without interpreting a nested owner's local
+    // schema ID against the root table.
+    let mut binding_schemas = projected.get(root_index)?.1.clone();
+    for (index, (_, schemas, _)) in projected.iter().enumerate() {
+        if index != root_index {
+            binding_schemas = binding_schemas.extend_preserving_ids(schemas).ok()?;
+        }
+    }
+    let binding_schema_index = source_schema_index(&binding_schemas).ok()?;
+    let binding_schemas = Arc::new(binding_schemas);
+    let contexts = projected
+        .into_iter()
+        .map(|(owner, schemas, projections)| {
+            Arc::new(SourceSchemaContext {
                 owner,
                 schemas: Arc::new(schemas),
                 projections,
-                schema_index,
-            }))
+                binding_schemas: Arc::clone(&binding_schemas),
+                binding_schema_index: Arc::clone(&binding_schema_index),
+            })
         })
-        .collect::<Option<Vec<_>>>()?;
-    let root = contexts
-        .iter()
-        .find(|context| Arc::ptr_eq(&context.owner, &root_owner))?
-        .clone();
+        .collect::<Vec<_>>();
+    let root = contexts.get(root_index)?.clone();
     Some((root, contexts.into()))
 }
 
@@ -461,6 +483,68 @@ struct SourceContextMaterializationBound {
     temporary_bytes: u64,
     retained_nodes: u64,
     work: u64,
+}
+
+struct DistinctSourceOwners {
+    owners: Vec<Arc<SchemaTable>>,
+    allocation_bytes: u64,
+}
+
+fn distinct_source_owners(
+    value: &Value,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<DistinctSourceOwners, ResidentKernelError> {
+    let mut occurrences = 0_u64;
+    visit_value_schema_owners(value, meter, &mut |_, _| {
+        occurrences = occurrences
+            .checked_add(1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    })?;
+    let capacity = usize::try_from(occurrences).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let minimum_bytes = occurrences
+        .checked_mul(core::mem::size_of::<Arc<SchemaTable>>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let sort_work = occurrences
+        .checked_mul(occurrences.max(1).ilog2() as u64 + 1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    meter.charge_comparison_work(sort_work)?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes: minimum_bytes,
+            ..meter.estimate()
+        },
+    )
+    .admit_control()?
+    .into_plan();
+
+    let mut owners = Vec::new();
+    owners
+        .try_reserve_exact(capacity)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let allocation_bytes = budget::checked_u64(owners.capacity())?
+        .checked_mul(core::mem::size_of::<Arc<SchemaTable>>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes: allocation_bytes,
+            ..meter.estimate()
+        },
+    )
+    .admit_control()?
+    .into_plan();
+    visit_value_schema_owners(value, meter, &mut |owner, _| {
+        owners.push(Arc::clone(owner));
+        Ok(())
+    })?;
+    owners.sort_unstable_by_key(|owner| Arc::as_ptr(owner) as usize);
+    owners.dedup_by(|left, right| Arc::ptr_eq(left, right));
+    Ok(DistinctSourceOwners {
+        owners,
+        allocation_bytes,
+    })
 }
 
 impl SourceContextMaterializationBound {
@@ -520,9 +604,11 @@ fn source_context_materialization_bound(
     meter: &mut ResidentBudgetMeter,
 ) -> Result<SourceContextMaterializationBound, ResidentKernelError> {
     let mut bound = SourceContextMaterializationBound::default();
-    visit_value_schema_owners(value, meter, &mut |owner, meter| {
-        bound.add_owner(owner, meter)
-    })?;
+    let owners = distinct_source_owners(value, meter)?;
+    bound.temporary_bytes = owners.allocation_bytes;
+    for owner in &owners.owners {
+        bound.add_owner(owner, meter)?;
+    }
     Ok(bound)
 }
 
@@ -559,26 +645,24 @@ fn resolve_pattern_item(
             contexts,
         } => loop {
             if !matches!(body, SchemaBody::Dynamic) {
-                let source_schemas = value_schema
-                    .filter(|schema| {
-                        context.owner.entry(*schema).is_some_and(|entry| {
-                            context
-                                .schemas
-                                .entry(*schema)
-                                .is_some_and(|candidate| candidate.key() == entry.key())
-                        })
+                let value_schema = value_schema
+                    .map(|schema| {
+                        let key = context
+                            .schemas
+                            .entry(schema)
+                            .ok_or(ResidentKernelError::InvalidInput)?
+                            .key();
+                        indexed_schema_id(&context.binding_schema_index, key)
+                            .ok_or(ResidentKernelError::InvalidInput)
                     })
-                    .map_or_else(
-                        || Arc::clone(&context.schemas),
-                        |_| Arc::clone(&context.owner),
-                    );
+                    .transpose()?;
                 return Ok(Some(ResolvedPatternItem {
                     projection_schema,
                     value_schema,
                     shape_values,
                     body,
                     data,
-                    schemas: Some(source_schemas),
+                    schemas: Some(Arc::clone(&context.binding_schemas)),
                     source_data,
                     source_context: Some(context),
                     source_contexts: Some(contexts),
@@ -676,6 +760,19 @@ fn adapt_resolved_pattern_item(
         })))));
     }
     if item.body == *target {
+        if let (Some(source_data), Some(context)) =
+            (item.source_data.as_ref(), item.source_context.as_ref())
+        {
+            let validation =
+                SnapshotValidationContext::with_shared_schemas(&context.binding_schemas);
+            return canonical_snapshot_data_draft_with_context(
+                &item.body,
+                source_data,
+                &validation,
+            )
+            .map(Some)
+            .map_err(|_| ResidentKernelError::InvalidInput);
+        }
         return Ok(Some(item.data));
     }
     let source_schemas = item.schemas.clone();
@@ -1349,7 +1446,7 @@ impl PatternItem {
         let source_schema_index = item
             .source_context
             .as_ref()
-            .map(|context| Arc::clone(&context.schema_index));
+            .map(|context| Arc::clone(&context.binding_schema_index));
         let Some(data) = adapt_resolved_pattern_item(item, &target, schemas, projections)? else {
             return Ok(None);
         };
@@ -2855,7 +2952,42 @@ fn visit_value_schema_owners(
 
 struct SchemaOwnerRoots {
     owner: Arc<mech_core::SchemaTable>,
-    roots: Vec<SchemaId>,
+    root_start: usize,
+    root_len: usize,
+    root_capacity: usize,
+}
+
+impl SchemaOwnerRoots {
+    fn roots<'a>(&self, storage: &'a [SchemaId]) -> &'a [SchemaId] {
+        &storage[self.root_start..self.root_start + self.root_len]
+    }
+
+    fn insert_root(
+        &mut self,
+        storage: &mut [SchemaId],
+        root: SchemaId,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<(), ResidentKernelError> {
+        let end = self
+            .root_start
+            .checked_add(self.root_capacity)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if end > storage.len() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        for candidate in &storage[self.root_start..self.root_start + self.root_len] {
+            meter.charge_comparison_work(1)?;
+            if *candidate == root {
+                return Ok(());
+            }
+        }
+        if self.root_len == self.root_capacity {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        storage[self.root_start + self.root_len] = root;
+        self.root_len += 1;
+        Ok(())
+    }
 }
 
 fn distinct_schema_owner_footprint(
@@ -2893,6 +3025,139 @@ fn same_schema_arena_contents(
         }
     }
     Ok(true)
+}
+
+fn component_closure_is_addressable(
+    owner: &mech_core::SchemaTable,
+    root: SchemaId,
+    plan: &mech_core::SchemaTable,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<bool, ResidentKernelError> {
+    fn contains_schema(
+        plan: &mech_core::SchemaTable,
+        key: mech_core::SchemaKey,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<bool, ResidentKernelError> {
+        for entry in plan.entries() {
+            meter.charge_comparison_work(1)?;
+            if entry.key() == key {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    fn visit_body(
+        parent: &mech_core::Schema,
+        body: &SchemaBody,
+        plan: &mech_core::SchemaTable,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<bool, ResidentKernelError> {
+        meter.charge_compute_work(1)?;
+        let mut visit_child = |child: &SchemaBody| {
+            let schema = parent
+                .canonical_component_schema(child)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            if !contains_schema(plan, schema.key(), meter)? {
+                return Ok(false);
+            }
+            visit_body(parent, child, plan, meter)
+        };
+        match body {
+            SchemaBody::Enum { variants, .. } => {
+                for child in variants
+                    .iter()
+                    .filter_map(|variant| variant.payload.as_ref())
+                {
+                    if !visit_child(child)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            SchemaBody::Option(child)
+            | SchemaBody::Matrix { element: child, .. }
+            | SchemaBody::Set { element: child, .. } => {
+                if !visit_child(child)? {
+                    return Ok(false);
+                }
+            }
+            SchemaBody::Tuple(children) => {
+                for child in children {
+                    if !visit_child(child)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            SchemaBody::Record(fields)
+            | SchemaBody::Table {
+                columns: fields, ..
+            } => {
+                for field in fields {
+                    if !visit_child(&field.schema)? {
+                        return Ok(false);
+                    }
+                }
+            }
+            SchemaBody::Map { key, value, .. } => {
+                if !visit_child(key)? || !visit_child(value)? {
+                    return Ok(false);
+                }
+            }
+            SchemaBody::Dynamic
+            | SchemaBody::Bool
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+            | SchemaBody::String
+            | SchemaBody::Id
+            | SchemaBody::Index
+            | SchemaBody::Atom(_)
+            | SchemaBody::ReifiedType => {}
+        }
+        Ok(true)
+    }
+
+    let root = owner.get(root).ok_or(ResidentKernelError::InvalidInput)?;
+    if !contains_schema(plan, root.key(), meter)? {
+        return Ok(false);
+    }
+    visit_body(root, root.body(), plan, meter)
+}
+
+fn schema_root_requires_import(
+    owner: &Arc<mech_core::SchemaTable>,
+    root: SchemaId,
+    nested_dynamic: bool,
+    plan: &Arc<mech_core::SchemaTable>,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<bool, ResidentKernelError> {
+    if same_schema_arena_contents(owner, plan, meter)? && !nested_dynamic {
+        return Ok(false);
+    }
+    let remaining = meter.estimate().remaining_incremental_work()?;
+    let closure_budget = SnapshotCanonicalizationBudget::new(remaining);
+    let (_, construction_bytes, closure_nodes) = owner
+        .component_closure_bounds_for_roots_with_budget(&[root], &closure_budget)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    meter.charge_comparison_work(closure_budget.consumed())?;
+    let retained_nodes = meter
+        .estimate()
+        .retained_nodes()
+        .checked_add(closure_nodes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes: construction_bytes,
+            retained_nodes,
+            ..meter.estimate()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(!component_closure_is_addressable(owner, root, plan, meter)?)
 }
 
 fn collection_canonicalization_work(
@@ -2999,10 +3264,14 @@ impl ReactiveInstance {
                     value,
                     false,
                     meter,
-                    &mut |owner, _, nested_dynamic, meter| {
-                        if nested_dynamic
-                            || !same_schema_arena_contents(owner, &self.plan.schemas, meter)?
-                        {
+                    &mut |owner, root, nested_dynamic, meter| {
+                        if schema_root_requires_import(
+                            owner,
+                            root,
+                            nested_dynamic,
+                            &self.plan.schemas,
+                            meter,
+                        )? {
                             root_occurrences = root_occurrences
                                 .checked_add(1)
                                 .ok_or(ResidentKernelError::InvalidShape)?;
@@ -3026,7 +3295,7 @@ impl ReactiveInstance {
             ));
         }
 
-        let owner_index_bytes = root_occurrences
+        let minimum_owner_index_bytes = root_occurrences
             .checked_mul(
                 (core::mem::size_of::<SchemaOwnerRoots>() + core::mem::size_of::<SchemaId>())
                     as u64,
@@ -3038,7 +3307,7 @@ impl ReactiveInstance {
         PreparedKernel::new(
             (),
             budget::resident_cost! {
-                temporary_bytes: owner_index_bytes,
+                temporary_bytes: minimum_owner_index_bytes,
                 ..meter.estimate()
             },
         )
@@ -3050,6 +3319,24 @@ impl ReactiveInstance {
         owners
             .try_reserve_exact(owner_capacity)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
+        let owner_buffer_bytes = allocation_capacity_bytes::<SchemaOwnerRoots>(owners.capacity())?;
+        let minimum_root_buffer_bytes = root_occurrences
+            .checked_mul(core::mem::size_of::<SchemaId>() as u64)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        PreparedKernel::new(
+            (),
+            budget::resident_cost! {
+                temporary_bytes: owner_buffer_bytes
+                    .checked_add(minimum_root_buffer_bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                ..meter.estimate()
+            },
+        )
+        .admit()?
+        .into_plan();
+        // Count every relevant root per owner before allocating root storage.
+        // The subsequent fixed segments never grow, so no replacement buffer
+        // can overlap the prior allocation during discovery.
         for location in captured_reads() {
             let Some(ResidentValueRef::Snapshot(values)) = self.read_location(location, working)
             else {
@@ -3061,9 +3348,13 @@ impl ReactiveInstance {
                     false,
                     meter,
                     &mut |owner, root, nested_dynamic, meter| {
-                        if !nested_dynamic
-                            && same_schema_arena_contents(owner, &self.plan.schemas, meter)?
-                        {
+                        if !schema_root_requires_import(
+                            owner,
+                            root,
+                            nested_dynamic,
+                            &self.plan.schemas,
+                            meter,
+                        )? {
                             return Ok(());
                         }
                         let mut owner_index = None;
@@ -3079,27 +3370,81 @@ impl ReactiveInstance {
                             None => {
                                 owners.push(SchemaOwnerRoots {
                                     owner: Arc::clone(owner),
-                                    roots: Vec::new(),
+                                    root_start: 0,
+                                    root_len: 0,
+                                    root_capacity: 0,
                                 });
                                 owners.len() - 1
                             }
                         };
-                        let mut present = false;
-                        for existing in &owners[owner_index].roots {
+                        owners[owner_index].root_capacity = owners[owner_index]
+                            .root_capacity
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        Ok(())
+                    },
+                )?;
+            }
+        }
+
+        let mut root_storage_len = 0_usize;
+        for owner in &mut owners {
+            owner.root_start = root_storage_len;
+            root_storage_len = root_storage_len
+                .checked_add(owner.root_capacity)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        if root_storage_len != owner_capacity {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let mut roots = Vec::new();
+        roots
+            .try_reserve_exact(root_storage_len)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+        let root_buffer_bytes = allocation_capacity_bytes::<SchemaId>(roots.capacity())?;
+        let owner_index_bytes = owner_buffer_bytes
+            .checked_add(root_buffer_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        PreparedKernel::new(
+            (),
+            budget::resident_cost! {
+                temporary_bytes: owner_index_bytes,
+                ..meter.estimate()
+            },
+        )
+        .admit()?
+        .into_plan();
+        roots.resize(root_storage_len, SchemaId::new(0));
+        for location in captured_reads() {
+            let Some(ResidentValueRef::Snapshot(values)) = self.read_location(location, working)
+            else {
+                continue;
+            };
+            for value in values.iter().flatten() {
+                visit_value_schema_roots(
+                    value,
+                    false,
+                    meter,
+                    &mut |owner, root, nested_dynamic, meter| {
+                        if !schema_root_requires_import(
+                            owner,
+                            root,
+                            nested_dynamic,
+                            &self.plan.schemas,
+                            meter,
+                        )? {
+                            return Ok(());
+                        }
+                        let mut owner_index = None;
+                        for (index, existing) in owners.iter().enumerate() {
                             meter.charge_comparison_work(1)?;
-                            if *existing == root {
-                                present = true;
+                            if Arc::ptr_eq(&existing.owner, owner) {
+                                owner_index = Some(index);
                                 break;
                             }
                         }
-                        if !present {
-                            owners[owner_index]
-                                .roots
-                                .try_reserve_exact(1)
-                                .map_err(|_| ResidentKernelError::InvalidShape)?;
-                            owners[owner_index].roots.push(root);
-                        }
-                        Ok(())
+                        let owner_index = owner_index.ok_or(ResidentKernelError::InvalidShape)?;
+                        owners[owner_index].insert_root(&mut roots, root, meter)
                     },
                 )?;
             }
@@ -3124,7 +3469,10 @@ impl ReactiveInstance {
             let closure_budget = SnapshotCanonicalizationBudget::new(remaining);
             let (owner_allocation, owner_construction, owner_nodes) = owner
                 .owner
-                .component_closure_bounds_for_roots_with_budget(&owner.roots, &closure_budget)
+                .component_closure_bounds_for_roots_with_budget(
+                    owner.roots(&roots),
+                    &closure_budget,
+                )
                 .ok_or(ResidentKernelError::InvalidShape)?;
             meter.charge_comparison_work(closure_budget.consumed())?;
             scan_work = owner_nodes
@@ -3208,7 +3556,7 @@ impl ReactiveInstance {
         for owner in owners {
             let closed = owner
                 .owner
-                .component_closure_for_roots(&owner.roots)
+                .component_closure_for_roots(owner.roots(&roots))
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
             merged = merged
                 .extend_preserving_ids(&closed)
@@ -4346,13 +4694,19 @@ impl ReactiveInstance {
                         schemas,
                     )
                     .map_err(fail)?;
-                    let (element, element_shape_values) = generator_element(
-                        *source_schema,
-                        *element_schema,
-                        &live_shape_values,
-                        schemas,
-                    )
-                    .map_err(fail)?;
+                    let element = if let Some(element_schema) = element_schema {
+                        let (body, shape_values) = generator_element(
+                            *source_schema,
+                            *element_schema,
+                            &live_shape_values,
+                            schemas,
+                        )
+                        .map_err(fail)?;
+                        Some((*element_schema, body, shape_values))
+                    } else {
+                        debug_assert!(matches!(pattern, crate::CollectionPattern::Wildcard));
+                        None
+                    };
                     let retained_shape_parameter_count = schemas
                         .get(control.output_schema)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?
@@ -4360,27 +4714,33 @@ impl ReactiveInstance {
                         .len();
                     for ordinal in 0..count {
                         meter.charge_compute_work(1).map_err(fail)?;
-                        let matched = self.match_collection_pattern(
-                            control.artifact_node,
-                            &control.locals,
-                            *source,
-                            *element_schema,
-                            &element,
-                            &element_shape_values,
-                            &live_shape_values,
-                            ordinal,
-                            pattern,
-                            &mut [0; crate::MAX_COLLECTION_PATTERN_DEPTH],
-                            0,
-                            values.len(),
-                            *footprint,
-                            retained_shape_parameter_count,
-                            schemas,
-                            projections,
-                            schema_arena_bytes,
-                            working,
-                            meter,
-                        )?;
+                        let matched = if let Some((element_schema, element, element_shape_values)) =
+                            &element
+                        {
+                            self.match_collection_pattern(
+                                control.artifact_node,
+                                &control.locals,
+                                *source,
+                                *element_schema,
+                                element,
+                                element_shape_values,
+                                &live_shape_values,
+                                ordinal,
+                                pattern,
+                                &mut [0; crate::MAX_COLLECTION_PATTERN_DEPTH],
+                                0,
+                                values.len(),
+                                *footprint,
+                                retained_shape_parameter_count,
+                                schemas,
+                                projections,
+                                schema_arena_bytes,
+                                working,
+                                meter,
+                            )?
+                        } else {
+                            true
+                        };
                         if matched {
                             self.collection_from(
                                 control,
@@ -4513,6 +4873,16 @@ mod tests {
             NominalKind::Atom,
             &CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
         ))
+    }
+
+    #[test]
+    fn buffer_accounting_uses_the_allocator_returned_capacity() {
+        let mut values = Vec::<SchemaId>::new();
+        values.try_reserve_exact(3).unwrap();
+        assert_eq!(
+            allocation_capacity_bytes::<SchemaId>(values.capacity()).unwrap(),
+            (values.capacity() * core::mem::size_of::<SchemaId>()) as u64,
+        );
     }
 
     #[test]
@@ -7217,6 +7587,7 @@ mod tests {
         let tuple = foreign.resolve(tuple).unwrap();
         let foreign_matrix = foreign.resolve(foreign_matrix).unwrap();
         let (foreign, _) = foreign.into_parts();
+        let tuple_key = foreign.entry(tuple).unwrap().key();
         let foreign = std::sync::Arc::new(foreign);
 
         let mut plan = SchemaTableBuilder::new();
@@ -7304,11 +7675,16 @@ mod tests {
         let payload = dynamic_payload
             .value()
             .expect("Dynamic binding retains its payload");
-        assert_eq!(payload.schema(), tuple);
-        assert!(std::sync::Arc::ptr_eq(
-            &payload.schemas().unwrap(),
-            &foreign
-        ));
+        assert_eq!(payload.schema_key(), tuple_key);
+        assert_eq!(
+            payload
+                .schemas()
+                .unwrap()
+                .entry(payload.schema())
+                .unwrap()
+                .key(),
+            tuple_key
+        );
 
         let number_binding = number
             .into_binding(dynamic, &[1], &plan, &projections)
@@ -7366,6 +7742,7 @@ mod tests {
         }
         .finalize(&SnapshotValidationContext::with_shared_schemas(&inner))
         .unwrap();
+        let tuple_key = tuple_value.schema_key();
 
         let mut root = SchemaTableBuilder::new();
         let dynamic = root
@@ -7440,6 +7817,39 @@ mod tests {
         )
         .expect("the root source owner is valid");
         let (_, root_projections) = structural_projection_schema_context(&root).unwrap();
+        let whole = item
+            .clone()
+            .into_binding(matrix, &[], &root, &root_projections)
+            .unwrap()
+            .expect("the complete matrix matches its declared schema");
+        let whole = finalize_pattern_binding(
+            matrix,
+            &whole.shape_values,
+            whole.data,
+            whole.schemas,
+            whole.schema_index,
+            &root,
+            &SnapshotCanonicalizationBudget::new(1_000_000),
+        )
+        .expect("whole-composite binding rebinds every nested Dynamic owner");
+        let ValueData::Matrix(whole_matrix) = whole.data() else {
+            panic!("whole binding is a matrix")
+        };
+        let mech_core::snapshot::SequenceView::Values(whole_values) = whole_matrix.elements()
+        else {
+            panic!("Dynamic matrix uses canonical ValueData elements")
+        };
+        let ValueData::Dynamic(whole_dynamic) = &whole_values[0] else {
+            panic!("matrix element remains Dynamic")
+        };
+        let whole_payload = whole_dynamic
+            .value()
+            .expect("Dynamic payload remains present");
+        assert_eq!(whole_payload.schema_key(), tuple_key);
+        assert!(matches!(
+            whole_payload.data(),
+            ValueData::Tuple(values) if values.len() == 2
+        ));
         let tuple_item = item
             .child(0, &root, &root_projections)
             .expect("Dynamic descent switches to the nested owner's tuple schema");
