@@ -258,3 +258,96 @@ fn disabled_mika_source_is_retained_but_cannot_publish_an_index() {
     assert!(!document.is_strictly_clean());
     assert!(document.index().is_err());
 }
+
+#[test]
+fn session_to_stream_identity_graph_cannot_alias_a_retained_revision() {
+    use mech_core::MechSourceCode;
+    use mech_runtime::{
+        InMemorySourceResolver, InMemoryStore, MechStore, ModuleRecord, ModuleVersionId,
+        ModuleVersionRecord, ResolvedSource, module_id,
+    };
+    use mech_syntax::document::{DocumentSession, StreamProgress};
+    let uri = "memory:identity.mec";
+    let session = DocumentSession::new_with_document(
+        DocumentId(mech_core::hash_str(uri)),
+        "answer := 1\n",
+        ParseConfig::default(),
+    );
+    let finite = SourceDocument::from_session(&session);
+    let mut stream = session.into_stream();
+    assert_eq!(stream.finish(u64::MAX).progress, StreamProgress::Finished);
+    let streamed = SourceDocument::from_finished_stream(&mut stream).unwrap();
+    assert_eq!(finite.source().revision(), streamed.source().revision());
+    assert_eq!(
+        finite.source().to_contiguous_string(),
+        streamed.source().to_contiguous_string()
+    );
+    assert_ne!(finite.document().scope_id(), streamed.document().scope_id());
+    assert_eq!(finite, finite.clone());
+    assert_ne!(finite, streamed);
+    let resolved = |document: SourceDocument| {
+        ResolvedSource::new(
+            "identity.mec",
+            uri,
+            MechSourceCode::String(document.source().to_contiguous_string()),
+        )
+        .with_kind(mech_runtime::SourceKind::Mech)
+        .with_source_document(document)
+        .unwrap()
+    };
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_source("identity.mec", resolved(finite.clone()))
+        .unwrap();
+    assert!(
+        resolver
+            .insert_source("identity.mec", resolved(streamed.clone()))
+            .is_err()
+    );
+    let mut runtime = mech_runtime::MechRuntime::builder().build().unwrap();
+    let options = mech_runtime::ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]);
+    runtime
+        .store_resolved_module_source(resolved(finite.clone()), options)
+        .unwrap();
+    assert!(
+        runtime
+            .store_resolved_module_source(resolved(streamed.clone()), options)
+            .is_err()
+    );
+    let mut store = InMemoryStore::new();
+    store
+        .put_module(ModuleRecord::new(module_id(uri), uri))
+        .unwrap();
+    for (id, document, accepted) in [(1, finite, true), (2, streamed, false)] {
+        let version = ModuleVersionRecord::new(ModuleVersionId(id), module_id(uri), 1)
+            .with_source(MechSourceCode::String(
+                document.source().to_contiguous_string(),
+            ))
+            .with_source_document(Some(document));
+        assert_eq!(store.put_module_version(version).is_ok(), accepted);
+    }
+}
+
+#[cfg(feature = "pretty_print")]
+#[test]
+fn repl_renderer_rejects_all_heading_owners_alongside_executable_code() {
+    use mech_runtime::CanonicalDocumentRenderer;
+    for heading in ["Heading\n====\n", "1. Heading\n----\n", "(1.2) Heading\n"] {
+        let source = format!("{heading}\nanswer := 1\n");
+        let document = record(&source).document();
+        assert!(document.contains_executable_source());
+        assert!(
+            CanonicalDocumentRenderer
+                .render_repl_source_html(&document)
+                .unwrap()
+                .is_none(),
+            "{source:?}"
+        );
+    }
+    assert!(
+        CanonicalDocumentRenderer
+            .render_repl_source_html(&record("-- comment\nanswer := 1\n").document())
+            .unwrap()
+            .is_some()
+    );
+}

@@ -25,15 +25,57 @@ pub struct SourceDocument {
 
 impl PartialEq for SourceDocument {
     fn eq(&self, other: &Self) -> bool {
-        self.snapshot.document == other.snapshot.document
-            && self.snapshot.revision == other.snapshot.revision
-            && self.snapshot.root.kind == other.snapshot.root.kind
-            && self.snapshot.root.flags == other.snapshot.root.flags
-            && self.snapshot.root.text_len == other.snapshot.root.text_len
-            && self.snapshot.root.structural_hash == other.snapshot.root.structural_hash
-            && self.snapshot.diagnostics == other.snapshot.diagnostics
-            && self.source().to_contiguous_string() == other.source().to_contiguous_string()
+        Arc::ptr_eq(&self.snapshot, &other.snapshot)
+            || (self.snapshot.document == other.snapshot.document
+                && self.snapshot.revision == other.snapshot.revision
+                && self.snapshot.diagnostics == other.snapshot.diagnostics
+                && same_syntax_identity(&self.snapshot.root, &other.snapshot.root)
+                && self.source().to_contiguous_string() == other.source().to_contiguous_string())
     }
+}
+
+// Compare the complete ordered graph: scope/result ownership uses IDs, and a
+// fresh parse may preserve every structural hash while changing those owners.
+// An explicit stack also handles deeply nested retained input without recursion.
+fn same_syntax_identity(
+    left: &Arc<mech_syntax::document::GreenNode>,
+    right: &Arc<mech_syntax::document::GreenNode>,
+) -> bool {
+    use mech_syntax::document::GreenElement;
+    let mut pending = vec![(left, right)];
+    while let Some((left, right)) = pending.pop() {
+        if Arc::ptr_eq(left, right) {
+            continue;
+        }
+        if left.id != right.id
+            || left.kind != right.kind
+            || left.flags != right.flags
+            || left.text_len != right.text_len
+            || left.structural_hash != right.structural_hash
+            || left.children.len() != right.children.len()
+        {
+            return false;
+        }
+        for (left, right) in left.children.iter().zip(right.children.iter()) {
+            match (left, right) {
+                (GreenElement::Node(left), GreenElement::Node(right)) => {
+                    pending.push((left, right))
+                }
+                (GreenElement::Token(left), GreenElement::Token(right)) => {
+                    if left.id != right.id
+                        || left.kind != right.kind
+                        || left.flags != right.flags
+                        || left.text_len != right.text_len
+                        || left.text_hash != right.text_hash
+                    {
+                        return false;
+                    }
+                }
+                _ => return false,
+            }
+        }
+    }
+    true
 }
 
 impl Eq for SourceDocument {}
@@ -171,5 +213,62 @@ impl SourceDocument {
             })?;
         }
         Ok(index)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_syntax::document::{GreenElement, GreenNode};
+
+    fn change_descendant_identity(node: &mut GreenNode, token: bool) -> bool {
+        let mut children = node.children.to_vec();
+        let mut changed = false;
+        for child in &mut children {
+            match child {
+                GreenElement::Node(child) if !token => {
+                    Arc::make_mut(child).id.0 += 10_000;
+                    changed = true;
+                }
+                GreenElement::Node(child) => {
+                    changed = change_descendant_identity(Arc::make_mut(child), token);
+                }
+                GreenElement::Token(child) if token => {
+                    child.id.0 += 10_000;
+                    changed = true;
+                }
+                _ => {}
+            }
+            if changed {
+                break;
+            }
+        }
+        node.children = children.into();
+        changed
+    }
+
+    #[test]
+    fn equality_compares_descendant_node_and_token_ids_even_when_root_matches() {
+        let original = SourceDocument::parse_resolved(
+            "memory:ids",
+            Revision(0),
+            "answer := 1\n",
+            ParseConfig::default(),
+        )
+        .unwrap();
+        for token in [false, true] {
+            let mut changed = original.clone();
+            let snapshot = Arc::make_mut(&mut changed.snapshot);
+            assert!(change_descendant_identity(
+                Arc::make_mut(&mut snapshot.root),
+                token
+            ));
+            assert_eq!(original.snapshot.root.id, changed.snapshot.root.id);
+            assert_eq!(
+                original.snapshot.root.structural_hash,
+                changed.snapshot.root.structural_hash
+            );
+            assert_ne!(original, changed);
+        }
     }
 }

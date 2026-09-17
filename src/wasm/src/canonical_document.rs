@@ -42,6 +42,9 @@ impl CanonicalWasmDocument {
     /// immutable; an invalid candidate returns an error and cannot consume or
     /// mutate its revision.
     pub fn replace_source(&self, source: impl Into<String>) -> MResult<Self> {
+        if self.document.source().revision().0 == u64::MAX {
+            return Err(browser_source_error("browser source revision is exhausted"));
+        }
         let snapshot = self
             .document
             .source()
@@ -136,6 +139,19 @@ mod tests {
         assert!(second.replace_source("value := [\r\n").is_err());
         assert_eq!(second.document().source().revision(), Revision(5));
         assert_eq!(second.initial_repl_source(), "value := 2\r\n");
+    }
+
+    #[test]
+    fn canonical_browser_rejects_exhausted_revision_without_replacing_source() {
+        let document = CanonicalWasmDocument::retain(
+            "browser:document.mec",
+            Revision(u64::MAX),
+            "value := 1\n",
+        )
+        .unwrap();
+        assert!(document.replace_source("value := 2\n").is_err());
+        assert_eq!(document.document().source().revision(), Revision(u64::MAX));
+        assert_eq!(document.initial_repl_source(), "value := 1\n");
     }
 
     #[test]
