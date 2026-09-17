@@ -1,5 +1,8 @@
 //! Canonical source-level metadata for interactive submissions.
 
+use alloc::vec;
+use alloc::vec::Vec;
+
 use super::{
     DocumentId, ParseConfig, Revision, SyntaxKind, TextSnapshot, parse_canonical_document,
 };
