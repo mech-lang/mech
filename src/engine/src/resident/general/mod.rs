@@ -4284,6 +4284,7 @@ fn build_plan(
             let input_sources = node_inputs(artifact, node.node)?;
             let output_slot = node_output_slot(artifact, node.node)?;
             steps.push(ActivatedTurnStep::Match(prepare_match_node(
+                artifact,
                 node.node,
                 control,
                 &input_sources,
@@ -6210,6 +6211,7 @@ mod shape_fact_tests {
 }
 
 fn prepare_match_node(
+    artifact: &ProgramArtifact,
     owner: NodeId,
     control: &crate::MatchDeclaration,
     inputs: &[ArtifactSource],
@@ -6223,11 +6225,20 @@ fn prepare_match_node(
         .any(|arm| matches!(arm.pattern, crate::MatchPattern::Literal(_)))
     {
         let region = scrutinee.region();
-        if !matches!(
+        let source = inputs[control.scrutinee as usize];
+        let schema = match source {
+            ArtifactSource::Constant(constant) => {
+                artifact.constants().get(constant).unwrap().schema()
+            }
+            ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].schema,
+        };
+        let schema = artifact.schemas().get(schema).unwrap();
+        let supported = matches!(
             region.kind,
             ResidentValueKind::Bool | ResidentValueKind::Index | ResidentValueKind::F64
-        ) || region.len != 1
-        {
+        ) || (region.kind == ResidentValueKind::Snapshot
+            && crate::is_control_scalar_schema(schema));
+        if !supported || region.len != 1 {
             return Err(ResidentActivationError::UnsupportedControlLayout { node: owner });
         }
     }
@@ -6370,7 +6381,8 @@ fn bind_control_block(
             let crate::ControlOperationBody::Match(nested) = &operation.body else {
                 unreachable!()
             };
-            let prepared = prepare_match_node(owner, nested, &inputs, output_slot, layout)?;
+            let prepared =
+                prepare_match_node(artifact, owner, nested, &inputs, output_slot, layout)?;
             steps.push(ActivatedTurnStep::Match(prepared));
             let arms = bind_match_arms(
                 artifact, catalog, owner, nested, &inputs, layout, steps, reads, calls,

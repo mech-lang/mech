@@ -1633,6 +1633,24 @@ impl ReactiveInstance {
                     (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
                         left == right
                     }
+                    (
+                        ResidentValueRef::Snapshot([Some(left)]),
+                        ResidentValueRef::Snapshot([Some(right)]),
+                    ) => {
+                        let left_schema = left
+                            .validate_against(&self.plan.schemas)
+                            .map_err(|_| fail())?;
+                        let right_schema = right
+                            .validate_against(&self.plan.schemas)
+                            .map_err(|_| fail())?;
+                        if !crate::is_control_scalar_schema(left_schema)
+                            || left_schema != right_schema
+                        {
+                            return Err(fail());
+                        }
+                        left.snapshot_eq(&self.plan.schemas, right, &self.plan.schemas)
+                            .map_err(|_| fail())?
+                    }
                     _ => return Err(fail()),
                 };
                 if !matches {

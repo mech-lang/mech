@@ -2377,11 +2377,11 @@ fn bind_snapshot_bool_binary(
         left.kind == ResidentValueKind::Snapshot && left.shape == ResidentShape::SCALAR;
     let right_snapshot =
         right.kind == ResidentValueKind::Snapshot && right.shape == ResidentShape::SCALAR;
-    let dense_bool_scalar = |port: &mech_core::ResidentPortLayout| {
-        port.kind == ResidentValueKind::Bool && port.shape.len() == Some(1)
+    let dense_bool = |port: &mech_core::ResidentPortLayout| {
+        port.kind == ResidentValueKind::Bool && port.shape.len().is_some()
     };
-    if (!left_snapshot && !dense_bool_scalar(left))
-        || (!right_snapshot && !dense_bool_scalar(right))
+    if (!left_snapshot && !dense_bool(left))
+        || (!right_snapshot && !dense_bool(right))
         || (!left_snapshot && !right_snapshot)
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
@@ -2414,6 +2414,10 @@ fn bind_snapshot_bool_binary(
             operation,
             u64::from(left_snapshot),
             u64::from(right_snapshot),
+            u64::from(left.shape.rows),
+            u64::from(left.shape.columns),
+            u64::from(right.shape.rows),
+            u64::from(right.shape.columns),
         ]
         .into_boxed_slice(),
     )?
@@ -11281,7 +11285,16 @@ fn snapshot_bool_binary(
 ) -> Result<bool, ResidentKernelError> {
     let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
-    let [operation, left_snapshot, right_snapshot] = kernel.parameters() else {
+    let [
+        operation,
+        left_snapshot,
+        right_snapshot,
+        bound_left_rows,
+        bound_left_columns,
+        bound_right_rows,
+        bound_right_columns,
+    ] = kernel.parameters()
+    else {
         return Err(ResidentKernelError::InvalidInput);
     };
     let flag = |value| match value {
@@ -11317,11 +11330,19 @@ fn snapshot_bool_binary(
         .transpose()?;
     let left_dimensions = match (left, left_schema) {
         (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
-        _ => (1, 1),
+        (None, None) => (
+            usize::try_from(*bound_left_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_left_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
     };
     let right_dimensions = match (right, right_schema) {
         (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
-        _ => (1, 1),
+        (None, None) => (
+            usize::try_from(*bound_right_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_right_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
     };
     let (rows, columns) = snapshot_broadcast_dimensions(left_dimensions, right_dimensions)?;
     let logical_output = resident_shape_for_dimensions(rows, columns)?;
@@ -11359,17 +11380,28 @@ fn snapshot_bool_binary(
         output_len,
         0,
     )?;
-    let dense_bool = |value| match value {
-        ResidentValueRef::Bool([value]) if *value <= 1 => Ok(vec![*value != 0]),
+    let dense_bool = |value: ResidentValueRef<'_>, (rows, columns): (usize, usize)| match value {
+        ResidentValueRef::Bool(values)
+            if values.iter().all(|value| *value <= 1)
+                && values.len() == rows.checked_mul(columns).unwrap_or(usize::MAX) =>
+        {
+            super::composite::canonical_matrix_elements(
+                values,
+                resident_shape_for_dimensions(rows, columns)?,
+                |value| (*value <= 1).then_some(*value != 0),
+            )
+            .map(|values| values.into_vec())
+            .ok_or(ResidentKernelError::InvalidInput)
+        }
         _ => Err(ResidentKernelError::InvalidInput),
     };
     let left_values = match left {
         Some(value) => snapshot_bool_elements(value)?,
-        None => dense_bool(left_input)?,
+        None => dense_bool(left_input, left_dimensions)?,
     };
     let right_values = match right {
         Some(value) => snapshot_bool_elements(value)?,
-        None => dense_bool(right_input)?,
+        None => dense_bool(right_input, right_dimensions)?,
     };
     if left_values.len() != left_count || right_values.len() != right_count {
         return Err(ResidentKernelError::InvalidShape);
@@ -20412,6 +20444,104 @@ mod tests {
                 Ok(expected.iter().any(|value| *value != 0)),
             );
             assert_eq!(output, expected);
+        }
+    }
+
+    #[test]
+    fn snapshot_boolean_logic_accepts_dense_matrix_operands_in_both_orders() {
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([matrix]);
+        let schema = ids[0];
+        let contract = test_contract(
+            &[schema, schema],
+            schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let snapshot = test_layout(
+            &schemas,
+            schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let dense = test_layout(
+            &schemas,
+            schema,
+            ResidentValueKind::Bool,
+            ResidentShape {
+                rows: 2,
+                columns: 2,
+            },
+        );
+        let output = snapshot.clone();
+        let snapshot_value = Some(test_value(
+            &schemas,
+            schema,
+            ValueDataDraft::Matrix(
+                [true, false, true, false]
+                    .into_iter()
+                    .map(ValueDataDraft::Bool)
+                    .collect(),
+            ),
+        ));
+        // Dense resident matrices are column-major; this is the canonical
+        // row-major matrix [true true; false false].
+        let dense_values = [1_u8, 0, 1, 0];
+        for (operation, expected) in [
+            (0, [true, false, false, false]),
+            (1, [true, true, true, false]),
+            (2, [false, true, true, false]),
+        ] {
+            for snapshot_first in [true, false] {
+                let layouts = if snapshot_first {
+                    [snapshot.clone(), dense.clone()]
+                } else {
+                    [dense.clone(), snapshot.clone()]
+                };
+                let kernel = bind_snapshot_bool_binary(
+                    &ResidentKernelBindRequest {
+                        contract: &contract,
+                        schemas: &schemas,
+                        inputs: &layouts,
+                        output: output.clone(),
+                    },
+                    operation,
+                )
+                .unwrap();
+                let snapshot_values = [snapshot_value.clone()];
+                let inputs = if snapshot_first {
+                    [
+                        ResidentValueRef::Snapshot(&snapshot_values),
+                        ResidentValueRef::Bool(&dense_values),
+                    ]
+                } else {
+                    [
+                        ResidentValueRef::Bool(&dense_values),
+                        ResidentValueRef::Snapshot(&snapshot_values),
+                    ]
+                };
+                let mut actual = [None];
+                kernel
+                    .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut actual))
+                    .unwrap();
+                assert_eq!(
+                    actual[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                    ValueDataDraft::Matrix(
+                        expected.into_iter().map(ValueDataDraft::Bool).collect()
+                    )
+                );
+            }
         }
     }
 

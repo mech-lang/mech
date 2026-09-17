@@ -153,10 +153,7 @@ fn region(location: ResidentReadLocation) -> ResidentRegion {
     }
 }
 
-fn admit_output(
-    count: usize,
-    meter: ResidentBudgetMeter,
-) -> Result<(u64, u64), ResidentKernelError> {
+fn admit_output(count: usize, meter: ResidentBudgetMeter) -> Result<(), ResidentKernelError> {
     let data = count
         .checked_mul(
             core::mem::size_of::<ValueDataDraft>() + core::mem::size_of::<ValueData>() + 16,
@@ -175,7 +172,7 @@ fn admit_output(
         retained_nodes: count.checked_mul(2).and_then(|count| count.checked_add(2)).ok_or(ResidentKernelError::InvalidShape)?,
         ..meter.estimate()
     }).admit()?.into_plan();
-    Ok((admitted_bytes, admitted_bytes))
+    Ok(())
 }
 
 impl ReactiveInstance {
@@ -241,35 +238,12 @@ impl ReactiveInstance {
                 .charge_comparison_work(footprint.encoded_bytes)
                 .map_err(fail)?;
         }
-        let (persistent_bytes, temporary_bytes) = admit_output(count, meter).map_err(fail)?;
-        let scope = {
-            let target = if control.write.storage == ResidentStorageClass::Constant {
-                &self.activation
-            } else {
-                &self.workspace.scratch
-            };
-            target
-                .prepare_payload_write(control.write.region)
-                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?
-        };
-        if let Some(prepared) = &scope {
-            if let Err(error) =
-                prepared.admit_snapshot_materialization(persistent_bytes, temporary_bytes)
-            {
-                let target = if control.write.storage == ResidentStorageClass::Constant {
-                    &mut self.activation
-                } else {
-                    &mut self.workspace.scratch
-                };
-                target
-                    .abort_payload_write(control.write.region, scope)
-                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                return Err(ResidentExecutionError::MemoryRuntime { error });
-            }
-            prepared.start();
-        }
-        let admission = scope.as_ref().map(|scope| scope.admission());
-        let next = budget::with_payload_admission(admission, || {
+        // `with_kernel_turn_plan` owns the one payload scope for this output.
+        // Admitting the concrete control plan below charges that enclosing
+        // scope; opening another same-region scope here would reserve the
+        // materialization peak twice while both reservations are live.
+        admit_output(count, meter).map_err(fail)?;
+        let next = {
             let schema = self
                 .plan
                 .schemas
@@ -319,34 +293,7 @@ impl ReactiveInstance {
                     .with_canonicalization_budget(&canonical_budget),
             )
             .map_err(|_| fail(ResidentKernelError::InvalidOutput))
-        });
-        let next = match next {
-            Ok(next) => next,
-            Err(error) => {
-                let target = if control.write.storage == ResidentStorageClass::Constant {
-                    &mut self.activation
-                } else {
-                    &mut self.workspace.scratch
-                };
-                target
-                    .abort_payload_write(control.write.region, scope)
-                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                return Err(error);
-            }
-        };
-        if let Some(prepared) = scope.as_ref()
-            && let Err(error) = prepared.admit_value(&next)
-        {
-            let target = if control.write.storage == ResidentStorageClass::Constant {
-                &mut self.activation
-            } else {
-                &mut self.workspace.scratch
-            };
-            target
-                .abort_payload_write(control.write.region, scope)
-                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-            return Err(ResidentExecutionError::MemoryRuntime { error });
-        }
+        }?;
         let target = if control.write.storage == ResidentStorageClass::Constant {
             &mut self.activation
         } else {
@@ -362,23 +309,12 @@ impl ReactiveInstance {
         };
         let changed = match changed {
             Ok(changed) => changed,
-            Err(_) => {
-                target
-                    .abort_payload_write(control.write.region, scope)
-                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                return Err(fail(ResidentKernelError::InvalidOutput));
-            }
+            Err(_) => return Err(fail(ResidentKernelError::InvalidOutput)),
         };
         let ResidentValueMut::Snapshot([target_value]) = target.write(control.write.region) else {
-            target
-                .abort_payload_write(control.write.region, scope)
-                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
             return Err(fail(ResidentKernelError::InvalidOutput));
         };
         *target_value = Some(next);
-        target
-            .finish_payload_write(control.write.region, scope)
-            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
         set_bit(
             &mut self.workspace.initialized_output_bits,
             index.get() as usize,
