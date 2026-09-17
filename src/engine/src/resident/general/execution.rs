@@ -1664,6 +1664,19 @@ impl ReactiveInstance {
                 } else {
                     &self.workspace.scratch
                 };
+                let prior_snapshot_nodes = match target.read(write.region) {
+                    ResidentValueRef::Snapshot([Some(value)]) => {
+                        value
+                            .retained_footprint(&self.plan.schemas)
+                            .map_err(|_| ResidentExecutionError::Kernel {
+                                node,
+                                error: ResidentKernelError::InvalidOutput,
+                            })?
+                            .node_count
+                    }
+                    ResidentValueRef::Snapshot([None]) => 0,
+                    _ => return Err(fail()),
+                };
                 let scope = target
                     .prepare_payload_write(write.region)
                     .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
@@ -1687,7 +1700,10 @@ impl ReactiveInstance {
                             output_bytes: cost.persistent_bytes,
                             temporary_bytes: cost.temporary_bytes,
                             cloned_bytes: cost.cloned_bytes,
-                            retained_nodes: cost.retained_nodes,
+                            retained_nodes: match_conversion_peak_retained_nodes(
+                                prior_snapshot_nodes,
+                                cost.retained_nodes,
+                            )?,
                             ..budget::KernelCostEstimate::default()
                         },
                     )
@@ -2268,6 +2284,15 @@ impl ReactiveInstance {
             }
         }
     }
+}
+
+fn match_conversion_peak_retained_nodes(
+    prior_snapshot_nodes: u64,
+    candidate_nodes: u64,
+) -> Result<u64, ResidentKernelError> {
+    prior_snapshot_nodes
+        .checked_add(candidate_nodes)
+        .ok_or(ResidentKernelError::InvalidShape)
 }
 
 impl StateArena {
@@ -3718,5 +3743,31 @@ mod tests {
         assert!(state.same_at(slot, candidate, InstanceEpoch::ZERO));
         state.abort(working);
         assert_eq!(scalar(&state, 0, 0), 10.0);
+    }
+
+    #[test]
+    fn match_conversion_peak_counts_prior_and_candidate_snapshot_nodes()
+    -> Result<(), ResidentKernelError> {
+        let prior = 32_770;
+        let candidate = 32_770;
+        let peak = match_conversion_peak_retained_nodes(prior, candidate).unwrap();
+        assert_eq!(peak, 65_540);
+        assert_eq!(
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    retained_nodes: peak,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()
+            .map(|permit| permit.into_plan()),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(
+            match_conversion_peak_retained_nodes(u64::MAX, 1),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        Ok(())
     }
 }
