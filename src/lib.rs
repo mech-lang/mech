@@ -38,6 +38,10 @@ use std::fs;
 
 use rand::Rng;
 
+#[cfg(any(feature = "bundle_web_core", feature = "serve"))]
+mod browser_planning;
+#[cfg(any(feature = "bundle_web_core", feature = "serve"))]
+pub use browser_planning::configured_browser_compiler_builder;
 #[cfg(feature = "bundle_web_core")]
 mod bundle_web;
 #[cfg(feature = "cli_core")]

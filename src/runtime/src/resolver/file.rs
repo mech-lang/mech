@@ -196,7 +196,7 @@ impl FileSourceResolver {
         match parse_filesystem_source_specifier(&request.specifier)? {
             FilesystemSourceSpecifier::OtherScheme => Ok(None),
             FilesystemSourceSpecifier::Absolute(specifier) => {
-                for candidate in absolute_path_candidates(&specifier) {
+                for candidate in absolute_source_path_candidates(&specifier) {
                     if candidate.is_file() {
                         return self
                             .authorize_resolved(request, canonicalize_source_path(&candidate)?);
@@ -206,7 +206,7 @@ impl FileSourceResolver {
             }
             FilesystemSourceSpecifier::RootRelative(specifier) => {
                 for root in &self.roots {
-                    for candidate in path_candidates(root, &specifier) {
+                    for candidate in source_path_candidates(root, &specifier) {
                         if candidate.is_file() {
                             return self.authorize_resolved(
                                 request,
@@ -219,7 +219,7 @@ impl FileSourceResolver {
             }
             FilesystemSourceSpecifier::Ordinary(specifier) => {
                 if specifier.is_absolute() {
-                    for candidate in absolute_path_candidates(&specifier) {
+                    for candidate in absolute_source_path_candidates(&specifier) {
                         if candidate.is_file() {
                             return self.authorize_resolved(
                                 request,
@@ -239,7 +239,7 @@ impl FileSourceResolver {
                         };
 
                         if let Some(parent) = parent {
-                            for candidate in path_candidates(parent, &specifier) {
+                            for candidate in source_path_candidates(parent, &specifier) {
                                 if candidate.is_file() {
                                     return self.authorize_resolved(
                                         request,
@@ -252,7 +252,7 @@ impl FileSourceResolver {
                 }
 
                 for root in &self.roots {
-                    for candidate in path_candidates(root, &specifier) {
+                    for candidate in source_path_candidates(root, &specifier) {
                         if candidate.is_file() {
                             return self.authorize_resolved(
                                 request,
@@ -274,7 +274,7 @@ impl FileSourceResolver {
             | FilesystemSourceSpecifier::Absolute(path) => Ok(Some(path)),
             FilesystemSourceSpecifier::RootRelative(path) => {
                 for root in &self.roots {
-                    for candidate in path_candidates(root, &path) {
+                    for candidate in source_path_candidates(root, &path) {
                         if candidate.is_file() {
                             return Ok(Some(canonicalize_source_path(&candidate)?));
                         }
@@ -802,18 +802,17 @@ fn hex_char(value: u8) -> char {
     }
 }
 
-fn path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
-    vec![
-        base.join(specifier),
-        base.join(format!("{}.mec", specifier.to_string_lossy())),
-        base.join(specifier).join("index.mec"),
-    ]
+/// Ordered filesystem candidates shared by source resolution and retained bundle linking.
+pub fn source_path_candidates(base: &Path, specifier: &Path) -> Vec<PathBuf> {
+    absolute_source_path_candidates(&base.join(specifier))
 }
 
-fn absolute_path_candidates(specifier: &Path) -> Vec<PathBuf> {
+fn absolute_source_path_candidates(specifier: &Path) -> Vec<PathBuf> {
+    let mut appended = specifier.as_os_str().to_os_string();
+    appended.push(".mec");
     vec![
         specifier.to_path_buf(),
-        PathBuf::from(format!("{}.mec", specifier.to_string_lossy())),
+        PathBuf::from(appended),
         specifier.join("index.mec"),
     ]
 }

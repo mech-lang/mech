@@ -221,7 +221,15 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source)
+        self.render_html_mode(document, &[], RenderMode::Source, true)
+    }
+
+    /// Format section content for a host shim that owns the article and title.
+    pub fn format_html_body(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Source, false)
     }
 
     pub fn render_html(
@@ -229,7 +237,7 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed)
+        self.render_html_mode(document, results, RenderMode::Completed, true)
     }
 
     fn render_html_mode(
@@ -237,11 +245,19 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
         mode: RenderMode,
+        document_frame: bool,
     ) -> Result<String, CanonicalDocumentRenderError> {
         let lookup = ResultLookup::new(document, results, mode)?;
-        let mut output = String::from("<article class='mech-document'>");
+        let mut output = String::new();
+        if document_frame {
+            output.push_str("<article class='mech-document'>");
+        }
         if let Some(title) = document.title() {
-            render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
+            if document_frame {
+                render_title_html(&title, document.scope_id(), &lookup, &mut output)?;
+            } else {
+                render_title_front_matter_html(&title, document.scope_id(), &lookup, &mut output)?;
+            }
         }
         if let Some(body) = document.body() {
             for section in body.sections() {
@@ -256,7 +272,9 @@ impl CanonicalDocumentRenderer {
             visible_root_program_range(document.syntax()),
         )?;
         append_citations_html(&lookup, &mut output)?;
-        output.push_str("</article>");
+        if document_frame {
+            output.push_str("</article>");
+        }
         Ok(output)
     }
 
@@ -618,6 +636,17 @@ fn render_title_html(
     output.push_str("<header class='mech-document-header'><h1 class='mech-document-title'>");
     output.push_str(&escape_html(title_text.trim()));
     output.push_str("</h1>");
+    render_title_front_matter_html(title, owner, lookup, output)?;
+    output.push_str("</header>");
+    Ok(())
+}
+
+fn render_title_front_matter_html(
+    title: &TitleSyntax,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+) -> Result<(), CanonicalDocumentRenderError> {
     if let Some(front_matter) = title.front_matter() {
         output.push_str("<dl class='mech-title-front-matter'>");
         let mut pending_key = None::<String>;
@@ -647,7 +676,6 @@ fn render_title_html(
         }
         output.push_str("</dl>");
     }
-    output.push_str("</header>");
     Ok(())
 }
 

@@ -1,10 +1,14 @@
+#[path = "bundle_planning.rs"]
+mod planning;
+#[path = "bundle_presentation.rs"]
+mod presentation;
+
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use mech_core::*;
-use mech_syntax::formatter::{Formatter, HtmlShimExtraSlots};
-use mech_syntax::parser;
+use mech_runtime::CanonicalProgramBundle;
 
 use crate::fs_paths::validate_safe_relative_path;
 use crate::{HostAuthorityInjection, LoadedMechConfig, resolve_config_path};
@@ -41,6 +45,7 @@ struct BundledSource {
     canonical_path: PathBuf,
     specifier: String,
     url: String,
+    artifact_url: Option<String>,
 }
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
@@ -80,6 +85,20 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             "bundle-web requires run.paths in the project config",
         ));
     }
+    if options
+        .loaded_config
+        .document
+        .run
+        .as_ref()
+        .unwrap()
+        .paths
+        .len()
+        != 1
+    {
+        return Err(validation_error(
+            "bundle-web requires exactly one run root; the browser project activates one root artifact",
+        ));
+    }
     let stylesheet_string = read_stylesheets(&options.stylesheet_paths)?;
     let shim_string = read_shim(&options.shim_path)?;
     validate_static_web_shim(&shim_string)?;
@@ -115,41 +134,62 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         crate::inject_host_authority_injection_script(&shim_string, &injection)?;
     fs::write(&index_html, &root_shim_with_config)?;
 
+    let root_paths = options
+        .loaded_config
+        .document
+        .run
+        .as_ref()
+        .unwrap()
+        .paths
+        .iter()
+        .map(|path| resolve_config_path(&base_dir, path).canonicalize())
+        .collect::<std::io::Result<BTreeSet<_>>>()?;
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
+    let (resolver, documents) =
+        planning::retained_sources(&options.source_paths, &base_dir, &project_dir)?;
+    let mut compiler = crate::configured_browser_compiler_builder(
+        &options.loaded_config.document.hosts,
+        runtime_config,
+    )?
+    .source_resolver(resolver)
+    .build_compiler()?;
     for source_path in &options.source_paths {
         let logical_source_path = source_path;
         let read_source_path = source_path.canonicalize()?;
         let relative = relative_source_path(logical_source_path, &base_dir, &project_dir)?;
-        let source_text = fs::read_to_string(&read_source_path)?;
-        let tree = parser::parse(&source_text)?;
-
         let specifier = bundle_source_specifier(&relative)?;
+        let canonical_uri = format!("bundle:///{specifier}");
+        let document = &documents[&canonical_uri];
+        let source_text = document.source().to_contiguous_string();
         let url = format!("source/{}", percent_encode_url_path(&specifier));
         bundled_sources.push(BundledSource {
             canonical_path: read_source_path.clone(),
-            specifier,
+            specifier: specifier.clone(),
             url,
+            artifact_url: root_paths
+                .contains(&read_source_path)
+                .then(|| format!("code/{}", percent_encode_url_path(&specifier))),
         });
 
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
 
-        let encoded =
-            compress_and_encode(&tree).map_err(|error| std::io::Error::other(error.to_string()))?;
-        write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
+        if root_paths.contains(&read_source_path) {
+            let product = compiler
+                .compile_canonical_root(mech_runtime::SourceRequest::new(&canonical_uri))?;
+            let encoded = CanonicalProgramBundle::from_product(canonical_uri, document, &product)?
+                .encode()?;
+            write_bundle_file(&output_dir, "code", &relative, encoded.as_bytes())?;
+        }
 
         let html_relative = relative.with_extension("html");
         let depth = html_relative.components().count();
         let rebased_shim = rebase_bundle_shim_for_depth(&shim_string, depth);
         let source_shim = crate::inject_host_authority_injection_script(&rebased_shim, &injection)?;
-        let mut formatter = Formatter::new();
-        let html = formatter
-            .format_html_with_slots(
-                &tree,
-                stylesheet_string.clone(),
-                source_shim,
-                &HtmlShimExtraSlots::default(),
-            )
-            .html;
+        let html = presentation::render_canonical_html(
+            &document.document(),
+            &stylesheet_string,
+            &source_shim,
+        )?;
         write_bundle_file(&output_dir, "html", &html_relative, html.as_bytes())?;
     }
     let mut roots = Vec::with_capacity(
@@ -178,14 +218,18 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
     let source_entries = bundled_sources
         .iter()
         .map(|source| {
-            serde_json::json!({
+            let mut entry = serde_json::json!({
               "specifier": source.specifier,
               "url": source.url,
-            })
+            });
+            if let Some(url) = &source.artifact_url {
+                entry["artifactUrl"] = serde_json::json!(url);
+            }
+            entry
         })
         .collect::<Vec<_>>();
     let manifest = serde_json::to_vec(&serde_json::json!({
-      "version": 2,
+      "version": 3,
       "roots": roots,
       "sources": source_entries,
     }))
@@ -680,7 +724,6 @@ fn write_bundle_file(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::nodes::Program;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
@@ -798,6 +841,355 @@ export default async function init() {}
             loaded_config: loaded,
             host_config_injection: None,
         }
+    }
+
+    #[test]
+    fn canonical_bundle_root_executes_with_transitive_source_exports() {
+        let root = temp_root("canonical-imports");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("demo.mec"),
+            "+> ./dep.mec\nanswer := dep/value + 2\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("dep.mec"),
+            "+> ./leaf.mec\nvalue := leaf/value + 1\n<+ value\n",
+        )
+        .unwrap();
+        fs::write(root.join("leaf.mec"), "value := 39\n<+ value\n").unwrap();
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options
+            .source_paths
+            .extend([root.join("dep.mec"), root.join("leaf.mec")]);
+        bundle_web_project(options).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let mut served_sources = std::collections::BTreeMap::from([
+            (
+                "bundle:///dep.mec".to_owned(),
+                fs::read_to_string(out.join("source/dep.mec")).unwrap(),
+            ),
+            (
+                "bundle:///leaf.mec".to_owned(),
+                fs::read_to_string(out.join("source/leaf.mec")).unwrap(),
+            ),
+        ]);
+        assert_eq!(
+            bundle.source_dependencies,
+            served_sources
+                .iter()
+                .map(|(uri, text)| (uri.clone(), hash_str(text)))
+                .collect()
+        );
+        bundle
+            .validate_dependency_sources(|uri| served_sources.get(uri).map(String::as_str))
+            .unwrap();
+        let old_leaf = served_sources
+            .insert(
+                "bundle:///leaf.mec".to_owned(),
+                "value := 100\n<+ value\n".to_owned(),
+            )
+            .unwrap();
+        let error = bundle
+            .validate_dependency_sources(|uri| served_sources.get(uri).map(String::as_str))
+            .unwrap_err();
+        assert!(error.display_message().contains("leaf.mec"));
+        served_sources.insert("bundle:///leaf.mec".to_owned(), old_leaf);
+        served_sources.remove("bundle:///dep.mec");
+        let error = bundle
+            .validate_dependency_sources(|uri| served_sources.get(uri).map(String::as_str))
+            .unwrap_err();
+        assert!(error.display_message().contains("dep.mec"));
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let durability = runtime.config().resident_durability;
+        let result = runtime
+            .load_bytecode_program(&bundle.bytecode, durability)
+            .unwrap();
+        assert_eq!(result.initial_value.format_canonical_inline(), "42");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_dependencies_use_configured_resource_planning_values() {
+        let root = temp_root("canonical-import-resource");
+        let mut loaded = write_demo_project(&root);
+        loaded
+            .document
+            .hosts
+            .push(mech_runtime::HostInstanceConfig {
+                name: "clock".to_owned(),
+                provider: "timer".to_owned(),
+                settings: mech_runtime::ConfigValue::Map(std::collections::BTreeMap::new()),
+            });
+        fs::write(root.join("demo.mec"), "+> ./dep.mec\nanswer := dep/value\n").unwrap();
+        fs::write(
+            root.join("dep.mec"),
+            "@clock := timer://clock/tick{:read(tick)}\nvalue := @clock/tick\n<+ value\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options.source_paths.push(root.join("dep.mec"));
+        bundle_web_project(options).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let mut runtime = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build()
+            .unwrap();
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_bytecode_program(&bundle.bytecode, durability)
+            .unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_admits_documented_browser_assignments() {
+        let root = temp_root("canonical-browser-assignments");
+        write_demo_project(&root);
+        fs::write(
+            root.join("demo.mec"),
+            include_str!("../examples/browser-dom-demo/demo.mec"),
+        )
+        .unwrap();
+        fs::write(
+            root.join("demo.mcfg"),
+            include_str!("../examples/browser-dom-demo/demo.mcfg"),
+        )
+        .unwrap();
+        let loaded =
+            crate::load_mech_config_path(root.join("demo.mcfg"), Some(root.clone())).unwrap();
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
+        let assignments = artifact
+            .requirements()
+            .iter()
+            .filter(|(_, requirement)| {
+                matches!(
+                    requirement, mech_core::ApplicationRequirement::Resource(request)
+                        if request.intent == mech_core::ResourceIntent::Assign
+                )
+            })
+            .count();
+        assert_eq!(assignments, 4);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_uses_file_resolver_import_candidates() {
+        for (specifier, dependency) in [
+            ("./filters", "filters/index.mec"),
+            ("./filters.v1", "filters.v1.mec"),
+        ] {
+            let root = temp_root("canonical-file-candidates");
+            let loaded = write_demo_project(&root);
+            fs::write(
+                root.join("demo.mec"),
+                format!("+> {specifier}\nanswer := 42\n"),
+            )
+            .unwrap();
+            let dependency = root.join(dependency);
+            fs::create_dir_all(dependency.parent().unwrap()).unwrap();
+            fs::write(&dependency, "value := 1\n<+ value\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            options.source_paths.push(dependency);
+            bundle_web_project(options).unwrap();
+            assert!(out.join("code/demo.mec").is_file());
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_bundle_prefers_resolved_source_modules_to_catalog_modules() {
+        for (import, value) in [
+            ("+> math/custom", "custom"),
+            ("+> math/*", "custom"),
+            ("+> math/{custom, cos}", "cos"),
+            ("+> selected := math/custom", "selected"),
+        ] {
+            let root = temp_root("canonical-source-precedence");
+            let loaded = write_demo_project(&root);
+            fs::write(
+                root.join("demo.mec"),
+                format!("{import}\nanswer := {value}\n"),
+            )
+            .unwrap();
+            fs::write(
+                root.join("math.mec"),
+                "custom := 42\ncos := 42\n<+ custom\n<+ cos\n",
+            )
+            .unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            options.source_paths.push(root.join("math.mec"));
+            bundle_web_project(options).unwrap();
+            let bundle = CanonicalProgramBundle::decode(
+                &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+                None,
+            )
+            .unwrap();
+            let mut runtime = mech_runtime::RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build()
+                .unwrap();
+            let durability = runtime.config().resident_durability;
+            let loaded = runtime
+                .load_bytecode_program(&bundle.bytecode, durability)
+                .unwrap();
+            assert_eq!(
+                loaded.initial_value.format_canonical_inline(),
+                "42",
+                "{import}"
+            );
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_source_module_errors_do_not_fall_back_to_catalog_functions() {
+        for source in [
+            "+> math\nanswer := math/cos(0.0)\n",
+            "+> math/cos\nanswer := cos(0.0)\n",
+            "+> ./math.mec\nanswer := math/cos(0.0)\n",
+            "+> ./math\nanswer := math/cos(0.0)\n",
+        ] {
+            let root = temp_root("source-module-no-catalog-fallback");
+            let loaded = write_demo_project(&root);
+            fs::write(root.join("demo.mec"), source).unwrap();
+            fs::write(root.join("math.mec"), "custom := 42\n<+ custom\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            options.source_paths.push(root.join("math.mec"));
+            assert!(bundle_web_project(options).is_err(), "{source}");
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn bundle_web_rejects_multiple_run_roots_before_emitting_assets() {
+        let root = temp_root("multiple-run-roots");
+        let mut loaded = write_demo_project(&root);
+        fs::write(root.join("second.mec"), "answer := 2\n").unwrap();
+        loaded
+            .document
+            .run
+            .as_mut()
+            .unwrap()
+            .paths
+            .push("second.mec".into());
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options.source_paths.push(root.join("second.mec"));
+        let error = bundle_web_project(options).unwrap_err().display_message();
+        assert!(error.contains("exactly one run root"), "{error}");
+        assert!(!out.join("style.css").exists());
+        assert!(!out.join("_mech/project-sources.json").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_serves_prose_without_requiring_an_artifact() {
+        let root = temp_root("canonical-presentation-only");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("notes.mec"),
+            "These are presentation-only notes.\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        let mut options = options(&root, &out, loaded);
+        options.source_paths.push(root.join("notes.mec"));
+        bundle_web_project(options).unwrap();
+        assert!(out.join("code/demo.mec").is_file());
+        assert!(!out.join("code/notes.mec").exists());
+        assert!(out.join("source/notes.mec").is_file());
+        assert!(out.join("html/notes.html").is_file());
+        let manifest: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(out.join("_mech/project-sources.json")).unwrap(),
+        )
+        .unwrap();
+        let notes = manifest["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|source| source["specifier"] == "notes.mec")
+            .unwrap();
+        assert!(notes.get("artifactUrl").is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn canonical_bundle_rejects_missing_and_cyclic_dependencies() {
+        for cyclic in [false, true] {
+            let root = temp_root("canonical-invalid-imports");
+            let loaded = write_demo_project(&root);
+            fs::write(root.join("demo.mec"), "+> ./dep.mec\nanswer := 42\n").unwrap();
+            let out = root.join("out");
+            let mut options = options(&root, &out, loaded);
+            if cyclic {
+                fs::write(
+                    root.join("dep.mec"),
+                    "+> ./demo.mec\nvalue := 1\n<+ value\n",
+                )
+                .unwrap();
+                options.source_paths.push(root.join("dep.mec"));
+            }
+            let error = bundle_web_project(options).unwrap_err().display_message();
+            assert!(
+                error.contains(if cyclic { "cycle" } else { "absent" }),
+                "{error}"
+            );
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn canonical_bundle_compiler_installs_configured_timer_contracts() {
+        let root = temp_root("canonical-provider");
+        let mut loaded = write_demo_project(&root);
+        loaded
+            .document
+            .hosts
+            .push(mech_runtime::HostInstanceConfig {
+                name: "clock".to_owned(),
+                provider: "timer".to_owned(),
+                settings: mech_runtime::ConfigValue::Map(std::collections::BTreeMap::new()),
+            });
+        fs::write(
+            root.join("demo.mec"),
+            "@clock := timer://clock/tick{:read(tick)}\nvalue := @clock/tick\n",
+        )
+        .unwrap();
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+        let bundle = CanonicalProgramBundle::decode(
+            &fs::read_to_string(out.join("code/demo.mec")).unwrap(),
+            None,
+        )
+        .unwrap();
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
+        assert!(artifact.inputs().is_empty());
+        assert!(artifact.requirements().iter().any(|(_, requirement)| matches!(requirement, mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -969,10 +1361,11 @@ export default async function init() {}
         assert!(index.contains("window.__MECH_HOST_CONFIG"));
         assert!(bootstrap.contains("WasmProject.fromServedBundle"));
         assert!(bootstrap.contains("../pkg/mech_wasm.js"));
-        assert_eq!(manifest["version"], 2);
+        assert_eq!(manifest["version"], 3);
         assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
         assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");
         assert_eq!(manifest["sources"][0]["url"], "source/demo.mec");
+        assert_eq!(manifest["sources"][0]["artifactUrl"], "code/demo.mec");
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -1025,7 +1418,7 @@ export default async function init() {}
         let manifest: serde_json::Value =
             serde_json::from_slice(&fs::read(root.join("out/_mech/project-sources.json")).unwrap())
                 .unwrap();
-        assert_eq!(manifest["version"], 2);
+        assert_eq!(manifest["version"], 3);
         assert_eq!(manifest["roots"], serde_json::json!(["src/main.mec"]));
         assert!(
             manifest["sources"]
@@ -1055,8 +1448,10 @@ export default async function init() {}
 
         let source = fs::read_to_string(root.join("demo.mec")).unwrap();
         let encoded = fs::read_to_string(out.join("code/demo.mec")).unwrap();
-        let decoded: Program = decode_and_decompress(&encoded).unwrap();
-        assert_eq!(decoded, parser::parse(&source).unwrap());
+        let decoded = CanonicalProgramBundle::decode(&encoded, Some(&source)).unwrap();
+        assert_eq!(decoded.source, source);
+        assert_eq!(decoded.canonical_uri, "bundle:///demo.mec");
+        assert!(!decoded.bytecode.is_empty());
         fs::remove_dir_all(root).unwrap();
     }
 
