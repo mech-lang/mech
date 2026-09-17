@@ -8,9 +8,7 @@ use mech_build::{
     NativeDependencySource, NativeEmit, NativeRuntimeConfig, selected_planning_host_factory,
     standard_native_host_catalog,
 };
-use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, ParsedProgram, ResourceIntent, hash_str,
-};
+use mech_core::{ApplicationRequirement, ParsedProgram, ResourceIntent};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, ProgramCompiler, RunResourceGrantConfig, RuntimeBuilder,
     RuntimeConfig,
@@ -215,6 +213,79 @@ fn every_standard_provider_plans_canonical_source_to_bytecode() {
 }
 
 #[test]
+fn canonical_resource_effect_survives_a_later_program_result() {
+    let case = ProviderCase {
+        provider: "cli",
+        instance: "cli",
+        target: "cli/stdout",
+        operations: &["write"],
+        paths: &["line"],
+        source: "@out := cli://stdout{:write(line)}\n@out/line <- \"planned\"\n\"done\"",
+        base_uri: "cli://stdout",
+        path: "line",
+        intent: ResourceIntent::Send,
+    };
+    let product = provider_compiler(&case)
+        .compile_canonical_source(case.source)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(parsed.instructions.is_empty());
+    assert!(!parsed.artifact.is_empty());
+    assert!(parsed.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == case.base_uri
+                    && request.path == case.path
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
+
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: "cli".to_owned(),
+                provider: "cli".to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: vec![RunResourceGrantConfig {
+                target: "cli/stdout".to_owned(),
+                operations: vec!["write".to_owned()],
+                paths: vec!["line".to_owned()],
+            }],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-resource-effect".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert_eq!(plan.hosts.len(), 1);
+    assert!(plan.application_requirements.iter().any(|requirement| {
+        matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
+            if request.base_uri == "cli://stdout"
+                && request.path == "line"
+                && request.intent == ResourceIntent::Send)
+    }));
+}
+
+#[test]
 fn canonical_context_alias_preserves_the_resolved_resource_owner() {
     let case = PROVIDER_CASES
         .iter()
@@ -263,8 +334,13 @@ fn robot_custom_send_operation_survives_source_artifact_and_bytecode() {
     );
     assert!(product.artifact().nodes().iter().any(|node| {
         node.as_operation().is_some_and(|node| {
-            node.operation.module_path.as_ref() == ["resource", "send"]
-                && node.operation.operation_name == "move"
+            node.operation.module_path.as_ref() == ["resource"]
+                && node.operation.operation_name == "send"
+                && node.requirement.is_some_and(|requirement| {
+                    matches!(product.artifact().requirements().get(requirement),
+                        Some(ApplicationRequirement::Resource(request))
+                        if request.operation == "move")
+                })
         })
     }));
 
@@ -292,12 +368,14 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
         .map(|product| product.into_parts().1)
         .unwrap();
     let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
-    assert!(parsed.instructions.iter().any(|instruction| matches!(
-        instruction,
-        BytecodeInstruction::RuntimeVariadic { function, arguments, .. }
-            if *function == hash_str("integrity/constraint")
-                && arguments.first() == parsed.symbols.get(&hash_str("safe!"))
-    )));
+    assert!(parsed.instructions.is_empty());
+    assert_eq!(
+        mech_engine::decode_program_artifact_bytecode_v1(&bytecode)
+            .unwrap()
+            .constraints()
+            .len(),
+        1
+    );
 
     let request = NativeBuildRequest {
         bytecode,
@@ -318,7 +396,7 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
         offline: true,
     };
     let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
-        function_catalog: mech_stdlib::native_plan_catalog(),
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
         host_catalog: standard_native_host_catalog().unwrap(),
         dependency_source: NativeDependencySource::Registry {
             version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
@@ -326,28 +404,7 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
     })
     .plan(&request)
     .unwrap();
-    let marker = plan
-        .runtime_functions
-        .iter()
-        .find(|function| function.runtime_name == "integrity/constraint")
-        .expect("integrity marker must remain in the exact native closure");
-    assert_eq!(marker.package, "mech-engine");
-    assert_eq!(
-        marker.installer_path,
-        "mech_engine::__mech_native::install_integrity_constraint_marker"
-    );
-    assert!(
-        marker
-            .cargo_features
-            .iter()
-            .any(|feature| feature == "invariant_define")
-    );
-    assert!(
-        plan.runtime_features
-            .iter()
-            .any(|feature| feature == "invariant_define"),
-        "hosted execution must enforce compiled integrity constraints",
-    );
+    assert!(plan.runtime_functions.is_empty());
 }
 
 #[test]
@@ -363,21 +420,8 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         path: "line",
         intent: ResourceIntent::Send,
     };
-    let parsed = compile_provider(&case);
-    let source = parsed
-        .instructions
-        .iter()
-        .find_map(|instruction| match instruction {
-            BytecodeInstruction::ResourceSend { src, .. } => Some(*src),
-            _ => None,
-        })
-        .expect("computed source emits a resource send");
-    assert!(parsed.instructions.iter().any(|instruction| {
-        matches!(instruction, BytecodeInstruction::RuntimeBinary { dst, .. } if *dst == source)
-    }));
-
     let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
         .host_factory(selected_planning_host_factory("cli").unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
@@ -392,11 +436,21 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         })
         .build_compiler()
         .unwrap();
+    let product = compiler.compile_canonical_source(case.source).unwrap();
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["string"]
+                && node.operation.operation_name == "concat"
+        })
+    }));
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["resource"]
+                && node.operation.operation_name == "send"
+        })
+    }));
     let request = NativeBuildRequest {
-        bytecode: compiler
-            .compile_source(case.source)
-            .map(|product| product.into_parts().1)
-            .unwrap(),
+        bytecode: product.bytecode().to_vec(),
         instruction_type_bindings: None,
         instruction_type_binding_requirements: None,
         runtime_config: Some(NativeRuntimeConfig {
@@ -421,8 +475,8 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         keep_project: false,
         offline: true,
     };
-    NativeApplicationBuilder::new(NativeBuildEnvironment {
-        function_catalog: mech_stdlib::native_plan_catalog(),
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
         host_catalog: standard_native_host_catalog().unwrap(),
         dependency_source: NativeDependencySource::Registry {
             version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
@@ -430,4 +484,6 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
     })
     .plan(&request)
     .unwrap();
+    assert!(plan.runtime_functions.is_empty());
+    assert_eq!(plan.hosts.len(), 1);
 }

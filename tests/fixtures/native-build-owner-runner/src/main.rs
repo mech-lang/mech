@@ -286,7 +286,7 @@ fn cli_runtime_config() -> NativeRuntimeConfig {
 
 #[cfg(all(feature = "standard", not(feature = "fixed")))]
 fn owner_catalog() -> AppResult<Arc<FunctionCatalog>> {
-    Ok(mech_stdlib::native_plan_catalog())
+    Ok(mech_stdlib::source_native_plan_catalog())
 }
 
 #[cfg(all(feature = "fixed", not(feature = "standard")))]
@@ -294,6 +294,8 @@ fn owner_catalog() -> AppResult<Arc<FunctionCatalog>> {
     let mut builder = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_runtime(&mut builder)
         .map_err(|error| mech_error("engine owner catalog", error))?;
+    mech_engine::install_intrinsic_resident(&mut builder)
+        .map_err(|error| mech_error("engine resident owner catalog", error))?;
     mech_math::install_runtime(&mut builder)
         .map_err(|error| mech_error("math owner catalog", error))?;
     Ok(Arc::new(
