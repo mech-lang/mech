@@ -1,0 +1,11 @@
+{
+  "code": "syntax/missing-expression",
+  "rule": 1192836915,
+  "range": {
+    "start": 5,
+    "end": 5
+  },
+  "expected": "expression",
+  "found": "Eof",
+  "recovery": "Insert"
+}

@@ -4,7 +4,6 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 
 extern crate mech_core;
-#[cfg(feature = "no_std")]
 #[macro_use]
 extern crate alloc;
 #[cfg(not(feature = "no_std"))]
@@ -59,6 +58,9 @@ pub mod state_machines;
 pub mod statements;
 pub mod structures;
 pub mod submission;
+/// Experimental lossless document syntax. Production parsing remains on the
+/// legacy parser during migration.
+pub mod document;
 
 pub use crate::imports::*;
 pub use crate::parser::*;

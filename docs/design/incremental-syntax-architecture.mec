@@ -1,0 +1,213 @@
+Incremental Syntax Architecture
+===============================================================================
+
+Status: Phase 1 experimental architecture.
+
+Stack base: PR 650 at
+`8c2719a8c46ed8225cba5fc58dca789e3a64cc03`.
+
+The legacy parser, public `parse` API, existing `Program` AST, formatter,
+interpreter, runtime, and accepted grammar remain unchanged while this
+architecture is introduced.
+
+1. Goals
+-------------------------------------------------------------------------------
+
+The canonical parsed representation of one source revision is a lossless
+`SyntaxSnapshot`. It is designed for whole `.mec` documents, live incomplete
+input, multiple independent errors, streamed appends, incremental edits, exact
+Unicode preservation, structured diagnostics, and later partial semantic
+analysis.
+
+The persisted canonical artifact remains UTF-8 `.mec` text. The parsed form is
+revisioned derived state.
+
+This phase deliberately implements a narrow grammar slice. It does not port or
+change the complete canonical grammar.
+
+2. Documents, not a host/guest format
+-------------------------------------------------------------------------------
+
+Document mode always parses sibling Mech and Mechdown constructs. Mechdown is
+not an optional wrapper, and parsing does not try a complete Mech program before
+falling back to prose.
+
+The document root contains sections and document items. Items may be paragraphs,
+Mech items, canonical `subtitle` and `ul-subtitle` headings, lists, tables,
+fences, equations, figures, Mika, and other Mechdown forms as their grammar
+families are ported.
+
+Tools may use fragment entry points for isolated productions, but `.mec` always
+selects document mode.
+
+3. Total parsing
+-------------------------------------------------------------------------------
+
+```rust
+pub fn parse_document(
+  source: TextSnapshot,
+  config: ParseConfig,
+) -> SyntaxSnapshot;
+```
+
+Every valid UTF-8 input produces a snapshot. User syntax errors do not produce a
+top-level `Err`. Resource limits create a diagnostic and an `ERROR` node that
+retains the bounded remainder.
+
+Strict validation and lowering are later consumers:
+
+```rust
+parse_document(source, config)
+validate_strict(&snapshot)
+lower_live(&snapshot)
+```
+
+The parser kernel is an event-based ordinary-function parser. It uses explicit
+checkpoints, commitment, recovery, rule context, and fuel. It does not use Nom,
+boxed parser closures, a parser generator, or an external tree framework.
+
+4. Revisioned source
+-------------------------------------------------------------------------------
+
+UTF-8 byte offsets are the primary coordinate system. Rows, byte columns,
+UTF-16 positions, grapheme positions, and display widths are derived views.
+Parser cursors store byte offsets only.
+
+A `TextSnapshot` identifies a `DocumentId` and `Revision`. Its immutable piece
+list references `Arc<str>` chunks and byte ranges within those chunks. Edits
+reuse unchanged chunks. Append is insertion at EOF. Multiple edits in one
+revision are sorted, non-overlapping, and expressed in the old revision.
+
+Edits are rejected when a range is reversed, outside the snapshot, or not on a
+UTF-8 boundary. Input is never normalized. LF, CRLF, and CR remain byte-exact
+and are all recognized by the derived line index.
+
+The current list representation intentionally leaves cursor and tree interfaces
+independent of storage shape so a balanced representation can replace it later.
+
+5. Lossless green and red trees
+-------------------------------------------------------------------------------
+
+Green nodes and tokens are immutable. They store relative lengths, stable
+session-minted identities, flags, structural hashes, and child arrays. They do
+not store absolute offsets or redundant token strings. A red view combines a
+green element with a source revision and derives its range from ancestor and
+sibling lengths.
+
+The lossless invariants are:
+
+- Every source byte belongs to exactly one non-synthetic token.
+- Concatenating non-synthetic token text reproduces the source byte-for-byte.
+- Whitespace, comments, and delimiters are tokens.
+- Missing tokens have zero width and are synthetic.
+- Skipped malformed tokens remain below an `ERROR` node.
+- The tree does not globally intern identical subtrees.
+
+`NodeId` and `TokenId` are minted by a document session. A reused green subtree
+keeps its identities. A reparsed subtree receives new identities. Hashes support
+comparison and caching but never define editor identity.
+
+The `NodeIndex` resolves each identity to its current kind, range, parent, and
+flags. This supports red navigation and diagnostic anchoring without putting
+absolute offsets in green storage.
+
+Typed AST views are zero-copy wrappers over red nodes. Accessors return `Option`
+because live syntax may omit required children.
+
+6. Structural errors and diagnostics
+-------------------------------------------------------------------------------
+
+Absent required syntax is represented by zero-width `MISSING` nodes or tokens.
+Unexpected source is retained as ordinary tokens under an `ERROR` node.
+
+Diagnostic messages are not stored in green nodes. A revisioned
+`DiagnosticStore` contains stable namespaced codes, phases, severity, canonical
+rule IDs, structural or absolute anchors, labels, expected and found syntax,
+fixes, related diagnostics, recovery actions, tags, and display messages.
+
+Structural anchors use an element identity plus a relative range. When an
+unchanged node shifts after an earlier edit, its diagnostics shift with it.
+Absolute anchors are revision-specific and are used when no suitable syntax
+identity exists.
+
+The stable fields, rather than English wording, are the test oracle. Optional
+Serde support supplies JSON for tools. A small plain-text renderer supplies
+human-readable output without coupling the schema to a terminal library.
+
+7. Recovery
+-------------------------------------------------------------------------------
+
+Productions distinguish `NoMatch`, `Match`, and `CommittedFailure`. Once a
+distinctive prefix such as a define operator is recognized, the construct may
+recover but cannot fall back to unrelated prose.
+
+Recovery operations are:
+
+- Insert a missing element at a legitimate boundary.
+- Skip unexpected source into an `ERROR` node.
+- Abandon an incomplete production to an ancestor restart root.
+
+Every parser and recovery loop consumes a source byte, inserts once and changes
+grammar state, returns, or terminates. Fuel, nesting, event, diagnostic, and
+recovery-byte limits enforce this invariant.
+
+Recovery uses contextual restart entries. Document, paragraph, Mech, and fence
+modes record delimiter depth, line-start state, and indentation. Canonical
+headings, matching fence boundaries, and delimiter-aware Mech terminals form
+strong restart points. Recovery never treats a Markdown `#` convention as a
+Mechdown heading.
+
+8. Incremental reparsing
+-------------------------------------------------------------------------------
+
+Edits create a `ChangeMap`, locate the smallest intersecting restart root, and
+expand when boundaries, newlines, composite sigils, delimiters, fence prefixes,
+headings, or relevant indentation change.
+
+A fragment splice is accepted only when it consumes the mapped region, preserves
+the ending boundary, and retains parser mode. Otherwise the reparser ascends.
+Document-root reparsing is the final fallback.
+
+Unaffected green subtrees are reused with their IDs. Full and incremental parses
+are compared after normalization that ignores minted IDs.
+
+9. Annotation substrate and future analysis
+-------------------------------------------------------------------------------
+
+Syntax annotations use typed `NodeMap<T>` values at one revision. Reusing a
+syntax node permits its annotation to be retained; replacing or deleting the
+node invalidates the entry. This is a generic typed map, not a dynamic property
+bag.
+
+Most future semantic facts attach to HIR because one syntax node may lower to
+multiple semantic entities. Origin mappings project them back to syntax:
+
+```rust
+pub struct AnalysisSnapshot {
+  pub document: DocumentId,
+  pub revision: Revision,
+
+  pub origins: HirMap<SyntaxPtr>,
+  pub kinds: HirMap<FactState<KindInfo>>,
+  pub dimensions: HirMap<FactState<DimensionInfo>>,
+  pub effects: HirMap<FactState<EffectInfo>>,
+  pub coeffects: HirMap<FactState<CoeffectInfo>>,
+  pub refinements: HirMap<FactState<RefinementInfo>>,
+  pub liveness: HirMap<FactState<LivenessInfo>>,
+}
+```
+
+`mech-syntax` supplies reusable identities, `SyntaxPtr`, `NodeMap<T>`, and
+`FactState<T>`. It does not define placeholder semantic fact types.
+
+10. Portability
+-------------------------------------------------------------------------------
+
+Production document modules use `core` and `alloc`, forbid unsafe code, and do
+not access filesystems, threads, clocks, terminal coloring, or platform APIs.
+Observable maps are deterministic. Source and diagnostic serialization is
+behind the existing `serde` feature.
+
+The design remains implementable in Mech: piece arrays, immutable nodes, event
+arrays, typed maps, checkpoints, and explicit recovery are concrete data
+structures rather than a Rust-specific framework.

@@ -1,0 +1,7 @@
+Intro paragraph
+1. Code
+-------
+x := (1 + 2)
+~~~text
+opaque 💡 content
+~~~
