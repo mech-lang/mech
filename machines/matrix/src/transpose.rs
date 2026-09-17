@@ -1,27 +1,10 @@
 use crate::*;
 use std::sync::LazyLock;
 
-static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::TransposeOf { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    });
+static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    mech_core::maintained_operation_contract("matrix/transpose", 1, true)
+        .expect("maintained transpose operation contract")
+});
 
 // Transpose ------------------------------------------------------------------
 
@@ -258,9 +241,7 @@ macro_rules! impl_transpose {
             T: CanonicalMatrixElementBacking,
             $out_type: FunctionStateBacking,
         {
-            fn planned_output_footprints(
-                &self,
-            ) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
+            fn planned_output_footprints(&self) -> MResult<Option<Box<[CurrentMemoryFootprint]>>> {
                 Ok(T::planned_output_footprint(&self.arg, &self.out)?
                     .map(|footprint| vec![footprint].into_boxed_slice()))
             }

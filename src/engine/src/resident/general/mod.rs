@@ -2327,11 +2327,11 @@ fn operation_requires_activation_fixed_range_shape(operation: &OperationReferenc
         )
 }
 
-fn source_extents(
+fn source_schema_and_shape(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
     facts: &ActivationFacts,
-) -> Result<Box<[u64]>, ResidentActivationError> {
+) -> Result<(mech_core::SchemaId, ShapeInstance), ResidentActivationError> {
     let (schema_id, shape) = match source {
         ArtifactSource::Constant(constant) => {
             let value = artifact
@@ -2345,6 +2345,15 @@ fn source_extents(
             (declaration.schema, slot_shape(artifact, slot, facts)?)
         }
     };
+    Ok((schema_id, shape))
+}
+
+fn source_extents(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+) -> Result<Box<[u64]>, ResidentActivationError> {
+    let (schema_id, shape) = source_schema_and_shape(artifact, source, facts)?;
     let schema = artifact
         .schemas()
         .entry(schema_id)
@@ -2494,6 +2503,23 @@ fn complete_activation_shape_facts(
             continue;
         }
         let inputs = node_inputs(artifact, node.node)?;
+        if node.operation.module_path.as_ref() == ["core"]
+            && node.operation.operation_name == "composite-pack"
+            && !matches!(output_schema.body(), SchemaBody::Matrix { .. })
+        {
+            let children = inputs
+                .iter()
+                .map(|source| source_schema_and_shape(artifact, *source, &facts))
+                .collect::<Result<Vec<_>, _>>()?;
+            let shape = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                artifact.slots()[output.get() as usize].schema,
+                &children,
+                artifact.schemas(),
+            )
+            .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
+            facts.slot_shapes.insert(output, shape);
+            continue;
+        }
         if node.operation.module_path.as_ref() == ["access"]
             && node.operation.operation_name == "column"
         {
@@ -2648,10 +2674,18 @@ fn complete_activation_shape_facts(
             let extents = match mode {
                 ResolvedSelectionMode::Whole => vec![*source_rows, *source_columns],
                 ResolvedSelectionMode::LinearGather => {
-                    let [selector] = &inputs[1..] else {
-                        return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                    let count = match &inputs[1..] {
+                        [] => source_rows
+                            .checked_mul(*source_columns)
+                            .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                        [selector] => selector_count(*selector)?,
+                        _ => {
+                            return Err(ResidentActivationError::InvalidDependency {
+                                node: node.node,
+                            });
+                        }
                     };
-                    vec![selector_count(*selector)?, 1]
+                    vec![count, 1]
                 }
                 ResolvedSelectionMode::Rows => {
                     let [selector] = &inputs[1..] else {
@@ -3297,11 +3331,17 @@ fn schema_layout(
     slot: Option<CellSlotId>,
 ) -> Result<(ResidentValueKind, ResidentShape), ResidentActivationError> {
     let schema_entry = artifact.schemas().entry(schema).unwrap();
-    if schema_entry
-        .schema()
-        .dimension_parameters()
-        .iter()
-        .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
+    // Only dense storage needs turn-invariant geometry in the arena. A
+    // snapshot occupies one scalar slot and carries its own per-turn shape.
+    let needs_dense_shape = matches!(schema_entry.schema().body(),
+        SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && dense_resident_kind(element).is_some());
+    if needs_dense_shape
+        && schema_entry
+            .schema()
+            .dimension_parameters()
+            .iter()
+            .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn)
         && !has_activation_shape_fact
     {
         return Err(ResidentActivationError::TurnDimension { schema, slot });

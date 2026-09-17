@@ -723,6 +723,9 @@ fn canonical_access_result(
             )
         }
         SchemaBody::String if selectors.len() == 1 => {
+            if matches!(selectors[0], CanonicalAccessSelector::All) {
+                return source.detached_clone();
+            }
             let index = canonical_indices(&selectors[0], usize::MAX)?[0];
             let ValueData::String(value) = source.snapshot()?.data().clone() else {
                 unreachable!()
@@ -1299,5 +1302,17 @@ mod canonical_aggregate_access_tests {
             output.snapshot().unwrap().data(),
             ValueData::U64(7)
         ));
+    }
+    #[test]
+    fn whole_string_selection_preserves_empty_and_grapheme_contents() {
+        for text in ["", "a👩🏽‍💻e\u{301}"] {
+            let source = ValueCell::from_exact(text.to_owned()).unwrap();
+            let selected =
+                canonical_access_result(&source, &[CanonicalAccessSelector::All]).unwrap();
+            assert_eq!(selected.closed_schema_body().unwrap(), SchemaBody::String);
+            assert!(
+                matches!(selected.snapshot().unwrap().data(), ValueData::String(value) if value.as_ref() == text)
+            );
+        }
     }
 }

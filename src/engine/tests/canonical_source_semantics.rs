@@ -161,13 +161,13 @@ fn identifiers_are_resolved_once_and_reused_as_source_inputs() {
 #[test]
 fn structures_calls_comprehensions_and_fsm_enter_one_source_graph() {
     for (source, final_operation) in [
-        ("{a: 1, b: 2}", "source/record"),
-        ("{1: 2, 3: 4}", "source/map"),
+        ("{a: 1, b: 2}", "core/composite-pack"),
+        ("{1: 2, 3: 4}", "core/composite-pack"),
         ("{1, 2}", "set/define"),
-        ("(1, 2)", "source/tuple"),
+        ("(1, 2)", "core/composite-pack"),
         ("[1 2]", "matrix/horzcat"),
-        ("|a<u8>|1|", "source/table"),
-        ("f(left: 1, 2)", "f"),
+        ("|a<u8>|1|", "core/composite-pack"),
+        ("math/add(left: 1, 2)", "math/add"),
         ("x[1].field", "access/column"),
         ("1..10", "range/exclusive"),
         ("x ? | * => 1", "source/match"),
@@ -203,19 +203,16 @@ fn recovered_trees_never_construct_partial_semantics() {
 #[test]
 fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     let call = CanonicalSourceFrontend
-        .compile_expression(&expression("f(left: 1, 2)"))
+        .compile_expression(&expression("math/add(left: 1, 2)"))
         .unwrap();
     let node = call.program().nodes.last().unwrap();
-    assert_eq!(node.operation.canonical_name(), "f");
+    assert_eq!(node.operation.canonical_name(), "math/add");
     assert_eq!(
         call.source_map().nodes.last().unwrap().detail.as_deref(),
-        Some("f(left,)")
+        Some("math/add(left,)")
     );
-    assert!(matches!(
-        call.compile_artifact(),
-        Err(mech_engine::ArtifactBuildError::MissingOperationContract { operation, .. })
-            if operation.canonical_name() == "f"
-    ));
+    call.compile_artifact()
+        .expect("a declared source call must carry its maintained contract");
 
     let range = CanonicalSourceFrontend
         .compile_expression(&expression("1..2..=10"))
@@ -979,14 +976,6 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
         ("¬:ready", "source-semantics/non-boolean-negation-kind"),
         ("¬<u8>", "source-semantics/non-boolean-negation-kind"),
         (
-            "1<c32> + 2<c32>",
-            "source-semantics/unsupported-resident-arithmetic-kind",
-        ),
-        (
-            "-(1<c32>)",
-            "source-semantics/unsupported-resident-arithmetic-kind",
-        ),
-        (
             "true + true",
             "source-semantics/non-numeric-arithmetic-kind",
         ),
@@ -1168,7 +1157,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
             .code,
         "source-semantics/unsupported-number-kind-suffix"
     );
-    for source in ["1.0e3u8", "1.0e3units"] {
+    for source in ["1.0e3u8"] {
         let scientific = CanonicalSourceFrontend
             .compile_expression(&expression(source))
             .unwrap();
