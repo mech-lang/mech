@@ -759,25 +759,79 @@ fn descended_collection_item_footprint(
     Ok(footprint)
 }
 
+fn admit_generator_schema_workspace(
+    workspace: u64,
+    live_bytes: u64,
+    live_nodes: u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(), ResidentKernelError> {
+    let temporary_bytes = live_bytes
+        .checked_add(workspace)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    meter.charge_compute_work(workspace)?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes,
+            retained_nodes: live_nodes,
+            ..meter.estimate()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
 fn generator_shape_values(
     value: ResidentValueRef<'_>,
     schema: SchemaId,
     activation_values: &[u64],
     schemas: &mech_core::SchemaTable,
-) -> Result<Box<[u64]>, ResidentKernelError> {
+    live_bytes: u64,
+    live_nodes: u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(Box<[u64]>, u64), ResidentKernelError> {
     let ResidentValueRef::Snapshot([Some(value)]) = value else {
-        return Ok(activation_values.to_vec().into_boxed_slice());
+        let retained_bytes = budget::checked_u64(activation_values.len())?
+            .checked_mul(core::mem::size_of::<u64>() as u64)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        admit_generator_schema_workspace(retained_bytes, live_bytes, live_nodes, meter)?;
+        return Ok((
+            activation_values.to_vec().into_boxed_slice(),
+            retained_bytes,
+        ));
     };
     let source_schemas = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
     let source_schema = value
         .validate_against(&source_schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let source_body = source_schema
-        .closed_body(value.shape())
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
     let target_schema = schemas
         .get(schema)
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let source_body_bytes = source_schema
+        .body()
+        .clone_allocation_bound_bytes()
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let target_body_bytes = target_schema
+        .body()
+        .clone_allocation_bound_bytes()
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let source_shape_bytes = budget::checked_u64(source_schema.dimension_parameters().len())?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let target_shape_bytes = budget::checked_u64(target_schema.dimension_parameters().len())?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let workspace = source_body_bytes
+        .checked_mul(2)
+        .and_then(|bytes| bytes.checked_add(target_body_bytes.checked_mul(2)?))
+        .and_then(|bytes| bytes.checked_add(source_shape_bytes.checked_mul(2)?))
+        .and_then(|bytes| bytes.checked_add(target_shape_bytes.checked_mul(3)?))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_generator_schema_workspace(workspace, live_bytes, live_nodes, meter)?;
+    let source_body = source_schema
+        .closed_body(value.shape())
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
     let shape = mech_core::shape_for_schema_components(
         target_schema,
         &[(target_schema.body(), source_body.clone())],
@@ -791,7 +845,11 @@ fn generator_shape_values(
     {
         return Err(ResidentKernelError::InvalidInput);
     }
-    Ok(shape.parameter_values().to_vec().into_boxed_slice())
+    let values = shape.parameter_values().to_vec().into_boxed_slice();
+    let retained_bytes = budget::checked_u64(values.len())?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((values, retained_bytes))
 }
 
 fn generator_element(
@@ -799,10 +857,41 @@ fn generator_element(
     element_schema: SchemaId,
     source_shape_values: &[u64],
     schemas: &mech_core::SchemaTable,
-) -> Result<(SchemaBody, Box<[u64]>), ResidentKernelError> {
+    live_bytes: u64,
+    live_nodes: u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<(SchemaBody, Box<[u64]>, u64), ResidentKernelError> {
     let source = schemas
         .get(source_schema)
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let component = schemas
+        .get(element_schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let source_body_bytes = source
+        .body()
+        .clone_allocation_bound_bytes()
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let component_body_bytes = component
+        .body()
+        .clone_allocation_bound_bytes()
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let source_shape_bytes = budget::checked_u64(source_shape_values.len())?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let component_shape_bytes = budget::checked_u64(component.dimension_parameters().len())?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    // Closing the source, resolving the component shape, and closing the
+    // component can transiently own the selected body, its resolver copy,
+    // witness storage, and both old/new shape buffers at once. SchemaBody's
+    // core-owned clone bound is also the closure allocation bound.
+    let workspace = source_body_bytes
+        .checked_mul(2)
+        .and_then(|bytes| bytes.checked_add(component_body_bytes.checked_mul(2)?))
+        .and_then(|bytes| bytes.checked_add(source_shape_bytes))
+        .and_then(|bytes| bytes.checked_add(component_shape_bytes.checked_mul(3)?))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    admit_generator_schema_workspace(workspace, live_bytes, live_nodes, meter)?;
     let source_shape = source
         .instantiate_shape(source_shape_values.to_vec().into_boxed_slice())
         .map_err(|_| ResidentKernelError::InvalidShape)?;
@@ -813,9 +902,6 @@ fn generator_element(
         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => *element,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
-    let component = schemas
-        .get(element_schema)
-        .ok_or(ResidentKernelError::InvalidInput)?;
     let shape = mech_core::shape_for_schema_components(
         component,
         &[(component.body(), actual.clone())],
@@ -829,7 +915,15 @@ fn generator_element(
     {
         return Err(ResidentKernelError::InvalidShape);
     }
-    Ok((actual, shape.parameter_values().to_vec().into_boxed_slice()))
+    let shape_values = shape.parameter_values().to_vec().into_boxed_slice();
+    let shape_values_bytes = budget::checked_u64(shape_values.len())?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let retained_bytes = actual
+        .clone_allocation_bound_bytes()
+        .and_then(|bytes| bytes.checked_add(shape_values_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((actual, shape_values, retained_bytes))
 }
 
 fn retained_item(
@@ -2828,25 +2922,52 @@ impl ReactiveInstance {
                         .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
                     let count = collection_len(source_value)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
-                    let live_shape_values = generator_shape_values(
-                        source_value,
-                        *source_schema,
-                        activation_shape_values,
-                        schemas,
-                    )
-                    .map_err(fail)?;
-                    let (element, element_shape_values) = generator_element(
-                        *source_schema,
-                        *element_schema,
-                        &live_shape_values,
-                        schemas,
-                    )
-                    .map_err(fail)?;
                     let retained_shape_parameter_count = schemas
                         .get(control.output_schema)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?
                         .dimension_parameters()
                         .len();
+                    let live_locals = self
+                        .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
+                        .map_err(fail)?;
+                    let (live_bytes, live_nodes) = comprehension_nested_live_demand(
+                        values.len(),
+                        values.capacity(),
+                        *footprint,
+                        retained_shape_parameter_count,
+                        schema_arena_bytes,
+                        published_output_bytes,
+                        live_locals,
+                        *meter,
+                    )
+                    .map_err(fail)?;
+                    let (live_shape_values, live_shape_values_bytes) = generator_shape_values(
+                        source_value,
+                        *source_schema,
+                        activation_shape_values,
+                        schemas,
+                        live_bytes,
+                        live_nodes,
+                        meter,
+                    )
+                    .map_err(fail)?;
+                    let element_input_bytes = live_bytes
+                        .checked_add(live_shape_values_bytes)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    let (element, element_shape_values, element_live_bytes) = generator_element(
+                        *source_schema,
+                        *element_schema,
+                        &live_shape_values,
+                        schemas,
+                        element_input_bytes,
+                        live_nodes,
+                        meter,
+                    )
+                    .map_err(fail)?;
+                    let nested_schema_bytes = schema_arena_bytes
+                        .checked_add(live_shape_values_bytes)
+                        .and_then(|bytes| bytes.checked_add(element_live_bytes))
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
                     for ordinal in 0..count {
                         meter.charge_compute_work(1).map_err(fail)?;
                         let matched = self.match_collection_pattern(
@@ -2866,7 +2987,7 @@ impl ReactiveInstance {
                             *footprint,
                             retained_shape_parameter_count,
                             schemas,
-                            schema_arena_bytes,
+                            nested_schema_bytes,
                             published_output_bytes,
                             working,
                             meter,
@@ -2880,7 +3001,7 @@ impl ReactiveInstance {
                                 nested_finalization_work,
                                 meter,
                                 schemas,
-                                schema_arena_bytes,
+                                nested_schema_bytes,
                                 published_output_bytes,
                                 before,
                                 working,
@@ -3440,11 +3561,74 @@ mod tests {
                 target,
                 &[1],
                 &target_schemas,
+                0,
+                0,
+                &mut ResidentBudgetMeter::default(),
             )
             .unwrap()
+            .0
             .as_ref(),
             [3],
             "execution must replace the stale activation-time extent",
+        );
+    }
+
+    #[test]
+    fn empty_generator_element_materialization_is_admitted_before_closure() {
+        let element_body =
+            SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice());
+        let mut builder = SchemaTableBuilder::new();
+        let element = builder
+            .insert(
+                SchemaDraft {
+                    body: element_body.clone(),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let source = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(element_body),
+                        dimensions: vec![DimensionExpr::Constant(0), DimensionExpr::Constant(1)]
+                            .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let element = build.resolve(element).unwrap();
+        let source = build.resolve(source).unwrap();
+        assert!(
+            generator_element(
+                source,
+                element,
+                &[],
+                &build.table,
+                mech_core::RESIDENT_MAX_BYTES,
+                0,
+                &mut ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "schema closure must be rejected before an empty generator allocates above the live ceiling",
+        );
+        assert!(
+            generator_element(
+                source,
+                element,
+                &[],
+                &build.table,
+                0,
+                0,
+                &mut ResidentBudgetMeter::default(),
+            )
+            .is_ok(),
         );
     }
 
@@ -5275,9 +5459,18 @@ mod tests {
         .unwrap();
         let lane = [Some(value)];
         assert_eq!(
-            generator_shape_values(ResidentValueRef::Snapshot(&lane), schema, &[1], &schemas,)
-                .unwrap()
-                .as_ref(),
+            generator_shape_values(
+                ResidentValueRef::Snapshot(&lane),
+                schema,
+                &[1],
+                &schemas,
+                0,
+                0,
+                &mut ResidentBudgetMeter::default(),
+            )
+            .unwrap()
+            .0
+            .as_ref(),
             &[3]
         );
     }
