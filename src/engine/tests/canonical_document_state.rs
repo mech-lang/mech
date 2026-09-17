@@ -606,6 +606,20 @@ fn runtime_shaped_state_supports_whole_value_updates_after_initialization() {
             (None, (1, 3), &[3.0, 4.0, 5.0]),
         ],
     );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate += 1\nstate\n",
+        &[
+            (None, (1, 3), &[2.0, 3.0, 4.0]),
+            (None, (1, 3), &[3.0, 4.0, 5.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate += [10 20 30]\nstate\n",
+        &[
+            (None, (1, 3), &[11.0, 22.0, 33.0]),
+            (None, (1, 3), &[21.0, 42.0, 63.0]),
+        ],
+    );
 }
 
 #[test]

@@ -1664,19 +1664,14 @@ impl ReactiveInstance {
                 } else {
                     &self.workspace.scratch
                 };
-                let prior_snapshot_nodes = match target.read(write.region) {
-                    ResidentValueRef::Snapshot([Some(value)]) => {
-                        value
-                            .retained_footprint(&self.plan.schemas)
-                            .map_err(|_| ResidentExecutionError::Kernel {
-                                node,
-                                error: ResidentKernelError::InvalidOutput,
-                            })?
-                            .node_count
-                    }
-                    ResidentValueRef::Snapshot([None]) => 0,
+                let prior = match target.read(write.region) {
+                    ResidentValueRef::Snapshot([Some(value)]) => Some(value),
+                    ResidentValueRef::Snapshot([None]) => None,
                     _ => return Err(fail()),
                 };
+                let (prior_snapshot_nodes, prior_footprint_work) =
+                    match_conversion_prior_footprint(prior, &self.plan.schemas)
+                        .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
                 let scope = target
                     .prepare_payload_write(write.region)
                     .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
@@ -1694,8 +1689,12 @@ impl ReactiveInstance {
                     budget::PreparedKernel::new(
                         (),
                         budget::resident_cost! {
-                            comparison_work: cost.comparison_work,
-                            compute_work: cost.compute_work,
+                            comparison_work: cost.comparison_work
+                                .checked_add(prior_footprint_work.comparison_work())
+                                .ok_or(ResidentKernelError::InvalidShape)?,
+                            compute_work: cost.compute_work
+                                .checked_add(prior_footprint_work.compute_work())
+                                .ok_or(ResidentKernelError::InvalidShape)?,
                             output_elements: cost.output_elements,
                             output_bytes: cost.persistent_bytes,
                             temporary_bytes: cost.temporary_bytes,
@@ -2293,6 +2292,20 @@ fn match_conversion_peak_retained_nodes(
     prior_snapshot_nodes
         .checked_add(candidate_nodes)
         .ok_or(ResidentKernelError::InvalidShape)
+}
+
+fn match_conversion_prior_footprint(
+    prior: Option<&Value>,
+    schemas: &mech_core::SchemaTable,
+) -> Result<(u64, budget::KernelCostEstimate), ResidentKernelError> {
+    let mut meter = budget::ResidentBudgetMeter::default();
+    let nodes = match prior {
+        Some(prior) => {
+            budget::measure_canonical_value_footprint(&mut meter, prior, schemas)?.node_count
+        }
+        None => 0,
+    };
+    Ok((nodes, meter.estimate()))
 }
 
 impl StateArena {
@@ -3766,6 +3779,43 @@ mod tests {
         );
         assert_eq!(
             match_conversion_peak_retained_nodes(u64::MAX, 1),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        Ok(())
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn match_conversion_prior_footprint_charges_the_complete_borrowed_traversal()
+    -> Result<(), ResidentKernelError> {
+        let mut instance =
+            source_instance("true ? | true => signal<[string]:1,2> | false => [\"\" \"\"]");
+        let slot = instance.plan.inputs[0].slot;
+        let prior = ["p".repeat(25 * 1024), "q".repeat(25 * 1024)];
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::String(&prior),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let (nodes, work) =
+            match_conversion_prior_footprint(Some(&output), &instance.plan.schemas).unwrap();
+        assert!(nodes >= 5);
+        assert!(work.comparison_work() >= 50 * 1024);
+
+        let candidate_work = 20 * 1024;
+        assert_eq!(
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    comparison_work: work.comparison_work() + candidate_work,
+                    compute_work: work.compute_work() + candidate_work,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()
+            .map(|permit| permit.into_plan()),
             Err(ResidentKernelError::InvalidShape)
         );
         Ok(())
