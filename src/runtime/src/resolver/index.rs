@@ -7,10 +7,11 @@ pub use canonical::{CanonicalDocumentIndex, CanonicalMikaIndex, CanonicalSourceI
 use mech_core::{MResult, MechError, SourceRange};
 
 use super::{
-    AddressTargetNameConflict, SourceAddressReference, SourceContextBase, SourceContextCapability,
-    SourceContextCapabilityScope, SourceContextDeclaration, SourceExportDeclaration,
-    SourceImportDeclaration, classify_import_specifier,
+    AddressTargetNameConflict, SourceAddressReference, SourceContextDeclaration,
+    SourceExportDeclaration, SourceImportDeclaration,
 };
+#[cfg(feature = "source")]
+use super::{SourceContextBase, SourceContextCapability, SourceContextCapabilityScope};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -247,12 +248,14 @@ impl SourceIndex {
         scopes
     }
 
+    #[cfg(feature = "source")]
     fn push_scope(&mut self, scope: SourceScope) {
         if !self.scopes.contains(&scope) {
             self.scopes.push(scope);
         }
     }
 
+    #[cfg(feature = "source")]
     fn push_import(
         &mut self,
         scope: SourceScope,
@@ -274,6 +277,7 @@ impl SourceIndex {
         self.imports.push(scoped);
     }
 
+    #[cfg(feature = "source")]
     fn push_export(
         &mut self,
         scope: SourceScope,
@@ -295,6 +299,7 @@ impl SourceIndex {
         self.exports.push(scoped);
     }
 
+    #[cfg(feature = "source")]
     fn push_context(
         &mut self,
         scope: SourceScope,
@@ -316,6 +321,7 @@ impl SourceIndex {
         self.contexts.push(scoped);
     }
 
+    #[cfg(feature = "source")]
     fn push_address_reference(
         &mut self,
         scope: SourceScope,
