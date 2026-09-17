@@ -252,7 +252,8 @@ static PURE_MATRIX_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
 fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
-    mech_core::maintained_operation_contract("matrix/multiply", 2, matrix).expect("maintained product contract")
+    mech_core::maintained_operation_contract("matrix/matmul", 2, matrix)
+        .expect("maintained product contract")
 }
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
