@@ -3908,10 +3908,16 @@ mod axis_tests {
 
     #[test]
     fn gpu_matrix_solve_rejects_singular_inputs_without_publishing() {
-        let source = "portable singular solve @compute\n\
+        let source = "GPU matrix solve\n\
+                      ===============================================================================\n\n\
+                      @worker := compute://worker/kernel{:write(input/coefficients), :write(input/rhs), :write(turn)}\n\
+                      @worker/input/coefficients <- [4f32 1f32; 2f32 3f32]\n\
+                      @worker/input/rhs <- [1f32; 2f32]\n\
+                      @worker/turn <- 1\n\n\
+                      portable singular solve @compute\n\
                       -------------------------------------------------------------------------------\n\
-                      coefficients := source-coefficients\n\
-                      rhs := source-rhs\n\
+                      coefficients := [4f32 1f32; 2f32 3f32]\n\
+                      rhs := [1f32; 2f32]\n\
                       ~result := [7f32; 8f32]\n\
                       result = coefficients \\ rhs\n\
                       result\n";
