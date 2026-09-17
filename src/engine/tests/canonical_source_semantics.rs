@@ -708,10 +708,15 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     };
     assert!(matches!(element.as_ref(), SchemaBody::FloatingPoint(_)));
     assert_eq!(dimensions[0], mech_core::DimensionExpr::Constant(1));
-    assert!(matches!(
-        dimensions[1],
-        mech_core::DimensionExpr::Parameter(_)
-    ));
+    assert_eq!(dimensions[1], mech_core::DimensionExpr::Constant(5));
+    let dynamic = CanonicalSourceFrontend
+        .compile_expression(&expression("start..=3"))
+        .unwrap();
+    let schema = dynamic
+        .schemas()
+        .get(dynamic.program().outputs[0].schema)
+        .unwrap();
+    assert!(!schema.dimension_parameters().is_empty());
     range
         .compile_artifact()
         .expect("typed range must be a canonical artifact input");
@@ -1041,17 +1046,27 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
         constrained_optional.code,
         "source-semantics/unsupported-kind-constraint"
     );
-    for source in ["matrix<[u64]>"] {
-        assert_eq!(
-            CanonicalSourceFrontend
-                .compile_expression(&expression(source))
-                .err()
-                .expect("unsupported composite annotations must be diagnosed")
-                .code,
-            "source-semantics/unsupported-kind-annotation",
-            "{source:?}",
-        );
-    }
+    let matrix = CanonicalSourceFrontend
+        .compile_expression(&expression("matrix<[u64]>"))
+        .expect("dimensionless matrix annotations retain independent extents");
+    let schema = matrix
+        .schemas()
+        .get(matrix.program().inputs[0].schema)
+        .unwrap();
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = schema.body()
+    else {
+        panic!("matrix annotation must retain its matrix schema");
+    };
+    assert_eq!(
+        element.as_ref(),
+        &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+    );
+    assert_eq!(dimensions.len(), 2);
+    assert_ne!(dimensions[0], dimensions[1]);
+    assert_eq!(schema.dimension_parameters().len(), 2);
 
     let promoted = CanonicalSourceFrontend
         .compile_expression(&expression("1u8 + 2u16"))
@@ -1572,10 +1587,7 @@ fn reviewed_source_kind_edges_match_operation_and_literal_contracts() {
     else {
         panic!("transposed range did not retain a matrix schema")
     };
-    assert!(matches!(
-        dimensions[0],
-        mech_core::DimensionExpr::Parameter(_)
-    ));
+    assert_eq!(dimensions[0], mech_core::DimensionExpr::Constant(2));
     assert_eq!(dimensions[1], mech_core::DimensionExpr::Constant(1));
     transposed_range
         .compile_artifact()
@@ -1938,7 +1950,7 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
 
     let parameterized_table = CanonicalSourceFrontend
         .compile_expression(&expression(
-            "╭──────────╮\n│ values   │\n├──────────┤\n│ (1..3)   │\n╰──────────╯",
+            "╭──────────╮\n│ values   │\n├──────────┤\n│ (a..3)   │\n╰──────────╯",
         ))
         .unwrap();
     let table_schema = parameterized_table
@@ -2022,7 +2034,7 @@ fn exact_table_columns_and_c32_are_first_class_source_schemas() {
 #[test]
 fn compound_and_maintained_operations_retain_exact_source_schemas() {
     let tuple = CanonicalSourceFrontend
-        .compile_expression(&expression("(1u8, (1..3))"))
+        .compile_expression(&expression("(1u8, (a..3))"))
         .unwrap();
     let tuple_schema = tuple
         .schemas()
@@ -2037,7 +2049,7 @@ fn compound_and_maintained_operations_retain_exact_source_schemas() {
     assert!(!tuple_schema.dimension_parameters().is_empty());
 
     let record = CanonicalSourceFrontend
-        .compile_expression(&expression("{values: (1..3), ready: true}"))
+        .compile_expression(&expression("{values: (a..3), ready: true}"))
         .unwrap();
     let record_schema = record
         .schemas()
@@ -2052,7 +2064,7 @@ fn compound_and_maintained_operations_retain_exact_source_schemas() {
     assert!(!record_schema.dimension_parameters().is_empty());
 
     let map = CanonicalSourceFrontend
-        .compile_expression(&expression("{1u8: (1..3), 2u8: (2..4)}"))
+        .compile_expression(&expression("{1u8: (a..3), 2u8: (b..4)}"))
         .unwrap();
     let map_schema = map.schemas().get(map.program().outputs[0].schema).unwrap();
     assert!(matches!(
@@ -2291,4 +2303,169 @@ fn the_source_semantic_module_has_no_aggregate_program_boundary() {
     let legacy_lower_path = ["document", "lower"].join("::");
     assert!(!source.contains(&legacy_lower_path));
     assert!(!source.contains("parser::parse("));
+}
+
+#[test]
+fn input_matrix_annotations_share_constraints_in_either_occurrence_order() {
+    for source in [
+        "(signal<[f64]>, signal<[f64]:2,3>)",
+        "(signal<[f64]:2,3>, signal<[f64]>)",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        assert_eq!(compiled.program().inputs.len(), 1);
+        let schema = compiled
+            .schemas()
+            .get(compiled.program().inputs[0].schema)
+            .unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+            panic!("matrix input lost its schema");
+        };
+        assert_eq!(
+            dimensions.as_ref(),
+            &[
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(3)
+            ]
+        );
+    }
+    for source in [
+        "(signal<[f64]>, signal<[u64]:2,3>)",
+        "(signal<[f64]:3,2>, signal<[f64]:2,3>)",
+    ] {
+        assert!(
+            CanonicalSourceFrontend
+                .compile_expression(&expression(source))
+                .is_err(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn absent_optional_matrix_annotations_have_valid_shape_witnesses() {
+    for source in ["_<[f64]?>", "_<([f64],[u8])?>"] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap();
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("absent value must be constant");
+        };
+        let value = compiled.constants().get(id).unwrap();
+        assert!(matches!(value.data(), ValueData::Option(None)));
+        compiled.compile_artifact().unwrap();
+        let schema = compiled.schemas().get(value.schema()).unwrap();
+        schema
+            .instantiate_shape(value.shape().parameter_values().to_vec().into_boxed_slice())
+            .unwrap();
+    }
+    CanonicalSourceFrontend
+        .compile_definition(&definition("x<[f64]?> := _"))
+        .unwrap();
+}
+
+#[test]
+fn matrix_bind_patterns_specialize_dimensions() {
+    for source in [
+        "[1.0 2.0] ? | y<[f64]> => y",
+        "[y | y<[f64]> <- {[1.0 2.0]}]",
+    ] {
+        CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+    }
+    assert!(
+        CanonicalSourceFrontend
+            .compile_expression(&expression("[1.0 2.0] ? | y<[u64]> => y"))
+            .is_err()
+    );
+}
+
+#[test]
+fn fixed_matrix_snapshots_bind_to_inferred_input_dimensions() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_core::{DimensionExpr, SchemaDraft, SchemaTableBuilder};
+    for (rows, columns) in [(2, 2), (1, 4), (3, 1)] {
+        let mut table = SchemaTableBuilder::new();
+        let handle = table
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Constant(columns),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = table.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let (table, _) = built.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                (0..rows * columns)
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&table))
+        .unwrap();
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression("matrix<[u64]>"))
+            .unwrap()
+            .bind_input_constants(&[(0, value)])
+            .unwrap();
+        assert!(compiled.program().inputs.is_empty());
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("bound input must become constant");
+        };
+        let value = compiled.constants().get(id).unwrap();
+        assert_eq!(value.shape().parameter_values(), &[rows, columns]);
+    }
+}
+
+#[test]
+fn static_output_projection_retains_state_dependencies_and_source_identity() {
+    use std::collections::BTreeSet;
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_planning_contract(
+            &document("unrelated := 7 + 8\n~answer := 40\nanswer += 2\nother := 9 + 10\n"),
+            std::sync::Arc::new(mech_core::FunctionCatalogBuilder::new().build().unwrap()),
+            Default::default(),
+            Default::default(),
+            &BTreeSet::new(),
+            &BTreeSet::from(["answer".to_owned()]),
+            &BTreeSet::new(),
+        )
+        .unwrap();
+    let original_count = compiled.program().nodes.len();
+    let compiled = compiled
+        .retain_static_outputs(&BTreeSet::from(["answer".to_owned()]))
+        .unwrap();
+    assert!(compiled.program().nodes.len() < original_count);
+    assert_eq!(compiled.program().outputs.len(), 1);
+    assert_eq!(compiled.source_map().outputs.len(), 1);
+    assert_eq!(
+        compiled.source_map().nodes.len(),
+        compiled.program().nodes.len()
+    );
+    assert_eq!(compiled.program().states.len(), 1);
+    compiled.compile_artifact().unwrap();
+    let empty = compiled.retain_static_outputs(&BTreeSet::new()).unwrap();
+    assert!(empty.program().nodes.is_empty());
+    assert!(empty.program().states.is_empty());
+    match empty.retain_static_outputs(&BTreeSet::from(["missing".to_owned()])) {
+        Ok(_) => panic!("missing output must fail"),
+        Err(error) => assert_eq!(error.code, "source-semantics/unknown-published-binding"),
+    }
 }
