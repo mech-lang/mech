@@ -1079,3 +1079,43 @@ and run the named interactive, compiler and module-index acceptance cells.
 Then publish the R21 slice on R20 without absorbing G22 browser work.
 
 **External blocker:** none. Checkpoint—not complete.
+
+
+## Current checkpoint — R23 canonical distribution closure published
+
+**Candidate:** R23 draft #881 is `codex/syntax-s8r23-distribution-closure` /
+`76dc984dc9071dac4cf149247e7999cf5f285d5c`, directly based on R22 draft
+#879 at `e760db1c593a7a9ddb9aabbf949ffa4dc131089f`. The pre-sync R23 work is
+preserved locally at `26dbfac06`; tree comparison established that the published
+R23 head contains that work plus the physical-deletion and canonical consumer
+migrations.
+
+**Completed:** the retired parser, legacy lowering and formatter authorities are
+physically absent. Remaining CLI format/run, serve, resolver, runtime profile,
+stdlib and presentation consumers use retained canonical documents. Served run
+roots publish canonical program bundles and dependencies/prose remain renderable
+without becoming implicit roots. Static formatting derives browser presentation
+addresses from retained syntax without enabling the semantic compiler. The
+syntax-only address list matches compiled canonical output anchors. The duplicate
+`productions.tsv` grammar authority and legacy/parity suites are removed with an
+explicit migration ledger. Exact-head focused evidence is: canonical browser
+address regression 1/1; formatter boundary 32/32; stock-shim contract 1/1; serve
+boundary 90/90 serial; migrated stdlib suites 18/18; reduced formatter and serve
+feature checks green; canonical grammar/dependency/rule/SCC generator checks and
+format/diff checks green.
+
+**Remaining:** finish R23 exact-head physical-deletion compilation and product
+probes, inspect focused CI and review without requesting a duplicate full matrix;
+then accepted R24 and R26 work. R25 remains assigned to another agent and must be
+stacked when accepted. After the accepted queue is assembled, the designated C
+candidate still requires deleted-parser product probes, one stable exact-head
+full qualification, protected merge, and post-merge verification.
+
+**Current action:** run the remaining exact-head physical-deletion compile gates
+and product probes on #881 while focused CI starts.
+
+**Next action:** fix any demonstrated R23 owner failure once, publish the amended
+head, then advance to the next dependency-ready accepted boundary without
+absorbing R25.
+
+**External blocker:** none. Checkpoint—not complete.
