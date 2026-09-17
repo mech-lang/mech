@@ -2,69 +2,53 @@
 
 ## Live landing checkpoint — 2026-09-17
 
-**Candidate:** `codex/syntax-s8r06-logical-activation-facts` /
-`8a2878f5796448055c6bb31adf5afa1a96871175`, published as draft #884 on
-R02 `876c434f5d1b517bd187ebe20afbcabe66e57241`. This is the current accumulated
-implementation head through R06. The designated landing branch remains
-`codex/syntax-s8c-cutover`; it is deliberately not treated as current or
-qualified until the remaining accepted corrections are incorporated and it is
-rebuilt from this stack.
+**Candidate:** `codex/syntax-s8r26-canonical-compute-lowering` /
+`45eeb5dbb8e43c8b44057cef335c94e19867f402`, published as draft #885 on
+R06 `8a2878f5796448055c6bb31adf5afa1a96871175`. This is the current accumulated
+implementation head through R26, excluding separately owned R25. The designated
+landing branch remains `codex/syntax-s8c-cutover`; it must be rebuilt with the
+accepted R25 and R26 heads before it becomes the qualification candidate.
 
-**Completed:** 24 numbered correction boundaries are published: R01-R14 except
-R15, and R16-R25. R25 remains owned by the separate review worker. R08 now
-owns runtime-sized promoted assignment inputs without introducing a second
-dense-access implementation; R07 remains the single generalized dense-to-
-snapshot access path. R09 retains all 17 accepted R07 live-layout regressions
-while adding its comprehension storage implementation. The resulting canonical
-document-state suite executes 104 tests and passes 104.
+**Completed:** all 25 v0.4 correction boundaries are implemented and published;
+R15 constrained/interval units remains explicitly deferred to post-v0.4 issue
+#865. R26 removes the `matrix/multiply` compatibility identity from the artifact,
+maintained contract, resident registry, and matrix provider; canonical
+`matrix/matmul` is the single owner. The fixed-shape lowerer now owns static range
+selectors, same-representation conversions, tuple-member forwarding, and the
+shipped EKF's derived fixed-shape graph. The elementwise planner reuses state-write
+storage when a canonical tuple publication is exactly a recurrence update, keeping
+the shipped particle kernel inside the guaranteed WebGPU storage-buffer budget.
+The maintained EKF and particle product oracles now enter through retained source
+documents rather than deleted tree APIs.
 
-R10's structural-match integration exposed and fixed one accumulated-build
-defect: its production schema-context calls now retain the R09 schema-owner
-walker in non-test builds. That owner fix is propagated through R24. Exact R23
-evidence passes the compatibility closure contract and 10/10 checker tests, the
-canonical artifact source/bytecode roundtrip, the deleted-parser WASM target,
-and the full `resident_external_test_support` runtime profile: 682/682 tests,
-including the 4,096-turn product N-body and public N-body viewer probes. R24's
-Index range source/decoded acceptance executes 3/3 tests and passes exact
-endpoint, increment, overflow, and live-endpoint boundaries. No canceled or
-zero-test command is counted as passing evidence. R02 closes all 25 G02 target
-cells through the shared canonical snapshot arithmetic, reduction, and matrix-
-product owners. Its focused source/decoded suite passes 4/4 and canonical
-document state passes 104/104; full-feature and reduced resident engine checks
-also pass. The broader engine unit profile now compiles after repairing one
-accumulated test fixture and passes 442/444. Its two failures remain assigned to
-the comprehension component-addressability and selected-match budget owners;
-they are not counted as R02 success. R06 derives a fixed logical-mask population
-only for finite closed constant comparisons, using the canonical comparison and
-broadcasting semantics; arbitrary live nodes are never executed during planning.
-Its source/decoded acceptance passes 3/3 across the comparison family, matrix and
-scalar broadcasting, explicit live-mask facts, same-population changes and atomic
-rejection. Existing mask review tests pass 5/5, exact Q09 passes 1/1, canonical
-document state remains 104/104, and full-source plus reduced artifact engine
-checks pass. The strict ad-hoc Clippy invocation remains blocked by 839 existing
-`mech-core` warnings; it is not counted as passing evidence.
+Exact R26 evidence passes the shipped source/decoded EKF witness 1/1, the maintained
+CPU/WebGPU EKF matrix 22/22, the maintained CPU/WebGPU particle matrix 30/30, native
+GPU library tests 50/50, canonical document state 104/104, canonical source review
+31/31, and the core type-system catalog 26/26. Formatting and diff checks pass. The
+full-distribution numeric-capability probe fails at the pre-existing
+`matrix/dot`/`r64` expectation on both R26 and its unchanged R06 parent, before the
+matmul assertion; it is recorded as accumulated qualification debt and is not
+counted as R26 success. No canceled or zero-test command is counted as evidence.
 
-**Remaining:** implement accepted v0.4 R26 canonical compute lowering. R15
-interval/constrained units remains deferred to post-v0.4 in issue #865. Required
-slice reviews and focused CI remain open. Resolve the two newly executable
-accumulated engine-unit failures in their existing owners. After the two
-implementation owners are accepted, rebuild the designated C candidate,
-run product probes after each coherent batch, hold one exact C SHA for full
-qualification, fix failures in their owners, complete protected review/merge,
-and verify the landed target.
+**Remaining:** obtain focused review for R26 #885 and preserve the separately owned
+R25 review boundary. Assemble exact R25 and R26 into the designated C candidate,
+run the configured deleted-parser CPU/WebGPU product probes on that head, and fix
+any combined failure in its owner. Resolve the two accumulated engine-unit failures
+in their existing owners and reconcile the inherited full-distribution
+`matrix/dot`/`r64` contract expectation. Then hold one exact C SHA for full
+qualification, complete protected review/merge, and verify the landed target.
 
-**Current action:** start R26 from exact R06. Reproduce G29 through the portable
-fixed-shape lowering API, reconcile the canonical operation and storage handoff
-in its existing owner, and preserve transactional integrity and unsupported-
-target negatives.
+**Current action:** assemble the accepted R25 and R26 implementation heads into
+`codex/syntax-s8c-cutover` without changing their review diffs, then run the
+single-lane CPU EKF probe followed by the maintained CPU/WebGPU product matrix.
 
-**Next action:** create the R26 branch/worktree on `8a2878f57`, establish the
-maintained single-lane CPU EKF failure and a direct source/decoded lowering
-witness, then fix each demonstrated handoff class once in the canonical portable
-lowerer before running the CPU/WebGPU product oracle.
+**Next action:** inspect the current remote R25 and C ancestry, rebuild C onto the
+accepted correction chain plus R26, publish the exact C SHA, and record the first
+combined product result before advancing any other correction.
 
-**External blocker:** none for R26, routine testing, rebasing, review
-response, or integration. No unresolved language decision is being requested.
+**External blocker:** none for routine integration, testing, review response, or
+rebasing. R25 remains assigned to its separate owner, but its published head is
+available for assembly. No unresolved language decision is being requested.
 
 **Status:** Checkpoint—not complete.
 
