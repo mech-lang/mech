@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0-S2 complete; S3 typed recursive syntax is next.
+Status: S0-S5 complete; S6 atomic Phase 2I activation is next.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -30,9 +30,10 @@ component contains 80 of the 211 unported rules. Phase 2I-C recognizes clean
 input for all 80 rules with the canonical event parser, but activates none of
 them. Those rows remain `unported` with no phase assignment.
 
-The component now has local malformed-input recovery for all 80 direct roots.
-It still lacks complete typed red-tree views, source-semantic handling,
-certification against the canonical contracts, and atomic registry activation.
+The component now has local malformed-input recovery, complete typed red-tree
+views, engine-owned source semantics, and canonical certification for all 80
+direct roots. The registry remains inactive until S6 performs the atomic status
+transition.
 
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping
