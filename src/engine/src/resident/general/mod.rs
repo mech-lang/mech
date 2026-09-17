@@ -3733,14 +3733,20 @@ fn build_layout(
                 SchemaBody::Matrix { element, dimensions }
                     if dimensions.len() == 2 && dense_resident_kind(element).is_some()
             ) && !has_fixed_shape;
-            let (kind, resident_shape) = if turn_shaped_binding && variable_dense_matrix {
-                // A middle-slice binding carries its live turn extent in the
-                // canonical snapshot; the scratch arena itself remains one
-                // fixed snapshot lane.
-                (ResidentValueKind::Snapshot, ResidentShape::SCALAR)
-            } else {
-                schema_layout(artifact, schema_id, &shape, has_fixed_shape, None)?
-            };
+            let turn_shaped_schema = schema
+                .schema()
+                .dimension_parameters()
+                .iter()
+                .any(|parameter| parameter.lifetime() == DimensionLifetime::Turn);
+            let (kind, resident_shape) =
+                if variable_dense_matrix && (turn_shaped_binding || turn_shaped_schema) {
+                    // A turn-shaped binding or operation local carries its live
+                    // extent in the canonical snapshot; the scratch arena itself
+                    // remains one fixed snapshot lane.
+                    (ResidentValueKind::Snapshot, ResidentShape::SCALAR)
+                } else {
+                    schema_layout(artifact, schema_id, &shape, has_fixed_shape, None)?
+                };
             let len = resident_shape
                 .len()
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;

@@ -56,9 +56,9 @@ allocation. Failed turns preserve published values and can recover on a smaller
 subsequent input. Pattern depth and generator nesting are bounded in artifacts;
 bytecode population limits apply before graph allocation.
 
-This remains an S4 increment. Comprehension composite bindings and yields,
-computed pattern evaluation blocks, control nested in or containing
-comprehensions, and FSM lowering still require implementation. Matches can nest
-in match bodies and guards, with at most eight declarations on a path.
-Unsupported cases remain explicit errors and do not count as executable
-completion evidence.
+The later S8 control revisions extend this S4 foundation with composite
+comprehension bindings and yields plus recursive match/comprehension operation
+bodies. Matches can nest in match bodies and guards, and either control form can
+contain the other, with at most eight declarations on a path. Computed pattern
+evaluation blocks and FSM lowering still require implementation. Unsupported
+cases remain explicit errors and do not count as executable completion evidence.

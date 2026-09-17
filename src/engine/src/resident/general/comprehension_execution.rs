@@ -62,6 +62,20 @@ fn allocation_capacity_bytes<T>(capacity: usize) -> Result<u64, ResidentKernelEr
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+fn retained_collection_draft_demand(
+    values: &Vec<ValueDataDraft>,
+    footprint: ValueFootprint,
+) -> Result<(u64, u64), ResidentKernelError> {
+    let bytes = allocation_capacity_bytes::<ValueDataDraft>(values.capacity())?
+        .checked_add(footprint.retained_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let nodes = footprint
+        .node_count
+        .checked_add(u64::from(values.capacity() > 0))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((bytes, nodes))
+}
+
 fn completed_set_shape_values(
     schema: &mech_core::Schema,
     data: &ValueDataDraft,
@@ -5480,7 +5494,11 @@ impl ReactiveInstance {
         for position in start..control.steps.len() {
             meter.charge_compute_work(1).map_err(fail)?;
             match &control.steps[position] {
-                ActivatedCollectionStep::Operation { node, work } => {
+                ActivatedCollectionStep::Operation {
+                    node,
+                    work,
+                    retained_locals,
+                } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
                     let kernel = if self.plan.pure_kernel_steps.is_some()
                         || matches!(
@@ -5494,7 +5512,7 @@ impl ReactiveInstance {
                     let output = kernel.and_then(|kernel| self.kernel_scratch_output_region(kernel));
                     let live_locals = self
                         .comprehension_live_local_footprint(
-                            &control.locals,
+                            retained_locals,
                             output,
                             kernel,
                             schemas,
@@ -5787,6 +5805,25 @@ mod tests {
                 .filter(|entry| !entry.tuple_children.is_empty())
                 .count() as u64
         );
+    }
+
+    #[test]
+    fn nested_control_live_demand_includes_the_retained_outer_draft() {
+        let mut values = Vec::<ValueDataDraft>::new();
+        values.try_reserve_exact(3).unwrap();
+        values.push(ValueDataDraft::String("retained".to_owned()));
+        let footprint = ValueFootprint {
+            encoded_bytes: 8,
+            retained_bytes: 4_096,
+            node_count: 5,
+        };
+
+        let (bytes, nodes) = retained_collection_draft_demand(&values, footprint).unwrap();
+        assert_eq!(
+            bytes,
+            (values.capacity() * core::mem::size_of::<ValueDataDraft>()) as u64 + 4_096
+        );
+        assert_eq!(nodes, 6);
     }
 
     #[test]

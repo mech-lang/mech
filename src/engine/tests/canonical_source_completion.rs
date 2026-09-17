@@ -448,6 +448,25 @@ fn comprehensions_execute_nested_canonical_control() {
 }
 
 #[test]
+fn parameterized_operation_over_nested_comprehension_activates() {
+    let source = "out := [[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    activate(
+        ReactiveInstanceId::new(0x557, 0),
+        &decoded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap_or_else(|error| {
+        panic!("turn-shaped ordinary-operation local must activate: {error:?}")
+    });
+}
+
+#[test]
 fn nested_comprehension_rejects_inconsistent_element_shapes_before_publish() {
     let source = "x := [[z | z <- [1 2], z <= item] | item <- [1 2]]";
     let artifact = compile(source).compile_artifact().unwrap();

@@ -15,6 +15,12 @@ pub enum ActivatedCollectionStep {
     Operation {
         node: ActivatedNodeIndex,
         work: u64,
+        /// Managed outer locals that remain allocated while this operation
+        /// executes but are neither inputs nor the output being replaced.
+        /// The operation's own memory facts account for consumed inputs and
+        /// its prior output; these unrelated locals must travel as additional
+        /// live demand.
+        retained_locals: Box<[ResidentRegion]>,
     },
     Filter(ResidentReadLocation),
 }
@@ -104,34 +110,38 @@ pub(super) fn all_local_definitions(
         control: &crate::ComprehensionDeclaration,
         output: &mut Vec<(bool, bool, u32, u32, SchemaId)>,
     ) {
-        for (local, (turn_shaped_binding, schema)) in
-            local_definitions(control).into_iter().enumerate()
-        {
-            let nested_control = control.steps.iter().find_map(|step| match step {
-                crate::ComprehensionStep::Operation(operation)
-                    if operation.local == local as u32 =>
-                {
-                    Some(&operation.body)
+        let mut next_local = 0u32;
+        for step in &control.steps {
+            match step {
+                crate::ComprehensionStep::Generator { pattern, .. } => {
+                    pattern.bindings(&mut |local, schema| {
+                        assert_eq!(local, next_local, "validated collection locals");
+                        output.push((false, true, control.id.0, local, *schema));
+                        next_local += 1;
+                    });
                 }
-                _ => None,
-            });
-            output.push((
-                false,
-                turn_shaped_binding
-                    || matches!(
-                        nested_control,
-                        Some(crate::ControlOperationBody::Comprehension(_))
-                    ),
-                control.id.0,
-                local as u32,
-                schema,
-            ));
-            match nested_control {
-                Some(crate::ControlOperationBody::Match(nested)) => append_match(nested, output),
-                Some(crate::ControlOperationBody::Comprehension(nested)) => {
-                    append_comprehension(nested, output)
+                crate::ComprehensionStep::Operation(operation) => {
+                    assert_eq!(operation.local, next_local, "validated collection locals");
+                    output.push((
+                        false,
+                        matches!(
+                            operation.body,
+                            crate::ControlOperationBody::Comprehension(_)
+                        ),
+                        control.id.0,
+                        operation.local,
+                        operation.schema,
+                    ));
+                    next_local += 1;
+                    match &operation.body {
+                        crate::ControlOperationBody::Match(nested) => append_match(nested, output),
+                        crate::ControlOperationBody::Comprehension(nested) => {
+                            append_comprehension(nested, output)
+                        }
+                        crate::ControlOperationBody::Operation { .. } => {}
+                    }
                 }
-                Some(crate::ControlOperationBody::Operation { .. }) | None => {}
+                crate::ComprehensionStep::Filter(_) => {}
             }
         }
     }
@@ -547,6 +557,16 @@ pub(super) fn bind_inner(
             }
         }
     };
+    let locals = locals(control)
+        .iter()
+        .enumerate()
+        .map(|(local, _)| {
+            layout.slots[layout.control_locals[&(owner, control.id.0, local as u32)]
+                .0
+                .get() as usize]
+                .region
+        })
+        .collect::<Box<[_]>>();
     let mut instructions = Vec::new();
     for step in &control.steps {
         match step {
@@ -611,6 +631,21 @@ pub(super) fn bind_inner(
                     .copied()
                     .map(port)
                     .collect::<Result<Vec<_>, _>>()?;
+                let input_reads = input_sources
+                    .iter()
+                    .copied()
+                    .map(|source| resolve_read(layout, source))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let retained_locals = locals
+                    .iter()
+                    .copied()
+                    .filter(|local| *local != output.region)
+                    .filter(|local| {
+                        !input_reads.iter().any(|read| {
+                            matches!(read, ResidentReadLocation::Scratch(region) if region == local)
+                        })
+                    })
+                    .collect::<Box<[_]>>();
                 let (reference, contract_id) = match &operation.body {
                     crate::ControlOperationBody::Operation {
                         operation,
@@ -647,15 +682,14 @@ pub(super) fn bind_inner(
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
+                            retained_locals,
                         });
                         continue;
                     }
                     crate::ControlOperationBody::Comprehension(nested) => {
                         let index = ActivatedNodeIndex(steps.len() as u32);
                         let start = reads.len() as u32;
-                        for input in &input_sources {
-                            reads.push(resolve_read(layout, *input)?);
-                        }
+                        reads.extend(input_reads.iter().copied());
                         steps.push(ActivatedTurnStep::Comprehension(std::sync::Arc::new(
                             ActivatedComprehensionNode {
                                 artifact_node: owner,
@@ -718,6 +752,7 @@ pub(super) fn bind_inner(
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
+                            retained_locals,
                         });
                         continue;
                     }
@@ -741,9 +776,7 @@ pub(super) fn bind_inner(
                     memory_plan,
                 ));
                 let start = reads.len() as u32;
-                for input in input_sources {
-                    reads.push(resolve_read(layout, input)?);
-                }
+                reads.extend(input_reads.iter().copied());
                 let mech_core::ResolvedOperationContract::Declared(contract) =
                     artifact.contracts().get(contract_id).unwrap()
                 else {
@@ -848,20 +881,14 @@ pub(super) fn bind_inner(
                 } else {
                     return Err(unsupported());
                 };
-                instructions.push(ActivatedCollectionStep::Operation { node: index, work });
+                instructions.push(ActivatedCollectionStep::Operation {
+                    node: index,
+                    work,
+                    retained_locals,
+                });
             }
         }
     }
-    let locals = locals(control)
-        .iter()
-        .enumerate()
-        .map(|(local, _)| {
-            layout.slots[layout.control_locals[&(owner, control.id.0, local as u32)]
-                .0
-                .get() as usize]
-                .region
-        })
-        .collect();
     let inputs = captures
         .iter()
         .copied()
@@ -1047,6 +1074,40 @@ mod tests {
         assert!(schema_adapting_pattern(&binding(tuple), &build.table));
         assert!(schema_adapting_pattern(&equal, &build.table));
         assert!(!schema_adapting_pattern(&binding(scalar), &build.table));
+    }
+
+    #[test]
+    fn comprehension_local_inventory_traverses_large_operation_lists_in_source_order() {
+        const OPERATION_COUNT: u32 = 4_096;
+        let schema = SchemaId::new(0);
+        let steps = (0..OPERATION_COUNT)
+            .map(|local| {
+                crate::ComprehensionStep::Operation(crate::ComprehensionOperation {
+                    local,
+                    body: crate::ControlOperationBody::Operation {
+                        operation: crate::OperationReference {
+                            module_path: Box::new([]),
+                            operation_name: "identity".to_owned(),
+                        },
+                        contract: mech_core::OperationContractId::new(0),
+                    },
+                    inputs: Box::new([]),
+                    schema,
+                })
+            })
+            .collect();
+        let control = crate::ComprehensionDeclaration {
+            id: crate::ControlBlockId(7),
+            kind: crate::ComprehensionKind::Matrix,
+            steps,
+            yield_value: crate::ComprehensionValue::Local(OPERATION_COUNT - 1),
+        };
+
+        let definitions = all_local_definitions(&control);
+        assert_eq!(definitions.len(), OPERATION_COUNT as usize);
+        for (local, definition) in definitions.into_iter().enumerate() {
+            assert_eq!(definition, (false, false, 7, local as u32, schema));
+        }
     }
 
     #[test]
