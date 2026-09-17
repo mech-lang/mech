@@ -28,7 +28,7 @@ PORTS = (
 
 SCC_OUTPUT = (
     REPOSITORY_ROOT
-    / "docs/design/grammar-audit/unported-sccs.tsv"
+    / "docs/design/grammar-audit/inactive-sccs.tsv"
 )
 
 PHASE_OUTPUT = (
@@ -134,7 +134,7 @@ class Analysis:
     components: tuple[tuple[str, ...], ...]
     component_ids: dict[tuple[str, ...], str]
     component_by_rule: dict[str, tuple[str, ...]]
-    unported_components: tuple[tuple[str, ...], ...]
+    inactive_components: tuple[tuple[str, ...], ...]
     recursive: dict[tuple[str, ...], bool]
     closure_components: frozenset[tuple[str, ...]]
     closure_rules: frozenset[str]
@@ -378,7 +378,7 @@ def analyze() -> Analysis:
         for component in components
     }
 
-    unported_components: list[tuple[str, ...]] = []
+    inactive_components: list[tuple[str, ...]] = []
     for component in components:
         inactive = tuple(
             member
@@ -398,7 +398,7 @@ def analyze() -> Analysis:
                 f"  active: {', '.join(active)}"
             )
         if inactive:
-            unported_components.append(component)
+            inactive_components.append(component)
 
     closure_rules = frozenset(
         name for name, row in ports.items() if row["phase"] == "2I"
@@ -466,7 +466,7 @@ def analyze() -> Analysis:
         components=components,
         component_ids=component_ids,
         component_by_rule=component_by_rule,
-        unported_components=tuple(unported_components),
+        inactive_components=tuple(inactive_components),
         recursive=recursive,
         closure_components=frozenset(closure_components),
         closure_rules=closure_rules,
@@ -492,7 +492,7 @@ def render_tsv(columns: list[str], rows: list[list[str]]) -> str:
 
 def render_scc_report(analysis: Analysis) -> str:
     rows: list[list[str]] = []
-    for component in analysis.unported_components:
+    for component in analysis.inactive_components:
         outgoing_components: set[str] = set()
         outgoing_active_rules: set[str] = set()
         for member in component:
@@ -557,16 +557,16 @@ def summary(analysis: Analysis) -> str:
         for row in analysis.ports.values()
         if row["syntax-status"] == "unported"
     )
-    recursive_unported = sum(
+    recursive_inactive = sum(
         analysis.recursive[component]
-        for component in analysis.unported_components
+        for component in analysis.inactive_components
     )
     return "\n".join(
         [
             f"canonical rules: {len(analysis.productions)}",
             f"unported rules: {unported_rules}",
-            f"unported SCCs: {len(analysis.unported_components)}",
-            f"recursive unported SCCs: {recursive_unported}",
+            f"inactive SCCs: {len(analysis.inactive_components)}",
+            f"recursive inactive SCCs: {recursive_inactive}",
             f"Phase 2I root: {PHASE_ROOT}",
             f"Phase 2I SCCs: {len(analysis.closure_components)}",
             f"Phase 2I rules: {len(analysis.closure_rules)}",
