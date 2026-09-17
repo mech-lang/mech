@@ -385,6 +385,10 @@ pub(crate) fn parse_parenthetical(parser: &mut Parser<'_>) -> Attempt<()> {
       let mut outcome = Attempt::Match(());
       if !parser.push_nesting() {
         nesting_limit(parser);
+        let _ = parser.consume_horizontal_space();
+        if parser.cursor().starts_with(")") {
+          let _ = parser.bump_bytes_token(1, SyntaxKind::RightParen);
+        }
       } else {
         let _ = parser.consume_horizontal_space();
         if at_expression_boundary(parser) || parser.cursor().starts_with(")") {

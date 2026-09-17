@@ -275,13 +275,52 @@ pub fn normalize_diagnostics(
   revision: Revision,
   nodes: &NodeIndex,
 ) -> Vec<NormalizedDiagnostic> {
-  let related_indices = store
+  normalize_diagnostic_indices(
+    store,
+    revision,
+    nodes,
+    &(0..store.len()).collect::<Vec<_>>(),
+  )
+}
+
+pub fn normalize_diagnostics_in_range(
+  store: &DiagnosticStore,
+  revision: Revision,
+  nodes: &NodeIndex,
+  range: TextRange,
+) -> Vec<NormalizedDiagnostic> {
+  let indices = store
     .iter()
     .enumerate()
-    .map(|(index, diagnostic)| (diagnostic.id, index))
-    .collect::<BTreeMap<_, _>>();
-  store
+    .filter_map(|(index, diagnostic)| {
+      let primary = diagnostic.primary.resolve(revision, nodes)?;
+      let belongs = if primary.is_empty() {
+        range.contains_inclusive(primary.start)
+      } else {
+        range.contains_range(primary)
+      };
+      belongs.then_some(index)
+    })
+    .collect::<Vec<_>>();
+  normalize_diagnostic_indices(store, revision, nodes, &indices)
+}
+
+fn normalize_diagnostic_indices(
+  store: &DiagnosticStore,
+  revision: Revision,
+  nodes: &NodeIndex,
+  indices: &[usize],
+) -> Vec<NormalizedDiagnostic> {
+  let related_indices = indices
     .iter()
+    .enumerate()
+    .map(|(normalized, original)| {
+      (store.diagnostics[*original].id, normalized)
+    })
+    .collect::<BTreeMap<_, _>>();
+  indices
+    .iter()
+    .map(|index| &store.diagnostics[*index])
     .map(|diagnostic| NormalizedDiagnostic {
       code: diagnostic.code.clone(),
       phase: diagnostic.phase,

@@ -11,6 +11,14 @@ pub struct CursorCheckpoint {
 pub struct Cursor<'a> {
   source: &'a TextSnapshot,
   offset: TextSize,
+  consume_end: TextSize,
+  context_end: TextSize,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ContextView<'a> {
+  source: &'a TextSnapshot,
+  offset: TextSize,
   end: TextSize,
 }
 
@@ -19,15 +27,25 @@ impl<'a> Cursor<'a> {
     Self {
       source,
       offset: TextSize::ZERO,
-      end: source.byte_len(),
+      consume_end: source.byte_len(),
+      context_end: source.byte_len(),
     }
   }
 
   pub fn for_range(source: &'a TextSnapshot, range: TextRange) -> Self {
+    Self::for_range_with_context(source, range, source.byte_len())
+  }
+
+  pub fn for_range_with_context(
+    source: &'a TextSnapshot,
+    range: TextRange,
+    context_end: TextSize,
+  ) -> Self {
     Self {
       source,
       offset: range.start,
-      end: range.end,
+      consume_end: range.end,
+      context_end,
     }
   }
 
@@ -36,11 +54,15 @@ impl<'a> Cursor<'a> {
   }
 
   pub fn end(&self) -> TextSize {
-    self.end
+    self.consume_end
+  }
+
+  pub fn context_end(&self) -> TextSize {
+    self.context_end
   }
 
   pub fn is_eof(&self) -> bool {
-    self.offset.0 >= self.end.0
+    self.offset.0 >= self.consume_end.0
   }
 
   pub fn checkpoint(&self) -> CursorCheckpoint {
@@ -54,16 +76,20 @@ impl<'a> Cursor<'a> {
   }
 
   pub fn byte(&self) -> Option<u8> {
-    (self.offset.0 < self.end.0)
+    (self.offset.0 < self.consume_end.0)
       .then(|| self.source.byte_at(self.offset))
       .flatten()
   }
 
   pub fn byte_at(&self, relative: u32) -> Option<u8> {
     let offset = TextSize(self.offset.0.checked_add(relative)?);
-    (offset.0 < self.end.0)
+    (offset.0 < self.consume_end.0)
       .then(|| self.source.byte_at(offset))
       .flatten()
+  }
+
+  pub fn context_byte_at(&self, relative: u32) -> Option<u8> {
+    self.context_view().byte_at(relative)
   }
 
   pub fn starts_with(&self, expected: &str) -> bool {
@@ -77,17 +103,24 @@ impl<'a> Cursor<'a> {
       .all(|(index, byte)| self.byte_at(index as u32) == Some(*byte))
   }
 
+  pub fn context_starts_with(&self, expected: &str) -> bool {
+    self.context_view().starts_with(expected)
+  }
+
   pub fn peek_char(&self) -> Option<char> {
-    let first = self.byte()?;
-    let width = utf8_width(first);
-    if width == 0 || self.offset.0.saturating_add(width as u32) > self.end.0 {
-      return None;
+    peek_char(self.source, self.offset, self.consume_end)
+  }
+
+  pub fn context_peek_char(&self) -> Option<char> {
+    self.context_view().peek_char()
+  }
+
+  pub fn context_view(&self) -> ContextView<'a> {
+    ContextView {
+      source: self.source,
+      offset: self.offset,
+      end: self.context_end,
     }
-    let mut bytes = [0_u8; 4];
-    for (index, slot) in bytes.iter_mut().take(width).enumerate() {
-      *slot = self.byte_at(index as u32)?;
-    }
-    str::from_utf8(&bytes[..width]).ok()?.chars().next()
   }
 
   pub fn bump_char(&mut self) -> Option<(char, TextRange)> {
@@ -98,14 +131,14 @@ impl<'a> Cursor<'a> {
         .offset
         .0
         .saturating_add(character.len_utf8() as u32)
-        .min(self.end.0),
+        .min(self.consume_end.0),
     );
     Some((character, TextRange::new(start, self.offset)))
   }
 
   pub fn bump_bytes(&mut self, count: u32) -> Option<TextRange> {
     let end = self.offset.0.checked_add(count)?;
-    if end > self.end.0 {
+    if end > self.consume_end.0 {
       return None;
     }
     let range = TextRange::new(self.offset, TextSize(end));
@@ -114,7 +147,7 @@ impl<'a> Cursor<'a> {
   }
 
   pub fn remaining(&self) -> TextSize {
-    self.end - self.offset
+    self.consume_end - self.offset
   }
 
   pub fn is_line_start(&self) -> bool {
@@ -127,6 +160,79 @@ impl<'a> Cursor<'a> {
       _ => false,
     }
   }
+}
+
+impl<'a> ContextView<'a> {
+  pub fn offset(self) -> TextSize {
+    self.offset
+  }
+
+  pub fn end(self) -> TextSize {
+    self.end
+  }
+
+  pub fn byte_at(self, relative: u32) -> Option<u8> {
+    let offset = TextSize(self.offset.0.checked_add(relative)?);
+    (offset.0 < self.end.0)
+      .then(|| self.source.byte_at(offset))
+      .flatten()
+  }
+
+  pub fn starts_with(self, expected: &str) -> bool {
+    if expected.len() > self.remaining().to_usize() {
+      return false;
+    }
+    expected
+      .as_bytes()
+      .iter()
+      .enumerate()
+      .all(|(index, byte)| self.byte_at(index as u32) == Some(*byte))
+  }
+
+  pub fn peek_char(self) -> Option<char> {
+    peek_char(self.source, self.offset, self.end)
+  }
+
+  pub fn at_relative(self, relative: u32) -> Option<Self> {
+    let offset = TextSize(self.offset.0.checked_add(relative)?);
+    (offset <= self.end).then_some(Self {
+      source: self.source,
+      offset,
+      end: self.end,
+    })
+  }
+
+  pub fn remaining(self) -> TextSize {
+    self.end - self.offset
+  }
+
+  pub fn is_line_start(self) -> bool {
+    if self.offset.0 == 0 {
+      return true;
+    }
+    match self.source.byte_at(TextSize(self.offset.0 - 1)) {
+      Some(b'\n') => true,
+      Some(b'\r') => self.byte_at(0) != Some(b'\n'),
+      _ => false,
+    }
+  }
+}
+
+fn peek_char(
+  source: &TextSnapshot,
+  offset: TextSize,
+  end: TextSize,
+) -> Option<char> {
+  let first = (offset < end).then(|| source.byte_at(offset)).flatten()?;
+  let width = utf8_width(first);
+  if width == 0 || offset.0.saturating_add(width as u32) > end.0 {
+    return None;
+  }
+  let mut bytes = [0_u8; 4];
+  for (index, slot) in bytes.iter_mut().take(width).enumerate() {
+    *slot = source.byte_at(TextSize(offset.0 + index as u32))?;
+  }
+  str::from_utf8(&bytes[..width]).ok()?.chars().next()
 }
 
 const fn utf8_width(first: u8) -> usize {

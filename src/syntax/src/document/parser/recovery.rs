@@ -190,7 +190,7 @@ fn should_stop(
         || parser.is_strong_document_boundary()
     }
     RecoveryClass::Paragraph => {
-      is_newline_start(parser.cursor()) || parser.is_fence_start()
+      is_newline_start(parser.cursor()) || parser.is_context_fence_start()
     }
     RecoveryClass::Fence => false,
   }
@@ -198,13 +198,42 @@ fn should_stop(
 
 pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
   let start = parser.offset();
-  let _ = skip_error(
-    parser,
-    RecoveryClass::MechItem,
-    "syntax/nesting-limit",
-    "syntax nesting limit reached",
-  );
+  let marker = parser.start();
+  let mut recovered = 0_u32;
+  let mut nested = 0_u32;
+  while !parser.is_eof() && recovered < parser.config().limits.max_recovery_bytes {
+    if nested == 0
+      && (parser.cursor().starts_with(")")
+        || parser.cursor().starts_with(";")
+        || parser.cursor().starts_with("--")
+        || parser.cursor().starts_with("//")
+        || is_newline_start(parser.cursor())
+        || parser.is_strong_document_boundary())
+    {
+      break;
+    }
+    let Some((character, range)) = parser.bump_char_raw() else {
+      break;
+    };
+    if character == '(' {
+      nested = nested.saturating_add(1);
+    } else if character == ')' {
+      nested = nested.saturating_sub(1);
+    }
+    recovered = recovered.saturating_add(range.len().0);
+    parser.token_with_flags(
+      token_kind_for_char(character),
+      range,
+      TokenFlags::ERROR,
+    );
+  }
+  if recovered >= parser.config().limits.max_recovery_bytes
+    && !parser.is_eof()
+  {
+    parser.halt();
+  }
   if start == parser.offset() {
+    marker.abandon(parser);
     let _ = insert_missing(
       parser,
       "syntax/nesting-limit",
@@ -212,5 +241,45 @@ pub(crate) fn nesting_limit(parser: &mut Parser<'_>) {
       ExpectedSyntax::Production(String::from("expression")),
       None,
     );
+    return;
   }
+  parser.stats_mut().recovery_bytes = parser
+    .stats()
+    .recovery_bytes
+    .saturating_add(u64::from(recovered));
+  let error = marker.complete_with_flags(parser, SyntaxKind::Error, NodeFlags::ERROR);
+  let range = TextRange::new(start, parser.offset());
+  let found = parser
+    .source()
+    .text(range)
+    .ok()
+    .map(|text| FoundSyntax {
+      kind: Some(SyntaxKind::Unknown),
+      text: Some(text),
+    });
+  let diagnostic = Diagnostic {
+    id: parser.next_diagnostic_id(),
+    code: DiagnosticCode::syntax("nesting-limit"),
+    phase: DiagnosticPhase::Syntax,
+    severity: Severity::Error,
+    rule: parser.current_rule(),
+    context: parser.current_context(),
+    primary: DiagnosticAnchor::Absolute {
+      revision: parser.source().revision(),
+      range,
+    },
+    labels: alloc::vec![],
+    expected: alloc::vec![],
+    found,
+    fixes: alloc::vec![],
+    related: alloc::vec![],
+    recovery: Some(RecoveryAction::Skip { range }),
+    tags: DiagnosticTags::NONE,
+    message: String::from("syntax nesting limit reached"),
+  };
+  parser.push_diagnostic(
+    diagnostic,
+    Some(error.position()),
+    TextRange::new(crate::document::TextSize::ZERO, range.len()),
+  );
 }
