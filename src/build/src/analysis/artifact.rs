@@ -1,8 +1,8 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    ApplicationRequirement, BindingId, FunctionCatalog, MResult, MechError, ReactiveInstanceId,
-    ResourceIntent,
+    ApplicationRequirement, BindingId, FunctionCatalog, MResult, MechError, NativeValueFeature,
+    ReactiveInstanceId, ResourceIntent, native_features_for_schema_body,
 };
 use mech_engine::{
     __resident::{ActivationFacts, CapturedValueInput, ResidentIntegrityMode, activate_external},
@@ -12,6 +12,56 @@ use mech_engine::{
 use crate::error::{NativeBuildErrorKind, native_build_error};
 
 use super::requirements::NativeBytecodeContractResolver;
+
+/// Exact Cargo features required to bind and execute one canonical artifact.
+///
+/// Artifact bytecode deliberately has no parallel legacy type or instruction
+/// table. Native planning therefore derives its value closure from the
+/// artifact schema arena and its gated resident closure from canonical
+/// operation identities.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub(crate) struct ArtifactNativeFeatureAnalysis {
+    pub value_features: Vec<String>,
+    pub engine_features: Vec<String>,
+}
+
+pub(crate) fn analyze_artifact_native_features(
+    artifact: &ProgramArtifact,
+) -> ArtifactNativeFeatureAnalysis {
+    let mut values = BTreeSet::new();
+    for entry in artifact.schemas().entries() {
+        native_features_for_schema_body(entry.schema().body(), &mut values);
+    }
+
+    let value_features = values
+        .into_iter()
+        .map(NativeValueFeature::cargo_feature)
+        .map(str::to_owned)
+        .collect();
+    let engine_features = artifact
+        .operation_references()
+        .into_iter()
+        .filter_map(|operation| {
+            required_resident_feature(&operation.module_path, &operation.operation_name)
+        })
+        .map(str::to_owned)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+
+    ArtifactNativeFeatureAnalysis {
+        value_features,
+        engine_features,
+    }
+}
+
+fn required_resident_feature(module_path: &[String], operation_name: &str) -> Option<&'static str> {
+    match (module_path, operation_name) {
+        ([module], _) if module == "convert" => Some("convert"),
+        ([module], _) if module == "table" => Some("table"),
+        _ => None,
+    }
+}
 
 /// Plans the external contracts carried by a canonical retained artifact.
 ///
@@ -156,4 +206,24 @@ fn artifact_error(reason: String) -> MechError {
         NativeBuildErrorKind::NativeProgramArtifactInvalid { reason },
         None,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn feature_gated_resident_modules_have_one_authoritative_mapping() {
+        let module = |name: &str| vec![name.to_owned()];
+
+        assert_eq!(
+            required_resident_feature(&module("convert"), "kind"),
+            Some("convert")
+        );
+        assert_eq!(
+            required_resident_feature(&module("table"), "left-outer-join"),
+            Some("table")
+        );
+        assert_eq!(required_resident_feature(&module("math"), "add"), None);
+    }
 }

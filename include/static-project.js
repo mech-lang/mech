@@ -47,7 +47,7 @@ async function readProjectSourceManifest(moduleUrl) {
   }
 
   if (
-    manifest?.version !== 3 ||
+    manifest?.version !== 4 ||
     !Array.isArray(manifest.roots) ||
     manifest.roots.length === 0 ||
     manifest.roots.some(root => typeof root !== "string") ||
@@ -57,6 +57,13 @@ async function readProjectSourceManifest(moduleUrl) {
         typeof source?.specifier !== "string" ||
         typeof source?.url !== "string" ||
         (source.documentUrl !== undefined && typeof source.documentUrl !== "string"),
+    ) ||
+    !Array.isArray(manifest.resolutions) ||
+    manifest.resolutions.some(
+      resolution =>
+        typeof resolution?.referrer !== "string" ||
+        typeof resolution?.specifier !== "string" ||
+        typeof resolution?.target !== "string",
     )
   ) {
     throw new Error("invalid project source manifest");
@@ -75,7 +82,9 @@ async function main() {
   if (
     typeof WasmProject.fromServedDocuments !== "function" ||
     typeof WasmProject.supportsServedAuthority !== "function" ||
-    WasmProject.supportsServedAuthority() !== true
+    WasmProject.supportsServedAuthority() !== true ||
+    typeof WasmProject.supportsServedDocumentResolutions !== "function" ||
+    WasmProject.supportsServedDocumentResolutions() !== true
   ) {
     throw new Error("static bundle WASM profile mismatch: rebuild with browser_project support");
   }
@@ -95,7 +104,13 @@ async function main() {
     throw new Error("static bundle is missing injected browser host authority");
   }
 
-  project = WasmProject.fromServedDocuments(config, sources, documents, manifest.roots);
+  project = WasmProject.fromServedDocuments(
+    config,
+    sources,
+    documents,
+    manifest.roots,
+    manifest.resolutions,
+  );
   project.start();
   running = true;
   requestAnimationFrame(frame);

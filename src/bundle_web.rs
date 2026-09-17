@@ -145,7 +145,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         .map(|path| resolve_config_path(&base_dir, path).canonicalize())
         .collect::<std::io::Result<BTreeSet<_>>>()?;
     let mut bundled_sources = Vec::with_capacity(options.source_paths.len());
-    let (resolver, documents) =
+    let (resolver, documents, resolutions) =
         planning::retained_sources(&options.source_paths, &base_dir, &project_dir)?;
     let mut compiler = crate::configured_browser_compiler_builder(
         &options.loaded_config.document.hosts,
@@ -234,9 +234,10 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
         })
         .collect::<Vec<_>>();
     let manifest = serde_json::to_vec(&serde_json::json!({
-      "version": 3,
+      "version": 4,
       "roots": roots,
       "sources": source_entries,
+      "resolutions": resolutions,
     }))
     .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
     fs::write(output_dir.join("_mech/project-sources.json"), manifest)?;
@@ -268,7 +269,10 @@ pub(crate) fn validate_static_bundle_wasm_package(path: &Path) -> MResult<()> {
     }
 
     let wrapper = fs::read_to_string(&js_path).map_err(|_| static_wasm_profile_error())?;
-    if !wrapper.contains("WasmProject") || !wrapper.contains("fromServedDocuments") {
+    if !wrapper.contains("WasmProject")
+        || !wrapper.contains("fromServedDocuments")
+        || !wrapper.contains("supportsServedDocumentResolutions")
+    {
         return Err(static_wasm_profile_error());
     }
 
@@ -734,6 +738,7 @@ mod tests {
     const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
   static fromServedDocuments() {}
   static supportsServedAuthority() { return true; }
+  static supportsServedDocumentResolutions() { return true; }
 }
 export default async function init() {}
 "#;
@@ -855,7 +860,7 @@ export default async function init() {}
     ) -> CanonicalProgramBundle {
         let project_dir = root.canonicalize().unwrap();
         let base_dir = loaded.base_dir.canonicalize().unwrap();
-        let (resolver, documents) =
+        let (resolver, documents, _) =
             planning::retained_sources(source_paths, &base_dir, &project_dir).unwrap();
         let runtime_config = crate::apply_runtime_config_patch(
             mech_runtime::RuntimeConfig::default(),
@@ -1337,6 +1342,30 @@ export default async function init() {}
     }
 
     #[test]
+    fn wasm_package_validator_rejects_missing_resolution_transport_capability() {
+        let root = temp_root("wasm-package-missing-resolutions");
+        let package = root.join("pkg");
+        fs::create_dir_all(&package).unwrap();
+        fs::write(
+            package.join("mech_wasm.js"),
+            r#"export class WasmProject {
+  static fromServedDocuments() {}
+  static supportsServedAuthority() { return true; }
+}
+"#,
+        )
+        .unwrap();
+        fs::write(package.join("mech_wasm_bg.wasm"), b"wasm").unwrap();
+
+        let error = format!(
+            "{:?}",
+            validate_static_bundle_wasm_package(&package).unwrap_err()
+        );
+        assert!(error.contains("static served-project support"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn wasm_package_incompatibility_leaves_output_untouched() {
         let root = temp_root("wasm-package-no-output");
         let loaded = write_demo_project(&root);
@@ -1394,12 +1423,14 @@ export default async function init() {}
         assert!(index.contains("src=\"./_mech/project.js\""));
         assert!(index.contains("window.__MECH_HOST_CONFIG"));
         assert!(bootstrap.contains("WasmProject.fromServedDocuments"));
+        assert!(bootstrap.contains("WasmProject.supportsServedDocumentResolutions"));
         assert!(bootstrap.contains("../pkg/mech_wasm.js"));
-        assert_eq!(manifest["version"], 3);
+        assert_eq!(manifest["version"], 4);
         assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
         assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");
         assert_eq!(manifest["sources"][0]["url"], "source/demo.mec");
         assert_eq!(manifest["sources"][0]["documentUrl"], "code/demo.mec");
+        assert_eq!(manifest["resolutions"], serde_json::json!([]));
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -1452,7 +1483,7 @@ export default async function init() {}
         let manifest: serde_json::Value =
             serde_json::from_slice(&fs::read(root.join("out/_mech/project-sources.json")).unwrap())
                 .unwrap();
-        assert_eq!(manifest["version"], 3);
+        assert_eq!(manifest["version"], 4);
         assert_eq!(manifest["roots"], serde_json::json!(["src/main.mec"]));
         assert!(
             manifest["sources"]
@@ -1467,6 +1498,14 @@ export default async function init() {}
                 .unwrap()
                 .iter()
                 .any(|source| source["specifier"] == "src/dep.mec")
+        );
+        assert_eq!(
+            manifest["resolutions"],
+            serde_json::json!([{
+                "referrer": "src/main.mec",
+                "specifier": "./dep.mec",
+                "target": "src/dep.mec",
+            }])
         );
         assert!(!manifest.to_string().contains("../"));
         fs::remove_dir_all(root).unwrap();

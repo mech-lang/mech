@@ -62,12 +62,12 @@ impl NativeApplicationBuilder {
             &self.environment.host_catalog,
             request.target.as_deref(),
         )?;
-        let artifact_program = if program.artifact.is_empty() {
+        let artifact_features = if program.artifact.is_empty() {
             program.validate_runtime_contracts_with(
                 &self.environment.function_catalog,
                 &mut native_resolver,
             )?;
-            false
+            None
         } else {
             let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
                 .map_err(|error| {
@@ -83,9 +83,11 @@ impl NativeApplicationBuilder {
                 &self.environment.function_catalog,
                 &mut native_resolver,
             )?;
-            true
+            Some(analysis::artifact::analyze_artifact_native_features(
+                &artifact,
+            ))
         };
-        let runtime_functions = if artifact_program {
+        let runtime_functions = if artifact_features.is_some() {
             Vec::new()
         } else {
             analysis::analyze_runtime_functions(
@@ -114,12 +116,19 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            core_features.extend(artifact.value_features.iter().cloned());
+        }
         core_features.insert("program".to_owned());
         let mut engine_features = runtime_types
             .cargo_features
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            engine_features.extend(artifact.value_features.iter().cloned());
+            engine_features.extend(artifact.engine_features.iter().cloned());
+        }
         // `mech-engine` retains dynamic row-vector construction through its
         // matrix-assignment implementation. A program that returns only a
         // `RowVectorD` therefore still needs this engine-internal closure;
@@ -142,6 +151,9 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            runtime_features.extend(artifact.value_features.iter().cloned());
+        }
         runtime_features.insert("runtime".to_owned());
         runtime_features.insert("string".to_owned());
         runtime_features.insert("resident-routing".to_owned());

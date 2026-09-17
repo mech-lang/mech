@@ -84,6 +84,11 @@ impl WasmProject {
         cfg!(feature = "served_project_authority")
     }
 
+    #[wasm_bindgen(js_name = supportsServedDocumentResolutions)]
+    pub fn supports_served_document_resolutions() -> bool {
+        cfg!(feature = "served_project_authority")
+    }
+
     #[wasm_bindgen(js_name = fromSources)]
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
@@ -158,13 +163,15 @@ impl WasmProject {
         sources: JsValue,
         documents: JsValue,
         roots: JsValue,
+        resolutions: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let document_map = source_map_from_js(documents)?;
         let roots = bundle_roots_from_js(roots)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
         replace_bundle_run_paths(&mut document, roots.clone())?;
-        Self::from_served_project_documents(document, source_map, document_map, roots)
+        Self::from_served_project_documents(document, source_map, document_map, roots, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -173,6 +180,7 @@ impl WasmProject {
         source_map: HashMap<String, String>,
         document_map: HashMap<String, String>,
         roots: Vec<String>,
+        resolutions: Vec<SourceResolutionEntry>,
     ) -> Result<WasmProject, JsValue> {
         let [root] = roots.as_slice() else {
             return Err(to_js_error(MechError::new(
@@ -189,7 +197,7 @@ impl WasmProject {
         })?;
         let payload = decode_document_payload(encoded)?;
         validate_document_payload(&payload, root, &source_map)?;
-        Self::from_served_project(document, source_map, Vec::new())
+        Self::from_served_project(document, source_map, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -5526,9 +5534,13 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_project_reports_served_authority_capability() {
+    fn wasm_project_reports_served_project_capabilities() {
         assert_eq!(
             WasmProject::supports_served_authority(),
+            cfg!(feature = "served_project_authority")
+        );
+        assert_eq!(
+            WasmProject::supports_served_document_resolutions(),
             cfg!(feature = "served_project_authority")
         );
     }
