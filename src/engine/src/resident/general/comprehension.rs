@@ -211,20 +211,35 @@ fn generator_element_schema(
     supported_pattern(pattern, element_schema, schemas).then_some(Some(element_schema))
 }
 
-fn structural_pattern<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+fn schema_adapting_pattern(
+    pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    let composite = |schema| {
+        schemas.get(schema).is_some_and(|schema| {
+            matches!(
+                schema.body(),
+                SchemaBody::Tuple(_) | SchemaBody::Matrix { .. }
+            )
+        })
+    };
     match pattern {
         crate::CollectionPattern::Tuple(_) | crate::CollectionPattern::Array { .. } => true,
-        crate::CollectionPattern::Wildcard
-        | crate::CollectionPattern::Bind { .. }
-        | crate::CollectionPattern::Equal(_) => false,
+        crate::CollectionPattern::Bind { schema, .. } => composite(schema.schema),
+        crate::CollectionPattern::Equal(value) => composite(value.schema),
+        crate::CollectionPattern::Wildcard => false,
     }
 }
 
-pub(super) fn uses_structural_patterns(control: &ActivatedComprehensionNode) -> bool {
+pub(super) fn uses_structural_patterns(
+    control: &ActivatedComprehensionNode,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
     control.steps.iter().any(|step| {
         matches!(
             step,
-            ActivatedCollectionStep::Generator { pattern, .. } if structural_pattern(pattern)
+            ActivatedCollectionStep::Generator { pattern, .. }
+                if schema_adapting_pattern(pattern, schemas)
         )
     })
 }
@@ -734,6 +749,54 @@ mod tests {
     }
 
     #[test]
+    fn root_composite_bindings_and_equalities_request_projection_planning() {
+        let mut builder = SchemaTableBuilder::new();
+        let tuple = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::Dynamic, SchemaBody::Dynamic].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let scalar = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let region = ResidentRegion {
+            kind: ResidentValueKind::Snapshot,
+            offset: 0,
+            len: 1,
+            shape: mech_core::ResidentShape::SCALAR,
+        };
+        let binding = |schema| crate::CollectionPattern::Bind {
+            local: 0,
+            schema: ActivatedPatternBinding { region, schema },
+        };
+        let equal = crate::CollectionPattern::Equal(ActivatedPatternValue {
+            location: ResidentReadLocation::Constant(region),
+            schema: tuple,
+        });
+
+        assert!(schema_adapting_pattern(&binding(tuple), &build.table));
+        assert!(schema_adapting_pattern(&equal, &build.table));
+        assert!(!schema_adapting_pattern(&binding(scalar), &build.table));
+    }
+
+    #[test]
     fn component_addressability_uses_canonical_parameter_numbering() {
         let component = |parameter| SchemaBody::Matrix {
             element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
@@ -788,7 +851,7 @@ mod tests {
             .into_boxed_slice(),
         );
 
-        let tuple = schemas.entries().next().unwrap().schema();
+        let tuple = schemas.get(root).unwrap();
         let SchemaBody::Tuple(components) = tuple.body() else {
             panic!("first schema is the tuple witness")
         };
