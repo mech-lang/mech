@@ -1,14 +1,12 @@
-//! Canonical pattern primitives introduced in Phase 2G.
-//!
-//! The candidate Phase 2I pattern parents compose these wildcard and spread leaves
-//! through `recursive_core::patterns`.
+//! Canonical pattern primitives entry points.
+//! Recognition runs through shared retained primitive phases.
+//! Candidate Phase 2I parents compose these leaves through recursive_core.
 
-use crate::document::{RuleId, SyntaxKind};
+use crate::document::RuleId;
 
 use super::super::Parser;
 use super::super::rule::rules;
-use super::base;
-use super::combinator::{self, Attempt};
+use super::combinator::Attempt;
 
 /// The Phase 2G pattern primitives.
 pub(crate) const PHASE_2G_PATTERN_RULES: &[RuleId; 2] = &[rules::WILDCARD, rules::SPREAD_OPERATOR];
@@ -27,32 +25,9 @@ pub(crate) fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Option<Attemp
     })
 }
 
-/// Parse the direct wildcard prefix. A following asterisk is deliberately
-/// left for the caller, matching the legacy prefix parser.
 pub(crate) fn parse_wildcard(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::WILDCARD, |parser| {
-        let wildcard = parser.start();
-        if !base::parse_rule(parser, rules::ASTERISK) {
-            wildcard.abandon(parser);
-            return Attempt::NoMatch;
-        }
-        wildcard.complete(parser, SyntaxKind::WildcardPattern);
-        Attempt::Matched
-    })
+    super::primitives::parse_rule(parser, rules::WILDCARD)
 }
-
-/// Parse either whitespace-aware spread terminal in its formal source order.
-///
-/// This rule is transparent: the fixed-terminal tokens remain directly in
-/// the lossless fragment without introducing a wrapper node.
 pub(crate) fn parse_spread_operator(parser: &mut Parser<'_>) -> Attempt {
-    combinator::transactional(parser, rules::SPREAD_OPERATOR, |parser| {
-        if base::parse_rule(parser, rules::SPREAD_OPERATOR_A)
-            || base::parse_rule(parser, rules::SPREAD_OPERATOR_U)
-        {
-            Attempt::Matched
-        } else {
-            Attempt::NoMatch
-        }
-    })
+    super::primitives::parse_rule(parser, rules::SPREAD_OPERATOR)
 }

@@ -51,30 +51,12 @@ pub(crate) fn fence_delimiter(cursor: &Cursor<'_>) -> Option<FenceStart> {
 }
 
 pub(crate) fn fence_delimiter_context(view: ContextView<'_>) -> Option<FenceStart> {
-    let mut relative = 0_u32;
-    while view
-        .at_relative(relative)
-        .and_then(ContextView::peek_char)
-        .is_some_and(is_horizontal_space)
-    {
-        relative = relative.saturating_add(
-            view.at_relative(relative)
-                .and_then(ContextView::peek_char)?
-                .len_utf8() as u32,
-        );
+    let mut probe = super::context_probe::FenceProbe::new();
+    let mut allowance = u64::MAX;
+    match probe.advance(view, true, &mut allowance) {
+        super::context_probe::Progress::Complete(result) => result,
+        _ => unreachable!("final context fence probe"),
     }
-    let lookahead = view.at_relative(relative)?;
-    let delimiter = if lookahead.starts_with("```") {
-        FenceDelimiter::Grave
-    } else if lookahead.starts_with("~~~") {
-        FenceDelimiter::Tilde
-    } else {
-        return None;
-    };
-    Some(FenceStart {
-        delimiter,
-        indentation_bytes: relative,
-    })
 }
 
 pub(crate) fn is_ul_subtitle(cursor: &Cursor<'_>) -> bool {
@@ -115,52 +97,12 @@ pub(crate) fn is_ul_subtitle(cursor: &Cursor<'_>) -> bool {
 }
 
 pub(crate) fn is_ul_subtitle_context(view: ContextView<'_>) -> bool {
-    if !view.is_line_start() {
-        return false;
+    let mut probe = super::context_probe::SubtitleProbe::new();
+    let mut allowance = u64::MAX;
+    match probe.advance(view, true, &mut allowance) {
+        super::context_probe::Progress::Complete(result) => result,
+        _ => unreachable!("final context subtitle probe"),
     }
-    let mut relative = 0_u32;
-    let mut count = 0_u32;
-    while let Some(character) = view
-        .at_relative(relative)
-        .and_then(ContextView::peek_char)
-        .filter(|character| character.is_alphanumeric())
-    {
-        count = count.saturating_add(1);
-        relative = relative.saturating_add(character.len_utf8() as u32);
-    }
-    let Some(dot) = view.at_relative(relative) else {
-        return false;
-    };
-    if count == 0 || !dot.starts_with(".") {
-        return false;
-    }
-    relative = relative.saturating_add(1);
-    relative = consume_horizontal_context(view, relative);
-    let title_start = relative;
-    relative = consume_until_newline_context(view, relative);
-    if relative == title_start {
-        return false;
-    }
-    let Some(after_title) = consume_newline_context(view, relative) else {
-        return false;
-    };
-    relative = after_title;
-    let mut dashes = 0_u32;
-    while view
-        .at_relative(relative)
-        .is_some_and(|lookahead| lookahead.starts_with("-"))
-    {
-        dashes = dashes.saturating_add(1);
-        relative = relative.saturating_add(1);
-    }
-    if dashes == 0 {
-        return false;
-    }
-    relative = consume_horizontal_context(view, relative);
-    consume_newline_context(view, relative).is_some()
-        || view
-            .at_relative(relative)
-            .is_some_and(|lookahead| lookahead.offset() == lookahead.end())
 }
 
 pub(crate) fn is_subtitle(cursor: &Cursor<'_>) -> bool {
@@ -447,36 +389,4 @@ fn consume_subtitle_segment(cursor: &mut Cursor<'_>) -> bool {
         let _ = cursor.bump_char();
     }
     consumed
-}
-
-fn consume_horizontal_context(view: ContextView<'_>, mut relative: u32) -> u32 {
-    while let Some(character) = view
-        .at_relative(relative)
-        .and_then(ContextView::peek_char)
-        .filter(|character| is_horizontal_space(*character))
-    {
-        relative = relative.saturating_add(character.len_utf8() as u32);
-    }
-    relative
-}
-
-fn consume_until_newline_context(view: ContextView<'_>, mut relative: u32) -> u32 {
-    while let Some(character) = view.at_relative(relative).and_then(ContextView::peek_char) {
-        if matches!(character, '\r' | '\n') {
-            break;
-        }
-        relative = relative.saturating_add(character.len_utf8() as u32);
-    }
-    relative
-}
-
-fn consume_newline_context(view: ContextView<'_>, relative: u32) -> Option<u32> {
-    let lookahead = view.at_relative(relative)?;
-    if lookahead.starts_with("\r\n") {
-        Some(relative.saturating_add(2))
-    } else if lookahead.starts_with("\r") || lookahead.starts_with("\n") {
-        Some(relative.saturating_add(1))
-    } else {
-        None
-    }
 }

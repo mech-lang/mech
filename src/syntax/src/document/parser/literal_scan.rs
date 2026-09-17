@@ -1,7 +1,7 @@
 //! Literal recognition keeps both Unicode cursors and comparison progress.
 //! Matching never treats a temporary source frontier as a final grapheme end.
-use super::grapheme_scan::{GraphemeScan, ScanProgress};
-use crate::document::{TextRange, TextSize, TextSnapshot};
+use super::grapheme_scan::{GraphemeScan, ScanProgress, ScanSource};
+use crate::document::{TextRange, TextSize};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum LiteralProgress {
@@ -48,18 +48,18 @@ impl<'l> LiteralScan<'l> {
         self.result = Some(result);
         LiteralProgress::Complete(result)
     }
-    pub fn advance(
+    pub fn advance<S: ScanSource + ?Sized>(
         &mut self,
-        source: &TextSnapshot,
+        source: &S,
         consume_end: TextSize,
         context_end: TextSize,
         final_input: bool,
         allowance: &mut u64,
     ) -> LiteralProgress {
         if consume_end > context_end
-            || context_end > source.byte_len()
-            || !source.is_char_boundary(consume_end)
-            || !source.is_char_boundary(context_end)
+            || context_end.to_usize() > source.len_bytes()
+            || !source.boundary(consume_end.to_usize())
+            || !source.boundary(context_end.to_usize())
             || self.final_context.is_some_and(|end| end != context_end)
         {
             return LiteralProgress::InvalidSource;
@@ -109,7 +109,7 @@ impl<'l> LiteralScan<'l> {
                 }
                 *allowance -= 1;
                 self.comparison_bytes += 1;
-                let byte = source.byte_at(actual.start + TextSize(self.compared));
+                let byte = source.scan_byte_at((actual.start + TextSize(self.compared)).to_usize());
                 let expected =
                     self.literal.as_bytes()[expected.start.to_usize() + self.compared as usize];
                 if byte != Some(expected) {
@@ -128,7 +128,7 @@ impl<'l> LiteralScan<'l> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::document::{DocumentId, Revision};
+    use crate::document::{DocumentId, Revision, TextSnapshot};
     use alloc::{string::String, vec::Vec};
     use unicode_segmentation::UnicodeSegmentation;
 

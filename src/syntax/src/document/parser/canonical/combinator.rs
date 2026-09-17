@@ -230,6 +230,10 @@ pub(crate) fn insert_missing(
     fix_text: Option<&str>,
 ) {
     let _ = recovery::insert_missing(parser, code, message, expected, token);
+    attach_missing_fix(parser, fix_text);
+}
+
+pub(crate) fn attach_missing_fix(parser: &mut Parser<'_>, fix_text: Option<&str>) {
     if let Some(text) = fix_text {
         let at = parser.offset();
         if let Some(diagnostic) = parser.last_diagnostic_mut() {
