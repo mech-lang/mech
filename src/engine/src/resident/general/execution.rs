@@ -1648,7 +1648,7 @@ impl ReactiveInstance {
                         {
                             return Err(fail());
                         }
-                        left.snapshot_eq(&self.plan.schemas, right, &self.plan.schemas)
+                        left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
                             .map_err(|_| fail())?
                     }
                     _ => return Err(fail()),
