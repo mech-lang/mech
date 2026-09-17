@@ -219,3 +219,16 @@ is not evidence that an artifact activates. The S4 regressions distinguish these
 boundaries from supported selection, construction, and matrix operations whose
 actual output values and changing input turns are tested. No production parser
 caller changes here; those remain S8 work.
+
+Computed mutable initialization is artifact-owned: SourceState retains its initial
+SourceValue, which becomes a constant or activation-slot initializer. The resident
+activation graph computes pure values once and copies them into managed state.
+Arithmetic, matrices, and earlier computed immutable bindings survive bytecode
+roundtrip. A live initializer is complete artifact semantics but receives a precise
+resident capability result before activation. No deferred initializer sidecar or
+frontend evaluator participates.
+
+Named call bindings use parameter metadata on the shared function type declaration.
+Maintained binary arithmetic declares left/right; names reorder semantic operands
+before overload selection. Unknown, duplicate, missing, and excess bindings fail
+with source anchors. Functions without name metadata require positional arguments.

@@ -95,6 +95,9 @@ pub struct FrozenEkfArtifactClosure {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrozenEkfArtifactClosureError {
+    UnsupportedControl {
+        node: NodeId,
+    },
     UnexpectedExecutableNode {
         node: NodeId,
         operation: crate::OperationReference,
@@ -158,9 +161,12 @@ impl FrozenEkfArtifactClosure {
         let mut output_by_operation = std::collections::BTreeMap::new();
 
         for node in artifact.nodes() {
+            let node = node
+                .as_operation()
+                .ok_or(FrozenEkfArtifactClosureError::UnsupportedControl { node: node.node })?;
             let declared = declared_contract(artifact, node.node, node.contract)?;
-            let inputs = node_inputs(artifact, node)?;
-            let outputs = node_outputs(artifact, node)?;
+            let inputs = node_inputs(artifact, &node)?;
+            let outputs = node_outputs(artifact, &node)?;
             if node.operation.module_path.as_ref() == ["resource", "read"]
                 && node.operation.operation_name == "read"
             {
@@ -236,7 +242,10 @@ impl FrozenEkfArtifactClosure {
                     .ok_or(FrozenEkfArtifactClosureError::InvalidStateUpdate)?;
                 let crate::InitializerReference::Constant(initializer) = target_declaration
                     .initializer
-                    .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?;
+                    .ok_or(FrozenEkfArtifactClosureError::InvalidInitializer)?
+                else {
+                    return Err(FrozenEkfArtifactClosureError::InvalidInitializer);
+                };
                 state_updates.push(FrozenEkfStateUpdate {
                     node: node.node,
                     target,
@@ -319,7 +328,7 @@ fn declared_contract<'a>(
 
 fn node_inputs(
     artifact: &ProgramArtifact,
-    node: &crate::NodeDeclaration,
+    node: &crate::OperationNodeView<'_>,
 ) -> Result<Box<[ArtifactSource]>, FrozenEkfArtifactClosureError> {
     artifact
         .bindings()
@@ -342,7 +351,7 @@ fn node_inputs(
 
 fn node_outputs(
     artifact: &ProgramArtifact,
-    node: &crate::NodeDeclaration,
+    node: &crate::OperationNodeView<'_>,
 ) -> Result<Box<[CellSlotId]>, FrozenEkfArtifactClosureError> {
     artifact
         .bindings()
@@ -477,7 +486,10 @@ fn validate_frozen_operation(
             FrozenEkfOperation::Kernel(_) => {
                 FrozenEkfArtifactClosureError::UnsupportedNodeContract {
                     node,
-                    contract: artifact.nodes()[node.get() as usize].contract,
+                    contract: artifact.nodes()[node.get() as usize]
+                        .as_operation()
+                        .ok_or(FrozenEkfArtifactClosureError::UnsupportedControl { node })?
+                        .contract,
                 }
             }
             FrozenEkfOperation::Predicate(_) => {
@@ -493,7 +505,10 @@ fn validate_frozen_operation(
             FrozenEkfOperation::Kernel(_) => {
                 FrozenEkfArtifactClosureError::UnsupportedNodeContract {
                     node,
-                    contract: artifact.nodes()[node.get() as usize].contract,
+                    contract: artifact.nodes()[node.get() as usize]
+                        .as_operation()
+                        .ok_or(FrozenEkfArtifactClosureError::UnsupportedControl { node })?
+                        .contract,
                 }
             }
             FrozenEkfOperation::Predicate(_) => {
@@ -1197,7 +1212,10 @@ mod tests {
             .filter(|slot| slot.role == crate::SlotRole::State)
             .map(|slot| {
                 let crate::InitializerReference::Constant(initializer) =
-                    slot.initializer.expect("state initializer");
+                    slot.initializer.expect("state initializer")
+                else {
+                    panic!("EKF requires a constant initializer")
+                };
                 value_f64s(artifact, initializer).expect("numeric state initializer")
             })
             .collect::<Vec<_>>();

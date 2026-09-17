@@ -1,6 +1,7 @@
 //! Deterministic, immutable semantic program artifacts.
 
 mod compiler;
+mod control;
 mod encoding;
 mod ir;
 mod model;
@@ -12,6 +13,7 @@ mod validation;
 mod bytecode;
 
 pub use self::compiler::*;
+pub use self::control::*;
 pub use self::ir::*;
 pub use self::model::*;
 pub use self::requirements::*;

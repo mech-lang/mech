@@ -1498,7 +1498,18 @@ result
 
     assert!(mixed.compute.interface.input_named("x").is_some());
     assert!(mixed.compute.artifact.nodes().iter().any(|node| {
-        node.operation.module_path.as_ref() == ["math"] && node.operation.operation_name == "mul"
+        node.as_operation()
+            .expect("ordinary fixture")
+            .operation
+            .module_path
+            .as_ref()
+            == ["math"]
+            && node
+                .as_operation()
+                .expect("ordinary fixture")
+                .operation
+                .operation_name
+                == "mul"
     }));
 }
 
@@ -1663,8 +1674,18 @@ fn compiled_conversion_executes_after_bytecode_round_trip() {
             });
         assert!(
             product.artifact().nodes().iter().any(|node| {
-                node.operation.module_path.as_ref() == ["convert"]
-                    && node.operation.operation_name == "kind"
+                node.as_operation()
+                    .expect("ordinary fixture")
+                    .operation
+                    .module_path
+                    .as_ref()
+                    == ["convert"]
+                    && node
+                        .as_operation()
+                        .expect("ordinary fixture")
+                        .operation
+                        .operation_name
+                        == "kind"
             }),
             "conversion instruction was not retained for {source_text}: {:?}",
             product.artifact().nodes(),
@@ -2084,8 +2105,18 @@ selected
         panic!("dynamic scalar access must remain resident")
     };
     assert!(execution.artifact.nodes().iter().any(|node| {
-        node.operation.module_path.as_ref() == ["access"]
-            && node.operation.operation_name == "index"
+        node.as_operation()
+            .expect("ordinary fixture")
+            .operation
+            .module_path
+            .as_ref()
+            == ["access"]
+            && node
+                .as_operation()
+                .expect("ordinary fixture")
+                .operation
+                .operation_name
+                == "index"
     }));
     assert!(matches!(
         execution.coordinator.instance().output_borrow(0),
@@ -3118,11 +3149,13 @@ fn resident_string_growth_rejection_preserves_publication_and_recovers_on_same_c
             })
             .into(),
         nodes: vec![SourceNode {
-            operation: OperationReference {
-                module_path: vec!["string".to_owned()].into(),
-                operation_name: "concat".to_owned(),
+            body: mech_engine::SourceNodeBody::Operation {
+                operation: OperationReference {
+                    module_path: vec!["string".to_owned()].into(),
+                    operation_name: "concat".to_owned(),
+                },
+                requirement: None,
             },
-            requirement: None,
             inputs: vec![SourceValue::Input(0), SourceValue::Input(1)].into(),
             outputs: vec![SourceNodeOutput::Derived { schema: string }].into(),
         }]
@@ -3246,11 +3279,13 @@ fn resident_canonical_import_allocation_failure_preserves_publication_and_retrie
             })
             .into(),
         nodes: vec![SourceNode {
-            operation: OperationReference {
-                module_path: vec!["math".to_owned()].into(),
-                operation_name: "add".to_owned(),
+            body: mech_engine::SourceNodeBody::Operation {
+                operation: OperationReference {
+                    module_path: vec!["math".to_owned()].into(),
+                    operation_name: "add".to_owned(),
+                },
+                requirement: None,
             },
-            requirement: None,
             inputs: vec![SourceValue::Input(0), SourceValue::Input(1)].into(),
             outputs: vec![SourceNodeOutput::Derived { schema: integer }].into(),
         }]
@@ -4128,10 +4163,14 @@ fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
         ))
         .unwrap();
     let outcome = runtime.drain_resident_host_inputs(64).unwrap();
-    assert!(matches!(
+    assert!(
+        matches!(
+            outcome.turn,
+            Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+        ),
+        "n-body turn was not accepted: {:?}",
         outcome.turn,
-        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
-    ));
+    );
 }
 
 #[derive(Clone, Debug)]

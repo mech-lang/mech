@@ -45,7 +45,13 @@ fn selection_semantics_preserve_element_geometry_and_chaining() {
     ] {
         let compiled = selected("a := [1 2; 3 4]", source);
         let node = compiled.program.nodes.last().unwrap();
-        assert_eq!(node.operation.canonical_name(), operation, "{source}");
+        assert_eq!(
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name(),
+            operation,
+            "{source}"
+        );
         let body = compiled
             .schemas
             .get(compiled.program.outputs[0].schema)
@@ -74,13 +80,12 @@ fn selection_semantics_preserve_element_geometry_and_chaining() {
                 "{source}"
             );
         }
-        assert!(
-            !compiled
-                .program
-                .nodes
-                .iter()
-                .any(|node| node.operation.canonical_name() == "access/index")
-        );
+        assert!(!compiled.program.nodes.iter().any(|node| {
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name()
+                == "access/index"
+        }));
         compiled.compile_artifact().unwrap();
     }
 }

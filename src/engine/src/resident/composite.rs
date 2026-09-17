@@ -491,7 +491,7 @@ fn resident_child_clone_cost(
     meter: &mut super::budget::ResidentBudgetMeter,
     input: ResidentValueRef<'_>,
     plan: &CompositeChildPlan,
-) -> Result<(usize, usize), ResidentKernelError> {
+) -> Result<(usize, usize, u64), ResidentKernelError> {
     let expected_len = if plan.input_is_matrix {
         if plan.snapshot_backed_matrix {
             1
@@ -507,12 +507,16 @@ fn resident_child_clone_cost(
     let container = expected_len
         .checked_mul(core::mem::size_of::<ValueData>())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let (payload, nodes) = match input {
+    let (payload, nodes, mut encoded_bytes) = match input {
         ResidentValueRef::Bool(values) => {
             if values.iter().any(|value| *value > 1) {
                 return Err(ResidentKernelError::InvalidInput);
             }
-            (values.len(), values.len())
+            (
+                values.len(),
+                values.len(),
+                super::budget::checked_u64(values.len())?,
+            )
         }
         ResidentValueRef::Index(values) => (
             values
@@ -520,6 +524,9 @@ fn resident_child_clone_cost(
                 .checked_mul(core::mem::size_of::<u64>())
                 .ok_or(ResidentKernelError::InvalidShape)?,
             values.len(),
+            super::budget::checked_u64(values.len())?
+                .checked_mul(8)
+                .ok_or(ResidentKernelError::InvalidShape)?,
         ),
         ResidentValueRef::F64(values) => (
             values
@@ -527,6 +534,9 @@ fn resident_child_clone_cost(
                 .checked_mul(core::mem::size_of::<f64>())
                 .ok_or(ResidentKernelError::InvalidShape)?,
             values.len(),
+            super::budget::checked_u64(values.len())?
+                .checked_mul(8)
+                .ok_or(ResidentKernelError::InvalidShape)?,
         ),
         ResidentValueRef::String(values) => {
             let payload = values.iter().try_fold(0usize, |bytes, value| {
@@ -534,16 +544,24 @@ fn resident_child_clone_cost(
                     .checked_add(value.len())
                     .ok_or(ResidentKernelError::InvalidShape)
             })?;
-            (payload, values.len())
+            let encoded = super::budget::checked_u64(values.len())?
+                .checked_mul(8)
+                .and_then(|headers| headers.checked_add(payload as u64))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            (payload, values.len(), encoded)
         }
         ResidentValueRef::Snapshot(values) => {
             let mut retained = 0usize;
             let mut nodes = 0usize;
+            let mut encoded = 0u64;
             for value in values {
                 let value = value.as_ref().ok_or(ResidentKernelError::InvalidInput)?;
                 let schemas = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
                 let footprint =
                     super::budget::measure_canonical_value_footprint(meter, value, &schemas)?;
+                encoded = encoded
+                    .checked_add(footprint.encoded_bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
                 retained = retained
                     .checked_add(checked_cost_usize(footprint.retained_bytes)?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
@@ -551,7 +569,7 @@ fn resident_child_clone_cost(
                     .checked_add(checked_cost_usize(footprint.node_count)?)
                     .ok_or(ResidentKernelError::InvalidShape)?;
             }
-            (retained, nodes)
+            (retained, nodes, encoded)
         }
     };
     let dynamic_overhead = if plan.dynamic {
@@ -574,6 +592,18 @@ fn resident_child_clone_cost(
     } else {
         0
     };
+    if plan.dynamic {
+        // Dynamic canonical values carry a presence tag, schema identity and
+        // shape/value envelope. Retained ValueData containers are not encoded.
+        encoded_bytes = encoded_bytes
+            .checked_add(1 + 32 + 8 + 5 + 8)
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    (plan.source.shape_instance.parameter_values().len() as u64).checked_mul(8)?,
+                )
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    }
     Ok((
         container
             .checked_add(payload)
@@ -582,6 +612,7 @@ fn resident_child_clone_cost(
         nodes
             .checked_add(1 + usize::from(plan.dynamic))
             .ok_or(ResidentKernelError::InvalidShape)?,
+        encoded_bytes,
     ))
 }
 
@@ -661,6 +692,8 @@ fn composite_pack(
     let normalization_work = plan.normalization.compute_work;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let mut child_bytes = 0usize;
+    // Eight bytes conservatively cover the aggregate map length prefix.
+    let mut output_encoded_bytes = 8u64;
     let mut native_draft_bytes = 0usize;
     let mut native_value_bytes = 0usize;
     let mut key_bytes = 0usize;
@@ -673,11 +706,14 @@ fn composite_pack(
     );
     let mut staged_child_nodes = 0usize;
     for (index, child) in plan.children.iter().enumerate() {
-        let (bytes, nodes) = resident_child_clone_cost(
+        let (bytes, nodes, encoded_bytes) = resident_child_clone_cost(
             &mut footprint_meter,
             inputs.get(index).ok_or(ResidentKernelError::InvalidInput)?,
             child,
         )?;
+        output_encoded_bytes = output_encoded_bytes
+            .checked_add(encoded_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
         child_bytes = child_bytes
             .checked_add(bytes)
             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -720,7 +756,7 @@ fn composite_pack(
     let previous_footprint = target
         .as_ref()
         .map(|previous| {
-            super::budget::measure_canonical_value_footprint(
+            super::budget::published_canonical_footprint(
                 &mut footprint_meter,
                 previous,
                 &plan.schemas,
@@ -792,8 +828,9 @@ fn composite_pack(
         .checked_add(2)
         .ok_or(ResidentKernelError::InvalidShape)?;
     if let (Some(previous), Some(previous_footprint)) = (target.as_ref(), previous_footprint) {
-        // Output containers and child storage bound its complete payload walk;
-        // cached schema bytes and both value shapes are charged separately.
+        // Equality visits canonical payloads, not native allocation containers.
+        // Keep retained bytes for allocation admission and use the separately
+        // witnessed payload bound here; schema and shape work are additional.
         let equality_work = super::budget::projected_language_equality_work(
             &plan.schemas,
             previous,
@@ -801,7 +838,7 @@ fn composite_pack(
             plan.output.schema_id,
             plan.output.shape_instance.parameter_values().len(),
             mech_core::snapshot::ValueFootprint {
-                encoded_bytes: super::budget::checked_u64(output_bytes)?,
+                encoded_bytes: output_encoded_bytes,
                 retained_bytes: super::budget::checked_u64(output_bytes)?,
                 node_count: final_output_nodes,
             },

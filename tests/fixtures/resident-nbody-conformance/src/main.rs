@@ -1806,7 +1806,7 @@ fn state_slot_with_initial(artifact: &ProgramArtifact, first: f64) -> mech_core:
         .slots()
         .iter()
         .find_map(|slot| {
-            let mech_engine::InitializerReference::Constant(constant) = slot.initializer?;
+            let mech_engine::InitializerReference::Constant(constant) = slot.initializer? else { return None; };
             let value = artifact.constants().get(constant)?;
             let ValueData::Matrix(matrix) = value.data() else {
                 return None;

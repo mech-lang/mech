@@ -213,7 +213,11 @@ pub fn plan_program_memory_template(
                     .operation_descriptor()
                     .canonical_name
                     .as_ref()
-                    != node.operation.canonical_name()
+                    != node
+                        .as_operation()
+                        .ok_or(MemoryPlanError::DescriptorMismatch)?
+                        .operation
+                        .canonical_name()
                 {
                     return Err(MemoryPlanError::DescriptorMismatch);
                 }
@@ -1230,6 +1234,9 @@ fn slot_descriptor(
                 .constants()
                 .get(constant)
                 .map(|value| value.shape().clone()),
+            crate::InitializerReference::Activation(source) => {
+                artifact.slot_shape_hint(source).cloned()
+            }
         })
         .or_else(|| artifact.slot_shape_hint(slot).cloned())?;
     let schema = artifact.schemas().entry(schema)?.schema().clone();

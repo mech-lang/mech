@@ -56,7 +56,12 @@ fn collection_contracts_and_exact_schemas_reach_artifacts_without_providers() {
     ] {
         let compiled = compile(source);
         let node = compiled.program().nodes.last().unwrap();
-        assert_eq!(node.operation.canonical_name(), operation);
+        assert_eq!(
+            node.operation()
+                .expect("ordinary operation fixture")
+                .canonical_name(),
+            operation
+        );
         let contract = compiled.contracts().last().unwrap().as_ref().unwrap();
         assert_eq!(
             contract,

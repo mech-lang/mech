@@ -665,7 +665,10 @@ impl MechRuntime {
     ) -> MResult<ActivationFacts> {
         let mut facts = ActivationFacts::default();
         for node in artifact.nodes() {
-            let Some(requirement) = node.requirement else {
+            let Some(requirement) = node
+                .as_operation()
+                .and_then(|operation| operation.requirement)
+            else {
                 continue;
             };
             let Some(ApplicationRequirement::Resource(request)) =
