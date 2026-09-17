@@ -309,10 +309,15 @@ impl<'a> Parser<'a> {
             covered_end: self.covered_end,
             rule_depth: self.rules.len(),
             nesting: self.nesting,
+            recovery_bytes: self.stats.recovery_bytes,
+            halted: self.halted,
+            resource_diagnostic_emitted: self.resource_diagnostic_emitted,
+            resource_finalizing: self.resource_finalizing,
         }
     }
 
     pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint) {
+        let rewinding_recovery = self.stats.recovery_bytes > checkpoint.recovery_bytes;
         self.cursor.rewind(checkpoint.cursor);
         self.events.truncate(checkpoint.events);
         self.diagnostics.truncate(checkpoint.diagnostics);
@@ -320,6 +325,12 @@ impl<'a> Parser<'a> {
         self.covered_end = checkpoint.covered_end;
         self.rules.truncate(checkpoint.rule_depth);
         self.nesting = checkpoint.nesting;
+        self.stats.recovery_bytes = checkpoint.recovery_bytes;
+        if rewinding_recovery {
+            self.halted = checkpoint.halted || self.fuel == 0;
+            self.resource_diagnostic_emitted = checkpoint.resource_diagnostic_emitted;
+            self.resource_finalizing = checkpoint.resource_finalizing;
+        }
     }
 
     pub(crate) fn cache_clean_subtree(

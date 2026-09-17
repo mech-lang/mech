@@ -3,7 +3,9 @@ use crate::document::{RuleId, SyntaxKind};
 use super::super::super::Parser;
 use super::super::super::rule::rules;
 use super::super::{base, combinator};
-use super::{Attempt, child_result, expressions, nesting_limit};
+use super::{
+    Attempt, child_result, expressions, nesting_limit, recover_closer, recover_required_production,
+};
 
 pub(super) fn parse_argument_list(parser: &mut Parser<'_>) -> Attempt {
     argument_list(parser, rules::ARGUMENT_LIST, SyntaxKind::ArgumentList)
@@ -37,8 +39,23 @@ pub(super) fn parse_call_arg_with_binding(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let child = expressions::parse_expression(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::BoundCallArgument, child) {
-            return result;
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, SyntaxKind::BoundCallArgument);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rules::CALL_ARG_WITH_BINDING,
+                    "syntax/missing-bound-call-argument-value",
+                    "missing value for bound call argument",
+                    "expression",
+                );
+                node.complete(parser, SyntaxKind::BoundCallArgument);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, SyntaxKind::BoundCallArgument);
         Attempt::Matched
@@ -68,11 +85,22 @@ pub(super) fn argument_list(parser: &mut Parser<'_>, rule: RuleId, kind: SyntaxK
             if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
                 return Attempt::Matched;
             }
-            let first = call_argument(parser);
-            if first != Attempt::Matched {
-                return first;
+            let mut committed = false;
+            match call_argument(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rule,
+                        "syntax/missing-call-argument",
+                        "missing call argument",
+                        "call-arg",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
-            loop {
+            while !parser.is_halted() {
                 let pair = parser.checkpoint();
                 if !base::parse_rule(parser, rules::LIST_SEPARATOR) {
                     break;
@@ -80,16 +108,35 @@ pub(super) fn argument_list(parser: &mut Parser<'_>, rule: RuleId, kind: SyntaxK
                 match call_argument(parser) {
                     Attempt::Matched if parser.offset() > pair.cursor.offset => {}
                     Attempt::Matched | Attempt::NoMatch => {
-                        parser.rewind(pair);
-                        break;
+                        recover_required_production(
+                            parser,
+                            rule,
+                            "syntax/missing-call-argument",
+                            "missing call argument after separator",
+                            "call-arg",
+                        );
+                        committed = true;
                     }
-                    Attempt::Committed => return Attempt::Committed,
+                    Attempt::Committed => {
+                        committed = true;
+                    }
                 }
             }
             if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
-                Attempt::Matched
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::NoMatch
+                recover_closer(
+                    parser,
+                    rule,
+                    rules::RIGHT_PARENTHESIS,
+                    SyntaxKind::RightParen,
+                    ')',
+                    ")",
+                )
             }
         }) else {
             let result = nesting_limit(parser);

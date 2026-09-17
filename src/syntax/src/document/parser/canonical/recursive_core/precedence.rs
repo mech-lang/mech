@@ -5,7 +5,8 @@ use super::super::super::rule::rules;
 use super::super::super::{Parser, ParserCheckpoint};
 use super::super::{base, combinator, control_operators, operators};
 use super::{
-    Attempt, calls, child_result, expressions, literals, structures, subscripts, variables,
+    Attempt, calls, child_result, expressions, literals, recover_closer,
+    recover_required_production, recover_required_token, structures, subscripts, variables,
 };
 
 pub(super) struct FormulaSeed {
@@ -218,16 +219,37 @@ pub(super) fn parse_parenthetical_term(parser: &mut Parser<'_>) -> Attempt {
             if !base::parse_rule(parser, rules::SPACE_TAB0) {
                 return Attempt::NoMatch;
             }
-            let formula = expressions::parse_formula(parser);
-            if formula != Attempt::Matched {
-                return formula;
+            let mut committed = false;
+            match expressions::parse_formula(parser) {
+                Attempt::Matched => {}
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rules::PARENTHETICAL_TERM,
+                        "syntax/missing-parenthetical-expression",
+                        "missing expression after opening parenthesis",
+                        "formula",
+                    );
+                    committed = true;
+                }
+                Attempt::Committed => committed = true,
             }
-            if !base::parse_rule(parser, rules::SPACE_TAB0)
-                || !base::parse_rule(parser, rules::RIGHT_PARENTHESIS)
-            {
-                Attempt::NoMatch
+            let _ = base::parse_rule(parser, rules::SPACE_TAB0);
+            if base::parse_rule(parser, rules::RIGHT_PARENTHESIS) {
+                if committed {
+                    Attempt::Committed
+                } else {
+                    Attempt::Matched
+                }
             } else {
-                Attempt::Matched
+                recover_closer(
+                    parser,
+                    rules::PARENTHETICAL_TERM,
+                    rules::RIGHT_PARENTHESIS,
+                    SyntaxKind::RightParen,
+                    ')',
+                    ")",
+                )
             }
         }) else {
             super::nesting_limit(parser);
@@ -259,8 +281,23 @@ pub(super) fn parse_not_factor(parser: &mut Parser<'_>) -> Attempt {
             node.complete(parser, SyntaxKind::NotFactor);
             return Attempt::Committed;
         };
-        if let Some(result) = child_result(parser, node, SyntaxKind::NotFactor, child) {
-            return result;
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, SyntaxKind::NotFactor);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rules::NOT_FACTOR,
+                    "syntax/missing-unary-operand",
+                    "missing operand after unary operator",
+                    "factor",
+                );
+                node.complete(parser, SyntaxKind::NotFactor);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, SyntaxKind::NotFactor);
         Attempt::Matched
@@ -281,8 +318,23 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let pattern = super::patterns::parse_pattern(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::MatchArm, pattern) {
-            return result;
+        match pattern {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, SyntaxKind::MatchArm);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rules::MATCH_ARM,
+                    "syntax/missing-match-arm-pattern",
+                    "missing pattern after match arm guard",
+                    "pattern",
+                );
+                node.complete(parser, SyntaxKind::MatchArm);
+                return Attempt::Committed;
+            }
         }
         let guard = parser.checkpoint();
         if base::parse_rule(parser, rules::LIST_SEPARATOR)
@@ -298,12 +350,35 @@ pub(super) fn parse_match_arm(parser: &mut Parser<'_>) -> Attempt {
             }
         }
         if !base::parse_rule(parser, rules::OUTPUT_OPERATOR) {
-            node.abandon(parser);
-            return Attempt::NoMatch;
+            recover_required_token(
+                parser,
+                rules::MATCH_ARM,
+                "syntax/missing-match-arm-output-operator",
+                "missing output operator after match arm pattern",
+                SyntaxKind::OutputOperator,
+                "=>",
+            );
+            node.complete(parser, SyntaxKind::MatchArm);
+            return Attempt::Committed;
         }
         let child = expressions::parse_expression(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::MatchArm, child) {
-            return result;
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, SyntaxKind::MatchArm);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rules::MATCH_ARM,
+                    "syntax/missing-match-arm-value",
+                    "missing expression after match arm output operator",
+                    "expression",
+                );
+                node.complete(parser, SyntaxKind::MatchArm);
+                return Attempt::Committed;
+            }
         }
         let suffix = parser.checkpoint();
         if !base::parse_rule(parser, rules::WHITESPACE1)
@@ -426,7 +501,19 @@ fn seeded_precedence_level(
                 marker.complete(parser, kind);
                 return Attempt::Committed;
             }
-            Attempt::Matched | Attempt::NoMatch => return Attempt::NoMatch,
+            Attempt::Matched => return Attempt::NoMatch,
+            Attempt::NoMatch => {
+                let target = parser.current_rule().unwrap_or(rules::EXPRESSION);
+                recover_required_production(
+                    parser,
+                    target,
+                    "syntax/missing-operator-operand",
+                    "missing expression after operator",
+                    "expression",
+                );
+                marker.complete(parser, kind);
+                return Attempt::Committed;
+            }
             Attempt::Committed => {
                 marker.complete(parser, kind);
                 return Attempt::Committed;
@@ -491,7 +578,18 @@ fn precedence_level(
                     node.complete(parser, kind);
                     return Attempt::Committed;
                 }
-                Attempt::Matched | Attempt::NoMatch => return Attempt::NoMatch,
+                Attempt::Matched => return Attempt::NoMatch,
+                Attempt::NoMatch => {
+                    recover_required_production(
+                        parser,
+                        rule,
+                        "syntax/missing-operator-operand",
+                        "missing expression after operator",
+                        "expression",
+                    );
+                    node.complete(parser, kind);
+                    return Attempt::Committed;
+                }
                 Attempt::Committed => {
                     node.complete(parser, kind);
                     return Attempt::Committed;
@@ -536,8 +634,23 @@ fn unary_factor(
             node.complete(parser, kind);
             return Attempt::Committed;
         };
-        if let Some(result) = child_result(parser, node, kind, child) {
-            return result;
+        match child {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                recover_required_production(
+                    parser,
+                    rule,
+                    "syntax/missing-unary-operand",
+                    "missing operand after unary operator",
+                    "factor",
+                );
+                node.complete(parser, kind);
+                return Attempt::Committed;
+            }
         }
         node.complete(parser, kind);
         Attempt::Matched

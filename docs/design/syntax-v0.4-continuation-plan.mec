@@ -1,7 +1,7 @@
 Syntax v0.4 Continuation Plan
 ===============================================================================
 
-Status: S0 complete; S1 source-boundary work in progress.
+Status: S0-S2 complete; S3 typed recursive syntax is next.
 
 Planning baseline: `feature/syntax` at `4560e5e6c`, rebased onto
 `integration/v0.4` after the R1-R6 stack. Pull request 812 is green at this
@@ -30,9 +30,9 @@ component contains 80 of the 211 unported rules. Phase 2I-C recognizes clean
 input for all 80 rules with the canonical event parser, but activates none of
 them. Those rows remain `unported` with no phase assignment.
 
-The component still lacks local malformed-input recovery, complete typed
-red-tree views, source-semantic handling, certification against the canonical
-contracts, and atomic registry activation.
+The component now has local malformed-input recovery for all 80 direct roots.
+It still lacks complete typed red-tree views, source-semantic handling,
+certification against the canonical contracts, and atomic registry activation.
 
 The supported canonical roots are currently `Canonical + Grammar` and
 `Prototype + Document`. The shipping
@@ -186,6 +186,18 @@ Exit gate:
 - adversarial shared-prefix and nesting cases stay within documented bounds.
 
 All 80 registry rows remain inactive.
+
+Implementation record:
+
+- absent required syntax inserts one local `MISSING` node after commitment;
+- unexpected physical source is retained below `ERROR` and abandons to the
+  owning rule's delimiter or sibling boundary;
+- parenthesis, bracket, brace, call, slice, table, comprehension, record, map,
+  set, atom, and tuple-structure recovery preserve their selected form;
+- every direct rule has a lossless malformed case tied to the syntax schema;
+  and
+- fuel, nesting, event, diagnostic, and cumulative recovery-byte limits have
+  adversarial coverage.
 
 S3. Typed recursive syntax
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
