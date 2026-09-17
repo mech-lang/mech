@@ -89,3 +89,91 @@ fn session_work_limit_is_cumulative_and_separate_from_call_allowance() {
         );
     }
 }
+
+#[test]
+fn rejected_edits_are_atomic_and_do_not_scan_or_allocate_the_insertion() {
+    let mut stream = DocumentStream::with_limits(
+        DocumentId(826),
+        ParseConfig::default(),
+        StreamLimits {
+            max_source_bytes: 16,
+            ..StreamLimits::default()
+        },
+    );
+    stream.append("x := 1\n", 100_000).unwrap();
+    let identity = stream.identity();
+    let work = stream.work();
+    let insertion = "\n".repeat(1_000_000);
+    assert_eq!(
+        stream
+            .apply_edits(
+                &[TextEdit::replace(TextRange::empty(TextSize(0)), insertion)],
+                100_000
+            )
+            .unwrap_err(),
+        StreamError::SourceLimit
+    );
+    assert_eq!(stream.identity(), identity);
+    assert_eq!(stream.work(), work);
+    assert_eq!(stream.source().to_contiguous_string(), "x := 1\n");
+}
+
+#[test]
+fn preview_and_live_parsing_share_the_cumulative_session_budget() {
+    let limit = 128;
+    let mut stream = DocumentStream::with_limits(
+        DocumentId(826),
+        ParseConfig::default(),
+        StreamLimits {
+            max_parser_work: limit,
+            ..StreamLimits::default()
+        },
+    );
+    for _ in 0..8 {
+        if stream.state() == StreamState::Limited {
+            break;
+        }
+        stream.append("a", 1).unwrap();
+        let preview = stream.preview();
+        assert_eq!(
+            preview.snapshot.source.byte_len(),
+            stream.source().byte_len()
+        );
+        let work = stream.work();
+        assert!(work.parser_work + work.preview_parser_work <= limit);
+        stream.preview();
+        assert_eq!(stream.work(), work, "cached preview is free");
+    }
+    assert_eq!(stream.advance(1000).progress, StreamProgress::Limited);
+    assert_eq!(
+        stream.work().parser_work + stream.work().preview_parser_work,
+        limit
+    );
+}
+
+#[test]
+fn limited_export_changes_identity_and_updates_the_delta_baseline() {
+    let mut stream = DocumentStream::with_limits(
+        DocumentId(826),
+        ParseConfig::default(),
+        StreamLimits {
+            max_parser_work: 1,
+            ..StreamLimits::default()
+        },
+    );
+    stream.append("x := [1, 2", 1).unwrap();
+    let before = stream.advance(1).view;
+    let before_events = format!("{:?}", before.events().collect::<Vec<_>>());
+    stream.materialize().unwrap();
+    let after = stream.view();
+    assert_ne!(before.identity, after.identity);
+    assert_eq!(
+        before_events,
+        format!("{:?}", before.events().collect::<Vec<_>>())
+    );
+    let update = stream
+        .apply_edits(&[TextEdit::replace(TextRange::empty(TextSize(0)), "y")], 1)
+        .unwrap();
+    assert_eq!(update.syntax.old_len, after.event_count());
+    assert_eq!(update.diagnostics.old_len, after.diagnostic_count());
+}

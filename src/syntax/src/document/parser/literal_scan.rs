@@ -20,7 +20,9 @@ pub(crate) struct LiteralScan<'l> {
     expected_range: Option<TextRange>,
     actual_range: Option<TextRange>,
     compared: u32,
+    prefix_checked: bool,
     pub comparison_bytes: u64,
+    pub prefix_bytes: u64,
     matched_end: TextSize,
     result: Option<Option<TextSize>>,
 }
@@ -39,7 +41,9 @@ impl<'l> LiteralScan<'l> {
             expected_range: None,
             actual_range: None,
             compared: 0,
+            prefix_checked: false,
             comparison_bytes: 0,
+            prefix_bytes: 0,
             matched_end: start,
             result: None,
         })
@@ -60,6 +64,7 @@ impl<'l> LiteralScan<'l> {
             || context_end.to_usize() > source.len_bytes()
             || !source.boundary(consume_end.to_usize())
             || !source.boundary(context_end.to_usize())
+            || !source.boundary(self.matched_end.to_usize())
             || self.final_context.is_some_and(|end| end != context_end)
         {
             return LiteralProgress::InvalidSource;
@@ -83,6 +88,23 @@ impl<'l> LiteralScan<'l> {
                         return LiteralProgress::InvalidSource;
                     }
                 }
+            }
+            if !self.prefix_checked {
+                if *allowance == 0 {
+                    return LiteralProgress::NeedsProcessing;
+                }
+                *allowance -= 1;
+                self.prefix_bytes += 1;
+                let expected = self.expected_range.expect("expected grapheme");
+                if let Some(byte) = source.scan_byte_at(self.matched_end.to_usize()) {
+                    if !byte.is_ascii()
+                        && self.matched_end < consume_end
+                        && byte != self.literal.as_bytes()[expected.start.to_usize()]
+                    {
+                        return self.complete(None);
+                    }
+                }
+                self.prefix_checked = true;
             }
             if self.actual_range.is_none() {
                 match self
@@ -121,6 +143,7 @@ impl<'l> LiteralScan<'l> {
             self.actual_range = None;
             self.expected_range = None;
             self.compared = 0;
+            self.prefix_checked = false;
         }
     }
 }
@@ -133,7 +156,10 @@ mod tests {
     use unicode_segmentation::UnicodeSegmentation;
 
     fn work(scan: &LiteralScan<'_>) -> u64 {
-        scan.expected.work.calls + scan.actual.work.calls + scan.comparison_bytes
+        scan.expected.work.calls
+            + scan.actual.work.calls
+            + scan.comparison_bytes
+            + scan.prefix_bytes
     }
 
     fn drain(

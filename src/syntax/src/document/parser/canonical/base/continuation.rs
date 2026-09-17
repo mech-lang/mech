@@ -370,13 +370,14 @@ impl Continuation {
                 }
                 Frame::Raw(kind) => {
                     if parser.charge() {
-                        self.push(Frame::Grapheme(
-                            GraphemeScan::new(
-                                parser.offset(),
-                                final_input.then_some(parser.cursor().context_end()),
-                            ),
-                            kind,
-                        ));
+                        let end = final_input.then_some(parser.cursor().context_end());
+                        let scan = parser
+                            .state
+                            .grapheme_tail
+                            .take()
+                            .filter(|scan| scan.resumes_at(parser.offset(), end))
+                            .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
+                        self.push(Frame::Grapheme(scan, kind));
                     } else {
                         self.raw_range = None;
                         self.result = false;
@@ -392,10 +393,13 @@ impl Continuation {
                     );
                     self.work += before - *allowance;
                     match progress {
-                        ScanProgress::Grapheme(range) => self.push(Frame::GraphemeResult(
-                            (range.end <= parser.cursor().end()).then_some(range),
-                            kind,
-                        )),
+                        ScanProgress::Grapheme(range) => {
+                            parser.state.grapheme_tail = Some(scan);
+                            self.push(Frame::GraphemeResult(
+                                (range.end <= parser.cursor().end()).then_some(range),
+                                kind,
+                            ));
+                        }
                         ScanProgress::End => self.push(Frame::GraphemeResult(None, kind)),
                         ScanProgress::NeedInput | ScanProgress::NeedsProcessing => {
                             self.push(Frame::Grapheme(scan, kind));

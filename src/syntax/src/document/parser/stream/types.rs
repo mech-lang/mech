@@ -61,6 +61,7 @@ pub struct StreamWork {
     pub peak_source_pieces: usize,
     pub source_bytes_copied: u64,
     pub source_index_bytes: u64,
+    pub source_lookup_steps: u64,
     pub source_nodes_allocated: u64,
     pub source_node_body_bytes: u64,
     pub parser_work: u64,
@@ -80,6 +81,9 @@ pub struct StreamWork {
     pub discarded_entries: u64,
     pub publications: u64,
     pub preview_work: u64,
+    /// Preview continuation work shares max_parser_work with live parsing.
+    /// Already included in preview_work for total accounting.
+    pub preview_parser_work: u64,
     pub export_work: u64,
     pub full_document_restarts: u64,
     pub edit_restart_work: u64,
@@ -90,6 +94,7 @@ impl StreamWork {
     pub fn total(&self) -> u64 {
         self.source_bytes_copied
             .saturating_add(self.source_index_bytes)
+            .saturating_add(self.source_lookup_steps)
             .saturating_add(self.source_nodes_allocated)
             .saturating_add(self.parser_work)
             .saturating_add(self.journal_nodes_allocated)

@@ -17,18 +17,27 @@ impl StreamView {
         SyntaxKind::Document
     }
     pub fn completed_node(&self, event: usize) -> Option<crate::document::SyntaxNode> {
-        let Event::Start {
-            cached: Some(cached),
-            ..
-        } = self.events.get(event)?
-        else {
-            return None;
+        self.completed_node_with_work(event).0
+    }
+    /// Return a completed node and the actual retained-journal lookup steps.
+    /// This caller-requested work never mutates the live parser counters.
+    pub fn completed_node_with_work(
+        &self,
+        event: usize,
+    ) -> (Option<crate::document::SyntaxNode>, u64) {
+        let (entry, steps) = self.events.get_with_work(event);
+        let node = match entry {
+            Some(Event::Start {
+                cached: Some(cached),
+                ..
+            }) => Some(crate::document::SyntaxNode::new_root_at(
+                cached.node.clone(),
+                self.source.clone(),
+                cached.range.start,
+            )),
+            _ => None,
         };
-        Some(crate::document::SyntaxNode::new_root_at(
-            cached.node.clone(),
-            self.source.clone(),
-            cached.range.start,
-        ))
+        (node, steps + 1)
     }
     pub fn event_count(&self) -> usize {
         self.events.len()
