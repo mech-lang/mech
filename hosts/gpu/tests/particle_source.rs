@@ -573,9 +573,15 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     );
     let outputs = program.run_cpu(&inputs).expect("CPU backend must run");
 
-    let expected_velocities = [-0.045, -0.0225, 0.045, 0.0225, -0.09, -0.18, 0.09, 0.18];
+    // Host inputs, artifact snapshots and elementwise outputs share row-major
+    // order. Each component advances by v = -position * 0.5 * 0.1 * 0.9.
+    assert_eq!(
+        program.prepare_cpu(&inputs).unwrap().outputs().unwrap()["result.0"],
+        inputs["positions"]
+    );
+    let expected_velocities = [-0.045, 0.045, -0.09, 0.09, -0.0225, 0.0225, -0.18, 0.18];
     let expected_positions = [
-        0.9955, 0.49775, -0.9955, -0.49775, 1.991, 3.982, -1.991, -3.982,
+        0.9955, -0.9955, 1.991, -1.991, 0.49775, -0.49775, 3.982, -3.982,
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
@@ -1145,4 +1151,231 @@ fn maximum_absolute_error(actual: &[f32], expected: &[f32]) -> f32 {
         .zip(expected)
         .map(|(actual, expected)| (actual - expected).abs())
         .fold(0.0, f32::max)
+}
+
+#[test]
+fn canonical_compute_inputs_and_assignments_keep_source_names() {
+    for name in ["signal", "mech-source-input-78"] {
+        let source = format!(
+            "@worker := compute://worker/kernel{{:write(input/{name}), :write(turn)}}\n@worker/input/{name} <- 2f32\n@worker/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\n{name} := 1f32\n~total := 0f32\ncopy := {name}\ntotal = total + copy\ntotal\n",
+        );
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://canonical-ports",
+            mech_syntax::document::Revision(0),
+            std::sync::Arc::<str>::from(source),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let mixed = compiler().compile_mixed_document(&document).unwrap();
+        let inputs = BTreeMap::from([(name.to_owned(), vec![2.0])]);
+        let elementwise =
+            mech_gpu::lower_elementwise_compute_program(&mixed.compute.artifact).unwrap();
+        assert_eq!(elementwise.interface().inputs[0].name.as_ref(), name);
+        let kernel = mech_gpu::ElementwiseKernel::from_compute_program(&elementwise).unwrap();
+        assert_eq!(kernel.run_cpu(&inputs).unwrap()["result"], vec![2.0]);
+        for kernel in [
+            ComputeLowerer.compile(&mixed.compute.artifact).unwrap(),
+            ComputeLowerer.compile_cpu(&mixed.compute.artifact).unwrap(),
+        ] {
+            assert_eq!(kernel.run_cpu(&inputs).unwrap()["result"], vec![2.0]);
+        }
+    }
+}
+
+#[test]
+fn canonical_elementwise_matrices_preserve_initializer_and_constant_order() {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://canonical-matrix-order", mech_syntax::document::Revision(0),
+        std::sync::Arc::<str>::from("@worker := compute://worker/kernel{:write(turn)}\n@worker/turn <- 1\n\ncalculation @compute\n-------------------------------------------------------------------------------\n~matrix := [1f32 2f32 3f32; 4f32 5f32 6f32]\nmatrix = matrix + [10f32 20f32 30f32; 40f32 50f32 60f32]\nmatrix\n"),
+        mech_syntax::document::ParseConfig::default(),
+    ).unwrap();
+    let mixed = compiler().compile_mixed_document(&document).unwrap();
+    let program = mech_gpu::lower_elementwise_compute_program(&mixed.compute.artifact).unwrap();
+    let kernel = mech_gpu::ElementwiseKernel::from_compute_program(&program).unwrap();
+    let result = kernel.run_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(result["result"], vec![11.0, 22.0, 33.0, 44.0, 55.0, 66.0]);
+}
+
+fn canonical_particle_artifact(count: usize) -> mech_engine::ProgramArtifact {
+    let start = SERVED_PARTICLE_SOURCE
+        .find("particle-field @compute\n")
+        .unwrap();
+    let source = format!(
+        "+> math\n@particles := compute://particles/kernel{{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}}\n@particles/input/force-point <- [0f32; 0f32]\n@particles/input/force-strength <- 0f32\n@particles/input/dt <- 0.016666667<f32>\n@particles/turn <- 1\n\n{}",
+        SERVED_PARTICLE_SOURCE[start..].replace(
+            "particle-count := 1000000f32",
+            &format!("particle-count := {count}f32")
+        ),
+    );
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://canonical-particles",
+        mech_syntax::document::Revision(0),
+        std::sync::Arc::<str>::from(source),
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .unwrap();
+    compiler()
+        .compile_mixed_document(&document)
+        .unwrap()
+        .compute
+        .artifact
+}
+
+#[test]
+fn canonical_shipped_particle_region_reaches_compute_lowering() {
+    let artifact = canonical_particle_artifact(5);
+    let inputs = BTreeMap::from([
+        ("force-point".to_owned(), vec![0.0, 0.0]),
+        ("force-strength".to_owned(), vec![0.0]),
+        ("dt".to_owned(), vec![0.016666667]),
+    ]);
+    let kernel = ComputeLowerer
+        .compile_broadcast(&artifact, &inputs)
+        .unwrap();
+    let mut session = kernel.prepare_cpu(&inputs).unwrap();
+    session.dispatch_turns(1).unwrap();
+    assert!(
+        session
+            .state()
+            .values()
+            .flat_map(|values| values.iter())
+            .all(|value| value.is_finite())
+    );
+}
+#[test]
+fn canonical_activation_initializers_are_shared_and_run_only_once() {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://canonical-initializers",
+        mech_syntax::document::Revision(0),
+        std::sync::Arc::<str>::from("+> math\ninitialization @compute\n-------------------------------------------------------------------------------\nrow := math/mod(1f32..=3f32, 4f32)\ninitial := [row; row + 3f32]\n~first := initial\n~second := initial\nfirst = first + 10f32\nsecond = second - 1f32 + first * 0f32\n(first, second)\n"),
+        mech_syntax::document::ParseConfig::default(),
+    ).unwrap();
+    let product = compiler().compile_document(&document).unwrap();
+    let artifact = product.artifact();
+    let states = artifact
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+        .collect::<Vec<_>>();
+    assert_eq!(states.len(), 2);
+    let mut activation = mech_compute::ComputeActivationValues::new(artifact);
+    let first = activation.initializer(states[0].initializer).unwrap();
+    let second = activation.initializer(states[1].initializer).unwrap();
+    assert!(
+        std::sync::Arc::ptr_eq(&first, &second),
+        "shared dependency must be evaluated once"
+    );
+    assert_eq!(&*first, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    let inputs = BTreeMap::new();
+    for kernel in [
+        ComputeLowerer.compile(artifact).unwrap(),
+        ComputeLowerer.compile_cpu(artifact).unwrap(),
+    ] {
+        for (_, _, initializer) in kernel.state_initializers() {
+            assert_eq!(initializer, &*first);
+        }
+        let mut session = kernel.prepare_cpu(&inputs).unwrap();
+        session.dispatch_turns(2).unwrap();
+        let outputs = session.outputs().unwrap();
+        assert!(
+            outputs
+                .values()
+                .any(|value| value == &[21.0, 22.0, 23.0, 24.0, 25.0, 26.0])
+        );
+        assert!(
+            outputs
+                .values()
+                .any(|value| value == &[-1.0, 0.0, 1.0, 2.0, 3.0, 4.0])
+        );
+    }
+    let kernel = ComputeLowerer.compile_batched(artifact, 5).unwrap();
+    let mut session = kernel.prepare_cpu(&inputs).unwrap();
+    for slot in &states {
+        assert_eq!(
+            session.state()[&slot.slot],
+            [1.0, 4.0, 2.0, 5.0, 3.0, 6.0].repeat(5)
+        );
+    }
+    session.dispatch_turns(2).unwrap();
+    let mut simd = kernel.prepare_simd_cpu(&inputs).unwrap();
+    simd.dispatch_turns(2).unwrap();
+    assert_eq!(session.state(), simd.state());
+    #[cfg(feature = "jit")]
+    {
+        let mut jit = kernel.prepare_jit_cpu(&inputs).unwrap();
+        jit.dispatch_turns(2).unwrap();
+        assert_eq!(session.state(), jit.state());
+    }
+    match kernel.prepare_resident(&inputs) {
+        Ok(mut gpu) => {
+            let published = gpu.run_turns(2).unwrap().state;
+            assert_eq!(
+                published.len(),
+                kernel.compute_program().interface().outputs.len()
+            );
+            for (slot, values) in published {
+                assert_eq!(session.state()[&slot], values);
+            }
+        }
+        Err(mech_gpu::BatchedExecutionError::Native(detail))
+            if detail == "GPU adapter unavailable" => {}
+        Err(error) => panic!("computed-initializer GPU preparation failed: {error}"),
+    }
+    assert_eq!(
+        session.state()[&states[0].slot],
+        [21.0, 24.0, 22.0, 25.0, 23.0, 26.0].repeat(5)
+    );
+    assert_eq!(
+        session.state()[&states[1].slot],
+        [-1.0, 2.0, 0.0, 3.0, 1.0, 4.0].repeat(5)
+    );
+}
+
+#[test]
+fn canonical_particle_activation_scales_with_array_extent() {
+    for count in [5, 257, 16_384, 1_000_000] {
+        let artifact = canonical_particle_artifact(count);
+        let kernel = ComputeLowerer.compile_cpu(&artifact).unwrap();
+        let states = kernel.state_initializers().collect::<Vec<_>>();
+        assert_eq!(states.len(), 2);
+        for (_, elements, values) in &states {
+            assert_eq!(*elements, (2 * count) as u64);
+            assert!(values.iter().all(|value| value.is_finite()));
+        }
+        // Check independently calculated declaration values at both ends of
+        // the range. No recurrence turn may execute during activation.
+        for index in [0, count - 1] {
+            let ordinal = (index + 1) as f32;
+            let radius = 0.06 + ((ordinal * 12.9898).sin() * 0.5 + 0.5) * 0.86;
+            let angle = radius * 19.0 + (ordinal % 7.0) * 0.8975979;
+            let x = angle.cos() * radius;
+            let y = angle.sin() * radius;
+            assert!((states[0].2[index] - x).abs() < 1e-6);
+            assert!((states[0].2[count + index] - y).abs() < 1e-6);
+            assert!((states[1].2[index] + y * 0.66).abs() < 1e-6);
+            assert!((states[1].2[count + index] - x * 0.66).abs() < 1e-6);
+        }
+    }
+}
+
+#[test]
+fn canonical_activation_rejects_dependencies_on_recurrence_state() {
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://live-state-initializer", mech_syntax::document::Revision(0),
+        std::sync::Arc::<str>::from("~first := 1f32\n~second := first + 1f32\nfirst = first + 1f32\nsecond = second + 1f32\n(first, second)\n"),
+        mech_syntax::document::ParseConfig::default(),
+    ).unwrap();
+    let product = compiler().compile_document(&document).unwrap();
+    let error = ComputeLowerer.compile_cpu(product.artifact()).unwrap_err();
+    assert!(
+        error.to_string().contains("unavailable at activation"),
+        "{error}"
+    );
+    let error = ComputeLowerer
+        .compile_batched(product.artifact(), 1)
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("unavailable at activation"),
+        "{error}"
+    );
 }

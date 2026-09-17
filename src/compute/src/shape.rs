@@ -324,7 +324,7 @@ fn static_range_endpoint(artifact: &ProgramArtifact, source: ArtifactSource) -> 
     None
 }
 
-fn source_dimensions(
+pub(crate) fn source_dimensions(
     artifact: &ProgramArtifact,
     resolved: &BTreeMap<CellSlotId, Box<[u64]>>,
     source: ArtifactSource,
@@ -426,5 +426,46 @@ fn lowering_dimensions(lowering: ElementwiseLowering, inputs: &[Box<[u64]>]) -> 
                 ConcatenationAxis::Vertical => vec![varying, common].into_boxed_slice(),
             })
         }
+    }
+}
+
+pub fn concatenate_shapes(
+    axis: ConcatenationAxis,
+    input_dimensions: &[Vec<u64>],
+    output_dimensions: &[u64],
+) -> Option<(u64, u64, Vec<(u64, u64)>)> {
+    let (output_rows, output_columns) = two_dimensional_shape(output_dimensions)?;
+    let inputs = input_dimensions
+        .iter()
+        .map(|dimensions| two_dimensional_shape(dimensions))
+        .collect::<Option<Vec<_>>>()?;
+    if inputs.is_empty() {
+        return None;
+    }
+    let compatible = match axis {
+        ConcatenationAxis::Horizontal => {
+            inputs.iter().all(|(rows, _)| *rows == output_rows)
+                && inputs
+                    .iter()
+                    .try_fold(0_u64, |total, (_, columns)| total.checked_add(*columns))
+                    == Some(output_columns)
+        }
+        ConcatenationAxis::Vertical => {
+            inputs.iter().all(|(_, columns)| *columns == output_columns)
+                && inputs
+                    .iter()
+                    .try_fold(0_u64, |total, (rows, _)| total.checked_add(*rows))
+                    == Some(output_rows)
+        }
+    };
+    compatible.then_some((output_rows, output_columns, inputs))
+}
+
+fn two_dimensional_shape(dimensions: &[u64]) -> Option<(u64, u64)> {
+    match dimensions {
+        [] => Some((1, 1)),
+        [rows] => Some((*rows, 1)),
+        [rows, columns] => Some((*rows, *columns)),
+        _ => None,
     }
 }
