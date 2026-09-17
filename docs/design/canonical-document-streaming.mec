@@ -1,7 +1,8 @@
 Canonical Retained-Document Streaming — S7B
 ===============================================================================
 
-Status: B1 contract and S7A baseline. Streaming implementation and acceptance open.
+Status: B1 contract and baseline; B2 retained append storage and scanners.
+Canonical continuations, session publication, and streaming acceptance remain open.
 Baseline: S7A PR #825, 34cb58ad3e676723d7161ae52906395cdfaa83c0.
 Branch: codex/syntax-s7b-streaming, targeting codex/syntax-s7-document-root.
 
@@ -99,6 +100,79 @@ A non-append edit may invalidate continuations and use S7A's full canonical repa
 Invalidate suspended frames and provisional caches explicitly; establish valid
 streaming state before subsequent appends. Charge that restart and its reason.
 Arbitrary edits need correctness and accounting, not a sublinear guarantee.
+
+B2 storage checkpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TextSnapshot now stores pieces in a persistent ordered binary tree. Complete
+power-of-two left subtrees bound append path copying and byte/chunk/range lookup
+by tree depth. Sequential exports traverse the tree in linear time with a bounded
+stack and no traversal allocation. Text equality still allocates no memory.
+Line starts share the same storage mechanism; append scans only incoming bytes.
+A CR/LF split replaces the final line-start path without modifying prior views.
+Arbitrary edits may rebuild storage, then subsequent appends establish the exact
+new line-ending frontier. Empty append retains the original source revision.
+
+`TextSnapshot::append_with_work` reports new source bytes copied, new bytes scanned
+for line indexing, tree nodes allocated, and their body bytes. Allocator headers
+and caller-owned input construction are explicitly outside those byte fields.
+An allocation-probe regression checks actual allocations against the node counts
+and rejects historical-prefix copying through 16,384 retained pieces. The focused
+`document_streaming_storage` target tests scaling with every historical snapshot
+retained, as well as Unicode partitions and append/edit/append correctness.
+These storage counters do not yet account for parser or publication work.
+
+`LineIndex::line_starts` now explicitly exports a Vec rather than borrowing a flat
+slice. Normal line lookup uses retained storage; full export pays for the returned
+array. Source bytes, line order, typed syntax, and grammar inventory are unchanged.
+This source-storage checkpoint does not make DocumentSession parsing resumable.
+
+B2 Unicode scanner checkpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Canonical cursor grapheme reads now use a retained Unicode segmentation cursor.
+Open input retains an unfinished grapheme across appends, including unbounded
+combining sequences. Each allowance unit supplies at most a forward scalar and
+one preceding scalar (eight bytes) to the pinned Unicode implementation; requested
+backward context is supplied one scalar per charged call. Bounded overlap keeps
+regional-indicator state valid at chunk edges. Forward, lookbehind, and additional
+context bytes are separately counted; source-tree lookup work still needs the
+session-wide accounting introduced with the canonical continuation owner.
+
+No Unicode classification tables or grammar rules are duplicated. Final one-shot
+cursor reads exercise this implementation with final input; an open continuation
+reports NeedInput or NeedsProcessing separately. Tests cover every scalar split
+of CRLF, combining text, joined emoji, flags, and Indic conjuncts, plus one-step
+allowances and long unfinished grapheme growth. This primitive is not yet a
+retained string/identifier/fence parser: token phases, grammar frames, live events,
+and efficient provisional publication remain required before B2-B4 closeout.
+
+B2 literal scanner checkpoint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Canonical exact-literal reads now retain both the expected and source Unicode
+cursors, pending grapheme ranges, and byte-comparison offset. An allowance pays
+for individual bounded Unicode calls and compared bytes; a long combined
+literal cannot hide an unbounded expected-grapheme scan. The same scalar-only
+adapter serves piece-backed source and borrowed literals without copying either.
+Temporary input never completes an unresolved grapheme. Finalization is retained
+before a cached result can return, so subsequent source growth is rejected.
+
+Focused regressions compare every scalar cut and scalar-at-a-time input against
+an independent contiguous Unicode iterator, including operator prefixes, CRLF,
+combining marks, regional indicators, emoji joiners, and Indic sequences. They
+also enforce one-unit polls, zero-work yields, invalid UTF-8 bounds, repeated
+finish, and linear scanner work for growing long combined literals. Canonical
+cursor reads use this scanner with final input; parent token/rule phases still
+need conversion before ordinary document sessions can suspend on source input.
+
+B2 delimiter scanner
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Delimiter search retains literal probes and grapheme traversal across input
+frontiers and work yields. Its partition and growth tests live with the scanner;
+B3 attaches it to the production fence owner. The scalar/byte counters expose
+scanner work; full source-index and session accounting remain qualification work.
 
 5. Limits and deterministic accounting
 -------------------------------------------------------------------------------

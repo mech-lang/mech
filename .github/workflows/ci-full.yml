@@ -1088,7 +1088,7 @@ jobs:
           --no-default-features --test canonical_document_feature_gates
           --test canonical_document_incremental --test document_incremental
           --test document_incremental_properties --test document_change_map
-          --test document_streaming_complexity
+          --test document_streaming_complexity --test document_streaming_storage
 
       - name: Verify canonical document execution and rendered outputs
         run: >-

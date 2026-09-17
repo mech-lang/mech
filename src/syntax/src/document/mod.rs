@@ -20,6 +20,7 @@ pub mod lower;
 pub mod parser;
 pub mod pointer;
 pub mod red;
+mod retained_sequence;
 pub mod source;
 pub mod syntax_kind;
 

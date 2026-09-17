@@ -15,10 +15,15 @@ mod canonical_ports;
 mod canonical_rules;
 pub mod checkpoint;
 pub mod cursor;
+// B3 supplies the retained grammar owner for delimiter scanning.
+#[cfg(test)]
+mod delimiter_scan;
 pub mod document;
 pub mod event;
 pub mod fragment;
+mod grapheme_scan;
 pub mod limits;
+mod literal_scan;
 pub mod marker;
 pub mod mech;
 pub mod mechdown;
