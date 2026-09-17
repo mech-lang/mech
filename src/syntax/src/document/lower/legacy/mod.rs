@@ -13,6 +13,7 @@ mod pattern_primitives;
 mod source;
 mod source_imports;
 mod subscript_primitives;
+mod structure_shell;
 
 pub use base::{
     lower_legacy_digit_sequence, lower_legacy_escaped_character, lower_legacy_identifier,
@@ -68,4 +69,10 @@ pub use subscript_primitives::{
 };
 pub(crate) use subscript_primitives::{
     lower_phase_2g_subscript_value, LegacySubscriptPrimitiveValue,
+};
+pub use structure_shell::{
+    lower_legacy_empty_map, lower_legacy_empty_set, lower_legacy_table_row_separator,
+};
+pub(crate) use structure_shell::{
+    lower_phase_2h_structure_shell_value, LegacyStructureShellValue,
 };
