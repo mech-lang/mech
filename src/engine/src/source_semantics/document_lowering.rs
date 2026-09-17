@@ -3,7 +3,8 @@
 
 use mech_syntax::document::{
     CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation, CodeFenceScope,
-    EvalInlineMechCodeSyntax, OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
+    EvalInlineMechCodeSyntax, ExportDeclarationSyntax, OpAssignSyntax, SliceRefSyntax,
+    VariableAssignSyntax,
 };
 
 use super::*;
@@ -13,7 +14,20 @@ mod document_assignment;
 
 enum DocumentUnit {
     Statement(SyntaxNode),
+    Inline(EvalInlineMechCodeSyntax),
     Fence(CodeBlockSyntax, CodeFencePresentation, Vec<DocumentUnit>),
+}
+
+struct CompiledDocumentValue {
+    value: PendingValue,
+    syntax: SyntaxNode,
+    program_visible: bool,
+}
+
+struct DeferredInline {
+    inline: EvalInlineMechCodeSyntax,
+    captured: BTreeMap<String, PendingValue>,
+    waiting: BTreeSet<String>,
 }
 
 pub(super) fn compile_document(
@@ -21,9 +35,9 @@ pub(super) fn compile_document(
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let mut units = Vec::new();
-    let mut inline = Vec::new();
-    collect_document_units(document.syntax(), &mut units, &mut inline)?;
-    compile_collected_document(anchor, units, inline)
+    let mut exports = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut exports)?;
+    compile_collected_document(anchor, units, exports)
 }
 
 pub(super) fn compile_named_document_scope(
@@ -39,7 +53,7 @@ fn compile_named_scope(
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(root);
     let mut units = Vec::new();
-    let mut inline = Vec::new();
+    let mut exports = Vec::new();
     let mut pending = vec![root.clone()];
     while let Some(node) = pending.pop() {
         if matches!(
@@ -61,14 +75,14 @@ fn compile_named_scope(
                 )
             })?;
             let mut body_units = Vec::new();
-            collect_document_units(body.syntax(), &mut body_units, &mut inline)?;
+            collect_document_units(body.syntax(), &mut body_units, &mut exports)?;
             units.push(DocumentUnit::Fence(fence, presentation, body_units));
             continue;
         }
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
-    compile_collected_document(anchor, units, inline)
+    compile_collected_document(anchor, units, exports)
 }
 
 pub(super) fn compile_mika_section(
@@ -83,51 +97,65 @@ pub(super) fn compile_mika_section(
         return compile_named_scope(body.syntax(), name);
     }
     let mut units = Vec::new();
-    let mut inline = Vec::new();
-    collect_document_units(body.syntax(), &mut units, &mut inline)?;
-    compile_collected_document(anchor, units, inline)
+    let mut exports = Vec::new();
+    collect_document_units(body.syntax(), &mut units, &mut exports)?;
+    compile_collected_document(anchor, units, exports)
 }
 
 fn compile_collected_document(
     anchor: SourceSemanticAnchor,
     units: Vec<DocumentUnit>,
-    inline: Vec<EvalInlineMechCodeSyntax>,
+    exports: Vec<ExportDeclarationSyntax>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = SemanticBuilder::new(anchor);
     let mut bindings = BTreeSet::new();
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
-    for expression in &inline {
-        builder.declare_input_annotations(expression.syntax(), &bindings)?;
-    }
+    declare_document_inline_inputs(&mut builder, &units, &bindings)?;
     let mut presentation = Vec::new();
-    let last = compile_document_units(&mut builder, units, &mut presentation)?;
-    let mut last_inline = None;
-    for inline in inline {
-        let expression = builder.required(
-            inline.expression(),
-            inline.syntax(),
-            "an evaluated inline expression",
-        )?;
-        let value = builder.expression(&expression)?.0;
-        last_inline = Some((value, inline.syntax().clone()));
-        presentation.push((
-            SourceDocumentOutputKind::Inline,
-            value,
-            inline.syntax().clone(),
-        ));
-    }
-    let Some((value, syntax)) = last.or(last_inline) else {
+    let last = compile_document_units(&mut builder, units, &bindings, &mut presentation)?;
+    let Some(last) = last else {
         return Err(SourceSemanticError {
             code: "source-semantics/empty-document",
             message: "canonical document contains no executable source unit".to_owned(),
             anchor,
         });
     };
-    builder.publish("result", None, value, &syntax);
+    builder.publish("result", None, last.value, &last.syntax);
     let mut output_bindings = vec![SourceDocumentOutput {
         output: 0,
         kind: SourceDocumentOutputKind::Program,
+        visible: last.program_visible,
     }];
+    let mut document_exports = Vec::new();
+    let mut exported_names = BTreeSet::new();
+    for export in exports {
+        let name_node = builder.required(export.name(), export.syntax(), "an exported name")?;
+        let name = node_text(name_node.syntax())?;
+        if !exported_names.insert(name.clone()) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/duplicate-export",
+                message: format!("document exports {name} more than once"),
+                anchor: SourceSemanticAnchor::for_node(export.syntax()),
+            });
+        }
+        let binding = builder
+            .bindings
+            .get(&name)
+            .copied()
+            .ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unknown-export",
+                message: format!("document exports undefined binding {name}"),
+                anchor: SourceSemanticAnchor::for_node(export.syntax()),
+            })?;
+        let value = builder.read_document_binding(binding, export.syntax())?;
+        let output = u32::try_from(builder.outputs.len()).map_err(|_| SourceSemanticError {
+            code: "source-semantics/output-identity-exhausted",
+            message: "canonical output count exceeds SourceProgram identity space".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(export.syntax()),
+        })?;
+        builder.publish(&name, None, value, name_node.syntax());
+        document_exports.push(SourceDocumentExport { output, name });
+    }
     presentation.sort_by_key(|(_, _, owner)| owner.range().start);
     for (kind, value, owner) in presentation {
         let role = match kind {
@@ -141,19 +169,21 @@ fn compile_collected_document(
         output_bindings.push(SourceDocumentOutput {
             output: builder.outputs.len() as u32,
             kind,
+            visible: true,
         });
         builder.publish(&name, None, value, &owner);
     }
     builder.order_document_state_writers();
     let mut program = builder.finish()?;
     program.document_outputs = output_bindings.into_boxed_slice();
+    program.document_exports = document_exports.into_boxed_slice();
     Ok(program)
 }
 
 fn collect_document_units(
     node: &SyntaxNode,
     output: &mut Vec<DocumentUnit>,
-    inline: &mut Vec<EvalInlineMechCodeSyntax>,
+    exports: &mut Vec<ExportDeclarationSyntax>,
 ) -> Result<(), SourceSemanticError> {
     if matches!(
         node.kind(),
@@ -162,7 +192,7 @@ fn collect_document_units(
         return Ok(());
     }
     if let Some(expression) = EvalInlineMechCodeSyntax::cast(node.clone()) {
-        inline.push(expression);
+        output.push(DocumentUnit::Inline(expression));
         return Ok(());
     }
     if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
@@ -180,7 +210,7 @@ fn collect_document_units(
             ));
         };
         let mut units = Vec::new();
-        collect_document_units(body.syntax(), &mut units, inline)?;
+        collect_document_units(body.syntax(), &mut units, exports)?;
         output.push(DocumentUnit::Fence(fence, presentation, units));
         return Ok(());
     }
@@ -194,13 +224,23 @@ fn collect_document_units(
         output.push(DocumentUnit::Statement(node.clone()));
         return Ok(());
     }
+    if let Some(export) = ExportDeclarationSyntax::cast(node.clone()) {
+        exports.push(export);
+        return Ok(());
+    }
+    // Resolver-owned declarations participate through the canonical source
+    // index and runtime handoff; they do not emit engine operations themselves.
+    if matches!(
+        node.kind(),
+        SyntaxKind::ContextDeclaration | SyntaxKind::ImportDeclaration | SyntaxKind::ModuleImport
+    ) {
+        return Ok(());
+    }
     if matches!(
         node.kind(),
         SyntaxKind::ActivationScope
-            | SyntaxKind::ContextDeclaration
             | SyntaxKind::ContextSend
             | SyntaxKind::EnumDefine
-            | SyntaxKind::ExportDeclaration
             | SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
             | SyntaxKind::FsmImplementation
@@ -210,9 +250,7 @@ fn collect_document_units(
             | SyntaxKind::FsmSpecification
             | SyntaxKind::FunctionDefine
             | SyntaxKind::InvariantDefine
-            | SyntaxKind::ImportDeclaration
             | SyntaxKind::KindDefine
-            | SyntaxKind::ModuleImport
             | SyntaxKind::TupleDestructure
     ) {
         return Err(SourceSemanticError {
@@ -225,7 +263,7 @@ fn collect_document_units(
         });
     }
     for child in node.children() {
-        collect_document_units(&child, output, inline)?;
+        collect_document_units(&child, output, exports)?;
     }
     Ok(())
 }
@@ -240,7 +278,27 @@ fn declare_document_inputs(
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
+            DocumentUnit::Inline(_) => {}
             DocumentUnit::Fence(_, _, units) => declare_document_inputs(builder, units, bindings)?,
+        }
+    }
+    Ok(())
+}
+
+fn declare_document_inline_inputs(
+    builder: &mut SemanticBuilder,
+    units: &[DocumentUnit],
+    bindings: &BTreeSet<String>,
+) -> Result<(), SourceSemanticError> {
+    for unit in units {
+        match unit {
+            DocumentUnit::Statement(_) => {}
+            DocumentUnit::Inline(inline) => {
+                builder.declare_input_annotations(inline.syntax(), bindings)?
+            }
+            DocumentUnit::Fence(_, _, units) => {
+                declare_document_inline_inputs(builder, units, bindings)?
+            }
         }
     }
     Ok(())
@@ -249,8 +307,34 @@ fn declare_document_inputs(
 fn compile_document_units(
     builder: &mut SemanticBuilder,
     units: Vec<DocumentUnit>,
+    local_bindings: &BTreeSet<String>,
     presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
-) -> Result<Option<(PendingValue, SyntaxNode)>, SourceSemanticError> {
+) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
+    let mut deferred_inline = Vec::new();
+    let mut last = compile_document_units_inner(
+        builder,
+        units,
+        local_bindings,
+        presentation,
+        &mut deferred_inline,
+    )?;
+    refresh_deferred_inline(builder, &mut deferred_inline, presentation, &mut last)?;
+    if let Some(deferred) = deferred_inline.first() {
+        return Err(internal(
+            SourceSemanticAnchor::for_node(deferred.inline.syntax()),
+            "a deferred inline expression never received its local definition".to_owned(),
+        ));
+    }
+    Ok(last)
+}
+
+fn compile_document_units_inner(
+    builder: &mut SemanticBuilder,
+    units: Vec<DocumentUnit>,
+    local_bindings: &BTreeSet<String>,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+    deferred_inline: &mut Vec<DeferredInline>,
+) -> Result<Option<CompiledDocumentValue>, SourceSemanticError> {
     let mut last = None;
     for unit in units {
         match unit {
@@ -268,13 +352,38 @@ fn compile_document_units(
                     _ => unreachable!("document statement selection is closed"),
                 };
                 result.0.resolved()?;
-                last = Some(result);
+                retain_later_document_value(
+                    &mut last,
+                    CompiledDocumentValue {
+                        value: result.0,
+                        syntax: result.1,
+                        program_visible: true,
+                    },
+                );
+                refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
+            }
+            DocumentUnit::Inline(inline) => {
+                if let Some(deferred) = defer_inline(builder, &inline, local_bindings)? {
+                    deferred_inline.push(deferred);
+                } else {
+                    retain_later_document_value(
+                        &mut last,
+                        compile_inline(builder, inline, presentation)?,
+                    );
+                }
             }
             DocumentUnit::Fence(fence, fence_presentation, units) => {
-                if let Some((value, syntax)) = compile_document_units(builder, units, presentation)?
-                {
-                    let value =
-                        builder.read_document_binding(PendingBinding::Value(value), &syntax)?;
+                if let Some(compiled) = compile_document_units_inner(
+                    builder,
+                    units,
+                    local_bindings,
+                    presentation,
+                    deferred_inline,
+                )? {
+                    let value = builder.read_document_binding(
+                        PendingBinding::Value(compiled.value),
+                        &compiled.syntax,
+                    )?;
                     if fence_presentation.show_output {
                         presentation.push((
                             SourceDocumentOutputKind::Fence,
@@ -282,12 +391,186 @@ fn compile_document_units(
                             fence.syntax().clone(),
                         ));
                     }
-                    last = Some((value, syntax));
+                    retain_later_document_value(
+                        &mut last,
+                        CompiledDocumentValue {
+                            value,
+                            syntax: compiled.syntax,
+                            program_visible: false,
+                        },
+                    );
                 }
+                refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
         }
     }
     Ok(last)
+}
+
+fn defer_inline(
+    builder: &mut SemanticBuilder,
+    inline: &EvalInlineMechCodeSyntax,
+    local_bindings: &BTreeSet<String>,
+) -> Result<Option<DeferredInline>, SourceSemanticError> {
+    let references = inline_local_references(builder, inline, local_bindings)?;
+    let waiting = references
+        .iter()
+        .filter(|name| !builder.bindings.contains_key(*name))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    if waiting.is_empty() {
+        return Ok(None);
+    }
+    let mut captured = BTreeMap::new();
+    for name in references.difference(&waiting) {
+        let binding = builder.bindings.get(name).copied().ok_or_else(|| {
+            internal(
+                SourceSemanticAnchor::for_node(inline.syntax()),
+                format!("local inline binding {name} disappeared during capture"),
+            )
+        })?;
+        let value = builder.read_document_binding(binding, inline.syntax())?;
+        captured.insert(name.clone(), value);
+    }
+    Ok(Some(DeferredInline {
+        inline: inline.clone(),
+        captured,
+        waiting,
+    }))
+}
+
+fn refresh_deferred_inline(
+    builder: &mut SemanticBuilder,
+    deferred: &mut Vec<DeferredInline>,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+    last: &mut Option<CompiledDocumentValue>,
+) -> Result<(), SourceSemanticError> {
+    for deferred in deferred.iter_mut() {
+        let available = deferred
+            .waiting
+            .iter()
+            .filter(|name| builder.bindings.contains_key(*name))
+            .cloned()
+            .collect::<Vec<_>>();
+        for name in available {
+            let binding = builder.bindings.get(&name).copied().ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(deferred.inline.syntax()),
+                    format!("local inline binding {name} disappeared during capture"),
+                )
+            })?;
+            let value = builder.read_document_binding(binding, deferred.inline.syntax())?;
+            deferred.captured.insert(name.clone(), value);
+            deferred.waiting.remove(&name);
+        }
+    }
+    loop {
+        let ready = deferred
+            .iter()
+            .position(|deferred| deferred.waiting.is_empty());
+        let Some(ready) = ready else { break };
+        let deferred = deferred.remove(ready);
+        retain_later_document_value(
+            last,
+            compile_deferred_inline(builder, deferred, presentation)?,
+        );
+    }
+    Ok(())
+}
+
+fn compile_deferred_inline(
+    builder: &mut SemanticBuilder,
+    deferred: DeferredInline,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+) -> Result<CompiledDocumentValue, SourceSemanticError> {
+    for name in deferred.captured.keys() {
+        if !builder.bindings.contains_key(name) {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(deferred.inline.syntax()),
+                format!("captured inline binding {name} has no current definition"),
+            ));
+        }
+    }
+    let mut previous = Vec::new();
+    for (name, value) in &deferred.captured {
+        let binding = builder
+            .bindings
+            .insert(name.clone(), PendingBinding::Value(*value))
+            .expect("captured bindings were validated before replacement");
+        previous.push((name.clone(), binding));
+    }
+    let compiled = compile_inline(builder, deferred.inline, presentation);
+    for (name, binding) in previous {
+        builder.bindings.insert(name, binding);
+    }
+    compiled
+}
+
+fn retain_later_document_value(
+    last: &mut Option<CompiledDocumentValue>,
+    candidate: CompiledDocumentValue,
+) {
+    if last
+        .as_ref()
+        .is_none_or(|current| current.syntax.range().start < candidate.syntax.range().start)
+    {
+        *last = Some(candidate);
+    }
+}
+
+fn compile_inline(
+    builder: &mut SemanticBuilder,
+    inline: EvalInlineMechCodeSyntax,
+    presentation: &mut Vec<(SourceDocumentOutputKind, PendingValue, SyntaxNode)>,
+) -> Result<CompiledDocumentValue, SourceSemanticError> {
+    let expression = builder.required(
+        inline.expression(),
+        inline.syntax(),
+        "an evaluated inline expression",
+    )?;
+    let value = builder.expression(&expression)?.0;
+    presentation.push((
+        SourceDocumentOutputKind::Inline,
+        value,
+        inline.syntax().clone(),
+    ));
+    Ok(CompiledDocumentValue {
+        value,
+        syntax: inline.syntax().clone(),
+        program_visible: false,
+    })
+}
+
+fn inline_local_references(
+    builder: &SemanticBuilder,
+    inline: &EvalInlineMechCodeSyntax,
+    local_bindings: &BTreeSet<String>,
+) -> Result<BTreeSet<String>, SourceSemanticError> {
+    let mut references = BTreeSet::new();
+    let mut pending = vec![inline.syntax().clone()];
+    while let Some(node) = pending.pop() {
+        if let Some(variable) = VariableSyntax::cast(node.clone()) {
+            let stem = builder.required(variable.stem(), variable.syntax(), "a variable stem")?;
+            let name = node_text(stem.syntax())?;
+            if local_bindings.contains(&name) {
+                references.insert(name);
+            }
+            continue;
+        }
+        if let Some(slice) = SliceSyntax::cast(node.clone()) {
+            let stem = builder.required(slice.stem(), slice.syntax(), "a slice stem")?;
+            let name = node_text(stem.syntax())?;
+            if local_bindings.contains(&name) {
+                references.insert(name);
+            }
+            if let Some(subscripts) = slice.subscripts() {
+                pending.push(subscripts.syntax().clone());
+            }
+            continue;
+        }
+        pending.extend(node.children());
+    }
+    Ok(references)
 }
 
 impl SemanticBuilder {

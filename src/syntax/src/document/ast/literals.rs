@@ -113,7 +113,11 @@ impl StringLiteralSyntax {
         ) {
             return None;
         }
-        decode_string(&self.syntax().text().ok()?)
+        if let Some(string) = self.utf8() {
+            decode_utf8_string(&string)
+        } else {
+            decode_raw_string(&self.raw()?)
+        }
     }
 
     pub fn utf8(&self) -> Option<Utf8StringSyntax> {
@@ -321,44 +325,53 @@ impl DigitSequenceSyntax {
     }
 }
 
-fn decode_string(source: &str) -> Option<String> {
-    if source.starts_with("\"\"\"") && source.ends_with("\"\"\"") && source.len() >= 6 {
-        return Some(source[3..source.len() - 3].to_string());
-    }
-    let body = source.strip_prefix('"')?.strip_suffix('"')?;
-    let mut output = String::with_capacity(body.len());
-    let mut chars = body.chars().peekable();
-    while let Some(character) = chars.next() {
-        if character != '\\' {
-            output.push(character);
-            continue;
-        }
-        let escaped = chars.next()?;
-        output.push(match escaped {
-            '0' => '\0',
-            'n' => '\n',
-            'r' => '\r',
-            't' => '\t',
-            '\\' => '\\',
-            '"' => '"',
-            'u' if chars.peek() == Some(&'{') => {
-                chars.next();
-                let mut digits = String::new();
-                loop {
-                    let next = chars.next()?;
-                    if next == '}' {
-                        break;
-                    }
-                    if !next.is_ascii_hexdigit() || digits.len() == 6 {
-                        return None;
-                    }
-                    digits.push(next);
-                }
-                let scalar = u32::from_str_radix(&digits, 16).ok()?;
-                char::from_u32(scalar)?
+fn decode_utf8_string(string: &Utf8StringSyntax) -> Option<String> {
+    let elements = string.syntax().children_with_tokens();
+    let content = elements.get(1..elements.len().checked_sub(1)?)?;
+    let mut output = String::new();
+    for element in content {
+        match element {
+            SyntaxElement::Token(token) => output.push_str(&token.text().ok()?),
+            SyntaxElement::Node(node) if node.kind() == SyntaxKind::EscapedCharacter => {
+                output.push_str(&decode_escaped_character(node)?);
             }
-            other => other,
-        });
+            SyntaxElement::Node(_) => return None,
+        }
     }
     Some(output)
+}
+
+fn decode_escaped_character(node: &SyntaxNode) -> Option<String> {
+    let escaped = node
+        .tokens()
+        .into_iter()
+        .find(|token| token.kind() == SyntaxKind::EscapedChar)?
+        .text()
+        .ok()?;
+    Some(match escaped.as_str() {
+        "0" => "\0".to_string(),
+        "n" => "\n".to_string(),
+        "r" => "\r".to_string(),
+        "t" => "\t".to_string(),
+        _ => {
+            if let Some(digits) = escaped
+                .strip_prefix("u{")
+                .and_then(|value| value.strip_suffix('}'))
+            {
+                char::from_u32(u32::from_str_radix(digits, 16).ok()?)?.to_string()
+            } else {
+                escaped
+            }
+        }
+    })
+}
+
+fn decode_raw_string(string: &RawStringSyntax) -> Option<String> {
+    let source = string.syntax().text().ok()?;
+    Some(
+        source
+            .strip_prefix("\"\"\"")?
+            .strip_suffix("\"\"\"")?
+            .to_string(),
+    )
 }

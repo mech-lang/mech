@@ -373,3 +373,61 @@ fn context_occurrences_span_name_through_last_semantic_role() {
         );
     }
 }
+
+#[test]
+fn context_send_destinations_are_not_indexed_as_addressed_reads() {
+    for (source, end_column) in [
+        ("@sink/value <- @env/HOME<u8>\n", 29),
+        ("@sink/value <- @env/HOME[1]\n", 28),
+    ] {
+        let index = index(source);
+        assert_eq!(index.address_references.len(), 1, "{source}");
+        let reference = &index.address_references[0];
+        assert_eq!(reference.reference.target, "env");
+        assert_eq!(reference.reference.name, "HOME");
+        let range = reference.occurrence.range.as_ref().unwrap();
+        assert_eq!((range.start.row, range.start.col), (1, 16), "{source}");
+        assert_eq!((range.end.row, range.end.col), (1, end_column), "{source}");
+    }
+}
+
+#[test]
+fn context_definition_destinations_are_not_indexed_as_addressed_reads() {
+    let context_index = index("@local/value := 1\n42\n");
+    assert!(context_index.address_references.is_empty());
+
+    let index = index("answer := @env/HOME\n42\n");
+    assert_eq!(index.address_references.len(), 1);
+    let reference = &index.address_references[0];
+    assert_eq!(reference.reference.target, "env");
+    assert_eq!(reference.reference.name, "HOME");
+}
+
+#[test]
+fn fsm_formal_inputs_and_specifications_are_not_resolver_reads() {
+    let source = "#Counter(@formal/input) -> :Count(@start/value)\n:Count(n)\n| @guard/enabled -> :Done(@body/value).\n\n#Shape(@spec/input) => <u64> :=\n| :Done(n).\n";
+    let index = index(source);
+    assert_eq!(
+        index
+            .address_references
+            .iter()
+            .map(|reference| (
+                reference.reference.target.as_str(),
+                reference.reference.name.as_str()
+            ))
+            .collect::<Vec<_>>(),
+        vec![("start", "value"), ("guard", "enabled"), ("body", "value"),]
+    );
+}
+
+#[test]
+fn many_same_line_occurrences_share_the_batched_location_projection() {
+    let reads = std::iter::repeat_n("@env/VALUE", 1_024)
+        .collect::<Vec<_>>()
+        .join(" + ");
+    let index = index(&format!("value := {reads}\n"));
+    assert_eq!(index.address_references.len(), 1_024);
+    assert!(index.address_references.iter().all(|reference| {
+        reference.reference.target == "env" && reference.reference.name == "VALUE"
+    }));
+}
