@@ -7,6 +7,7 @@ pub struct ParseLimits {
     pub max_nesting: u32,
     pub max_diagnostics: u32,
     pub max_events: u32,
+    /// Maximum cumulative recovery work; speculative rewinds do not refund it.
     pub max_recovery_bytes: u32,
     pub fuel: u64,
 }

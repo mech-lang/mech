@@ -99,6 +99,7 @@ pub struct ParseStats {
     pub events_emitted: u64,
     pub diagnostics_emitted: u64,
     pub diagnostics_truncated: bool,
+    /// Cumulative recovery work, including bytes scanned by rejected alternatives.
     pub recovery_bytes: u64,
     pub reparse_root_count: u64,
     pub reused_node_count: u64,

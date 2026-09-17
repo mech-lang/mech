@@ -309,20 +309,13 @@ impl<'a> Parser<'a> {
             covered_end: self.covered_end,
             rule_depth: self.rules.len(),
             nesting: self.nesting,
-            recovery_bytes: self.stats.recovery_bytes,
-            halted: self.halted,
-            resource_diagnostic_emitted: self.resource_diagnostic_emitted,
-            resource_finalizing: self.resource_finalizing,
         }
     }
 
     pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint) {
-        let rewinding_recovery = self.stats.recovery_bytes > checkpoint.recovery_bytes;
-        // Fuel/event finalization has already assigned the remaining source to
-        // an ERROR envelope. Later failed lookahead cannot discard that source
-        // or rewind its cursor while the parser remains halted. A speculative
-        // recovery may still roll back its own charged bytes when fuel remains.
-        if self.resource_finalizing && (!rewinding_recovery || self.fuel == 0) {
+        // Resource finalization has assigned the remaining source to an ERROR
+        // envelope. Rejected lookahead cannot discard it or refund parser work.
+        if self.resource_finalizing {
             // The rejected candidate may have left provisional markers for its
             // transaction to discard. Keep finalized children and source, but
             // remove those unselected wrappers before its enclosing owner ends.
@@ -339,12 +332,6 @@ impl<'a> Parser<'a> {
         self.covered_end = checkpoint.covered_end;
         self.rules.truncate(checkpoint.rule_depth);
         self.nesting = checkpoint.nesting;
-        self.stats.recovery_bytes = checkpoint.recovery_bytes;
-        if rewinding_recovery {
-            self.halted = checkpoint.halted || self.fuel == 0;
-            self.resource_diagnostic_emitted = checkpoint.resource_diagnostic_emitted;
-            self.resource_finalizing = checkpoint.resource_finalizing;
-        }
     }
 
     pub(crate) fn cache_clean_subtree(
@@ -1225,5 +1212,43 @@ mod tests {
         let output = parser.finish();
         assert!(output.events.is_empty());
         assert!(output.diagnostics.is_empty());
+    }
+    #[test]
+    fn speculative_rewinds_do_not_refund_recovery_work() {
+        let source = TextSnapshot::new(DocumentId(1), Revision(0), "@]").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalGrammar,
+            ParseConfig {
+                limits: ParseLimits {
+                    max_recovery_bytes: 1,
+                    ..ParseLimits::default()
+                },
+            },
+            &mut ids,
+        );
+        let checkpoint = parser.checkpoint();
+        recovery::abandon_to_restart(
+            &mut parser,
+            rules::EXPRESSION,
+            &[']'],
+            "test/recovery",
+            "test",
+        );
+        assert_eq!(parser.stats().recovery_bytes, 1);
+        parser.rewind(checkpoint);
+        assert_eq!(parser.offset(), TextSize::ZERO);
+        assert_eq!(parser.stats().recovery_bytes, 1);
+        recovery::abandon_to_restart(
+            &mut parser,
+            rules::EXPRESSION,
+            &[']'],
+            "test/recovery",
+            "test",
+        );
+        assert!(parser.is_halted());
+        assert_eq!(parser.stats().recovery_bytes, 1);
+        assert_eq!(parser.offset(), TextSize::ZERO);
     }
 }

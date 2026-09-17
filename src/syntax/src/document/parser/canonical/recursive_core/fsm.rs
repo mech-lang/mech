@@ -43,6 +43,7 @@ pub(super) fn parse_fsm_instance(parser: &mut Parser<'_>) -> Attempt {
             node.abandon(parser);
             return Attempt::NoMatch;
         }
+        let mut committed = false;
         if !base::parse_rule(parser, rules::IDENTIFIER) {
             recover_required_production_with_prefixes(
                 parser,
@@ -50,17 +51,17 @@ pub(super) fn parse_fsm_instance(parser: &mut Parser<'_>) -> Attempt {
                 "syntax/missing-fsm-name",
                 "missing state-machine name after hash sign",
                 "identifier",
-                &["->", "~>", "=>", "→", "⇒"],
+                &["(", "->", "~>", "=>", "→", "⇒"],
             );
-            node.complete(parser, SyntaxKind::FsmInstance);
-            return Attempt::Committed;
+            committed = true;
         }
-        if parse_fsm_args(parser) == Attempt::Committed {
-            node.complete(parser, SyntaxKind::FsmInstance);
-            return Attempt::Committed;
-        }
+        committed |= parse_fsm_args(parser) == Attempt::Committed;
         node.complete(parser, SyntaxKind::FsmInstance);
-        Attempt::Matched
+        if committed {
+            Attempt::Committed
+        } else {
+            Attempt::Matched
+        }
     })
 }
 
@@ -105,7 +106,17 @@ pub(super) fn parse_fsm_value(parser: &mut Parser<'_>) -> Attempt {
                 node.complete(parser, SyntaxKind::FsmValue);
                 Attempt::Matched
             }
-            FactAttempt::Matched(_) | FactAttempt::NoMatch => {
+            FactAttempt::Recovered(facts)
+                if !facts.contains_wildcard && !facts.contains_array_spread_or_rest =>
+            {
+                node.complete(parser, SyntaxKind::FsmValue);
+                Attempt::Committed
+            }
+            FactAttempt::Recovered(_) if parser.is_halted() => {
+                node.complete(parser, SyntaxKind::FsmValue);
+                Attempt::Committed
+            }
+            FactAttempt::Matched(_) | FactAttempt::Recovered(_) | FactAttempt::NoMatch => {
                 node.abandon(parser);
                 Attempt::NoMatch
             }

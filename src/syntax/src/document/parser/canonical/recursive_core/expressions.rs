@@ -16,7 +16,7 @@ pub(super) fn parse_expression(parser: &mut Parser<'_>) -> Attempt {
                 node.abandon(parser);
                 Attempt::NoMatch
             }
-            FactAttempt::Committed => {
+            FactAttempt::Recovered(_) | FactAttempt::Committed => {
                 node.complete(parser, SyntaxKind::Expression);
                 Attempt::Committed
             }
@@ -74,7 +74,14 @@ pub(super) fn expression_body(parser: &mut Parser<'_>) -> FactAttempt<Expression
                     }
                 }
             }
-            FactAttempt::Committed => {
+            FactAttempt::Recovered(
+                form @ (ExpressionForm::SetComprehension | ExpressionForm::MatrixComprehension),
+            ) if !parser.is_halted() => {
+                seed.abandon(parser);
+                range.abandon(parser);
+                return FactAttempt::Recovered(form);
+            }
+            FactAttempt::Recovered(_) | FactAttempt::Committed => {
                 seed.commit(parser);
                 finish_provisional_formula_marker(parser, range);
                 return FactAttempt::Committed;

@@ -67,18 +67,30 @@ fn kind_annotation(parser: &mut Parser<'_>, recover: bool) -> Attempt {
     })
 }
 
+#[derive(Clone, Copy)]
+enum KindPosition {
+    Ordinary,
+    MapKey,
+    BraceElement,
+}
+
 pub(super) fn parse_kind(parser: &mut Parser<'_>) -> Attempt {
+    kind(parser, KindPosition::Ordinary)
+}
+
+fn kind(parser: &mut Parser<'_>, position: KindPosition) -> Attempt {
     combinator::transactional(parser, rules::KIND, |parser| {
         let node = parser.start();
         let selected = if parser.cursor().starts_with("{") {
             kind_brace_selection(parser)
+        } else if parser.cursor().starts_with("[") {
+            kind_matrix(parser, position)
         } else {
             let mut selected = Attempt::NoMatch;
             for parse in [
                 leaves::parse_kind_any,
                 leaves::parse_kind_atom,
                 leaves::parse_kind_empty,
-                parse_kind_matrix,
                 parse_kind_scalar,
                 parse_kind_table,
                 parse_kind_tuple,
@@ -103,12 +115,15 @@ pub(super) fn parse_kind_with_option(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::KIND_WITH_OPTION, |parser| {
         let node = parser.start();
         let child = parse_kind(parser);
-        if let Some(result) = child_result(parser, node, SyntaxKind::KindWithOption, child) {
-            return result;
+        if child == Attempt::NoMatch {
+            node.abandon(parser);
+            return child;
         }
-        let _ = base::parse_rule(parser, rules::QUESTION);
+        if !parser.is_halted() {
+            let _ = base::parse_rule(parser, rules::QUESTION);
+        }
         node.complete(parser, SyntaxKind::KindWithOption);
-        Attempt::Matched
+        child
     })
 }
 
@@ -263,7 +278,7 @@ pub(super) fn parse_kind_map(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::NoMatch;
         }
         let Some(interior) = parser.with_nesting(|parser| {
-            let committed = match parse_kind(parser) {
+            let committed = match kind(parser, KindPosition::MapKey) {
                 Attempt::Matched => false,
                 Attempt::Committed if parser.is_halted() => return Attempt::Committed,
                 Attempt::Committed => true,
@@ -299,6 +314,10 @@ pub(super) fn parse_kind_record(parser: &mut Parser<'_>) -> Attempt {
 }
 
 pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
+    kind_matrix(parser, KindPosition::Ordinary)
+}
+
+fn kind_matrix(parser: &mut Parser<'_>, position: KindPosition) -> Attempt {
     combinator::transactional(parser, rules::KIND_MATRIX, |parser| {
         let node = parser.start();
         if !base::parse_rule(parser, rules::LEFT_BRACKET) {
@@ -346,7 +365,7 @@ pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
             return finish(node, parser, SyntaxKind::KindMatrix, interior);
         }
         let suffix = parser.checkpoint();
-        let _ = base::parse_rule(parser, rules::COLON);
+        let colon = base::parse_rule(parser, rules::COLON);
         match literals::parse_literal(parser) {
             Attempt::Matched => loop {
                 let pair = parser.checkpoint();
@@ -365,8 +384,22 @@ pub(super) fn parse_kind_matrix(parser: &mut Parser<'_>) -> Attempt {
                     }
                 }
             },
-            Attempt::NoMatch if interior == Attempt::Committed => parser.rewind(suffix),
-            Attempt::NoMatch => {}
+            Attempt::NoMatch => {
+                // A bare colon is valid matrix syntax. Only an enclosing map
+                // candidate may reserve it as the key/value separator. Shared
+                // braces still accept a clean set containing `[u8]:`.
+                let map_separator = !parser.cursor().starts_with(":")
+                    && match position {
+                        KindPosition::Ordinary => false,
+                        KindPosition::MapKey => true,
+                        KindPosition::BraceElement => {
+                            interior == Attempt::Committed || !parser.cursor().starts_with("}")
+                        }
+                    };
+                if colon && map_separator {
+                    parser.rewind(suffix);
+                }
+            }
             Attempt::Committed => {
                 node.complete(parser, SyntaxKind::KindMatrix);
                 return Attempt::Committed;
@@ -483,44 +516,22 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
     let Some(result) = parser.with_nesting(|parser| {
         let after_open = parser.checkpoint();
         if base::parse_rule(parser, rules::WHITESPACE1) {
-            match kind_record_field(parser) {
-                Attempt::Matched => {}
+            let committed = match kind_record_field(parser) {
+                Attempt::Matched => false,
                 Attempt::NoMatch => return Attempt::NoMatch,
-                Attempt::Committed => {
-                    recover_closer(
-                        parser,
-                        rules::KIND_RECORD,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        '}',
-                        "}",
-                    );
-                    record.complete(parser, SyntaxKind::KindRecord);
-                    finish_provisional_marker(parser, set, SyntaxKind::KindSet);
-                    finish_provisional_marker(parser, map, SyntaxKind::KindMap);
-                    return Attempt::Committed;
-                }
-            }
-            return finish_selected_kind_record(parser, record, set, map);
+                Attempt::Committed => true,
+            };
+            return finish_selected_kind_record(parser, record, set, map, committed);
         }
         parser.rewind(after_open);
 
         if base::parse_rule(parser, rules::IDENTIFIER) {
             match parse_kind_annotation(parser) {
-                Attempt::Matched => return finish_selected_kind_record(parser, record, set, map),
+                Attempt::Matched => {
+                    return finish_selected_kind_record(parser, record, set, map, false);
+                }
                 Attempt::Committed => {
-                    recover_closer(
-                        parser,
-                        rules::KIND_RECORD,
-                        rules::RIGHT_BRACE,
-                        SyntaxKind::RightBrace,
-                        '}',
-                        "}",
-                    );
-                    record.complete(parser, SyntaxKind::KindRecord);
-                    finish_provisional_marker(parser, set, SyntaxKind::KindSet);
-                    finish_provisional_marker(parser, map, SyntaxKind::KindMap);
-                    return Attempt::Committed;
+                    return finish_selected_kind_record(parser, record, set, map, true);
                 }
                 Attempt::NoMatch => {}
             }
@@ -588,7 +599,7 @@ fn kind_brace_selection(parser: &mut Parser<'_>) -> Attempt {
         }
         parser.rewind(scalar_map);
 
-        let committed = match parse_kind(parser) {
+        let committed = match kind(parser, KindPosition::BraceElement) {
             Attempt::Matched => false,
             Attempt::NoMatch => return Attempt::NoMatch,
             Attempt::Committed => true,
@@ -701,16 +712,16 @@ fn kind_record_interior(parser: &mut Parser<'_>) -> Attempt {
     if !base::parse_rule(parser, rules::WHITESPACE0) {
         return Attempt::NoMatch;
     }
-    match kind_record_field(parser) {
-        Attempt::Matched => {}
-        other => return other,
-    }
-    finish_kind_record_fields(parser)
+    let committed = match kind_record_field(parser) {
+        Attempt::Matched => false,
+        Attempt::Committed => true,
+        Attempt::NoMatch => return Attempt::NoMatch,
+    };
+    finish_kind_record_fields(parser, committed)
 }
 
-fn finish_kind_record_fields(parser: &mut Parser<'_>) -> Attempt {
-    let mut committed = false;
-    loop {
+fn finish_kind_record_fields(parser: &mut Parser<'_>, mut committed: bool) -> Attempt {
+    while !parser.is_halted() {
         let pair = parser.checkpoint();
         if !base::parse_rule(parser, rules::LIST_SEPARATOR)
             && !base::parse_rule(parser, rules::WHITESPACE1)
@@ -750,8 +761,9 @@ fn finish_selected_kind_record(
     record: super::super::super::marker::Marker,
     set: super::super::super::marker::Marker,
     map: super::super::super::marker::Marker,
+    committed: bool,
 ) -> Attempt {
-    match finish_kind_record_fields(parser) {
+    match finish_kind_record_fields(parser, committed) {
         Attempt::Matched => {
             record.complete(parser, SyntaxKind::KindRecord);
             finish_provisional_marker(parser, set, SyntaxKind::KindSet);
