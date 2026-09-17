@@ -2,16 +2,16 @@
 
 ## Live landing checkpoint — 2026-09-17
 
-**Candidate:** `codex/syntax-s8r02-numeric-targets` /
-`876c434f5d1b517bd187ebe20afbcabe66e57241`, published as draft #883 on
-R24 `d1a9ce64e9d3ddf3816ac246cad98c5821bc3934`. This is the current accumulated
-implementation head through R02. The designated landing branch remains
+**Candidate:** `codex/syntax-s8r06-logical-activation-facts` /
+`8a2878f5796448055c6bb31adf5afa1a96871175`, published as draft #884 on
+R02 `876c434f5d1b517bd187ebe20afbcabe66e57241`. This is the current accumulated
+implementation head through R06. The designated landing branch remains
 `codex/syntax-s8c-cutover`; it is deliberately not treated as current or
 qualified until the remaining accepted corrections are incorporated and it is
 rebuilt from this stack.
 
-**Completed:** 23 numbered correction boundaries are published: R01-R05,
-R07-R14, and R16-R25. R25 remains owned by the separate review worker. R08 now
+**Completed:** 24 numbered correction boundaries are published: R01-R14 except
+R15, and R16-R25. R25 remains owned by the separate review worker. R08 now
 owns runtime-sized promoted assignment inputs without introducing a second
 dense-access implementation; R07 remains the single generalized dense-to-
 snapshot access path. R09 retains all 17 accepted R07 live-layout regressions
@@ -34,10 +34,17 @@ document state passes 104/104; full-feature and reduced resident engine checks
 also pass. The broader engine unit profile now compiles after repairing one
 accumulated test fixture and passes 442/444. Its two failures remain assigned to
 the comprehension component-addressability and selected-match budget owners;
-they are not counted as R02 success.
+they are not counted as R02 success. R06 derives a fixed logical-mask population
+only for finite closed constant comparisons, using the canonical comparison and
+broadcasting semantics; arbitrary live nodes are never executed during planning.
+Its source/decoded acceptance passes 3/3 across the comparison family, matrix and
+scalar broadcasting, explicit live-mask facts, same-population changes and atomic
+rejection. Existing mask review tests pass 5/5, exact Q09 passes 1/1, canonical
+document state remains 104/104, and full-source plus reduced artifact engine
+checks pass. The strict ad-hoc Clippy invocation remains blocked by 839 existing
+`mech-core` warnings; it is not counted as passing evidence.
 
-**Remaining:** implement the accepted v0.4 R06 constant/computed fixed-
-population mask activation facts and R26 canonical compute lowering. R15
+**Remaining:** implement accepted v0.4 R26 canonical compute lowering. R15
 interval/constrained units remains deferred to post-v0.4 in issue #865. Required
 slice reviews and focused CI remain open. Resolve the two newly executable
 accumulated engine-unit failures in their existing owners. After the two
@@ -46,17 +53,17 @@ run product probes after each coherent batch, hold one exact C SHA for full
 qualification, fix failures in their owners, complete protected review/merge,
 and verify the landed target.
 
-**Current action:** start R06 from exact R02. Implement constant and computed
-fixed-population logical-mask activation facts in the existing shape-fact owner,
-then execute its source/decoded mask cells without weakening live-mask
-revalidation or publication atomicity.
+**Current action:** start R26 from exact R06. Reproduce G29 through the portable
+fixed-shape lowering API, reconcile the canonical operation and storage handoff
+in its existing owner, and preserve transactional integrity and unsupported-
+target negatives.
 
-**Next action:** recover the finite G17 witnesses and existing mask review
-contracts, establish the exact R06 failure baseline on `876c434f5`, implement
-the shared activation-fact correction, and publish focused direct plus decoded
-acceptance on top of #883. R26 follows R06.
+**Next action:** create the R26 branch/worktree on `8a2878f57`, establish the
+maintained single-lane CPU EKF failure and a direct source/decoded lowering
+witness, then fix each demonstrated handoff class once in the canonical portable
+lowerer before running the CPU/WebGPU product oracle.
 
-**External blocker:** none for R06, R26, routine testing, rebasing, review
+**External blocker:** none for R26, routine testing, rebasing, review
 response, or integration. No unresolved language decision is being requested.
 
 **Status:** Checkpoint—not complete.
