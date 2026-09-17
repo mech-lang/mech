@@ -266,6 +266,22 @@ impl CanonicalDocumentCompilation {
             match &dependency.declaration.kind {
                 SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
                     if let Some(namespace) = module_namespace_for_import(&dependency.declaration) {
+                        let namespace_prefix = format!("{namespace}/");
+                        for export in self
+                            .program
+                            .program()
+                            .inputs
+                            .iter()
+                            .filter_map(|input| input.name.strip_prefix(&namespace_prefix))
+                        {
+                            if !dependency.exports.contains_key(export) {
+                                return Err(CanonicalDocumentHandoffError::MissingExport {
+                                    dependency: dependency.canonical_uri.clone(),
+                                    export: export.to_owned(),
+                                    occurrence: occurrence.clone(),
+                                });
+                            }
+                        }
                         for (name, value) in &dependency.exports {
                             insert(format!("{namespace}/{name}"), value.clone())?;
                         }

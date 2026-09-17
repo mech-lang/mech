@@ -63,7 +63,7 @@ impl DocumentSyntax {
                     .items()
                     .iter()
                     .filter_map(MechCodeAltSyntax::value)
-                    .any(|item| !matches!(item.kind(), SyntaxKind::Comment))
+                    .any(|item| mech_code_item_is_executable(&item))
                 {
                     return true;
                 }
@@ -79,6 +79,27 @@ impl DocumentSyntax {
         collect_sections(self.syntax(), &mut sections);
         sections
     }
+}
+
+fn mech_code_item_is_executable(item: &SyntaxNode) -> bool {
+    fn is_metadata(kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::Comment
+                | SyntaxKind::ContextDeclaration
+                | SyntaxKind::ExportDeclaration
+                | SyntaxKind::ImportDeclaration
+                | SyntaxKind::ModuleImport
+        )
+    }
+
+    if is_metadata(item.kind()) {
+        return false;
+    }
+    if item.kind() == SyntaxKind::Statement {
+        return item.children().any(|child| !is_metadata(child.kind()));
+    }
+    true
 }
 
 impl BodySyntax {

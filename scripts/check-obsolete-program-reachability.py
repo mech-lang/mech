@@ -46,12 +46,29 @@ def is_allowed_compatibility_data(relative: Path, line: str) -> bool:
 
 def is_css_class_occurrence(line: str, start: int) -> bool:
     """Return whether one package spelling is CSS selector/class data."""
-    if start > 0 and line[start - 1] == ".":
+    in_string = False
+    for index, character in enumerate(line[:start]):
+        if character != '"':
+            continue
+        backslashes = 0
+        cursor = index
+        while cursor > 0 and line[cursor - 1] == "\\":
+            backslashes += 1
+            cursor -= 1
+        if backslashes % 2 == 0:
+            in_string = not in_string
+
+    if start > 0 and line[start - 1] == "." and in_string:
         return True
 
     prefix = line[:start]
-    class_attribute = r"(?<![\w:-])class\s*=\s*(?P<escape>\\?)(?P<quote>[\"'])"
+    class_attribute = r"class\s*=\s*(?P<escape>\\?)(?P<quote>[\"'])"
     for opening in reversed(list(re.finditer(class_attribute, prefix))):
+        if opening.start() > 0:
+            previous = line[opening.start() - 1]
+            in_tag = prefix.rfind("<") > prefix.rfind(">")
+            if not in_string or not (previous == '"' or previous.isspace() and in_tag):
+                continue
         delimiter = opening.group("escape") + opening.group("quote")
         closing = line.find(delimiter, opening.end())
         if closing >= start + len(OBSOLETE_PACKAGE):
