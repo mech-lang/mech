@@ -1,0 +1,81 @@
+grammar-name	parser-module	emission-policy	syntax-kind	kind-origin	notes
+argument-list	calls	node	ArgumentList	new	Emits the complete call argument list.
+binding	structures	node	RecordBinding	new	Uses the concrete record-binding role.
+brace-subscript	subscripts	node	BraceSubscript	new	Preserves brace-delimited subscript structure.
+bracket-subscript	subscripts	node	BracketSubscript	new	Preserves bracket-delimited subscript structure.
+call-arg	calls	node	CallArgument	new	Emits one positional call argument.
+call-arg-with-binding	calls	node	BoundCallArgument	new	Emits one named call argument.
+comprehension-qualifier	comprehensions	node	ComprehensionQualifier	new	Emits one comprehension qualifier.
+expression	expressions	node	Expression	existing	Reuses the existing expression node.
+factor	precedence	node	Factor	new	Emits the factor and postfix sequence.
+fancy-table	structures	node	FancyTable	new	Emits a framed table.
+fancy-table-header	structures	node	FancyTableHeader	new	Emits a framed-table header.
+field	structures	node	TableField	new	Uses the concrete table-field role.
+formula	expressions	transparent	none	none	Alias emits its l1 child directly.
+formula-subscript	subscripts	node	FormulaSubscript	new	Emits a formula subscript item.
+fsm-args	fsm	node	FsmArguments	new	Uses the concrete state-machine argument role.
+fsm-async-transition	fsm	node	FsmAsyncTransition	new	Emits an asynchronous transition stage.
+fsm-instance	fsm	node	FsmInstance	new	Emits a state-machine instance stage.
+fsm-output	fsm	node	FsmOutput	new	Emits an output stage.
+fsm-pipe	fsm	node	FsmPipe	new	Emits the complete state-machine pipe.
+fsm-state-transition	fsm	node	FsmStateTransition	new	Emits a state transition stage.
+fsm-value	fsm	node	FsmValue	new	Emits a state-machine value pattern.
+function-call	calls	node	FunctionCall	new	Emits a complete function call.
+generator	comprehensions	node	Generator	new	Emits a comprehension generator.
+header-field	structures	node	HeaderField	new	Emits one table header field.
+inline-table	structures	node	InlineTable	new	Emits an inline table.
+inline-table-header	structures	node	InlineTableHeader	new	Emits an inline-table header.
+inline-table-row	structures	node	InlineTableRow	new	Emits an inline-table row.
+kind	kinds	node	Kind	new	Emits a complete kind selection.
+kind-annotation	kinds	node	KindAnnotation	existing	Reuses the existing kind-annotation node.
+kind-kind	kinds	node	KindKind	new	Emits a nested kind kind.
+kind-map	kinds	node	KindMap	new	Emits a map kind.
+kind-matrix	kinds	node	KindMatrix	new	Emits a matrix kind.
+kind-record	kinds	node	KindRecord	new	Emits a record kind.
+kind-scalar	kinds	node	KindScalar	new	Emits a scalar kind.
+kind-set	kinds	node	KindSet	new	Emits a set kind.
+kind-table	kinds	node	KindTable	new	Emits a table kind.
+kind-tuple	kinds	node	KindTuple	new	Emits a tuple kind.
+kind-with-option	kinds	node	KindWithOption	new	Emits a kind and its optional marker.
+l1	precedence	conditional-node	LogicExpression	new	Wraps only when a logic chain forms.
+l2	precedence	conditional-node	ComparisonExpression	new	Wraps only when a comparison chain forms.
+l3	precedence	conditional-node	AdditiveExpression	existing	Reuses the existing kind only when an additive chain forms.
+l4	precedence	conditional-node	MultiplicativeExpression	new	Wraps only when a multiplicative chain forms.
+l5	precedence	conditional-node	PowerExpression	new	Wraps only when a power chain forms.
+l6	precedence	conditional-node	TableExpression	new	Wraps only when a table-operator chain forms.
+l7	precedence	conditional-node	SetExpression	new	Wraps only when a set-operator chain forms.
+literal	literals	node	Literal	new	Emits the literal selection and annotation.
+map	structures	node	Map	new	Emits a map structure.
+mapping	structures	node	MapEntry	new	Uses the concrete map-entry role.
+match-arm	precedence	node	MatchArm	new	Emits one expression match arm.
+matrix	structures	node	Matrix	new	Emits one lossless matrix structure.
+matrix-column	structures	node	MatrixColumn	new	Emits one matrix column.
+matrix-comprehension	comprehensions	node	MatrixComprehension	new	Emits a matrix comprehension.
+matrix-row	structures	node	MatrixRow	new	Emits one matrix row.
+negate-factor	precedence	node	NegateFactor	new	Emits a negated factor.
+not-factor	precedence	node	NotFactor	new	Emits a logical-not factor.
+parenthetical-term	precedence	node	ParentheticalExpression	existing	Reuses the existing parenthetical-expression node.
+pattern	patterns	node	Pattern	new	Emits a complete pattern selection.
+pattern-array	patterns	node	ArrayPattern	new	Uses the concrete array-pattern role.
+pattern-array-item	patterns	transparent	none	none	Alias emits its pattern child directly.
+pattern-array-token	patterns	node	ArrayPatternElement	new	Uses the concrete array-pattern-element role.
+pattern-atom-struct	patterns	node	AtomStructPattern	new	Uses the concrete atom-structure-pattern role.
+pattern-tuple	patterns	node	TuplePattern	new	Uses the concrete tuple-pattern role.
+pattern-tuple-struct	patterns	node	TupleStructPattern	new	Uses the concrete tuple-structure-pattern role.
+range-expression	precedence	node	RangeExpression	new	Emits a complete range expression.
+range-subscript	subscripts	node	RangeSubscript	new	Emits a range subscript item.
+record	structures	node	Record	new	Emits a record structure.
+regular-table	structures	node	RegularTable	new	Emits a regular table.
+set	structures	node	Set	new	Emits a set structure.
+set-comprehension	comprehensions	node	SetComprehension	new	Emits a set comprehension.
+slice	subscripts	node	Slice	new	Emits a variable slice.
+structure	structures	node	Structure	new	Emits the structure selection.
+subscript	subscripts	node	SubscriptList	new	Uses the concrete subscript-list role.
+table	structures	node	Table	new	Emits the table presentation selection.
+table-header	structures	node	TableHeader	new	Emits a regular-table header.
+table-row	structures	node	TableRow	new	Emits a regular-table row.
+table-row2	structures	node	FancyTableRow	new	Uses the concrete framed-table-row role.
+tuple	structures	node	Tuple	new	Emits a tuple structure.
+tuple-struct	structures	node	TupleStruct	new	Emits a tuple structure constructor.
+var	variables	node	Variable	new	Uses the concrete variable role.
+variable-define	variables	node	VariableDefine	existing	Reuses the existing variable-definition node.

@@ -10,6 +10,7 @@ docs/design/language-design.mec	accept	mech_syntax::parser::parse	Raw source acc
 docs/design/literate-programming.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/mika.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/project.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
+docs/design/recursive-executable-core.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/design/specification.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/getting-started/build-and-run.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
 docs/getting-started/first-project.mec	accept	mech_syntax::parser::parse	Raw source accepted unchanged; no preprocessing or exclusion.
