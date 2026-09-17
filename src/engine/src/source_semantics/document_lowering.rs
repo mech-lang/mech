@@ -676,7 +676,7 @@ fn mixed_section_identity(
             "compute section subtitle is outside retained source".to_owned(),
         )
     })?;
-    let heading = text.lines().next().unwrap_or_default().trim();
+    let heading = logical_underlined_section_title(text.lines().next().unwrap_or_default().trim());
     let mut name_parts = Vec::new();
     let mut selected = None;
     for part in heading.split_whitespace() {
@@ -732,6 +732,18 @@ fn mixed_section_identity(
         });
     }
     Ok(Some((name, placement)))
+}
+
+fn logical_underlined_section_title(heading: &str) -> &str {
+    heading
+        .split_once('.')
+        .filter(|(section, title)| {
+            !section.is_empty()
+                && section.chars().all(char::is_alphanumeric)
+                && title.chars().next().is_some_and(char::is_whitespace)
+        })
+        .map(|(_, title)| title.trim_start())
+        .unwrap_or(heading)
 }
 
 fn collect_document_units(
@@ -1056,7 +1068,10 @@ fn compile_document_units_inner(
                 if let Some(deferred) = defer_inline(builder, &inline, local_bindings, true)? {
                     deferred_inline.push(deferred);
                 } else {
-                    compile_inline(builder, inline, presentation)?;
+                    let compiled = compile_inline(builder, inline, presentation)?;
+                    if last.is_none() {
+                        last = Some(compiled);
+                    }
                 }
             }
             DocumentUnit::Inline(inline) => {
@@ -1913,6 +1928,44 @@ impl SemanticBuilder {
     }
 }
 
+#[derive(Clone, Default)]
+struct OrderedDocumentScope {
+    input_by_name: BTreeMap<String, u32>,
+    input_declarations: BTreeMap<String, SchemaDraft>,
+    declared_kinds: BTreeMap<String, SchemaDraft>,
+    declared_variants: BTreeMap<String, Vec<DeclaredEnumVariant>>,
+    bindings: BTreeMap<String, PendingBinding>,
+    scope_definitions: BTreeSet<String>,
+    external_definitions: BTreeSet<String>,
+    local_fsms: BTreeMap<String, document_fsms::DeclaredFsm>,
+}
+
+impl OrderedDocumentScope {
+    fn capture(builder: &SemanticBuilder) -> Self {
+        Self {
+            input_by_name: builder.input_by_name.clone(),
+            input_declarations: builder.input_declarations.clone(),
+            declared_kinds: builder.declared_kinds.clone(),
+            declared_variants: builder.declared_variants.clone(),
+            bindings: builder.bindings.clone(),
+            scope_definitions: builder.scope_definitions.clone(),
+            external_definitions: builder.external_definitions.clone(),
+            local_fsms: builder.local_fsms.clone(),
+        }
+    }
+
+    fn activate(&self, builder: &mut SemanticBuilder) {
+        builder.input_by_name = self.input_by_name.clone();
+        builder.input_declarations = self.input_declarations.clone();
+        builder.declared_kinds = self.declared_kinds.clone();
+        builder.declared_variants = self.declared_variants.clone();
+        builder.bindings = self.bindings.clone();
+        builder.scope_definitions = self.scope_definitions.clone();
+        builder.external_definitions = self.external_definitions.clone();
+        builder.local_fsms = self.local_fsms.clone();
+    }
+}
+
 pub(super) fn compile_ordered_documents(
     documents: &[CanonicalOrderedDocument],
     catalog: Arc<mech_core::FunctionCatalog>,
@@ -1933,6 +1986,7 @@ pub(super) fn compile_ordered_documents(
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
     let mut presentation = Vec::new();
+    let mut ordered_root_scope = OrderedDocumentScope::default();
     for root in documents {
         let anchor = SourceSemanticAnchor::for_node(root.document.syntax());
         if results.contains_key(&root.identity) {
@@ -1947,14 +2001,11 @@ pub(super) fn compile_ordered_documents(
         // such as `value := ...` collide with the same local spelling in a
         // transitive dependency.
         builder.anchor = anchor;
-        builder.input_by_name.clear();
-        builder.input_declarations.clear();
-        builder.declared_kinds.clear();
-        builder.declared_variants.clear();
-        builder.bindings.clear();
-        builder.scope_definitions.clear();
-        builder.external_definitions.clear();
-        builder.local_fsms.clear();
+        if root.publish_result {
+            ordered_root_scope.activate(&mut builder);
+        } else {
+            OrderedDocumentScope::default().activate(&mut builder);
+        }
         builder.active_functions.clear();
         builder.active_recursive_outputs.clear();
         builder.retained_result_boundary = None;
@@ -2088,6 +2139,9 @@ pub(super) fn compile_ordered_documents(
             if let Some(input) = builder.input_by_name.remove(name) {
                 builder.inputs[input as usize].name = format!("root:{}/{name}", root.identity);
             }
+        }
+        if root.publish_result {
+            ordered_root_scope = OrderedDocumentScope::capture(&builder);
         }
     }
     // Constraints remain constraints; requested roots and visible document
