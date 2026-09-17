@@ -286,6 +286,67 @@ fn canonical_resource_effect_survives_a_later_program_result() {
 }
 
 #[test]
+fn canonical_read_only_resource_plans_without_a_synthetic_effect_turn() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "time")
+        .unwrap();
+    let product = provider_compiler(case)
+        .compile_canonical_source(case.source)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(parsed.instructions.is_empty());
+    assert!(!parsed.artifact.is_empty());
+
+    let request = NativeBuildRequest {
+        bytecode: product.bytecode().to_vec(),
+        instruction_type_bindings: None,
+        instruction_type_binding_requirements: None,
+        runtime_config: Some(NativeRuntimeConfig {
+            runtime: RuntimeConfig::default(),
+            actor_bootstrap: None,
+            hosts: vec![HostInstanceConfig {
+                name: case.instance.to_owned(),
+                provider: case.provider.to_owned(),
+                settings: ConfigValue::Map(BTreeMap::new()),
+            }],
+            run_grants: vec![RunResourceGrantConfig {
+                target: case.target.to_owned(),
+                operations: case
+                    .operations
+                    .iter()
+                    .map(|operation| (*operation).to_owned())
+                    .collect(),
+                paths: case.paths.iter().map(|path| (*path).to_owned()).collect(),
+            }],
+        }),
+        target: None,
+        profile: NativeBuildProfile::Debug,
+        binary_name: "canonical-read-only-resource".to_owned(),
+        output: PathBuf::from("ignored"),
+        emit: NativeEmit::Plan,
+        keep_project: false,
+        offline: true,
+    };
+    let plan = NativeApplicationBuilder::new(NativeBuildEnvironment {
+        function_catalog: mech_stdlib::source_native_plan_catalog(),
+        host_catalog: standard_native_host_catalog().unwrap(),
+        dependency_source: NativeDependencySource::Registry {
+            version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
+        },
+    })
+    .plan(&request)
+    .unwrap();
+    assert_eq!(plan.hosts.len(), 1);
+    assert!(plan.application_requirements.iter().any(|requirement| {
+        matches!(requirement, mech_build::PlannedApplicationRequirement::Resource { request, .. }
+            if request.base_uri == case.base_uri
+                && request.path == case.path
+                && request.intent == ResourceIntent::Read)
+    }));
+}
+
+#[test]
 fn canonical_context_alias_preserves_the_resolved_resource_owner() {
     let case = PROVIDER_CASES
         .iter()
