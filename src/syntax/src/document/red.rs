@@ -211,25 +211,32 @@ ast_node!(MechItemSyntax, SyntaxKind::MechItem);
 ast_node!(VariableDefineSyntax, SyntaxKind::VariableDefine);
 ast_node!(IdentifierSyntax, SyntaxKind::Identifier);
 ast_node!(MissingSyntax, SyntaxKind::Missing);
-ast_node!(
-    ExpressionSyntax,
-    SyntaxKind::Expression
-        | SyntaxKind::AdditiveExpression
-        | SyntaxKind::ParentheticalExpression
-        | SyntaxKind::IntegerLiteral
-);
+ast_node!(ExpressionSyntax, SyntaxKind::Expression);
 
 impl VariableDefineSyntax {
     pub fn name(&self) -> Option<IdentifierSyntax> {
-        self.0
-            .first_child(SyntaxKind::Identifier)
-            .and_then(IdentifierSyntax::cast)
+        self.0.children().find_map(|child| match child.kind() {
+            SyntaxKind::Identifier => IdentifierSyntax::cast(child),
+            SyntaxKind::Variable => child
+                .first_child(SyntaxKind::Identifier)
+                .and_then(IdentifierSyntax::cast),
+            _ => None,
+        })
     }
 
     pub fn define_operator(&self) -> Option<SyntaxToken> {
         self.0
-            .first_child(SyntaxKind::DefineOperator)
-            .and_then(|node| node.tokens().into_iter().next())
+            .children_with_tokens()
+            .into_iter()
+            .find_map(|element| match element {
+                SyntaxElement::Token(token) if token.kind() == SyntaxKind::DefineOperatorToken => {
+                    Some(token)
+                }
+                SyntaxElement::Node(node) if node.kind() == SyntaxKind::DefineOperator => {
+                    node.tokens().into_iter().next()
+                }
+                _ => None,
+            })
     }
 
     pub fn value(&self) -> Option<ExpressionSyntax> {

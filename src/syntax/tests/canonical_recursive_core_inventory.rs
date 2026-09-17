@@ -595,7 +595,7 @@ fn reviewed_count_anchors_and_families_are_frozen() {
 }
 
 #[test]
-fn recursive_core_has_the_exact_implementation_shell_and_remains_unactivated() {
+fn recursive_core_has_exact_parser_and_typed_view_shells_and_remains_unactivated() {
     let root = repository_root();
     let parser_directory = root.join("src/syntax/src/document/parser/canonical/recursive_core");
     assert!(parser_directory.is_dir());
@@ -628,15 +628,25 @@ fn recursive_core_has_the_exact_implementation_shell_and_remains_unactivated() {
     .collect::<BTreeSet<_>>();
     assert_eq!(actual_files, expected_files);
 
-    for path in [
-        "src/syntax/src/document/ast/recursive_core",
-        "src/syntax/src/document/lower/legacy/recursive_core",
-    ] {
-        assert!(
-            !root.join(path).exists(),
-            "Phase 2I implementation path exists: {path}"
-        );
-    }
+    let ast_directory = root.join("src/syntax/src/document/ast/recursive_core");
+    assert!(ast_directory.is_dir());
+    let actual_ast_files = fs::read_dir(&ast_directory)
+        .expect("read recursive typed-view directory")
+        .map(|entry| {
+            entry
+                .expect("read recursive typed-view entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect::<BTreeSet<_>>();
+    assert_eq!(actual_ast_files, expected_files);
+
+    assert!(
+        !root
+            .join("src/syntax/src/document/lower/legacy/recursive_core")
+            .exists()
+    );
     let generated_ports =
         fs::read_to_string(root.join("src/syntax/src/document/parser/canonical_ports.rs"))
             .expect("read canonical_ports.rs");
