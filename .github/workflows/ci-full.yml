@@ -1099,12 +1099,18 @@ jobs:
           --no-default-features --features full_source,resident-routing-source
           --test canonical_declaration_handoff --test canonical_document_outputs
           --test canonical_document_render --test canonical_source_index
+          --test source_document
 
       - name: Verify canonical complete-document indexing work
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features full_source,resident-routing-source
           --lib resolver::index::canonical::tests
+
+      - name: Verify retained source admission without Mika
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features source --test source_document
 
       - name: Check reduced core feature boundaries
         run: |
