@@ -2700,10 +2700,18 @@ fn source_extents(
 }
 
 fn node_output_requires_runtime_control_shape(artifact: &ProgramArtifact, node: NodeId) -> bool {
-    artifact
-        .nodes()
-        .get(node.get() as usize)
-        .is_none_or(|producer| producer.as_operation().is_none())
+    let Some(producer) = artifact.nodes().get(node.get() as usize) else {
+        return true;
+    };
+    let Some(operation) = producer.as_operation() else {
+        return true;
+    };
+    operation.operation.resolved_range_mode().is_some()
+        && node_inputs(artifact, node).is_ok_and(|inputs| {
+            inputs
+                .iter()
+                .any(|source| matches!(source, ArtifactSource::Slot(_)))
+        })
 }
 
 fn source_has_activation_shape_fact(
@@ -3401,6 +3409,17 @@ fn complete_activation_shape_facts(
             continue;
         }
         let inputs = node_inputs(artifact, node.node)?;
+        if inputs
+            .iter()
+            .any(|source| matches!(source, ArtifactSource::Slot(_)))
+        {
+            // Activation-produced scalar endpoints acquire their values only
+            // when the preceding closed control executes. Keep this range in
+            // one snapshot lane and let its resident executor publish the
+            // resolved row extent instead of treating a compiler shape hint as
+            // durable cardinality authority.
+            continue;
+        }
         let values = inputs
             .iter()
             .map(|source| match source {
