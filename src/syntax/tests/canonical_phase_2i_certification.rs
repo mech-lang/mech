@@ -1548,13 +1548,16 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
                                 | "DimensionExpr"
                                 | "FunctionCatalogBuilder"
                                 | "IntegerWidth"
+                                | "ManagedMemoryBudget"
                                 | "OutputConstruction"
                                 | "ReactiveInstanceId"
+                                | "ResidentValueRef"
                                 | "SchemaBody"
                                 | "SchemaDraft"
                                 | "SchemaTableBuilder"
                                 | "ShapeRule"
                                 | "ValueData"
+                                | "ValueDataDraft"
                         )
                     } else {
                         matches!(
