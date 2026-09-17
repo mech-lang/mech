@@ -13,9 +13,7 @@ use std::time::{Duration, Instant};
 use colored::{ColoredString, Colorize};
 use ignore::WalkBuilder;
 use mech_browser::BrowserRuntimeInjectionConfig;
-use mech_core::{
-    GenericError, MResult, MechError, MechErrorKind, MechSourceCode, compress_and_encode,
-};
+use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
     DefaultIdGenerator, EventId, EventSink, FS_IMPORT, FS_LIST, FS_READ, FS_RESOLVE, FS_SERVE,
     FS_WATCH, HostFilesystemAuthority, ModuleBuildOptions, RuntimeConfig, RuntimeEvent,
@@ -473,6 +471,15 @@ impl ServerSourceRegistry {
                         // with an embedded source bundle instead.
                         extra_slots.insert("DOCUMENT_SOURCES", "");
                     }
+                    #[cfg(feature = "serde")]
+                    let encoded_document = mech_runtime::BrowserDocumentPayload::new(
+                        logical_specifier.clone(),
+                        source_text.clone(),
+                    )?
+                    .with_presentation_output_ids(mech_engine::root_document_output_ids(tree))
+                    .encode()?;
+                    #[cfg(feature = "serde")]
+                    extra_slots.insert("CODE", encoded_document);
                     let mut formatter = Formatter::new();
                     let render = formatter.format_html_with_style_sheets_and_slots(
                         &tree,
@@ -499,9 +506,15 @@ impl ServerSourceRegistry {
                     self.code_sources.insert(
                         key.clone(),
                         ServerAsset {
-                            bytes: compress_and_encode(&tree)
-                                .map_err(|error| Error::new(ErrorKind::Other, error.to_string()))?
-                                .into_bytes(),
+                            bytes: mech_runtime::BrowserDocumentPayload::new(
+                                logical_specifier.clone(),
+                                source_text.clone(),
+                            )?
+                            .with_presentation_output_ids(mech_engine::root_document_output_ids(
+                                tree,
+                            ))
+                            .encode()?
+                            .into_bytes(),
                             content_type: "text/plain",
                             content_encoding: None,
                             backing_paths: vec![path.clone()],
@@ -2299,7 +2312,8 @@ mod tests {
     #[test]
     fn default_shim_owns_standalone_document_execution() {
         let root = temp_root("default-document-shim");
-        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let source = "answer := 42\r\nanswer\r\n";
+        std::fs::write(root.join("main.mec"), source).unwrap();
         let snapshot = snapshot(&root, "main.mec");
         let mut registry = ServerSourceRegistry::default();
         registry.set_document_controller(
@@ -2329,6 +2343,11 @@ mod tests {
             registry.get_route("/code/main.mec").unwrap().content_type,
             "text/plain",
         );
+        let encoded =
+            String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
         std::fs::remove_dir_all(root).unwrap();
     }
 

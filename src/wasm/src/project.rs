@@ -21,19 +21,19 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
 use mech_engine::{
-    insert_root_document_program_output_capture, root_document_inline_eval_count,
-    root_document_output_ids, root_document_program_output_id,
+    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_program_output_id,
 };
 #[cfg(feature = "served_project_authority")]
 use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
-    ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
-    MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
-    ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
-    SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
+    BrowserDocumentPayload, ConfigProfileOptions, ConfigValue, HostInstanceConfig,
+    InMemorySourceResolver, MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime,
+    ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
+    RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
+    RuntimeProgramRoute, SourceDocument, SourceKind, SourceRequest, SourceResolutionEntry,
+    import_may_resolve_source_dependency, parse_config_document, source_request_for_import,
     validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
@@ -50,12 +50,13 @@ use mech_timer::BrowserTimerHostFactory;
 #[cfg(feature = "served_project_authority")]
 use serde::Deserialize;
 
+use crate::canonical_document::CanonicalWasmDocument;
 #[cfg(feature = "browser_host_dom")]
 use crate::host::WasmBrowserDomBackend;
 #[cfg(feature = "browser_compute")]
 use crate::mixed_compute::{
     BrowserComputeBridge, BrowserComputePurpose, prepare_browser_compute_runtime,
-    prepare_compute_region,
+    prepare_compute_document_region,
 };
 
 #[wasm_bindgen]
@@ -431,21 +432,21 @@ pub(crate) struct WasmDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
-    tree: mech_core::nodes::Program,
+    document: CanonicalWasmDocument,
+    document_base: Rc<RefCell<Staged<SourceDocument>>>,
+    presentation_output_ids: Vec<u64>,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
     #[cfg(feature = "served_project_authority")]
     served: Option<ServedDocumentBootstrap>,
 }
 
-#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 #[derive(Clone, Default)]
 struct Staged<T> {
     active: T,
     pending: Option<T>,
 }
 
-#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 impl<T> Staged<T> {
     fn stage(&mut self, value: T) {
         self.pending = Some(value);
@@ -566,30 +567,24 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn initial_repl_source(&self) -> String {
-        let source = self.source();
-        if let Some(text) = source
-            .source_map
-            .get(&source.root_specifier)
-            .filter(|text| !text.trim().is_empty())
-        {
-            if mech_syntax::parser::parse(text.trim()).ok().as_ref() == Some(&source.tree) {
-                return text.clone();
-            }
-        }
-        mech_syntax::formatter::Formatter::new().format(&source.tree)
+        self.document_base().source().to_contiguous_string()
     }
 
-    pub(crate) fn initial_repl_tree(&self) -> mech_core::nodes::Program {
-        self.source().tree.clone()
+    pub(crate) fn initial_document(&self) -> SourceDocument {
+        self.document_base()
+    }
+
+    fn document_base(&self) -> SourceDocument {
+        let base = self.document_base.borrow();
+        base.pending.as_ref().unwrap_or(&base.active).clone()
+    }
+
+    fn stage_document_base(&self, document: SourceDocument) {
+        self.document_base.borrow_mut().stage(document);
     }
 
     fn program_output_id(&self) -> MResult<Option<OutputId>> {
-        let (_, output_id) = document_runtime_tree(self.source(), self.source().tree.clone())?;
-        Ok(output_id)
-    }
-
-    fn interactive_tree(&self, candidate_source: &str) -> MResult<mech_core::nodes::Program> {
-        mech_syntax::parser::parse(candidate_source.trim())
+        runtime_document(self, &self.document_base()).map(|(_, output)| output)
     }
 
     pub(crate) fn console_output_context(&self) -> String {
@@ -608,6 +603,7 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn commit(&self) {
+        self.document_base.borrow_mut().commit();
         #[cfg(feature = "browser_host_scene")]
         self.source().lifecycle.commit_scenes();
         #[cfg(feature = "browser_compute")]
@@ -615,6 +611,7 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn abort(&self) {
+        self.document_base.borrow_mut().abort();
         #[cfg(feature = "browser_host_scene")]
         self.source().lifecycle.abort_scenes();
         #[cfg(feature = "browser_compute")]
@@ -626,8 +623,8 @@ pub(crate) fn build_document_repl_runtime(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
 ) -> MResult<MechRuntime> {
-    let tree = bootstrap.source().tree.clone();
-    build_document_repl_runtime_for_tree(bootstrap, events, tree).map(|candidate| candidate.runtime)
+    build_document_repl_runtime_for_document(bootstrap, events, bootstrap.document.document())
+        .map(|candidate| candidate.runtime)
 }
 
 pub(crate) fn activate_document_repl_runtime(
@@ -635,17 +632,23 @@ pub(crate) fn activate_document_repl_runtime(
     events: MechEventBuffer,
     source: &str,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
-    let tree = bootstrap.interactive_tree(source)?;
-    activate_document_repl_runtime_tree(bootstrap, events, source, tree)
+    let document = SourceDocument::parse_resolved(
+        "runtime:interactive",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
+    activate_document_repl_runtime_document(bootstrap, events, &document)
 }
 
-pub(crate) fn activate_document_repl_runtime_tree(
+pub(crate) fn activate_document_repl_runtime_document(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
-    source: &str,
-    tree: mech_core::nodes::Program,
+    document: &SourceDocument,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
-    let mut candidate = build_document_repl_runtime_for_tree(bootstrap, events, tree)?;
+    let mut candidate = build_document_repl_runtime_for_document(bootstrap, events, document)?;
+    let source = document.source().to_contiguous_string();
     if source.trim().is_empty() {
         #[cfg(feature = "browser_host_scene")]
         bootstrap.source().lifecycle.stage_scenes(candidate.scenes);
@@ -711,10 +714,10 @@ struct DocumentRuntimeCandidate {
     scenes: BrowserSceneRegistry,
 }
 
-fn build_document_repl_runtime_for_tree(
+fn build_document_repl_runtime_for_document(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
-    candidate_tree: mech_core::nodes::Program,
+    candidate_document: &SourceDocument,
 ) -> MResult<DocumentRuntimeCandidate> {
     let source = bootstrap.source();
     #[cfg(feature = "browser_compute")]
@@ -723,7 +726,7 @@ fn build_document_repl_runtime_for_tree(
     if let Some(previous) = previous_compute.as_ref() {
         previous.ensure_source_replacement_ready()?;
     }
-    let (candidate_tree, _) = document_runtime_tree(source, candidate_tree)?;
+    let (candidate_document, _) = runtime_document(source, candidate_document)?;
     #[cfg(feature = "browser_host_scene")]
     let candidate_scenes = BrowserSceneRegistry::new();
 
@@ -746,7 +749,7 @@ fn build_document_repl_runtime_for_tree(
                 .map_err(js_value_to_mech_error)?
                 .function_catalog(mech_stdlib::source_native_plan_catalog())
                 .config(served.authority.into_runtime_config()?)
-                .source_resolver(document_source_resolver(candidate_tree.clone(), source)?);
+                .source_resolver(document_source_resolver(&candidate_document, source)?);
                 for required in document
                     .hosts
                     .iter()
@@ -775,8 +778,12 @@ fn build_document_repl_runtime_for_tree(
                 let compiler_started = web_time::Instant::now();
                 let mut compiler = planning.build_compiler()?;
                 let catalog_setup = compiler_started.elapsed().as_secs_f64() * 1_000.0;
-                let prepared =
-                    prepare_compute_region(&mut compiler, &candidate_tree, 0.0, catalog_setup)?;
+                let prepared = prepare_compute_document_region(
+                    &mut compiler,
+                    &candidate_document,
+                    0.0,
+                    catalog_setup,
+                )?;
                 Some(prepare_browser_compute_runtime(
                     &document,
                     prepared,
@@ -813,7 +820,7 @@ fn build_document_repl_runtime_for_tree(
         builder = builder.host_factory(Box::new(factory))?;
     }
 
-    let resolver = document_source_resolver(candidate_tree, source)?;
+    let resolver = document_source_resolver(&candidate_document, source)?;
 
     #[cfg(feature = "served_project_authority")]
     match bootstrap.served.as_ref() {
@@ -880,43 +887,76 @@ fn build_document_repl_runtime_for_tree(
     })
 }
 
-/// Add a runtime-only capture at the last ordinary source statement and
-/// publish it at the original document boundary. Appended console sections
-/// remain after this boundary, so they cannot replace the fixed Output pane.
-fn document_runtime_tree(
+/// Derive the executable browser revision from the retained candidate by
+/// inserting one canonical runtime-only capture at the original document boundary.
+/// Console overlays remain after that boundary and cannot replace the fixed
+/// document Output pane.
+fn runtime_document(
     source: &WasmDocumentBootstrap,
-    mut candidate_tree: mech_core::nodes::Program,
-) -> MResult<(mech_core::nodes::Program, Option<OutputId>)> {
-    let boundary = source
-        .tree
-        .body
-        .sections
-        .len()
-        .min(candidate_tree.body.sections.len());
-    let console_sections = candidate_tree.body.sections.split_off(boundary);
-    let mut capture_tree = mech_syntax::parser::parse("~~~mech:hidden\nans\n~~~")?;
-    let capture = capture_tree
-        .body
-        .sections
-        .iter_mut()
-        .flat_map(|section| section.elements.drain(..))
-        .find_map(|element| match element {
-            mech_core::nodes::SectionElement::FencedMechCode(block) => Some(block),
-            _ => None,
-        })
-        .ok_or_else(|| document_runtime_error("program output capture syntax did not parse"))?;
-    let inserted = insert_root_document_program_output_capture(&mut candidate_tree, capture);
-    candidate_tree.body.sections.extend(console_sections);
-    let output_id = if inserted {
-        root_document_output_ids(&candidate_tree)
-            .iter()
-            .position(|candidate| *candidate == root_document_program_output_id())
-            .and_then(|ordinal| u32::try_from(ordinal).ok())
-            .map(OutputId::new)
-    } else {
-        None
+    candidate: &SourceDocument,
+) -> MResult<(SourceDocument, Option<OutputId>)> {
+    use mech_syntax::document::{ParseConfig, Revision};
+
+    let original = source.initial_repl_source();
+    let candidate_source = candidate.source().to_contiguous_string();
+    let (base, suffix) = candidate_source
+        .strip_prefix(&original)
+        .map(|suffix| (original.as_str(), suffix))
+        .unwrap_or((candidate_source.as_str(), ""));
+    let base_document = SourceDocument::parse_resolved(
+        "runtime:interactive",
+        Revision(candidate.source().revision().0),
+        base,
+        ParseConfig::default(),
+    )
+    .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
+    let original_program = match CanonicalSourceFrontend.compile_document(&base_document.document())
+    {
+        Ok(program) => program,
+        Err(_) => return Ok((candidate.clone(), None)),
     };
-    Ok((candidate_tree, output_id))
+    let publishes_program = original_program
+        .document_outputs()
+        .iter()
+        .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible);
+    if !publishes_program {
+        return Ok((candidate.clone(), None));
+    }
+
+    const CAPTURE: &str = "```mech\nans\n```\n";
+    let mut executable = String::with_capacity(candidate_source.len() + CAPTURE.len() + 1);
+    executable.push_str(base);
+    if !executable.ends_with(['\r', '\n']) {
+        executable.push('\n');
+    }
+    let capture_start = executable.len();
+    executable.push_str(CAPTURE);
+    let capture_end = executable.len();
+    executable.push_str(suffix);
+    let document = SourceDocument::parse_resolved(
+        "runtime:interactive",
+        Revision(candidate.source().revision().0),
+        executable,
+        ParseConfig::default(),
+    )
+    .map_err(|error| {
+        document_runtime_error(format!("invalid browser runtime source: {error:?}"))
+    })?;
+    let program = CanonicalSourceFrontend
+        .compile_document(&document.document())
+        .map_err(|error| document_runtime_error(error.to_string()))?;
+    let output = program.document_outputs().iter().find_map(|output| {
+        let anchor = program.source_map().outputs.get(output.output as usize)?;
+        let start = anchor.range.start.0 as usize;
+        (output.kind == SourceDocumentOutputKind::Fence
+            && start >= capture_start
+            && start < capture_end)
+            .then_some(OutputId::new(output.output))
+    });
+    let output = output.ok_or_else(|| {
+        document_runtime_error("canonical browser program output capture was not published")
+    })?;
+    Ok((document, Some(output)))
 }
 
 fn document_runtime_error(message: impl Into<String>) -> MechError {
@@ -952,12 +992,38 @@ fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
 mod document {
     use super::*;
 
-    pub(super) fn document_output_ordinals(tree: &mech_core::nodes::Program) -> HashMap<u64, u64> {
-        root_document_output_ids(tree)
-            .into_iter()
-            .enumerate()
-            .map(|(ordinal, output_id)| (output_id, ordinal as u64))
-            .collect()
+    pub(super) fn document_output_ordinals(
+        bootstrap: &WasmDocumentBootstrap,
+    ) -> MResult<HashMap<u64, u64>> {
+        let program = match CanonicalSourceFrontend
+            .compile_document(&bootstrap.document.document().document())
+        {
+            Ok(program) => program,
+            Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
+            Err(error) => return Err(document_runtime_error(error.to_string())),
+        };
+        let outputs = program
+            .document_outputs()
+            .iter()
+            .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
+            .collect::<Vec<_>>();
+        if outputs.len() != bootstrap.presentation_output_ids.len() {
+            return Err(document_runtime_error(format!(
+                "browser presentation payload has {} addresses for {} canonical outputs",
+                bootstrap.presentation_output_ids.len(),
+                outputs.len(),
+            )));
+        }
+        let mut ordinals = bootstrap
+            .presentation_output_ids
+            .iter()
+            .copied()
+            .zip(outputs.into_iter().map(|output| u64::from(output.output)))
+            .collect::<HashMap<_, _>>();
+        if let Some(output) = bootstrap.program_output_id()? {
+            ordinals.insert(root_document_program_output_id(), u64::from(output.0));
+        }
+        Ok(ordinals)
     }
 
     fn selected_value_response(
@@ -1013,26 +1079,22 @@ mod document {
     fn capture_program_output(
         repl: &mut crate::repl::WasmRepl,
         bootstrap: &WasmDocumentBootstrap,
-    ) -> Result<Option<DocumentProgramOutput>, JsValue> {
+    ) -> MResult<Option<DocumentProgramOutput>> {
         let (output_id, captured) = {
             let Some(runtime) = repl.session.runtime() else {
                 return Ok(None);
             };
-            let Some(output_id) = bootstrap.program_output_id().map_err(to_js_error)? else {
+            let Some(output_id) = bootstrap.program_output_id()? else {
                 return Ok(None);
             };
-            (
-                output_id,
-                runtime.output_value(output_id).map_err(to_js_error)?,
-            )
+            (output_id, runtime.output_value(output_id)?)
         };
         let Some(snapshot) = captured.filter(|snapshot| !snapshot.is_empty()) else {
             return Ok(None);
         };
         let selection_token = repl
             .session
-            .retain_selection("ans", snapshot.clone(), None)
-            .map_err(to_js_error)?;
+            .retain_selection("ans", snapshot.clone(), None)?;
         Ok(Some(DocumentProgramOutput {
             selection_token,
             output_id,
@@ -1053,17 +1115,10 @@ mod document {
     impl WasmDocument {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
-            let tree = decode_document_tree(encoded)?;
-            Self::from_bootstrap(WasmDocumentBootstrap {
-                root_specifier: "document.mec".to_string(),
-                source_map: HashMap::from([("document.mec".to_string(), String::new())]),
-                resolutions: Vec::new(),
-                tree,
-                console_instance: "repl".to_string(),
-                lifecycle: DocumentRuntimeLifecycle::default(),
-                #[cfg(feature = "served_project_authority")]
-                served: None,
-            })
+            let payload = decode_document_payload(encoded)?;
+            let root_specifier = payload.root_specifier().to_owned();
+            let source_map = HashMap::from([(root_specifier.clone(), payload.source().to_owned())]);
+            Self::from_payload_with_sources(payload, &root_specifier, source_map, Vec::new())
         }
 
         /// Builds a formatted source document with a resolver rooted at its
@@ -1075,9 +1130,9 @@ mod document {
             root_specifier: &str,
             sources: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let tree = decode_document_tree(encoded)?;
+            let payload = decode_document_payload(encoded)?;
             let source_map = source_map_from_js(sources)?;
-            Self::from_tree_with_sources(tree, root_specifier, source_map, Vec::new())
+            Self::from_payload_with_sources(payload, root_specifier, source_map, Vec::new())
         }
 
         #[wasm_bindgen(js_name = fromEncodedWithBundle)]
@@ -1087,23 +1142,36 @@ mod document {
             sources: JsValue,
             resolutions: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let tree = decode_document_tree(encoded)?;
+            let payload = decode_document_payload(encoded)?;
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-            Self::from_tree_with_sources(tree, root_specifier, source_map, resolutions)
+            Self::from_payload_with_sources(payload, root_specifier, source_map, resolutions)
         }
 
-        pub(super) fn from_tree_with_sources(
-            tree: mech_core::nodes::Program,
+        pub(super) fn from_payload_with_sources(
+            payload: BrowserDocumentPayload,
             root_specifier: &str,
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
         ) -> Result<WasmDocument, JsValue> {
+            validate_document_payload(&payload, root_specifier, &source_map)?;
+            let document = CanonicalWasmDocument::retain(
+                "runtime:interactive",
+                mech_syntax::document::Revision(0),
+                payload.source(),
+            )
+            .map_err(to_js_error)?;
+            let document_base = Rc::new(RefCell::new(Staged {
+                active: document.document().clone(),
+                pending: None,
+            }));
             Self::from_bootstrap(WasmDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
-                tree,
+                document,
+                document_base,
+                presentation_output_ids: payload.presentation_output_ids().to_vec(),
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 #[cfg(feature = "served_project_authority")]
@@ -1112,9 +1180,14 @@ mod document {
         }
 
         fn from_bootstrap(bootstrap: WasmDocumentBootstrap) -> Result<WasmDocument, JsValue> {
-            let document_output_ordinals = document_output_ordinals(&bootstrap.tree);
-            let mut repl =
-                crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
+            Self::try_from_bootstrap(bootstrap).map_err(to_js_error)
+        }
+
+        pub(super) fn try_from_bootstrap(
+            bootstrap: WasmDocumentBootstrap,
+        ) -> MResult<WasmDocument> {
+            let document_output_ordinals = document_output_ordinals(&bootstrap)?;
+            let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
             Ok(Self {
                 repl,
@@ -1136,12 +1209,12 @@ mod document {
             config_source: &str,
             sources: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let tree = decode_document_tree(encoded)?;
+            let payload = decode_document_payload(encoded)?;
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
             let authority = served_browser_authority()?;
-            Self::from_served_tree(
-                tree,
+            Self::from_served_payload(
+                payload,
                 root_specifier,
                 document,
                 config_source,
@@ -1163,13 +1236,13 @@ mod document {
             sources: JsValue,
             resolutions: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let tree = decode_document_tree(encoded)?;
+            let payload = decode_document_payload(encoded)?;
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let authority = served_browser_authority()?;
-            Self::from_served_tree(
-                tree,
+            Self::from_served_payload(
+                payload,
                 root_specifier,
                 document,
                 config_source,
@@ -1180,8 +1253,8 @@ mod document {
         }
 
         #[cfg(feature = "served_project_authority")]
-        pub(super) fn from_served_tree(
-            tree: mech_core::nodes::Program,
+        pub(super) fn from_served_payload(
+            payload: BrowserDocumentPayload,
             root_specifier: &str,
             document: MechConfigDocument,
             config_source: &str,
@@ -1191,11 +1264,24 @@ mod document {
         ) -> Result<WasmDocument, JsValue> {
             validate_served_authority(&document, &authority).map_err(to_js_error)?;
             validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+            validate_document_payload(&payload, root_specifier, &source_map)?;
+            let retained = CanonicalWasmDocument::retain(
+                "runtime:interactive",
+                mech_syntax::document::Revision(0),
+                payload.source(),
+            )
+            .map_err(to_js_error)?;
+            let document_base = Rc::new(RefCell::new(Staged {
+                active: retained.document().clone(),
+                pending: None,
+            }));
             Self::from_bootstrap(WasmDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
-                tree,
+                document: retained,
+                document_base,
+                presentation_output_ids: payload.presentation_output_ids().to_vec(),
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 served: Some(ServedDocumentBootstrap {
@@ -1295,7 +1381,36 @@ mod document {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
             let mut replacement_bootstrap = self.bootstrap.clone();
-            replacement_bootstrap.tree = decode_document_tree(encoded)?;
+            let payload = decode_document_payload(encoded)?;
+            if payload.root_specifier() != replacement_bootstrap.root_specifier {
+                return Err(js_error(
+                    "replacement document changes the retained root specifier",
+                ));
+            }
+            replacement_bootstrap.source_map.insert(
+                replacement_bootstrap.root_specifier.clone(),
+                payload.source().to_owned(),
+            );
+            replacement_bootstrap.document = CanonicalWasmDocument::retain(
+                "runtime:interactive",
+                mech_syntax::document::Revision(
+                    replacement_bootstrap
+                        .document
+                        .document()
+                        .source()
+                        .revision()
+                        .0
+                        .saturating_add(1),
+                ),
+                payload.source(),
+            )
+            .map_err(to_js_error)?;
+            replacement_bootstrap.document_base = Rc::new(RefCell::new(Staged {
+                active: replacement_bootstrap.document.document().clone(),
+                pending: None,
+            }));
+            replacement_bootstrap.presentation_output_ids =
+                payload.presentation_output_ids().to_vec();
             let mut replacement = Self::from_bootstrap(replacement_bootstrap)?;
             // Request generations belong to the stable WasmDocument wrapper,
             // not to one replaceable runtime. Carry the clock forward before
@@ -1595,10 +1710,37 @@ mod document {
         #[wasm_bindgen(js_name = replReplaceSource)]
         pub fn repl_replace_source(&mut self, source: &str) -> Result<JsValue, JsValue> {
             let accepted_before = self.repl.session.source().to_string();
-            let response = self.repl.replace_source(source)?;
+            let revision = self
+                .repl
+                .session
+                .source_document()
+                .map(|document| document.source().revision().0)
+                .unwrap_or(0)
+                .saturating_add(1);
+            let candidate = SourceDocument::parse_resolved(
+                "runtime:interactive",
+                mech_syntax::document::Revision(revision),
+                source,
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .map_err(|error| {
+                to_js_error(document_runtime_error(format!(
+                    "invalid browser source: {error:?}"
+                )))
+            })?;
+            self.bootstrap.stage_document_base(candidate);
+            let response = match self.repl.replace_source(source) {
+                Ok(response) => response,
+                Err(error) => {
+                    self.bootstrap.abort();
+                    return Err(error);
+                }
+            };
             if self.repl.session.source() != accepted_before {
-                self.refresh_document_output_ordinals()
-                    .map_err(to_js_error)?;
+                self.program_output =
+                    capture_program_output(&mut self.repl, &self.bootstrap).map_err(to_js_error)?;
+            } else {
+                self.bootstrap.abort();
             }
             Ok(response)
         }
@@ -1639,40 +1781,7 @@ mod document {
         /// entry is a complete, recoverable Mech source fragment.
         #[wasm_bindgen(js_name = replFormatSource)]
         pub fn repl_format_source(&self, source: &str) -> Option<String> {
-            if source.trim().is_empty() || source.trim_start().starts_with(':') {
-                return None;
-            }
-            let suppresses_value = mech_syntax::submission_terminal(source)
-                .is_some_and(|terminal| terminal.suppresses_value);
-            let tree = mech_syntax::parser::parse(source.trim()).ok()?;
-            let mut formatter = mech_syntax::formatter::Formatter::new();
-            formatter.html = true;
-            let mut html = String::new();
-            let mut found_code = false;
-            for section in &tree.body.sections {
-                for element in &section.elements {
-                    let mech_core::nodes::SectionElement::MechCode(code) = element else {
-                        return None;
-                    };
-                    if code
-                        .iter()
-                        .any(|(node, _)| matches!(node, mech_core::nodes::MechCode::Error(_, _)))
-                    {
-                        return None;
-                    }
-                    html.push_str(&formatter.mech_code(code));
-                    found_code = true;
-                }
-            }
-            if suppresses_value {
-                const TERMINATOR: &str = "<span class=\"mech-code-terminal\">;</span>";
-                if let Some(comment) = html.rfind("<span class=\"mech-comment\">") {
-                    html.insert_str(comment, &format!("{TERMINATOR} "));
-                } else {
-                    html.push_str(TERMINATOR);
-                }
-            }
-            found_code.then_some(html)
+            CanonicalWasmDocument::repl_format_source(source)
         }
 
         #[wasm_bindgen(js_name = replFinishHostRequest)]
@@ -1811,14 +1920,20 @@ mod document {
                     "documentation response does not match the active REPL host request",
                 ));
             }
-            let tree = mech_syntax::parser::parse(source).map_err(to_js_error)?;
-            let inline_offset = root_document_inline_eval_count(
-                &self.current_interactive_tree().map_err(to_js_error)?,
-            );
-            let mut formatter = mech_syntax::formatter::Formatter::new();
-            formatter.html = true;
-            formatter.set_root_inline_eval_offset(inline_offset);
-            let html = formatter.program(&tree);
+            let document = CanonicalWasmDocument::retain(
+                &format!("browser:documentation:{topic}"),
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .map_err(to_js_error)?;
+            document.document().index().map_err(|error| {
+                to_js_error(document_runtime_error(format!(
+                    "invalid documentation source: {error}"
+                )))
+            })?;
+            let html = mech_runtime::CanonicalDocumentRenderer
+                .format_html_body(&document.document().document())
+                .map_err(|error| js_error(error.to_string()))?;
             let accepted = match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
                     self.refresh_document_output_ordinals()
@@ -1871,19 +1986,17 @@ mod document {
                 .ok_or_else(|| js_error("document runtime is not active"))
         }
 
-        pub(super) fn current_interactive_tree(&self) -> MResult<mech_core::nodes::Program> {
-            self.repl
-                .session
-                .source_tree()
-                .cloned()
-                .map(Ok)
-                .unwrap_or_else(|| self.bootstrap.interactive_tree(self.repl.session.source()))
-        }
-
         fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
-            let current = self.current_interactive_tree()?;
-            let (runtime_tree, _) = document_runtime_tree(self.bootstrap.source(), current)?;
-            self.document_output_ordinals = document_output_ordinals(&runtime_tree);
+            let current =
+                self.repl.session.source_document().ok_or_else(|| {
+                    document_runtime_error("document session has no retained source")
+                })?;
+            let (_, output_id) = runtime_document(self.bootstrap.source(), current)?;
+            if let (Some(program_output), Some(output_id)) =
+                (self.program_output.as_mut(), output_id)
+            {
+                program_output.output_id = output_id;
+            }
             Ok(())
         }
 
@@ -1958,9 +2071,32 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
     .map_err(to_js_error)
 }
 
-fn decode_document_tree(encoded: &str) -> Result<mech_core::nodes::Program, JsValue> {
-    mech_core::nodes::decode_and_decompress(encoded)
-        .map_err(|error| js_error(format!("failed to decode Mech document: {error}")))
+fn decode_document_payload(encoded: &str) -> Result<BrowserDocumentPayload, JsValue> {
+    BrowserDocumentPayload::decode(encoded).map_err(to_js_error)
+}
+
+fn validate_document_payload(
+    payload: &BrowserDocumentPayload,
+    root_specifier: &str,
+    source_map: &HashMap<String, String>,
+) -> Result<(), JsValue> {
+    if payload.root_specifier() != root_specifier {
+        return Err(js_error(format!(
+            "browser document payload root `{}` does not match requested root `{root_specifier}`",
+            payload.root_specifier(),
+        )));
+    }
+    let source = source_map.get(root_specifier).ok_or_else(|| {
+        js_error(format!(
+            "document root `{root_specifier}` is missing from the source map"
+        ))
+    })?;
+    if source != payload.source() {
+        return Err(js_error(format!(
+            "browser document payload is stale for source-map root `{root_specifier}`"
+        )));
+    }
+    Ok(())
 }
 
 fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
@@ -2466,7 +2602,7 @@ fn project_source_resolver_with_resolutions(
 }
 
 fn document_source_resolver(
-    tree: mech_core::nodes::Program,
+    document: &SourceDocument,
     source: &WasmDocumentBootstrap,
 ) -> MResult<InMemorySourceResolver> {
     if source.root_specifier.trim().is_empty() {
@@ -2481,26 +2617,51 @@ fn document_source_resolver(
         )));
     }
 
-    let mut resolver = project_source_resolver(&source.source_map)?;
-    for resolution in &source.resolutions {
-        resolver.insert_resolution_entry(resolution)?;
+    let mut resolver =
+        project_source_resolver_with_resolutions(&source.source_map, &source.resolutions)?;
+    let default_root_uri = format!("memory:{}", source.root_specifier);
+    let mut derived_root_resolutions = Vec::new();
+    let index = document
+        .index()
+        .map_err(|error| MechError::new(error, None))?;
+    for declaration in index.root.program_imports() {
+        if !import_may_resolve_source_dependency(&declaration) {
+            continue;
+        }
+        let request = source_request_for_import(&declaration, Some(&default_root_uri));
+        let Some(resolved) = mech_runtime::SourceResolver::resolve(&resolver, &request)? else {
+            continue;
+        };
+        let Some(target) = source
+            .source_map
+            .keys()
+            .find(|specifier| format!("memory:{specifier}") == resolved.canonical_uri)
+        else {
+            continue;
+        };
+        derived_root_resolutions.push(SourceResolutionEntry::new(
+            source.root_specifier.clone(),
+            request.specifier,
+            target.clone(),
+        ));
     }
+    let candidate_source = document.source().to_contiguous_string();
     resolver.insert_source(
         &source.root_specifier,
         ResolvedSource::new(
             &source.root_specifier,
-            format!("memory:{}", source.root_specifier),
-            MechSourceCode::String(
-                source
-                    .source_map
-                    .get(&source.root_specifier)
-                    .expect("document root presence is checked above")
-                    .clone(),
-            ),
+            "runtime:interactive",
+            MechSourceCode::String(candidate_source),
         )
-        .with_syntax_tree(tree)
+        .with_source_document(document.clone())?
         .with_kind(SourceKind::Mech),
     )?;
+    for resolution in &source.resolutions {
+        resolver.insert_resolution_entry(resolution)?;
+    }
+    for resolution in &derived_root_resolutions {
+        resolver.insert_resolution_entry(resolution)?;
+    }
     Ok(resolver)
 }
 
@@ -2814,56 +2975,99 @@ mod tests {
   }
 }"#;
 
+    fn document_payload(root_specifier: &str, source: &str) -> BrowserDocumentPayload {
+        let document = SourceDocument::parse_resolved(
+            "runtime:test-presentation",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let presentation_output_ids = CanonicalSourceFrontend
+            .compile_document(&document.document())
+            .ok()
+            .into_iter()
+            .flat_map(|program| {
+                program
+                    .document_outputs()
+                    .iter()
+                    .filter(|output| {
+                        output.visible && output.kind != SourceDocumentOutputKind::Program
+                    })
+                    .map(|output| {
+                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
+                    })
+                    .collect::<Vec<_>>()
+            });
+        BrowserDocumentPayload::new(root_specifier, source)
+            .unwrap()
+            .with_presentation_output_ids(presentation_output_ids)
+    }
+
+    fn document_bootstrap(
+        root_specifier: &str,
+        source: &str,
+        mut source_map: HashMap<String, String>,
+        resolutions: Vec<SourceResolutionEntry>,
+    ) -> WasmDocumentBootstrap {
+        source_map.insert(root_specifier.to_owned(), source.to_owned());
+        let payload = document_payload(root_specifier, source);
+        let document = CanonicalWasmDocument::retain(
+            "runtime:interactive",
+            mech_syntax::document::Revision(0),
+            source,
+        )
+        .unwrap();
+        let document_base = Rc::new(RefCell::new(Staged {
+            active: document.document().clone(),
+            pending: None,
+        }));
+        WasmDocumentBootstrap {
+            root_specifier: root_specifier.to_owned(),
+            source_map,
+            resolutions,
+            document,
+            document_base,
+            presentation_output_ids: payload.presentation_output_ids().to_vec(),
+            console_instance: "repl".to_owned(),
+            lifecycle: DocumentRuntimeLifecycle::default(),
+            #[cfg(feature = "served_project_authority")]
+            served: None,
+        }
+    }
+
     #[test]
     fn document_output_hashes_map_to_resident_output_ordinals() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let outputs = document::document_output_ordinals(&tree);
-        assert_eq!(outputs.get(&29_884_140_763_677_669), Some(&0));
-
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
-                .unwrap();
-        let outputs = document::document_output_ordinals(&tree);
-        assert_eq!(
-            outputs.get(&mech_core::hash_str("inline-eval:0:0")),
-            Some(&0)
-        );
-        assert_eq!(
-            outputs.len(),
-            2,
-            "inline and fenced root outputs are mapped"
-        );
+        for source in [
+            include_str!("../../../examples/working/fizzbuzz.mec"),
+            include_str!("../../../tests/fixtures/shims/all-slots.mec"),
+        ] {
+            let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+            let outputs = document::document_output_ordinals(&bootstrap).unwrap();
+            for output_id in &bootstrap.presentation_output_ids {
+                assert!(outputs.contains_key(output_id));
+            }
+            assert_eq!(
+                outputs.contains_key(&root_document_program_output_id()),
+                bootstrap.program_output_id().unwrap().is_some(),
+            );
+        }
     }
 
     #[test]
     fn browser_document_profile_runs_nbody_module_imports() {
-        let tree = mech_syntax::parser::parse(
-            "+> combinatorics\n\
+        let source = "+> combinatorics\n\
              +> stats\n\
              pairs := combinatorics/n-choose-k(10.0, 2.0)\n\
              column-totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
              row-totals := stats/sum/row([1.0 2.0; 3.0 4.0])\n\
-             pairs",
-        )
-        .unwrap();
-        let bootstrap = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::from([("document.mec".to_string(), String::new())]),
-            resolutions: Vec::new(),
-            tree: tree.clone(),
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
-        let source = bootstrap.initial_repl_source();
-        let (runtime, outcome) = activate_document_repl_runtime_tree(
+             pairs";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        let document = bootstrap.initial_document();
+        let (runtime, outcome) = activate_document_repl_runtime_document(
             &bootstrap,
             MechEventBuffer::default(),
-            &source,
-            tree,
+            &document,
         )
         .unwrap();
 
@@ -2902,10 +3106,8 @@ mod tests {
 
     #[test]
     fn document_program_output_identity_survives_console_overlays() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
-                .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let source = "~answer := 0\nanswer += 7\nanswer\n";
+        let encoded = document_payload("document.mec", source).encode().unwrap();
         let mut document = document::WasmDocument::from_encoded(&encoded).unwrap();
         let output_id = document
             .bootstrap
@@ -2921,7 +3123,7 @@ mod tests {
                 .unwrap()
                 .to_string(),
             "7",
-            "a named fence still contributes the enclosing program result",
+            "the retained document result is captured",
         );
 
         document.repl.session.submit("40 + 2").unwrap();
@@ -2936,6 +3138,41 @@ mod tests {
                 .to_string(),
             "7",
             "a console result must not replace the fixed document output",
+        );
+    }
+
+    #[test]
+    fn accepted_document_edit_becomes_the_program_output_boundary() {
+        let source = "answer := 1\nanswer\n";
+        let encoded = document_payload("document.mec", source).encode().unwrap();
+        let mut document = document::WasmDocument::from_encoded(&encoded).unwrap();
+        let replacement = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            "answer := 40\nanswer\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+
+        document.bootstrap.stage_document_base(replacement.clone());
+        document.repl.session.replace_document(replacement).unwrap();
+        document.repl.session.submit("1 + 1").unwrap();
+
+        let output_id = document
+            .bootstrap
+            .program_output_id()
+            .unwrap()
+            .expect("the edited document keeps a fixed program output");
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .output_value(output_id)
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "40",
+            "a later REPL overlay must remain outside the accepted edit boundary",
         );
     }
 
@@ -3179,7 +3416,7 @@ mod tests {
             .build_compiler()
             .unwrap();
         let bytecode = compiler
-            .compile_root(SourceRequest::new("demo.mec"), browser_module_options())
+            .compile_canonical_root(SourceRequest::new("demo.mec"))
             .unwrap()
             .into_parts()
             .1;
@@ -3259,15 +3496,21 @@ mod tests {
         run_project_sources(&mut runtime, &document).unwrap();
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
         assert!(matches!(
-            runtime.root_symbol_value("greeting").unwrap().value().data(),
+            runtime
+                .program_output_value()
+                .unwrap()
+                .unwrap()
+                .value()
+                .data(),
             mech_core::ValueData::String(value) if value.as_ref() == "Hello, Ada"
         ));
     }
 
     #[test]
     fn encoded_document_controller_loads_residently_without_legacy_execution() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
+            .encode()
+            .unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_f64(
@@ -3294,10 +3537,9 @@ mod tests {
 
 ~phase := 0.0
 next-phase := #Drive(phase)
-phase = next-phase
+        phase = next-phase
 phase"#;
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", source).encode().unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -3308,10 +3550,7 @@ phase"#;
 
     #[test]
     fn encoded_document_controller_accepts_wildcard_imported_resident_atan2() {
-        let tree = mech_syntax::parser::parse(
-            "Resident Atan2\n================\n+> math/*\n================\n\nangle := atan2(1.0, 0.0)\nangle",
-        )
-        .unwrap();
+        let source = "Resident Atan2\n================\n+> math/*\n================\n\nangle := atan2(1.0, 0.0)\nangle";
         let module = ["math".to_string()];
         assert!(
             mech_stdlib::source_catalog()
@@ -3319,16 +3558,7 @@ phase"#;
                 .is_some(),
             "the standard source catalog must install resident math/atan2",
         );
-        let bootstrap = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::from([("document.mec".to_string(), String::new())]),
-            resolutions: Vec::new(),
-            tree,
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
         let document = crate::repl::WasmRepl::from_document(bootstrap);
         assert!(document.is_ok(), "{:#?}", document.err());
         let document = document.unwrap();
@@ -3341,11 +3571,8 @@ phase"#;
 
     #[test]
     fn encoded_document_controller_accepts_resident_matrix_scalar_access() {
-        let tree = mech_syntax::parser::parse(
-            "matrix := [1.0 2.0; 3.0 4.0]\nselected := matrix[2,1]\nselected",
-        )
-        .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let source = "matrix := [1.0 2.0; 3.0 4.0]\nselected := matrix[2,1]\nselected";
+        let encoded = document_payload("document.mec", source).encode().unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -3364,8 +3591,9 @@ phase"#;
 
     #[test]
     fn document_console_queries_and_updates_the_same_resident_program() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
+            .encode()
+            .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -3428,8 +3656,9 @@ phase"#;
     #[cfg(feature = "browser_compute")]
     #[test]
     fn accepted_generation_rebuild_preserves_source_and_resident_state() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 41\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 41\nanswer")
+            .encode()
+            .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         document.repl.session.submit("answer += 1").unwrap();
         let accepted_source = document.repl.session.source().to_owned();
@@ -3456,10 +3685,12 @@ phase"#;
 
     #[test]
     fn selecting_a_large_document_value_is_runtime_local_until_ans_is_consumed() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload(
+            "document.mec",
+            include_str!("../../../examples/working/fizzbuzz.mec"),
+        )
+        .encode()
+        .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let accepted_source = document.repl.session.source().to_string();
         let revision = document
@@ -3562,7 +3793,6 @@ phase"#;
     #[test]
     fn source_backed_document_resolves_relative_imports_from_its_root_specifier() {
         let source = "+> ./math.mec\n~answer := 0\nanswer += math/value + 1\nanswer\n";
-        let tree = mech_syntax::parser::parse(source).unwrap();
         let source_map = HashMap::from([
             ("docs/main.mec".to_string(), source.to_string()),
             (
@@ -3571,9 +3801,13 @@ phase"#;
             ),
         ]);
 
-        let document =
-            WasmDocument::from_tree_with_sources(tree, "docs/main.mec", source_map, Vec::new())
-                .unwrap();
+        let document = WasmDocument::try_from_bootstrap(document_bootstrap(
+            "docs/main.mec",
+            source,
+            source_map,
+            Vec::new(),
+        ))
+        .unwrap();
 
         assert_f64(
             document
@@ -3586,9 +3820,8 @@ phase"#;
     }
 
     #[test]
-    fn source_backed_document_keeps_the_decoded_tree_authoritative() {
+    fn source_backed_document_rejects_a_stale_payload() {
         let decoded_source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
-        let tree = mech_syntax::parser::parse(decoded_source).unwrap();
         let source_map = HashMap::from([
             (
                 "docs/main.mec".to_string(),
@@ -3600,30 +3833,23 @@ phase"#;
             ),
         ]);
 
-        let document =
-            WasmDocument::from_tree_with_sources(tree, "docs/main.mec", source_map, Vec::new())
-                .unwrap();
-
-        assert_f64(
-            document
-                .runtime()
-                .unwrap()
-                .root_symbol_value("answer")
-                .unwrap(),
-            42.0,
-        );
-        assert_eq!(
-            document.current_interactive_tree().unwrap(),
-            document.repl.session.source_tree().unwrap().clone(),
-            "document projections must use the session's accepted semantic tree",
+        assert!(
+            WasmDocument::from_payload_with_sources(
+                document_payload("docs/main.mec", decoded_source),
+                "docs/main.mec",
+                source_map,
+                Vec::new(),
+            )
+            .is_err()
         );
     }
 
     #[test]
     fn source_backed_document_preserves_explicit_resolution_edges_across_reset() {
         let source = "+> ./math.mec\n~answer := 0\nanswer += math/value + 1\nanswer\n";
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("bundle/000000.mec", source)
+            .encode()
+            .unwrap();
         let source_map = HashMap::from([
             ("bundle/000000.mec".to_string(), source.to_string()),
             (
@@ -3637,8 +3863,8 @@ phase"#;
             "bundle/000001.mec",
         )];
 
-        let mut document = WasmDocument::from_tree_with_sources(
-            tree,
+        let mut document = WasmDocument::from_payload_with_sources(
+            document_payload("bundle/000000.mec", source),
             "bundle/000000.mec",
             source_map,
             resolutions,
@@ -3670,8 +3896,9 @@ phase"#;
 
     #[test]
     fn detached_session_reset_reactivates_its_complete_source_baseline() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
+            .encode()
+            .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         document.repl.session.submit("answer += 1\nanswer").unwrap();
         assert_f64(
@@ -3694,8 +3921,9 @@ phase"#;
 
     #[test]
     fn document_repl_clear_owns_the_complete_workspace_source() {
-        let tree = mech_syntax::parser::parse("x := 1\ny := 2\ny").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "x := 1\ny := 2\ny")
+            .encode()
+            .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
 
         document
@@ -3718,8 +3946,9 @@ phase"#;
 
     #[test]
     fn document_repl_formats_only_complete_mech_source_entries() {
-        let tree = mech_syntax::parser::parse("baseline := 1").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "baseline := 1")
+            .encode()
+            .unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         let formatted = document
@@ -3738,79 +3967,42 @@ phase"#;
     }
 
     #[test]
-    fn appended_document_fragments_continue_the_root_inline_output_namespace() {
-        let baseline = mech_syntax::parser::parse("Baseline {1}.\n\nanswer := 1\nanswer").unwrap();
-        let fragment = mech_syntax::parser::parse("Documentation {2}.").unwrap();
-        let offset = root_document_inline_eval_count(&baseline);
-        assert_eq!(offset, 1);
-
-        let mut formatter = mech_syntax::formatter::Formatter::new();
-        formatter.html = true;
-        formatter.set_root_inline_eval_offset(offset);
-        let html = formatter.program(&fragment);
-        let fragment_id = mech_core::hash_str("inline-eval:0:1");
-        assert!(html.contains(&format!("id=\"{fragment_id}:0\"")), "{html}");
-
-        let mut combined = baseline.clone();
-        combined.body.sections.extend(fragment.body.sections);
-        assert_eq!(
-            root_document_output_ids(&combined),
-            vec![
-                mech_core::hash_str("inline-eval:0:0"),
-                mech_core::hash_str("inline-eval:0:1"),
-            ],
-        );
-        assert_eq!(
-            document::document_output_ordinals(&combined).get(&fragment_id),
-            Some(&1),
-        );
-
-        let source = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::new(),
-            resolutions: Vec::new(),
-            tree: baseline,
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
-        let (runtime_tree, program_output) = document_runtime_tree(&source, combined).unwrap();
-        assert!(program_output.is_some());
-        assert_eq!(
-            document::document_output_ordinals(&runtime_tree).get(&fragment_id),
-            Some(&2),
-            "the hidden fixed program output owns the ordinal before appended documentation",
-        );
+    fn appended_document_fragments_follow_the_canonical_program_capture() {
+        let baseline = "Baseline {1}.\n\nanswer := 1\nanswer\n";
+        let fragment = "\nDocumentation {2}.\n";
+        let bootstrap = document_bootstrap("document.mec", baseline, HashMap::new(), Vec::new());
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            format!("{baseline}{fragment}"),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let (runtime_document, program_output) = runtime_document(&bootstrap, &candidate).unwrap();
+        let program_output = program_output.expect("the original result is captured");
+        let program = CanonicalSourceFrontend
+            .compile_document(&runtime_document.document())
+            .unwrap();
+        assert!(program.document_outputs().iter().any(|output| {
+            output.kind == SourceDocumentOutputKind::Inline && output.output > program_output.get()
+        }));
     }
 
     #[test]
     fn fixed_program_capture_preserves_trailing_comment_output_order() {
-        let tree = mech_syntax::parser::parse(
-            "~~~mech\nanswer := 40 + 2\n-- The next value is {answer + 1}.\n~~~",
-        )
-        .unwrap();
-        let source_output_ids = root_document_output_ids(&tree);
-        assert_eq!(source_output_ids.len(), 2);
-        assert_eq!(source_output_ids[0], mech_core::hash_str("inline-eval:0:0"));
+        let source = "answer := 40 + 2\n\nThe next value is {answer + 1}.\n\nanswer\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        let (runtime_source, program_output) =
+            runtime_document(&bootstrap, bootstrap.document.document()).unwrap();
+        let program_output = program_output.expect("the final statement is captured");
+        let program = CanonicalSourceFrontend
+            .compile_document(&runtime_source.document())
+            .unwrap();
+        assert!(program.document_outputs().iter().any(|output| {
+            output.kind == SourceDocumentOutputKind::Inline && output.output < program_output.get()
+        }));
 
-        let source = WasmDocumentBootstrap {
-            root_specifier: "document.mec".to_string(),
-            source_map: HashMap::new(),
-            resolutions: Vec::new(),
-            tree: tree.clone(),
-            console_instance: "repl".to_string(),
-            lifecycle: DocumentRuntimeLifecycle::default(),
-            #[cfg(feature = "served_project_authority")]
-            served: None,
-        };
-        let (runtime_tree, program_output) = document_runtime_tree(&source, tree.clone()).unwrap();
-        let mut expected = source_output_ids;
-        expected.push(root_document_program_output_id());
-        assert_eq!(root_document_output_ids(&runtime_tree), expected);
-        assert!(program_output.is_some());
-
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", source).encode().unwrap();
         let document = WasmDocument::from_encoded(&encoded).unwrap();
         let output = document
             .bootstrap
@@ -3862,7 +4054,8 @@ phase"#;
         assert!(
             error
                 .kind_as::<mech_runtime::RuntimeModuleDependencyMissingError>()
-                .is_some()
+                .is_some(),
+            "{error:?}",
         );
     }
 
@@ -4067,21 +4260,18 @@ scene := {
             ConfigProfileOptions::default(),
         )
         .unwrap();
-        let tree = mech_syntax::parser::parse(source).unwrap();
         let authority = authority_config(
             config.hosts.clone(),
             config.run.as_ref().unwrap().grants.clone(),
         );
-        let mut document = WasmDocument::from_served_tree(
-            tree,
-            "main.mec",
-            config,
-            config_source,
-            HashMap::from([("main.mec".to_string(), source.to_string())]),
-            Vec::new(),
+        validate_served_authority(&config, &authority).unwrap();
+        let mut bootstrap = document_bootstrap("main.mec", source, HashMap::new(), Vec::new());
+        bootstrap.console_instance = internal_repl_console_instance(&config.hosts);
+        bootstrap.served = Some(ServedDocumentBootstrap {
+            config_source: config_source.to_owned(),
             authority,
-        )
-        .unwrap();
+        });
+        let mut document = WasmDocument::try_from_bootstrap(bootstrap).unwrap();
         let active = document.bootstrap.source().lifecycle.scenes();
         let accepted_scene = active
             .latest("view")
@@ -4258,7 +4448,7 @@ rows := |id<string> x<f64>|
             .unwrap();
         run_project_sources(&mut runtime, &document).unwrap();
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
-        runtime.root_symbol_value("rows").unwrap();
+        assert!(runtime.program_output_value().unwrap().is_some());
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
@@ -4471,10 +4661,20 @@ rows := |id<string> x<f64>|
                 planning = planning.run_resource_grant(grant.clone());
             }
             let mut compiler = planning.build_compiler().unwrap();
-            let tree = mech_syntax::parser::parse(&source).unwrap();
-            let prepared =
-                crate::mixed_compute::prepare_compute_region(&mut compiler, &tree, 0.0, 0.0)
-                    .unwrap();
+            let retained = SourceDocument::parse_resolved(
+                "memory:main.mec",
+                mech_syntax::document::Revision(0),
+                source.as_str(),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .unwrap();
+            let prepared = crate::mixed_compute::prepare_compute_document_region(
+                &mut compiler,
+                &retained,
+                0.0,
+                0.0,
+            )
+            .unwrap();
             assert!(!prepared.coordinator.nodes().is_empty());
             assert!(prepared.coordinator.nodes().iter().all(|node| {
                 let node = node.as_operation().expect("EKF coordinator operation");
@@ -5189,14 +5389,11 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn browser_document_profile_executes_both_stats_sum_axes() {
-        let tree = mech_syntax::parser::parse(
-            "+> stats\n\
+        let source = "+> stats\n\
              column-totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
              row-totals := stats/sum/row([1.0 2.0; 3.0 4.0])\n\
-             row-totals",
-        )
-        .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+             row-totals";
+        let encoded = encoded_document(source);
         let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
@@ -5222,8 +5419,34 @@ mod browser_tests {
     }
 
     fn encoded_document(source: &str) -> String {
-        let tree = mech_syntax::parser::parse(source).unwrap();
-        mech_core::nodes::compress_and_encode(&tree).unwrap()
+        let document = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let presentation_output_ids = CanonicalSourceFrontend
+            .compile_document(&document.document())
+            .ok()
+            .into_iter()
+            .flat_map(|program| {
+                program
+                    .document_outputs()
+                    .iter()
+                    .filter(|output| {
+                        output.visible && output.kind != SourceDocumentOutputKind::Program
+                    })
+                    .map(|output| {
+                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
+                    })
+                    .collect::<Vec<_>>()
+            });
+        BrowserDocumentPayload::new("document.mec", source)
+            .unwrap()
+            .with_presentation_output_ids(presentation_output_ids)
+            .encode()
+            .unwrap()
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -5405,8 +5628,9 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn encoded_document_executes_and_exposes_detached_render_queries() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = document_payload("document.mec", "~answer := 0\nanswer += 42\nanswer")
+            .encode()
+            .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let rendered = document.rendered_symbol("answer").unwrap();
         assert!(!rendered.is_null());
@@ -5654,31 +5878,18 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn encoded_fizzbuzz_document_executes_in_the_resident_browser_product() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let output_id = tree
-            .body
-            .sections
-            .iter()
-            .flat_map(|section| &section.elements)
-            .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
-                    block
-                        .code
-                        .last()
-                        .map(|(code, _)| mech_core::hash_str(&format!("{code:?}")))
-                }
-                _ => None,
-            })
-            .last()
-            .expect("FizzBuzz fixture must contain an output block");
+        let source = include_str!("../../../examples/working/fizzbuzz.mec");
+        let output_id = 29_884_140_763_677_669;
         assert_eq!(
             output_id, 29_884_140_763_677_669,
             "the WASM output key must match the native formatter key",
         );
 
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = BrowserDocumentPayload::new("document.mec", source)
+            .unwrap()
+            .with_presentation_output_ids([output_id])
+            .encode()
+            .unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         assert_eq!(
             document.runtime().unwrap().program_route(),
@@ -5721,10 +5932,7 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn factorial_document_exposes_its_unfenced_final_statement() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/factorial.mec"))
-                .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = encoded_document(include_str!("../../../examples/working/factorial.mec"));
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let output = document.rendered_program_output().unwrap();
 
@@ -5780,8 +5988,7 @@ mod browser_tests {
 
     #[wasm_bindgen_test]
     fn fixed_program_output_resolves_its_live_value_after_steps() {
-        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 1\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let encoded = encoded_document("~answer := 0\nanswer += 1\nanswer");
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let initial = document.rendered_program_output().unwrap();
         let selection_token = Reflect::get(&initial, &JsValue::from_str("selectionToken"))
