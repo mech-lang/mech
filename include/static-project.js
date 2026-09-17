@@ -56,15 +56,15 @@ async function readProjectSourceManifest(moduleUrl) {
       source =>
         typeof source?.specifier !== "string" ||
         typeof source?.url !== "string" ||
-        (source.artifactUrl !== undefined && typeof source.artifactUrl !== "string"),
+        (source.documentUrl !== undefined && typeof source.documentUrl !== "string"),
     )
   ) {
     throw new Error("invalid project source manifest");
   }
 
   for (const root of manifest.roots) {
-    if (!manifest.sources.some(source => source.specifier === root && typeof source.artifactUrl === "string")) {
-      throw new Error(`static bundle root artifact is missing: ${root}`);
+    if (!manifest.sources.some(source => source.specifier === root && typeof source.documentUrl === "string")) {
+      throw new Error(`static bundle root document is missing: ${root}`);
     }
   }
   return manifest;
@@ -73,7 +73,7 @@ async function readProjectSourceManifest(moduleUrl) {
 async function main() {
   await init();
   if (
-    typeof WasmProject.fromServedBundle !== "function" ||
+    typeof WasmProject.fromServedDocuments !== "function" ||
     typeof WasmProject.supportsServedAuthority !== "function" ||
     WasmProject.supportsServedAuthority() !== true
   ) {
@@ -82,12 +82,12 @@ async function main() {
   const config = await fetchText("mech.mcfg");
   const manifest = await readProjectSourceManifest(import.meta.url);
   const sources = {};
-  const artifacts = {};
+  const documents = {};
 
   for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
-    if (source.artifactUrl !== undefined) {
-      artifacts[source.specifier] = await fetchText(source.artifactUrl);
+    if (source.documentUrl !== undefined) {
+      documents[source.specifier] = await fetchText(source.documentUrl);
     }
   }
 
@@ -95,7 +95,7 @@ async function main() {
     throw new Error("static bundle is missing injected browser host authority");
   }
 
-  project = WasmProject.fromServedBundle(config, sources, artifacts, manifest.roots);
+  project = WasmProject.fromServedDocuments(config, sources, documents, manifest.roots);
   project.start();
   running = true;
   requestAnimationFrame(frame);

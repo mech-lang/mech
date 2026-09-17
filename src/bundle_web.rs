@@ -45,7 +45,7 @@ struct BundledSource {
     canonical_path: PathBuf,
     specifier: String,
     url: String,
-    artifact_url: Option<String>,
+    document_url: Option<String>,
 }
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
@@ -166,7 +166,7 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             canonical_path: read_source_path.clone(),
             specifier: specifier.clone(),
             url,
-            artifact_url: root_paths
+            document_url: root_paths
                 .contains(&read_source_path)
                 .then(|| format!("code/{}", percent_encode_url_path(&specifier))),
         });
@@ -227,8 +227,8 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
               "specifier": source.specifier,
               "url": source.url,
             });
-            if let Some(url) = &source.artifact_url {
-                entry["artifactUrl"] = serde_json::json!(url);
+            if let Some(url) = &source.document_url {
+                entry["documentUrl"] = serde_json::json!(url);
             }
             entry
         })
@@ -268,7 +268,7 @@ pub(crate) fn validate_static_bundle_wasm_package(path: &Path) -> MResult<()> {
     }
 
     let wrapper = fs::read_to_string(&js_path).map_err(|_| static_wasm_profile_error())?;
-    if !wrapper.contains("WasmProject") || !wrapper.contains("fromServedBundle") {
+    if !wrapper.contains("WasmProject") || !wrapper.contains("fromServedDocuments") {
         return Err(static_wasm_profile_error());
     }
 
@@ -732,7 +732,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
-  static fromServedBundle() {}
+  static fromServedDocuments() {}
   static supportsServedAuthority() { return true; }
 }
 export default async function init() {}
@@ -1171,7 +1171,7 @@ export default async function init() {}
             .iter()
             .find(|source| source["specifier"] == "notes.mec")
             .unwrap();
-        assert!(notes.get("artifactUrl").is_none());
+        assert!(notes.get("documentUrl").is_none());
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -1317,7 +1317,7 @@ export default async function init() {}
     }
 
     #[test]
-    fn wasm_package_validator_rejects_missing_served_bundle_export() {
+    fn wasm_package_validator_rejects_missing_served_document_export() {
         let root = temp_root("wasm-package-missing-bundle");
         let package = root.join("pkg");
         fs::create_dir_all(&package).unwrap();
@@ -1379,7 +1379,7 @@ export default async function init() {}
     }
 
     #[test]
-    fn bundle_web_static_project_bootstrap_uses_served_bundle() {
+    fn bundle_web_static_project_bootstrap_uses_served_documents() {
         let root = temp_root("static-bootstrap");
         let loaded = write_demo_project(&root);
         let out = root.join("out");
@@ -1393,13 +1393,13 @@ export default async function init() {}
                 .unwrap();
         assert!(index.contains("src=\"./_mech/project.js\""));
         assert!(index.contains("window.__MECH_HOST_CONFIG"));
-        assert!(bootstrap.contains("WasmProject.fromServedBundle"));
+        assert!(bootstrap.contains("WasmProject.fromServedDocuments"));
         assert!(bootstrap.contains("../pkg/mech_wasm.js"));
         assert_eq!(manifest["version"], 3);
         assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
         assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");
         assert_eq!(manifest["sources"][0]["url"], "source/demo.mec");
-        assert_eq!(manifest["sources"][0]["artifactUrl"], "code/demo.mec");
+        assert_eq!(manifest["sources"][0]["documentUrl"], "code/demo.mec");
         fs::remove_dir_all(root).unwrap();
     }
 

@@ -155,8 +155,8 @@ if pairs != expected:
     raise SystemExit(f"unexpected source manifest entries: {manifest!r}")
 if manifest.get("roots") != ["demo.mec"]:
     raise SystemExit(f"unexpected source manifest roots: {manifest!r}")
-if sources[0].get("artifactUrl") != "code/demo.mec":
-    raise SystemExit(f"root source has no canonical artifact: {sources!r}")
+if sources[0].get("documentUrl") != "code/demo.mec":
+    raise SystemExit(f"root source has no canonical document payload: {sources!r}")
 PY
 
 set +e

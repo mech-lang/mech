@@ -28,7 +28,7 @@ async function bootstrap(manifest) {
     console: { error: error => errors.push(String(error)) },
     WasmProject: {
       supportsServedAuthority: () => true,
-      fromServedBundle: (...args) => { admitted.push(args); return { start() {}, stop() {} }; },
+      fromServedDocuments: (...args) => { admitted.push(args); return { start() {}, stop() {} }; },
     },
     fetch: async value => {
       const path = new URL(value).pathname;
@@ -41,9 +41,9 @@ async function bootstrap(manifest) {
   return { fetched, errors, admitted };
 }
 
-test('static bootstrap fetches served prose and only the configured root artifact', async () => {
+test('static bootstrap fetches served prose and only the configured root document', async () => {
   const result = await bootstrap({ version: 3, roots: ['main.mec'], sources: [
-    { specifier: 'main.mec', url: 'source/main.mec', artifactUrl: 'code/main.mec' },
+    { specifier: 'main.mec', url: 'source/main.mec', documentUrl: 'code/main.mec' },
     { specifier: 'notes.mec', url: 'source/notes.mec' },
   ] });
   assert.deepEqual(result.errors, []);
@@ -54,10 +54,10 @@ test('static bootstrap fetches served prose and only the configured root artifac
   assert.ok(!result.fetched.includes('/app/code/notes.mec'));
 });
 
-test('static bootstrap rejects a configured root without its artifact', async () => {
+test('static bootstrap rejects a configured root without its document', async () => {
   const result = await bootstrap({ version: 3, roots: ['main.mec'], sources: [
     { specifier: 'main.mec', url: 'source/main.mec' },
   ] });
   assert.equal(result.admitted.length, 0);
-  assert.match(result.errors[0], /root artifact is missing: main.mec/);
+  assert.match(result.errors[0], /root document is missing: main.mec/);
 });
