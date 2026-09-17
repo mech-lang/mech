@@ -32,14 +32,14 @@ use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
 use crossterm::{execute, queue};
 #[cfg(feature = "mika")]
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
+#[cfg(feature = "mika")]
+use mech_core::mika::MICROMIKA_WAVE;
 use mech_core::{MResult, MechError};
 use mech_runtime::{
     DiagnosticPhase, MechEvent, OutputContent, REPL_TEXT_LOGO, ReplDispatchControl, ReplEvent,
     ReplHostRequest, ReplResponse, ReplResponseKind, ReplResponseStatus, Severity, TextOutput,
     parse_repl_request,
 };
-#[cfg(feature = "mika")]
-use mech_syntax::mika::MICROMIKA_WAVE;
 
 use self::presentation::{
     MECH_AMBER, capabilities, docs, list_directory, profiling, save_session_source, value,

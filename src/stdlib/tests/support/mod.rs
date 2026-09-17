@@ -1,4 +1,7 @@
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    reason = "shared canonical source helpers are selected by focused integration tests"
+)]
 
 use mech_core::{
     ReactiveInstanceId, ResolvedType, ResolvedValueDescriptor, Schema, Value, ValueData,
