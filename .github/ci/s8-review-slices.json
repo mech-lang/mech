@@ -741,6 +741,22 @@
           "--features",
           "full_compiler,full_source,resident-artifact",
           "--lib",
+          "resident::general::execution::tests::match_conversion_prior_footprint_charges_the_complete_borrowed_traversal",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--lib",
           "source_semantics::frontend::review_tests::latest_review_select_all_roundtrips_linear_order_and_zero_extents",
           "--",
           "--exact"
@@ -839,6 +855,22 @@
           "full_compiler,full_source,resident-routing-source",
           "--lib",
           "canonical_product_closed_control_lifecycle_survives_rejection_and_reset"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source",
+          "--lib",
+          "runtime::program::tests::pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output",
+          "--",
+          "--exact"
         ],
         [
           "cargo",

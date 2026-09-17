@@ -2699,6 +2699,13 @@ fn source_extents(
     }
 }
 
+fn node_output_requires_runtime_control_shape(artifact: &ProgramArtifact, node: NodeId) -> bool {
+    artifact
+        .nodes()
+        .get(node.get() as usize)
+        .is_none_or(|producer| producer.as_operation().is_none())
+}
+
 fn source_has_activation_shape_fact(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
@@ -2730,7 +2737,12 @@ fn source_has_activation_shape_fact(
     if let ProducerReference::Output { source, .. } = declaration.producer {
         return source_has_activation_shape_fact(artifact, source, facts);
     }
-    if matches!(declaration.producer, ProducerReference::NodeOutput { .. }) {
+    if let ProducerReference::NodeOutput { node, .. } = declaration.producer
+        && node_output_requires_runtime_control_shape(artifact, node)
+    {
+        // Control outputs acquire their parameterized axes only when the
+        // selected block executes. Ordinary operation outputs may still use
+        // compiler-proven hints (or a closed schema) as activation facts.
         return false;
     }
     if artifact.slot_shape_hint(slot).is_some() {
@@ -3852,7 +3864,12 @@ fn slot_has_activation_fixed_shape(
         return true;
     }
     match declaration.producer {
-        ProducerReference::NodeOutput { .. } => false,
+        ProducerReference::NodeOutput { node, .. }
+            if node_output_requires_runtime_control_shape(artifact, node) =>
+        {
+            false
+        }
+        ProducerReference::NodeOutput { .. } => artifact.slot_shape_hint(slot).is_some(),
         ProducerReference::Output {
             source: ArtifactSource::Slot(source),
             ..
