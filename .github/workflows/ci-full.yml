@@ -1099,7 +1099,7 @@ jobs:
           --no-default-features --features full_source,resident-routing-source
           --test canonical_declaration_handoff --test canonical_document_outputs
           --test canonical_document_render --test canonical_source_index
-          --test source_document
+          --test source_document --test canonical_config_profile --test config_profile
 
       - name: Verify canonical complete-document indexing work
         run: >-
@@ -1111,6 +1111,7 @@ jobs:
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features source --test source_document
+          --test canonical_config_profile --test config_profile
 
       - name: Check reduced core feature boundaries
         run: |

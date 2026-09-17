@@ -2,7 +2,7 @@ S8B — Execution interfaces and the deleted-code rehearsal
 ===============================================================================
 
 Status: B1 dependency preparation; no execution consumer is accepted.
-Parent: S8A 49311d39e0fe2bc036761e272d6a11fdad9e8ed0.
+Parent: S8A 8a650af6a6f80268b75216092aed45500c0babed.
 The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
 fixes B's initial public-interface decisions.
 
