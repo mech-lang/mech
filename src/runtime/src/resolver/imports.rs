@@ -95,6 +95,7 @@ pub fn source_request_for_import(
     request
 }
 
+#[cfg(feature = "source")]
 pub(super) fn classified_module_import(
     module: &str,
     item: Option<&str>,
