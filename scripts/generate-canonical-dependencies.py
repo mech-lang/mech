@@ -15,29 +15,8 @@ FENCE_CLOSE = "```"
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SPECIFICATION = REPOSITORY_ROOT / "docs/design/specification.mec"
-PRODUCTIONS = REPOSITORY_ROOT / "docs/design/grammar-audit/productions.tsv"
 PORTS = REPOSITORY_ROOT / "docs/design/grammar-audit/ports.tsv"
 OUTPUT = REPOSITORY_ROOT / "docs/design/grammar-audit/canonical-dependencies.tsv"
-
-PRODUCTION_COLUMNS = [
-    "id",
-    "grammar-name",
-    "module",
-    "rust-function",
-    "classification",
-    "feature-gate",
-    "entry-point",
-    "output-type",
-    "parent-rules",
-    "child-rules",
-    "selection-behavior",
-    "termination",
-    "whitespace",
-    "spec-location",
-    "conformance-cases",
-    "implementation-path",
-    "notes",
-]
 
 PORT_COLUMNS = [
     "grammar-name",
@@ -107,24 +86,6 @@ def read_tsv(path: Path, expected_columns: list[str]) -> list[dict[str, str]]:
         if None in row or any(value is None for value in row.values()):
             raise SystemExit(f"{path.name}:{line_number}: invalid field count")
     return rows
-
-
-def canonical_inventory_names() -> set[str]:
-    rows = read_tsv(PRODUCTIONS, PRODUCTION_COLUMNS)
-    canonical = [
-        row
-        for row in rows
-        if row["spec-location"].startswith("docs/design/specification.mec::")
-    ]
-    if len(canonical) != EXPECTED_RULES:
-        raise SystemExit(
-            f"expected {EXPECTED_RULES} canonical production rows, "
-            f"found {len(canonical)}"
-        )
-    names = [row["grammar-name"] for row in canonical]
-    if len(set(names)) != EXPECTED_RULES:
-        raise SystemExit("canonical productions contain duplicate grammar names")
-    return set(names)
 
 
 def port_names() -> set[str]:
@@ -260,10 +221,7 @@ def identifier_tokens(rhs: str) -> list[str]:
 
 
 def dependency_graph() -> tuple[dict[str, set[str]], int]:
-    inventory = canonical_inventory_names()
     ports = port_names()
-    if inventory != ports:
-        raise SystemExit("canonical production and port name sets differ")
 
     parsed = [split_production(item) for item in scan_productions(canonical_fence())]
     if len(parsed) != EXPECTED_RULES:
@@ -273,11 +231,11 @@ def dependency_graph() -> tuple[dict[str, set[str]], int]:
     names = [name for name, _ in parsed]
     if len(set(names)) != EXPECTED_RULES:
         raise SystemExit("canonical EBNF contains duplicate rule definitions")
-    if set(names) != inventory:
-        missing = sorted(inventory - set(names))
-        unknown = sorted(set(names) - inventory)
+    if set(names) != ports:
+        missing = sorted(ports - set(names))
+        unknown = sorted(set(names) - ports)
         raise SystemExit(
-            f"canonical EBNF and inventory names differ: missing={missing}, unknown={unknown}"
+            f"canonical EBNF and port names differ: missing={missing}, unknown={unknown}"
         )
 
     primitives = 0
@@ -290,7 +248,7 @@ def dependency_graph() -> tuple[dict[str, set[str]], int]:
         graph[name] = {
             token
             for token in identifier_tokens(rhs)
-            if token in inventory
+            if token in ports
         }
 
     for name, required in REQUIRED_EDGES.items():

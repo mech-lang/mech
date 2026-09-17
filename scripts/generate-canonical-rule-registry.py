@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the package-local Phase 0 canonical RuleId registry."""
+"""Generate the package-local canonical RuleId registry."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 EXPECTED_RULES = 539
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-INVENTORY = REPOSITORY_ROOT / "docs/design/grammar-audit/productions.tsv"
+INVENTORY = REPOSITORY_ROOT / "docs/design/grammar-audit/ports.tsv"
 OUTPUT = (
     REPOSITORY_ROOT
     / "src/syntax/src/document/parser/canonical_rules.rs"
@@ -28,13 +28,7 @@ def stable_hash(name: str) -> int:
 def canonical_rules() -> list[tuple[str, int]]:
     with INVENTORY.open(newline="", encoding="utf-8") as source:
         rows = csv.DictReader(source, delimiter="\t")
-        rules = {
-            row["grammar-name"]
-            for row in rows
-            if row["spec-location"].startswith(
-                "docs/design/specification.mec::"
-            )
-        }
+        rules = {row["grammar-name"] for row in rows}
     if len(rules) != EXPECTED_RULES:
         raise SystemExit(
             f"expected {EXPECTED_RULES} canonical rules, found {len(rules)}"
@@ -61,7 +55,7 @@ def render() -> str:
     if len(constants) != len(set(constants)):
         raise SystemExit("canonical rule names collide as Rust constants")
     lines = [
-        "// Generated from docs/design/grammar-audit/productions.tsv.",
+        "// Generated from docs/design/grammar-audit/ports.tsv.",
         "// Do not edit by hand.",
         "",
         "use crate::document::RuleId;",

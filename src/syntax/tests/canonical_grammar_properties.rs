@@ -1,11 +1,10 @@
-use mech_core::{Grammar, GrammarExpression, Token};
 use mech_syntax::document::parser::canonical::{
     parse_canonical_base_rule_for_test, parse_canonical_tag_for_test,
 };
 use mech_syntax::document::parser::{CANONICAL_PORTS, PortPhase, RuleFamily, rules};
 use mech_syntax::document::{
     DocumentId, FragmentKind, IdGenerator, ParseConfig, ParseContext, RecoveryAction, Revision,
-    SyntaxKind, TextRange, TextSize, TextSnapshot, compact_debug_tree, lower_legacy_grammar,
+    SyntaxKind, TextRange, TextSize, TextSnapshot, TokenFlags, compact_debug_tree,
     parse_canonical_grammar, parse_fragment, reconstruct_source, validate_lossless,
     validate_lossless_range,
 };
@@ -18,44 +17,6 @@ fn parse(text: &str) -> mech_syntax::document::SyntaxSnapshot {
     )
 }
 
-fn normalize_token_source(token: &mut Token) {
-    token.src_range = Default::default();
-}
-
-fn normalize_expression_source(expression: &mut GrammarExpression) {
-    match expression {
-        GrammarExpression::Choice(items) | GrammarExpression::Sequence(items) => {
-            for item in items {
-                normalize_expression_source(item);
-            }
-        }
-        GrammarExpression::Definition(identifier) => normalize_token_source(&mut identifier.name),
-        GrammarExpression::Group(item)
-        | GrammarExpression::Not(item)
-        | GrammarExpression::Optional(item)
-        | GrammarExpression::Peek(item)
-        | GrammarExpression::Repeat0(item)
-        | GrammarExpression::Repeat1(item) => normalize_expression_source(item),
-        GrammarExpression::List(first, second) => {
-            normalize_expression_source(first);
-            normalize_expression_source(second);
-        }
-        GrammarExpression::Range(start, end) => {
-            normalize_token_source(start);
-            normalize_token_source(end);
-        }
-        GrammarExpression::Terminal(token) => normalize_token_source(token),
-    }
-}
-
-fn normalize_grammar_source(mut grammar: Grammar) -> Grammar {
-    for rule in &mut grammar.rules {
-        normalize_token_source(&mut rule.name.name);
-        normalize_expression_source(&mut rule.expr);
-    }
-    grammar
-}
-
 proptest! {
   #![proptest_config(ProptestConfig {
     cases: 128,
@@ -64,7 +25,7 @@ proptest! {
   })]
 
   #[test]
-  fn generated_terminal_rules_are_lossless_and_match_legacy_lowering(
+  fn generated_terminal_rules_are_lossless_and_structurally_complete(
     identifier in "[a-z][a-z0-9-]{0,12}",
     terminal in "[A-Za-z0-9.,!]{1,20}",
     leading_space in any::<bool>(),
@@ -86,14 +47,27 @@ proptest! {
       text.as_str()
     );
     validate_lossless(&snapshot.root, &snapshot.source).unwrap();
-    let lowered = lower_legacy_grammar(&snapshot).unwrap();
-    prop_assert_eq!(lowered.rules.len(), 1);
-    prop_assert_eq!(lowered.rules[0].name.to_string(), identifier);
-    let legacy = mech_syntax::parse_grammar(&text).unwrap();
-    prop_assert_eq!(
-      normalize_grammar_source(lowered),
-      normalize_grammar_source(legacy)
-    );
+    let grammar = snapshot.syntax().first_child(SyntaxKind::Grammar).unwrap();
+    let rules = grammar
+      .children()
+      .filter(|child| child.kind() == SyntaxKind::GrammarRule)
+      .collect::<Vec<_>>();
+    prop_assert_eq!(rules.len(), 1);
+    let name = rules[0].first_child(SyntaxKind::GrammarIdentifier).unwrap();
+    let canonical_name = name
+      .tokens()
+      .into_iter()
+      .filter(|token| !token.flags().contains(TokenFlags::TRIVIA))
+      .map(|token| token.text().unwrap())
+      .collect::<String>();
+    prop_assert_eq!(canonical_name, identifier);
+    let terminal_node = rules[0]
+      .first_child(SyntaxKind::GrammarExpression).unwrap()
+      .first_child(SyntaxKind::GrammarTerm).unwrap()
+      .first_child(SyntaxKind::GrammarFactor).unwrap()
+      .first_child(SyntaxKind::GrammarTerminal).unwrap()
+      .first_child(SyntaxKind::GrammarTerminalToken).unwrap();
+    prop_assert_eq!(terminal_node.text().unwrap(), format!("\"{terminal}\""));
   }
 
   #[test]
