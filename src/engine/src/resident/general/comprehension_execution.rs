@@ -624,17 +624,20 @@ fn collection_item_footprint(
         ResidentValueRef::String(values) => {
             let offset = dense_collection_offset(region, ordinal)
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            scalar_footprint(
-                values
-                    .get(offset)
-                    .ok_or(ResidentKernelError::InvalidShape)?
-                    .len(),
-            )?
+            let value = values
+                .get(offset)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            // The native lane is cloned into a PatternItem immediately after
+            // this preflight. Account for every copied byte even when a later
+            // filter discards the path and no result is retained.
+            meter.charge_compute_work(budget::checked_u64(value.len())?)?;
+            scalar_footprint(value.len())?
         }
         ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
     };
-    // Native scalar lanes are borrowed directly; the generator loop already
-    // charges their visit. Recursive snapshot traversal is charged above.
+    // Fixed-width native scalar lanes need no recursive traversal beyond the
+    // generator visit. Native String clone work and recursive snapshot
+    // traversal are charged above.
     Ok(footprint)
 }
 
@@ -1158,6 +1161,7 @@ fn retained_value_footprint(
 fn admit_item_clone(
     item: ValueFootprint,
     retained_count: usize,
+    retained_capacity: usize,
     retained: ValueFootprint,
     retained_shape_parameter_count: usize,
     schema_arena_bytes: u64,
@@ -1167,6 +1171,11 @@ fn admit_item_clone(
 ) -> Result<(), ResidentKernelError> {
     let item_temporary = item_clone_bytes(item)?;
     let temporary = snapshot_draft_bytes(retained_count, retained, retained_shape_parameter_count)?
+        .checked_add(draft_capacity_overlap_bytes(
+            retained_count,
+            retained_capacity,
+        )?)
+        .ok_or(ResidentKernelError::InvalidShape)?
         .checked_add(item_temporary)
         .and_then(|bytes| bytes.checked_add(schema_arena_bytes))
         .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
@@ -1234,6 +1243,7 @@ fn admit_pattern_binding_finalization(
     previous_binding: ValueFootprint,
     other_live_locals: ValueFootprint,
     retained_count: usize,
+    retained_capacity: usize,
     retained: ValueFootprint,
     retained_shape_parameter_count: usize,
     schema_arena_bytes: u64,
@@ -1256,6 +1266,11 @@ fn admit_pattern_binding_finalization(
     })
     .map_err(|_| ResidentKernelError::InvalidShape)?;
     let temporary = snapshot_draft_bytes(retained_count, retained, retained_shape_parameter_count)?
+        .checked_add(draft_capacity_overlap_bytes(
+            retained_count,
+            retained_capacity,
+        )?)
+        .ok_or(ResidentKernelError::InvalidShape)?
         .checked_add(item_clone_bytes(item)?)
         .and_then(|bytes| bytes.checked_add(finalization))
         .and_then(|bytes| bytes.checked_add(previous_binding.retained_bytes))
@@ -1598,10 +1613,11 @@ fn schema_root_requires_import(
     plan: &Arc<mech_core::SchemaTable>,
     meter: &mut ResidentBudgetMeter,
 ) -> Result<bool, ResidentKernelError> {
-    if !same_schema_arena_contents(owner, plan, meter)? {
-        return Ok(true);
-    }
-    if !nested_dynamic {
+    // Equal arenas prove every ordinary root is already addressable without
+    // constructing canonical component schemas. Foreign arenas and Dynamic
+    // roots need the rooted check below: their complete closure may already
+    // exist in the plan even when unrelated entries or ordering differ.
+    if same_schema_arena_contents(owner, plan, meter)? && !nested_dynamic {
         return Ok(false);
     }
     // Computing canonical component keys transiently materializes each child
@@ -2256,6 +2272,7 @@ impl ReactiveInstance {
         ordinal: usize,
         path: &[usize],
         retained_count: usize,
+        retained_capacity: usize,
         retained_footprint: ValueFootprint,
         retained_shape_parameter_count: usize,
         schemas: &Arc<mech_core::SchemaTable>,
@@ -2272,6 +2289,7 @@ impl ReactiveInstance {
         admit_item_clone(
             footprint,
             retained_count,
+            retained_capacity,
             retained_footprint,
             retained_shape_parameter_count,
             schema_arena_bytes,
@@ -2327,6 +2345,7 @@ impl ReactiveInstance {
         selected_footprint: ValueFootprint,
         concrete_footprint: ValueFootprint,
         retained_count: usize,
+        retained_capacity: usize,
         retained_footprint: ValueFootprint,
         retained_shape_parameter_count: usize,
         schemas: &Arc<mech_core::SchemaTable>,
@@ -2432,6 +2451,7 @@ impl ReactiveInstance {
                     previous_binding,
                     other_live_locals,
                     retained_count,
+                    retained_capacity,
                     retained_footprint,
                     retained_shape_parameter_count,
                     schema_arena_bytes,
@@ -2495,6 +2515,7 @@ impl ReactiveInstance {
         path: &mut [usize; crate::MAX_COLLECTION_PATTERN_DEPTH],
         depth: usize,
         retained_count: usize,
+        retained_capacity: usize,
         retained_footprint: ValueFootprint,
         retained_shape_parameter_count: usize,
         schemas: &Arc<mech_core::SchemaTable>,
@@ -2520,6 +2541,7 @@ impl ReactiveInstance {
                         ordinal,
                         &path[..depth],
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2540,6 +2562,7 @@ impl ReactiveInstance {
                     selected_footprint,
                     concrete_footprint,
                     retained_count,
+                    retained_capacity,
                     retained_footprint,
                     retained_shape_parameter_count,
                     schemas,
@@ -2560,6 +2583,7 @@ impl ReactiveInstance {
                         ordinal,
                         &path[..depth],
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2587,6 +2611,7 @@ impl ReactiveInstance {
                         ordinal,
                         &path[..depth],
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2619,6 +2644,7 @@ impl ReactiveInstance {
                         path,
                         depth + 1,
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2647,6 +2673,7 @@ impl ReactiveInstance {
                         ordinal,
                         &path[..depth],
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2683,6 +2710,7 @@ impl ReactiveInstance {
                         path,
                         depth + 1,
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2717,6 +2745,7 @@ impl ReactiveInstance {
                         path,
                         depth + 1,
                         retained_count,
+                        retained_capacity,
                         retained_footprint,
                         retained_shape_parameter_count,
                         schemas,
@@ -2833,6 +2862,7 @@ impl ReactiveInstance {
                             &mut [0; crate::MAX_COLLECTION_PATTERN_DEPTH],
                             0,
                             values.len(),
+                            values.capacity(),
                             *footprint,
                             retained_shape_parameter_count,
                             schemas,
@@ -2939,6 +2969,7 @@ impl ReactiveInstance {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ResidentShape;
     use mech_core::{
         CanonicalNominalPath, CardinalitySpec, DimensionExpr, DimensionLifetime,
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
@@ -3108,6 +3139,7 @@ mod tests {
             admit_item_clone(
                 item,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -3125,6 +3157,7 @@ mod tests {
                 item,
                 ValueFootprint::zero(),
                 ValueFootprint::zero(),
+                0,
                 0,
                 ValueFootprint::zero(),
                 0,
@@ -3302,6 +3335,7 @@ mod tests {
                 ValueFootprint::zero(),
                 ValueFootprint::zero(),
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -3319,6 +3353,7 @@ mod tests {
                 selected,
                 ValueFootprint::zero(),
                 ValueFootprint::zero(),
+                0,
                 0,
                 ValueFootprint::zero(),
                 0,
@@ -3757,6 +3792,32 @@ mod tests {
     }
 
     #[test]
+    fn native_string_pattern_clones_charge_every_copied_byte() {
+        let payload = "generator-byte".repeat(128);
+        let values = [payload.clone()];
+        let region = ResidentRegion {
+            kind: ResidentValueKind::String,
+            offset: 0,
+            len: 1,
+            shape: ResidentShape {
+                rows: 1,
+                columns: 1,
+            },
+        };
+        let mut meter = ResidentBudgetMeter::default();
+        let footprint = collection_item_footprint(
+            ResidentValueRef::String(&values),
+            region,
+            &SchemaBody::String,
+            0,
+            &mut meter,
+        )
+        .unwrap();
+        assert_eq!(footprint.retained_bytes, payload.len() as u64);
+        assert_eq!(meter.estimate().compute_work(), payload.len() as u64);
+    }
+
+    #[test]
     fn matrix_results_do_not_pay_set_sorting_work() {
         assert_eq!(
             collection_canonicalization_work(crate::ComprehensionKind::Matrix, 20_000).unwrap(),
@@ -4167,6 +4228,7 @@ mod tests {
             admit_item_clone(
                 item,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -4185,6 +4247,7 @@ mod tests {
         assert!(
             admit_item_clone(
                 item,
+                1,
                 1,
                 retained,
                 0,
@@ -4214,6 +4277,7 @@ mod tests {
             admit_item_clone(
                 item,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -4228,6 +4292,7 @@ mod tests {
             admit_item_clone(
                 item,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -4237,6 +4302,74 @@ mod tests {
             )
             .is_err(),
             "the published comprehension result remains live while the selected item is cloned",
+        );
+    }
+
+    #[test]
+    fn pattern_admissions_count_spare_result_capacity() {
+        let unit = core::mem::size_of::<ValueDataDraft>();
+        let oversized_capacity = (mech_core::RESIDENT_MAX_BYTES as usize / unit) + 1;
+        assert!(
+            admit_item_clone(
+                ValueFootprint::zero(),
+                0,
+                0,
+                ValueFootprint::zero(),
+                0,
+                0,
+                ValueFootprint::zero(),
+                0,
+                ResidentBudgetMeter::default(),
+            )
+            .is_ok(),
+        );
+        assert!(
+            admit_item_clone(
+                ValueFootprint::zero(),
+                0,
+                oversized_capacity,
+                ValueFootprint::zero(),
+                0,
+                0,
+                ValueFootprint::zero(),
+                0,
+                ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "spare result slots remain live while the pattern item is cloned",
+        );
+
+        let mut builder = SchemaTableBuilder::new();
+        let atom = builder
+            .insert(
+                SchemaDraft {
+                    body: atom("capacity"),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let atom = build.resolve(atom).unwrap();
+        assert!(
+            admit_pattern_binding_finalization(
+                atom,
+                &[],
+                ValueFootprint::zero(),
+                ValueFootprint::zero(),
+                ValueFootprint::zero(),
+                0,
+                oversized_capacity,
+                ValueFootprint::zero(),
+                0,
+                0,
+                0,
+                &build.table,
+                ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "spare result slots remain live while a snapshot binding is finalized",
         );
     }
 
@@ -4631,6 +4764,7 @@ mod tests {
                 ValueFootprint::zero(),
                 ValueFootprint::zero(),
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -4651,6 +4785,7 @@ mod tests {
                     node_count: 1,
                 },
                 ValueFootprint::zero(),
+                0,
                 0,
                 ValueFootprint::zero(),
                 0,
@@ -4673,6 +4808,7 @@ mod tests {
                     retained_bytes: 6 * 1024 * 1024,
                     node_count: 1,
                 },
+                0,
                 0,
                 ValueFootprint::zero(),
                 0,
@@ -4754,6 +4890,34 @@ mod tests {
             )
             .unwrap(),
             "a source-built component-closed plan needs no redundant clone or merge",
+        );
+
+        let mut extension = SchemaTableBuilder::new();
+        extension
+            .insert(
+                SchemaDraft {
+                    body: atom("unrelated"),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let foreign = Arc::new(
+            closed
+                .extend_preserving_ids(&extension.finish().unwrap().table)
+                .unwrap(),
+        );
+        assert!(
+            !schema_root_requires_import(
+                &foreign,
+                tuple,
+                false,
+                &closed,
+                &mut ResidentBudgetMeter::default(),
+            )
+            .unwrap(),
+            "an independently owned arena with unrelated entries reuses an addressable root closure",
         );
     }
 
