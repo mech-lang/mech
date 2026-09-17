@@ -12,7 +12,7 @@ crate at that baseline. It documents existing behavior, not a parser redesign.
 R1–R6 Integration Rebase
 -------------------------------------------------------------------------------
 
-The syntax stack is rebased through S5 onto
+The syntax stack is rebased through S6 onto
 `integration/v0.4` at `535e4b245` (R1–R6 plus the combined integration fixes).
 S0-S3 recovery and typed-view gates and the S5 certification implementation
 are complete. S4 source semantics remains open. Comprehension, pattern, and FSM witnesses now
@@ -23,12 +23,11 @@ Borrowed tuple, array, and tagged-pattern projection executes with primitive
 bindings, and matches support compound results and nested bodies and guards.
 Composite comprehension bindings/yields, computed pattern blocks, composition
 with nested comprehensions, the FSM resident continuation owner, and other S4
-limits remain unfinished. S6 activation remains gated on S4 completion.
+limits remain unfinished. S6 registry activation is implemented here; qualification remains gated on S4 completion.
 `docs/design/syntax-v0.4-continuation-plan.mec` replaces the old combined Phase
-2I-D/2I-E delivery assumption with independently gated milestones and an atomic
-document-root/product cutover that removes the Nom path and compatibility
-lowerers. This rebase does not activate the recursive registry or change the
-production parser entry point.
+S6 implements atomic registry activation on this branch, pending S4/S5
+qualification. S7 completes the canonical Document root; S8 performs the
+production cutover and removes the Nom implementation and its lowerers.
 
 The 539 canonical rule IDs and Phase 0 inventory remain stable. Their live
 implementation audit records the intervening integration changes explicitly:

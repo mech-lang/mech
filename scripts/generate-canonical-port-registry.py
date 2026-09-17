@@ -20,20 +20,19 @@ EXPECTED_COLUMNS = [
     "grammar-name",
     "family",
     "syntax-status",
-    "lowering-status",
+    "semantic-status",
     "node-policy",
     "phase",
     "notes",
 ]
 SYNTAX_STATUSES = {
     "unported": "Unported",
-    "syntax-ported": "SyntaxPorted",
-    "parity-verified": "ParityVerified",
+    "certified": "Certified",
 }
-LOWERING_STATUSES = {
-    "not-applicable": "NotApplicable",
+SEMANTIC_STATUSES = {
     "pending": "Pending",
-    "parity-verified": "ParityVerified",
+    "syntax-only": "SyntaxOnly",
+    "certified": "Certified",
 }
 FAMILIES = {
     "activation": "Activation",
@@ -62,6 +61,7 @@ PHASES = {
     "2F": "Some(PortPhase::Phase2F)",
     "2G": "Some(PortPhase::Phase2G)",
     "2H": "Some(PortPhase::Phase2H)",
+    "2I": "Some(PortPhase::Phase2I)",
 }
 
 
@@ -125,10 +125,10 @@ def port_rows() -> list[dict[str, str]]:
             raise SystemExit(
                 f"{name}: unknown syntax status {row['syntax-status']}"
             )
-        if row["lowering-status"] not in LOWERING_STATUSES:
+        if row["semantic-status"] not in SEMANTIC_STATUSES:
             raise SystemExit(
-                f"{name}: unknown lowering status "
-                f"{row['lowering-status']}"
+                f"{name}: unknown semantic status "
+                f"{row['semantic-status']}"
             )
         node_policy(row["node-policy"])
         if row["phase"] not in PHASES:
@@ -149,15 +149,14 @@ def render() -> str:
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
         "pub enum SyntaxPortStatus {",
         "  Unported,",
-        "  SyntaxPorted,",
-        "  ParityVerified,",
+        "  Certified,",
         "}",
         "",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
-        "pub enum LoweringPortStatus {",
-        "  NotApplicable,",
+        "pub enum SemanticPortStatus {",
         "  Pending,",
-        "  ParityVerified,",
+        "  SyntaxOnly,",
+        "  Certified,",
         "}",
         "",
         "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
@@ -187,6 +186,7 @@ def render() -> str:
             "  Phase2F,",
             "  Phase2G,",
             "  Phase2H,",
+            "  Phase2I,",
             "}",
             "",
             "#[derive(Clone, Copy, Debug, Eq, PartialEq)]",
@@ -195,7 +195,7 @@ def render() -> str:
             "  pub rule: RuleId,",
             "  pub family: RuleFamily,",
             "  pub syntax: SyntaxPortStatus,",
-            "  pub lowering: LoweringPortStatus,",
+            "  pub semantic: SemanticPortStatus,",
             "  pub node_policy: NodePolicy,",
             "  pub phase: Option<PortPhase>,",
             "  pub notes: &'static str,",
@@ -215,8 +215,8 @@ def render() -> str:
                 f"    family: RuleFamily::{FAMILIES[row['family']]},",
                 "    syntax: SyntaxPortStatus::"
                 f"{SYNTAX_STATUSES[row['syntax-status']]},",
-                "    lowering: LoweringPortStatus::"
-                f"{LOWERING_STATUSES[row['lowering-status']]},",
+                "    semantic: SemanticPortStatus::"
+                f"{SEMANTIC_STATUSES[row['semantic-status']]},",
                 f"    node_policy: {node_policy(row['node-policy'])},",
                 f"    phase: {PHASES[row['phase']]},",
                 f'    notes: "{rust_string(row["notes"])}",',

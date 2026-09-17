@@ -1,7 +1,7 @@
-//! Canonical closed pattern primitives for Phase 2G.
+//! Canonical pattern primitives introduced in Phase 2G.
 //!
-//! Pattern parents remain unported; this module only exposes their acyclic
-//! wildcard and spread leaves through the hidden direct-rule surface.
+//! The active Phase 2I pattern parents compose these wildcard and spread leaves
+//! through `recursive_core::patterns`.
 
 use crate::document::{RuleId, SyntaxKind};
 

@@ -1,7 +1,7 @@
 Incremental Syntax Architecture
 ===============================================================================
 
-Status: Phase 1 experimental architecture.
+Status: S6 recursive-core activation complete.
 
 Integration branch: `feature/syntax`.
 
@@ -23,10 +23,10 @@ package builds read only that package-local registry; a repository test
 recomputes and verifies every ordered `(name, RuleId)` entry against the
 inventory.
 
-Current canonical syntax progress is 328 / 539 productions. The closed
-Phase 2H structure-shell layer contributes 10 of those productions without
-adding a complete matrix, table, map, set, structure, expression, or document
-parser root.
+Current canonical syntax progress is 408 / 539 productions. The closed
+Phase 2H structure-shell layer and the complete 80-rule Phase 2I recursive
+component are included in that active total. The canonical document root is the
+remaining S7 boundary.
 
 The exact next executable implementation boundary is generated from the
 normative `ebnf:canonical` grammar graph in `docs/design/specification.mec` and
@@ -41,16 +41,18 @@ representation of all 80 members in
 `docs/design/grammar-audit/phase-2i-syntax-schema.tsv`: 71 unconditional nodes,
 seven conditional precedence nodes, and two transparent aliases. It reserves
 73 append-only syntax kinds and reuses five existing kinds. Phase 2I-C now
-implements clean, lossless recognition for all 80 rules. Current canonical
-progress remains 328 / 539 because every Phase 2I rule remains unactivated.
+implements clean, lossless recognition for all 80 rules. S6 activates the
+entire certified component atomically, bringing canonical progress to
+408 / 539.
 
 `phase-2i-recursive-core.tsv` defines membership and dependencies.
 `phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
-emission. Phase 2I-C adds the complete clean recognizer without a public parser
-root or port activation. S2 adds bounded local malformed-input recovery for all
-80 rules. Typed syntax, engine-owned source semantics, and canonical
-certification remain pending. Shared parenthesis, bracket, brace, colon,
-identifier, and kind prefixes are handled without exponential reparsing.
+emission. Phase 2I-C added the complete clean recognizer without a public parser
+root or port activation. S2 added bounded local malformed-input recovery for
+all 80 rules; S3 completed typed syntax, S4 added engine-owned source semantics,
+S5 certified the component, and S6 activated it. Shared parenthesis, bracket,
+brace, colon, identifier, and kind prefixes are handled without exponential
+reparsing.
 
 `MATCH-001` records the canonical rule permitting whitespace before an
 expression match question mark. Expression-level set and
@@ -59,8 +61,8 @@ set comprehensions remain unavailable as factors. Complete record candidates
 may fall through to maps after clean failure with measured-linear nested-prefix
 growth. Matrix structure selection preserves leading whitespace, newlines, and
 box borders, and every recursive repetition propagates committed child
-recovery. Every direct rule now has a lossless malformed-input contract, and the
-80 rules remain unactivated with progress at 328 / 539.
+recovery. Every direct rule now has a lossless malformed-input contract, and all
+80 rules are active with progress at 408 / 539.
 
 The current Nom source path remains unchanged while the canonical document root
 is incomplete. The final cutover removes that path atomically; this

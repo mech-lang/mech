@@ -1,8 +1,7 @@
-//! Canonical literal and number productions for the Phase 2C closed island.
+//! Canonical literal and number leaf productions.
 //!
-//! This module intentionally ports only the direct literal children selected
-//! for Phase 2C.  The enclosing `literal` production remains absent because
-//! its optional kind annotation reaches the still-unported recursive closure.
+//! The direct leaves originated in Phase 2C. The active enclosing `literal`
+//! production composes them with recursive kinds in `recursive_core::literals`.
 
 use alloc::string::String;
 

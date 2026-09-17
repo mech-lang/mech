@@ -1,4 +1,4 @@
-grammar-name	family	component-id	component-size	recursive-component	same-component-children	closure-children	ported-external-children
+grammar-name	family	component-id	component-size	recursive-component	same-component-children	closure-children	certified-external-children
 argument-list	functions	SCC-0001	80	true	call-arg|call-arg-with-binding	none	left-parenthesis|list-separator|right-parenthesis
 binding	structures	SCC-0001	80	true	expression|kind-annotation	none	colon|comma|identifier|whitespace0
 brace-subscript	expressions	SCC-0001	80	true	formula-subscript|range-subscript	none	left-brace|list-separator|right-brace|select-all
