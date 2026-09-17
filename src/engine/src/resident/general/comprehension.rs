@@ -5,7 +5,10 @@ pub enum ActivatedCollectionStep {
     Generator {
         source: ResidentReadLocation,
         source_schema: SchemaId,
-        element_schema: SchemaId,
+        /// Wildcard generators never materialize or descend into an element,
+        /// so they do not require the element component to have its own
+        /// retained schema-table entry.
+        element_schema: Option<SchemaId>,
         shape_values: Box<[u64]>,
         pattern: crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
     },
@@ -198,6 +201,22 @@ fn supported_pattern(
         && pattern_components_addressable(pattern, element_schema, schemas)
 }
 
+fn generator_element_schema(
+    pattern: &crate::CollectionPattern,
+    source: &mech_core::Schema,
+    schemas: &mech_core::SchemaTable,
+) -> Option<Option<SchemaId>> {
+    let element = match source.body() {
+        SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => element.as_ref(),
+        _ => return None,
+    };
+    if matches!(pattern, crate::CollectionPattern::Wildcard) {
+        return Some(None);
+    }
+    let element_schema = canonical_component_schema_id(source, element, schemas)?;
+    supported_pattern(pattern, element_schema, schemas).then_some(Some(element_schema))
+}
+
 fn visit_pattern_values(
     pattern: &crate::CollectionPattern,
     visit: &mut impl FnMut(crate::ComprehensionValue),
@@ -372,23 +391,14 @@ pub(super) fn bind(
             } => {
                 let source = source(*value);
                 let input = port(source)?;
+                let Some(source_schema) = artifact.schemas().get(input.schema_id) else {
+                    return Err(unsupported());
+                };
                 let Some(element_schema) =
-                    artifact.schemas().get(input.schema_id).and_then(|schema| {
-                        let element = match schema.body() {
-                            SchemaBody::Matrix { element, .. }
-                            | SchemaBody::Set { element, .. } => element.clone(),
-                            _ => return None,
-                        };
-                        let element_schema =
-                            canonical_component_schema_id(schema, &element, artifact.schemas())?;
-                        Some(element_schema)
-                    })
+                    generator_element_schema(pattern, source_schema, artifact.schemas())
                 else {
                     return Err(unsupported());
                 };
-                if !supported_pattern(pattern, element_schema, artifact.schemas()) {
-                    return Err(unsupported());
-                }
                 let pattern = activate_pattern(
                     pattern,
                     &|local, schema| ActivatedPatternBinding {
@@ -789,6 +799,46 @@ mod tests {
 
         assert!(!pattern_components_addressable(&pattern, root, &schemas));
         assert!(!supported_pattern(&pattern, root, &schemas));
+    }
+
+    #[test]
+    fn wildcard_generator_does_not_require_a_retained_element_schema() {
+        let mut builder = SchemaTableBuilder::new();
+        let source = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Tuple(
+                            vec![SchemaBody::Bool].into_boxed_slice(),
+                        )),
+                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                            .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let source = build.resolve(source).unwrap();
+        let schemas = build.table;
+        let source = schemas.get(source).unwrap();
+
+        assert_eq!(
+            generator_element_schema(&crate::CollectionPattern::Wildcard, source, &schemas),
+            Some(None),
+        );
+        assert_eq!(
+            generator_element_schema(
+                &crate::CollectionPattern::Tuple(
+                    vec![crate::CollectionPattern::Wildcard].into_boxed_slice(),
+                ),
+                source,
+                &schemas,
+            ),
+            None,
+        );
     }
 
     #[test]
