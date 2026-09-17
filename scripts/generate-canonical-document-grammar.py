@@ -393,6 +393,7 @@ SAMPLE_OVERRIDES = {
     "mika-nose": "◉",
     "mini-mika": "(◉◯◉)",
     "op-assign": "x += 1 + 2",
+    "ul-subtitle": "1. x\n-\n",
 }
 
 
