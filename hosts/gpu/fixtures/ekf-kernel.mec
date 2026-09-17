@@ -1,11 +1,13 @@
+Portable EKF Kernel
+===============================================================================
 +> math
+===============================================================================
 
-EKF array inputs
+1. EKF array inputs
 -------------------------------------------------------------------------------
 
--- This ordinary Mech section constructs the outer arrays. The accelerator
--- derives the broadcast extent from these values; no host API supplies a
--- filter count to the kernel compiler.
+This ordinary Mech section constructs the outer arrays. The accelerator derives the broadcast extent from these values; no host API supplies a filter count to the kernel compiler.
+
 filter-count := 100000f32
 filter-index := 1f32..=filter-count
 filter-phase := 6.283185307179586<f32> * (filter-index - 1f32) / filter-count
@@ -22,16 +24,18 @@ angular-velocity := lane-angular-velocity
 bearing := lane-bearing
 measurement-noise := lane-measurement-noise
 
-EKF step @compute
+2. EKF step @compute
 -------------------------------------------------------------------------------
 
--- This region is one filter. Array-valued activation inputs broadcast this
--- fixed-shape body over their common outer extent.
-dt := lane-dt
-linear-velocity := lane-linear-velocity
-angular-velocity := lane-angular-velocity
-bearing := lane-bearing
-measurement-noise := lane-measurement-noise
+This region is one filter. Array-valued activation inputs broadcast this fixed-shape body over their common outer extent.
+
+dt := 0.1<f32>
+linear-velocity := 1f32
+angular-velocity := 0.015<f32>
+bearing := -0.55<f32>
+measurement-noise := 0.25<f32>
+finite-limit := 3.402823466e38<f32>
+covariance-symmetry-tolerance := 0.0001<f32>
 landmark := [140f32; 12f32]
 
 process-noise := [0.01<f32> 0f32
@@ -86,10 +90,8 @@ corrected-state := predicted-state + gain * innovation
 correction := identity - gain ** observation-jacobian
 corrected-covariance := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise
 
--- Robot-oriented publication constraints are ordinary Mech expressions. The
--- fixed-shape compiler fuses these predicates with the candidate calculation;
--- no EKF-specific validation operation or host-side covariance discovery is
--- involved.
+Robot-oriented publication constraints are ordinary Mech expressions. The fixed-shape compiler fuses these predicates with the candidate calculation; no EKF-specific validation operation or host-side covariance discovery is involved.
+
 candidate-x := corrected-state · basis-x
 candidate-y := corrected-state · basis-y
 candidate-theta := corrected-state · basis-theta
