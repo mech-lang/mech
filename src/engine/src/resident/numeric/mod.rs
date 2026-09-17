@@ -17292,7 +17292,165 @@ macro_rules! checked_numeric_binary {
 }
 
 #[cfg(feature = "r64")]
-fn rational_from_draft(value: ValueDataDraft) -> Result<mech_core::R64, ResidentKernelError> {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct CanonicalRational {
+    numerator: i64,
+    denominator: u64,
+}
+
+#[cfg(feature = "r64")]
+fn rational_gcd(mut left: u128, mut right: u128) -> u128 {
+    while right != 0 {
+        let remainder = left % right;
+        left = right;
+        right = remainder;
+    }
+    left
+}
+
+#[cfg(feature = "r64")]
+impl CanonicalRational {
+    fn from_sign_magnitude(
+        negative: bool,
+        magnitude: u128,
+        denominator: u128,
+    ) -> Result<Self, ResidentKernelError> {
+        if denominator == 0 {
+            return Err(ResidentKernelError::Arithmetic);
+        }
+        let divisor = rational_gcd(magnitude, denominator);
+        let magnitude = magnitude / divisor;
+        let denominator =
+            u64::try_from(denominator / divisor).map_err(|_| ResidentKernelError::Arithmetic)?;
+        let numerator = if negative && magnitude != 0 {
+            if magnitude == 1_u128 << 63 {
+                i64::MIN
+            } else {
+                -i64::try_from(magnitude).map_err(|_| ResidentKernelError::Arithmetic)?
+            }
+        } else {
+            i64::try_from(magnitude).map_err(|_| ResidentKernelError::Arithmetic)?
+        };
+        Ok(Self {
+            numerator,
+            denominator,
+        })
+    }
+
+    fn sign_magnitude(self) -> (bool, u128) {
+        (
+            self.numerator < 0,
+            u128::from(self.numerator.unsigned_abs()),
+        )
+    }
+
+    fn combine(self, right: Self, subtract: bool) -> Result<Self, ResidentKernelError> {
+        let divisor = rational_gcd(u128::from(self.denominator), u128::from(right.denominator));
+        let left_scale = u128::from(right.denominator) / divisor;
+        let right_scale = u128::from(self.denominator) / divisor;
+        let denominator = u128::from(self.denominator)
+            .checked_mul(left_scale)
+            .ok_or(ResidentKernelError::Arithmetic)?;
+        let (left_negative, left_magnitude) = self.sign_magnitude();
+        let (mut right_negative, right_magnitude) = right.sign_magnitude();
+        right_negative ^= subtract;
+        let left_magnitude = left_magnitude
+            .checked_mul(left_scale)
+            .ok_or(ResidentKernelError::Arithmetic)?;
+        let right_magnitude = right_magnitude
+            .checked_mul(right_scale)
+            .ok_or(ResidentKernelError::Arithmetic)?;
+        let (negative, magnitude) = if left_negative == right_negative {
+            (
+                left_negative,
+                left_magnitude
+                    .checked_add(right_magnitude)
+                    .ok_or(ResidentKernelError::Arithmetic)?,
+            )
+        } else if left_magnitude >= right_magnitude {
+            (left_negative, left_magnitude - right_magnitude)
+        } else {
+            (right_negative, right_magnitude - left_magnitude)
+        };
+        Self::from_sign_magnitude(negative, magnitude, denominator)
+    }
+
+    fn checked_add(self, right: Self) -> Result<Self, ResidentKernelError> {
+        self.combine(right, false)
+    }
+
+    fn checked_sub(self, right: Self) -> Result<Self, ResidentKernelError> {
+        self.combine(right, true)
+    }
+
+    fn checked_mul(self, right: Self) -> Result<Self, ResidentKernelError> {
+        let (left_negative, mut left_magnitude) = self.sign_magnitude();
+        let (right_negative, mut right_magnitude) = right.sign_magnitude();
+        let mut left_denominator = u128::from(self.denominator);
+        let mut right_denominator = u128::from(right.denominator);
+        let left_divisor = rational_gcd(left_magnitude, right_denominator);
+        left_magnitude /= left_divisor;
+        right_denominator /= left_divisor;
+        let right_divisor = rational_gcd(right_magnitude, left_denominator);
+        right_magnitude /= right_divisor;
+        left_denominator /= right_divisor;
+        Self::from_sign_magnitude(
+            left_negative ^ right_negative,
+            left_magnitude
+                .checked_mul(right_magnitude)
+                .ok_or(ResidentKernelError::Arithmetic)?,
+            left_denominator
+                .checked_mul(right_denominator)
+                .ok_or(ResidentKernelError::Arithmetic)?,
+        )
+    }
+
+    fn checked_div(self, right: Self) -> Result<Self, ResidentKernelError> {
+        let (left_negative, mut left_magnitude) = self.sign_magnitude();
+        let (right_negative, mut right_magnitude) = right.sign_magnitude();
+        if right_magnitude == 0 {
+            return Err(ResidentKernelError::Arithmetic);
+        }
+        let mut left_denominator = u128::from(self.denominator);
+        let mut right_denominator = u128::from(right.denominator);
+        let numerator_divisor = rational_gcd(left_magnitude, right_magnitude);
+        left_magnitude /= numerator_divisor;
+        right_magnitude /= numerator_divisor;
+        let denominator_divisor = rational_gcd(right_denominator, left_denominator);
+        right_denominator /= denominator_divisor;
+        left_denominator /= denominator_divisor;
+        Self::from_sign_magnitude(
+            left_negative ^ right_negative,
+            left_magnitude
+                .checked_mul(right_denominator)
+                .ok_or(ResidentKernelError::Arithmetic)?,
+            left_denominator
+                .checked_mul(right_magnitude)
+                .ok_or(ResidentKernelError::Arithmetic)?,
+        )
+    }
+
+    fn reciprocal(self) -> Result<Self, ResidentKernelError> {
+        let (negative, magnitude) = self.sign_magnitude();
+        if magnitude == 0 {
+            return Err(ResidentKernelError::Arithmetic);
+        }
+        Self::from_sign_magnitude(negative, u128::from(self.denominator), magnitude)
+    }
+
+    fn checked_neg(self) -> Result<Self, ResidentKernelError> {
+        let (negative, magnitude) = self.sign_magnitude();
+        Self::from_sign_magnitude(!negative, magnitude, u128::from(self.denominator))
+    }
+
+    fn checked_abs(self) -> Result<Self, ResidentKernelError> {
+        let (_, magnitude) = self.sign_magnitude();
+        Self::from_sign_magnitude(false, magnitude, u128::from(self.denominator))
+    }
+}
+
+#[cfg(feature = "r64")]
+fn rational_from_draft(value: ValueDataDraft) -> Result<CanonicalRational, ResidentKernelError> {
     let ValueDataDraft::Rational64 {
         numerator,
         denominator,
@@ -17300,23 +17458,21 @@ fn rational_from_draft(value: ValueDataDraft) -> Result<mech_core::R64, Resident
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let denominator = i64::try_from(denominator).map_err(|_| ResidentKernelError::Arithmetic)?;
-    if denominator <= 0 {
+    if denominator == 0 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    Ok(mech_core::R64::new(numerator, denominator))
+    CanonicalRational::from_sign_magnitude(
+        numerator < 0,
+        u128::from(numerator.unsigned_abs()),
+        u128::from(denominator),
+    )
 }
 
 #[cfg(feature = "r64")]
-fn rational_to_draft(value: mech_core::R64) -> Result<ValueDataDraft, ResidentKernelError> {
-    let numerator = *value.numer();
-    let denominator = u64::try_from(*value.denom()).map_err(|_| ResidentKernelError::Arithmetic)?;
-    if denominator == 0 {
-        return Err(ResidentKernelError::Arithmetic);
-    }
+fn rational_to_draft(value: CanonicalRational) -> Result<ValueDataDraft, ResidentKernelError> {
     Ok(ValueDataDraft::Rational64 {
-        numerator,
-        denominator,
+        numerator: value.numerator,
+        denominator: value.denominator,
     })
 }
 
@@ -17361,11 +17517,23 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
 }
 
 fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
-    let denominator = right.0 * right.0 + right.1 * right.1;
-    (
-        (left.0 * right.0 + left.1 * right.1) / denominator,
-        (left.1 * right.0 - left.0 * right.1) / denominator,
-    )
+    if right.0.abs() >= right.1.abs() {
+        let ratio = right.1 / right.0;
+        let denominator = 1.0 + ratio * ratio;
+        let left = (left.0 / right.0, left.1 / right.0);
+        (
+            (left.0 + left.1 * ratio) / denominator,
+            (left.1 - left.0 * ratio) / denominator,
+        )
+    } else {
+        let ratio = right.0 / right.1;
+        let denominator = 1.0 + ratio * ratio;
+        let left = (left.0 / right.1, left.1 / right.1);
+        (
+            (left.0 * ratio + left.1) / denominator,
+            (left.1 * ratio - left.0) / denominator,
+        )
+    }
 }
 
 #[cfg(feature = "c64")]
@@ -17394,11 +17562,23 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
 
 #[cfg(feature = "c64")]
 fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
-    let denominator = right.0 * right.0 + right.1 * right.1;
-    (
-        (left.0 * right.0 + left.1 * right.1) / denominator,
-        (left.1 * right.0 - left.0 * right.1) / denominator,
-    )
+    if right.0.abs() >= right.1.abs() {
+        let ratio = right.1 / right.0;
+        let denominator = 1.0 + ratio * ratio;
+        let left = (left.0 / right.0, left.1 / right.0);
+        (
+            (left.0 + left.1 * ratio) / denominator,
+            (left.1 - left.0 * ratio) / denominator,
+        )
+    } else {
+        let ratio = right.0 / right.1;
+        let denominator = 1.0 + ratio * ratio;
+        let left = (left.0 / right.1, left.1 / right.1);
+        (
+            (left.0 * ratio + left.1) / denominator,
+            (left.1 * ratio - left.0) / denominator,
+        )
+    }
 }
 
 fn numeric_multiply(
@@ -17419,9 +17599,7 @@ fn numeric_multiply(
         }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
-            let next = rational_from_draft(left)?
-                .checked_mul(rational_from_draft(right)?)
-                .ok_or(ResidentKernelError::Arithmetic)?;
+            let next = rational_from_draft(left)?.checked_mul(rational_from_draft(right)?)?;
             rational_to_draft(next)
         }
         #[cfg(feature = "c64")]
@@ -17452,9 +17630,7 @@ fn numeric_add(
         }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
-            let next = rational_from_draft(left)?
-                .checked_add(rational_from_draft(right)?)
-                .ok_or(ResidentKernelError::Arithmetic)?;
+            let next = rational_from_draft(left)?.checked_add(rational_from_draft(right)?)?;
             rational_to_draft(next)
         }
         #[cfg(feature = "c64")]
@@ -17485,9 +17661,7 @@ fn numeric_subtract(
         }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
-            let next = rational_from_draft(left)?
-                .checked_sub(rational_from_draft(right)?)
-                .ok_or(ResidentKernelError::Arithmetic)?;
+            let next = rational_from_draft(left)?.checked_sub(rational_from_draft(right)?)?;
             rational_to_draft(next)
         }
         #[cfg(feature = "c64")]
@@ -17518,15 +17692,14 @@ fn numeric_divide(
         }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
-            let next = rational_from_draft(left)?
-                .checked_div(rational_from_draft(right)?)
-                .ok_or(ResidentKernelError::Arithmetic)?;
+            let next = rational_from_draft(left)?.checked_div(rational_from_draft(right)?)?;
             rational_to_draft(next)
         }
         #[cfg(feature = "c64")]
-        (left @ ValueDataDraft::Complex64(_), right @ ValueDataDraft::Complex64(_)) => Ok(
-            complex_to_draft(complex_from_draft(left)? / complex_from_draft(right)?),
-        ),
+        (left @ ValueDataDraft::Complex64(_), right @ ValueDataDraft::Complex64(_)) => {
+            let quotient = complex64_divide(complex64_parts(left)?, complex64_parts(right)?);
+            Ok(complex64_from_parts(quotient.0, quotient.1))
+        }
         (left, right) => {
             checked_numeric_binary!(left, right, checked_div).ok_or(ResidentKernelError::Arithmetic)
         }
@@ -17625,7 +17798,9 @@ fn numeric_power(
 }
 
 fn complex32_integer_power(mut base: (f32, f32), exponent: i32) -> (f32, f32) {
-    let negative = exponent < 0;
+    if exponent < 0 {
+        base = complex32_divide((1.0, 0.0), base);
+    }
     let mut exponent = exponent.unsigned_abs();
     let mut result = (1.0, 0.0);
     while exponent != 0 {
@@ -17637,11 +17812,7 @@ fn complex32_integer_power(mut base: (f32, f32), exponent: i32) -> (f32, f32) {
             base = complex32_multiply(base, base);
         }
     }
-    if negative {
-        complex32_divide((1.0, 0.0), result)
-    } else {
-        result
-    }
+    result
 }
 
 fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
@@ -17670,7 +17841,9 @@ fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
 
 #[cfg(feature = "c64")]
 fn complex64_integer_power(mut base: (f64, f64), exponent: i32) -> (f64, f64) {
-    let negative = exponent < 0;
+    if exponent < 0 {
+        base = complex64_divide((1.0, 0.0), base);
+    }
     let mut exponent = exponent.unsigned_abs();
     let mut result = (1.0, 0.0);
     while exponent != 0 {
@@ -17682,11 +17855,7 @@ fn complex64_integer_power(mut base: (f64, f64), exponent: i32) -> (f64, f64) {
             base = complex64_multiply(base, base);
         }
     }
-    if negative {
-        complex64_divide((1.0, 0.0), result)
-    } else {
-        result
-    }
+    result
 }
 
 #[cfg(feature = "c64")]
@@ -17720,26 +17889,22 @@ fn numeric_rational_power_with_exponent(
     exponent: i64,
 ) -> Result<ValueDataDraft, ResidentKernelError> {
     let mut base = rational_from_draft(left)?;
-    let negative = exponent < 0;
+    if exponent < 0 {
+        base = base.reciprocal()?;
+    }
     let mut exponent = exponent.unsigned_abs();
-    let mut result = mech_core::R64::new(1, 1);
+    let mut result = CanonicalRational {
+        numerator: 1,
+        denominator: 1,
+    };
     while exponent != 0 {
         if exponent & 1 == 1 {
-            result = result
-                .checked_mul(base)
-                .ok_or(ResidentKernelError::Arithmetic)?;
+            result = result.checked_mul(base)?;
         }
         exponent >>= 1;
         if exponent != 0 {
-            base = base
-                .checked_mul(base)
-                .ok_or(ResidentKernelError::Arithmetic)?;
+            base = base.checked_mul(base)?;
         }
-    }
-    if negative {
-        result = mech_core::R64::new(1, 1)
-            .checked_div(result)
-            .ok_or(ResidentKernelError::Arithmetic)?;
     }
     rational_to_draft(result)
 }
@@ -17809,11 +17974,9 @@ fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKerne
             complex32_to_draft(-value.0, -value.1)
         }
         #[cfg(feature = "r64")]
-        value @ ValueDataDraft::Rational64 { .. } => rational_to_draft(
-            rational_from_draft(value)?
-                .checked_neg()
-                .ok_or(ResidentKernelError::Arithmetic)?,
-        )?,
+        value @ ValueDataDraft::Rational64 { .. } => {
+            rational_to_draft(rational_from_draft(value)?.checked_neg()?)?
+        }
         #[cfg(feature = "c64")]
         value @ ValueDataDraft::Complex64(_) => complex_to_draft(-complex_from_draft(value)?),
         _ => return Err(ResidentKernelError::InvalidInput),
@@ -17850,7 +18013,7 @@ fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelEr
         }
         #[cfg(feature = "r64")]
         value @ ValueDataDraft::Rational64 { .. } => {
-            rational_to_draft(rational_from_draft(value)?.abs())?
+            rational_to_draft(rational_from_draft(value)?.checked_abs()?)?
         }
         #[cfg(feature = "c64")]
         value @ ValueDataDraft::Complex64(_) => complex_to_draft(complex_from_draft(value)?.abs()),
@@ -22006,6 +22169,63 @@ mod tests {
             )))
         );
 
+        let large_c32 = ValueDataDraft::Complex32(Complex32Bits::new(
+            F32Bits::from_f32(1.0e30),
+            F32Bits::from_f32(0.0),
+        ));
+        assert_eq!(
+            numeric_divide(large_c32.clone(), large_c32),
+            Ok(ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(1.0),
+                F32Bits::from_f32(0.0),
+            )))
+        );
+        let two = ValueDataDraft::Complex32(Complex32Bits::new(
+            F32Bits::from_f32(2.0),
+            F32Bits::from_f32(0.0),
+        ));
+        let negative_128 = ValueDataDraft::Complex32(Complex32Bits::new(
+            F32Bits::from_f32(-128.0),
+            F32Bits::from_f32(0.0),
+        ));
+        assert_eq!(
+            numeric_power(two, negative_128),
+            Ok(ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(f32::from_bits(0x0020_0000)),
+                F32Bits::from_f32(0.0),
+            )))
+        );
+
+        #[cfg(feature = "c64")]
+        {
+            let large = ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(1.0e300),
+                F64Bits::from_f64(0.0),
+            ));
+            assert_eq!(
+                numeric_divide(large.clone(), large),
+                Ok(ValueDataDraft::Complex64(Complex64Bits::new(
+                    F64Bits::from_f64(1.0),
+                    F64Bits::from_f64(0.0),
+                )))
+            );
+            let two = ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(2.0),
+                F64Bits::from_f64(0.0),
+            ));
+            let negative_512 = ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(-512.0),
+                F64Bits::from_f64(0.0),
+            ));
+            assert_eq!(
+                numeric_power(two, negative_512),
+                Ok(ValueDataDraft::Complex64(Complex64Bits::new(
+                    F64Bits::from_f64(2.0_f64.powi(-512)),
+                    F64Bits::from_f64(0.0),
+                )))
+            );
+        }
+
         #[cfg(feature = "r64")]
         {
             let rational = |numerator, denominator| ValueDataDraft::Rational64 {
@@ -22020,7 +22240,95 @@ mod tests {
                 numeric_power(rational(2, 1), rational(1, 2)),
                 Err(ResidentKernelError::InvalidInput)
             );
+            assert_eq!(
+                numeric_multiply(rational(1, 1_u64 << 63), rational(1, 1)),
+                Ok(rational(1, 1_u64 << 63))
+            );
+            assert_eq!(
+                numeric_add(rational(1, 1_u64 << 63), rational(1, 1_u64 << 63),),
+                Ok(rational(1, 1_u64 << 62))
+            );
+            assert_eq!(
+                numeric_subtract(rational(1, 1_u64 << 63), rational(1, 1_u64 << 63),),
+                Ok(rational(0, 1))
+            );
+            assert_eq!(
+                numeric_divide(rational(1, u64::MAX), rational(1, u64::MAX)),
+                Ok(rational(1, 1))
+            );
         }
+    }
+
+    #[cfg(feature = "r64")]
+    #[test]
+    fn rational_matrix_product_preserves_full_u64_denominators() {
+        let matrix_body = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Rational64),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(1),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([matrix_body]);
+        let matrix_schema = ids[0];
+        let contract = test_contract(
+            &[matrix_schema, matrix_schema],
+            matrix_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::MatrixProduct { lhs: 0, rhs: 1 },
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let layout = test_layout(
+            &schemas,
+            matrix_schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let kernel = bind_matmul(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[layout.clone(), layout.clone()],
+            output: layout,
+        })
+        .unwrap();
+        let matrix = |numerator, denominator| {
+            test_value(
+                &schemas,
+                matrix_schema,
+                ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::Rational64 {
+                        numerator,
+                        denominator,
+                    }]
+                    .into_boxed_slice(),
+                ),
+            )
+        };
+        let left = [Some(matrix(1, 1_u64 << 63))];
+        let right = [Some(matrix(1, 1))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let mut output = [None];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true),
+        );
+        assert_eq!(
+            output[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::Rational64 {
+                    numerator: 1,
+                    denominator: 1_u64 << 63,
+                }]
+                .into_boxed_slice(),
+            ),
+        );
     }
 
     #[test]
