@@ -8,7 +8,7 @@ use crate::document::{
 pub use super::mechdown::FenceDelimiter;
 use super::mechdown;
 use super::recovery::Attempt;
-use super::{Parser, document, mech, sink};
+use super::{LexicalMode, Parser, canonical_fragment_rule, document, mech, sink};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FragmentKind {
@@ -139,10 +139,19 @@ pub fn parse_fragment(
   config: super::ParseConfig,
   ids: &mut IdGenerator,
 ) -> FragmentSnapshot {
+  let lexical_mode = if kind.mode() == ParseMode::Grammar {
+    LexicalMode::CanonicalGrammar
+  } else {
+    LexicalMode::PrototypeDocument
+  };
+  let resource_rule = (kind.mode() == ParseMode::Grammar)
+    .then(|| canonical_fragment_rule(kind.syntax_kind()))
+    .flatten();
   let mut parser = Parser::for_range(
     source,
     range,
-    kind.syntax_kind(),
+    lexical_mode,
+    resource_rule,
     u32::from(context.delimiter_depth),
     config,
     ids,

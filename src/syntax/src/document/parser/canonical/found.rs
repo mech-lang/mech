@@ -77,6 +77,62 @@ pub(crate) fn found_syntax(parser: &Parser<'_>, at: TextSize) -> FoundSyntax {
   }
 }
 
+/// Classify physical source syntax without grammar-global trivia removal.
+pub(crate) fn source_found_syntax(
+  parser: &Parser<'_>,
+  at: TextSize,
+) -> FoundSyntax {
+  let context_end = parser.cursor().context_end();
+  if at >= context_end {
+    return eof();
+  }
+
+  let cursor = Cursor::for_range_with_context(
+    parser.source(),
+    TextRange::new(at, context_end),
+    context_end,
+  );
+  let mut longest = None;
+  for spec in FIXED_TERMINALS {
+    if cursor.grapheme_literal_end(spec.literal).is_some()
+      && longest.map_or(
+        true,
+        |current: &FixedTerminalSpec| {
+          spec.literal.len() > current.literal.len()
+        },
+      )
+    {
+      longest = Some(spec);
+    }
+  }
+  if let Some(spec) = longest {
+    return FoundSyntax {
+      kind: Some(spec.kind),
+      text: Some(spec.literal.to_string()),
+    };
+  }
+
+  let Some(range) = cursor.peek_grapheme_range() else {
+    return eof();
+  };
+  let Some(first) = cursor.peek_char() else {
+    return eof();
+  };
+  let kind = if first.is_alphabetic() {
+    SyntaxKind::Alpha
+  } else if first.is_numeric() {
+    SyntaxKind::Digit
+  } else if is_canonical_emoji(first) {
+    SyntaxKind::Emoji
+  } else {
+    SyntaxKind::Any
+  };
+  FoundSyntax {
+    kind: Some(kind),
+    text: parser.source().text(range).ok(),
+  }
+}
+
 fn is_canonical_emoji(first: char) -> bool {
   !first.is_alphanumeric() && !first.is_ascii()
 }

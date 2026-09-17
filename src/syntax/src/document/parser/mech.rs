@@ -627,7 +627,12 @@ mod tests {
   fn failed_speculation_restores_rule_depth() {
     let source = TextSnapshot::new(DocumentId(1), Revision(0), "@").unwrap();
     let mut ids = IdGenerator::new();
-    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let mut parser = Parser::new(
+      &source,
+      crate::document::parser::LexicalMode::PrototypeDocument,
+      ParseConfig::default(),
+      &mut ids,
+    );
     let depth = parser.rule_depth();
     assert!(matches!(parse_expression(&mut parser), Attempt::NoMatch));
     assert_eq!(parser.rule_depth(), depth);
@@ -637,7 +642,12 @@ mod tests {
   fn distinctive_prefix_returns_committed_failure_and_restores_rule_depth() {
     let source = TextSnapshot::new(DocumentId(1), Revision(0), "x := @").unwrap();
     let mut ids = IdGenerator::new();
-    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let mut parser = Parser::new(
+      &source,
+      crate::document::parser::LexicalMode::PrototypeDocument,
+      ParseConfig::default(),
+      &mut ids,
+    );
     let depth = parser.rule_depth();
     assert!(matches!(
       parse_mech_item(&mut parser),

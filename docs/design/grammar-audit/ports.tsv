@@ -28,7 +28,7 @@ bar	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 bare-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 binary-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 binding	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-blank-line	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+blank-line	mechdown	parity-verified	not-applicable	node:BlankLine	2B	Phase 2B closed Mechdown grammar island
 body	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 boolean	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 box-bl	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -72,11 +72,11 @@ clear-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 code-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 code-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 code-terminal	parser	unported	pending	undecided		Deferred beyond Phase 2A.
-codeblock-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+codeblock-sigil	mechdown	parity-verified	not-applicable	transparent	2B	Phase 2B closed Mechdown grammar island
 colon	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 comma	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-comment	statements	unported	pending	undecided		Deferred beyond Phase 2A.
-comment-sigil	statements	unported	pending	undecided		Deferred beyond Phase 2A.
+comment	statements	parity-verified	pending	node:Comment	2B	rich comment lowering depends on the complete paragraph-element grammar
+comment-sigil	statements	parity-verified	not-applicable	transparent	2B	Phase 2B closed Mechdown grammar island
 comparison-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 complement	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 complex-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -126,7 +126,7 @@ enum-variant-inline-kind	statements	unported	pending	undecided		Deferred beyond 
 enum-variant-kind	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 equal	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 equal-to	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
-equation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+equation	mechdown	parity-verified	parity-verified	node:Equation	2B	Phase 2B closed Mechdown grammar island
 equation-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 error-alt-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 error-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -154,7 +154,7 @@ float-right	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base
 float-sigil	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 footnote	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 footnote-prefix	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-footnote-reference	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+footnote-reference	mechdown	parity-verified	parity-verified	node:FootnoteReference	2B	Phase 2B closed Mechdown grammar island
 forbidden-emoji	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 formula	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 formula-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -237,8 +237,8 @@ import-group-items	imports	unported	pending	undecided		Deferred beyond Phase 2A.
 import-group-separator	imports	unported	pending	undecided		Deferred beyond Phase 2A.
 info-block	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 info-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-inline-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-inline-equation	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+inline-code	mechdown	parity-verified	parity-verified	node:InlineCode	2B	Phase 2B closed Mechdown grammar island
+inline-equation	mechdown	parity-verified	parity-verified	node:InlineEquation	2B	Phase 2B closed Mechdown grammar island
 inline-mech-code	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 inline-paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 inline-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -368,7 +368,7 @@ output-operator-u	base	parity-verified	not-applicable	token	2A	Phase 2A canonica
 paragraph	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 paragraph-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 paragraph-newline	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-paragraph-text	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+paragraph-text	mechdown	parity-verified	parity-verified	node:ParagraphText	2B	Phase 2B closed Mechdown grammar island
 parenthetical-term	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 parse	parser	unported	pending	undecided		Deferred beyond Phase 2A.
 parse-grammar	parser	parity-verified	parity-verified	root:GrammarDocument	2A	Phase 2A explicit dependency closure
@@ -408,13 +408,13 @@ range-inclusive	expressions	unported	pending	undecided		Deferred beyond Phase 2A
 range-operator	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 range-subscript	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 rational-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
-raw-hyperlink	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+raw-hyperlink	mechdown	parity-verified	parity-verified	node:RawHyperlink	2B	Phase 2B closed Mechdown grammar island
 raw-string	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 raw-subtract	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 raw-text	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 real-number	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 record	structures	unported	pending	undecided		Deferred beyond Phase 2A.
-reference	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+reference	mechdown	parity-verified	parity-verified	node:Reference	2B	Phase 2B closed Mechdown grammar island
 regular-table	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 relative-source-import-specifier	statements	unported	pending	undecided		Deferred beyond Phase 2A.
 repl-identifier	repl	unported	pending	undecided		Deferred beyond Phase 2A.
@@ -431,7 +431,7 @@ save-rpl	repl	unported	pending	undecided		Deferred beyond Phase 2A.
 scientific-literal	literals	unported	pending	undecided		Deferred beyond Phase 2A.
 section	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
 section-element	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
-section-reference	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+section-reference	mechdown	parity-verified	parity-verified	node:SectionReference	2B	Phase 2B closed Mechdown grammar island
 section-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 select-all	expressions	unported	pending	undecided		Deferred beyond Phase 2A.
 semicolon	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
@@ -497,7 +497,7 @@ table-start	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 table-top	structures	unported	pending	undecided		Deferred beyond Phase 2A.
 tag	parser	parity-verified	not-applicable	token	2A	Phase 2A explicit dependency closure
 text	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
-thematic-break	mechdown	unported	pending	undecided		Deferred beyond Phase 2A.
+thematic-break	mechdown	parity-verified	parity-verified	node:ThematicBreak	2B	Phase 2B closed Mechdown grammar island
 thin-space	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 tilde	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
 tilde-codeblock-sigil	base	parity-verified	not-applicable	token	2A	Phase 2A canonical base closure
