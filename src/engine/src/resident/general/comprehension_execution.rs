@@ -53,6 +53,12 @@ fn collection_len(value: ResidentValueRef<'_>) -> Option<usize> {
     }
 }
 
+fn allocation_capacity_bytes<T>(capacity: usize) -> Result<u64, ResidentKernelError> {
+    budget::checked_u64(capacity)?
+        .checked_mul(core::mem::size_of::<T>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 fn completed_set_shape_values(
     schema: &mech_core::Schema,
     data: &ValueDataDraft,
@@ -246,6 +252,126 @@ impl PatternItem {
                 data,
             } => selected(schema, body, shape_values, data, index, schemas),
         }
+    }
+
+    /// Bounds the schema closure and shape-copy storage used while a
+    /// structural pattern descends through Dynamic values. The executor walks
+    /// the same path once to materialize the PatternItem and again to measure
+    /// the selected retained footprint, so both passes must be admitted before
+    /// the first `closed_body` call.
+    fn dynamic_descent_workspace(
+        &self,
+        path: &[usize],
+        schemas: &mech_core::SchemaTable,
+    ) -> Result<u64, ResidentKernelError> {
+        enum Cursor<'a> {
+            Plain(&'a ValueDataDraft),
+            Typed {
+                body: &'a SchemaBody,
+                data: &'a ValueDataDraft,
+            },
+            Dynamic(Option<&'a ValueDraft>),
+        }
+
+        fn resolve_dynamic<'a>(
+            mut cursor: Cursor<'a>,
+            schemas: &'a mech_core::SchemaTable,
+            workspace: &mut u64,
+        ) -> Result<Option<Cursor<'a>>, ResidentKernelError> {
+            loop {
+                let Cursor::Dynamic(value) = cursor else {
+                    return Ok(Some(cursor));
+                };
+                let Some(value) = value else {
+                    return Ok(None);
+                };
+                let schema = schemas
+                    .get(value.schema)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let shape_bytes = budget::checked_u64(value.shape_values.len())?
+                    .checked_mul(core::mem::size_of::<u64>() as u64)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                let body_bytes = schema
+                    .body()
+                    .clone_allocation_bound_bytes()
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                *workspace = workspace
+                    .checked_add(shape_bytes)
+                    .and_then(|bytes| bytes.checked_add(body_bytes))
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                cursor = match (schema.body(), &value.data) {
+                    (SchemaBody::Dynamic, ValueDataDraft::Dynamic(next)) => {
+                        Cursor::Dynamic(next.as_deref())
+                    }
+                    (body, data) => Cursor::Typed { body, data },
+                };
+            }
+        }
+
+        fn child<'a>(cursor: Cursor<'a>, index: usize) -> Option<Cursor<'a>> {
+            match cursor {
+                Cursor::Plain(data) => match data {
+                    ValueDataDraft::Tuple(items) | ValueDataDraft::Matrix(items) => {
+                        Some(Cursor::Plain(items.get(index)?))
+                    }
+                    _ => None,
+                },
+                Cursor::Typed { body, data } => match (body, data) {
+                    (SchemaBody::Tuple(fields), ValueDataDraft::Tuple(items)) => {
+                        let body = fields.get(index)?;
+                        let data = items.get(index)?;
+                        if matches!(body, SchemaBody::Dynamic) {
+                            let ValueDataDraft::Dynamic(value) = data else {
+                                return None;
+                            };
+                            Some(Cursor::Dynamic(value.as_deref()))
+                        } else {
+                            Some(Cursor::Typed { body, data })
+                        }
+                    }
+                    (SchemaBody::Matrix { element, .. }, ValueDataDraft::Matrix(items)) => {
+                        let body = element.as_ref();
+                        let data = items.get(index)?;
+                        if matches!(body, SchemaBody::Dynamic) {
+                            let ValueDataDraft::Dynamic(value) = data else {
+                                return None;
+                            };
+                            Some(Cursor::Dynamic(value.as_deref()))
+                        } else {
+                            Some(Cursor::Typed { body, data })
+                        }
+                    }
+                    _ => None,
+                },
+                Cursor::Dynamic(_) => None,
+            }
+        }
+
+        let mut cursor = match self {
+            Self::Plain(data) => Cursor::Plain(data),
+            Self::Dynamic(value) => Cursor::Dynamic(value.as_deref()),
+            Self::Component { body, data, .. } => Cursor::Typed { body, data },
+        };
+        let mut workspace = 0_u64;
+        for index in path {
+            let Some(resolved) = resolve_dynamic(cursor, schemas, &mut workspace)? else {
+                return Ok(workspace
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?);
+            };
+            let Some(next) = child(resolved, *index) else {
+                return Ok(workspace
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?);
+            };
+            cursor = next;
+        }
+        // The retained-footprint pass resolves a Dynamic at the selected leaf
+        // even though `PatternItem::child` defers that final resolution.
+        let _ = resolve_dynamic(cursor, schemas, &mut workspace)?;
+        workspace
+            .checked_mul(2)
+            .ok_or(ResidentKernelError::InvalidShape)
     }
 
     fn into_binding(
@@ -1263,6 +1389,42 @@ fn admit_item_clone(
     published_output_bytes: u64,
     meter: ResidentBudgetMeter,
 ) -> Result<(), ResidentKernelError> {
+    let (temporary, retained_nodes) = item_clone_live_demand(
+        item,
+        retained_count,
+        retained_capacity,
+        retained,
+        retained_shape_parameter_count,
+        schema_arena_bytes,
+        live_locals,
+        published_output_bytes,
+        meter,
+    )?;
+    PreparedKernel::new(
+        (),
+        budget::resident_cost! {
+            temporary_bytes: temporary,
+            cloned_bytes: item.retained_bytes,
+            retained_nodes,
+            ..meter.estimate()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
+fn item_clone_live_demand(
+    item: ValueFootprint,
+    retained_count: usize,
+    retained_capacity: usize,
+    retained: ValueFootprint,
+    retained_shape_parameter_count: usize,
+    schema_arena_bytes: u64,
+    live_locals: ValueFootprint,
+    published_output_bytes: u64,
+    meter: ResidentBudgetMeter,
+) -> Result<(u64, u64), ResidentKernelError> {
     let item_temporary = item_clone_bytes(item)?;
     let temporary = snapshot_draft_bytes(retained_count, retained, retained_shape_parameter_count)?
         .checked_add(draft_capacity_overlap_bytes(
@@ -1283,18 +1445,7 @@ fn admit_item_clone(
         .and_then(|nodes| nodes.checked_add(live_locals.node_count))
         .and_then(|nodes| nodes.checked_add(u64::from(retained_count > 0)))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    PreparedKernel::new(
-        (),
-        budget::resident_cost! {
-            temporary_bytes: temporary,
-            cloned_bytes: item.retained_bytes,
-            retained_nodes,
-            ..meter.estimate()
-        },
-    )
-    .admit()?
-    .into_plan();
-    Ok(())
+    Ok((temporary, retained_nodes))
 }
 
 fn item_clone_bytes(item: ValueFootprint) -> Result<u64, ResidentKernelError> {
@@ -1872,7 +2023,7 @@ impl ReactiveInstance {
             return Ok((Arc::clone(&self.plan.schemas), 0));
         }
 
-        let owner_index_bytes = root_occurrences
+        let minimum_owner_index_bytes = root_occurrences
             .checked_mul(
                 (core::mem::size_of::<SchemaOwnerRoots>() + core::mem::size_of::<SchemaId>())
                     as u64,
@@ -1884,7 +2035,7 @@ impl ReactiveInstance {
         PreparedKernel::new(
             (),
             budget::resident_cost! {
-                temporary_bytes: owner_index_bytes,
+                temporary_bytes: minimum_owner_index_bytes,
                 ..meter.estimate()
             },
         )
@@ -1896,6 +2047,21 @@ impl ReactiveInstance {
         owners
             .try_reserve_exact(owner_capacity)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
+        let owner_buffer_bytes = allocation_capacity_bytes::<SchemaOwnerRoots>(owners.capacity())?;
+        let minimum_root_buffer_bytes = root_occurrences
+            .checked_mul(core::mem::size_of::<SchemaId>() as u64)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        PreparedKernel::new(
+            (),
+            budget::resident_cost! {
+                temporary_bytes: owner_buffer_bytes
+                    .checked_add(minimum_root_buffer_bytes)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                ..meter.estimate()
+            },
+        )
+        .admit()?
+        .into_plan();
         // Count every relevant root per owner before allocating root storage.
         // The subsequent fixed segments never grow, so no replacement buffer
         // can overlap the prior allocation during discovery.
@@ -1963,6 +2129,19 @@ impl ReactiveInstance {
         roots
             .try_reserve_exact(root_storage_len)
             .map_err(|_| ResidentKernelError::InvalidShape)?;
+        let root_buffer_bytes = allocation_capacity_bytes::<SchemaId>(roots.capacity())?;
+        let owner_index_bytes = owner_buffer_bytes
+            .checked_add(root_buffer_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        PreparedKernel::new(
+            (),
+            budget::resident_cost! {
+                temporary_bytes: owner_index_bytes,
+                ..meter.estimate()
+            },
+        )
+        .admit()?
+        .into_plan();
         roots.resize(root_storage_len, SchemaId::new(0));
         for location in captured_reads() {
             let Some(ResidentValueRef::Snapshot(values)) = self.read_location(location, working)
@@ -2406,6 +2585,21 @@ impl ReactiveInstance {
         )
         .ok_or(ResidentKernelError::InvalidInput)?;
         meter.charge_comparison_work(canonical_budget.consumed())?;
+        let descent_workspace = item.dynamic_descent_workspace(path, schemas)?;
+        if descent_workspace > 0 {
+            let (live_bytes, live_nodes) = item_clone_live_demand(
+                footprint,
+                retained_count,
+                retained_capacity,
+                retained_footprint,
+                retained_shape_parameter_count,
+                schema_arena_bytes,
+                live_locals,
+                published_output_bytes,
+                *meter,
+            )?;
+            admit_generator_schema_workspace(descent_workspace, live_bytes, live_nodes, meter)?;
+        }
         for index in path {
             item = item
                 .child(*index, schemas)
@@ -2954,44 +3148,63 @@ impl ReactiveInstance {
                     let element_input_bytes = live_bytes
                         .checked_add(live_shape_values_bytes)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-                    let (element, element_shape_values, element_live_bytes) = generator_element(
-                        *source_schema,
-                        *element_schema,
-                        &live_shape_values,
-                        schemas,
-                        element_input_bytes,
-                        live_nodes,
-                        meter,
-                    )
-                    .map_err(fail)?;
+                    let element = if let Some(element_schema) = element_schema {
+                        let (body, shape_values, retained_bytes) = generator_element(
+                            *source_schema,
+                            *element_schema,
+                            &live_shape_values,
+                            schemas,
+                            element_input_bytes,
+                            live_nodes,
+                            meter,
+                        )
+                        .map_err(fail)?;
+                        Some((*element_schema, body, shape_values, retained_bytes))
+                    } else {
+                        debug_assert!(matches!(pattern, crate::CollectionPattern::Wildcard));
+                        None
+                    };
                     let nested_schema_bytes = schema_arena_bytes
                         .checked_add(live_shape_values_bytes)
-                        .and_then(|bytes| bytes.checked_add(element_live_bytes))
+                        .and_then(|bytes| {
+                            bytes.checked_add(
+                                element
+                                    .as_ref()
+                                    .map_or(0, |(_, _, _, retained_bytes)| *retained_bytes),
+                            )
+                        })
                         .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
                     for ordinal in 0..count {
                         meter.charge_compute_work(1).map_err(fail)?;
-                        let matched = self.match_collection_pattern(
-                            control.artifact_node,
-                            &control.locals,
-                            *source,
-                            *element_schema,
-                            &element,
-                            &element_shape_values,
-                            &live_shape_values,
-                            ordinal,
-                            pattern,
-                            &mut [0; crate::MAX_COLLECTION_PATTERN_DEPTH],
-                            0,
-                            values.len(),
-                            values.capacity(),
-                            *footprint,
-                            retained_shape_parameter_count,
-                            schemas,
-                            nested_schema_bytes,
-                            published_output_bytes,
-                            working,
-                            meter,
-                        )?;
+                        let matched =
+                            if let Some((element_schema, element, element_shape_values, _)) =
+                                &element
+                            {
+                                self.match_collection_pattern(
+                                    control.artifact_node,
+                                    &control.locals,
+                                    *source,
+                                    *element_schema,
+                                    element,
+                                    element_shape_values,
+                                    &live_shape_values,
+                                    ordinal,
+                                    pattern,
+                                    &mut [0; crate::MAX_COLLECTION_PATTERN_DEPTH],
+                                    0,
+                                    values.len(),
+                                    values.capacity(),
+                                    *footprint,
+                                    retained_shape_parameter_count,
+                                    schemas,
+                                    nested_schema_bytes,
+                                    published_output_bytes,
+                                    working,
+                                    meter,
+                                )?
+                            } else {
+                                true
+                            };
                         if matched {
                             self.collection_from(
                                 control,
@@ -3102,6 +3315,16 @@ mod tests {
             NominalKind::Atom,
             &CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
         ))
+    }
+
+    #[test]
+    fn buffer_accounting_uses_the_allocator_returned_capacity() {
+        let mut values = Vec::<SchemaId>::new();
+        values.try_reserve_exact(3).unwrap();
+        assert_eq!(
+            allocation_capacity_bytes::<SchemaId>(values.capacity()).unwrap(),
+            (values.capacity() * core::mem::size_of::<SchemaId>()) as u64,
+        );
     }
 
     #[test]
@@ -3339,6 +3562,54 @@ mod tests {
                 ..
             } if schema == f64_schema
         ));
+    }
+
+    #[test]
+    fn dynamic_child_descent_accounts_for_both_schema_closure_passes() {
+        let mut builder = SchemaTableBuilder::new();
+        let tuple = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::FloatingPoint(FloatWidth::W64)].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let (schemas, _) = build.into_parts();
+        let item = PatternItem::new(ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+            schema: tuple,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                vec![ValueDataDraft::F64(F64Bits::from_f64(7.0))].into_boxed_slice(),
+            ),
+        }))));
+        let one_closure = schemas
+            .get(tuple)
+            .unwrap()
+            .body()
+            .clone_allocation_bound_bytes()
+            .unwrap();
+
+        assert_eq!(
+            item.dynamic_descent_workspace(&[0], &schemas).unwrap(),
+            one_closure * 2,
+        );
     }
 
     #[test]
