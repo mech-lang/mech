@@ -1,0 +1,14 @@
+Syntax Boundary Fixture
+===============================================================================
+author: Ada
+section: Compatibility
+===============================================================================
+
+This paragraph preserves **formatted text** and evaluates {answer} inline.
+
+~answer := 41
+answer += 1
+
+~~~mech
+answer
+~~~

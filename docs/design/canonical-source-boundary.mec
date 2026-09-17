@@ -1,0 +1,141 @@
+Canonical Source Boundary
+===============================================================================
+
+Status: S1 contract.
+
+This document defines the source ownership boundary for the syntax
+reimplementation after R1-R6. `docs/design/specification.mec` is the sole
+language authority. The current Nom entry point is inventoried only so the
+atomic cutover can remove every caller.
+
+The authoritative inventories are:
+
+- `grammar-audit/source-parser-consumers.tsv`: all 27 production calls grouped
+  into 25 caller contracts, with current behavior and final canonical target;
+- `grammar-audit/source-parser-consumer-fixtures.tsv`: whole-document canonical
+  expectations shared by those caller contracts;
+- `grammar-audit/phase-2i-recursive-core.tsv`: the exact 80-rule component; and
+- `grammar-audit/phase-2i-syntax-schema.tsv`: the rule-level canonical tree
+  contract.
+
+1. Ownership
+-------------------------------------------------------------------------------
+
+The syntax crate owns UTF-8 source revisions, scanning, lossless trees, parser
+recovery, structural diagnostics, strict structural validation, typed red-tree
+views, and incremental identity.
+
+Source tools consume canonical syntax directly:
+
+```text
+formatter / HTML renderer   DocumentSyntax plus lossless tokens
+source index / resolver     typed imports, exports, contexts, scopes, paths
+CLI source classification   typed document and Mech item structure
+editor / interactive input  SyntaxSnapshot, revisions, diagnostics
+```
+
+The engine owns source semantics. Its canonical source frontend consumes a
+strictly valid typed document and constructs the semantic forms used by
+`SourceProgram`, `ProgramArtifact`, Type System v1, and memory planning.
+
+The runtime owns activation, state, scheduling, resources, effects, and host
+interfaces. It does not interpret concrete syntax.
+
+2. Prohibited boundaries
+-------------------------------------------------------------------------------
+
+Canonical syntax, validation, and source-semantic modules do not call the Nom
+parser or compare their output to it. The syntax crate does not depend on the
+engine or runtime and does not construct compiler IR, `SourceProgram`,
+`ProgramArtifact`, `Value`, memory plans, or runtime cells.
+
+There is no canonical-to-`mech_core::Program` lowering tree, parser selector,
+fallback route, or compatibility adapter. The product cutover replaces the
+inventoried current callers and deletes the old source path in one milestone.
+
+3. Strict validation
+-------------------------------------------------------------------------------
+
+Parsing is total and lossless. Strict validation is the gate for consumers that
+require a complete source program. A snapshot fails strict validation when it
+contains any of:
+
+- parser diagnostics with error severity;
+- an `ERROR` node or token;
+- a `MISSING` node or token;
+- a required typed child or token that is absent;
+- token text invalid for its canonical syntax kind; or
+- a parser resource-limit diagnostic that leaves the requested root incomplete.
+
+Validation diagnostics use these stable fields:
+
+```text
+code       validation/<stable-condition>
+phase      SyntaxValidation
+severity   Error
+rule       canonical RuleId when one owns the condition
+context    internal ParserContextId when recovery owns the condition
+primary    structural anchor when possible, absolute revision range otherwise
+expected   canonical syntax kinds or terminals when applicable
+found      observed canonical kind or token when applicable
+recovery   ResourceLimit for exhausted parser resources
+tags       stable diagnostic classification flags when applicable
+```
+
+English messages are presentation. Codes, phases, rules, anchors, expected and
+found syntax, and tags are the test contract.
+
+Validation never constructs partial semantic values. Consumers that can work
+with incomplete input use the snapshot and typed optional accessors directly;
+they do not invoke strict source semantics.
+
+4. Current caller removal census
+-------------------------------------------------------------------------------
+
+`source-parser-consumers.tsv` records current call counts at function granularity
+and assigns every caller a final boundary. Repository tests scan production Rust
+sources and fail when an unlisted `parser::parse` call is added or an inventoried
+count changes.
+
+The census describes current code only. Its current result-use and failure
+columns do not grant authority to old AST shapes or behavior. The canonical
+target and cutover-action columns define the intended replacement.
+
+The target classes are:
+
+```text
+syntax-snapshot                 retain source revision and diagnostics
+typed-document                  format, render, or inspect canonical structure
+typed-source-index              derive imports, exports, contexts, and scopes
+syntax-session                  append, edit, reset, and reuse source revisions
+engine-source-semantics         compile typed source into canonical artifacts
+engine-config-semantics         evaluate the canonical configuration subset
+program-artifact                publish the canonical executable artifact
+```
+
+Composite targets join these responsibilities without introducing an
+intermediate parser AST.
+
+5. Canonical fixtures
+-------------------------------------------------------------------------------
+
+The S1 fixtures cover empty input, executable inline source, a mixed document,
+source indexing, interactive mutation, compiler structures, configuration,
+WASM document structure, and malformed input. Their accept/reject expectation
+comes from the canonical specification.
+
+S1 freezes their source and intended root. Later parser, recovery, typed-view,
+semantic, and product-cutover milestones add canonical snapshots and consumer
+assertions to the same fixtures. S1 deliberately does not execute the Nom
+parser to generate or approve expected results.
+
+6. Cutover invariant
+-------------------------------------------------------------------------------
+
+Before S8, the current product path is frozen for removal while the canonical
+document root is completed. It receives no new behavior. New production work
+uses canonical modules and cannot add an unlisted old-parser call.
+
+S8 is complete only when the removal census reaches zero, source tools consume
+typed canonical syntax, execution enters through engine source semantics, and
+Nom plus `document/lower/legacy` are absent from production dependencies.
