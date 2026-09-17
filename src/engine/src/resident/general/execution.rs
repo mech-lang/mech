@@ -2003,6 +2003,23 @@ impl ReactiveInstance {
     }
 
     #[inline(always)]
+    fn kernel_scratch_output_region(
+        &self,
+        node_index: ActivatedNodeIndex,
+    ) -> Option<ResidentRegion> {
+        let index = node_index.get() as usize;
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            nodes.get(index)?
+        } else {
+            let ActivatedTurnStep::Kernel(node) = self.plan.steps.get(index)? else {
+                return None;
+            };
+            node
+        };
+        (node.write.storage == ResidentStorageClass::Scratch).then_some(node.write.region)
+    }
+
+    #[inline(always)]
     fn execute_kernel(
         &mut self,
         node_index: ActivatedNodeIndex,
@@ -3429,7 +3446,7 @@ fn hash_string(value: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resident::general::{ResidentArenaSizes, StateVersion};
+    use crate::resident::general::{ActivatedCollectionStep, ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
     #[cfg(feature = "source")]
@@ -3536,6 +3553,34 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_operation_identifies_its_replaceable_local_output() {
+        let instance = source_instance("[(item, true) | item <- signal<[f64]:1,2>]");
+        let control = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Comprehension(control) => Some(control),
+                _ => None,
+            })
+            .expect("source must contain a comprehension");
+        let operation = control
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedCollectionStep::Operation { node, .. } => Some(*node),
+                _ => None,
+            })
+            .expect("tuple yield must contain a nested operation");
+        let output = instance
+            .kernel_scratch_output_region(operation)
+            .expect("nested operation must write a scratch local");
+
+        assert!(control.locals.contains(&output));
     }
 
     #[cfg(feature = "source")]

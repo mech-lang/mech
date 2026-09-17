@@ -565,6 +565,16 @@ fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunctio
         )
         self.assert_failure(root, "do not preserve shared frozen ownership")
 
+    def test_49c_snapshot_rebind_must_not_clone_the_local_schema_alias(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/core/src/snapshot/validation.rs",
+            "schemas: Some(context.try_clone_schemas()?),",
+            "schemas: Some(Arc::new(schemas.clone())),",
+        )
+        self.assert_failure(root, "do not preserve shared frozen ownership")
+
     def test_50_payload_nodes_use_declared_not_allocator_capacity(self):
         root = self.fixture()
         self.replace(
