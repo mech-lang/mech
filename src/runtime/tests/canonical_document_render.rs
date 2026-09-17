@@ -220,10 +220,13 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
     let html = CanonicalDocumentRenderer
         .render_html(&document, &[])
         .unwrap();
-    assert!(html.contains("<header class='mech-document-title'><pre>"));
+    assert!(html.contains(
+        "<header class='mech-document-header'><h1 class='mech-document-title'>Grammar Conformance</h1>"
+    ));
     assert!(html.contains("Grammar Conformance"));
+    assert!(!html.contains("==================="), "{html}");
     assert!(
-        html.contains("<h2 class='mech-subtitle'>1. Overview\n--------</h2>"),
+        html.contains("<h2 class='mech-subtitle' id='section-1'>Overview</h2>"),
         "{html}"
     );
     assert!(html.contains("<p>Body A &amp; B.</p>"));
@@ -232,12 +235,12 @@ fn renderer_preserves_title_subtitle_and_plain_document_structure() {
 
 #[test]
 fn text_renderer_preserves_retained_blank_lines() {
-    let document = document("first\n\nsecond\n");
+    let document = document("first line.\n\nsecond line.\n");
     assert_eq!(
         CanonicalDocumentRenderer
             .render_text(&document, &[])
             .unwrap(),
-        "first\n\nsecond\n"
+        "first line.\n\nsecond line.\n"
     );
 }
 
@@ -252,6 +255,51 @@ fn visible_executable_fences_require_their_owner_result() {
         "visible executable fence has no completed scope result"
     );
     assert!(error.range.is_some());
+}
+
+#[test]
+fn visible_root_programs_require_their_owner_result() {
+    let document = document("answer := 42\nanswer\n");
+    for error in [
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap_err(),
+        CanonicalDocumentRenderer
+            .render_text(&document, &[])
+            .unwrap_err(),
+    ] {
+        assert_eq!(
+            error.message,
+            "visible root program has no completed scope result"
+        );
+        assert!(error.range.is_some());
+    }
+}
+
+#[test]
+fn visible_mika_root_programs_require_their_owner_result() {
+    let document = document("~∘~⸢answer := 42\nanswer\n⸥\n");
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap_err();
+    assert_eq!(
+        error.message,
+        "visible root program has no completed scope result"
+    );
+    assert!(error.range.is_some());
+}
+
+#[test]
+fn metadata_only_documents_do_not_require_program_results() {
+    for source in ["+> ./dep.mec\n", "@ui := fs://workspace\n"] {
+        let document = document(source);
+        CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap();
+        CanonicalDocumentRenderer
+            .render_text(&document, &[])
+            .unwrap();
+    }
 }
 
 #[test]
@@ -287,6 +335,377 @@ fn renderer_rejects_active_script_hyperlinks() {
         .render_html(&document, &[])
         .unwrap_err();
     assert!(error.message.contains("unsafe hyperlink scheme"));
+    assert!(error.range.is_some());
+}
+
+#[test]
+fn retained_images_render_with_safe_escaped_attributes_and_captions() {
+    let document = document("![A ' & B](image'file.png?x=1&y=2)\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<img class='mech-image' src='image&#39;file.png?x=1&amp;y=2' alt='A &#39; &amp; B' />"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains("<figcaption class='mech-figure-caption'>A ' &amp; B</figcaption>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn image_url_extraction_starts_after_parentheses_in_the_caption() {
+    let document = document("![Results (draft)](plot.png)\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(html.contains("src='plot.png'"), "{html}");
+    assert!(html.contains("alt='Results (draft)'"), "{html}");
+}
+
+#[test]
+fn image_options_are_safely_whitelisted_into_presentation_attributes() {
+    let document = document(
+        "![small](image.png){width: \"200px\", height: \"50%\", alignment: center}\n![unsafe](other.png){width: \"1px; color: red\", onclick: alert}\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "class='mech-image mech-image-align-center' src='image.png' alt='small' style='width: 200px; height: 50%'"
+        ),
+        "{html}"
+    );
+    assert!(!html.contains("color: red"), "{html}");
+    assert!(!html.contains("onclick"), "{html}");
+}
+
+#[test]
+fn inert_fences_preserve_their_language_for_highlighting() {
+    let document = document("```rust\nfn main() {}\n```\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(html.contains("<pre><code data-language='rust'>"), "{html}");
+}
+
+#[test]
+fn title_front_matter_is_semantic_and_uses_completed_inline_results() {
+    let document = document(
+        "Result Report\n===================\nauthor: Ada\nvalue: {answer}\n===================\nanswer := 42\n",
+    );
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let results = [execute(
+        document.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        18,
+    )];
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &results)
+        .unwrap();
+    assert!(
+        html.contains("<h1 class='mech-document-title'>Result Report</h1>"),
+        "{html}"
+    );
+    assert!(
+        html.contains("<div class='mech-title-field'><dt>author</dt><dd>Ada</dd></div>"),
+        "{html}"
+    );
+    assert!(html.contains("<dt>value</dt><dd><span"), "{html}");
+    assert!(html.contains(">42</span>"), "{html}");
+    assert!(!html.contains("{answer}"), "{html}");
+    assert!(!html.contains("==================="), "{html}");
+    let text = CanonicalDocumentRenderer
+        .render_text(&document, &results)
+        .unwrap();
+    assert!(text.contains("value: 42"), "{text}");
+    assert!(!text.contains("{answer}"), "{text}");
+}
+
+#[test]
+fn raw_hyperlinks_and_inline_code_use_semantic_html() {
+    let document = document("Visit http://example.com/path or `x < y & z`.\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<a class='mech-hyperlink' href='http://example.com/path'>http://example.com/path</a>"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains("<code class='mech-inline-code'>x &lt; y &amp; z</code>"),
+        "{html}"
+    );
+    assert!(!html.contains("`x"), "{html}");
+}
+
+#[test]
+fn retained_inline_markup_uses_semantic_elements_without_delimiters() {
+    let document = document(
+        "1. Overview\n--------\n(1.2) Details\n*emphasis* _underline_ ~strike~ $$x+1$$ [ref] [^note] §1.2\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    for expected in [
+        "<em class='mech-emphasis'>emphasis</em>",
+        "<u class='mech-underline'>underline</u>",
+        "<del class='mech-strikethrough'>strike</del>",
+        "<span class='mech-inline-equation'>x+1</span>",
+        "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>1</a>]</span>",
+        "<a class='mech-footnote-reference' href='#footnote-note'>1</a>",
+        "<a class='mech-section-reference-link' href='#section-1.2'>§1.2</a>",
+        "<h3 class='mech-subtitle' id='section-1.2'>Details</h3>",
+    ] {
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+    for leaked in ["*emphasis*", "_underline_", "~strike~", "$$x+1$$"] {
+        assert!(!html.contains(leaked), "leaked {leaked:?}: {html}");
+    }
+}
+
+#[test]
+fn retained_rich_document_nodes_use_semantic_html_containers() {
+    for (source, expected) in [
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-abstract.mec"),
+            "<aside class='mech-abstract'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-quote.mec"),
+            "<blockquote class='mech-quote-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-info.mec"),
+            "<aside class='mech-info-block'><p>Isolated info</p></aside>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-success.mec"),
+            "<aside class='mech-success-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-idea.mec"),
+            "<aside class='mech-idea-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-warning.mec"),
+            "<aside class='mech-warning-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-error.mec"),
+            "<aside class='mech-error-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-question.mec"),
+            "<aside class='mech-question-block'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-prompt.mec"),
+            "<div class='mech-prompt'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-table.mec"),
+            "<table class='mech-table'><thead><tr><th class='mech-table-cell mech-align-left'>Name ",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-thematic.mec"),
+            "<hr class='mech-thematic-break' />",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-equation.mec"),
+            "<div class='mech-equation'>x + 1</div>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/citation.mec"),
+            "<section class='mech-works-cited'><h3 class='mech-backmatter-heading'>Works Cited</h3><div class='mech-citation' id='reference-ref1'><span class='mech-citation-id'>[1]:</span>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/figures.mec"),
+            "<figure class='mech-figure-table'><div class='mech-figure-grid'>",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/float.mec"),
+            "<div class='mech-float mech-float-left'>",
+        ),
+    ] {
+        let document = document(source);
+        let html = CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap();
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+}
+
+#[test]
+fn citations_are_numbered_and_deferred_to_link_safe_backmatter() {
+    let document = document(
+        "See [ref] before the definition.\n[ref]: Source [site](https://example.com)\nText after the definition.\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<span class='mech-reference'>[<a class='mech-reference-link' href='#reference-ref'>1</a>]</span>"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains(
+            "class='mech-hyperlink mech-citation-external-link' href='https://example.com' target='_blank' rel='noopener noreferrer'"
+        ),
+        "{html}"
+    );
+    let after = html.find("Text after the definition.").unwrap();
+    let works_cited = html.find("class='mech-works-cited'").unwrap();
+    assert!(works_cited > after, "{html}");
+}
+
+#[test]
+fn citation_numbers_and_backmatter_follow_first_reference_order() {
+    let document = document("Read [alpha] then [beta].\n[beta]: B\n[alpha]: A\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(html.contains("href='#reference-alpha'>1</a>"), "{html}");
+    assert!(html.contains("href='#reference-beta'>2</a>"), "{html}");
+    let works = html.split("class='mech-works-cited'").nth(1).unwrap();
+    assert!(
+        works.find("id='reference-alpha'").unwrap() < works.find("id='reference-beta'").unwrap(),
+        "{html}"
+    );
+}
+
+#[test]
+fn floats_preserve_left_and_right_direction() {
+    let document = document("<<: ![left](left.png)\n:>> ![right](right.png)\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains("<div class='mech-float mech-float-left'>"),
+        "{html}"
+    );
+    assert!(
+        html.contains("<div class='mech-float mech-float-right'>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn table_alignment_is_projected_to_header_and_body_cells() {
+    let document = document(include_str!(
+        "../../syntax/tests/fixtures/grammar/accepted/mechdown-table.mec"
+    ));
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    for expected in [
+        "<th class='mech-table-cell mech-align-left'>Name ",
+        "<th class='mech-table-cell mech-align-right'>Value ",
+        "<td class='mech-table-cell mech-align-left'>one  ",
+        "<td class='mech-table-cell mech-align-right'>1     ",
+    ] {
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+}
+
+#[test]
+fn figure_grids_preserve_panel_labels_and_combined_caption() {
+    let document = document(include_str!(
+        "../../syntax/tests/fixtures/grammar/accepted/figures.mec"
+    ));
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    for expected in [
+        "<figure class='mech-figure-table'>",
+        "<figure class='mech-subfigure' data-panel='a'>",
+        "<figure class='mech-subfigure' data-panel='b'>",
+        "<figure class='mech-subfigure' data-panel='c'>",
+        "<figcaption class='mech-figure-table-caption'>",
+        "<span class='mech-subfigure-label'>(a)</span> one",
+        "<span class='mech-subfigure-label'>(c)</span> wide",
+    ] {
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+    }
+}
+
+#[test]
+fn retained_footnotes_preserve_every_paragraph() {
+    let document = document("[^note]: First paragraph.\nSecond paragraph.\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<aside class='mech-footnote' id='footnote-note'><span class='mech-footnote-id'>1:</span><p>First paragraph.</p><p>Second paragraph.</p></aside>"
+        ),
+        "{html}"
+    );
+}
+
+#[test]
+fn retained_lists_use_semantic_html_without_source_markers() {
+    for (source, expected, marker) in [
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-ordered.mec"),
+            "<ol class='mech-ordered-list'><li value='1'>first",
+            "1.first",
+        ),
+        (
+            include_str!("../../syntax/tests/fixtures/grammar/accepted/mechdown-unordered.mec"),
+            "<ul class='mech-unordered-list'><li>first",
+            "- first",
+        ),
+        (
+            "-[x]done\ncontinued\n",
+            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled checked /><span class='mech-list-item-label'>done</span><p class='mech-list-item-continuation'>continued</p>",
+            "-[x]done",
+        ),
+        (
+            "-[]todo\n",
+            "<ul class='mech-check-list'><li><input class='mech-check-item' type='checkbox' disabled /><span class='mech-list-item-label'>todo</span>",
+            "-[]todo",
+        ),
+    ] {
+        let document = document(source);
+        let html = CanonicalDocumentRenderer
+            .render_html(&document, &[])
+            .unwrap();
+        assert!(html.contains(expected), "missing {expected:?}: {html}");
+        assert!(!html.contains(marker), "leaked {marker:?}: {html}");
+    }
+}
+
+#[test]
+fn ordered_lists_preserve_their_authored_start_and_item_values() {
+    let document = document("3.third\n5.fifth\n");
+    let html = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap();
+    assert!(
+        html.contains(
+            "<ol class='mech-ordered-list' start='3'><li value='3'>third\n</li><li value='5'>fifth"
+        ),
+        "{html}"
+    );
+}
+
+#[test]
+fn renderer_rejects_active_script_image_sources() {
+    let document = document("![unsafe](javascript:payload)\n");
+    let error = CanonicalDocumentRenderer
+        .render_html(&document, &[])
+        .unwrap_err();
+    assert!(error.message.contains("unsafe image source scheme"));
     assert!(error.range.is_some());
 }
 

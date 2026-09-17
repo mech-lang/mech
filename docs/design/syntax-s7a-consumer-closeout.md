@@ -98,6 +98,31 @@ passes the mixed-state forward-inline, forward-slice, destination-write and
 scope-relabel regressions together with all document output, renderer, index,
 document-state and source-semantics integrations.
 
+The final consumer audit also closed declaration and presentation omissions at
+their failure boundaries. Source-path wildcard imports now require a resolved
+dependency while compiler-module wildcards remain optional; a resolved
+namespace must supply every namespace-owned program input. Source
+classification no longer routes import, export or context-only documents into
+the executable compiler. Visible root program slots are mandatory in both text
+and HTML rendering, and retained images render as escaped figures after safe
+source-scheme validation. The obsolete-package CI exception is occurrence-bound
+and recognizes CSS selectors or actual quoted `class` attributes only, so
+unrelated markup and similarly named attributes cannot hide a package edge.
+The presentation inventory was then re-audited node by node: image URL
+delimiters are selected after captions, raw links and inline code have semantic
+HTML paths, inline emphasis/equation/reference forms do not leak delimiters,
+and retained callouts, lists, equations, thematic breaks, tables, figures and
+floats use structural containers rather than escaped source punctuation. The
+document dispatch boundary now excludes lists and footnotes from Mech-code
+classification, so those certified rules are reachable from a clean complete
+document; multi-paragraph retained notes preserve every paragraph. Semantic
+title/front-matter rendering consumes completed inline results; citations are
+numbered and deferred to link-safe backmatter; image options, float direction,
+table alignment and inert-fence language survive as constrained presentation
+attributes; checked-list continuations and figure-grid panels retain their
+structural roles. Ordered-list starts/items and citation/footnote numbering
+preserve authored order rather than being regenerated from definition order.
+
 ## Independent seal audit
 
 The candidate diff was traced from retained syntax through each affected owner,
@@ -108,8 +133,8 @@ not inferred from green smoke tests. The bounded S7A gate has this disposition:
 | FSM resolver roles | Canonical traversal omits specifications and implementation formals while retaining start, guard and body reads. Assignment, send and definition destinations are write roles; only their executable values are traversed. | `canonical_source_index::fsm_formal_inputs_and_specifications_are_not_resolver_reads` starts from a parsed document and asserts both excluded and retained targets. Destination regressions prove addressed RHS reads remain indexed without publishing their targets. | Complete in candidate. |
 | RMW backup ownership | Derived comparison backups alone share a per-kind, disjoint-lifetime region; effect payloads retain cumulative storage. Peak and budget evaluation use the plan's effective limits. | The resident unit test proves unequal-size maximum-only arena/peak and budget admission. Document-state tests prove multiple actual updates, final-value change detection, candidate discard, failed-turn rollback and budget release. | Complete in candidate. |
 | Whole-document indexing work | `CanonicalDocumentIndex` constructs one immutable coordinate projection and reuses it for root and every nested Mika owner. Standalone owner APIs remain self-contained. | The complete-document unit test parses nested Mika owners, checks each local result and asserts exactly one projection; Unicode/CRLF and 1,024-reference integration checks remain separate. | Complete in candidate. |
-| Declaration handoff | The runtime handoff keeps the canonical index and compiled program together, binds resolved dependency exports using established namespace/alias rules, leaves compiler-module imports as optional source edges, excludes context aliases from source edges, and publishes canonical exports as artifact outputs. Construction and binding are result-valued, so an error cannot publish a partially accepted program or environment. | Root, named-root, Mika-root and named-Mika execution use imported values and publish exports. Unresolved required dependencies, missing dependency exports, incomplete completed exports and unknown exported bindings retain source positions. | Complete for implemented declaration owners; S4-owned unsupported forms remain explicit capability errors. |
-| Complete rendering | The renderer walks retained canonical nodes directly, associates results by document revision, retained owner ancestry, retained root/named execution scope, output kind and source range, and does no evaluation or legacy lowering. Inline results retain source-order state versions, including mixed forward/current locals; aggregate outputs without visible presentation ownership are not rendered. | Complete text/HTML tests cover the shared mixed fixture, semantic inline markup, evaluated/displayed inline code, retained blank lines, prose/title/subtitle, root/named/Mika results, hidden execution, disabled/inert source, options, escaping, safe hyperlink schemes, and stale/foreign/same-document-misowned/scope-relabelled/duplicate/missing result rejection. | Complete in candidate; production caller replacement remains S8. |
+| Declaration handoff | The runtime handoff keeps the canonical index and compiled program together, binds resolved dependency exports using established namespace/alias rules, requires source-path wildcard edges, leaves compiler-module imports optional, excludes context aliases from source edges, validates namespace-owned inputs against resolved exports, and publishes canonical exports as artifact outputs. Construction and binding are result-valued, so an error cannot publish a partially accepted program or environment. | Root, named-root, Mika-root and named-Mika execution use imported values and publish exports. Unresolved required and wildcard dependencies, missing single/namespace exports, incomplete completed exports and unknown exported bindings retain source positions. Metadata-only documents remain outside executable classification. | Complete for implemented declaration owners; S4-owned unsupported forms remain explicit capability errors. |
+| Complete rendering | The renderer walks retained canonical nodes directly, associates results by document revision, retained owner ancestry, retained root/named execution scope, output kind and source range, and does no evaluation or legacy lowering. Inline results retain source-order state versions, including mixed forward/current locals and title front matter; aggregate outputs without visible presentation ownership are not rendered, while visible root aggregates are required. Retained rich-document nodes use semantic containers without delimiter leakage, and list/footnote dispatch remains outside executable Mech classification. | Complete text/HTML tests cover the shared mixed fixture, semantic inline markup/code/equations/references, raw and labelled links, evaluated/displayed inline code, retained blank lines, semantic title/front-matter/subtitles, root/named/Mika results, hidden execution, disabled/inert fence languages, safely constrained image options and caption parentheses, callouts, ordered/unordered/checked lists and continuations, numbered deferred citations and multi-paragraph footnotes, equations, thematic breaks, aligned tables, labelled figure grids, directed floats, escaping, safe hyperlink/image schemes, and stale/foreign/same-document-misowned/scope-relabelled/duplicate/missing result rejection. | Complete in candidate; production caller replacement remains S8. |
 | Exact-head authority | Full CI now invokes the handoff and renderer integrations plus the canonical-index library units that the earlier integration-only command omitted. | The final pushed SHA still requires completed required checks and a fresh clean Codex review. | Pending final-head evidence. |
 
 No audit item changes the S6 activation prerequisite or claims implementation of
