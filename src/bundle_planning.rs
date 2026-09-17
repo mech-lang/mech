@@ -9,6 +9,7 @@ pub(super) fn retained_sources(
 ) -> MResult<(
     mech_runtime::InMemorySourceResolver,
     std::collections::HashMap<String, mech_runtime::SourceDocument>,
+    Vec<mech_runtime::SourceResolutionEntry>,
 )> {
     use mech_runtime::resolver::{
         ResolvedSource, import_may_resolve_source_dependency, import_requires_source_dependency,
@@ -17,6 +18,7 @@ pub(super) fn retained_sources(
     let filesystem = mech_runtime::FileSourceResolver::new(base).with_root(project);
     let mut documents = std::collections::HashMap::new();
     let mut owners = std::collections::HashMap::new();
+    let mut resolutions = Vec::new();
     for path in paths {
         let relative = super::relative_source_path(path, base, project)?;
         let uri = format!("bundle:///{}", super::bundle_source_specifier(&relative)?);
@@ -66,6 +68,11 @@ pub(super) fn retained_sources(
                 .and_then(|candidate| owners.get(&candidate));
             if let Some(target) = resolved {
                 resolver.insert_resolution(uri, &request.specifier, target)?;
+                resolutions.push(mech_runtime::SourceResolutionEntry::new(
+                    uri.strip_prefix("bundle:///").unwrap_or(uri),
+                    request.specifier,
+                    target.strip_prefix("bundle:///").unwrap_or(target),
+                ));
             } else if import_requires_source_dependency(&import) {
                 return Err(super::validation_error(format!(
                     "bundle dependency {} from {uri} is absent from the bundled source set",
@@ -74,5 +81,7 @@ pub(super) fn retained_sources(
             }
         }
     }
-    Ok((resolver, documents))
+    resolutions.sort();
+    resolutions.dedup();
+    Ok((resolver, documents, resolutions))
 }
