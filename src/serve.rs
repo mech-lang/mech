@@ -676,7 +676,7 @@ impl ServerSourceRegistry {
                 let code = crate::browser_planning::compile_browser_document_payload(
                     &mut compiler,
                     uri,
-                    &key,
+                    &logical_specifier,
                     &document,
                 )?
                 .encode()?;
@@ -2554,6 +2554,33 @@ mod tests {
         let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
         assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(payload.source(), source);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn served_document_payload_keeps_the_unencoded_manifest_specifier() {
+        let root = temp_root("encoded-document-specifier");
+        let source = "answer := 42\nanswer\n";
+        std::fs::write(root.join("my report.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "my report.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(&root, &snapshot, "", "", &[])
+            .unwrap();
+
+        let encoded = String::from_utf8(
+            registry
+                .get_route("/code/my%20report.mec")
+                .expect("the URL-encoded transport route exists")
+                .bytes,
+        )
+        .unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "my report.mec");
+        assert_eq!(
+            registry.source_specifiers["my%20report.mec"],
+            "my report.mec"
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
