@@ -85,6 +85,19 @@ fn append_edit_append_rebuilds_a_valid_line_frontier() {
 }
 
 #[test]
+fn adjacent_insertions_at_eof_rebuild_the_complete_line_frontier() {
+    let old = empty().append("a").unwrap();
+    let edited = old
+        .apply_edits(&[
+            TextEdit::insert(old.byte_len(), "\r"),
+            TextEdit::insert(old.byte_len(), "\nnext\n"),
+        ])
+        .unwrap();
+    verify(&edited, "a\r\nnext\n");
+    verify(&old, "a");
+}
+
+#[test]
 fn retained_append_storage_has_bounded_cumulative_growth() {
     let mut previous = None;
     for n in [512usize, 1024, 2048, 4096] {

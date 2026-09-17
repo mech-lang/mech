@@ -20,7 +20,9 @@ pub enum StreamProgress {
 pub struct StreamLimits {
     pub max_source_bytes: u32,
     /// Cumulative canonical continuation transitions, including scanners and
-    /// speculative work. Final resource-envelope export is accounted separately.
+    /// speculative work and explicit previews. This caps live parser_work plus
+    /// preview_parser_work; source maintenance and resource-envelope export are
+    /// accounted separately and are not bounded by this transition limit.
     pub max_parser_work: u64,
 }
 impl Default for StreamLimits {
@@ -115,6 +117,11 @@ pub struct StreamChange {
     pub old_len: usize,
     pub new_len: usize,
 }
+/// Changes since the immediately preceding returned update, including calls
+/// that yield NeedsProcessing. Apply every update before advancing, or explicitly
+/// resynchronize from its complete view. Overwriting intermediate updates does
+/// not coalesce their deltas. Limited materialization establishes a new baseline;
+/// resynchronize from DocumentStream::view after that explicit export.
 #[derive(Clone, Debug)]
 pub struct StreamUpdate {
     pub progress: StreamProgress,

@@ -1,7 +1,7 @@
 Incremental Syntax Architecture
 ===============================================================================
 
-Status: S0-S7A remains under correction and qualification; S7B B1-B4 implemented; complete qualification and closeout remain open. S6 activation remains gated on S4 completion.
+Status: S0-S7A remains under correction and qualification; S7B B1-B6 implemented; exact-head qualification and closeout are recorded on PR #826. S6 activation remains gated on S4 completion.
 
 Integration branch: `feature/syntax`.
 
@@ -89,8 +89,12 @@ cache validity even when the source revision is unchanged. The one-shot
 path uses the same canonical recognition/recovery machinery with final input.
 DocumentStream now owns retained append/advance, provisional journal/typed-node
 views, explicit finite previews, finalization, cancellation, and edit transitions.
-The four baseline growth gates pass with publication and final grammar draining;
-full exact-head qualification and closeout remain B5/B6 obligations.
+The B5 growth matrix covers eight adversarial families and settled-prefix append,
+including publication, metered typed-node access, and final grammar draining.
+Its 68 measured samples and supported scope are recorded in
+`s7b-streaming-qualification.json`. B6 documents the API and S8 handoff in
+`canonical-document-streaming.mec`; exact-head CI and review outcomes live on
+PR #826. Implemented checkpoints do not certify pending qualification.
 No new grammar rows, compatibility trees, or production switches are introduced.
 
 1. Goals

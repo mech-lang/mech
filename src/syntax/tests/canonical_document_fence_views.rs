@@ -337,3 +337,27 @@ fn fence_information_normalizes_optional_colon_and_repeated_prefixes() {
         }
     }
 }
+
+#[test]
+fn configured_crlf_fences_keep_information_and_decodable_option_values() {
+    for newline in ["\n", "\r\n"] {
+        for prefix in ["mechworker", "mech:worker"] {
+            let info = format!("{prefix}{{output: false, label: \"a\\n\"}}");
+            let text = format!("```{info}{newline}x := 1{newline}```{newline}");
+            let parsed = parse_canonical_document(source(&text), ParseConfig::default());
+            assert!(parsed.is_strictly_clean());
+            let fence = find::<CodeBlockSyntax>(parsed.syntax()).unwrap();
+            assert_eq!(
+                parsed.source.text(fence.info_range().unwrap()).unwrap(),
+                info
+            );
+            assert_eq!(
+                fence.info().unwrap().scope,
+                CodeFenceScope::Named("worker".into())
+            );
+            let presentation = fence.presentation().unwrap();
+            assert!(!presentation.show_output);
+            assert_eq!(presentation.styles, vec![("label".into(), "a\n".into())]);
+        }
+    }
+}

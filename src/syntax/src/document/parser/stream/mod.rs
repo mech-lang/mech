@@ -10,6 +10,43 @@ mod view;
 pub use types::*;
 pub use view::StreamView;
 
+/// A retained canonical document with explicit input and scheduling boundaries.
+///
+/// Ordinary updates share journals and completed nodes. [`Self::preview`] is an
+/// explicit finite-prefix parse; only [`StreamState::Finished`] plus canonical
+/// validation authorizes handing a materialized document to semantic consumers.
+///
+/// ```
+/// use mech_syntax::document::{DocumentId, DocumentStream, ParseConfig, StreamProgress, StreamUpdate};
+///
+/// // A real application applies both suffix deltas here against its previous view.
+/// fn publish_update(update: &StreamUpdate) {
+///     assert_eq!(update.syntax.new_len, update.view.event_count());
+///     assert_eq!(update.diagnostics.new_len, update.view.diagnostic_count());
+/// }
+/// let mut stream = DocumentStream::new(DocumentId(1), ParseConfig::default());
+/// for text in ["x := ", "1\n"] {
+///     let mut update = stream.append(text, 1024)?;
+///     loop {
+///         publish_update(&update);
+///         if update.progress != StreamProgress::NeedsProcessing { break; }
+///         update = stream.advance(1024);
+///     }
+///     assert_eq!(update.progress, StreamProgress::NeedInput);
+/// }
+/// let mut update = stream.finish(1024);
+/// loop {
+///     publish_update(&update);
+///     if update.progress != StreamProgress::NeedsProcessing { break; }
+///     update = stream.advance(1024);
+/// }
+/// assert_eq!(update.progress, StreamProgress::Finished);
+/// let snapshot = stream.materialize()?;
+/// // Before execution, additionally require snapshot.is_strictly_clean()
+/// // and the existing semantic frontend's capability validation.
+/// assert_eq!(snapshot.source.to_contiguous_string(), "x := 1\n");
+/// # Ok::<(), mech_syntax::document::StreamError>(())
+/// ```
 pub struct DocumentStream {
     source: TextSnapshot,
     parser_source: TextSnapshot,
@@ -151,8 +188,9 @@ impl DocumentStream {
         if matches!(self.state, StreamState::Open | StreamState::Finishing) {
             self.state = StreamState::Cancelled;
             self.invalidate();
+            return self.publish(StreamProgress::Cancelled, 0);
         }
-        self.publish(self.current_progress(), 0)
+        self.unchanged()
     }
     fn current_progress(&self) -> StreamProgress {
         match self.state {
@@ -361,6 +399,10 @@ impl DocumentStream {
     }
     /// Explicit full canonical tree/index export. Repeated calls share the same
     /// immutable result and perform no repeated parse or traversal.
+    ///
+    /// In the Limited state, this seals recovery and advances the publication
+    /// baseline without returning a StreamUpdate. Resynchronize retained consumer
+    /// state from `self.view()` after export, before applying any later delta.
     pub fn materialize(&mut self) -> Result<Arc<SyntaxSnapshot>, StreamError> {
         if !matches!(self.state, StreamState::Finished | StreamState::Limited) {
             return Err(StreamError::NotFinal);
