@@ -154,7 +154,9 @@ fn transition(
             node.abandon(parser);
             return Attempt::NoMatch;
         }
-        let child = parse_fsm_value(parser);
+        let child = parser
+            .with_nesting(parse_fsm_value)
+            .unwrap_or_else(|| super::nesting_limit(parser));
         match child {
             Attempt::Matched => {}
             Attempt::Committed => {
