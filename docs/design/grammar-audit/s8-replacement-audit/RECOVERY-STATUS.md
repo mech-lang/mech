@@ -1084,7 +1084,7 @@ Then publish the R21 slice on R20 without absorbing G22 browser work.
 ## Current checkpoint — R23 canonical distribution closure published
 
 **Candidate:** R23 draft #881 is `codex/syntax-s8r23-distribution-closure` /
-`7b2c5ff57346546e68a49ed51078433481ac8f50`, directly based on R22 draft
+`c7342723cccc6a89ed9512ee8c922ebc248f9edd`, directly based on R22 draft
 #879 at `e760db1c593a7a9ddb9aabbf949ffa4dc131089f`. The pre-sync R23 work is
 preserved locally at `26dbfac06`; tree comparison established that the published
 R23 head contains that work plus the physical-deletion and canonical consumer
@@ -1105,20 +1105,26 @@ feature checks green; canonical grammar/dependency/rule/SCC generator checks and
 format/diff checks green. The full syntax all-feature test surface and full runtime
 all-feature test surface compile on this head, and the supported syntax `no_std`
 profile plus canonical submission-terminal witness pass after the explicit `alloc`
-import correction.
+import correction. The first focused CI run then exposed three cutover remnants:
+the REPL still imported Mika presentation data from the deleted syntax module,
+the migrated stdlib helper lacked a reviewed lint exception, and the standard
+distribution contract still counted the removed parser dependencies. All three
+are fixed at their owners on the current head. The standard Mika build, warning
+policy, regenerated standard distribution contract, packaging, native-host
+catalog and static distribution-profile checks pass locally.
 
-**Remaining:** finish R23 exact-head physical-deletion compilation and product
-probes, inspect focused CI and review without requesting a duplicate full matrix;
-then accepted R24 and R26 work. R25 remains assigned to another agent and must be
-stacked when accepted. After the accepted queue is assembled, the designated C
-candidate still requires deleted-parser product probes, one stable exact-head
+**Remaining:** focused CI and review on corrected R23 head `c7342723c`, followed
+by accepted R24/G27 and R26/G29. R25 remains assigned to another agent and must
+be stacked when accepted. After the accepted queue is assembled, the designated
+C candidate still requires deleted-parser product probes, one stable exact-head
 full qualification, protected merge, and post-merge verification.
 
-**Current action:** inspect focused #881 CI on exact head `7b2c5ff57` and run the
-remaining deleted-parser product probe while review begins.
+**Current action:** inspect focused #881 CI on corrected exact head `c7342723c`
+while beginning the dependency-ready R24/G27 index-range boundary.
 
-**Next action:** fix any demonstrated R23 owner failure once, publish the amended
-head, then advance to the next dependency-ready accepted boundary without
-absorbing R25.
+**Next action:** add the strict source/decoded Index-range witness at its resident
+owner, implement physical range binding/execution without weakening live-endpoint
+rejection, and publish R24 stacked on the corrected R23 head. Interrupt that work
+for any demonstrated R23 owner failure without absorbing R25.
 
 **External blocker:** none. Checkpoint—not complete.
