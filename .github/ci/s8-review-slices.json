@@ -1,0 +1,447 @@
+{
+  "repository": "mech-lang/mech",
+  "landing": {
+    "number": 830,
+    "branch": "codex/syntax-s8c-cutover"
+  },
+  "slices": {
+    "831": {
+      "branch": "codex/syntax-s8e1-config-syntax",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "source",
+          "--test",
+          "config_profile"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_source",
+          "--test",
+          "canonical_config_profile",
+          "--test",
+          "config_profile"
+        ]
+      ],
+      "base": "codex/syntax-s8a-consumers"
+    },
+    "832": {
+      "branch": "codex/syntax-s8e2-syntax",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-syntax",
+          "--no-default-features",
+          "--features",
+          "full",
+          "--test",
+          "canonical_document_root",
+          "--test",
+          "canonical_phase_2i_review_regressions",
+          "--test",
+          "canonical_s7_document_certification",
+          "--test",
+          "document_streaming_equivalence"
+        ]
+      ],
+      "base": "codex/syntax-s8e1-config-syntax"
+    },
+    "833": {
+      "branch": "codex/syntax-s8e3-resident-values",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "check",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact"
+        ]
+      ],
+      "base": "codex/syntax-s8e2-syntax"
+    },
+    "834": {
+      "branch": "codex/syntax-s8e4-semantic-frontend",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "canonical_boolean_match",
+          "--test",
+          "canonical_document_state",
+          "--test",
+          "canonical_source_collections",
+          "--test",
+          "canonical_source_completion",
+          "--test",
+          "canonical_source_review",
+          "--test",
+          "canonical_source_semantics",
+          "--test",
+          "canonical_source_structures"
+        ]
+      ],
+      "base": "codex/syntax-s8e3-resident-values"
+    },
+    "835": {
+      "branch": "codex/syntax-s8e5-compiler-planning",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--lib",
+          "runtime::program::tests::canonical_"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "check",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source"
+        ]
+      ],
+      "base": "codex/syntax-s8e4-semantic-frontend"
+    },
+    "836": {
+      "branch": "codex/syntax-s8e6-graph-planning",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source",
+          "--test",
+          "canonical_declaration_handoff"
+        ]
+      ],
+      "base": "codex/syntax-s8e5-compiler-planning"
+    },
+    "837": {
+      "branch": "codex/syntax-s8e7-interactive",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--lib",
+          "interactive::tests::"
+        ]
+      ],
+      "base": "codex/syntax-s8e6-graph-planning"
+    },
+    "838": {
+      "branch": "codex/syntax-s8e8-mixed-planning",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--lib"
+        ]
+      ],
+      "base": "codex/syntax-s8e7-interactive"
+    },
+    "839": {
+      "branch": "codex/syntax-s8e9-compute-execution",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "check",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-gpu",
+          "--features",
+          "native,jit"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-gpu",
+          "--features",
+          "native,jit",
+          "--test",
+          "particle_source",
+          "canonical_activation_initializers_are_shared_and_run_only_once",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-gpu",
+          "--features",
+          "native,jit",
+          "--test",
+          "parallel_ekf",
+          "canonical_derived_publications_commit_without_becoming_recurrence_state",
+          "--",
+          "--exact"
+        ]
+      ],
+      "base": "codex/syntax-s8e8-mixed-planning"
+    },
+    "840": {
+      "branch": "codex/syntax-s8e10-web-handoff",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--lib",
+          "runtime::program::bundle::tests::canonical_bundle_rejects_stale_source_and_retired_tree_payload",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_document_render"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech",
+          "--no-default-features",
+          "--features",
+          "serve,bundle_web,formatter",
+          "--lib",
+          "bundle_web::"
+        ]
+      ],
+      "base": "codex/syntax-s8e9-compute-execution"
+    },
+    "841": {
+      "branch": "codex/syntax-s8e11-qualification",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-syntax",
+          "--no-default-features",
+          "--features",
+          "full",
+          "--test",
+          "canonical_phase_2i_certification"
+        ]
+      ],
+      "base": "codex/syntax-s8e10-web-handoff"
+    },
+    "842": {
+      "branch": "codex/syntax-s8r01-call-visibility",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_call_visibility"
+        ]
+      ],
+      "base": "codex/syntax-s8e11-qualification"
+    },
+    "843": {
+      "branch": "codex/syntax-s8r03-bound-schemas",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_constant_binding"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "canonical_source_review",
+          "fixed_matrix_snapshots_bind_to_inferred_input_dimensions",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-syntax",
+          "--no-default-features",
+          "--features",
+          "full",
+          "--test",
+          "canonical_phase_2i_certification",
+          "certification_evidence_uses_only_canonical_authorities",
+          "--",
+          "--exact"
+        ]
+      ],
+      "base": "codex/syntax-s8r01-call-visibility"
+    },
+    "844": {
+      "branch": "codex/syntax-s8r04-dynamic-binding",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-runtime",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-routing-source,compute",
+          "--test",
+          "canonical_constant_binding"
+        ]
+      ],
+      "base": "codex/syntax-s8r03-bound-schemas"
+    },
+    "847": {
+      "branch": "codex/syntax-s8r05-selected-updates",
+      "checks": [
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "canonical_document_state",
+          "--test",
+          "r6_memory_runtime"
+        ]
+      ],
+      "base": "codex/syntax-s8r04-dynamic-binding"
+    }
+  }
+}

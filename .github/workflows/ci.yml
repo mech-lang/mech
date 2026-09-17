@@ -15,6 +15,8 @@ jobs:
     outputs:
       owner_shards: ${{ steps.classify.outputs.owner_shards }}
       docs_only: ${{ steps.classify.outputs.docs_only }}
+      review_only: ${{ steps.classify.outputs.review_only }}
+      landing_candidate: ${{ steps.classify.outputs.landing_candidate }}
       static_contracts_required: ${{ steps.classify.outputs.static_contracts_required }}
       standard_canaries_required: ${{ steps.classify.outputs.standard_canaries_required }}
       windows_canary_required: ${{ steps.classify.outputs.windows_canary_required }}
@@ -29,6 +31,11 @@ jobs:
         id: classify
         env:
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: >-
           python3 scripts/ci-impact.py
           --base "${{ github.event.pull_request.base.sha }}"
@@ -204,6 +211,9 @@ jobs:
       - uses: actions/checkout@v7.0.1
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch the accumulated C source fixture dependencies
+        if: needs.impact.outputs.landing_candidate == 'true'
+        run: cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
       - name: Build and exercise the lean standard distribution
         run: |
           cargo +nightly-2026-03-03 fetch --locked
@@ -233,6 +243,13 @@ jobs:
           grep -F '"resident_accepted_turns":2' /tmp/mech-standard-live-timer.out
           grep -F '"resident_rejected_turns":0' /tmp/mech-standard-live-timer.out
 
+      - name: Probe accumulated C with the parser physically deleted
+        if: ${{ !cancelled() && needs.impact.outputs.landing_candidate == 'true' }}
+        run: |
+          test ! -e src/syntax/src/parser.rs
+          test ! -e src/syntax/src/document/lower/legacy
+          cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+
   changed-owner-tests:
     name: Owner ${{ matrix.id }} (${{ matrix.owners }})
     needs: impact
@@ -249,11 +266,19 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch the locked dependency graph
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Run only the selected owners
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: python3 -B scripts/run-owner-tests.py --owners "${{ matrix.owners }}"
 
   standard-windows:
@@ -581,6 +606,7 @@ jobs:
       - name: Require exactly the selected validation set
         env:
           DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
+          REVIEW_ONLY: ${{ needs.impact.outputs.review_only }}
           FULL_REQUIRED: ${{ needs.impact.outputs.full_validation_required }}
           IMPACT_RESULT: ${{ needs.impact.result }}
           STATIC_RESULT: ${{ needs.static-contracts.result }}
@@ -592,7 +618,14 @@ jobs:
           NATIVE_PLAN_RESULT: ${{ needs.early-native-plan.result }}
         run: |
           test "$IMPACT_RESULT" = success
-          if test "$DOCS_ONLY" = true
+          if test "$REVIEW_ONLY" = true
+          then
+            if test "$DOCS_ONLY" = true; then test "$STATIC_RESULT" = skipped; else test "$STATIC_RESULT" = success; fi
+            test "$OWNER_RESULT" = success
+            test "$LINUX_RESULT" = skipped
+            test "$WINDOWS_RESULT" = skipped
+            test "$BROWSER_RESULT" = success
+          elif test "$DOCS_ONLY" = true
           then
             test "$STATIC_RESULT" = skipped
             test "$LINUX_RESULT" = skipped
