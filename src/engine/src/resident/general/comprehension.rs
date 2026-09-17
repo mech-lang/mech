@@ -5,12 +5,9 @@ pub enum ActivatedCollectionStep {
     Generator {
         source: ResidentReadLocation,
         source_schema: SchemaId,
-        /// Wildcard generators never materialize or descend into an element,
-        /// so they do not require the element component to have its own
-        /// retained schema-table entry.
-        element_schema: Option<SchemaId>,
+        element_schema: SchemaId,
         shape_values: Box<[u64]>,
-        pattern: crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
+        pattern: crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
     },
     Operation {
         node: ActivatedNodeIndex,
@@ -43,21 +40,32 @@ pub struct ActivatedComprehensionNode {
     pub yield_schema: SchemaId,
 }
 
-pub(super) fn locals(control: &crate::ComprehensionDeclaration) -> Vec<SchemaId> {
+pub(super) fn local_definitions(
+    control: &crate::ComprehensionDeclaration,
+) -> Vec<(bool, SchemaId)> {
     let mut locals = Vec::new();
     for step in &control.steps {
         match step {
             crate::ComprehensionStep::Generator { pattern, .. } => {
                 pattern.bindings(&mut |local, schema| {
                     assert_eq!(local as usize, locals.len(), "validated collection locals");
-                    locals.push(*schema);
+                    locals.push((true, *schema));
                 })
             }
-            crate::ComprehensionStep::Operation(operation) => locals.push(operation.schema),
+            crate::ComprehensionStep::Operation(operation) => {
+                locals.push((false, operation.schema));
+            }
             crate::ComprehensionStep::Filter(_) => {}
         }
     }
     locals
+}
+
+pub(super) fn locals(control: &crate::ComprehensionDeclaration) -> Vec<SchemaId> {
+    local_definitions(control)
+        .into_iter()
+        .map(|(_, schema)| schema)
+        .collect()
 }
 
 pub(super) fn owns_output(artifact: &ProgramArtifact, mut slot: CellSlotId) -> bool {
@@ -87,22 +95,6 @@ fn primitive(body: &SchemaBody) -> bool {
         SchemaBody::Bool
             | SchemaBody::Index
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
-    )
-}
-
-fn equality_scalar(body: &SchemaBody) -> bool {
-    matches!(
-        body,
-        SchemaBody::Bool
-            | SchemaBody::UnsignedInteger(_)
-            | SchemaBody::SignedInteger(_)
-            | SchemaBody::FloatingPoint(_)
-            | SchemaBody::Complex(_)
-            | SchemaBody::Rational64
-            | SchemaBody::String
-            | SchemaBody::Id
-            | SchemaBody::Index
-            | SchemaBody::Atom(_)
     )
 }
 
@@ -165,7 +157,6 @@ fn pattern_components_addressable(
         }
     }
 }
-
 fn supported_pattern_inner(
     pattern: &crate::CollectionPattern,
     schemas: &mech_core::SchemaTable,
@@ -187,7 +178,7 @@ fn supported_pattern_inner(
                 .all(|item| supported_pattern_inner(item, schemas))
                 && rest
                     .as_deref()
-                    .is_none_or(|rest| matches!(rest, crate::CollectionPattern::Wildcard))
+                    .is_none_or(|rest| supported_pattern_inner(rest, schemas))
         }
     }
 }
@@ -201,20 +192,22 @@ fn supported_pattern(
         && pattern_components_addressable(pattern, element_schema, schemas)
 }
 
-fn generator_element_schema(
-    pattern: &crate::CollectionPattern,
-    source: &mech_core::Schema,
-    schemas: &mech_core::SchemaTable,
-) -> Option<Option<SchemaId>> {
-    let element = match source.body() {
-        SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => element.as_ref(),
-        _ => return None,
-    };
-    if matches!(pattern, crate::CollectionPattern::Wildcard) {
-        return Some(None);
+fn structural_pattern<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        crate::CollectionPattern::Tuple(_) | crate::CollectionPattern::Array { .. } => true,
+        crate::CollectionPattern::Wildcard
+        | crate::CollectionPattern::Bind { .. }
+        | crate::CollectionPattern::Equal(_) => false,
     }
-    let element_schema = canonical_component_schema_id(source, element, schemas)?;
-    supported_pattern(pattern, element_schema, schemas).then_some(Some(element_schema))
+}
+
+pub(super) fn uses_structural_patterns(control: &ActivatedComprehensionNode) -> bool {
+    control.steps.iter().any(|step| {
+        matches!(
+            step,
+            ActivatedCollectionStep::Generator { pattern, .. } if structural_pattern(pattern)
+        )
+    })
 }
 
 fn visit_pattern_values(
@@ -275,9 +268,9 @@ fn comprehension_constant_ids(
 fn activate_pattern(
     pattern: &crate::CollectionPattern,
     binding: &impl Fn(u32, SchemaId) -> ActivatedPatternBinding,
-    value: &impl Fn(crate::ComprehensionValue) -> Result<ResidentReadLocation, ResidentActivationError>,
+    value: &impl Fn(crate::ComprehensionValue) -> Result<ActivatedPatternValue, ResidentActivationError>,
 ) -> Result<
-    crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
+    crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
     ResidentActivationError,
 > {
     Ok(match pattern {
@@ -391,14 +384,23 @@ pub(super) fn bind(
             } => {
                 let source = source(*value);
                 let input = port(source)?;
-                let Some(source_schema) = artifact.schemas().get(input.schema_id) else {
-                    return Err(unsupported());
-                };
                 let Some(element_schema) =
-                    generator_element_schema(pattern, source_schema, artifact.schemas())
+                    artifact.schemas().get(input.schema_id).and_then(|schema| {
+                        let element = match schema.body() {
+                            SchemaBody::Matrix { element, .. }
+                            | SchemaBody::Set { element, .. } => element.clone(),
+                            _ => return None,
+                        };
+                        let element_schema =
+                            canonical_component_schema_id(schema, &element, artifact.schemas())?;
+                        Some(element_schema)
+                    })
                 else {
                     return Err(unsupported());
                 };
+                if !supported_pattern(pattern, element_schema, artifact.schemas()) {
+                    return Err(unsupported());
+                }
                 let pattern = activate_pattern(
                     pattern,
                     &|local, schema| ActivatedPatternBinding {
@@ -410,11 +412,10 @@ pub(super) fn bind(
                     &|value| {
                         let source = source_for_value(value, &captures, owner, layout);
                         let peer = port(source)?;
-                        let schema = artifact.schemas().get(peer.schema_id).unwrap();
-                        if !equality_scalar(schema.body()) {
-                            return Err(unsupported());
-                        }
-                        resolve_read(layout, source)
+                        Ok(ActivatedPatternValue {
+                            location: resolve_read(layout, source)?,
+                            schema: peer.schema_id,
+                        })
                     },
                 )?;
                 instructions.push(ActivatedCollectionStep::Generator {
@@ -537,6 +538,15 @@ pub(super) fn bind(
                     256
                 } else if matches!(name.as_str(), "stats/sum/column" | "stats/sum/row") {
                     // Reduction kernels admit their complete scan before execution.
+                    0
+                } else if name == "access/scalar"
+                    && input_layouts
+                        .first()
+                        .is_some_and(|port| port.kind == ResidentValueKind::Snapshot)
+                {
+                    // Turn-shaped pattern bindings live in canonical snapshot
+                    // storage. The managed access kernel and its bound call
+                    // plan own selection materialization and admission.
                     0
                 } else if matches!(
                     name.as_str(),
@@ -715,10 +725,6 @@ mod tests {
 
     #[test]
     fn component_addressability_uses_canonical_parameter_numbering() {
-        assert!(equality_scalar(&SchemaBody::String));
-        assert!(equality_scalar(&SchemaBody::SignedInteger(
-            mech_core::IntegerWidth::W32,
-        )));
         let component = |parameter| SchemaBody::Matrix {
             element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
             dimensions: vec![
@@ -772,6 +778,15 @@ mod tests {
             .into_boxed_slice(),
         );
 
+        let tuple = schemas.entries().next().unwrap().schema();
+        let SchemaBody::Tuple(components) = tuple.body() else {
+            panic!("first schema is the tuple witness")
+        };
+        assert!(
+            components
+                .iter()
+                .all(|body| canonical_component_schema_id(tuple, body, &schemas).is_some())
+        );
         assert!(pattern_components_addressable(&pattern, root, &schemas));
     }
 
@@ -799,46 +814,6 @@ mod tests {
 
         assert!(!pattern_components_addressable(&pattern, root, &schemas));
         assert!(!supported_pattern(&pattern, root, &schemas));
-    }
-
-    #[test]
-    fn wildcard_generator_does_not_require_a_retained_element_schema() {
-        let mut builder = SchemaTableBuilder::new();
-        let source = builder
-            .insert(
-                SchemaDraft {
-                    body: SchemaBody::Matrix {
-                        element: Box::new(SchemaBody::Tuple(
-                            vec![SchemaBody::Bool].into_boxed_slice(),
-                        )),
-                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
-                            .into_boxed_slice(),
-                    },
-                    dimension_parameters: Box::new([]),
-                }
-                .finalize()
-                .unwrap(),
-            )
-            .unwrap();
-        let build = builder.finish().unwrap();
-        let source = build.resolve(source).unwrap();
-        let schemas = build.table;
-        let source = schemas.get(source).unwrap();
-
-        assert_eq!(
-            generator_element_schema(&crate::CollectionPattern::Wildcard, source, &schemas),
-            Some(None),
-        );
-        assert_eq!(
-            generator_element_schema(
-                &crate::CollectionPattern::Tuple(
-                    vec![crate::CollectionPattern::Wildcard].into_boxed_slice(),
-                ),
-                source,
-                &schemas,
-            ),
-            None,
-        );
     }
 
     #[test]

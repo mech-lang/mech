@@ -1093,6 +1093,22 @@ pub fn schema_data_partial_cmp(
 
 fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
     match (schema, left, right) {
+        (SchemaBody::Dynamic, ValueData::Dynamic(left), ValueData::Dynamic(right)) => {
+            match (left.value(), right.value()) {
+                (None, None) => true,
+                (Some(left), Some(right)) => {
+                    let Some(left_schemas) = left.schemas() else {
+                        return false;
+                    };
+                    let Some(right_schemas) = right.schemas() else {
+                        return false;
+                    };
+                    left.language_eq(&left_schemas, right, &right_schemas)
+                        .unwrap_or(false)
+                }
+                _ => false,
+            }
+        }
         (
             SchemaBody::FloatingPoint(FloatWidth::W32),
             ValueData::F32(left),

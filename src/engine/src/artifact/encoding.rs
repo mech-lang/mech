@@ -77,6 +77,10 @@ impl CanonicalArtifactWriter {
             self.u32(parameter.schema.get());
             match parameter.source {
                 super::ControlParameterSource::Scrutinee => self.u8(0),
+                super::ControlParameterSource::PatternBinding(local) => {
+                    self.u8(2);
+                    self.u32(local);
+                }
                 super::ControlParameterSource::Capture(index) => {
                     self.u8(1);
                     self.u16(index);
@@ -118,13 +122,17 @@ impl CanonicalArtifactWriter {
         }
         self.u64(control.arms.len() as u64);
         for arm in &control.arms {
-            match arm.pattern {
+            match &arm.pattern {
                 super::MatchPattern::Literal(constant) => {
                     self.u8(0);
                     self.u32(constant.get());
                 }
                 super::MatchPattern::Wildcard => self.u8(1),
                 super::MatchPattern::Bind => self.u8(2),
+                super::MatchPattern::Structural(pattern) => {
+                    self.u8(3);
+                    self.match_structural_pattern(pattern);
+                }
             };
             match &arm.guard {
                 None => self.u8(0),
@@ -134,6 +142,59 @@ impl CanonicalArtifactWriter {
                 }
             }
             self.control_block(&arm.body);
+        }
+    }
+
+    fn match_structural_pattern(
+        &mut self,
+        pattern: &super::CollectionPattern<mech_core::SchemaId, super::MatchPatternValue>,
+    ) {
+        match pattern {
+            super::CollectionPattern::Wildcard => self.u8(0),
+            super::CollectionPattern::Bind { local, schema } => {
+                self.u8(1);
+                self.u32(*local);
+                self.u32(schema.get());
+            }
+            super::CollectionPattern::Equal(super::MatchPatternValue::Literal(constant)) => {
+                self.u8(2);
+                self.u8(0);
+                self.u32(constant.get());
+            }
+            super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local)) => {
+                self.u8(2);
+                self.u8(1);
+                self.u32(*local);
+            }
+            super::CollectionPattern::Tuple(items) => {
+                self.u8(3);
+                self.u64(items.len() as u64);
+                for item in items {
+                    self.match_structural_pattern(item);
+                }
+            }
+            super::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                self.u8(4);
+                self.u64(prefix.len() as u64);
+                for item in prefix {
+                    self.match_structural_pattern(item);
+                }
+                match rest {
+                    None => self.u8(0),
+                    Some(rest) => {
+                        self.u8(1);
+                        self.match_structural_pattern(rest);
+                    }
+                }
+                self.u64(suffix.len() as u64);
+                for item in suffix {
+                    self.match_structural_pattern(item);
+                }
+            }
         }
     }
 

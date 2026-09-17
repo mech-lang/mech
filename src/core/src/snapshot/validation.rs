@@ -2464,6 +2464,53 @@ pub fn wrap_resident_dynamic_data(
     })
 }
 
+/// Wraps an already canonical detached value in a Dynamic snapshot while
+/// retaining the concrete value's authoritative schema arena. The caller has
+/// admitted the wrapper and canonical-material allocations before binding.
+#[doc(hidden)]
+pub fn wrap_resident_dynamic_value(
+    schema: SchemaId,
+    shape_values: Box<[u64]>,
+    schemas: Arc<SchemaTable>,
+    value: Option<Value>,
+) -> Result<Value, SnapshotValueError> {
+    let entry = schemas
+        .entry(schema)
+        .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
+    if !matches!(entry.schema().body(), SchemaBody::Dynamic) {
+        return Err(SnapshotValueError::SnapshotDataSchemaMismatch {
+            path: SnapshotPath::root(),
+            expected: schema_kind(entry.schema().body()),
+            actual: super::ValueDataKind::Dynamic,
+        });
+    }
+    let concrete = value
+        .as_ref()
+        .map(|value| {
+            let owner = value
+                .schemas()
+                .ok_or(SnapshotValueError::UnknownSnapshotSchema {
+                    schema: value.schema(),
+                })?;
+            value
+                .validate_against(&owner)
+                .map(|schema| schema.body().clone())
+        })
+        .transpose()?;
+    let canonical = dynamic_canonical(value.as_ref(), concrete.as_ref());
+    let shape = entry.schema().instantiate_shape(shape_values)?;
+    Ok(finalized_value(
+        schema,
+        entry.key(),
+        shape,
+        ValueData::Dynamic(DynamicValue {
+            value: value.map(Box::new),
+            canonical,
+        }),
+        Some(schemas),
+    ))
+}
+
 /// Builds a table from certified canonical cells. Callers admit the complete
 /// staging and output allocation before binding. Cell copies retain Dynamic
 /// payloads' own schema arenas; they never translate arena-local draft IDs.

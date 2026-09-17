@@ -116,13 +116,31 @@ impl<C> ComprehensionDeclaration<C> {
 pub const MAX_COLLECTION_PATTERN_DEPTH: usize = 32;
 pub const MAX_COLLECTION_GENERATORS: usize = 64;
 
-pub(super) fn pattern_counts(pattern: &CollectionPattern) -> Option<usize> {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct PatternMetrics {
+    pub nodes: usize,
+    pub bindings: usize,
+    pub equalities: usize,
+    pub depth: usize,
+}
+
+pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option<PatternMetrics> {
     let mut pending = vec![(pattern, 1usize)];
     let mut count = 0usize;
+    let mut bindings = 0usize;
+    let mut equalities = 0usize;
+    let mut max_depth = 0usize;
     while let Some((pattern, depth)) = pending.pop() {
         count = count.checked_add(1)?;
         if depth > MAX_COLLECTION_PATTERN_DEPTH || count > super::MAX_CONTROL_OPERANDS {
             return None;
+        }
+        max_depth = max_depth.max(depth);
+        if matches!(pattern, CollectionPattern::Bind { .. }) {
+            bindings = bindings.checked_add(1)?;
+        }
+        if matches!(pattern, CollectionPattern::Equal(_)) {
+            equalities = equalities.checked_add(1)?;
         }
         let children = match pattern {
             CollectionPattern::Tuple(items) => items.len(),
@@ -162,7 +180,16 @@ pub(super) fn pattern_counts(pattern: &CollectionPattern) -> Option<usize> {
             return None;
         }
     }
-    Some(count)
+    Some(PatternMetrics {
+        nodes: count,
+        bindings,
+        equalities,
+        depth: max_depth,
+    })
+}
+
+pub(crate) fn pattern_counts<S, V>(pattern: &CollectionPattern<S, V>) -> Option<usize> {
+    pattern_metrics(pattern).map(|metrics| metrics.nodes)
 }
 
 pub(super) fn value_schema(
@@ -360,6 +387,47 @@ fn component_schema(
     .ok()
 }
 
+pub(super) fn array_rest_schema(
+    parent: &mech_core::Schema,
+    element: &mech_core::SchemaBody,
+) -> Option<mech_core::Schema> {
+    let mut parameters = parent
+        .dimension_parameters()
+        .iter()
+        .enumerate()
+        .map(|(id, parameter)| {
+            Some(mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(u32::try_from(id).ok()?),
+                origin: mech_core::DimensionParameterOrigin::Explicit,
+                lifetime: parameter.lifetime(),
+                lower_bound: parameter.lower_bound().clone(),
+                upper_bound: parameter.upper_bound().cloned(),
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let extent = mech_core::DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+    parameters.push(mech_core::DimensionParameterDeclaration {
+        id: extent,
+        origin: mech_core::DimensionParameterOrigin::Inferred,
+        lifetime: mech_core::DimensionLifetime::Turn,
+        lower_bound: mech_core::DimensionExpr::Constant(0),
+        upper_bound: None,
+    });
+    mech_core::SchemaDraft {
+        body: mech_core::SchemaBody::Matrix {
+            element: Box::new(element.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Parameter(extent),
+            ]
+            .into_boxed_slice(),
+        },
+        dimension_parameters: parameters.into_boxed_slice(),
+    }
+    .finalize()
+    .ok()
+}
+
 fn validate_pattern(
     draft: &super::ProgramArtifactDraft,
     pattern: &CollectionPattern,
@@ -428,7 +496,7 @@ fn validate_pattern(
                 validate_pattern(
                     draft,
                     rest,
-                    &component_schema(expected, &SchemaBody::Dynamic)?,
+                    &array_rest_schema(expected, element)?,
                     inputs,
                     locals,
                 )?;
