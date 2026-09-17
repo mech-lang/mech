@@ -451,6 +451,8 @@ fn source_schema_contexts(
     }
     let binding_schema_index = source_schema_index(&binding_schemas).ok()?;
     let binding_schemas = Arc::new(binding_schemas);
+    // `distinct_source_owners` returns pointer-sorted owners. Preserve that
+    // order so every Dynamic owner switch uses the binary identity lookup.
     let contexts = projected
         .into_iter()
         .map(|(owner, schemas, projections)| {
@@ -471,9 +473,12 @@ fn source_context_for_owner(
     contexts: &[Arc<SourceSchemaContext>],
     owner: &Arc<SchemaTable>,
 ) -> Option<Arc<SourceSchemaContext>> {
+    let identity = Arc::as_ptr(owner) as usize;
     contexts
-        .iter()
-        .find(|context| Arc::ptr_eq(&context.owner, owner))
+        .binary_search_by_key(&identity, |context| Arc::as_ptr(&context.owner) as usize)
+        .ok()
+        .and_then(|position| contexts.get(position))
+        .filter(|context| Arc::ptr_eq(&context.owner, owner))
         .cloned()
 }
 
@@ -764,7 +769,8 @@ fn adapt_resolved_pattern_item(
             (item.source_data.as_ref(), item.source_context.as_ref())
         {
             let validation =
-                SnapshotValidationContext::with_shared_schemas(&context.binding_schemas);
+                SnapshotValidationContext::with_shared_schemas(&context.binding_schemas)
+                    .with_schema_index(&context.binding_schema_index);
             return canonical_snapshot_data_draft_with_context(
                 &item.body,
                 source_data,
@@ -2262,6 +2268,14 @@ pub(super) fn admit_pattern_item_materialization(
     let mut canonical_finalization_work = 0;
     let mut canonical_finalization_bytes = 0;
     let mut source_context_bound = SourceContextMaterializationBound::default();
+    let dense_array = array
+        && matches!(
+            value,
+            ResidentValueRef::Bool(_)
+                | ResidentValueRef::Index(_)
+                | ResidentValueRef::F64(_)
+                | ResidentValueRef::String(_)
+        );
     let footprint = match value {
         ResidentValueRef::Snapshot([Some(value)]) => {
             let expected = schemas
@@ -2386,6 +2400,36 @@ pub(super) fn admit_pattern_item_materialization(
         ResidentValueRef::String([value]) => scalar_footprint(value.len())?,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
+    if dense_array && finalization_count > 0 {
+        // A rest binding or snapshot equality candidate turns the native dense
+        // lane into an owned matrix draft and then a packed canonical value.
+        // Preflight both the per-element packing loop and the immutable output
+        // that overlaps the draft before materializing the first element.
+        canonical_finalization_work = footprint.node_count.max(1);
+        meter.charge_compute_work(
+            canonical_finalization_work
+                .checked_mul(finalization_count)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        let expected = schemas
+            .entry(schema)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        canonical_finalization_bytes =
+            mech_core::canonical_snapshot_finalization_bytes(CurrentMemoryFootprint {
+                logical_elements: budget::checked_u64(
+                    collection_len(value).ok_or(ResidentKernelError::InvalidInput)?,
+                )?,
+                payload_bytes: footprint.retained_bytes,
+                encoded_bytes: footprint.encoded_bytes,
+                retained_nodes: footprint.node_count,
+                schema_bytes: budget::checked_u64(expected.canonical_bytes().len())?,
+                shape_parameter_count: budget::checked_u64(
+                    expected.schema().dimension_parameters().len(),
+                )?,
+                ..CurrentMemoryFootprint::default()
+            })
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+    }
     let equality_work = footprint
         .encoded_bytes
         .max(footprint.node_count)
@@ -6771,6 +6815,126 @@ mod tests {
     }
 
     #[test]
+    fn dense_structural_candidates_preflight_canonical_finalization() {
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(4)]
+                            .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let (schemas, _) = build.into_parts();
+        let values = [1.0, 2.0, 3.0, 4.0];
+        let region = ResidentRegion {
+            kind: ResidentValueKind::F64,
+            offset: 0,
+            len: values.len(),
+            shape: mech_core::ResidentShape::SCALAR,
+        };
+        let binding_work = admit_pattern_item_materialization(
+            ResidentValueRef::F64(&values),
+            region,
+            matrix,
+            true,
+            1,
+            1,
+            0,
+            1,
+            &schemas,
+        )
+        .unwrap();
+        let equality_work = admit_pattern_item_materialization(
+            ResidentValueRef::F64(&values),
+            region,
+            matrix,
+            true,
+            1,
+            0,
+            1,
+            1,
+            &schemas,
+        )
+        .unwrap();
+
+        assert_eq!(binding_work, values.len() as u64 + 1);
+        assert_eq!(equality_work, binding_work);
+
+        // Long strings make the immutable packed candidate, rather than the
+        // retained-node ceiling, the deciding resource. The draft and its
+        // cloned payload fit independently; retaining both at once does not.
+        let large_count = 10_000usize;
+        let large_payload = 1_000usize;
+        let mut builder = SchemaTableBuilder::new();
+        let large_matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::String),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Constant(large_count as u64),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let large_matrix = build.resolve(large_matrix).unwrap();
+        let (large_schemas, _) = build.into_parts();
+        let large_values = vec!["x".repeat(large_payload); large_count];
+        let large_region = ResidentRegion {
+            kind: ResidentValueKind::String,
+            offset: 0,
+            len: large_values.len(),
+            shape: mech_core::ResidentShape::SCALAR,
+        };
+        assert!(
+            admit_pattern_item_materialization(
+                ResidentValueRef::String(&large_values),
+                large_region,
+                large_matrix,
+                true,
+                1,
+                0,
+                0,
+                0,
+                &large_schemas,
+            )
+            .is_ok(),
+            "the dense draft alone remains within the control budget",
+        );
+        assert!(
+            admit_pattern_item_materialization(
+                ResidentValueRef::String(&large_values),
+                large_region,
+                large_matrix,
+                true,
+                1,
+                1,
+                0,
+                0,
+                &large_schemas,
+            )
+            .is_err(),
+            "the overlapping packed canonical candidate must also fit",
+        );
+    }
+
+    #[test]
     fn snapshot_pattern_binding_drafts_keep_component_shape_parameters() {
         let mut builder = SchemaTableBuilder::new();
         let handle = builder
@@ -7545,6 +7709,22 @@ mod tests {
         )
         .unwrap();
         assert!(saw_plan && saw_foreign);
+        let (_, contexts) = source_schema_contexts(&outer).expect("source contexts");
+        assert!(contexts.windows(2).all(|pair| {
+            (Arc::as_ptr(&pair[0].owner) as usize) < (Arc::as_ptr(&pair[1].owner) as usize)
+        }));
+        assert!(Arc::ptr_eq(
+            &source_context_for_owner(&contexts, &plan)
+                .expect("plan owner is indexed")
+                .owner,
+            &plan,
+        ));
+        assert!(Arc::ptr_eq(
+            &source_context_for_owner(&contexts, &foreign)
+                .expect("foreign owner is indexed")
+                .owner,
+            &foreign,
+        ));
         assert_eq!(
             distinct_schema_owner_footprint(
                 &outer.schemas().unwrap(),

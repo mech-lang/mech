@@ -38,6 +38,7 @@ type SnapshotBudgetRegistry = std::sync::Mutex<Option<Box<SnapshotBudgetRegistra
 
 pub struct SnapshotValidationContext<'a> {
     schemas: &'a SchemaTable,
+    schema_index: Option<&'a [(SchemaKey, SchemaId)]>,
     named_kinds: Option<&'a dyn NamedKindPathResolver>,
     canonicalization_budget: Option<&'a SnapshotCanonicalizationBudget>,
     construction_authority: Option<&'a dyn SnapshotConstructionAuthority>,
@@ -98,6 +99,7 @@ impl<'a> SnapshotValidationContext<'a> {
     pub const fn new(schemas: &'a SchemaTable) -> Self {
         Self {
             schemas,
+            schema_index: None,
             named_kinds: None,
             canonicalization_budget: None,
             construction_authority: None,
@@ -120,6 +122,7 @@ impl<'a> SnapshotValidationContext<'a> {
     ) -> Self {
         Self {
             schemas,
+            schema_index: None,
             named_kinds: Some(named_kinds),
             canonicalization_budget: None,
             construction_authority: None,
@@ -133,6 +136,29 @@ impl<'a> SnapshotValidationContext<'a> {
     ) -> Self {
         self.canonicalization_budget = Some(budget);
         self
+    }
+
+    /// Uses a caller-retained, key-sorted schema index for recursive Dynamic
+    /// rebinding. The destination table remains the semantic authority; index
+    /// entries are checked against it before use.
+    #[doc(hidden)]
+    pub const fn with_schema_index(mut self, index: &'a [(SchemaKey, SchemaId)]) -> Self {
+        self.schema_index = Some(index);
+        self
+    }
+
+    fn schema_for_key(&self, key: SchemaKey) -> Option<SchemaId> {
+        let schema = match self.schema_index {
+            Some(index) => index
+                .binary_search_by_key(&key, |(candidate, _)| *candidate)
+                .ok()
+                .map(|position| index[position].1),
+            None => self.schemas.find_by_key(key),
+        }?;
+        self.schemas
+            .entry(schema)
+            .filter(|entry| entry.key() == key)
+            .map(|_| schema)
     }
 
     pub(crate) const fn with_construction_authority(
@@ -1738,7 +1764,7 @@ fn canonical_data_to_draft_with_target(
                 .map(|value| -> Result<Box<ValueDraft>, SnapshotValueError> {
                     if let Some(target_context) = target_context {
                         let target_schemas = target_context.schemas();
-                        let schema = target_schemas.find_by_key(value.schema_key()).ok_or(
+                        let schema = target_context.schema_for_key(value.schema_key()).ok_or(
                             SnapshotValueError::SnapshotSchemaTableMismatch {
                                 schema: value.schema(),
                                 expected: value.schema_key(),
@@ -5121,11 +5147,18 @@ mod tests {
         let target_build = target_builder.finish().unwrap();
         let target_string = target_build.resolve(target_string).unwrap();
         let target_schemas = Arc::new(target_build.table);
+        let mut schema_index = target_schemas
+            .entries()
+            .enumerate()
+            .map(|(raw, entry)| (entry.key(), SchemaId::new(raw as u32)))
+            .collect::<Vec<_>>();
+        schema_index.sort_unstable_by_key(|(key, _)| *key);
         let authority = RecordingConstructionAuthority::default();
         let draft = canonical_snapshot_data_draft_with_context(
             &SchemaBody::Dynamic,
             source.data(),
             &SnapshotValidationContext::with_shared_schemas(&target_schemas)
+                .with_schema_index(&schema_index)
                 .with_construction_authority(&authority),
         )
         .unwrap();
@@ -5138,5 +5171,20 @@ mod tests {
             draft,
             ValueDataDraft::Dynamic(Some(value)) if value.schema == target_string
         ));
+
+        let wrong_index = [(
+            target_schemas.entry(target_string).unwrap().key(),
+            SchemaId::new(0),
+        )];
+        assert!(
+            canonical_snapshot_data_draft_with_context(
+                &SchemaBody::Dynamic,
+                source.data(),
+                &SnapshotValidationContext::with_shared_schemas(&target_schemas)
+                    .with_schema_index(&wrong_index),
+            )
+            .is_err(),
+            "the index cannot override the destination schema authority",
+        );
     }
 }
