@@ -157,12 +157,82 @@ fn retained_completed_nodes_keep_identity_and_typed_access_through_finalization(
         .expect("settled canonical number");
     let update = stream.append("3\n", 100_000).unwrap();
     let next = drain(&mut stream, update).view;
-    let retained = next
-        .completed_node(event)
-        .expect("retained node at stable event");
+    let (retained, lookup_work) = next.completed_node_with_work(event);
+    let retained = retained.expect("retained node at stable event");
+    assert!(lookup_work > 1);
+    assert!(lookup_work <= u64::from(usize::BITS - next.event_count().leading_zeros()) + 2);
     assert_eq!(node.id(), retained.id());
     assert!(Arc::ptr_eq(node.green(), retained.green()));
     let snapshot = finish(&mut stream);
     assert_eq!(snapshot.nodes.node(node.id()).unwrap().range, node.range());
     assert_eq!(node.text().unwrap(), "1");
+}
+
+#[test]
+fn source_lookup_work_survives_append_and_edits_without_counting_public_reads() {
+    let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    let mut previous = 0;
+    for chunk in ["x := 1\n", "y := 2\n", "z := 3\n"] {
+        let update = stream.append(chunk, 100_000).unwrap();
+        let view = drain(&mut stream, update).view;
+        let work = stream.work();
+        assert!(work.source_lookup_steps > previous);
+        previous = work.source_lookup_steps;
+        assert_eq!(
+            view.source.to_contiguous_string(),
+            stream.source().to_contiguous_string()
+        );
+        for index in 0..view.event_count() {
+            if let Some(node) = view.completed_node(index) {
+                let _ = node.text().unwrap();
+            }
+        }
+        assert_eq!(
+            stream.work(),
+            work,
+            "public reads cannot charge live parsing"
+        );
+    }
+    let update = stream
+        .apply_edits(
+            &[TextEdit::replace(
+                TextRange::new(TextSize(5), TextSize(6)),
+                "4",
+            )],
+            100_000,
+        )
+        .unwrap();
+    drain(&mut stream, update);
+    assert!(stream.work().source_lookup_steps > previous);
+    let snapshot = finish(&mut stream);
+    let work = stream.work();
+    reconstruct_source(&snapshot.root, &snapshot.source).unwrap();
+    assert_eq!(stream.work(), work);
+}
+
+#[test]
+fn session_conversion_reports_retained_storage_and_shared_export_copy_volume() {
+    let mut stream = DocumentStream::new(DocumentId(826), ParseConfig::default());
+    stream.append("x :=\ny :=\n", 100_000).unwrap();
+    let snapshot = finish(&mut stream);
+    assert!(!snapshot.diagnostics.is_empty());
+    let before = stream.work();
+    let minimum = snapshot.nodes.node_count()
+        + snapshot.nodes.token_count()
+        + snapshot.restarts.as_slice().len()
+        + snapshot.diagnostics.len();
+    let (session, work) = stream.into_session().unwrap();
+    assert!(
+        work.export_work - before.export_work > minimum as u64,
+        "diagnostic payloads also count"
+    );
+    let stream = session.into_stream();
+    assert_eq!(
+        stream.work().retained_source_bytes,
+        snapshot.source.byte_len().0
+    );
+    assert_eq!(
+        stream.work().peak_source_pieces,
+        snapshot.source.piece_count()
+    );
 }

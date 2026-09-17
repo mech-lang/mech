@@ -16,13 +16,25 @@ impl DocumentStream {
         if edits.is_empty() {
             return Ok(self.unchanged());
         }
-        let source = self
-            .source
-            .apply_edits(edits)
+        // Validate against the untracked public source, then reject capacity
+        // before allocating pieces or scanning inserted text for its line index.
+        self.source
+            .validate_edits(edits)
             .map_err(StreamError::Source)?;
-        if source.byte_len().0 > self.limits.max_source_bytes {
+        let mut new_len = u64::from(self.source.byte_len().0);
+        for edit in edits {
+            new_len = new_len.saturating_sub(u64::from(edit.delete.len().0));
+        }
+        for edit in edits {
+            new_len = new_len.saturating_add(edit.insert.len() as u64);
+        }
+        if new_len > u64::from(self.limits.max_source_bytes) {
             return Err(StreamError::SourceLimit);
         }
+        let source = self
+            .parser_source
+            .apply_edits(edits)
+            .map_err(StreamError::Source)?;
         self.work.full_document_restarts += 1;
         // Arbitrary edits rebuild source descriptors and the line index. Charge
         // a documented bound: bytes plus at most 64 storage steps per piece or
@@ -32,9 +44,10 @@ impl DocumentStream {
                 + source.piece_count()
                 + source.line_index().line_count()) as u64;
         self.work_base = self.work;
-        self.source = source;
+        self.source = source.without_lookup_work();
+        self.parser_source = source;
         let mut parser = Parser::new(
-            &self.source,
+            &self.parser_source,
             LexicalMode::CanonicalSourceFragment,
             self.config,
             &mut self.ids,
@@ -72,8 +85,14 @@ impl DocumentStream {
         let snapshot = match Arc::try_unwrap(snapshot) {
             Ok(snapshot) => snapshot,
             Err(snapshot) => {
-                self.work.export_work +=
-                    snapshot.nodes.node_count() as u64 + snapshot.nodes.token_count() as u64;
+                self.work.export_work += snapshot.nodes.node_count() as u64
+                    + snapshot.nodes.token_count() as u64
+                    + snapshot.restarts.as_slice().len() as u64
+                    + snapshot
+                        .diagnostics
+                        .iter()
+                        .map(diagnostic_clone_work)
+                        .sum::<u64>();
                 snapshot.as_ref().clone()
             }
         };
@@ -82,4 +101,45 @@ impl DocumentStream {
             self.work,
         ))
     }
+}
+
+// Charge each cloned record/vector element and all owned UTF-8 payload bytes.
+fn diagnostic_clone_work(diagnostic: &crate::document::Diagnostic) -> u64 {
+    use crate::document::{ExpectedSyntax, RecoveryAction};
+    fn expected(value: &ExpectedSyntax) -> usize {
+        match value {
+            ExpectedSyntax::Token(_) => 0,
+            ExpectedSyntax::Production(text) => text.len(),
+        }
+    }
+    let mut work = 1
+        + diagnostic.code.0.len()
+        + diagnostic.message.len()
+        + diagnostic.labels.len()
+        + diagnostic.expected.len()
+        + diagnostic.fixes.len()
+        + diagnostic.related.len();
+    work += diagnostic
+        .labels
+        .iter()
+        .map(|label| label.message.len())
+        .sum::<usize>();
+    work += diagnostic.expected.iter().map(expected).sum::<usize>();
+    work += diagnostic
+        .found
+        .as_ref()
+        .and_then(|found| found.text.as_ref())
+        .map_or(0, |text| text.len());
+    for fix in &diagnostic.fixes {
+        work += fix.title.len() + fix.edits.len();
+        work += fix
+            .edits
+            .iter()
+            .map(|edit| edit.insert.len())
+            .sum::<usize>();
+    }
+    if let Some(RecoveryAction::Insert { syntax, .. }) = &diagnostic.recovery {
+        work += expected(syntax);
+    }
+    work as u64
 }

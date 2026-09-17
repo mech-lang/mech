@@ -1,7 +1,7 @@
 Canonical Retained-Document Streaming — S7B
 ===============================================================================
 
-Status: B1-B4 implemented. B5 qualification and B6 closeout remain open.
+Status: B1-B5 implemented; final qualification and B6 closeout remain open.
 The public DocumentStream lifecycle retains canonical grammar, source, events,
 diagnostics, and completed typed nodes. Ordinary publication shares persistent
 journals; explicit finite previews and final exports have separate accounting.
@@ -837,3 +837,31 @@ full run passed 890 tests and surfaced two storage-refactor issues (the canonica
 type allowlist and frozen hash preservation); both pass focused reruns. The
 165-test library and existing typed/incremental targets also pass. Final exact-head
 base/full, reduced/native/WASM, consumer, review, and CI results remain B5/B6 work.
+
+B5 complete qualification implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The boundary/recovery/resource suites now exercise byte transport partitions,
+random long partitions, preview isolation, physical closers, accepted suffixes,
+and session transitions. Existing semantic/artifact consumers have finalized
+stream canaries. Full CI explicitly includes all streaming targets in the reduced
+syntax profile and the semantic canary in the full_source producer profile.
+
+Adversarial growth includes combining clusters, regional indicators, executable
+fence lines, malformed tails, and late brace selection. Tests retain historical
+normal views and exercise bounded completed-node access; final grammar draining
+is included before the separate explicit export. Source lookup counters count
+actual retained-tree visits on the private parser source; public reads cannot
+mutate these counters. Sequential base and delimiter scans retain Unicode cursor
+state. Literal prefix rejection avoids rescanning nonmatching regional-indicator
+context; ASCII frontier probes still wait for complete grapheme context.
+
+Five B4 review regressions cover pre-allocation edit capacity rejection, cumulative
+live plus preview parser allowance, limited-export identity/publication baselines,
+initial session storage gauges, and diagnostic/restart/payload clone accounting.
+Preview parser transitions share max_parser_work with live transitions. Preview
+and resource-envelope export remain separately attributed in total work.
+
+This checkpoint installs the complete qualification surface. Full/base, reduced,
+no-std/WASM and CI outcomes must be recorded at their exact heads before B6 can
+close the PR's implementation review; test presence is not a passing result.

@@ -2,6 +2,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::sync::atomic::{AtomicU64, Ordering};
 
 use super::edit::{SourceError, TextEdit, TextRange, TextSize};
 use super::ids::{DocumentId, Revision};
@@ -56,6 +57,7 @@ pub struct TextSnapshot {
     pieces: RetainedSequence<Piece>,
     byte_len: TextSize,
     line_index: LineIndex,
+    lookup_work: Option<Arc<AtomicU64>>,
 }
 
 impl TextSnapshot {
@@ -83,9 +85,32 @@ impl TextSnapshot {
             pieces,
             byte_len,
             line_index,
+            lookup_work: None,
         })
     }
 
+    pub(crate) fn with_lookup_work(&self, counter: Arc<AtomicU64>) -> Self {
+        Self {
+            lookup_work: Some(counter),
+            ..self.clone()
+        }
+    }
+    pub(crate) fn without_lookup_work(&self) -> Self {
+        Self {
+            lookup_work: None,
+            ..self.clone()
+        }
+    }
+    fn record_lookups(&self, steps: u64) {
+        if let Some(counter) = &self.lookup_work {
+            counter.fetch_add(steps, Ordering::Relaxed);
+        }
+    }
+    fn piece_at(&self, offset: usize) -> Option<(usize, &Piece)> {
+        let (piece, steps) = self.pieces.at_measure_with_work(offset);
+        self.record_lookups(steps);
+        piece
+    }
     pub fn document(&self) -> DocumentId {
         self.document
     }
@@ -168,7 +193,10 @@ impl TextSnapshot {
     }
 
     pub fn chunks(&self) -> impl Iterator<Item = &str> {
-        self.pieces.iter().map(Piece::text)
+        self.pieces.iter_with_work().map(|(piece, steps)| {
+            self.record_lookups(steps);
+            piece.text()
+        })
     }
 
     pub fn text(&self, range: TextRange) -> Result<String, SourceError> {
@@ -205,7 +233,7 @@ impl TextSnapshot {
     }
 
     pub fn byte_at(&self, offset: TextSize) -> Option<u8> {
-        let (base, piece) = self.pieces.at_measure(offset.to_usize())?;
+        let (base, piece) = self.piece_at(offset.to_usize())?;
         piece
             .text()
             .as_bytes()
@@ -214,7 +242,7 @@ impl TextSnapshot {
     }
 
     pub(crate) fn chunk_at(&self, offset: TextSize) -> Option<SourceChunk<'_>> {
-        let (base, piece) = self.pieces.at_measure(offset.to_usize())?;
+        let (base, piece) = self.piece_at(offset.to_usize())?;
         Some(SourceChunk {
             text: piece.text(),
             range: TextRange::new(TextSize(base as u32), TextSize(base as u32) + piece.len()),
@@ -225,7 +253,7 @@ impl TextSnapshot {
         if offset.0 == 0 || offset.0 > self.byte_len.0 || !self.is_char_boundary(offset) {
             return None;
         }
-        let (base, piece) = self.pieces.at_measure(offset.to_usize() - 1)?;
+        let (base, piece) = self.piece_at(offset.to_usize() - 1)?;
         Some(SourceChunk {
             text: &piece.text()[..offset.to_usize() - base],
             range: TextRange::new(TextSize(base as u32), offset),
@@ -301,6 +329,7 @@ impl TextSnapshot {
                 pieces,
                 byte_len,
                 line_index,
+                lookup_work: self.lookup_work.clone(),
             },
             work,
         ))
@@ -340,6 +369,7 @@ impl TextSnapshot {
             pieces: pieces.into_iter().collect(),
             byte_len,
             line_index,
+            lookup_work: self.lookup_work.clone(),
         })
     }
 
@@ -347,7 +377,7 @@ impl TextSnapshot {
         if range.is_empty() {
             return;
         }
-        self.pieces.visit_range(
+        let steps = self.pieces.visit_range_with_work(
             range.start.to_usize(),
             range.end.to_usize(),
             |base, piece| {
@@ -356,9 +386,10 @@ impl TextSnapshot {
                 f(&piece.text()[start..end]);
             },
         );
+        self.record_lookups(steps);
     }
 
-    fn validate_edits(&self, edits: &[TextEdit]) -> Result<(), SourceError> {
+    pub(crate) fn validate_edits(&self, edits: &[TextEdit]) -> Result<(), SourceError> {
         let mut previous: Option<TextRange> = None;
         for edit in edits {
             self.validate_range(edit.delete)?;

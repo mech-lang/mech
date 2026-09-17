@@ -65,12 +65,21 @@ fn append(session: &mut DocumentStream, chunk: &str, views: bool, work: &mut Wor
         let view = session.view();
         assert_eq!(view.kind(), mech_syntax::document::SyntaxKind::Document);
         assert_eq!(view.source.byte_len(), session.source().byte_len());
+        // Exercise bounded random access to completed canonical nodes; callers
+        // need not enumerate the settled prefix to publish an ordinary view.
+        for index in view.event_count().saturating_sub(8)..view.event_count() {
+            let (node, lookup_work) = view.completed_node_with_work(index);
+            work.accounted += lookup_work;
+            if let Some(node) = node {
+                assert!(node.range().end <= view.source.byte_len());
+            }
+        }
         work.views += 1;
     }
     work.accounted += session.work().total() - before.total();
 }
 
-fn final_equivalence(session: &mut DocumentStream, source: &str) -> u64 {
+fn final_equivalence(session: &mut DocumentStream, source: &str, clean: bool) -> u64 {
     let before = session.work().total();
     let mut update = session.finish(65_536);
     while update.progress == StreamProgress::NeedsProcessing {
@@ -93,27 +102,39 @@ fn final_equivalence(session: &mut DocumentStream, source: &str) -> u64 {
         normalize_diagnostics(&actual.diagnostics, actual.revision, &actual.nodes),
         normalize_diagnostics(&expected.diagnostics, expected.revision, &expected.nodes),
     );
-    // All three selected complete fixtures are valid; recovery cannot mask an
-    // accidentally truncated workload. Malformed input gets separate B5 gates.
-    assert!(actual.is_strictly_clean(), "{:#?}", actual.diagnostics);
+    assert_eq!(actual.is_strictly_clean(), expected.is_strictly_clean());
+    assert_eq!(
+        actual.is_strictly_clean(),
+        clean,
+        "{:#?}",
+        actual.diagnostics
+    );
     finish_work
 }
 
-fn workload(source: &str, views: bool) -> Work {
-    assert!(source.is_ascii()); // UTF-8 split qualification is a separate target.
+fn workload(source: &str, views: bool, clean: bool) -> Work {
     let mut session = DocumentStream::new(DocumentId(826), ParseConfig::default());
     let mut work = Work::default();
-    for chunk in source.as_bytes().chunks(8) {
-        append(
-            &mut session,
-            std::str::from_utf8(chunk).unwrap(),
-            views,
-            &mut work,
-        );
+    let mut history = Vec::new();
+    let mut start = 0;
+    while start < source.len() {
+        let mut end = (start + 8).min(source.len());
+        while !source.is_char_boundary(end) {
+            end -= 1;
+        }
+        append(&mut session, &source[start..end], views, &mut work);
+        if views {
+            history.push(session.view());
+            work.accounted += 1;
+        }
+        start = end;
+    }
+    for view in &history {
+        assert!(view.source.byte_len() <= session.source().byte_len());
     }
     // Explicit full export/differential validation happens once after ingestion;
     // it is not included in this baseline's ordinary-publication accounting.
-    work.accounted += final_equivalence(&mut session, source);
+    work.accounted += final_equivalence(&mut session, source, clean);
     assert_eq!(work.accepted_bytes as usize, source.len());
     work
 }
@@ -123,7 +144,7 @@ fn growth(family: &str, make_source: impl Fn(usize) -> String) {
     for views in [false, true] {
         let mut previous = None;
         for n in [64, 128, 256, 512] {
-            let work = workload(&make_source(n), views);
+            let work = workload(&make_source(n), views, family != "malformed-tail");
             eprintln!("S7B_STREAM family={family} n={n} normal_views={views} {work:?}");
             if let Some(previous) = previous {
                 if work.accounted_work() > previous * 3 {
@@ -168,7 +189,7 @@ fn small_append_cost_is_independent_of_settled_prefix() {
         append(&mut session, &prefix, false, &mut warmup);
         let mut work = Work::default();
         append(&mut session, "Next.\n", true, &mut work);
-        final_equivalence(&mut session, &(prefix + "Next.\n"));
+        final_equivalence(&mut session, &(prefix + "Next.\n"), true);
         eprintln!("S7B_STREAM family=settled n={n} {work:?}");
         costs.push(work.accounted_work());
     }
@@ -176,4 +197,27 @@ fn small_append_cost_is_independent_of_settled_prefix() {
         costs[3] <= costs[0] * 3,
         "S7B stable-prefix gate failed: {costs:?}"
     );
+}
+
+#[test]
+fn combining_clusters_and_regional_indicators_have_bounded_cumulative_work() {
+    growth("combining", |n| {
+        format!("x := \"a{}\"\n", "\u{301}".repeat(n))
+    });
+    growth("regional", |n| format!("x := \"{}\"\n", "🇺🇸".repeat(n / 4)));
+}
+
+#[test]
+fn executable_fence_lines_have_bounded_cumulative_work() {
+    growth("executable-fence", |n| {
+        format!("```mech\n{}\n```\n", "x := 1\n".repeat(n / 8))
+    });
+}
+
+#[test]
+fn malformed_tail_and_late_brace_selection_have_bounded_cumulative_work() {
+    growth("malformed-tail", |n| format!("x := \"{}", "a".repeat(n)));
+    growth("late-brace", |n| {
+        format!("x := {{\"{}\": 1}}\n", "a".repeat(n))
+    });
 }
