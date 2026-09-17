@@ -1,5 +1,60 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-17
+
+**Candidate:** `codex/syntax-s8r24-index-ranges` /
+`d1a9ce64e9d3ddf3816ac246cad98c5821bc3934`, published as draft #882 on
+R23 `c42c4ccd90aff19919268a8e9f7f87469fe5ab8d`. This is the current accumulated
+implementation head through R24. The designated landing branch remains
+`codex/syntax-s8c-cutover`; it is deliberately not treated as current or
+qualified until the remaining accepted corrections are incorporated and it is
+rebuilt from this stack.
+
+**Completed:** 22 numbered correction boundaries are published: R01, R03-R05,
+R07-R14, and R16-R25. R25 remains owned by the separate review worker. R08 now
+owns runtime-sized promoted assignment inputs without introducing a second
+dense-access implementation; R07 remains the single generalized dense-to-
+snapshot access path. R09 retains all 17 accepted R07 live-layout regressions
+while adding its comprehension storage implementation. The resulting canonical
+document-state suite executes 104 tests and passes 104.
+
+R10's structural-match integration exposed and fixed one accumulated-build
+defect: its production schema-context calls now retain the R09 schema-owner
+walker in non-test builds. That owner fix is propagated through R24. Exact R23
+evidence passes the compatibility closure contract and 10/10 checker tests, the
+canonical artifact source/bytecode roundtrip, the deleted-parser WASM target,
+and the full `resident_external_test_support` runtime profile: 682/682 tests,
+including the 4,096-turn product N-body and public N-body viewer probes. R24's
+Index range source/decoded acceptance executes 3/3 tests and passes exact
+endpoint, increment, overflow, and live-endpoint boundaries. No canceled or
+zero-test command is counted as passing evidence.
+
+**Remaining:** implement the accepted v0.4 R02 numeric target capabilities,
+R06 constant/computed fixed-population mask activation facts, and R26 canonical
+compute lowering. R15 interval/constrained units remains deferred to post-v0.4
+in issue #865. Required slice reviews and focused CI remain open. After the
+three implementation owners are accepted, rebuild the designated C candidate,
+run product probes after each coherent batch, hold one exact C SHA for full
+qualification, fix failures in their owners, complete protected review/merge,
+and verify the landed target.
+
+**Current action:** start R02 from the published R24 head. Use the finite G02
+target cells as acceptance tests for the four physical capability families:
+C32 arithmetic/reductions/updates, numeric power, complex/rational matrix
+multiplication, and f32 special-binary broadcast. Preserve current target-
+rejection tests separately while converting each required positive witness to
+execution through its physical owner.
+
+**Next action:** create the R02 branch on exact R24, run the G02 witnesses to
+record the current grouped failures, implement the first shared physical owner,
+and execute direct plus decoded acceptance before publishing the review slice.
+Then continue the remaining G02 families without opening replacement PRs.
+
+**External blocker:** none for R02, R06, R26, routine testing, rebasing, review
+response, or integration. No unresolved language decision is being requested.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-15
 
 **Candidate:** `codex/syntax-s8c-cutover` / `daf69ffff909aa9c17bfa69e08718c8a5bf2664c`, published as draft #830 on native stack #859 and targeting `integration/v0.4` through R09 #858. The accepted correction chain is R01 #842, R03 #843, R04 #844, R05 #847, R25 #849, R08 #854, R07 #856, and R09 #858.
