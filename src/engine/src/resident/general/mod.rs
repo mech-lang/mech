@@ -3368,7 +3368,11 @@ fn complete_activation_shape_facts(
                 }
             };
             let ArtifactSource::Constant(selection) = selection_source else {
-                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+                // An activation-produced selection resolves k only when its
+                // control executes. Preserve the parameterized result shape;
+                // the resident mixed-layout executor validates k and resolves
+                // both output axes from the committed selection value.
+                continue;
             };
             let selection = artifact
                 .constants()
