@@ -188,8 +188,7 @@ fn parse_utf8_string_recovery(parser: &mut Parser<'_>) -> Attempt {
     let string = parser.start();
     let opening_start = parser.offset();
     if !base::parse_rule(parser, rules::QUOTE) {
-        string.abandon(parser);
-        return Attempt::NoMatch;
+        return failed_literal(parser, string, SyntaxKind::Utf8String);
     }
     let opening = TextRange::new(opening_start, parser.offset());
 
@@ -220,8 +219,7 @@ fn parse_raw_string_recovery(parser: &mut Parser<'_>) -> Attempt {
     let string = parser.start();
     let opening_start = parser.offset();
     if !consume_quotes(parser, 3) {
-        string.abandon(parser);
-        return Attempt::NoMatch;
+        return failed_literal(parser, string, SyntaxKind::RawString);
     }
     let opening = TextRange::new(opening_start, parser.offset());
 
@@ -297,9 +295,16 @@ pub(crate) fn parse_number(parser: &mut Parser<'_>) -> Attempt {
 pub(crate) fn parse_complex_number(parser: &mut Parser<'_>) -> Attempt {
     combinator::transactional(parser, rules::COMPLEX_NUMBER, |parser| {
         let complex = parser.start();
-        if parse_untyped_real_number_candidate(parser) != Attempt::Matched {
-            complex.abandon(parser);
-            return Attempt::NoMatch;
+        match parse_untyped_real_number_candidate(parser) {
+            Attempt::Matched => {}
+            Attempt::Committed => {
+                complex.complete(parser, SyntaxKind::ComplexNumber);
+                return Attempt::Committed;
+            }
+            Attempt::NoMatch => {
+                complex.abandon(parser);
+                return Attempt::NoMatch;
+            }
         }
 
         if consume_imaginary_unit(parser) {
@@ -317,6 +322,10 @@ pub(crate) fn parse_complex_number(parser: &mut Parser<'_>) -> Attempt {
             return Attempt::Matched;
         }
 
+        if parser.is_halted() {
+            complex.complete(parser, SyntaxKind::ComplexNumber);
+            return Attempt::Committed;
+        }
         complex.abandon(parser);
         Attempt::NoMatch
     })
@@ -426,8 +435,7 @@ pub(crate) fn parse_rational_literal(parser: &mut Parser<'_>) -> Attempt {
             || !base::parse_rule(parser, rules::SLASH)
             || !parse_integer_literal(parser).accepted()
         {
-            rational.abandon(parser);
-            return Attempt::NoMatch;
+            return failed_literal(parser, rational, SyntaxKind::RationalLiteral);
         }
         rational.complete(parser, SyntaxKind::RationalLiteral);
         Attempt::Matched
@@ -441,16 +449,14 @@ pub(crate) fn parse_scientific_literal(parser: &mut Parser<'_>) -> Attempt {
         if !first_accepted!(parser, parse_float_literal, parse_integer_literal).accepted()
             || !consume_scientific_marker(parser)
         {
-            scientific.abandon(parser);
-            return Attempt::NoMatch;
+            return failed_literal(parser, scientific, SyntaxKind::ScientificLiteral);
         }
 
         let _ = base::parse_rule(parser, rules::PLUS);
         let _ = base::parse_rule(parser, rules::DASH);
 
         if !first_accepted!(parser, parse_float_literal, parse_integer_literal).accepted() {
-            scientific.abandon(parser);
-            return Attempt::NoMatch;
+            return failed_literal(parser, scientific, SyntaxKind::ScientificLiteral);
         }
 
         scientific.complete(parser, SyntaxKind::ScientificLiteral);
@@ -465,8 +471,7 @@ pub(crate) fn parse_float_decimal_start(parser: &mut Parser<'_>) -> Attempt {
         if !base::parse_rule(parser, rules::PERIOD)
             || !base::parse_rule(parser, rules::DIGIT_SEQUENCE)
         {
-            float.abandon(parser);
-            return Attempt::NoMatch;
+            return failed_literal(parser, float, SyntaxKind::FloatDecimalStart);
         }
         float.complete(parser, SyntaxKind::FloatDecimalStart);
         Attempt::Matched
@@ -481,8 +486,7 @@ pub(crate) fn parse_float_full(parser: &mut Parser<'_>) -> Attempt {
             || !base::parse_rule(parser, rules::PERIOD)
             || !base::parse_rule(parser, rules::DIGIT_SEQUENCE)
         {
-            float.abandon(parser);
-            return Attempt::NoMatch;
+            return failed_literal(parser, float, SyntaxKind::FloatFull);
         }
         float.complete(parser, SyntaxKind::FloatFull);
         Attempt::Matched
@@ -524,8 +528,7 @@ pub(crate) fn parse_typed_integer(parser: &mut Parser<'_>) -> Attempt {
         if !base::parse_rule(parser, rules::DIGIT_SEQUENCE)
             || !base::parse_rule(parser, rules::IDENTIFIER)
         {
-            integer.abandon(parser);
-            return Attempt::NoMatch;
+            return failed_literal(parser, integer, SyntaxKind::TypedInteger);
         }
         integer.complete(parser, SyntaxKind::TypedInteger);
         Attempt::Matched
@@ -803,5 +806,21 @@ fn label_opening(parser: &mut Parser<'_>, opening: TextRange, message: &str) {
             },
             message: String::from(message),
         });
+    }
+}
+
+/// A failed speculative literal can be rewound only while parsing may continue.
+/// On resource exhaustion, retain its partial node and unwind the owner stack.
+fn failed_literal(
+    parser: &mut Parser<'_>,
+    marker: super::super::marker::Marker,
+    kind: SyntaxKind,
+) -> Attempt {
+    if parser.is_halted() {
+        marker.complete(parser, kind);
+        Attempt::Committed
+    } else {
+        marker.abandon(parser);
+        Attempt::NoMatch
     }
 }

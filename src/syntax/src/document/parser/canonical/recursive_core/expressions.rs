@@ -170,9 +170,10 @@ fn finish_match_suffix(parser: &mut Parser<'_>) -> FactAttempt<ExpressionForm> {
     if !base::parse_rule(parser, rules::WHITESPACE0) {
         return FactAttempt::NoMatch;
     }
+    let mut committed = false;
     match precedence::parse_match_arm(parser) {
         Attempt::Matched => {}
-        Attempt::Committed => return FactAttempt::Committed,
+        Attempt::Committed => committed = true,
         Attempt::NoMatch => {
             recover_required_production(
                 parser,
@@ -189,11 +190,16 @@ fn finish_match_suffix(parser: &mut Parser<'_>) -> FactAttempt<ExpressionForm> {
         match precedence::parse_match_arm(parser) {
             Attempt::Matched if parser.offset() > before => {}
             Attempt::Matched | Attempt::NoMatch => break,
-            Attempt::Committed => return FactAttempt::Committed,
+            Attempt::Committed if parser.offset() > before => committed = true,
+            Attempt::Committed => break,
         }
     }
     let _ = base::parse_rule(parser, rules::PERIOD);
-    FactAttempt::Matched(ExpressionForm::Match)
+    if committed {
+        FactAttempt::Committed
+    } else {
+        FactAttempt::Matched(ExpressionForm::Match)
+    }
 }
 
 pub(super) fn formula_or_range(parser: &mut Parser<'_>, require_range: bool) -> Attempt {

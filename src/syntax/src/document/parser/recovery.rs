@@ -101,22 +101,6 @@ pub(crate) fn skip_error(
     Some(error)
 }
 
-/// Preserve unexpected bytes until the delimiter owned by `target` can resume
-/// parsing. Nested `()`, `[]`, and `{}` pairs are skipped as one malformed
-/// region, so an inner closer cannot steal the owning rule's restart point.
-/// The delimiter itself is left for the caller to consume normally.
-pub(crate) fn abandon_to_delimiter(
-    parser: &mut Parser<'_>,
-    target: RuleId,
-    delimiter: char,
-    code: &str,
-    message: &str,
-) -> Option<CompletedMarker> {
-    abandon_until(parser, target, code, message, |character| {
-        is_owner_delimiter(character, delimiter) || is_unowned_closer(character, delimiter)
-    })
-}
-
 /// Preserve unexpected bytes until a sibling or ancestor production can
 /// restart. Boundary characters remain unconsumed for the owning production.
 pub(crate) fn abandon_to_restart(
@@ -126,8 +110,22 @@ pub(crate) fn abandon_to_restart(
     code: &str,
     message: &str,
 ) -> Option<CompletedMarker> {
-    abandon_until(parser, target, code, message, |character| {
+    abandon_to_restart_with_prefixes(parser, target, boundaries, &[], code, message)
+}
+
+pub(crate) fn abandon_to_restart_with_prefixes(
+    parser: &mut Parser<'_>,
+    target: RuleId,
+    boundaries: &[char],
+    prefixes: &[&str],
+    code: &str,
+    message: &str,
+) -> Option<CompletedMarker> {
+    abandon_until(parser, target, code, message, |parser, character| {
         boundaries.contains(&character)
+            || prefixes
+                .iter()
+                .any(|prefix| parser.cursor().starts_with(prefix))
     })
 }
 
@@ -136,7 +134,7 @@ fn abandon_until(
     target: RuleId,
     code: &str,
     message: &str,
-    should_stop: impl Fn(char) -> bool,
+    should_stop: impl Fn(&Parser<'_>, char) -> bool,
 ) -> Option<CompletedMarker> {
     let start = parser.offset();
     let marker = parser.start();
@@ -169,7 +167,7 @@ fn abandon_until(
         };
         if quoted.is_none()
             && !raw_triple
-            && recovery_boundary(character, &delimiters, &should_stop)
+            && recovery_boundary(character, &delimiters, should_stop(parser, character))
         {
             break;
         }
@@ -178,6 +176,13 @@ fn abandon_until(
             break;
         }
 
+        // These canonical operator/sigil prefixes contain no angle opener.
+        // In particular a generator arrow inside skipped comprehension source
+        // must not hide its enclosing brace from the recovery scanner.
+        let opens_ascii_angle = character == '<'
+            && !["<-", "<=", "<+"]
+                .iter()
+                .any(|prefix| parser.cursor().starts_with(prefix));
         let Some((character, range)) = parser.bump_char_raw() else {
             break;
         };
@@ -199,8 +204,9 @@ fn abandon_until(
         }
         match character {
             '"' => quoted = Some(character),
-            '(' | '[' | '{' => delimiters.push(character),
-            ')' | ']' | '}' => {
+            '(' | '[' | '{' | '⟨' => delimiters.push(character),
+            '<' if opens_ascii_angle => delimiters.push(character),
+            ')' | ']' | '}' | '>' | '⟩' => {
                 if delimiters
                     .last()
                     .is_some_and(|opener| delimiters_match(*opener, character))
@@ -214,10 +220,9 @@ fn abandon_until(
 
     let stopped_at_boundary = quoted.is_none()
         && !raw_triple
-        && parser
-            .cursor()
-            .peek_char()
-            .is_some_and(|character| recovery_boundary(character, &delimiters, &should_stop));
+        && parser.cursor().peek_char().is_some_and(|character| {
+            recovery_boundary(character, &delimiters, should_stop(parser, character))
+        });
     let exhausted = recovered >= remaining && !parser.is_eof() && !stopped_at_boundary;
     if exhausted {
         parser.halt();
@@ -268,12 +273,8 @@ fn abandon_until(
     Some(error)
 }
 
-fn recovery_boundary(
-    character: char,
-    delimiters: &[char],
-    should_stop: &impl Fn(char) -> bool,
-) -> bool {
-    if !should_stop(character) {
+fn recovery_boundary(character: char, delimiters: &[char], should_stop: bool) -> bool {
+    if !should_stop {
         return false;
     }
     let Some(opener) = delimiters.last().copied() else {
@@ -283,11 +284,14 @@ fn recovery_boundary(
 }
 
 fn is_recovery_closer(character: char) -> bool {
-    matches!(character, ')' | ']' | '}' | '>' | '⟩')
+    matches!(character, ')' | ']' | '}' | '>' | '⟩' | '╯' | '┘' | '┛')
 }
 
 fn delimiters_match(opener: char, closer: char) -> bool {
-    matches!((opener, closer), ('(', ')') | ('[', ']') | ('{', '}'))
+    matches!(
+        (opener, closer),
+        ('(', ')') | ('[', ']') | ('{', '}') | ('<' | '⟨', '>' | '⟩')
+    )
 }
 
 pub(crate) fn insert_missing(
@@ -474,12 +478,4 @@ fn nesting_should_stop(parser: &Parser<'_>, nested: u32) -> bool {
             || parser.cursor().starts_with("//")
             || is_newline_start(parser.cursor())
             || parser.is_strong_document_boundary())
-}
-
-fn is_unowned_closer(character: char, owner: char) -> bool {
-    matches!(character, ')' | ']' | '}' | '>' | '⟩') && !is_owner_delimiter(character, owner)
-}
-
-fn is_owner_delimiter(character: char, owner: char) -> bool {
-    character == owner || (owner == '>' && character == '⟩')
 }

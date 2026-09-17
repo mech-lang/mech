@@ -147,9 +147,19 @@ pub(crate) fn parse_source_rule_prefix(
     let fragment = parser.start();
     let start = parser.offset();
     let outcome = parse(&mut parser);
+    fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
+    // Finalizing an exhausted parser owns the unparsed remainder. Capture the
+    // completed range and committed outcome after that resource envelope exists.
+    if parser.is_halted() {
+        parser.consume_resource_remainder();
+    }
+    let outcome = if parser.is_halted() {
+        Attempt::Committed
+    } else {
+        outcome
+    };
     let matched = outcome.accepted();
     let end = parser.offset();
-    fragment.complete(&mut parser, SyntaxKind::CanonicalFragment);
     let output = parser.finish();
     // A valid zero-event budget cannot form the outer fragment. Return the
     // same bounded failed snapshot as the public parser instead of making a

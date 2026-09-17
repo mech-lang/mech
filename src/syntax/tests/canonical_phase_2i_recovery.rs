@@ -404,7 +404,7 @@ fn recursive_list_recovery_resumes_at_later_siblings() {
             rules::KIND_TUPLE,
             "(u8, <u8, i8)",
             SyntaxKind::KindScalar,
-            2,
+            3,
         ),
         (
             rules::BRACKET_SUBSCRIPT,
@@ -434,6 +434,110 @@ fn recursive_list_recovery_resumes_at_later_siblings() {
             "{rule:?}"
         );
     }
+}
+
+#[test]
+fn direct_collection_recovery_retains_later_siblings() {
+    for (rule, text, kind, expected) in [
+        (rules::SET, "{1, 2 +, 3}", SyntaxKind::IntegerLiteral, 3),
+        (rules::MAP, "{1: 2, 3:, 4: 5}", SyntaxKind::MapEntry, 3),
+        (
+            rules::RECORD,
+            "{a: 1, b:, c: 3}",
+            SyntaxKind::RecordBinding,
+            3,
+        ),
+        (rules::TUPLE, "(1,,3)", SyntaxKind::IntegerLiteral, 2),
+        (rules::KIND_TABLE, "|a,,c|", SyntaxKind::Identifier, 2),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert_eq!(count_kind(&parsed.syntax(), kind), expected, "{text:?}");
+        assert!(
+            contains_kind(&parsed.syntax(), SyntaxKind::Missing),
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn recovered_table_cells_preserve_physical_row_boundaries() {
+    let regular = "|a<u8>|\n|1 +\n|2|";
+    let parsed = parse(rules::REGULAR_TABLE, regular);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, regular.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::TableRow), 2);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+
+    let framed = "│1 +│";
+    let parsed = parse(rules::TABLE_ROW2, framed);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, framed.len());
+    assert_eq!(
+        parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::BoxDrawing)
+            .count(),
+        2
+    );
+}
+
+#[test]
+fn recovered_matrix_row_retains_later_rows() {
+    let text = "[1; 2 +; 3]";
+    let parsed = parse(rules::MATRIX, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::IntegerLiteral), 3);
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::MatrixRow), 3);
+}
+
+#[test]
+fn recovered_kind_owners_consume_their_physical_braces() {
+    for (text, selected) in [
+        ("{u8:<u8}", SyntaxKind::KindMap),
+        ("{a<u8>, b<u8}", SyntaxKind::KindRecord),
+    ] {
+        let parsed = parse(rules::KIND, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), selected), "{text:?}");
+        let right_braces = parsed
+            .syntax()
+            .tokens()
+            .into_iter()
+            .filter(|token| token.kind() == SyntaxKind::RightBrace)
+            .collect::<Vec<_>>();
+        assert_eq!(right_braces.len(), 1, "{text:?}");
+        assert!(
+            !right_braces[0]
+                .flags()
+                .contains(mech_syntax::document::TokenFlags::MISSING),
+            "{text:?}"
+        );
+    }
+}
+
+#[test]
+fn match_and_fsm_recovery_resume_at_later_stages() {
+    let match_text = "x ? | * => 1 | * => | * => 3";
+    let parsed = parse(rules::EXPRESSION, match_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, match_text.len());
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::MatchArm), 3);
+
+    let fsm_text = "#m -> => :next";
+    let parsed = parse(rules::FSM_PIPE, fsm_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, fsm_text.len());
+    assert_eq!(
+        count_kind(&parsed.syntax(), SyntaxKind::FsmStateTransition),
+        1
+    );
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::FsmOutput), 1);
 }
 
 #[test]
@@ -664,6 +768,123 @@ fn table_selection_defers_inline_recovery_at_a_physical_newline() {
 }
 
 #[test]
+fn committed_shared_collections_resume_at_physical_separators() {
+    for (rule, text, owner, child, expected_children) in [
+        (
+            rules::PATTERN_ARRAY,
+            "[1, 2 +, 3]",
+            SyntaxKind::ArrayPattern,
+            SyntaxKind::IntegerLiteral,
+            3,
+        ),
+        (
+            rules::EXPRESSION,
+            "(1,,3)",
+            SyntaxKind::Tuple,
+            SyntaxKind::IntegerLiteral,
+            2,
+        ),
+        (
+            rules::EXPRESSION,
+            "{1: 2, 3:, 4: 5}",
+            SyntaxKind::Map,
+            SyntaxKind::MapEntry,
+            3,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), owner), "{text:?}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), child),
+            expected_children,
+            "{text:?}"
+        );
+        assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    }
+}
+
+#[test]
+fn committed_prefixes_finish_their_selected_recursive_owner() {
+    for (rule, text, owner, child, expected_children) in [
+        (
+            rules::MATCH_ARM,
+            "| (1 +) => 2",
+            SyntaxKind::MatchArm,
+            SyntaxKind::IntegerLiteral,
+            2,
+        ),
+        (
+            rules::EXPRESSION,
+            "{1 + | x <- xs}",
+            SyntaxKind::SetComprehension,
+            SyntaxKind::Generator,
+            1,
+        ),
+        (
+            rules::FSM_PIPE,
+            "# -> :next",
+            SyntaxKind::FsmPipe,
+            SyntaxKind::FsmStateTransition,
+            1,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed, "{text:?}");
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text:?}");
+        assert!(contains_kind(&parsed.syntax(), owner), "{text:?}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), child),
+            expected_children,
+            "{text:?}"
+        );
+        assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    }
+}
+
+#[test]
+fn recovered_fancy_header_retains_the_first_data_row() {
+    let text = "╭─\n│a<u8│\n│1│";
+    let parsed = parse(rules::FANCY_TABLE, text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::FancyTable));
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::FancyTableRow), 1);
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+}
+
+#[test]
+fn delimited_mapping_keys_and_box_closers_preserve_owner_selection() {
+    let map_text = "{a: 1, (2): 3}";
+    let parsed = parse(rules::EXPRESSION, map_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
+    assert_eq!(parsed.consumed.end.0 as usize, map_text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Map));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Record));
+    assert_eq!(count_kind(&parsed.syntax(), SyntaxKind::MapEntry), 2);
+
+    let matrix_text = "╭1 @ (2╯";
+    let parsed = parse(rules::MATRIX, matrix_text);
+    assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+    assert_eq!(parsed.consumed.end.0 as usize, matrix_text.len());
+    assert!(contains_kind(&parsed.syntax(), SyntaxKind::Error));
+    assert!(!contains_kind(&parsed.syntax(), SyntaxKind::Missing));
+    let closers = parsed
+        .syntax()
+        .tokens()
+        .into_iter()
+        .filter(|token| token.kind() == SyntaxKind::BoxDrawing)
+        .collect::<Vec<_>>();
+    assert_eq!(closers.len(), 2);
+    assert!(
+        !closers[1]
+            .flags()
+            .contains(mech_syntax::document::TokenFlags::MISSING)
+    );
+}
+
+#[test]
 fn deferred_inline_table_restores_speculative_recovery_state() {
     let text = "|a<u8> @\n|1|";
     let limits = ParseLimits {
@@ -766,6 +987,127 @@ fn shared_prefix_recovery_preserves_complete_form_selection() {
             assert!(
                 !contains_kind(&parsed.syntax(), *kind),
                 "{text:?} incorrectly retained {kind:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn inline_table_row_separator_wins_over_recovered_nested_header() {
+    for text in [
+        "x := (|value<*>|(signal<f64>, true)|payload<*>|)",
+        "x := (|value<*>|1|payload<*>|)",
+        "x := (│value<*>│1│payload<*>│)",
+    ] {
+        let parsed = parse(rules::VARIABLE_DEFINE, text);
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::InlineTable),
+            1,
+            "{text}"
+        );
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::InlineTableRow),
+            2,
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn inline_table_separator_disambiguation_preserves_clean_nested_cells() {
+    for (rule, text, tables) in [
+        (rules::INLINE_TABLE_ROW, "1 |inner<f64>|2| |", 1),
+        (rules::INLINE_TABLE, "|a<f64> b<*>|1 |inner<f64>|2| |", 2),
+        (
+            rules::VARIABLE_DEFINE,
+            "x := (|a<f64> b<*>|1 |inner<f64>|2| |)",
+            2,
+        ),
+    ] {
+        let parsed = parse(rule, text);
+        assert!(
+            parsed.is_strictly_clean(),
+            "{text}: {:?}",
+            parsed.diagnostics
+        );
+        assert_eq!(parsed.consumed.end.0 as usize, text.len(), "{text}");
+        assert_eq!(
+            count_kind(&parsed.syntax(), SyntaxKind::InlineTable),
+            tables,
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn inline_table_separator_disambiguation_retains_resource_limits() {
+    for text in [
+        "x := (|value<*>|(signal<f64>, true)|payload<*>|)",
+        "x := (|a<f64> b<*>|1 |inner<f64>|2| |)",
+    ] {
+        let budgets = (0..=256)
+            .map(|fuel| ParseLimits {
+                fuel,
+                ..ParseLimits::default()
+            })
+            .chain(
+                (mech_syntax::document::parser::MIN_PREFIX_PRESERVING_EVENTS..=192).map(
+                    |max_events| ParseLimits {
+                        max_events,
+                        ..ParseLimits::default()
+                    },
+                ),
+            )
+            .chain((0..=12).map(|max_nesting| ParseLimits {
+                max_nesting,
+                ..ParseLimits::default()
+            }))
+            .chain((0..=4).map(|max_diagnostics| ParseLimits {
+                max_diagnostics,
+                ..ParseLimits::default()
+            }))
+            .chain((0..=16).map(|max_recovery_bytes| ParseLimits {
+                max_recovery_bytes,
+                ..ParseLimits::default()
+            }));
+        for limits in budgets {
+            let parsed = std::panic::catch_unwind(|| {
+                parse_canonical_phase_2i_rule_for_test(
+                    source(text),
+                    rules::VARIABLE_DEFINE,
+                    ParseConfig { limits },
+                )
+            })
+            .unwrap_or_else(|_| panic!("root failure for {text}: {limits:?}"))
+            .unwrap();
+            assert!(
+                parsed.stats.parser_steps <= limits.fuel,
+                "{text}: {limits:?}"
+            );
+            assert!(
+                parsed.stats.events_emitted <= u64::from(limits.max_events),
+                "{text}: {limits:?}"
+            );
+            assert!(
+                parsed.stats.diagnostics_emitted <= u64::from(limits.max_diagnostics),
+                "{text}: {limits:?}"
+            );
+            assert!(
+                parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes),
+                "{text}: {limits:?}"
+            );
+            validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
+                .unwrap_or_else(|error| panic!("{text}: {limits:?}: {error:?}"));
+            assert_eq!(
+                reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+                &text[..parsed.consumed.end.0 as usize],
+                "{limits:?}"
             );
         }
     }

@@ -1,8 +1,12 @@
-use mech_syntax::document::parser::canonical::parse_canonical_phase_2c_rule_for_test;
+use mech_syntax::document::parser::canonical::{
+    CanonicalRuleOutcome, parse_canonical_phase_2c_rule_for_test,
+    parse_canonical_phase_2i_rule_for_test,
+};
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    DocumentId, ExpectedSyntax, FixApplicability, ParseConfig, RecoveryAction, Revision, RuleId,
-    SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags,
+    DocumentId, ExpectedSyntax, FixApplicability, ParseConfig, ParseLimits, RecoveryAction,
+    Revision, RuleId, SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags,
+    reconstruct_source_range, validate_lossless_range,
 };
 
 fn source(text: &str) -> TextSnapshot {
@@ -178,5 +182,248 @@ fn incomplete_losing_candidates_restore_without_diagnostics() {
             TextRange::empty(TextSize::ZERO),
             "{input:?}"
         );
+    }
+}
+
+#[test]
+fn fuel_exhausted_at_string_recovery_opening_retains_its_selected_owner() {
+    for (rule, text, fuel, parent) in [
+        (
+            rules::STRING,
+            "\"unterminated",
+            14,
+            SyntaxKind::StringLiteral,
+        ),
+        (
+            rules::EXPRESSION,
+            "\"unterminated",
+            14,
+            SyntaxKind::Expression,
+        ),
+        (
+            rules::VARIABLE_DEFINE,
+            "x := (|a<*>|1 |b<*>|\"unterminated| |)",
+            93,
+            SyntaxKind::VariableDefine,
+        ),
+        (
+            rules::VARIABLE_DEFINE,
+            "x := (|a<*>|1 |b<*>|\"unterminated| |)",
+            141,
+            SyntaxKind::VariableDefine,
+        ),
+    ] {
+        let config = ParseConfig {
+            limits: ParseLimits {
+                fuel,
+                ..ParseLimits::default()
+            },
+        };
+        let parsed = parse_canonical_phase_2c_rule_for_test(source(text), rule, config)
+            .or_else(|| parse_canonical_phase_2i_rule_for_test(source(text), rule, config))
+            .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+        assert_eq!(parsed.stats.parser_steps, fuel);
+        assert_eq!(parsed.consumed, parsed.source.full_range());
+        assert!(find_node(&parsed.syntax(), parent).is_some());
+        let string = find_node(&parsed.syntax(), SyntaxKind::StringLiteral).unwrap();
+        let utf8 = find_node(&string, SyntaxKind::Utf8String).unwrap();
+        let remainder = find_node(&utf8, SyntaxKind::Error).unwrap();
+        assert_eq!(remainder.range().start.0 as usize, text.find('"').unwrap());
+        assert_eq!(remainder.range().end, parsed.consumed.end);
+        let resource_diagnostics = parsed
+            .diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.code.as_str() == "syntax/recovery-limit")
+            .collect::<Vec<_>>();
+        assert_eq!(resource_diagnostics.len(), 1);
+        if rule != rules::VARIABLE_DEFINE {
+            assert_eq!(parsed.diagnostics.len(), 1);
+        }
+        let diagnostic = resource_diagnostics[0];
+        assert_eq!(diagnostic.code.as_str(), "syntax/recovery-limit");
+        assert_eq!(diagnostic.rule, Some(rules::STRING));
+        assert_eq!(diagnostic.context, None);
+        assert!(diagnostic.expected.is_empty());
+        assert_eq!(
+            diagnostic.found.as_ref().unwrap().kind,
+            Some(SyntaxKind::Quote)
+        );
+        assert_eq!(
+            diagnostic.found.as_ref().unwrap().text.as_deref(),
+            Some("\"")
+        );
+        assert_eq!(
+            diagnostic.recovery,
+            Some(RecoveryAction::ResourceLimit {
+                range: remainder.range(),
+            })
+        );
+        assert!(diagnostic.fixes.is_empty());
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+        assert_eq!(
+            reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+            text
+        );
+    }
+}
+
+#[test]
+fn direct_string_recovery_preserves_its_owner_when_opening_quotes_exhaust_fuel() {
+    for (rule, text, kind, fuel, physical_quotes) in [
+        (
+            rules::UTF8_STRING,
+            "\"unterminated",
+            SyntaxKind::Utf8String,
+            13,
+            0,
+        ),
+        (
+            rules::RAW_STRING,
+            "\"\"\"unterminated",
+            SyntaxKind::RawString,
+            15,
+            0,
+        ),
+        (
+            rules::RAW_STRING,
+            "\"\"\"unterminated",
+            SyntaxKind::RawString,
+            16,
+            1,
+        ),
+        (
+            rules::RAW_STRING,
+            "\"\"\"unterminated",
+            SyntaxKind::RawString,
+            17,
+            2,
+        ),
+    ] {
+        let parsed = parse_canonical_phase_2c_rule_for_test(
+            source(text),
+            rule,
+            ParseConfig {
+                limits: ParseLimits {
+                    fuel,
+                    ..ParseLimits::default()
+                },
+            },
+        )
+        .unwrap();
+        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+        assert_eq!(parsed.stats.parser_steps, fuel);
+        assert_eq!(parsed.consumed, parsed.source.full_range());
+        let owner = find_node(&parsed.syntax(), kind).unwrap();
+        assert_eq!(owner.range(), parsed.consumed);
+        let remainder = find_node(&owner, SyntaxKind::Error).unwrap();
+        assert_eq!(
+            remainder.range(),
+            TextRange::new(TextSize(physical_quotes), parsed.consumed.end)
+        );
+        assert_eq!(
+            owner
+                .tokens()
+                .iter()
+                .filter(|token| token.kind() == SyntaxKind::Quote)
+                .count(),
+            physical_quotes as usize
+        );
+        assert_eq!(parsed.diagnostics.len(), 1);
+        let diagnostic = parsed.diagnostics.iter().next().unwrap();
+        assert_eq!(diagnostic.code.as_str(), "syntax/recovery-limit");
+        assert_eq!(diagnostic.rule, Some(rule));
+        assert_eq!(diagnostic.context, None);
+        assert!(diagnostic.expected.is_empty());
+        assert_eq!(
+            diagnostic.found.as_ref().unwrap().kind,
+            Some(SyntaxKind::Quote)
+        );
+        assert_eq!(
+            diagnostic.found.as_ref().unwrap().text.as_deref(),
+            Some("\"")
+        );
+        assert_eq!(
+            diagnostic.recovery,
+            Some(RecoveryAction::ResourceLimit {
+                range: remainder.range()
+            })
+        );
+        assert!(diagnostic.fixes.is_empty());
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
+        assert_eq!(
+            reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+            text
+        );
+    }
+}
+
+#[test]
+fn string_recovery_keeps_all_shared_resource_budgets_bounded() {
+    for (rule, text) in [
+        (rules::STRING, "\"unterminated"),
+        (rules::UTF8_STRING, "\"unterminated"),
+        (rules::RAW_STRING, "\"\"\"unterminated"),
+        (rules::STRING, "\"closed\""),
+        (rules::STRING, "\"\"\"closed\"\"\""),
+        (rules::EXPRESSION, "\"unterminated"),
+        (
+            rules::VARIABLE_DEFINE,
+            "x := (|a<*>|1 |b<*>|\"unterminated| |)",
+        ),
+    ] {
+        for limits in (0..=180)
+            .map(|fuel| ParseLimits {
+                fuel,
+                ..ParseLimits::default()
+            })
+            .chain(
+                (mech_syntax::document::parser::MIN_PREFIX_PRESERVING_EVENTS..=120).map(
+                    |max_events| ParseLimits {
+                        max_events,
+                        ..ParseLimits::default()
+                    },
+                ),
+            )
+            .chain((0..=8).map(|max_nesting| ParseLimits {
+                max_nesting,
+                ..ParseLimits::default()
+            }))
+            .chain((0..=2).flat_map(|max_diagnostics| {
+                (0..=24).map(move |max_recovery_bytes| ParseLimits {
+                    max_diagnostics,
+                    max_recovery_bytes,
+                    ..ParseLimits::default()
+                })
+            }))
+        {
+            let config = ParseConfig { limits };
+            let parsed = std::panic::catch_unwind(|| {
+                parse_canonical_phase_2c_rule_for_test(source(text), rule, config)
+                    .or_else(|| parse_canonical_phase_2i_rule_for_test(source(text), rule, config))
+                    .unwrap()
+            })
+            .unwrap_or_else(|_| panic!("{rule:?}, {text:?}, {limits:?}"));
+            assert!(parsed.stats.parser_steps <= limits.fuel, "{limits:?}");
+            assert!(
+                parsed.stats.events_emitted <= u64::from(limits.max_events),
+                "{limits:?}"
+            );
+            assert!(
+                parsed.stats.diagnostics_emitted <= u64::from(limits.max_diagnostics),
+                "{limits:?}"
+            );
+            assert!(
+                parsed.stats.recovery_bytes <= u64::from(limits.max_recovery_bytes),
+                "{limits:?}"
+            );
+            validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed)
+                .unwrap_or_else(|error| panic!("{rule:?}, {text:?}, {limits:?}: {error:?}"));
+            assert_eq!(
+                reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+                &text[..parsed.consumed.end.0 as usize],
+                "{rule:?}, {limits:?}"
+            );
+        }
     }
 }
