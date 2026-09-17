@@ -6,9 +6,9 @@
 use std::sync::Arc;
 
 use mech_core::{MResult, MechError};
-use mech_runtime::SourceDocument;
 #[cfg(feature = "formatter")]
-use mech_runtime::{CanonicalDocumentRenderer, CanonicalScopeResults};
+use mech_runtime::CanonicalDocumentRenderer;
+use mech_runtime::SourceDocument;
 use mech_syntax::document::{ParseConfig, Revision};
 
 /// One losslessly retained CLI source revision.
@@ -47,15 +47,15 @@ impl CanonicalCliSource {
         self.document.index().is_ok() && self.document.document().contains_executable_source()
     }
 
-    /// Render through the qualified canonical document renderer. Invalid
-    /// retained syntax cannot enter presentation as a partially valid source.
+    /// Format canonical syntax without compiling or evaluating executable code.
+    /// Invalid retained syntax cannot enter presentation as a partially valid source.
     #[cfg(feature = "formatter")]
-    pub fn render_text(&self, results: &[CanonicalScopeResults]) -> MResult<String> {
+    pub fn render_text(&self) -> MResult<String> {
         self.document
             .index()
             .map_err(|error| MechError::new(error, None))?;
         CanonicalDocumentRenderer
-            .render_text(&self.document.document(), results)
+            .format_text(&self.document.document())
             .map_err(|error| {
                 MechError::new(
                     crate::GenericError {
@@ -67,12 +67,12 @@ impl CanonicalCliSource {
     }
 
     #[cfg(feature = "formatter")]
-    pub fn render_html(&self, results: &[CanonicalScopeResults]) -> MResult<String> {
+    pub fn render_html(&self) -> MResult<String> {
         self.document
             .index()
             .map_err(|error| MechError::new(error, None))?;
         CanonicalDocumentRenderer
-            .render_html(&self.document.document(), results)
+            .format_html(&self.document.document())
             .map_err(|error| {
                 MechError::new(
                     crate::GenericError {
@@ -90,6 +90,48 @@ mod tests {
 
     #[cfg(feature = "formatter")]
     #[test]
+    fn canonical_cli_formats_executable_source_without_running_it() {
+        let source =
+            CanonicalCliSource::retain("cli:format:code", Revision(0), "answer := 42\nanswer\n")
+                .unwrap();
+        assert_eq!(source.render_text().unwrap(), "answer := 42\nanswer\n");
+        let html = source.render_html().unwrap();
+        assert!(html.contains("answer := 42"));
+        assert!(!html.contains("class='mech-program-output'"));
+    }
+
+    #[cfg(feature = "formatter")]
+    #[test]
+    fn canonical_cli_source_format_preserves_fences_and_inline_code() {
+        for text in [
+            "```mech:worker\nanswer := 42\nanswer\n```\n",
+            "```mech:hidden\nsecret := 7\n```\n",
+            "answer := 42\nThe answer is {answer}; displayed {{answer}}.\n",
+        ] {
+            let source =
+                CanonicalCliSource::retain("cli:format:scopes", Revision(0), text).unwrap();
+            let formatted = source.render_text().unwrap();
+            assert_eq!(formatted, text);
+            let html = source.render_html().unwrap();
+            assert!(!html.contains("class='mech-program-output'"));
+            assert!(!html.contains("class='mech-output'"));
+            if text.contains("{answer}") {
+                assert!(html.contains("{answer}"));
+            }
+        }
+    }
+
+    #[cfg(all(feature = "formatter", feature = "mika"))]
+    #[test]
+    fn canonical_cli_source_format_preserves_mika_scope_boundaries() {
+        let text = "╭◉╮⸢answer := 42\nanswer\n⸥\n";
+        let source = CanonicalCliSource::retain("cli:format:mika", Revision(0), text).unwrap();
+        assert_eq!(source.render_text().unwrap(), text);
+        assert!(source.render_html().unwrap().contains("answer := 42"));
+    }
+
+    #[cfg(feature = "formatter")]
+    #[test]
     fn canonical_cli_format_adapter_preserves_raw_coordinates_and_rejects_malformed_input() {
         let valid = CanonicalCliSource::retain(
             "cli:format:test",
@@ -103,10 +145,10 @@ mod tests {
         );
         assert_eq!(valid.document().source().revision(), Revision(7));
         assert_eq!(
-            valid.render_text(&[]).unwrap(),
+            valid.render_text().unwrap(),
             "first e\u{301}.\r\n\r\nsecond.\r\n"
         );
-        assert!(valid.render_html(&[]).unwrap().contains("first e\u{301}."));
+        assert!(valid.render_html().unwrap().contains("first e\u{301}."));
 
         let invalid =
             CanonicalCliSource::retain("cli:format:test", Revision(8), "value := [\r\n").unwrap();
@@ -115,8 +157,8 @@ mod tests {
             "value := [\r\n"
         );
         assert!(!invalid.document().snapshot().diagnostics.is_empty());
-        assert!(invalid.render_text(&[]).is_err());
-        assert!(invalid.render_html(&[]).is_err());
+        assert!(invalid.render_text().is_err());
+        assert!(invalid.render_html().is_err());
     }
 
     #[cfg(feature = "run")]

@@ -23,15 +23,15 @@ use mech_core::{
 };
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, ComprehensionQualifierValueSyntax,
-    DocumentId, DocumentSyntax, ExpressionBodySyntax, ExpressionSyntax, FactorSyntax,
-    FactorValueSyntax, FormulaSyntax, FsmPipeSyntax, FsmStageSyntax, IntegerLiteralSyntax,
-    KindAnnotationSyntax, KindSyntax, KindValueSyntax, LiteralSyntax, LiteralValueSyntax,
-    MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, NodeFlags, OperatorSyntax, PatternSyntax,
-    PatternValueSyntax, RangeExpressionSyntax, RecordSyntax, RecursiveSyntaxNode, Revision,
-    SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax, StructureSyntax,
-    StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind, SyntaxNode,
-    TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax, VariableDefineSyntax,
-    VariableStemSyntax, VariableSyntax,
+    DocumentId, DocumentScopeId, DocumentSyntax, ExpressionBodySyntax, ExpressionSyntax,
+    FactorSyntax, FactorValueSyntax, FormulaSyntax, FsmPipeSyntax, FsmStageSyntax,
+    IntegerLiteralSyntax, KindAnnotationSyntax, KindSyntax, KindValueSyntax, LiteralSyntax,
+    LiteralValueSyntax, MapSyntax, MatrixComprehensionSyntax, MatrixSyntax, NodeFlags,
+    OperatorSyntax, PatternSyntax, PatternValueSyntax, RangeExpressionSyntax, RecordSyntax,
+    RecursiveSyntaxNode, Revision, SetComprehensionSyntax, SetSyntax, SliceStemSyntax, SliceSyntax,
+    StructureSyntax, StructureValueSyntax, SubscriptItemSyntax, SubscriptValueSyntax, SyntaxKind,
+    SyntaxNode, TableSyntax, TableValueSyntax, TextRange, TupleStructSyntax, TupleSyntax,
+    VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
 };
 
 use crate::{
@@ -81,6 +81,7 @@ pub struct SourceSemanticMap {
 
 /// The complete engine-owned input to canonical artifact construction.
 pub struct CanonicalSourceProgram {
+    document_owner: Option<DocumentScopeId>,
     program: SourceProgram,
     schemas: SchemaTable,
     constants: ConstantStore,
@@ -118,6 +119,12 @@ pub struct SourceDocumentExport {
 }
 
 impl CanonicalSourceProgram {
+    /// Original retained scope selected by document/Mika compilation.
+    /// Expression-only programs do not claim a document presentation owner.
+    pub const fn document_owner(&self) -> Option<DocumentScopeId> {
+        self.document_owner
+    }
+
     pub const fn program(&self) -> &SourceProgram {
         &self.program
     }
@@ -5326,6 +5333,7 @@ impl SemanticBuilder {
                 .into_boxed_slice(),
         };
         Ok(CanonicalSourceProgram {
+            document_owner: None,
             program: SourceProgram {
                 requirements: Default::default(),
                 inputs,

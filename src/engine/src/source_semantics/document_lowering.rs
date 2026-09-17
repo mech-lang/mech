@@ -37,18 +37,19 @@ pub(super) fn compile_document(
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(document.syntax(), &mut units, &mut exports)?;
-    compile_collected_document(anchor, units, exports)
+    compile_collected_document(document.scope_id(), anchor, units, exports)
 }
 
 pub(super) fn compile_named_document_scope(
     document: &DocumentSyntax,
     name: &str,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_named_scope(document.syntax(), name)
+    compile_named_scope(document.syntax(), document.scope_id(), name)
 }
 
 fn compile_named_scope(
     root: &SyntaxNode,
+    owner: DocumentScopeId,
     name: &str,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(root);
@@ -82,7 +83,7 @@ fn compile_named_scope(
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
-    compile_collected_document(anchor, units, exports)
+    compile_collected_document(owner, anchor, units, exports)
 }
 
 pub(super) fn compile_mika_section(
@@ -94,15 +95,16 @@ pub(super) fn compile_mika_section(
         .body()
         .ok_or_else(|| internal(anchor, "Mika section has no retained body".to_owned()))?;
     if let Some(name) = name {
-        return compile_named_scope(body.syntax(), name);
+        return compile_named_scope(body.syntax(), section.scope_id(), name);
     }
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(body.syntax(), &mut units, &mut exports)?;
-    compile_collected_document(anchor, units, exports)
+    compile_collected_document(section.scope_id(), anchor, units, exports)
 }
 
 fn compile_collected_document(
+    owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
@@ -175,6 +177,7 @@ fn compile_collected_document(
     }
     builder.order_document_state_writers();
     let mut program = builder.finish()?;
+    program.document_owner = Some(owner);
     program.document_outputs = output_bindings.into_boxed_slice();
     program.document_exports = document_exports.into_boxed_slice();
     Ok(program)
