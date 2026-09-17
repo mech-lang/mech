@@ -461,6 +461,9 @@ pub(super) fn validate_comprehension_inner(
         _ => return Err(invalid("collection result requires a matrix or set schema")),
     };
     let element_parameter_count = yielded.dimension_parameters().len();
+    if declaration.kind == ComprehensionKind::Set && element_parameter_count != 0 {
+        return Err(invalid("set collection elements require a closed shape"));
+    }
     if output.dimension_parameters().len()
         != element_parameter_count + usize::from(declaration.kind == ComprehensionKind::Matrix)
     {
@@ -707,6 +710,85 @@ mod schema_tests {
         NodeId, OperationContractTableBuilder, SchemaBody, SchemaDraft, SchemaTableBuilder,
         ValueDataDraft, ValueDraft,
     };
+
+    #[test]
+    fn parameterized_set_yields_fail_artifact_validation() {
+        let parameter = DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(8)),
+        };
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(0)),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let yielded = builder
+            .insert(
+                SchemaDraft {
+                    body: matrix.clone(),
+                    dimension_parameters: vec![parameter.clone()].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Set {
+                        element: Box::new(matrix),
+                        cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                    },
+                    dimension_parameters: vec![parameter].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let yielded = built.resolve(yielded).unwrap();
+        let output = built.resolve(output).unwrap();
+        let schemas = built.into_parts().0;
+        let constants = ConstantStoreBuilder::new(&schemas).finish().unwrap();
+        let draft = crate::ProgramArtifactDraft {
+            schemas,
+            constants: constants.into_parts().0,
+            contracts: OperationContractTableBuilder::new()
+                .finish()
+                .unwrap()
+                .into_parts()
+                .0,
+            requirements: Default::default(),
+            inputs: Box::new([]),
+            slots: Box::new([]),
+            nodes: Box::new([]),
+            bindings: Box::new([]),
+            outputs: Box::new([]),
+            constraints: Box::new([]),
+            compute_regions: Box::new([]),
+        };
+        let control = ComprehensionDeclaration {
+            id: crate::ControlBlockId(0),
+            kind: ComprehensionKind::Set,
+            steps: Box::new([]),
+            yield_value: ComprehensionValue::Input(0),
+        };
+
+        assert!(matches!(
+            validate_comprehension(&draft, NodeId::new(0), &control, &[yielded], output),
+            Err(crate::ArtifactBuildError::InvalidControl {
+                reason: "set collection elements require a closed shape",
+                ..
+            })
+        ));
+    }
 
     #[test]
     fn dense_finalization_metrics_count_only_whole_or_rest_candidates() {

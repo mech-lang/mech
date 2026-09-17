@@ -249,23 +249,15 @@ fn shared_prefixes_select_the_exact_outer_structure() {
     assert_eq!(set_factor.outcome, CanonicalRuleOutcome::NoMatch);
     assert_eq!(set_factor.consumed, TextRange::empty(TextSize::ZERO));
 
-    for (text, prefix, kind) in [
-        (
-            "{x | x <- xs} + 1",
-            "{x | x <- xs}",
-            SyntaxKind::SetComprehension,
-        ),
-        (
-            "[x | x <- xs] + 1",
-            "[x | x <- xs]",
-            SyntaxKind::MatrixComprehension,
-        ),
+    for (text, kind) in [
+        ("{x | x <- xs} + 1", SyntaxKind::SetComprehension),
+        ("[x | x <- xs] + 1", SyntaxKind::MatrixComprehension),
     ] {
         let parsed = parse_raw(rules::EXPRESSION, text);
         assert_eq!(parsed.outcome, CanonicalRuleOutcome::Matched);
-        assert_eq!(parsed.consumed.end, TextSize(prefix.len() as u32));
+        assert_eq!(parsed.consumed.end, TextSize(text.len() as u32));
         assert!(contains_kind(&parsed.syntax(), kind));
-        assert!(!contains_kind(
+        assert!(contains_kind(
             &parsed.syntax(),
             SyntaxKind::AdditiveExpression
         ));

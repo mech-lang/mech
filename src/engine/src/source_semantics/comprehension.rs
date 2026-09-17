@@ -143,6 +143,13 @@ impl SemanticBuilder {
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
     ) -> Result<PendingValue, SourceSemanticError> {
+        if self.control_depth >= crate::MAX_CONTROL_DEPTH {
+            return Err(SourceSemanticError {
+                code: "source-semantics/control-depth-limit",
+                message: "executable control exceeds the nesting limit".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
         if self.control_depth == 0 {
             self.next_control_block = 0;
         }

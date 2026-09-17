@@ -1853,6 +1853,28 @@ fn nested_comprehension_depth_is_bounded_before_contract_mapping() {
             ..
         })
     ));
+
+    let mut source = "1".to_owned();
+    for _ in 0..MAX_CONTROL_DEPTH {
+        source = format!("[{source} | item <- [1]]");
+    }
+    compile(&source);
+    source = format!("[{source} | item <- [1]]");
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        TextSnapshot::new(DocumentId(823), Revision(1), source.as_str()).unwrap(),
+        rules::EXPRESSION,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(parsed.is_strictly_clean());
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&find(parsed.syntax()).unwrap())
+            .err()
+            .unwrap()
+            .code,
+        "source-semantics/control-depth-limit"
+    );
 }
 
 #[cfg(feature = "resident-artifact")]
