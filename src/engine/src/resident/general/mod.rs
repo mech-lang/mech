@@ -3323,6 +3323,12 @@ fn complete_activation_shape_facts(
             let [values_source, selection_source] = inputs.as_slice() else {
                 return Err(ResidentActivationError::InvalidDependency { node: node.node });
             };
+            // A control-produced matrix acquires its cardinality only when
+            // activation executes. Keep n-choose-k snapshot-backed and let
+            // its executor resolve both result axes from that live value.
+            if !source_has_activation_shape_fact(artifact, *values_source, &facts) {
+                continue;
+            }
             let available = match values_source {
                 ArtifactSource::Constant(constant) => {
                     let value = artifact

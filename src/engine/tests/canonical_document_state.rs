@@ -539,6 +539,48 @@ fn closed_comprehension_matrix_dot_publishes_a_dense_scalar() {
 }
 
 #[test]
+fn runtime_shaped_matrix_dot_accepts_fixed_dense_operands_in_both_orders() {
+    turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nresult := matrix/dot(values, [1 2 3])\nresult\n",
+        &[14.0, 14.0],
+    );
+    turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nresult := matrix/dot([1 2 3], values)\nresult\n",
+        &[14.0, 14.0],
+    );
+}
+
+#[test]
+fn all_elements_access_flattens_the_live_snapshot_shape() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nflattened := values[:]\nflattened\n",
+        &[
+            (None, (3, 1), &[1.0, 2.0, 3.0]),
+            (None, (3, 1), &[1.0, 2.0, 3.0]),
+        ],
+    );
+}
+
+#[test]
+fn runtime_shaped_n_choose_k_accepts_a_dense_selection() {
+    variable_matrix_turns(
+        "samples := 1..=4\nvalues := [x | x <- samples]\ncombinations := combinatorics/n-choose-k(values, 2)\ncombinations\n",
+        &[
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+        ],
+    );
+}
+
+#[test]
 fn closed_comprehension_matmul_resolves_live_product_dimensions() {
     variable_matrix_turns(
         "samples := 1..=3\nvalues := [sample | sample <- samples]\nproduct := matrix/matmul(values', values)\n~state := product\nstate\n",
@@ -618,6 +660,27 @@ fn runtime_shaped_state_supports_whole_value_updates_after_initialization() {
         &[
             (None, (1, 3), &[11.0, 22.0, 33.0]),
             (None, (1, 3), &[21.0, 42.0, 63.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate = [10 20 30]\nstate\n",
+        &[
+            (None, (1, 3), &[10.0, 20.0, 30.0]),
+            (None, (1, 3), &[10.0, 20.0, 30.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate[2] = 10\nstate\n",
+        &[
+            (None, (1, 3), &[1.0, 10.0, 3.0]),
+            (None, (1, 3), &[1.0, 10.0, 3.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=2\nrow := [x | x <- samples]\nvalues := [row; row + 2]\n~state := values\nstate[2,:] = [10 20]\nstate\n",
+        &[
+            (None, (2, 2), &[1.0, 2.0, 10.0, 20.0]),
+            (None, (2, 2), &[1.0, 2.0, 10.0, 20.0]),
         ],
     );
 }
