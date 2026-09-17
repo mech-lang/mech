@@ -252,40 +252,7 @@ static PURE_MATRIX_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
 fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                },
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: if matrix {
-                    ShapeRule::MatrixProduct { lhs: 0, rhs: 1 }
-                } else {
-                    ShapeRule::Declared
-                },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: if matrix {
-                ChangeDetectionPolicy::KernelReported
-            } else {
-                ChangeDetectionPolicy::ExactScalar
-            },
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+    mech_core::maintained_operation_contract("matrix/multiply", 2, matrix).expect("maintained product contract")
 }
 
 #[cfg(any(feature = "dot", feature = "matmul"))]

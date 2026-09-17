@@ -6,9 +6,11 @@
 
 mod declaration;
 mod encoding;
+mod maintained;
 mod resolved;
 mod validation;
 
 pub use declaration::*;
+pub use maintained::*;
 pub use resolved::*;
 pub use validation::*;

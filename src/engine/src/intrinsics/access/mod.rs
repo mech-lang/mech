@@ -42,14 +42,12 @@ use crate::intrinsics::canonical_access::{
 };
 #[cfg(feature = "semantic-compiler")]
 use crate::{
-    AccessMode, AliasPolicy, BytecodeCompilerContext, CanonicalFunctionSpecializer,
-    ChangeDetectionPolicy, CurrentMemoryFootprint, DeliveryMode, DimensionExpr,
-    ExternalInteraction, FunctionInvocation, FunctionMatrixElement, FunctionStatePort,
-    FunctionValueRepresentation, GenericError, InputPortLayout, InputPortPolicy,
-    MechFunctionCompiler, MechFunctionImpl, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ReactiveNodeKind, Register, SchemaBody, ShapeRule, SpecializationContext,
-    SpecializationInput, SpecializationInvocation, SpecializedFunction, ValueCell, ValueData,
-    ValueDataDraft, compile_value_cell_register, hash_str,
+    BytecodeCompilerContext, CanonicalFunctionSpecializer, CurrentMemoryFootprint, DimensionExpr,
+    FunctionInvocation, FunctionMatrixElement, FunctionStatePort, FunctionValueRepresentation,
+    GenericError, MechFunctionCompiler, MechFunctionImpl, OperationContractDeclaration,
+    ReactiveNodeKind, Register, SchemaBody, SpecializationContext, SpecializationInput,
+    SpecializationInvocation, SpecializedFunction, ValueCell, ValueData, ValueDataDraft,
+    compile_value_cell_register, hash_str,
 };
 use crate::{FunctionCatalogBuilder, MResult};
 #[cfg(all(feature = "native-plan", not(feature = "semantic-compiler")))]
@@ -63,41 +61,22 @@ use crate::{FunctionValueOutput, MechFunction};
 use crate::{IncorrectNumberOfArguments, MechError};
 
 #[cfg(feature = "semantic-compiler")]
-fn canonical_access_contract(input_count: usize, shape: ShapeRule) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![
-                InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                };
-                input_count
-            ]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite { shape },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+fn canonical_access_contract(input_count: usize) -> OperationContractDeclaration {
+    mech_core::maintained_operation_contract("access/scalar", input_count, false)
+        .expect("maintained selection contract")
 }
 
 #[cfg(feature = "semantic-compiler")]
 static PURE_CANONICAL_ACCESS_COPY_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| canonical_access_contract(1, ShapeRule::SameAsInput { input: 0 }));
+    std::sync::LazyLock::new(|| canonical_access_contract(1));
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_CANONICAL_ACCESS_BINARY_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
-> = std::sync::LazyLock::new(|| canonical_access_contract(2, ShapeRule::Declared));
+> = std::sync::LazyLock::new(|| canonical_access_contract(2));
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_CANONICAL_ACCESS_TERNARY_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
-> = std::sync::LazyLock::new(|| canonical_access_contract(3, ShapeRule::Declared));
+> = std::sync::LazyLock::new(|| canonical_access_contract(3));
 #[cfg(feature = "native-plan")]
 use crate::{
     MechFunctionFactory, RuntimeFunctionContract, RuntimeFunctionSignature,

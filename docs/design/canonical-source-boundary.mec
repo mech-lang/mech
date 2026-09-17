@@ -170,3 +170,52 @@ uses canonical modules and cannot add an unlisted old-parser call.
 S8 is complete only when the removal census reaches zero, source tools consume
 typed canonical syntax, execution enters through engine source semantics, and
 Nom plus `document/lower/legacy` are absent from production dependencies.
+
+
+7. S4 semantic ownership and artifact completion
+-------------------------------------------------------------------------------
+
+The canonical source producer and resident providers share maintained operation
+contracts from mech-core. Producer feature selection does not change variadic
+construction, shape, alias, or change-detection policies. A provider-independent
+contract describes semantics; availability of a resident implementation remains
+an activation concern.
+
+An undeclared source input may acquire a concrete schema from expression-local
+peer constraints before a SourceProgram is finalized. Unannotated local pattern
+projections from unresolved inputs can likewise acquire constrained element kinds;
+their unresolved generator retains the existing source/bind artifact boundary.
+An explicitly Dynamic
+input is a boxed runtime value and cannot escape through a fabricated conversion:
+Type System v1 has no cast from Dynamic to a concrete scalar or aggregate.
+Optional construction preserves existing option layers and live dependencies.
+A present Dynamic option boxes the original typed snapshot, including its schema
+and shape, through the canonical ValueDraft constructor.
+
+Constant-endpoint ranges activate and produce their specified values. Ranges
+with live input or state endpoints retain the existing resident completion gate:
+fixed arenas cannot support changing range cardinality. A correct peer-inferred
+SourceProgram and serializable artifact do not claim that runtime capability;
+activation rejects live ranges even when initial shape facts are supplied.
+
+Selection preserves the source element kind and sequential subscript order.
+Record and table fields use canonical Id selectors. Boolean selector populations
+are bounded turn dimensions; activation supplies their resolved cardinality.
+Existing resident arenas remain fixed for an activation, and a later mask with a
+different selected cardinality must fail before publication. Set construction
+retains the canonical duplicate-key rejection policy.
+
+SourceProgram input names and source anchors remain canonical source identities.
+At compile_artifact, every external input name uses the existing hexadecimal
+interface-transport mechanism under the mech-source-input- namespace. The public
+artifact_input_name, encode_source_input_name, and decode_source_input_name
+accessors expose the injective, reversible transport mapping. This permits paths
+and Unicode names without changing source identity or artifact ABI. Transporting
+@ctx/path as an input does not implement context or capability resolution.
+
+Source-only constructs without an executable operation contract retain an
+explicit artifact completion boundary. Publishing an intermediate semantic graph
+is not evidence that an artifact activates. The S4 regressions distinguish these
+boundaries from supported selection, construction, and matrix operations whose
+actual output values and changing input turns are tested. No production parser
+caller changes here; those remain S8 work.
