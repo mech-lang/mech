@@ -118,6 +118,10 @@ mod tests {
             if text.contains("{answer}") {
                 assert!(html.contains("{answer}"));
             }
+            if text.contains("mech:hidden") {
+                assert!(html.contains("secret := 7"), "{html}");
+                assert!(html.contains("class='mech-code-block hidden'"), "{html}");
+            }
         }
     }
 
