@@ -658,3 +658,156 @@ fn select_all_derives_its_shape_from_a_symbolic_selected_source() {
         }
     }
 }
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn review_swizzles_use_field_ids_and_preserve_heterogeneous_order() {
+    use crate::resident::{ActivationFacts, activate};
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueData};
+    let mut catalog = FunctionCatalogBuilder::new();
+    crate::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (source, expected) in [
+        (
+            "a := {first: 7u8, second: true}",
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::Bool(true),
+                    ValueDataDraft::U8(7),
+                    ValueDataDraft::Bool(true),
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "a := (|first<u8> second<bool>|7u8 true|8u8 false|)",
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::Bool(true), ValueDataDraft::Bool(false)]
+                            .into_boxed_slice(),
+                    ),
+                    ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::U8(7), ValueDataDraft::U8(8)].into_boxed_slice(),
+                    ),
+                    ValueDataDraft::Matrix(
+                        vec![ValueDataDraft::Bool(true), ValueDataDraft::Bool(false)]
+                            .into_boxed_slice(),
+                    ),
+                ]
+                .into_boxed_slice(),
+            ),
+        ),
+    ] {
+        let compiled = selected(source, "a.second,first,second");
+        let selectors = compiled
+            .program
+            .nodes
+            .iter()
+            .filter(|node| {
+                node.operation()
+                    .is_some_and(|operation| operation.canonical_name() == "access/column")
+            })
+            .map(|node| {
+                let SourceValue::Constant(id) = node.inputs[1] else {
+                    panic!("immutable field selector")
+                };
+                let ValueData::Id(id) = compiled.constants.get(id).unwrap().data() else {
+                    panic!("canonical field ID")
+                };
+                *id
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            selectors,
+            vec![
+                mech_core::hash_str("second"),
+                mech_core::hash_str("first"),
+                mech_core::hash_str("second")
+            ]
+        );
+        let artifact = compiled.compile_artifact().unwrap();
+        let artifact = crate::decode_program_artifact_bytecode_v1(
+            &crate::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 62),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected,
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn complex_decoder_preserves_decimal_exponent_signs_and_based_component_separators() {
+    for (source, real, imaginary) in [
+        ("0xE+2e-3i", 14.0, 0.002),
+        ("1e-2+3e-4i", 0.01, 0.0003),
+        ("0xFE-0xEi", 254.0, -14.0),
+        ("0xE+0xAi", 14.0, 10.0),
+    ] {
+        let (schema, value) = decode_number(source, None, None).unwrap();
+        assert_eq!(schema, BuiltinSchema::C64);
+        assert_eq!(
+            value,
+            ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(real),
+                F64Bits::from_f64(imaginary),
+            )),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn maintained_underscore_set_relation_infers_both_operand_positions() {
+    // The maintained semantic identity contains an underscore; that spelling
+    // is not a canonical source identifier. Exercise the declared-call boundary
+    // directly without extending the frozen grammar or adding a source alias.
+    for reversed in [false, true] {
+        let signal: ExpressionSyntax = parse("signal", rules::EXPRESSION);
+        let peer: ExpressionSyntax = parse("{1}", rules::EXPRESSION);
+        let mut builder = SemanticBuilder::new(SourceSemanticAnchor::for_node(signal.syntax()));
+        let signal_value = builder.expression(&signal).unwrap().0;
+        let peer_value = builder.expression(&peer).unwrap().0;
+        let inputs = if reversed {
+            vec![peer_value, signal_value]
+        } else {
+            vec![signal_value, peer_value]
+        };
+        let (inputs, schema) = builder
+            .resolve_maintained_call("set/not_equals", inputs, signal.syntax())
+            .unwrap()
+            .unwrap();
+        let value = builder.emit_with_schema_draft(
+            "set/not_equals",
+            inputs,
+            schema,
+            signal.syntax(),
+            "call",
+            None,
+        );
+        builder.publish("result", None, value, signal.syntax());
+        let compiled = builder.finish().unwrap();
+        let artifact = compiled.compile_artifact().unwrap();
+        let bytes = crate::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = crate::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(artifact.revision(), decoded.revision());
+        assert!(
+            matches!(artifact.schemas().get(artifact.inputs()[0].schema).unwrap().body(), SchemaBody::Set { element, .. } if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64))
+        );
+    }
+}

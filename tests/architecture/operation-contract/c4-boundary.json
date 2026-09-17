@@ -34,7 +34,9 @@
   ],
   "artifact_contract_fields": {
     "ProgramArtifact": "contracts: OperationContractTable",
-    "NodeDeclaration": "contract: OperationContractId",
+    "NodeDeclaration": "body: ExecutableNodeBody",
+    "OperationNodeBody": "contract: OperationContractId",
+    "ControlOperation": "contract: C",
     "IntegrityConstraintDeclaration": "contract: OperationContractId"
   },
   "bytecode_section": "ArtifactOperationContracts",

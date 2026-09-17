@@ -637,7 +637,7 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
     ));
 
     let negated = CanonicalSourceFrontend
-        .compile_expression(&expression("-1<i8>"))
+        .compile_expression(&expression("-signal<i8>"))
         .unwrap();
     assert!(matches!(
         negated

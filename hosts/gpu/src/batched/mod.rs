@@ -1762,6 +1762,9 @@ impl<'a> BatchCompiler<'a> {
     fn lower_nodes(&mut self) {
         let required = turn_required_nodes(self.artifact);
         for node in self.artifact.nodes() {
+            if !required.contains(&node.node) {
+                continue;
+            }
             let Some(node) = node.as_operation() else {
                 self.reject(
                     Some(node.node),
@@ -1770,9 +1773,6 @@ impl<'a> BatchCompiler<'a> {
                 );
                 continue;
             };
-            if !required.contains(&node.node) {
-                continue;
-            }
             let operation = display_operation(&node.operation);
             if operation == "core/composite-pack" {
                 continue;

@@ -4422,10 +4422,13 @@ rows := |id<string> x<f64>|
                 crate::mixed_compute::prepare_compute_region(&mut compiler, &tree, 0.0, 0.0)
                     .unwrap();
             assert!(!prepared.coordinator.nodes().is_empty());
-            assert!(prepared.coordinator.nodes().iter().all(|node| matches!(
-                prepared.coordinator.contracts().get(node.contract),
-                Some(mech_core::ResolvedOperationContract::Declared(_))
-            )));
+            assert!(prepared.coordinator.nodes().iter().all(|node| {
+                let node = node.as_operation().expect("EKF coordinator operation");
+                matches!(
+                    prepared.coordinator.contracts().get(node.contract),
+                    Some(mech_core::ResolvedOperationContract::Declared(_))
+                )
+            }));
             let command =
                 crate::mixed_compute::ComputeCommandHandle::new(prepared.region.clone(), 1);
             let registry = crate::mixed_compute::browser_compute_backend_registry(

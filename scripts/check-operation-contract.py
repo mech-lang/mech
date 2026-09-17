@@ -143,6 +143,21 @@ def validate_artifact_fields(model: str, fields: dict[str, str]) -> list[str]:
     return errors
 
 
+def validate_executable_contract_ownership(model: str) -> list[str]:
+    errors: list[str] = []
+    body = named_block(model, "enum", "ExecutableNodeBody") or ""
+    for variant, payload in (("Operation", "OperationNodeBody"), ("Match", "MatchDeclaration")):
+        if re.search(rf"\b{variant}\s*\(\s*(?:super::)?{payload}\s*\)", body) is None:
+            errors.append(f"ExecutableNodeBody lost {variant}({payload}) ownership")
+    node = named_block(model, "struct", "NodeDeclaration") or ""
+    if re.search(r"\bcontract\s*:", node):
+        errors.append("NodeDeclaration must not duplicate the executable body's contract")
+    control = named_block(model, "struct", "ControlOperation") or ""
+    if re.search(r"\bControlOperation\s*<\s*C\s*=\s*OperationContractId\s*>", control) is None:
+        errors.append("ControlOperation must default to artifact OperationContractId ownership")
+    return errors
+
+
 def validate_bytecode(section: str, reader: str, expected: str) -> list[str]:
     errors: list[str] = []
     for required in (
@@ -228,8 +243,11 @@ def run(root: Path = ROOT) -> list[str]:
     errors.extend(validate_semantic_guards(
         read(root, "src/core/src/operation_contract/validation.rs")
     ))
-    model = read(root, "src/engine/src/artifact/model.rs")
+    model = read(root, "src/engine/src/artifact/model.rs") + "\n" + read(
+        root, "src/engine/src/artifact/control.rs"
+    )
     errors.extend(validate_artifact_fields(model, manifest["artifact_contract_fields"]))
+    errors.extend(validate_executable_contract_ownership(model))
     section = read(root, "src/core/src/program/bytecode/section.rs")
     reader = read(root, "src/core/src/program/bytecode/reader.rs")
     errors.extend(validate_bytecode(section, reader, manifest["bytecode_section"]))

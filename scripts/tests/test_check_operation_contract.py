@@ -112,12 +112,28 @@ pub struct DeclaredOperationContract { storage: StorageStrategy }
             failures = CHECKER.validate_semantic_guards(source)
             self.assertTrue(any("shape-contract reference" in failure for failure in failures))
 
-    def test_node_without_contract_is_rejected(self) -> None:
-        model = "pub struct NodeDeclaration { pub node: NodeId }"
-        failures = CHECKER.validate_artifact_fields(
-            model, {"NodeDeclaration": "contract: OperationContractId"}
-        )
-        self.assertTrue(any("NodeDeclaration" in failure for failure in failures))
+    def test_executable_operation_without_contract_is_rejected(self) -> None:
+        for name, field_type in (("OperationNodeBody", "OperationContractId"), ("ControlOperation", "C")):
+            model = f"pub struct {name} {{ pub operation: OperationReference }}"
+            failures = CHECKER.validate_artifact_fields(
+                model, {name: f"contract: {field_type}"}
+            )
+            self.assertTrue(any(name in failure for failure in failures))
+
+    def test_executable_contract_ownership_rejects_missing_and_duplicate_owners(self) -> None:
+        model = """
+pub struct NodeDeclaration { pub body: ExecutableNodeBody }
+pub enum ExecutableNodeBody { Operation(OperationNodeBody), Match(super::MatchDeclaration) }
+pub struct ControlOperation<C = OperationContractId> { pub contract: C }
+"""
+        self.assertEqual(CHECKER.validate_executable_contract_ownership(model), [])
+        for broken in (
+            model.replace("Operation(OperationNodeBody)", "Operation(OperationReference)"),
+            model.replace("Match(super::MatchDeclaration)", "Match(String)"),
+            model.replace("pub body: ExecutableNodeBody", "pub contract: OperationContractId"),
+            model.replace("C = OperationContractId", "C = RuntimeFunctionId"),
+        ):
+            self.assertTrue(CHECKER.validate_executable_contract_ownership(broken))
 
     def test_bytecode_contract_section_is_required(self) -> None:
         failures = CHECKER.validate_bytecode(

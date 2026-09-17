@@ -4,6 +4,7 @@ use mech_gpu::{ComputeLowerer, GpuDiagnosticCode, lower_elementwise_compute_prog
 use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
 use mech_syntax::document::{
     AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+    VariableDefineSyntax,
 };
 
 fn artifact(source: &str) -> ProgramArtifact {
@@ -62,5 +63,74 @@ fn compute_targets_report_typed_control_without_dropping_or_flattening_arms() {
                 "{error}"
             );
         }
+    }
+}
+
+#[test]
+fn compute_targets_ignore_unreachable_control_and_its_private_slots() {
+    use mech_syntax::document::{DocumentSyntax, GreenBuilder, IdGenerator, SyntaxKind};
+    for result in ["1f32", "1"] {
+        let first = format!("unused := flag<bool> ? | * => {result}");
+        let last = "~value := 3f32";
+        let mut ids = IdGenerator::default();
+        let mut builder = GreenBuilder::new(&mut ids);
+        builder.start_node(SyntaxKind::Document);
+        builder.start_node(SyntaxKind::Body);
+        for (index, (source, rule)) in [
+            (first.as_str(), rules::VARIABLE_DEFINE),
+            (last, rules::VARIABLE_DEFINE),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            if index != 0 {
+                builder.token(SyntaxKind::Newline, "\n").unwrap();
+            }
+            let parsed = parse_canonical_phase_2i_rule_for_test(
+                TextSnapshot::new(DocumentId(822), Revision(2), source).unwrap(),
+                rule,
+                ParseConfig::default(),
+            )
+            .unwrap();
+            assert!(parsed.is_strictly_clean());
+            assert_eq!(parsed.consumed.end.0 as usize, source.len());
+            fn unit(node: SyntaxNode) -> Option<SyntaxNode> {
+                if VariableDefineSyntax::cast(node.clone()).is_some()
+                    || ExpressionSyntax::cast(node.clone()).is_some()
+                {
+                    Some(node)
+                } else {
+                    node.children().find_map(unit)
+                }
+            }
+            builder
+                .reuse_node(unit(parsed.syntax()).unwrap().green().clone())
+                .unwrap();
+        }
+        builder.finish_node().unwrap();
+        builder.finish_node().unwrap();
+        let document = DocumentSyntax::cast(SyntaxNode::new_root(
+            builder.finish().unwrap(),
+            TextSnapshot::new(DocumentId(822), Revision(2), format!("{first}\n{last}")).unwrap(),
+        ))
+        .unwrap();
+        let artifact = CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        assert!(
+            artifact
+                .nodes()
+                .iter()
+                .any(|node| matches!(node.body, ExecutableNodeBody::Match(_)))
+        );
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        lower_elementwise_compute_program(&artifact).unwrap();
+        ComputeLowerer.compile(&artifact).unwrap();
+        ComputeLowerer.compile_batched(&artifact, 1).unwrap();
     }
 }
