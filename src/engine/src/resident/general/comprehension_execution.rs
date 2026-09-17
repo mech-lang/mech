@@ -4298,15 +4298,32 @@ impl ReactiveInstance {
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        self.execute_comprehension_with_live_demand(index, before, working, probe, 0, 0)
+    }
+
+    pub(super) fn execute_comprehension_with_live_demand(
+        &mut self,
+        index: ActivatedNodeIndex,
+        before: InstanceEpoch,
+        working: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
         let ActivatedTurnStep::Comprehension(control) = &self.plan.steps[index.get() as usize]
         else {
             unreachable!()
         };
         let control = control.clone();
         let result = budget::with_control_work_budget(|| {
-            self.with_kernel_turn_plan(index, before, working, |this| {
-                this.execute_collection_planned(index, &control, before, working, probe)
-            })
+            self.with_kernel_turn_plan_and_live_demand(
+                index,
+                before,
+                working,
+                live_bytes,
+                live_nodes,
+                |this| this.execute_collection_planned(index, &control, before, working, probe),
+            )
         });
         // Lexical payloads have no consumers after this control invocation.
         // This also releases every completed inner allocation on a failed turn.
@@ -5465,12 +5482,21 @@ impl ReactiveInstance {
             match &control.steps[position] {
                 ActivatedCollectionStep::Operation { node, work } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
-                    let output = self.kernel_scratch_output_region(*node);
+                    let kernel = if self.plan.pure_kernel_steps.is_some()
+                        || matches!(
+                            self.plan.steps.get(node.get() as usize),
+                            Some(ActivatedTurnStep::Kernel(_))
+                        ) {
+                        Some(*node)
+                    } else {
+                        None
+                    };
+                    let output = kernel.and_then(|kernel| self.kernel_scratch_output_region(kernel));
                     let live_locals = self
                         .comprehension_live_local_footprint(
                             &control.locals,
                             output,
-                            Some(*node),
+                            kernel,
                             schemas,
                             meter,
                         )
@@ -5490,7 +5516,7 @@ impl ReactiveInstance {
                         *meter,
                     )
                     .map_err(fail)?;
-                    self.execute_kernel_with_live_demand(
+                    self.execute_step_with_live_demand(
                         *node, before, working, probe, live_bytes, live_nodes,
                     )?;
                 }
