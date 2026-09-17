@@ -37,12 +37,12 @@ use crate::SourceContextCapabilityScope;
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeResourceKey,
-    RuntimeResourceProviderNotFound, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteCommand, RuntimeResourceWriteIntent, SourceContextBase, SourceDocument,
-    SourceImportAlias, SourceImportDeclaration, SourceIndex, SourceRequest, SourceResolver,
-    import_may_resolve_source_dependency, import_requires_source_dependency,
-    module_namespace_for_import, source_request_for_import,
+    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyMissingError,
+    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteCommand, RuntimeResourceWriteIntent,
+    SourceContextBase, SourceDocument, SourceImportAlias, SourceImportDeclaration, SourceIndex,
+    SourceRequest, SourceResolver, import_may_resolve_source_dependency,
+    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure};
