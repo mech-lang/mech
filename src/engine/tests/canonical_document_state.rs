@@ -750,6 +750,20 @@ fn runtime_shaped_state_resolves_snapshot_rhs_axes_for_indexed_assignment() {
             assert_eq!(f32_matrix_values(actual), [1.0, 9.0]);
         },
     );
+    let turn = std::cell::Cell::new(0);
+    closed_matrix_turns(
+        "samples := 1..=2\nrow := [x | x <- samples]\nvalues<[f32]> := [row; row + 2]\n~state := values\nstate[2,:] += [10 20]\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (2, 2));
+            let expected = if turn.get() % 2 == 0 {
+                [1.0, 2.0, 13.0, 24.0]
+            } else {
+                [1.0, 2.0, 23.0, 44.0]
+            };
+            assert_eq!(f32_matrix_values(actual), expected);
+            turn.set(turn.get() + 1);
+        },
+    );
 }
 
 #[test]
@@ -2924,6 +2938,17 @@ fn activation_derived_range_endpoints_initialize_runtime_shaped_state() {
             (None, (1, 3), &[1.0, 2.0, 3.0]),
             (None, (1, 3), &[1.0, 2.0, 3.0]),
         ],
+    );
+}
+
+#[test]
+fn activation_derived_index_range_endpoints_initialize_runtime_shaped_state() {
+    closed_matrix_turns(
+        "start := (true ? | true => 1<index> | false => 2<index>)\nvalues := start..=3<index>\n~state := values\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 3));
+            assert_eq!(index_matrix_values(actual), [1, 2, 3]);
+        },
     );
 }
 

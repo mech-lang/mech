@@ -4668,7 +4668,8 @@ fn bind_range_increment_exclusive(
 fn is_range_snapshot_element(body: &SchemaBody) -> bool {
     matches!(
         body,
-        SchemaBody::UnsignedInteger(_)
+        SchemaBody::Index
+            | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
     )
@@ -5218,14 +5219,33 @@ fn bind_all_elements_range(
     if source.shape != ResidentShape::SCALAR || request.output.shape != ResidentShape::SCALAR {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    let fixed_geometry = [source, &request.output].into_iter().all(|port| {
+        port.activation_fixed_shape
+            || request
+                .schemas
+                .get(port.schema_id)
+                .is_some_and(|schema| schema.dimension_parameters().is_empty())
+    });
+    let matrix_constructor = fixed_geometry
+        .then(|| {
+            mech_core::snapshot::MatrixSnapshotConstructor::bind(
+                request.output.schema_id,
+                request.output.shape_instance.clone(),
+                (source.schema_id, source.shape_instance.clone()),
+                Arc::new(request.schemas.clone()),
+            )
+            .map(Arc::new)
+        })
+        .transpose()
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let plan = SnapshotAccessPlan {
         dense_source: None,
-        matrix_constructor: None,
+        matrix_constructor,
         selectors: Box::new([]),
         matrix_mode: Some(ResolvedSelectionMode::LinearGather),
-        source_dimensions: None,
+        source_dimensions: fixed_geometry.then_some((rows, columns)),
         output_dimensions: Some((count, 1)),
-        output_dimensions_dynamic: true,
+        output_dimensions_dynamic: !fixed_geometry,
         output_geometry: ResolvedAccessGeometry {
             logical_output_rows: count,
             logical_output_columns: 1,
@@ -13543,6 +13563,26 @@ fn range_input_draft(
     }
 }
 
+fn range_one(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError> {
+    match body {
+        SchemaBody::Index => Ok(ValueDataDraft::Index(1)),
+        _ => numeric_one(body),
+    }
+}
+
+fn range_add(
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::Index(left), ValueDataDraft::Index(right)) => left
+            .checked_add(right)
+            .map(ValueDataDraft::Index)
+            .ok_or(ResidentKernelError::Arithmetic),
+        (left, right) => numeric_add(left, right),
+    }
+}
+
 fn range_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13610,13 +13650,13 @@ fn range_snapshot(
     let step = if incremented {
         second
     } else {
-        numeric_one(input_schema.body())?
+        range_one(input_schema.body())?
     };
     let mut elements = Vec::with_capacity(count);
     for index in 0..count {
         elements.push(current.clone());
         if index + 1 < count {
-            current = numeric_add(current, step.clone())?;
+            current = range_add(current, step.clone())?;
         }
     }
     let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
