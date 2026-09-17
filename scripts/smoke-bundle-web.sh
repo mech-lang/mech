@@ -155,18 +155,10 @@ if pairs != expected:
     raise SystemExit(f"unexpected source manifest entries: {manifest!r}")
 if manifest.get("roots") != ["demo.mec"]:
     raise SystemExit(f"unexpected source manifest roots: {manifest!r}")
-if sources[0].get("artifactUrl") != "code/demo.mec":
-    raise SystemExit(f"root source has no canonical artifact: {sources!r}")
-origin = sources[0].get("nominalOrigin")
-if not isinstance(origin, dict) or origin.get("segments", [])[-3:] != [
-    "examples", "browser-dom-demo", "demo"
-]:
-    raise SystemExit(f"root source has unexpected nominal origin: {sources!r}")
-package_id = sources[0].get("nominalPackageId")
-if not isinstance(package_id, str) or not package_id.startswith("sha256:") or len(package_id) != 71:
-    raise SystemExit(f"root source has no canonical package identity: {sources!r}")
-if any(char not in "0123456789abcdef" for char in package_id[7:]):
-    raise SystemExit(f"root source has invalid package identity: {sources!r}")
+if manifest.get("resolutions") != []:
+    raise SystemExit(f"unexpected source manifest resolutions: {manifest!r}")
+if sources[0].get("documentUrl") != "code/demo.mec":
+    raise SystemExit(f"root source has no canonical document payload: {sources!r}")
 PY
 
 set +e

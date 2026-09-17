@@ -56,20 +56,22 @@ async function readProjectSourceManifest(moduleUrl) {
       source =>
         typeof source?.specifier !== "string" ||
         typeof source?.url !== "string" ||
-        (source.artifactUrl !== undefined && typeof source.artifactUrl !== "string") ||
-        (source.nominalOrigin !== undefined &&
-          (!Array.isArray(source.nominalOrigin?.segments) ||
-            source.nominalOrigin.segments.some(segment => typeof segment !== "string"))) ||
-        (source.nominalPackageId !== undefined &&
-          source.nominalPackageId !== null && typeof source.nominalPackageId !== "string"),
+        (source.documentUrl !== undefined && typeof source.documentUrl !== "string"),
+    ) ||
+    !Array.isArray(manifest.resolutions) ||
+    manifest.resolutions.some(
+      resolution =>
+        typeof resolution?.referrer !== "string" ||
+        typeof resolution?.specifier !== "string" ||
+        typeof resolution?.target !== "string",
     )
   ) {
     throw new Error("invalid project source manifest");
   }
 
   for (const root of manifest.roots) {
-    if (!manifest.sources.some(source => source.specifier === root && typeof source.artifactUrl === "string")) {
-      throw new Error(`static bundle root artifact is missing: ${root}`);
+    if (!manifest.sources.some(source => source.specifier === root && typeof source.documentUrl === "string")) {
+      throw new Error(`static bundle root document is missing: ${root}`);
     }
   }
   return manifest;
@@ -78,28 +80,23 @@ async function readProjectSourceManifest(moduleUrl) {
 async function main() {
   await init();
   if (
-    typeof WasmProject.fromServedBundle !== "function" ||
+    typeof WasmProject.fromServedDocuments !== "function" ||
     typeof WasmProject.supportsServedAuthority !== "function" ||
-    WasmProject.supportsServedAuthority() !== true
+    WasmProject.supportsServedAuthority() !== true ||
+    typeof WasmProject.supportsServedDocumentResolutions !== "function" ||
+    WasmProject.supportsServedDocumentResolutions() !== true
   ) {
     throw new Error("static bundle WASM profile mismatch: rebuild with browser_project support");
   }
   const config = await fetchText("mech.mcfg");
   const manifest = await readProjectSourceManifest(import.meta.url);
   const sources = {};
-  const artifacts = {};
-  const provenance = {};
+  const documents = {};
 
   for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
-    if (source.artifactUrl !== undefined) {
-      artifacts[source.specifier] = await fetchText(source.artifactUrl);
-    }
-    if (source.nominalOrigin !== undefined) {
-      provenance[source.specifier] = {
-        nominalOrigin: source.nominalOrigin,
-        nominalPackageId: source.nominalPackageId ?? null,
-      };
+    if (source.documentUrl !== undefined) {
+      documents[source.specifier] = await fetchText(source.documentUrl);
     }
   }
 
@@ -107,7 +104,13 @@ async function main() {
     throw new Error("static bundle is missing injected browser host authority");
   }
 
-  project = WasmProject.fromServedBundle(config, sources, artifacts, manifest.roots, provenance);
+  project = WasmProject.fromServedDocuments(
+    config,
+    sources,
+    documents,
+    manifest.roots,
+    manifest.resolutions,
+  );
   project.start();
   running = true;
   requestAnimationFrame(frame);

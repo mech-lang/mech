@@ -16,6 +16,7 @@ async function bootstrap(manifest) {
     ['/app/mech.mcfg', 'configuration'],
     ['/app/source/main.mec', 'answer := 42'],
     ['/app/source/notes.mec', 'Presentation notes.'],
+    ['/app/source/filters/index.mec', 'selected := 42'],
     ['/app/code/main.mec', 'root artifact'],
   ]);
   const script = { dataset: {}, getAttribute: () => './_mech/project.js' };
@@ -28,7 +29,8 @@ async function bootstrap(manifest) {
     console: { error: error => errors.push(String(error)) },
     WasmProject: {
       supportsServedAuthority: () => true,
-      fromServedBundle: (...args) => { admitted.push(args); return { start() {}, stop() {} }; },
+      supportsServedDocumentResolutions: () => true,
+      fromServedDocuments: (...args) => { admitted.push(args); return { start() {}, stop() {} }; },
     },
     fetch: async value => {
       const path = new URL(value).pathname;
@@ -41,26 +43,28 @@ async function bootstrap(manifest) {
   return { fetched, errors, admitted };
 }
 
-test('static bootstrap fetches served prose and only the configured root artifact', async () => {
+test('static bootstrap fetches served prose and transports retained resolutions', async () => {
+  const resolutions = [
+    { referrer: 'main.mec', specifier: './filters', target: 'filters/index.mec' },
+  ];
   const result = await bootstrap({ version: 4, roots: ['main.mec'], sources: [
-    { specifier: 'main.mec', url: 'source/main.mec', artifactUrl: 'code/main.mec',
-      nominalOrigin: { segments: ['sample', 'main'] }, nominalPackageId: 'sample@1' },
+    { specifier: 'main.mec', url: 'source/main.mec', documentUrl: 'code/main.mec' },
     { specifier: 'notes.mec', url: 'source/notes.mec' },
-  ] });
+    { specifier: 'filters/index.mec', url: 'source/filters/index.mec' },
+  ], resolutions });
   assert.deepEqual(result.errors, []);
   assert.equal(result.admitted.length, 1);
   assert.deepEqual(Object.keys(result.admitted[0][2]), ['main.mec']);
   assert.equal(result.admitted[0][1]['notes.mec'], 'Presentation notes.');
-  assert.equal(result.admitted[0][4]['main.mec'].nominalOrigin.segments[0], 'sample');
-  assert.equal(result.admitted[0][4]['main.mec'].nominalPackageId, 'sample@1');
+  assert.deepEqual(result.admitted[0][4], resolutions);
   assert.ok(result.fetched.includes('/app/source/notes.mec'));
   assert.ok(!result.fetched.includes('/app/code/notes.mec'));
 });
 
-test('static bootstrap rejects a configured root without its artifact', async () => {
+test('static bootstrap rejects a configured root without its document', async () => {
   const result = await bootstrap({ version: 4, roots: ['main.mec'], sources: [
     { specifier: 'main.mec', url: 'source/main.mec' },
-  ] });
+  ], resolutions: [] });
   assert.equal(result.admitted.length, 0);
-  assert.match(result.errors[0], /root artifact is missing: main.mec/);
+  assert.match(result.errors[0], /root document is missing: main.mec/);
 });

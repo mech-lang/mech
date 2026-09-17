@@ -689,7 +689,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const STATIC_WASM_WRAPPER: &str = r#"export class WasmProject {
-  static fromServedBundle() {}
+  static fromServedDocuments() {}
   static supportsServedAuthority() { return true; }
 }
 export default async function init() {}
