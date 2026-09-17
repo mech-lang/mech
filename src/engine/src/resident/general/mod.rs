@@ -4781,7 +4781,7 @@ fn build_plan(
             .any(|arm| matches!(arm.pattern, ActivatedMatchPattern::Structural { .. }))
             .then_some(control.artifact_node),
         ActivatedTurnStep::Comprehension(control)
-            if comprehension::uses_structural_patterns(control) =>
+            if comprehension::uses_structural_patterns(control, artifact.schemas()) =>
         {
             Some(control.artifact_node)
         }

@@ -292,6 +292,22 @@ impl StructuralProjectionTable {
     fn matrix_rest(&self, parent: SchemaId) -> Option<SchemaId> {
         self.entries.get(parent.get() as usize)?.matrix_rest
     }
+
+    fn retained_footprint(&self) -> Option<(u64, u64)> {
+        let mut bytes = u64::try_from(self.entries.len())
+            .ok()?
+            .checked_mul(core::mem::size_of::<StructuralProjectionEntry>() as u64)?;
+        let mut nodes = u64::from(!self.entries.is_empty());
+        for entry in &self.entries {
+            bytes = bytes.checked_add(
+                u64::try_from(entry.tuple_children.len())
+                    .ok()?
+                    .checked_mul(core::mem::size_of::<Option<SchemaId>>() as u64)?,
+            )?;
+            nodes = nodes.checked_add(u64::from(!entry.tuple_children.is_empty()))?;
+        }
+        Some((bytes, nodes))
+    }
 }
 
 fn collect_projection_schemas(
@@ -1485,6 +1501,52 @@ impl PatternItem {
         let binding = schemas
             .get(binding_schema)
             .ok_or(ResidentKernelError::InvalidInput)?;
+        if matches!(binding.body(), SchemaBody::Dynamic) {
+            let binding_shape = binding
+                .instantiate_shape(Box::new([]))
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            match &self {
+                Self::Dynamic(value) => {
+                    return Ok(Some(PatternBindingItem {
+                        shape_values: binding_shape.parameter_values().to_vec().into_boxed_slice(),
+                        data: ValueDataDraft::Dynamic(value.clone()),
+                        schemas: None,
+                        schema_index: None,
+                        footprint: BindingFootprint::Selected,
+                    }));
+                }
+                Self::SourceComponent {
+                    body: SchemaBody::Dynamic,
+                    data,
+                    source_data,
+                    context,
+                    ..
+                } => {
+                    let data = if let Some(source_data) = source_data {
+                        let validation = SnapshotValidationContext::with_shared_schemas(
+                            &context.binding_schemas,
+                        )
+                        .with_schema_index(&context.binding_schema_index);
+                        canonical_snapshot_data_draft_with_context(
+                            &SchemaBody::Dynamic,
+                            source_data,
+                            &validation,
+                        )
+                        .map_err(|_| ResidentKernelError::InvalidInput)?
+                    } else {
+                        data.clone()
+                    };
+                    return Ok(Some(PatternBindingItem {
+                        shape_values: binding_shape.parameter_values().to_vec().into_boxed_slice(),
+                        data,
+                        schemas: Some(Arc::clone(&context.binding_schemas)),
+                        schema_index: Some(Arc::clone(&context.binding_schema_index)),
+                        footprint: BindingFootprint::Selected,
+                    }));
+                }
+                _ => {}
+            }
+        }
         let selected_dynamic = matches!(&self, Self::Dynamic(_));
         let item = match self {
             Self::Plain(data) => {
@@ -3719,11 +3781,27 @@ impl ReactiveInstance {
         )
         .admit()?
         .into_plan();
+        let entries_before_projection = merged.len();
         let (merged, projections) = structural_projection_schema_context(&merged)
             .map_err(|_| ResidentKernelError::InvalidInput)?;
+        let appended_schema_nodes = budget::checked_u64(
+            merged
+                .len()
+                .checked_sub(entries_before_projection)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        let (projection_retained_bytes, projection_retained_nodes) = projections
+            .retained_footprint()
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        meter.charge_retained_nodes(
+            appended_schema_nodes
+                .checked_add(projection_retained_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
         let retained = merged
             .clone_allocation_bound_bytes()
             .and_then(|bytes| bytes.checked_add(shared_owner_bytes))
+            .and_then(|bytes| bytes.checked_add(projection_retained_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?;
         Ok((Arc::new(merged), projections, retained))
     }
@@ -5042,6 +5120,45 @@ mod tests {
     }
 
     #[test]
+    fn runtime_projection_footprint_retains_entries_and_tuple_indices() {
+        let mut builder = SchemaTableBuilder::new();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::Bool, SchemaBody::Index].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let (schemas, projections) = structural_projection_schema_context(&build.table).unwrap();
+        let (bytes, nodes) = projections.retained_footprint().unwrap();
+        let tuple_children = projections
+            .entries
+            .iter()
+            .map(|entry| entry.tuple_children.len())
+            .sum::<usize>();
+
+        assert_eq!(
+            bytes,
+            (schemas.len() * core::mem::size_of::<StructuralProjectionEntry>()
+                + tuple_children * core::mem::size_of::<Option<SchemaId>>()) as u64
+        );
+        assert_eq!(
+            nodes,
+            1 + projections
+                .entries
+                .iter()
+                .filter(|entry| !entry.tuple_children.is_empty())
+                .count() as u64
+        );
+    }
+
+    #[test]
     fn binding_resolution_charges_constructed_bodies_without_schema_arenas() {
         let mut builder = SchemaTableBuilder::new();
         let matrix = builder
@@ -6123,9 +6240,9 @@ mod tests {
     }
 
     #[test]
-    fn absent_dynamic_equality_is_a_nonmatch() {
+    fn absent_dynamic_matches_only_dynamic_peers_and_bindings() {
         let mut builder = SchemaTableBuilder::new();
-        let schema = builder
+        let index = builder
             .insert(
                 SchemaDraft {
                     body: SchemaBody::Index,
@@ -6135,8 +6252,19 @@ mod tests {
                 .unwrap(),
             )
             .unwrap();
+        let dynamic = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Dynamic,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
         let build = builder.finish().unwrap();
-        let schema = build.resolve(schema).unwrap();
+        let index = build.resolve(index).unwrap();
+        let dynamic = build.resolve(dynamic).unwrap();
         let (schemas, projections) = structural_projection_schema_context(&build.table).unwrap();
         let schemas = Arc::new(schemas);
         let item = PatternItem::Dynamic(None);
@@ -6150,7 +6278,7 @@ mod tests {
                     len: 1,
                     shape: mech_core::ResidentShape::SCALAR,
                 },
-                schema,
+                index,
                 &[],
                 0,
                 &schemas,
@@ -6159,6 +6287,53 @@ mod tests {
             .unwrap(),
             Some(false),
         );
+
+        let binding = item
+            .clone()
+            .into_binding(dynamic, &[], &schemas, &projections)
+            .unwrap()
+            .expect("an absent Dynamic remains a valid Dynamic binding");
+        assert!(matches!(binding.data, ValueDataDraft::Dynamic(None)));
+        let absent = ValueDraft {
+            schema: dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(None),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&schemas))
+        .unwrap();
+        assert_eq!(
+            item.language_equals(
+                ResidentValueRef::Snapshot(&[Some(absent)]),
+                ResidentRegion {
+                    kind: ResidentValueKind::Snapshot,
+                    offset: 0,
+                    len: 1,
+                    shape: mech_core::ResidentShape::SCALAR,
+                },
+                dynamic,
+                &[],
+                1_000,
+                &schemas,
+                &projections,
+            )
+            .unwrap(),
+            Some(true),
+        );
+
+        let nested_absence = PatternItem::Dynamic(Some(Box::new(ValueDraft {
+            schema: dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(None),
+        })));
+        let binding = nested_absence
+            .into_binding(dynamic, &[], &schemas, &projections)
+            .unwrap()
+            .expect("a nested absent Dynamic retains its outer wrapper");
+        assert!(matches!(
+            binding.data,
+            ValueDataDraft::Dynamic(Some(value))
+                if matches!(value.data, ValueDataDraft::Dynamic(None))
+        ));
     }
 
     #[test]
