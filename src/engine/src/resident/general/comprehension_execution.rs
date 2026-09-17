@@ -1399,43 +1399,24 @@ impl PatternItem {
         )?
         .checked_mul(core::mem::size_of::<u64>() as u64)
         .ok_or(ResidentKernelError::InvalidShape)?;
-        let mut workspace = schemas
+        // Binding resolution borrows both the plan and source schema arenas.
+        // Charge only bodies, witnesses, and parameter buffers constructed by
+        // `into_binding`; the retained arenas are not cloned per iteration.
+        let mut workspace = binding
+            .body()
             .clone_allocation_bound_bytes()
-            .and_then(|bytes| {
-                bytes.checked_add(
-                    binding
-                        .body()
-                        .clone_allocation_bound_bytes()?
-                        .checked_mul(3)?,
-                )
-            })
+            .and_then(|bytes| bytes.checked_mul(3))
             .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let (body, shape_values, extra_schemas) = match self {
+        let (body, shape_values) = match self {
             Self::Component {
                 body, shape_values, ..
-            } => (Some(body), shape_values.len(), None),
+            } => (Some(body), shape_values.len()),
             Self::SourceComponent {
-                body,
-                shape_values,
-                context,
-                ..
-            } => (
-                Some(body),
-                shape_values.len(),
-                Some(context.binding_schemas.as_ref()),
-            ),
-            Self::Plain(_) | Self::Dynamic(_) => (None, 0, None),
+                body, shape_values, ..
+            } => (Some(body), shape_values.len()),
+            Self::Plain(_) | Self::Dynamic(_) => (None, 0),
         };
-        if let Some(extra_schemas) = extra_schemas {
-            workspace = workspace
-                .checked_add(
-                    extra_schemas
-                        .clone_allocation_bound_bytes()
-                        .ok_or(ResidentKernelError::InvalidShape)?,
-                )
-                .ok_or(ResidentKernelError::InvalidShape)?;
-        }
         if let Some(body) = body {
             workspace = workspace
                 .checked_add(
@@ -4976,6 +4957,110 @@ mod tests {
             allocation_capacity_bytes::<SchemaId>(values.capacity()).unwrap(),
             (values.capacity() * core::mem::size_of::<SchemaId>()) as u64,
         );
+    }
+
+    #[test]
+    fn binding_resolution_charges_constructed_bodies_without_schema_arenas() {
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(8)),
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let (schemas, _) = build.into_parts();
+        let item = PatternItem::component(
+            Some(matrix),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                    .into_boxed_slice(),
+            },
+            vec![3].into_boxed_slice(),
+            ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        );
+        let workspace = item
+            .binding_resolution_workspace(matrix, &[3], &schemas)
+            .unwrap();
+        let body_bytes = schemas
+            .get(matrix)
+            .unwrap()
+            .body()
+            .clone_allocation_bound_bytes()
+            .unwrap();
+
+        assert_eq!(
+            workspace,
+            body_bytes * 5 + 8 * core::mem::size_of::<u64>() as u64
+        );
+    }
+
+    #[test]
+    fn ordinary_scalar_binding_does_not_charge_the_schema_arena() {
+        let mut builder = SchemaTableBuilder::new();
+        let scalar = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        for width in [
+            IntegerWidth::W8,
+            IntegerWidth::W16,
+            IntegerWidth::W32,
+            IntegerWidth::W64,
+        ] {
+            builder
+                .insert(
+                    SchemaDraft {
+                        body: SchemaBody::UnsignedInteger(width),
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+        }
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let (schemas, _) = build.into_parts();
+        let item = PatternItem::Plain(ValueDataDraft::F64(F64Bits::from_f64(1.0)));
+
+        assert_eq!(
+            item.binding_resolution_workspace(scalar, &[], &schemas)
+                .unwrap(),
+            0
+        );
+        assert!(schemas.clone_allocation_bound_bytes().unwrap() > 0);
     }
 
     #[test]
