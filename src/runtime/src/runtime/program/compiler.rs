@@ -2466,12 +2466,12 @@ fn invalid_context_import(specifier: &str, missing: &'static str) -> mech_core::
 }
 
 #[cfg(feature = "compute")]
-
 struct CompilerExternalContractResolver<'a> {
     providers: ResidentExternalContractResolver<'a>,
     compute: bool,
 }
 
+#[cfg(feature = "compute")]
 impl mech_engine::ExternalRequirementContractResolver for CompilerExternalContractResolver<'_> {
     fn resolve_external_contract(
         &self,
