@@ -598,6 +598,33 @@ fn runtime_shaped_n_choose_k_accepts_a_dense_selection() {
 }
 
 #[test]
+fn runtime_shaped_n_choose_k_accepts_an_activation_derived_selection() {
+    variable_matrix_turns(
+        "selection := (true ? | true => 2 | false => 1)\ncombinations := combinatorics/n-choose-k([1 2 3 4], selection)\ncombinations\n",
+        &[
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+        ],
+    );
+}
+
+#[test]
+fn activation_derived_selectors_gather_from_fixed_dense_matrices() {
+    variable_matrix_turns(
+        "samples := 1..=3\nselectors := [x | x <- samples, x != 2]\nvalues := [10 20 30]\nselected := values[selectors]\nselected\n",
+        &[(None, (2, 1), &[10.0, 30.0]), (None, (2, 1), &[10.0, 30.0])],
+    );
+}
+
+#[test]
 fn closed_comprehension_matmul_resolves_live_product_dimensions() {
     variable_matrix_turns(
         "samples := 1..=3\nvalues := [sample | sample <- samples]\nproduct := matrix/matmul(values', values)\n~state := product\nstate\n",
@@ -645,6 +672,18 @@ fn runtime_shaped_f64_matrices_reach_the_existing_solve_semantics() {
     );
     variable_matrix_turns(
         "first := [x | x <- [1 2]]\nsecond := [x | x <- [1 4]]\ncoefficients := [first; second]\nright-row := [x | x <- [5 9]]\nright := right-row'\nsolution := coefficients \\ right\n~state := solution\nstate\n",
+        &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
+    );
+}
+
+#[test]
+fn runtime_shaped_matrix_solve_accepts_fixed_dense_operands_in_both_positions() {
+    variable_matrix_turns(
+        "first := [x | x <- [1 2]]\nsecond := [x | x <- [1 4]]\ncoefficients := [first; second]\nsolution := coefficients \\ [5; 9]\nsolution\n",
+        &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
+    );
+    variable_matrix_turns(
+        "right-row := [x | x <- [5 9]]\nright := right-row'\nsolution := [1 2; 1 4] \\ right\nsolution\n",
         &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
     );
 }
