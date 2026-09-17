@@ -127,6 +127,8 @@ pub struct MixedProgramCompilation {
     /// capability. These form the demand-retention contract across compatible
     /// compute-host generations; undeclared outputs remain GPU-resident.
     pub retained_outputs: BTreeSet<String>,
+    /// Exact transitive retained revisions shared by both compiled products.
+    pub source_dependencies: BTreeMap<String, u64>,
 }
 
 #[cfg(feature = "compute")]
@@ -483,8 +485,46 @@ impl ProgramCompiler {
     /// Compiles an inline one-document application into its ordinary resident
     /// coordinator and one backend-neutral compute region.
     #[cfg(feature = "compute")]
+    pub fn compile_mixed_source(&mut self, source: &str) -> MResult<MixedProgramCompilation> {
+        let document = retained_compiler_document(source)?;
+        self.compile_mixed_document(&document)
+    }
+
+    #[cfg(feature = "compute")]
+    pub fn compile_mixed_document(
+        &mut self,
+        document: &SourceDocument,
+    ) -> MResult<MixedProgramCompilation> {
+        self.view().compile_mixed_document(document)
+    }
+
+    #[cfg(feature = "compute")]
     pub fn compile_mixed_tree(&mut self, tree: &Program) -> MResult<MixedProgramCompilation> {
         self.view().compile_mixed_tree(tree)
+    }
+
+    /// Compile both mixed products from one retained resolved graph.
+    #[cfg(feature = "compute")]
+    pub fn compile_canonical_mixed_root(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        request.validate()?;
+        let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
+            canonical_compilation_error(format!("missing canonical root {}", request.specifier))
+        })?;
+        self.compile_canonical_mixed_resolved_root(resolved, options)
+    }
+
+    #[cfg(feature = "compute")]
+    pub fn compile_canonical_mixed_resolved_root(
+        &mut self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        self.view()
+            .compile_canonical_mixed_resolved_root(resolved, options)
     }
 
     /// Resolves a rooted application once, then compiles both mixed-program
@@ -1793,6 +1833,175 @@ impl<'a> ProgramCompilerView<'a> {
     }
 
     #[cfg(feature = "compute")]
+    fn compile_canonical_mixed_resolved_root(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        let resolved = resolved.admit_canonical_document()?;
+        let document = resolved
+            .source_document()
+            .ok_or_else(|| canonical_compilation_error("mixed root has no retained document"))?;
+        let index = document
+            .index()
+            .map_err(|error| MechError::new(error, None))?;
+        let mut context = CanonicalGraphCompilation::new(Some(options));
+        context.active.push(resolved.canonical_uri.clone());
+        let imports =
+            self.canonical_graph_imports(&index.root, &resolved.canonical_uri, &mut context)?;
+        self.canonical_graph_module_identity(&resolved, &imports, &mut context)?;
+        let mut mixed = self.compile_mixed_document_with_imports(document, &imports)?;
+        mixed.source_dependencies = context.source_dependencies;
+        Ok(mixed)
+    }
+
+    #[cfg(feature = "compute")]
+    fn compile_mixed_document(
+        &self,
+        document: &SourceDocument,
+    ) -> MResult<MixedProgramCompilation> {
+        self.compile_mixed_document_with_imports(document, &[])
+    }
+
+    #[cfg(feature = "compute")]
+    fn compile_mixed_document_with_imports(
+        &self,
+        document: &SourceDocument,
+        imports: &[crate::resolver::CanonicalResolvedImport],
+    ) -> MResult<MixedProgramCompilation> {
+        let index = document
+            .index()
+            .map_err(|error| MechError::new(error, None))?;
+        let external_input_names = canonical_declared_compute_inputs(&index.root)?;
+        let retained_outputs = canonical_declared_compute_outputs(&index.root)?;
+        let (mut input_schemas, resource_reads, resource_writes, planned_reads) =
+            self.canonical_document_resources(&index.root, &document.document())?;
+        let imported = crate::resolver::canonical_import_values(
+            &index.root,
+            &crate::resolver::SourceScope::Program,
+            imports,
+        )
+        .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        for (name, value) in &imported {
+            input_schemas.insert(
+                name.clone(),
+                ValueCell::from_snapshot(value.to_value())?.closed_schema_body()?,
+            );
+        }
+        let modules = imports
+            .iter()
+            .filter_map(|import| {
+                import
+                    .declaration
+                    .module
+                    .clone()
+                    .or_else(|| module_namespace_for_import(&import.declaration))
+            })
+            .collect();
+        let mut programs = CanonicalSourceFrontend
+            .compile_mixed_document_with_planning_contract(
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                input_schemas,
+                resource_writes,
+                &external_input_names,
+                &retained_outputs,
+                &modules,
+            )
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+
+        let bind_imports = |program: CanonicalSourceProgram| -> MResult<CanonicalSourceProgram> {
+            let values = program
+                .program()
+                .inputs
+                .iter()
+                .enumerate()
+                .filter_map(|(ordinal, input)| {
+                    imported
+                        .get(&input.name)
+                        .map(|value| (ordinal as u32, value.to_value()))
+                })
+                .collect::<Vec<_>>();
+            program
+                .bind_input_constants(&values)
+                .map_err(|error| canonical_compilation_error(error.to_string()))
+        };
+        programs.coordinator = bind_imports(programs.coordinator)?;
+        programs.compute = bind_imports(programs.compute)?;
+        programs.compute_initializers = bind_imports(programs.compute_initializers)?;
+
+        let initial_inputs = if external_input_names.is_empty() {
+            BTreeMap::new()
+        } else {
+            let compute_initializer_artifact = programs
+                .compute_initializers
+                .compile_artifact_with_external_contracts(
+                    &ResidentExternalContractResolver::new(self.resources),
+                )?;
+            execute_named_canonical_outputs(
+                &compute_initializer_artifact,
+                &self.function_catalog,
+                &external_input_names,
+            )?
+        };
+        let compute_artifact = programs.compute.compile_artifact_with_external_contracts(
+            &ResidentExternalContractResolver::new(self.resources),
+        )?;
+        let compute = assemble_compute_region(
+            ProgramArtifactCompilationProduct::from_artifact(compute_artifact),
+            initial_inputs,
+            &programs.region_name,
+        )?;
+
+        let read_bindings = programs
+            .coordinator
+            .program()
+            .inputs
+            .iter()
+            .enumerate()
+            .filter_map(|(ordinal, input)| {
+                planned_reads
+                    .get(&input.name)
+                    .cloned()
+                    .map(|value| (ordinal as u32, value))
+            })
+            .collect::<Vec<_>>();
+        let planning_coordinator = programs
+            .coordinator
+            .clone()
+            .bind_input_constants(&read_bindings)
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        let compute_contracts = CompilerExternalContractResolver {
+            providers: ResidentExternalContractResolver::new(self.resources),
+            compute: true,
+        };
+        let planning_artifact =
+            planning_coordinator.compile_artifact_with_external_contracts(&compute_contracts)?;
+        let activation_inputs = capture_canonical_compute_activation_inputs(
+            &planning_artifact,
+            &self.function_catalog,
+            &compute.interface,
+            self.resources,
+        )?;
+
+        let mut coordinator = programs.coordinator;
+        for (name, request) in resource_reads {
+            coordinator = coordinator
+                .bind_resource_input(&name, request)
+                .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        }
+        let coordinator =
+            coordinator.compile_artifact_with_external_contracts(&compute_contracts)?;
+        Ok(MixedProgramCompilation {
+            coordinator: ProgramArtifactCompilationProduct::from_artifact(coordinator),
+            compute,
+            activation_inputs,
+            retained_outputs,
+            source_dependencies: BTreeMap::new(),
+        })
+    }
+
+    #[cfg(feature = "compute")]
     fn compile_mixed_tree(&self, tree: &Program) -> MResult<MixedProgramCompilation> {
         let partition = partition_mixed_program(tree)?;
         let external_input_names = source_declared_compute_inputs(tree)?;
@@ -1816,6 +2025,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute,
             activation_inputs,
             retained_outputs,
+            source_dependencies: BTreeMap::new(),
         })
     }
 
@@ -1855,6 +2065,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute,
             activation_inputs,
             retained_outputs,
+            source_dependencies: BTreeMap::new(),
         })
     }
 
@@ -2610,6 +2821,95 @@ fn execute_named_canonical_outputs(
         .collect::<MResult<BTreeMap<_, _>>>()?;
     prepared.abort();
     Ok(values)
+}
+
+#[cfg(feature = "compute")]
+fn capture_canonical_compute_activation_inputs(
+    artifact: &ProgramArtifact,
+    catalog: &Arc<mech_core::FunctionCatalog>,
+    interface: &ComputeRegionInterface,
+    resources: &RuntimeResourceRegistry,
+) -> MResult<BTreeMap<String, ComputeValue>> {
+    let mut instance = activate_external(
+        ReactiveInstanceId::new(0x4343_4f4f, 0),
+        artifact,
+        catalog,
+        &ActivationFacts::default(),
+        ResidentIntegrityMode::Checked,
+    )
+    .map_err(|error| {
+        canonical_compilation_error(format!(
+            "canonical compute coordinator activation failed: {error:?}"
+        ))
+    })?;
+    let prepared = instance.prepare_turn(&[]).map_err(|error| {
+        canonical_compilation_error(format!(
+            "canonical compute coordinator planning failed: {error:?}"
+        ))
+    })?;
+    preflight_canonical_effect_payloads(&prepared, artifact, resources)?;
+    let effects = prepared
+        .effect_intents()
+        .map(|intent| (intent.ordinal, intent.requirement))
+        .collect::<Vec<_>>();
+    let mut activation_inputs = BTreeMap::new();
+    for (ordinal, requirement) in effects {
+        let Some(ApplicationRequirement::Resource(request)) =
+            artifact.requirements().get(requirement)
+        else {
+            continue;
+        };
+        if !is_compute_kernel_base(&request.base_uri) {
+            continue;
+        }
+        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        let payload = prepared.materialize_effect_payload(ordinal)?;
+        if let Some((name, value)) =
+            plan_compute_write(interface, &key, RuntimeResourceWriteIntent::Send, &payload)?
+        {
+            activation_inputs.insert(name, value);
+        }
+    }
+    prepared.abort();
+    Ok(activation_inputs)
+}
+
+#[cfg(feature = "compute")]
+fn canonical_declared_compute_inputs(index: &SourceIndex) -> MResult<BTreeSet<String>> {
+    canonical_declared_compute_paths(index, "write", "input/")
+}
+
+#[cfg(feature = "compute")]
+fn canonical_declared_compute_outputs(index: &SourceIndex) -> MResult<BTreeSet<String>> {
+    canonical_declared_compute_paths(index, "read", "sample/")
+}
+
+#[cfg(feature = "compute")]
+fn canonical_declared_compute_paths(
+    index: &SourceIndex,
+    operation: &str,
+    prefix: &str,
+) -> MResult<BTreeSet<String>> {
+    index.validate_address_targets()?;
+    Ok(index
+        .all_contexts()
+        .into_iter()
+        .filter(|context| {
+            matches!(
+                &context.base,
+                SourceContextBase::ResourceUri(uri)
+                    if uri.starts_with("compute://") && uri.ends_with("/kernel")
+            )
+        })
+        .flat_map(|context| context.capabilities)
+        .filter(|capability| capability.operation == operation)
+        .filter_map(|capability| match capability.scope {
+            SourceContextCapabilityScope::Path(path) => (!path.contains('*'))
+                .then(|| path.strip_prefix(prefix).map(str::to_owned))
+                .flatten(),
+            SourceContextCapabilityScope::Wildcard => None,
+        })
+        .collect())
 }
 
 #[cfg(feature = "compute")]
