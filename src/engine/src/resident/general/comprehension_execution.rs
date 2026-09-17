@@ -443,12 +443,16 @@ fn source_schema_contexts(
     // owned nested schema by canonical key. Drafts rebound into this arena can
     // finalize a whole composite without interpreting a nested owner's local
     // schema ID against the root table.
-    let mut binding_schemas = projected.get(root_index)?.1.clone();
-    for (index, (_, schemas, _)) in projected.iter().enumerate() {
-        if index != root_index {
-            binding_schemas = binding_schemas.extend_preserving_ids(schemas).ok()?;
-        }
-    }
+    let binding_schemas = projected
+        .get(root_index)?
+        .1
+        .extend_many_preserving_ids(
+            projected
+                .iter()
+                .enumerate()
+                .filter_map(|(index, (_, schemas, _))| (index != root_index).then_some(schemas)),
+        )
+        .ok()?;
     let binding_schema_index = source_schema_index(&binding_schemas).ok()?;
     let binding_schemas = Arc::new(binding_schemas);
     // `distinct_source_owners` returns pointer-sorted owners. Preserve that
@@ -488,6 +492,7 @@ struct SourceContextMaterializationBound {
     temporary_bytes: u64,
     retained_nodes: u64,
     work: u64,
+    merged_schema_nodes: u64,
 }
 
 struct DistinctSourceOwners {
@@ -600,6 +605,22 @@ impl SourceContextMaterializationBound {
             .and_then(|work| work.checked_add(nodes))
             .and_then(|work| work.checked_add(index_work))
             .ok_or(ResidentKernelError::InvalidShape)?;
+        self.merged_schema_nodes = self
+            .merged_schema_nodes
+            .checked_add(schema_nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        Ok(())
+    }
+
+    fn add_binding_merge_work(&mut self) -> Result<(), ResidentKernelError> {
+        let merge_work = self
+            .merged_schema_nodes
+            .checked_mul(self.merged_schema_nodes.max(1).ilog2() as u64 + 1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        self.work = self
+            .work
+            .checked_add(merge_work)
+            .ok_or(ResidentKernelError::InvalidShape)?;
         Ok(())
     }
 }
@@ -614,6 +635,7 @@ fn source_context_materialization_bound(
     for owner in &owners.owners {
         bound.add_owner(owner, meter)?;
     }
+    bound.add_binding_merge_work()?;
     Ok(bound)
 }
 
@@ -758,10 +780,21 @@ fn adapt_resolved_pattern_item(
 ) -> Result<Option<ValueDataDraft>, ResidentKernelError> {
     if matches!(target, SchemaBody::Dynamic) {
         let schema = item.value_schema.ok_or(ResidentKernelError::InvalidInput)?;
+        let data = if let (Some(source_data), Some(context)) =
+            (item.source_data.as_ref(), item.source_context.as_ref())
+        {
+            let validation =
+                SnapshotValidationContext::with_shared_schemas(&context.binding_schemas)
+                    .with_schema_index(&context.binding_schema_index);
+            canonical_snapshot_data_draft_with_context(&item.body, source_data, &validation)
+                .map_err(|_| ResidentKernelError::InvalidInput)?
+        } else {
+            item.data
+        };
         return Ok(Some(ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
             schema,
             shape_values: item.shape_values,
-            data: item.data,
+            data,
         })))));
     }
     if item.body == *target {
@@ -2253,15 +2286,13 @@ pub(super) fn admit_pattern_item_materialization(
     pattern_work: u64,
     binding_count: u64,
     equality_count: u64,
+    dense_finalization_count: u64,
     clone_multiplicity: u64,
     schemas: &mech_core::SchemaTable,
 ) -> Result<u64, ResidentKernelError> {
     let mut meter = ResidentBudgetMeter::default();
     meter.charge_compute_work(pattern_work)?;
     meter.charge_comparison_work(pattern_work)?;
-    let finalization_count = binding_count
-        .checked_add(equality_count)
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let mut canonical_finalization_work = 0;
     let mut canonical_finalization_bytes = 0;
     let mut source_context_bound = SourceContextMaterializationBound::default();
@@ -2273,6 +2304,13 @@ pub(super) fn admit_pattern_item_materialization(
                 | ResidentValueRef::F64(_)
                 | ResidentValueRef::String(_)
         );
+    let finalization_count = if dense_array {
+        dense_finalization_count
+    } else {
+        binding_count
+            .checked_add(equality_count)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    };
     let footprint = match value {
         ResidentValueRef::Snapshot([Some(value)]) => {
             let expected = schemas
@@ -6403,6 +6441,7 @@ mod tests {
                 1,
                 0,
                 0,
+                0,
                 1,
                 &schemas,
             )
@@ -6431,6 +6470,7 @@ mod tests {
                 1,
                 0,
                 0,
+                0,
                 1,
                 &schemas,
             )
@@ -6443,6 +6483,7 @@ mod tests {
                 SchemaId::new(0),
                 false,
                 1,
+                0,
                 0,
                 0,
                 crate::MAX_COLLECTION_PATTERN_DEPTH as u64,
@@ -6500,6 +6541,7 @@ mod tests {
             1,
             1,
             0,
+            0,
             1,
             &schemas,
         )
@@ -6533,6 +6575,7 @@ mod tests {
             1,
             0,
             1,
+            0,
             1,
             &schemas,
         )
@@ -6575,6 +6618,7 @@ mod tests {
                 false,
                 1,
                 u64::MAX,
+                0,
                 0,
                 1,
                 &schemas,
@@ -6620,6 +6664,7 @@ mod tests {
             1,
             0,
             1,
+            1,
             &schemas,
         )
         .unwrap();
@@ -6630,6 +6675,7 @@ mod tests {
             true,
             1,
             0,
+            1,
             1,
             1,
             &schemas,
@@ -6682,6 +6728,7 @@ mod tests {
                 0,
                 0,
                 0,
+                0,
                 &large_schemas,
             )
             .is_ok(),
@@ -6693,9 +6740,26 @@ mod tests {
                 large_region,
                 large_matrix,
                 true,
+                large_count as u64,
+                large_count as u64,
+                0,
+                0,
+                0,
+                &large_schemas,
+            )
+            .is_ok(),
+            "scalar dense leaves do not each finalize the complete collection",
+        );
+        assert!(
+            admit_pattern_item_materialization(
+                ResidentValueRef::String(&large_values),
+                large_region,
+                large_matrix,
+                true,
                 1,
                 1,
                 0,
+                1,
                 0,
                 &large_schemas,
             )
@@ -7517,6 +7581,38 @@ mod tests {
     }
 
     #[test]
+    fn multi_owner_context_bound_charges_the_combined_binding_index() {
+        let owner = |body| {
+            let mut builder = SchemaTableBuilder::new();
+            builder
+                .insert(
+                    SchemaDraft {
+                        body,
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            builder.finish().unwrap().table
+        };
+        let owners = [owner(SchemaBody::Bool), owner(SchemaBody::String)];
+        let mut bound = SourceContextMaterializationBound::default();
+        let mut meter = ResidentBudgetMeter::default();
+        for owner in &owners {
+            bound.add_owner(owner, &mut meter).unwrap();
+        }
+        let owner_work = bound.work;
+        let merged_nodes = bound.merged_schema_nodes;
+        bound.add_binding_merge_work().unwrap();
+        assert_eq!(merged_nodes, 2);
+        assert_eq!(
+            bound.work - owner_work,
+            merged_nodes * (merged_nodes.ilog2() as u64 + 1)
+        );
+    }
+
+    #[test]
     fn foreign_dynamic_collection_items_rebind_to_the_plan_schema_arena() {
         fn schemas(include_prefix: bool) -> (mech_core::SchemaTable, SchemaId, SchemaId) {
             let mut builder = SchemaTableBuilder::new();
@@ -7636,6 +7732,7 @@ mod tests {
             plan_matrix,
             false,
             1,
+            0,
             0,
             0,
             1,
@@ -7998,6 +8095,41 @@ mod tests {
             whole_payload.data(),
             ValueData::Tuple(values) if values.len() == 2
         ));
+        let wrapped = item
+            .clone()
+            .into_binding(dynamic, &[], &root, &root_projections)
+            .unwrap()
+            .expect("the complete foreign composite binds through Dynamic");
+        let wrapped = finalize_pattern_binding(
+            dynamic,
+            &wrapped.shape_values,
+            wrapped.data,
+            wrapped.schemas,
+            wrapped.schema_index,
+            &root,
+            &SnapshotCanonicalizationBudget::new(1_000_000),
+        )
+        .expect("Dynamic wrapping rebinds nested source-owner schema IDs");
+        let ValueData::Dynamic(wrapped) = wrapped.data() else {
+            panic!("the binding schema is Dynamic")
+        };
+        let wrapped = wrapped.value().expect("the wrapped matrix remains present");
+        let ValueData::Matrix(wrapped) = wrapped.data() else {
+            panic!("the Dynamic payload is the complete matrix")
+        };
+        let mech_core::snapshot::SequenceView::Values(wrapped) = wrapped.elements() else {
+            panic!("the Dynamic matrix retains canonical values")
+        };
+        let ValueData::Dynamic(wrapped) = &wrapped[0] else {
+            panic!("the matrix element remains Dynamic")
+        };
+        assert_eq!(
+            wrapped
+                .value()
+                .expect("the nested payload remains present")
+                .schema_key(),
+            tuple_key
+        );
         let tuple_item = item
             .child(0, &root, &root_projections)
             .expect("Dynamic descent switches to the nested owner's tuple schema");

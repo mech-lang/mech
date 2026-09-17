@@ -121,16 +121,21 @@ pub(crate) struct PatternMetrics {
     pub nodes: usize,
     pub bindings: usize,
     pub equalities: usize,
+    /// Bindings/equalities whose candidate is the complete native dense lane
+    /// or an array rest. Only these candidates require canonical snapshot
+    /// finalization; scalar prefix/suffix leaves use direct resident lanes.
+    pub dense_finalizations: usize,
     pub depth: usize,
 }
 
 pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option<PatternMetrics> {
-    let mut pending = vec![(pattern, 1usize)];
+    let mut pending = vec![(pattern, 1usize, true)];
     let mut count = 0usize;
     let mut bindings = 0usize;
     let mut equalities = 0usize;
+    let mut dense_finalizations = 0usize;
     let mut max_depth = 0usize;
-    while let Some((pattern, depth)) = pending.pop() {
+    while let Some((pattern, depth, dense_candidate)) = pending.pop() {
         count = count.checked_add(1)?;
         if depth > MAX_COLLECTION_PATTERN_DEPTH || count > super::MAX_CONTROL_OPERANDS {
             return None;
@@ -141,6 +146,14 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
         }
         if matches!(pattern, CollectionPattern::Equal(_)) {
             equalities = equalities.checked_add(1)?;
+        }
+        if dense_candidate
+            && matches!(
+                pattern,
+                CollectionPattern::Bind { .. } | CollectionPattern::Equal(_)
+            )
+        {
+            dense_finalizations = dense_finalizations.checked_add(1)?;
         }
         let children = match pattern {
             CollectionPattern::Tuple(items) => items.len(),
@@ -159,7 +172,7 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
         }
         match pattern {
             CollectionPattern::Tuple(items) => {
-                pending.extend(items.iter().map(|item| (item, depth + 1)));
+                pending.extend(items.iter().map(|item| (item, depth + 1, false)));
             }
             CollectionPattern::Array {
                 prefix,
@@ -170,9 +183,9 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
                     prefix
                         .iter()
                         .chain(suffix.iter())
-                        .map(|item| (item, depth + 1)),
+                        .map(|item| (item, depth + 1, false)),
                 );
-                pending.extend(rest.iter().map(|item| (item.as_ref(), depth + 1)));
+                pending.extend(rest.iter().map(|item| (item.as_ref(), depth + 1, true)));
             }
             _ => {}
         }
@@ -184,6 +197,7 @@ pub(crate) fn pattern_metrics<S, V>(pattern: &CollectionPattern<S, V>) -> Option
         nodes: count,
         bindings,
         equalities,
+        dense_finalizations,
         depth: max_depth,
     })
 }
@@ -579,6 +593,29 @@ mod schema_tests {
         NodeId, OperationContractTableBuilder, SchemaBody, SchemaDraft, SchemaTableBuilder,
         ValueDataDraft, ValueDraft,
     };
+
+    #[test]
+    fn dense_finalization_metrics_count_only_whole_or_rest_candidates() {
+        let pattern = CollectionPattern::Array {
+            prefix: vec![CollectionPattern::Bind {
+                local: 0,
+                schema: SchemaId::new(0),
+            }]
+            .into_boxed_slice(),
+            rest: Some(Box::new(CollectionPattern::Bind {
+                local: 1,
+                schema: SchemaId::new(1),
+            })),
+            suffix: vec![CollectionPattern::Equal(ComprehensionValue::Constant(
+                mech_core::ConstantId::new(0),
+            ))]
+            .into_boxed_slice(),
+        };
+        let metrics = pattern_metrics(&pattern).unwrap();
+        assert_eq!(metrics.bindings, 2);
+        assert_eq!(metrics.equalities, 1);
+        assert_eq!(metrics.dense_finalizations, 1);
+    }
 
     #[test]
     fn lexical_collection_pattern_schemas_preserve_component_bounds_and_lifetimes() {

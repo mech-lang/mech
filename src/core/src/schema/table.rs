@@ -228,6 +228,41 @@ mod tests {
     }
 
     #[test]
+    fn multi_owner_extension_preserves_base_ids_and_deduplicates_once() {
+        let mut base = SchemaTableBuilder::new();
+        let bool_handle = base.insert(schema(SchemaBody::Bool)).unwrap();
+        let base = base.finish().unwrap();
+        let bool_id = base.resolve(bool_handle).unwrap();
+
+        let mut first = SchemaTableBuilder::new();
+        first.insert(schema(SchemaBody::String)).unwrap();
+        let first = first.finish().unwrap().table;
+        let mut second = SchemaTableBuilder::new();
+        second.insert(schema(SchemaBody::Bool)).unwrap();
+        second
+            .insert(schema(SchemaBody::UnsignedInteger(IntegerWidth::W8)))
+            .unwrap();
+        let second = second.finish().unwrap().table;
+
+        let merged = base
+            .table
+            .extend_many_preserving_ids([&first, &second])
+            .unwrap();
+        assert_eq!(merged.get(bool_id), base.table.get(bool_id));
+        assert_eq!(merged.len(), 3);
+        assert!(
+            merged
+                .find_by_key(schema(SchemaBody::String).key())
+                .is_some()
+        );
+        assert!(
+            merged
+                .find_by_key(schema(SchemaBody::UnsignedInteger(IntegerWidth::W8)).key())
+                .is_some()
+        );
+    }
+
+    #[test]
     fn component_closure_preserves_ids_and_bounds_its_runtime_construction() {
         let tuple_schema = schema(SchemaBody::Tuple(
             vec![SchemaBody::String, SchemaBody::Bool, SchemaBody::String].into_boxed_slice(),
@@ -553,21 +588,35 @@ impl SchemaTable {
         &self,
         additional: &SchemaTable,
     ) -> Result<Self, SemanticModelError> {
+        self.extend_many_preserving_ids(core::iter::once(additional))
+    }
+
+    /// Extends this arena with several detached schema owners in one pass
+    /// while keeping every existing schema ID stable. This avoids rebuilding
+    /// the key index for every source owner when a retained value contains
+    /// several independently owned Dynamic payloads.
+    #[doc(hidden)]
+    pub fn extend_many_preserving_ids<'a>(
+        &self,
+        additional: impl IntoIterator<Item = &'a SchemaTable>,
+    ) -> Result<Self, SemanticModelError> {
         let mut entries = self.entries.to_vec();
         let mut by_key = entries
             .iter()
             .map(|entry| (entry.key, entry.canonical_bytes.clone()))
             .collect::<BTreeMap<_, _>>();
-        for entry in additional.entries.iter() {
-            if let Some(existing) = by_key.get(&entry.key) {
-                if existing.as_ref() != entry.canonical_bytes.as_ref() {
-                    return Err(SemanticModelError::SchemaKeyCollision { key: entry.key });
+        for table in additional {
+            for entry in table.entries.iter() {
+                if let Some(existing) = by_key.get(&entry.key) {
+                    if existing.as_ref() != entry.canonical_bytes.as_ref() {
+                        return Err(SemanticModelError::SchemaKeyCollision { key: entry.key });
+                    }
+                    continue;
                 }
-                continue;
+                u32::try_from(entries.len()).map_err(|_| SemanticModelError::SchemaIdExhausted)?;
+                by_key.insert(entry.key, entry.canonical_bytes.clone());
+                entries.push(entry.clone());
             }
-            u32::try_from(entries.len()).map_err(|_| SemanticModelError::SchemaIdExhausted)?;
-            by_key.insert(entry.key, entry.canonical_bytes.clone());
-            entries.push(entry.clone());
         }
         Ok(Self {
             entries: entries.into_boxed_slice(),
