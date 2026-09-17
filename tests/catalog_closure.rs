@@ -712,8 +712,10 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
                     "resident preflight repeated node {:?}",
                     case.node
                 );
-                let node = &canonical.nodes()[case.node.get() as usize];
-                assert_eq!(case.operation, node.operation);
+                let node = canonical.nodes()[case.node.get() as usize]
+                    .as_operation()
+                    .expect("catalog witness operation");
+                assert_eq!(&case.operation, node.operation);
                 assert!(case.targets.contains(ExecutionTarget::ResidentCpu));
                 assert!(
                     catalog
@@ -745,7 +747,13 @@ fn generated_source_catalog_closes_over_bytecode_and_resident_binders() -> MResu
             let operation = error
                 .operation
                 .expect("unsupported join must retain semantic identity");
-            assert_eq!(operation, canonical.nodes()[node.get() as usize].operation);
+            assert_eq!(
+                &operation,
+                canonical.nodes()[node.get() as usize]
+                    .as_operation()
+                    .unwrap()
+                    .operation
+            );
             assert_eq!(operation.canonical_name(), witness.operation);
             assert!(
                 error.reason.contains("MissingResidentFactory"),
@@ -979,7 +987,12 @@ fn closure_validator_rejects_broken_runtime_and_resident_edges() -> MResult<()> 
         .expect("binder rejection identifies the node");
     assert_eq!(
         missing_binder.operation.as_ref(),
-        Some(&artifact.nodes()[node.get() as usize].operation)
+        Some(
+            artifact.nodes()[node.get() as usize]
+                .as_operation()
+                .unwrap()
+                .operation
+        )
     );
     assert_eq!(
         missing_binder.operation.unwrap().canonical_name(),

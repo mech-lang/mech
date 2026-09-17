@@ -20,7 +20,7 @@ pub(super) fn node_bodies_semantically_equal(
                         .requirement
                         .and_then(|id| target.requirements().get(id))
         }
-        (ExecutableNodeBody::BooleanMatch(left), ExecutableNodeBody::BooleanMatch(right)) => {
+        (ExecutableNodeBody::Match(left), ExecutableNodeBody::Match(right)) => {
             left.scrutinee == right.scrutinee
                 && left.captures.len() == right.captures.len()
                 && left
@@ -32,7 +32,7 @@ pub(super) fn node_bodies_semantically_equal(
                     })
                 && left.arms.len() == right.arms.len()
                 && left.arms.iter().zip(&right.arms).all(|(left, right)| {
-                    left.pattern == right.pattern
+                    comparison.pattern(left.pattern, right.pattern)
                         && match (&left.guard, &right.guard) {
                             (Some(left), Some(right)) => comparison.block(left, right),
                             (None, None) => true,
@@ -87,6 +87,18 @@ impl Comparison<'_> {
                         && left.alias == right.alias
                         && left.change_detection == right.change_detection
                 })
+    }
+
+    fn pattern(&self, left: mech_engine::MatchPattern, right: mech_engine::MatchPattern) -> bool {
+        match (left, right) {
+            (
+                mech_engine::MatchPattern::Literal(left),
+                mech_engine::MatchPattern::Literal(right),
+            ) => self.value(ControlValue::Constant(left), ControlValue::Constant(right)),
+            (mech_engine::MatchPattern::Wildcard, mech_engine::MatchPattern::Wildcard)
+            | (mech_engine::MatchPattern::Bind, mech_engine::MatchPattern::Bind) => true,
+            _ => false,
+        }
     }
 
     fn value(&self, left: ControlValue, right: ControlValue) -> bool {
@@ -176,9 +188,34 @@ mod tests {
         &artifact
             .nodes()
             .iter()
-            .find(|node| matches!(node.body, ExecutableNodeBody::BooleanMatch(_)))
+            .find(|node| matches!(node.body, ExecutableNodeBody::Match(_)))
             .unwrap()
             .body
+    }
+
+    #[test]
+    fn literal_pattern_reuse_resolves_the_owning_constant_arena() {
+        let source = "signal<f64> ? | 0 => 10 | * => 20";
+        let original = compile(source);
+        let mut moved = false;
+        for extra in 1..12 {
+            let shifted = compile(&format!("({extra}u8, ({source}))"));
+            moved |= control(&original) != control(&shifted);
+            assert!(node_bodies_semantically_equal(
+                &original,
+                control(&original),
+                &shifted,
+                control(&shifted)
+            ));
+        }
+        assert!(moved);
+        let changed = compile("signal<f64> ? | 1 => 10 | * => 20");
+        assert!(!node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &changed,
+            control(&changed)
+        ));
     }
 
     #[test]

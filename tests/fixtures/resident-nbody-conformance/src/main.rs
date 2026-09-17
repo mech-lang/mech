@@ -19,7 +19,8 @@ use mech_engine::__resident::{
 };
 use mech_engine::{
     ApplicationRequirementTable, ArtifactSource, BindingDeclaration, InitializerReference,
-    InputDeclaration, NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference,
+    ExecutableNodeBody, InputDeclaration, NodeDeclaration, OperationNodeBody, OperationReference,
+    OutputDeclaration, ProducerReference,
     ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
     decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
 };
@@ -151,6 +152,7 @@ fn main() {
         }
     }
     for node in artifact.nodes() {
+        let node = node.as_operation().expect("n-body witness operation");
         let ResolvedOperationContract::Declared(contract) = artifact
             .contracts()
             .get(node.contract)
@@ -167,8 +169,8 @@ fn main() {
                 activation_nodes.contains(&node.node),
                 "Build node reached the resident turn graph: {:?} {:?} slots={:?}",
                 node.operation,
-                node_inputs(&artifact, node),
-                node_inputs(&artifact, node)
+                node_inputs(&artifact, &node),
+                node_inputs(&artifact, &node)
                     .iter()
                     .filter_map(|source| match source {
                         ArtifactSource::Slot(slot) => Some(&artifact.slots()[slot.get() as usize]),
@@ -654,7 +656,7 @@ fn assert_explicit_state_migration(
 
 fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
     assert_eq!(artifact.nodes().len(), 1);
-    let node = &artifact.nodes()[0];
+    let node = artifact.nodes()[0].as_operation().unwrap();
     let ResolvedOperationContract::Declared(mut contract) = artifact
         .contracts()
         .get(node.contract)
@@ -694,7 +696,10 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
     };
     *id = BindingId::new(2);
     let mut nodes = artifact.nodes().to_vec();
-    nodes[0].contract = contract;
+    let ExecutableNodeBody::Operation(operation) = &mut nodes[0].body else {
+        panic!("ordinary witness operation")
+    };
+    operation.contract = contract;
     ProgramArtifactDraft {
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
@@ -848,12 +853,14 @@ fn assert_activation_fact_reconfiguration(
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["core".to_owned()].into_boxed_slice(),
-                operation_name: "assign".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "assign".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..1,
             output_bindings: 1..2,
         }]
@@ -972,7 +979,7 @@ fn assert_activation_fact_reconfiguration(
 
     let ResolvedOperationContract::Declared(mut observation_contract) = artifact
         .contracts()
-        .get(artifact.nodes()[0].contract)
+        .get(artifact.nodes()[0].as_operation().unwrap().contract)
         .unwrap()
         .clone()
     else {
@@ -997,7 +1004,7 @@ fn assert_activation_fact_reconfiguration(
 
     let ResolvedOperationContract::Declared(assign_contract) = artifact
         .contracts()
-        .get(artifact.nodes()[0].contract)
+        .get(artifact.nodes()[0].as_operation().unwrap().contract)
         .unwrap()
         .clone()
     else {
@@ -1067,7 +1074,10 @@ fn assert_activation_fact_reconfiguration(
 
     let zero_input = zero_input_state_artifact(&artifact);
     let mut wrong_arity_node = zero_input.nodes()[0].clone();
-    wrong_arity_node.operation = OperationReference {
+    let ExecutableNodeBody::Operation(operation) = &mut wrong_arity_node.body else {
+        panic!("ordinary witness operation")
+    };
+    operation.operation = OperationReference {
         module_path: vec!["core".to_owned()].into_boxed_slice(),
         operation_name: "assign".to_owned(),
     };
@@ -1148,9 +1158,12 @@ fn replace_single_contract(
     let (contracts, _) = build.into_parts();
     let mut nodes = artifact.nodes().to_vec();
     assert_eq!(nodes.len(), 1);
-    nodes[0].contract = contract;
+    let ExecutableNodeBody::Operation(operation) = &mut nodes[0].body else {
+        panic!("ordinary witness operation")
+    };
+    operation.contract = contract;
     let requirements = if external {
-        nodes[0].requirement = Some(ApplicationRequirementId::new(0));
+        operation.requirement = Some(ApplicationRequirementId::new(0));
         ApplicationRequirementTable::from_canonical_entries(vec![ApplicationRequirement::Resource(
             ExecutionResourceRequest {
                 base_uri: "test-resource://contract/probe".to_owned(),
@@ -1296,12 +1309,14 @@ fn wrong_dimension_artifact(
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["math".to_owned()].into_boxed_slice(),
-                operation_name: "sub".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["math".to_owned()].into_boxed_slice(),
+                    operation_name: "sub".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..2,
             output_bindings: 2..3,
         }]
@@ -1404,12 +1419,14 @@ fn canonical_bool_assign_artifact(
         .into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["core".to_owned()].into_boxed_slice(),
-                operation_name: "assign".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["core".to_owned()].into_boxed_slice(),
+                    operation_name: "assign".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..1,
             output_bindings: 1..2,
         }]
@@ -1485,12 +1502,14 @@ fn zero_input_state_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         slots: vec![state].into_boxed_slice(),
         nodes: vec![NodeDeclaration {
             node: NodeId::new(0),
-            operation: OperationReference {
-                module_path: vec!["test".to_owned()].into_boxed_slice(),
-                operation_name: "zero-input-state".to_owned(),
-            },
-            contract,
-            requirement: None,
+            body: ExecutableNodeBody::Operation(OperationNodeBody {
+                operation: OperationReference {
+                    module_path: vec!["test".to_owned()].into_boxed_slice(),
+                    operation_name: "zero-input-state".to_owned(),
+                },
+                contract,
+                requirement: None,
+            }),
             input_bindings: 0..0,
             output_bindings: 0..1,
         }]
@@ -1655,23 +1674,27 @@ fn dirty_propagation_artifact(
         nodes: vec![
             NodeDeclaration {
                 node: NodeId::new(0),
-                operation: OperationReference {
-                    module_path: vec!["test".to_owned()].into_boxed_slice(),
-                    operation_name: root_operation.to_owned(),
-                },
-                contract: root_contract,
-                requirement: None,
+                body: ExecutableNodeBody::Operation(OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["test".to_owned()].into_boxed_slice(),
+                        operation_name: root_operation.to_owned(),
+                    },
+                    contract: root_contract,
+                    requirement: None,
+                }),
                 input_bindings: 0..1,
                 output_bindings: 1..2,
             },
             NodeDeclaration {
                 node: NodeId::new(1),
-                operation: OperationReference {
-                    module_path: vec!["test".to_owned()].into_boxed_slice(),
-                    operation_name: "state-copy".to_owned(),
-                },
-                contract: state_contract,
-                requirement: None,
+                body: ExecutableNodeBody::Operation(OperationNodeBody {
+                    operation: OperationReference {
+                        module_path: vec!["test".to_owned()].into_boxed_slice(),
+                        operation_name: "state-copy".to_owned(),
+                    },
+                    contract: state_contract,
+                    requirement: None,
+                }),
                 input_bindings: 2..3,
                 output_bindings: 3..4,
             },
@@ -1986,9 +2009,7 @@ fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtif
         }
         nodes.push(mech_engine::NodeDeclaration {
             node,
-            operation: original.operation.clone(),
-            contract: original.contract,
-            requirement: original.requirement,
+            body: original.body.clone(),
             input_bindings: input_start..input_end,
             output_bindings: output_start..bindings.len() as u32,
         });
@@ -2227,7 +2248,7 @@ fn assert_rmw_region(
     writer: mech_core::NodeId,
     expected_region: RegionPolicy,
 ) {
-    let node = &artifact.nodes()[writer.get() as usize];
+    let node = artifact.nodes()[writer.get() as usize].as_operation().unwrap();
     let ResolvedOperationContract::Declared(contract) = artifact
         .contracts()
         .get(node.contract)
@@ -2246,7 +2267,7 @@ fn assert_rmw_region(
     assert_eq!(regions, expected_region);
     assert_eq!(output.alias, AliasPolicy::MayAlias { input: base_input });
     assert!(matches!(
-        node_inputs(artifact, node)[base_input as usize],
+        node_inputs(artifact, &node)[base_input as usize],
         ArtifactSource::Slot(slot) if slot == target
     ));
 }

@@ -242,7 +242,7 @@ impl BindingDeclaration {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExecutableNodeBody {
     Operation(OperationNodeBody),
-    BooleanMatch(super::BooleanMatchDeclaration),
+    Match(super::MatchDeclaration),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -286,7 +286,7 @@ impl NodeDeclaration {
                 contract: operation.contract,
                 requirement: operation.requirement,
             }),
-            ExecutableNodeBody::BooleanMatch(_) => None,
+            ExecutableNodeBody::Match(_) => None,
         }
     }
 }
@@ -518,7 +518,7 @@ impl ProgramArtifactDraft {
         let mut node_handles = Vec::with_capacity(self.nodes.len());
         let mut control_handles = BTreeMap::new();
         for (node, declaration) in self.nodes.iter().zip(declarations) {
-            if let super::SourceNodeBody::BooleanMatch(control) =
+            if let super::SourceNodeBody::Match(control) =
                 &graph.nodes[node.node.get() as usize].body
             {
                 if declaration.is_some() {
@@ -637,7 +637,7 @@ impl ProgramArtifactDraft {
                 (ExecutableNodeBody::Operation(operation), Some(handle)) => {
                     operation.contract = build.resolve(handle)?
                 }
-                (ExecutableNodeBody::BooleanMatch(control), None) => {
+                (ExecutableNodeBody::Match(control), None) => {
                     *control = control_handles
                         .remove(&node.node)
                         .expect("compiler control handles")

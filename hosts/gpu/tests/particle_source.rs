@@ -1066,20 +1066,10 @@ fn particle_arithmetic_reaches_artifact_with_declared_contracts() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
     assert!(!artifact.nodes().is_empty());
     for node in artifact.nodes() {
-        assert_ne!(
-            node.as_operation()
-                .expect("ordinary fixture operation")
-                .operation
-                .module_path
-                .as_ref(),
-            ["runtime"]
-        );
+        let node = node.as_operation().expect("ordinary fixture operation");
+        assert_ne!(node.operation.module_path.as_ref(), ["runtime"]);
         assert!(matches!(
-            artifact.contracts().get(
-                node.as_operation()
-                    .expect("ordinary fixture operation")
-                    .contract
-            ),
+            artifact.contracts().get(node.contract),
             Some(ResolvedOperationContract::Declared(_))
         ));
     }

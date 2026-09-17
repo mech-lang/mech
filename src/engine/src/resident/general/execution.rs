@@ -795,7 +795,7 @@ impl ReactiveInstance {
             .enumerate()
             .filter_map(|(index, step)| match step {
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
-                ActivatedTurnStep::External(_) | ActivatedTurnStep::BooleanMatch(_) => None,
+                ActivatedTurnStep::External(_) | ActivatedTurnStep::Match(_) => None,
             })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
@@ -850,7 +850,7 @@ impl ReactiveInstance {
                     None,
                 ),
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
-                ActivatedTurnStep::BooleanMatch(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Match(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
                 self.workspace.scratch.discard_payload_write(region);
@@ -1445,9 +1445,9 @@ impl ReactiveInstance {
     ) -> Result<bool, ResidentExecutionError> {
         if matches!(
             self.plan.steps[node_index.get() as usize],
-            ActivatedTurnStep::BooleanMatch(_)
+            ActivatedTurnStep::Match(_)
         ) {
-            return self.execute_boolean_match(node_index, before_epoch, working_epoch, probe);
+            return self.execute_match_expression(node_index, before_epoch, working_epoch, probe);
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
@@ -1459,7 +1459,7 @@ impl ReactiveInstance {
         self.execute_kernel(node_index, before_epoch, working_epoch, probe)
     }
 
-    fn execute_boolean_match(
+    fn execute_match_expression(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
@@ -1467,7 +1467,7 @@ impl ReactiveInstance {
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
-        let ActivatedTurnStep::BooleanMatch(matched) = &self.plan.steps[index] else {
+        let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
             unreachable!()
         };
         let node = matched.artifact_node;
@@ -1477,18 +1477,32 @@ impl ReactiveInstance {
             node,
             error: ResidentKernelError::InvalidInput,
         };
-        let scrutinee = match self.read_location(matched.scrutinee, working_epoch) {
-            Some(ResidentValueRef::Bool([0])) => false,
-            Some(ResidentValueRef::Bool([1])) => true,
-            _ => return Err(fail()),
-        };
+        let scrutinee_source = matched.scrutinee;
         for arm_index in 0..arm_count {
-            let ActivatedTurnStep::BooleanMatch(matched) = &self.plan.steps[index] else {
+            let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
                 unreachable!()
             };
             let arm = &matched.arms[arm_index];
-            if matches!(arm.pattern, crate::BooleanPattern::Literal(value) if value != scrutinee) {
-                continue;
+            if let Some(literal) = arm.literal {
+                let scrutinee = self
+                    .read_location(scrutinee_source, working_epoch)
+                    .ok_or_else(fail)?;
+                let matches = match (scrutinee, self.activation.read(literal)) {
+                    (
+                        ResidentValueRef::Bool([left @ (0 | 1)]),
+                        ResidentValueRef::Bool([right @ (0 | 1)]),
+                    ) => left == right,
+                    (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
+                        left == right
+                    }
+                    (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
+                        left == right
+                    }
+                    _ => return Err(fail()),
+                };
+                if !matches {
+                    continue;
+                }
             }
             let guard = arm.guard.clone();
             let body = arm.body.clone();

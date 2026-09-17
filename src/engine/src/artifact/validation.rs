@@ -436,7 +436,7 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                     Some(operation.contract),
                 )
             }
-            super::ExecutableNodeBody::BooleanMatch(control) => {
+            super::ExecutableNodeBody::Match(control) => {
                 let input_schemas = draft.bindings[inputs.clone()]
                     .iter()
                     .map(|binding| match binding {

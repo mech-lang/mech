@@ -98,7 +98,7 @@ pub fn plan_compute_artifact(
         .iter()
         .map(|node| {
             let operation = node.as_operation().map_or_else(
-                || "BooleanMatch".to_owned(),
+                || "Match".to_owned(),
                 |node| display_operation(node.operation),
             );
             let (target, reason) =
@@ -407,7 +407,7 @@ fn classify_node(
     let Some(node) = node.as_operation() else {
         return (
             ComputeExecutionTarget::Cpu,
-            "Boolean control requires resident execution".to_owned(),
+            "Typed match control requires resident execution".to_owned(),
         );
     };
     if node.operation.module_path.as_ref() == ["core"]

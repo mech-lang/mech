@@ -185,7 +185,7 @@ enum WireNodeBody {
         contract: u32,
         requirement: Option<u32>,
     },
-    BooleanMatch {
+    Match {
         scrutinee: u16,
         captures: Box<[(u16, u32)]>,
         arms: Box<[WireMatchArm]>,
@@ -194,9 +194,16 @@ enum WireNodeBody {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireMatchArm {
-    pattern: u8,
+    pattern: WirePattern,
     guard: Option<WireControlBlock>,
     body: WireControlBlock,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WirePattern {
+    Literal(u32),
+    Wildcard,
+    Bind,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1431,7 +1438,7 @@ fn wire_node_body(
             contract: operation.contract.get(),
             requirement: operation.requirement.map(ApplicationRequirementId::get),
         },
-        super::ExecutableNodeBody::BooleanMatch(control) => WireNodeBody::BooleanMatch {
+        super::ExecutableNodeBody::Match(control) => WireNodeBody::Match {
             scrutinee: control.scrutinee,
             captures: control
                 .captures
@@ -1443,10 +1450,11 @@ fn wire_node_body(
                 .iter()
                 .map(|arm| WireMatchArm {
                     pattern: match arm.pattern {
-                        super::BooleanPattern::Literal(false) => 0,
-                        super::BooleanPattern::Literal(true) => 1,
-                        super::BooleanPattern::Wildcard => 2,
-                        super::BooleanPattern::Bind => 3,
+                        super::MatchPattern::Literal(constant) => {
+                            WirePattern::Literal(constant.get())
+                        }
+                        super::MatchPattern::Wildcard => WirePattern::Wildcard,
+                        super::MatchPattern::Bind => WirePattern::Bind,
                     },
                     guard: arm
                         .guard
@@ -1511,11 +1519,11 @@ fn node_body_from_wire(
             contract: OperationContractId::new(contract),
             requirement: requirement.map(ApplicationRequirementId::new),
         }),
-        WireNodeBody::BooleanMatch {
+        WireNodeBody::Match {
             scrutinee,
             captures,
             arms,
-        } => super::ExecutableNodeBody::BooleanMatch(super::BooleanMatchDeclaration {
+        } => super::ExecutableNodeBody::Match(super::MatchDeclaration {
             scrutinee,
             captures: captures
                 .into_iter()
@@ -1527,18 +1535,13 @@ fn node_body_from_wire(
             arms: arms
                 .into_iter()
                 .map(|arm| {
-                    Ok(super::BooleanMatchArm {
+                    Ok(super::ControlMatchArm {
                         pattern: match arm.pattern {
-                            0 => super::BooleanPattern::Literal(false),
-                            1 => super::BooleanPattern::Literal(true),
-                            2 => super::BooleanPattern::Wildcard,
-                            3 => super::BooleanPattern::Bind,
-                            tag => {
-                                return Err(ArtifactBytecodeError::InvalidWireTag {
-                                    section: "Boolean pattern",
-                                    tag,
-                                });
+                            WirePattern::Literal(constant) => {
+                                super::MatchPattern::Literal(ConstantId::new(constant))
                             }
+                            WirePattern::Wildcard => super::MatchPattern::Wildcard,
+                            WirePattern::Bind => super::MatchPattern::Bind,
                         },
                         guard: arm
                             .guard
@@ -1555,7 +1558,7 @@ fn node_body_from_wire(
 fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationReference> {
     match body {
         super::ExecutableNodeBody::Operation(operation) => vec![operation.operation.clone()],
-        super::ExecutableNodeBody::BooleanMatch(control) => control
+        super::ExecutableNodeBody::Match(control) => control
             .arms
             .iter()
             .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
@@ -1572,7 +1575,7 @@ fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationR
 fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
     match body {
         WireNodeBody::Operation { operation, .. } => vec![*operation],
-        WireNodeBody::BooleanMatch { arms, .. } => arms
+        WireNodeBody::Match { arms, .. } => arms
             .iter()
             .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
             .flat_map(|block| block.operations.iter().map(|operation| operation.operation))

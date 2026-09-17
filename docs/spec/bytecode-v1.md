@@ -427,13 +427,13 @@ read-only artifact.
 ### Typed graph bodies (graph revision 3)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
-A control body is `{"BooleanMatch":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
+A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
 The decoder requires revision 3 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
-An arm has `pattern`, `guard`, and `body`. Pattern tags are 0 for false, 1 for
-true, 2 for wildcard, and 3 for bind. A guard is a block or null. A block has
+An arm has `pattern`, `guard`, and `body`. Patterns are `{"Literal":constant_id}`, `"Wildcard"`, or `"Bind"`.
+Literal constants must have the scrutinee's exact schema. A guard is a block or null. A block has
 `id`, `parameters`, `operations`, and `yield_value`. Parameters are
 `[capture_ordinal_or_null,schema_id]`; null denotes the bound scrutinee.
 Each local operation has `node`, `operation`, `contract`, `inputs`, and `schema`.
@@ -444,7 +444,7 @@ artifact tables.
 
 Finalization checks scope and dominance, exact scalar schemas, pure ordinary
 operation contracts, Boolean guard yields, identical arm result schemas, and
-unguarded coverage of both Boolean values. It rejects cross-block references
+an unguarded wildcard/binding or coverage of both Boolean values. It rejects cross-block references
 and undeclared captures. Decoder admission counts nested control arrays before
 allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
 and 262,144 operands across the artifact. Existing section and aggregate byte

@@ -1107,7 +1107,7 @@ impl<'a> Compiler<'a> {
                     GpuDiagnosticCode::OperationUnsupported,
                     Some(node.node),
                     None,
-                    "Boolean control requires resident execution",
+                    "Typed match control requires resident execution",
                 );
                 continue;
             };

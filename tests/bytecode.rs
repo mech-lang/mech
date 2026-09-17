@@ -64,7 +64,7 @@ fn expected_artifact_selector(
                 let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
                     return None;
                 };
-                let node = artifact.nodes().get(node.get() as usize)?;
+                let node = artifact.nodes().get(node.get() as usize)?.as_operation()?;
                 if node.operation.module_path.as_ref() != ["access"]
                     || node.operation.operation_name != "index"
                 {
@@ -257,6 +257,10 @@ fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() ->
             "{source} canonical artifact encoding must be deterministic",
         );
         for (before, after) in artifact.nodes().iter().zip(canonical.nodes()) {
+            let before = before.as_operation().expect("selection witness operation");
+            let after = after
+                .as_operation()
+                .expect("roundtripped selection operation");
             let input_count =
                 usize::try_from(before.input_bindings.end - before.input_bindings.start).unwrap();
             let selector_count = if before.operation.module_path.as_ref() == ["access"] {
@@ -318,8 +322,10 @@ fn generated_resident_capability_matrix_survives_bytecode_and_exact_binding() ->
                 "{source}: {:?}",
                 case.operation,
             );
-            let node = &canonical.nodes()[case.node.get() as usize];
-            assert_eq!(case.operation, node.operation, "{source}");
+            let node = canonical.nodes()[case.node.get() as usize]
+                .as_operation()
+                .expect("preflight operation");
+            assert_eq!(&case.operation, node.operation, "{source}");
         }
 
         let mut runtime = RuntimeBuilder::new()
@@ -376,7 +382,10 @@ fn unsupported_resident_target_is_structured_before_instance_emission() -> MResu
     let bytecode = compile_source(source)?;
     let artifact = decode_program_artifact_bytecode_v1(&bytecode).unwrap();
     let mut nodes = artifact.nodes().to_vec();
-    nodes[0].operation.operation_name = "deliberately-unavailable".to_owned();
+    let mech_engine::ExecutableNodeBody::Operation(operation) = &mut nodes[0].body else {
+        panic!("arithmetic witness must emit an operation")
+    };
+    operation.operation.operation_name = "deliberately-unavailable".to_owned();
     let unavailable = ProgramArtifactDraft {
         schemas: artifact.schemas().clone(),
         constants: artifact.constants().clone(),
@@ -403,7 +412,13 @@ fn unsupported_resident_target_is_structured_before_instance_emission() -> MResu
     assert_eq!(error.node, Some(unavailable.nodes()[0].node));
     assert_eq!(
         error.operation,
-        Some(unavailable.nodes()[0].operation.clone())
+        Some(
+            unavailable.nodes()[0]
+                .as_operation()
+                .unwrap()
+                .operation
+                .clone()
+        )
     );
     assert!(error.reason.contains("MissingResidentFactory"));
     Ok(())

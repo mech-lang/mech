@@ -139,7 +139,7 @@ impl CanonicalSourceProgram {
                         node: NodeId(index as u32),
                         operation: operation.clone(),
                     }),
-                crate::SourceNodeBody::BooleanMatch(_) => Ok(None),
+                crate::SourceNodeBody::Match(_) => Ok(None),
             })
             .collect::<Result<Vec<_>, _>>()?;
         let mut artifact_program = self.program.clone();
@@ -443,7 +443,7 @@ impl SourceSchemas {
             .map(|value| insert(&value.schema))
             .collect::<Result<Vec<_>, _>>()?;
         for node in nodes {
-            if let PendingNodeBody::BooleanMatch(control) = &node.body {
+            if let PendingNodeBody::Match(control) = &node.body {
                 for block in control
                     .arms
                     .iter()
@@ -1359,16 +1359,16 @@ enum PendingNodeBody {
         operation: OperationReference,
         contract: Option<OperationContractDeclaration>,
     },
-    BooleanMatch(PendingBooleanMatch),
+    Match(PendingMatch),
 }
 
-struct PendingBooleanMatch {
+struct PendingMatch {
     captures: Vec<(u16, SchemaDraft)>,
-    arms: Vec<PendingBooleanArm>,
+    arms: Vec<PendingMatchArm>,
 }
 
-struct PendingBooleanArm {
-    pattern: crate::BooleanPattern,
+struct PendingMatchArm {
+    pattern: crate::MatchPattern<usize>,
     guard: Option<PendingControlBlock>,
     body: PendingControlBlock,
 }
@@ -1736,12 +1736,11 @@ impl SemanticBuilder {
             if self.control_depth != 0 {
                 return Err(SourceSemanticError {
                     code: "source-semantics/unsupported-nested-control",
-                    message: "nested executable control is not lowered by this Boolean match slice"
-                        .to_owned(),
+                    message: "nested executable control is not yet lowered".to_owned(),
                     anchor: SourceSemanticAnchor::for_node(expression.syntax()),
                 });
             }
-            value = self.boolean_match(value, &arms, expression.syntax())?;
+            value = self.match_expression(value, &arms, expression.syntax())?;
         }
         Ok((value, expression.syntax().clone()))
     }
@@ -5004,9 +5003,9 @@ impl SemanticBuilder {
                             requirement: None,
                         }
                     }
-                    PendingNodeBody::BooleanMatch(control) => {
+                    PendingNodeBody::Match(control) => {
                         contracts.push(None);
-                        crate::SourceNodeBody::BooleanMatch(resolve_pending_match(
+                        crate::SourceNodeBody::Match(resolve_pending_match(
                             control,
                             &schemas.table,
                             &constant_ids,
@@ -5911,6 +5910,13 @@ fn scalar_data(schema: BuiltinSchema, source: &str) -> Option<ValueDataDraft> {
         BuiltinSchema::U16 => ValueDataDraft::U16(u16::try_from(unsigned()?).ok()?),
         BuiltinSchema::U32 => ValueDataDraft::U32(u32::try_from(unsigned()?).ok()?),
         BuiltinSchema::U64 => ValueDataDraft::U64(u64::try_from(unsigned()?).ok()?),
+        BuiltinSchema::Index => {
+            let value = u64::try_from(unsigned()?).ok()?;
+            if value == 0 {
+                return None;
+            }
+            ValueDataDraft::Index(value)
+        }
         BuiltinSchema::U128 => ValueDataDraft::U128(unsigned()?),
         BuiltinSchema::I8 => ValueDataDraft::I8(i8::try_from(signed()?).ok()?),
         BuiltinSchema::I16 => ValueDataDraft::I16(i16::try_from(signed()?).ok()?),
@@ -6240,23 +6246,18 @@ mod review_tests;
 mod mask_review_tests;
 
 impl SemanticBuilder {
-    fn boolean_match(
+    fn match_expression(
         &mut self,
         scrutinee: PendingValue,
         arms: &[mech_syntax::document::MatchArmSyntax],
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
-            code: "source-semantics/unsupported-boolean-match",
+            code: "source-semantics/unsupported-match",
             message: message.to_owned(),
             anchor: SourceSemanticAnchor::for_node(syntax),
         };
-        if self.schema_draft_of(scrutinee)?.body != SchemaBody::Bool {
-            return Err(error(
-                "this executable match slice requires a Boolean scrutinee",
-                syntax,
-            ));
-        }
+        let scrutinee_schema = self.schema_draft_of(scrutinee)?;
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
@@ -6268,7 +6269,7 @@ impl SemanticBuilder {
             let value = self.required(pattern.value(), pattern.syntax(), "pattern value")?;
             let mut binding = None;
             let pattern = match value {
-                PatternValueSyntax::Wildcard(_) => crate::BooleanPattern::Wildcard,
+                PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
                 PatternValueSyntax::Expression(expression) => {
                     if let Some(variable) = standalone_pattern_variable(&expression) {
                         let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
@@ -6282,53 +6283,64 @@ impl SemanticBuilder {
                             .annotation()
                             .map(|annotation| annotation_schema_draft(&annotation))
                             .transpose()?
-                            .is_some_and(|schema| schema.body != SchemaBody::Bool)
+                            .is_some_and(|schema| schema != scrutinee_schema)
                         {
                             return Err(error(
-                                "Boolean match binding requires Boolean schema",
+                                "match binding requires the scrutinee schema",
                                 variable.syntax(),
                             ));
                         }
                         binding = Some(node_text(identifier.syntax())?);
-                        crate::BooleanPattern::Bind
+                        crate::MatchPattern::Bind
                     } else {
                         let start = self.nodes.len();
                         let literal = self.expression(&expression)?.0;
                         let PendingValue::Constant(index) = literal else {
                             return Err(error(
-                                "only Boolean literal, wildcard and bind patterns are lowered",
+                                "only scalar literal, wildcard and bind patterns are lowered",
                                 expression.syntax(),
                             ));
                         };
-                        let ValueDataDraft::Bool(value) = self.constants[index].data else {
+                        if self.constants[index].schema != scrutinee_schema {
                             return Err(error(
-                                "match literal pattern must be Boolean",
+                                "match literal pattern must have the scrutinee schema",
                                 expression.syntax(),
                             ));
-                        };
+                        }
                         if self.nodes.len() != start {
                             return Err(error(
                                 "match literal pattern cannot execute operations",
                                 expression.syntax(),
                             ));
                         }
-                        crate::BooleanPattern::Literal(value)
+                        crate::MatchPattern::Literal(index)
                     }
                 }
                 _ => {
                     return Err(error(
-                        "only Boolean literal, wildcard and bind patterns are lowered",
+                        "only scalar literal, wildcard and bind patterns are lowered",
                         pattern.syntax(),
                     ));
                 }
             };
+            if pattern != crate::MatchPattern::Wildcard
+                && !scrutinee_schema
+                    .clone()
+                    .finalize()
+                    .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+            {
+                return Err(error(
+                    "non-wildcard patterns require a concrete scalar scrutinee",
+                    syntax,
+                ));
+            }
             let saved = self.bindings.clone();
             if let Some(name) = binding {
                 self.bindings.insert(name, scrutinee);
             }
             let lowered_arm = (|| {
                 let guard = if let Some(guard) = arm.guard() {
-                    let (block, schema) = self.boolean_control_block(
+                    let (block, schema) = self.control_block(
                         &guard,
                         pattern,
                         scrutinee,
@@ -6349,7 +6361,7 @@ impl SemanticBuilder {
                     None
                 };
                 let result = self.required(arm.value(), arm.syntax(), "match result")?;
-                let (body, schema) = self.boolean_control_block(
+                let (body, schema) = self.control_block(
                     &result,
                     pattern,
                     scrutinee,
@@ -6369,7 +6381,7 @@ impl SemanticBuilder {
                     });
                 }
                 result_schema.get_or_insert(schema);
-                Ok(PendingBooleanArm {
+                Ok(PendingMatchArm {
                     pattern,
                     guard,
                     body,
@@ -6379,8 +6391,12 @@ impl SemanticBuilder {
             let lowered_arm = lowered_arm?;
             if lowered_arm.guard.is_none() {
                 match pattern {
-                    crate::BooleanPattern::Literal(value) => coverage[value as usize] = true,
-                    crate::BooleanPattern::Wildcard | crate::BooleanPattern::Bind => {
+                    crate::MatchPattern::Literal(index) => {
+                        if let ValueDataDraft::Bool(value) = self.constants[index].data {
+                            coverage[value as usize] = true;
+                        }
+                    }
+                    crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {
                         coverage = [true; 2]
                     }
                 }
@@ -6389,14 +6405,15 @@ impl SemanticBuilder {
         }
         if coverage != [true; 2] {
             return Err(SourceSemanticError {
-                code: "source-semantics/non-exhaustive-boolean-match",
-                message: "Boolean match needs an unguarded arm for both Boolean values".to_owned(),
+                code: "source-semantics/non-exhaustive-match",
+                message: "match needs an unguarded wildcard/binding or both Boolean literal cases"
+                    .to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }
         let index = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
-            body: PendingNodeBody::BooleanMatch(PendingBooleanMatch {
+            body: PendingNodeBody::Match(PendingMatch {
                 captures,
                 arms: lowered,
             }),
@@ -6406,7 +6423,7 @@ impl SemanticBuilder {
             state: None,
             semantic: SourceSemanticNode {
                 operation: "match".to_owned(),
-                role: "Boolean-match",
+                role: "match",
                 detail: None,
                 anchor: SourceSemanticAnchor::for_node(syntax),
             },
@@ -6414,10 +6431,10 @@ impl SemanticBuilder {
         Ok(PendingValue::Node(index))
     }
 
-    fn boolean_control_block(
+    fn control_block(
         &mut self,
         expression: &ExpressionSyntax,
-        pattern: crate::BooleanPattern,
+        pattern: crate::MatchPattern<usize>,
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
         captures: &mut Vec<(u16, SchemaDraft)>,
@@ -6467,8 +6484,7 @@ impl SemanticBuilder {
                         if !scalar(&schema) {
                             return Err(unsupported());
                         }
-                        let source = if pattern == crate::BooleanPattern::Bind && value == scrutinee
-                        {
+                        let source = if pattern == crate::MatchPattern::Bind && value == scrutinee {
                             crate::ControlParameterSource::Scrutinee
                         } else {
                             let input = match inputs.iter().position(|existing| *existing == value)
@@ -6541,10 +6557,10 @@ impl SemanticBuilder {
 }
 
 fn resolve_pending_match(
-    control: &PendingBooleanMatch,
+    control: &PendingMatch,
     schemas: &SchemaTable,
     constants: &[mech_core::ConstantId],
-) -> crate::BooleanMatchDeclaration<OperationContractDeclaration> {
+) -> crate::MatchDeclaration<OperationContractDeclaration> {
     let schema = |draft: &SchemaDraft| {
         schemas
             .find_by_key(
@@ -6593,7 +6609,7 @@ fn resolve_pending_match(
             yield_value: value(block.yield_value),
         }
     };
-    crate::BooleanMatchDeclaration {
+    crate::MatchDeclaration {
         scrutinee: 0,
         captures: control
             .captures
@@ -6606,8 +6622,14 @@ fn resolve_pending_match(
         arms: control
             .arms
             .iter()
-            .map(|arm| crate::BooleanMatchArm {
-                pattern: arm.pattern,
+            .map(|arm| crate::ControlMatchArm {
+                pattern: match arm.pattern {
+                    crate::MatchPattern::Literal(index) => {
+                        crate::MatchPattern::Literal(constants[index])
+                    }
+                    crate::MatchPattern::Wildcard => crate::MatchPattern::Wildcard,
+                    crate::MatchPattern::Bind => crate::MatchPattern::Bind,
+                },
                 guard: arm.guard.as_ref().map(block),
                 body: block(&arm.body),
             })

@@ -164,10 +164,7 @@ fn bindings_inherit_actual_structural_projections_and_keep_local_scope() {
         .compile_expression(&expression("x<*> ? | y => y + 1 | * => 0"))
         .err()
         .unwrap();
-    assert_eq!(
-        explicit_dynamic.code,
-        "source-semantics/unsupported-boolean-match"
-    );
+    assert_eq!(explicit_dynamic.code, "source-semantics/unsupported-match");
     let inferred = compile("[y | x <- xs, y := x, y > 0]");
     assert_eq!(
         inferred
