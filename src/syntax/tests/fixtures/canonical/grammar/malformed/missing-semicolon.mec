@@ -1,0 +1,2 @@
+missing-semicolon := "a"
+next := "b" ;

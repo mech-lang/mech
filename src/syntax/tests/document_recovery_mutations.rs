@@ -117,7 +117,7 @@ fn accepted_fixture_mutations_preserve_totality_and_bytes() {
 #[test]
 fn malformed_and_promoted_regression_fixtures_remain_lossless() {
     let malformed = fixture_files("malformed");
-    let regressions = fixture_files("fuzz-regressions");
+    let regressions = fixture_files("promoted-regressions");
     assert_eq!(malformed.len(), 4);
     assert_eq!(regressions.len(), 8);
     for path in malformed.into_iter().chain(regressions) {

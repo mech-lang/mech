@@ -10,7 +10,9 @@ use crate::document::{
   RuleId, Severity, SyntaxKind, SyntaxSnapshot, TextRange, TextSize, TextSnapshot, TokenFlags,
 };
 
+mod canonical_ports;
 mod canonical_rules;
+pub mod canonical;
 pub mod checkpoint;
 pub mod cursor;
 pub mod document;
@@ -45,6 +47,26 @@ struct ParserOutput {
   stats: ParseStats,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParserImplementation {
+  Prototype,
+  Canonical,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParseRoot {
+  Document,
+  Grammar,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParseRequestError {
+  Unsupported {
+    implementation: ParserImplementation,
+    root: ParseRoot,
+  },
+}
+
 pub(crate) struct Parser<'a> {
   source: &'a TextSnapshot,
   parse_range: TextRange,
@@ -60,6 +82,7 @@ pub(crate) struct Parser<'a> {
   halted: bool,
   resource_diagnostic_emitted: bool,
   resource_finalizing: bool,
+  resource_rule: Option<RuleId>,
   ids: &'a mut IdGenerator,
   stats: ParseStats,
 }
@@ -85,6 +108,7 @@ impl<'a> Parser<'a> {
       halted: false,
       resource_diagnostic_emitted: false,
       resource_finalizing: false,
+      resource_rule: None,
       ids,
       stats: ParseStats {
         source_bytes: u64::from(source.byte_len().0),
@@ -96,7 +120,7 @@ impl<'a> Parser<'a> {
   fn for_range(
     source: &'a TextSnapshot,
     range: TextRange,
-    _root_kind: SyntaxKind,
+    root_kind: SyntaxKind,
     initial_nesting: u32,
     config: ParseConfig,
     ids: &'a mut IdGenerator,
@@ -116,13 +140,14 @@ impl<'a> Parser<'a> {
       halted: false,
       resource_diagnostic_emitted: false,
       resource_finalizing: false,
+      resource_rule: canonical_fragment_rule(root_kind),
       ids,
       stats: ParseStats {
         source_bytes: u64::from(range.len().0),
         ..ParseStats::default()
       },
     };
-    if source.text(range).is_err() {
+    if source.validate_range(range).is_err() {
       parser.halted = true;
     }
     parser
@@ -130,6 +155,10 @@ impl<'a> Parser<'a> {
 
   pub(crate) fn source(&self) -> &TextSnapshot {
     self.source
+  }
+
+  pub(crate) fn set_resource_rule(&mut self, rule: RuleId) {
+    self.resource_rule = Some(rule);
   }
 
   pub(crate) fn cursor(&self) -> &Cursor<'a> {
@@ -282,6 +311,18 @@ impl<'a> Parser<'a> {
     result
   }
 
+  pub(crate) fn with_canonical_rule<T>(
+    &mut self,
+    rule: RuleId,
+    parse: impl FnOnce(&mut Self) -> T,
+  ) -> T {
+    let depth = self.rules.len();
+    self.rules.push_canonical(rule);
+    let result = parse(self);
+    self.rules.truncate(depth);
+    result
+  }
+
   pub(crate) fn current_rule(&self) -> Option<RuleId> {
     self.rules.current_rule()
   }
@@ -299,6 +340,13 @@ impl<'a> Parser<'a> {
       return None;
     }
     self.cursor.bump_char()
+  }
+
+  pub(crate) fn bump_grapheme_raw(&mut self) -> Option<TextRange> {
+    if !self.charge() {
+      return None;
+    }
+    self.cursor.bump_grapheme()
   }
 
   pub(crate) fn bump_bytes_token(
@@ -414,6 +462,9 @@ impl<'a> Parser<'a> {
   }
 
   pub(crate) fn found_syntax(&self) -> FoundSyntax {
+    if self.resource_rule.is_some() {
+      return canonical::found::found_syntax(self, self.offset());
+    }
     let character = self.cursor.context_peek_char();
     if character.is_none() {
       return FoundSyntax {
@@ -491,23 +542,30 @@ impl<'a> Parser<'a> {
     }
     if !self.resource_diagnostic_emitted {
       self.resource_diagnostic_emitted = true;
+      let rule = self.current_rule().or(self.resource_rule);
+      let context = rule.is_none().then(|| self.current_context()).flatten();
+      let found = if self.resource_rule.is_some() {
+        canonical::found::found_syntax(self, range.start)
+      } else {
+        FoundSyntax {
+          kind: Some(SyntaxKind::Unknown),
+          text: None,
+        }
+      };
       let diagnostic = Diagnostic {
         id: self.next_diagnostic_id(),
         code: DiagnosticCode::syntax("recovery-limit"),
         phase: DiagnosticPhase::Syntax,
         severity: Severity::Error,
-        rule: None,
-        context: self.current_context(),
+        rule,
+        context,
         primary: DiagnosticAnchor::Absolute {
           revision: self.source.revision(),
           range,
         },
         labels: Vec::new(),
         expected: Vec::new(),
-        found: Some(FoundSyntax {
-          kind: Some(SyntaxKind::Unknown),
-          text: None,
-        }),
+        found: Some(found),
         fixes: Vec::new(),
         related: Vec::new(),
         recovery: Some(RecoveryAction::ResourceLimit { range }),
@@ -595,9 +653,48 @@ impl<'a> Parser<'a> {
   }
 }
 
-pub fn parse_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
+pub fn parse_syntax(
+  source: TextSnapshot,
+  root: ParseRoot,
+  implementation: ParserImplementation,
+  config: ParseConfig,
+) -> Result<SyntaxSnapshot, ParseRequestError> {
   let mut ids = IdGenerator::new();
-  parse_document_with_ids(source, config, &mut ids)
+  match (implementation, root) {
+    (ParserImplementation::Prototype, ParseRoot::Document) => {
+      Ok(parse_document_with_ids(source, config, &mut ids))
+    }
+    (ParserImplementation::Canonical, ParseRoot::Grammar) => {
+      Ok(parse_canonical_grammar_with_ids(source, config, &mut ids))
+    }
+    _ => Err(ParseRequestError::Unsupported {
+      implementation,
+      root,
+    }),
+  }
+}
+
+pub fn parse_document(source: TextSnapshot, config: ParseConfig) -> SyntaxSnapshot {
+  parse_syntax(
+    source,
+    ParseRoot::Document,
+    ParserImplementation::Prototype,
+    config,
+  )
+  .expect("prototype document parsing is a supported configuration")
+}
+
+pub fn parse_canonical_grammar(
+  source: TextSnapshot,
+  config: ParseConfig,
+) -> SyntaxSnapshot {
+  parse_syntax(
+    source,
+    ParseRoot::Grammar,
+    ParserImplementation::Canonical,
+    config,
+  )
+  .expect("canonical grammar parsing is a supported configuration")
 }
 
 pub(crate) fn parse_document_with_ids(
@@ -608,8 +705,41 @@ pub(crate) fn parse_document_with_ids(
   let mut parser = Parser::new(&source, config, ids);
   document::parse_document_root(&mut parser);
   let output = parser.finish();
+  finish_snapshot(source, output, ids, SyntaxKind::Document)
+}
+
+fn parse_canonical_grammar_with_ids(
+  source: TextSnapshot,
+  config: ParseConfig,
+  ids: &mut IdGenerator,
+) -> SyntaxSnapshot {
+  let mut parser = Parser::new(&source, config, ids);
+  parser.set_resource_rule(rules::PARSE_GRAMMAR);
+  canonical::roots::parse_grammar_root(&mut parser);
+  let output = parser.finish();
+  finish_snapshot(source, output, ids, SyntaxKind::GrammarDocument)
+}
+
+fn canonical_fragment_rule(kind: SyntaxKind) -> Option<RuleId> {
+  match kind {
+    SyntaxKind::Grammar => Some(rules::GRAMMAR),
+    SyntaxKind::GrammarRule => Some(rules::GRAMMAR_RULE),
+    SyntaxKind::GrammarExpression => Some(rules::GRAMMAR_EXPRESSION),
+    SyntaxKind::GrammarTerm => Some(rules::GRAMMAR_TERM),
+    SyntaxKind::GrammarFactor => Some(rules::GRAMMAR_FACTOR),
+    SyntaxKind::GrammarTerminalToken => Some(rules::GRAMMAR_TERMINAL_TOKEN),
+    _ => None,
+  }
+}
+
+fn finish_snapshot(
+  source: TextSnapshot,
+  output: ParserOutput,
+  ids: &mut IdGenerator,
+  fallback_kind: SyntaxKind,
+) -> SyntaxSnapshot {
   let sink_result = sink(&output.events, &source, ids)
-    .unwrap_or_else(|_| fallback_tree(&source, ids));
+    .unwrap_or_else(|_| fallback_tree(&source, ids, fallback_kind));
 
   let mut diagnostics = DiagnosticStore::new(source.revision());
   for mut pending in output.diagnostics {
@@ -632,24 +762,25 @@ pub(crate) fn parse_document_with_ids(
   snapshot
 }
 
-fn fallback_tree(source: &TextSnapshot, ids: &mut IdGenerator) -> SinkResult {
+fn fallback_tree(
+  source: &TextSnapshot,
+  ids: &mut IdGenerator,
+  root_kind: SyntaxKind,
+) -> SinkResult {
   let mut builder = GreenBuilder::new(ids);
-  builder.start_node(SyntaxKind::Document);
+  builder.start_node(root_kind);
   if !source.is_empty() {
     builder.start_node_with_flags(SyntaxKind::Error, NodeFlags::ERROR);
-    let text = source.to_contiguous_string();
-    let _ = builder.token_with_flags(
-      SyntaxKind::Unknown,
-      &text,
-      TokenFlags::ERROR,
-    );
+    for chunk in source.chunks() {
+      let _ = builder.token_with_flags(SyntaxKind::Unknown, chunk, TokenFlags::ERROR);
+    }
     let _ = builder.finish_node();
   }
   let _ = builder.finish_node();
   let root = builder.finish().unwrap_or_else(|_| {
     Arc::new(GreenNode {
       id: ids.node(),
-      kind: SyntaxKind::Document,
+      kind: root_kind,
       text_len: TextSize::ZERO,
       children: Arc::from([]),
       flags: NodeFlags::ERROR,
@@ -676,6 +807,9 @@ pub(crate) fn build_restart_index(snapshot: &SyntaxSnapshot) -> RestartIndex {
       | SyntaxKind::SectionElement
       | SyntaxKind::Subtitle
       | SyntaxKind::UlSubtitle => RestartMode::Document,
+      SyntaxKind::GrammarDocument | SyntaxKind::Grammar | SyntaxKind::GrammarRule => {
+        RestartMode::Grammar
+      }
       _ => continue,
     };
     restarts.push(RestartEntry {
@@ -751,5 +885,122 @@ mod tests {
     let outer = parser.start();
     let _inner = parser.start();
     outer.abandon(&mut parser);
+  }
+
+  #[test]
+  fn canonical_rule_scope_uses_rule_without_prototype_context() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let rule = rules::GRAMMAR;
+    parser.with_canonical_rule(rule, |parser| {
+      let _ = recovery::insert_missing(
+        parser,
+        "syntax/missing-grammar-rule",
+        "expected a grammar rule",
+        ExpectedSyntax::Production(String::from("grammar rule")),
+        None,
+      );
+    });
+
+    let output = parser.finish();
+    assert_eq!(output.diagnostics.len(), 1);
+    assert_eq!(output.diagnostics[0].diagnostic.rule, Some(rule));
+    assert_eq!(output.diagnostics[0].diagnostic.context, None);
+  }
+
+  #[test]
+  fn prototype_rule_scope_keeps_context_without_canonical_rule() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let context = parser_context_id("prototype-test");
+    parser.with_rule(context, None, |parser| {
+      let _ = recovery::insert_missing(
+        parser,
+        "syntax/missing-test-token",
+        "expected a test token",
+        ExpectedSyntax::Production(String::from("test token")),
+        None,
+      );
+    });
+
+    let output = parser.finish();
+    assert_eq!(output.diagnostics.len(), 1);
+    assert_eq!(output.diagnostics[0].diagnostic.rule, None);
+    assert_eq!(
+      output.diagnostics[0].diagnostic.context,
+      Some(context)
+    );
+  }
+
+  #[test]
+  fn canonical_resource_diagnostic_keeps_rule_attribution() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "remainder").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let rule = rules::PARSE_GRAMMAR;
+    parser.with_canonical_rule(rule, |parser| {
+      parser.halt();
+      parser.consume_resource_remainder();
+    });
+
+    let output = parser.finish();
+    assert_eq!(output.diagnostics.len(), 1);
+    assert_eq!(output.diagnostics[0].diagnostic.rule, Some(rule));
+    assert_eq!(output.diagnostics[0].diagnostic.context, None);
+  }
+
+  #[test]
+  fn canonical_tiny_event_budgets_keep_root_rule_attribution() {
+    for max_events in 0..=4 {
+      let source =
+        TextSnapshot::new(DocumentId(1), Revision(0), "x := \"a\";").unwrap();
+      let config = ParseConfig {
+        limits: ParseLimits {
+          max_events,
+          ..ParseLimits::default()
+        },
+      };
+      let snapshot = parse_canonical_grammar(source, config);
+
+      assert!(snapshot.stats.events_emitted <= u64::from(max_events));
+      crate::document::validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+      assert!(!snapshot.diagnostics.is_empty());
+      for diagnostic in snapshot.diagnostics.iter() {
+        assert_eq!(diagnostic.rule, Some(rules::PARSE_GRAMMAR));
+        assert_eq!(
+          diagnostic.rule.and_then(canonical_rule_name),
+          Some("parse-grammar")
+        );
+        assert_eq!(diagnostic.context, None);
+      }
+    }
+  }
+
+  #[test]
+  fn failed_canonical_alternative_restores_rule_and_marker_depth() {
+    let source =
+      TextSnapshot::new(DocumentId(1), Revision(0), "x").unwrap();
+    let mut ids = IdGenerator::new();
+    let mut parser = Parser::new(&source, ParseConfig::default(), &mut ids);
+    let checkpoint = parser.checkpoint();
+    let matched = parser.with_canonical_rule(rules::GRAMMAR_FACTOR, |parser| {
+      let factor = parser.start();
+      let _ = parser.bump_char_token(SyntaxKind::Text);
+      factor.complete(parser, SyntaxKind::ParagraphText);
+      parser.rewind(checkpoint);
+      false
+    });
+
+    assert!(!matched);
+    assert_eq!(parser.offset(), TextSize::ZERO);
+    assert_eq!(parser.rule_depth(), 0);
+    let output = parser.finish();
+    assert!(output.events.is_empty());
+    assert!(output.diagnostics.is_empty());
   }
 }

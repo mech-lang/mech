@@ -52,4 +52,22 @@ impl TokenFlags {
   pub const SYNTHETIC: Self = Self(1 << 0);
   pub const MISSING: Self = Self(1 << 1);
   pub const ERROR: Self = Self(1 << 2);
+  pub const TRIVIA: Self = Self(1 << 3);
+}
+
+#[cfg(test)]
+mod tests {
+  use super::TokenFlags;
+
+  #[test]
+  fn trivia_is_an_independent_composable_token_flag() {
+    assert_eq!(TokenFlags::TRIVIA.0, 1 << 3);
+    assert!(!TokenFlags::TRIVIA.intersects(TokenFlags::SYNTHETIC));
+    assert!(!TokenFlags::TRIVIA.intersects(TokenFlags::MISSING));
+    assert!(!TokenFlags::TRIVIA.intersects(TokenFlags::ERROR));
+
+    let synthetic_trivia = TokenFlags::SYNTHETIC | TokenFlags::TRIVIA;
+    assert!(synthetic_trivia.contains(TokenFlags::SYNTHETIC));
+    assert!(synthetic_trivia.contains(TokenFlags::TRIVIA));
+  }
 }
