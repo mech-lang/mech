@@ -96,6 +96,99 @@ fn certification_contracts() -> BTreeMap<String, CertificationContract> {
         .collect()
 }
 
+fn contains_named_test(source: &str, name: &str) -> bool {
+    let bytes = source.as_bytes();
+    let mut code = Vec::with_capacity(bytes.len());
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        if bytes.get(cursor..cursor + 2) == Some(b"//") {
+            code.push(b' ');
+            cursor += 2;
+            while cursor < bytes.len() && bytes[cursor] != b'\n' {
+                cursor += 1;
+            }
+            continue;
+        }
+        if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+            code.push(b' ');
+            cursor += 2;
+            let mut depth = 1usize;
+            while cursor < bytes.len() && depth != 0 {
+                if bytes.get(cursor..cursor + 2) == Some(b"/*") {
+                    depth += 1;
+                    cursor += 2;
+                } else if bytes.get(cursor..cursor + 2) == Some(b"*/") {
+                    depth -= 1;
+                    cursor += 2;
+                } else {
+                    cursor += 1;
+                }
+            }
+            continue;
+        }
+        let raw_start = if bytes[cursor] == b'r' {
+            Some(cursor)
+        } else if bytes[cursor] == b'b' && bytes.get(cursor + 1) == Some(&b'r') {
+            Some(cursor + 1)
+        } else {
+            None
+        };
+        if let Some(raw_start) = raw_start {
+            let mut quote = raw_start + 1;
+            while bytes.get(quote) == Some(&b'#') {
+                quote += 1;
+            }
+            if bytes.get(quote) == Some(&b'"') {
+                let hashes = quote - raw_start - 1;
+                cursor = quote + 1;
+                while cursor < bytes.len() {
+                    if bytes[cursor] == b'"'
+                        && bytes.get(cursor + 1..cursor + 1 + hashes)
+                            == Some(&bytes[raw_start + 1..quote])
+                    {
+                        cursor += 1 + hashes;
+                        break;
+                    }
+                    cursor += 1;
+                }
+                code.push(b' ');
+                continue;
+            }
+        }
+        let quote = if bytes[cursor] == b'"' {
+            Some(cursor)
+        } else if bytes[cursor] == b'b' && bytes.get(cursor + 1) == Some(&b'"') {
+            Some(cursor + 1)
+        } else {
+            None
+        };
+        if let Some(quote) = quote {
+            cursor = quote + 1;
+            while cursor < bytes.len() {
+                if bytes[cursor] == b'\\' {
+                    cursor = (cursor + 2).min(bytes.len());
+                } else {
+                    let end = bytes[cursor] == b'"';
+                    cursor += 1;
+                    if end {
+                        break;
+                    }
+                }
+            }
+            code.push(b' ');
+            continue;
+        }
+        code.push(bytes[cursor]);
+        cursor += 1;
+    }
+    let compact = String::from_utf8(code)
+        .expect("masking preserves UTF-8")
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect::<String>();
+    compact.contains(&format!("#[test]fn{name}("))
+}
+
 #[test]
 fn semantic_completion_record_keeps_artifact_evidence_from_opening_s6() {
     let table = fs::read_to_string(
@@ -120,10 +213,17 @@ fn semantic_completion_record_keeps_artifact_evidence_from_opening_s6() {
             ));
             assert!(matches!(fields[5], "true" | "false"));
             assert!(!fields[3].is_empty(), "completion target must be named");
-            let evidence_path = fields[6].split("::").next().unwrap();
+            let (evidence_path, evidence_symbol) = fields[6]
+                .split_once("::")
+                .map_or((fields[6], None), |(path, symbol)| (path, Some(symbol)));
+            let evidence_source = fs::read_to_string(repository_root().join(evidence_path))
+                .unwrap_or_else(|error| {
+                    panic!("missing completion evidence {evidence_path}: {error}")
+                });
             assert!(
-                repository_root().join(evidence_path).is_file(),
-                "missing completion evidence {evidence_path}"
+                evidence_symbol.is_none_or(|symbol| contains_named_test(&evidence_source, symbol)),
+                "missing completion evidence test {}",
+                fields[6]
             );
             fields
         })
@@ -157,6 +257,10 @@ fn semantic_completion_record_keeps_artifact_evidence_from_opening_s6() {
             .count(),
         4
     );
+    assert!(!contains_named_test(
+        "// #[test] fn stale() {}\nconst TEXT: &str = \"#[test] fn stale() {}\";",
+        "stale"
+    ));
 }
 
 #[derive(Clone, Copy)]
