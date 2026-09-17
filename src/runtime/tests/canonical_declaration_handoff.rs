@@ -116,6 +116,75 @@ fn resolved_canonical_export_is_a_usable_imported_binding() {
 }
 
 #[test]
+fn resolved_canonical_exports_can_be_sealed_into_artifact_constants() {
+    let resolver =
+        InMemorySourceResolver::new().with_string("app/dep.mec", "value := 42\n<+ value\n");
+    let root = CanonicalDocumentCompilation::from_document(&document(
+        31,
+        "+> ./dep.mec\nanswer := dep/value\nanswer\n",
+    ))
+    .unwrap();
+    let declaration = root.declared_imports()[0].clone();
+    let resolved = resolver
+        .resolve(&source_request_for_import(
+            &declaration,
+            Some("memory:app/main.mec"),
+        ))
+        .unwrap()
+        .unwrap();
+    let MechSourceCode::String(dependency_source) = &resolved.source else {
+        panic!("test dependency must be textual Mech source")
+    };
+    let dependency =
+        CanonicalDocumentCompilation::from_document(&document(32, dependency_source)).unwrap();
+    let catalog = catalog();
+    let dependency_artifact = dependency.program.compile_artifact().unwrap();
+    let mut dependency_instance = activate(
+        ReactiveInstanceId::new(32, 0),
+        &dependency_artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    dependency_instance.turn(&[]).unwrap();
+    let dependency_values = (0..dependency.program.program().outputs.len())
+        .map(|output| {
+            RuntimeValueSnapshot::from_value(dependency_instance.copied_output(output).unwrap())
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let exports = dependency.exports_from_values(&dependency_values).unwrap();
+    let bindings = root
+        .bind_resolved_imports(&[CanonicalResolvedImport {
+            declaration,
+            canonical_uri: resolved.canonical_uri,
+            exports,
+        }])
+        .unwrap();
+    let program = root
+        .program
+        .bind_input_constants(
+            &bindings
+                .iter()
+                .map(|binding| (binding.input, binding.value.to_value()))
+                .collect::<Vec<_>>(),
+        )
+        .unwrap();
+    let artifact = program.compile_artifact().unwrap();
+    assert!(artifact.inputs().is_empty());
+    let mut instance = activate(
+        ReactiveInstanceId::new(31, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    let value = RuntimeValueSnapshot::from_value(instance.copied_output(0).unwrap()).unwrap();
+    assert_eq!(value.format_canonical_inline(), "42");
+}
+
+#[test]
 fn resolved_bindings_remain_local_to_root_named_and_mika_owners() {
     fn exported_value(source: &str) -> RuntimeValueSnapshot {
         let dependency =

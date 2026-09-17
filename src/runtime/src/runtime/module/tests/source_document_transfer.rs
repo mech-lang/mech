@@ -350,12 +350,17 @@ fn resolved_document_owner_must_match_the_canonical_uri() {
 
 #[test]
 fn invalid_canonical_authority_never_falls_back_to_an_available_legacy_tree() {
-    let source = include_str!("../../../../../../examples/gpu-particles/particles.mec");
+    let source = "value := 42\n";
     let document = SourceDocument::parse_resolved(
         "memory:main.mec",
         Revision(0),
         source,
-        ParseConfig::default(),
+        ParseConfig {
+            limits: mech_syntax::document::ParseLimits {
+                fuel: 1,
+                ..Default::default()
+            },
+        },
     )
     .unwrap();
     assert!(!document.is_strictly_clean());
