@@ -3383,6 +3383,69 @@ fn closed_comprehension_scalar_initializer_runs_once_before_state_turns() {
 }
 
 #[test]
+fn activation_derived_range_endpoints_initialize_runtime_shaped_state() {
+    variable_matrix_turns(
+        "start := (true ? | true => 1 | false => 2)\nvalues := start..=3\n~state := values\nstate\n",
+        &[
+            (None, (1, 3), &[1.0, 2.0, 3.0]),
+            (None, (1, 3), &[1.0, 2.0, 3.0]),
+        ],
+    );
+}
+
+#[test]
+fn activation_derived_index_range_endpoints_initialize_runtime_shaped_state() {
+    closed_matrix_turns(
+        "start := (true ? | true => 1<index> | false => 2<index>)\nvalues := start..=3<index>\n~state := values\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 3));
+            assert_eq!(index_matrix_values(actual), [1, 2, 3]);
+        },
+    );
+}
+
+#[test]
+fn runtime_shaped_matrix_can_be_wrapped_in_an_option() {
+    use mech_core::{
+        ValueDataDraft,
+        snapshot::{F64Bits, OptionDraft},
+    };
+
+    closed_matrix_turns(
+        "values := [x | x <- [1 2 3]]\nwrapped<[f64]?> := values\nwrapped\n",
+        |actual| {
+            assert_eq!(
+                actual.canonical_data_draft().unwrap(),
+                ValueDataDraft::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(ValueDataDraft::Matrix(
+                        [1.0, 2.0, 3.0]
+                            .into_iter()
+                            .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                            .collect(),
+                    ))),
+                })
+            );
+        },
+    );
+}
+
+#[test]
+fn activation_match_compares_snapshot_backed_scalar_literals() {
+    for source in [
+        "selected := (1u8 ? | 1u8 => 2u8 | * => 3u8)\n~state := selected\nstate\n",
+        "selected := (-0.0<f32> ? | 0.0<f32> => 2u8 | * => 3u8)\n~state := selected\nstate\n",
+    ] {
+        closed_matrix_turns(source, |actual| {
+            assert_eq!(
+                actual.canonical_data_draft().unwrap(),
+                mech_core::ValueDataDraft::U8(2)
+            );
+        });
+    }
+}
+
+#[test]
 fn runtime_shaped_selection_resolves_complete_result_geometry() {
     for (selection, expected_shape, expected_values) in [
         ("a[1,:]", (1, 2), &[3.0, 4.0][..]),
@@ -3559,6 +3622,431 @@ fn closed_control_activation_reports_budget_exhaustion_and_releases_ownership() 
         assert!(
             admitted,
             "closed control must activate within its finite budget"
+        );
+    }
+}
+
+fn f32_matrix_values(value: &Value) -> Vec<f32> {
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("expected matrix output: {value:?}")
+    };
+    match matrix.elements() {
+        SequenceView::F32(values) => values.iter().map(|value| value.to_f32()).collect(),
+        SequenceView::Values(values) => values
+            .iter()
+            .map(|value| match value {
+                ValueData::F32(value) => value.to_f32(),
+                other => panic!("expected f32 matrix element: {other:?}"),
+            })
+            .collect(),
+        other => panic!("expected f32 matrix storage: {other:?}"),
+    }
+}
+
+#[test]
+fn runtime_shaped_arithmetic_accepts_dense_matrix_operands_in_both_orders() {
+    for (source, expected_shape, expected_values) in [
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\nvalues + [10 20 30]\n",
+            (1, 3),
+            &[11.0, 22.0, 33.0][..],
+        ),
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\n[10 20 30] + values\n",
+            (1, 3),
+            &[11.0, 22.0, 33.0],
+        ),
+        (
+            "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\nvalues + [10 20 30]\n",
+            (2, 3),
+            &[11.0, 22.0, 33.0, 14.0, 25.0, 36.0],
+        ),
+        (
+            "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\nvalues + [10; 20]\n",
+            (2, 3),
+            &[11.0, 12.0, 13.0, 24.0, 25.0, 26.0],
+        ),
+    ] {
+        variable_matrix_turns(
+            source,
+            &[
+                (None, expected_shape, expected_values),
+                (None, expected_shape, expected_values),
+            ],
+        );
+    }
+}
+
+#[test]
+fn runtime_shaped_arithmetic_rejects_incompatible_dense_matrix_geometry() {
+    let source = "samples := 1..=3\nvalues := [x | x <- samples]\nvalues + [10 20]\n";
+    let program = compiled(source);
+    let artifact = program.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        assert!(
+            activate(
+                ReactiveInstanceId::new(0x570, 0),
+                &artifact,
+                &catalog.build().unwrap(),
+                &ActivationFacts::default(),
+            )
+            .is_err(),
+            "{source:?}: incompatible live and dense axes must be rejected"
+        );
+    }
+}
+
+#[test]
+fn runtime_shaped_binary_math_accepts_dense_matrix_operands_in_both_orders() {
+    for (source, expected) in [
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\nmath/atan2(values, [1 1 1])\n",
+            [1.0_f64.atan2(1.0), 2.0_f64.atan2(1.0), 3.0_f64.atan2(1.0)],
+        ),
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\nmath/atan2([1 1 1], values)\n",
+            [1.0_f64.atan2(1.0), 1.0_f64.atan2(2.0), 1.0_f64.atan2(3.0)],
+        ),
+    ] {
+        variable_matrix_turns(
+            source,
+            &[(None, (1, 3), &expected), (None, (1, 3), &expected)],
+        );
+    }
+}
+
+#[test]
+fn runtime_shaped_comparisons_accept_dense_matrix_operands_in_both_orders() {
+    for (source, expected) in [
+        (
+            "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\nvalues == [1 0 3; 4 5 0]\n",
+            &[true, false, true, true, true, false][..],
+        ),
+        (
+            "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\nvalues < [2 2 4]\n",
+            &[true, false, true, false, false, false],
+        ),
+        (
+            "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\n[2; 5] < values\n",
+            &[false, false, true, false, false, true],
+        ),
+    ] {
+        variable_bool_matrix_turns(
+            source,
+            &[(None, (2, 3), expected), (None, (2, 3), expected)],
+        );
+    }
+}
+
+#[test]
+fn runtime_shaped_matrix_dot_accepts_fixed_dense_operands_in_both_orders() {
+    turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nresult := matrix/dot(values, [1 2 3])\nresult\n",
+        &[14.0, 14.0],
+    );
+    turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nresult := matrix/dot([1 2 3], values)\nresult\n",
+        &[14.0, 14.0],
+    );
+}
+
+#[test]
+fn all_elements_access_flattens_the_live_snapshot_shape() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [sample | sample <- samples]\nflattened := values[:]\nflattened\n",
+        &[
+            (None, (3, 1), &[1.0, 2.0, 3.0]),
+            (None, (3, 1), &[1.0, 2.0, 3.0]),
+        ],
+    );
+}
+
+#[test]
+fn runtime_shaped_n_choose_k_accepts_a_dense_selection() {
+    variable_matrix_turns(
+        "samples := 1..=4\nvalues := [x | x <- samples]\ncombinations := combinatorics/n-choose-k(values, 2)\ncombinations\n",
+        &[
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+        ],
+    );
+}
+
+#[test]
+fn runtime_shaped_n_choose_k_accepts_an_activation_derived_selection() {
+    variable_matrix_turns(
+        "selection := (true ? | true => 2 | false => 1)\ncombinations := combinatorics/n-choose-k([1 2 3 4], selection)\ncombinations\n",
+        &[
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+            (
+                None,
+                (2, 6),
+                &[1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 4.0],
+            ),
+        ],
+    );
+}
+
+#[test]
+fn activation_derived_selectors_gather_from_fixed_dense_matrices() {
+    variable_matrix_turns(
+        "samples := 1..=3\nselectors := [x | x <- samples, x != 2]\nvalues := [10 20 30]\nselected := values[selectors]\nselected\n",
+        &[(None, (2, 1), &[10.0, 30.0]), (None, (2, 1), &[10.0, 30.0])],
+    );
+}
+
+#[test]
+fn runtime_shaped_matmul_accepts_asymmetric_dense_matrix_operands_in_both_orders() {
+    variable_matrix_turns(
+        "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\nproduct := matrix/matmul(values, [7 8; 9 10; 11 12])\nproduct\n",
+        &[
+            (None, (2, 2), &[58.0, 64.0, 139.0, 154.0]),
+            (None, (2, 2), &[58.0, 64.0, 139.0, 154.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nrow := [x | x <- samples]\nvalues := [row; row + 3]\nproduct := matrix/matmul([7 8; 9 10], values)\nproduct\n",
+        &[
+            (None, (2, 3), &[39.0, 54.0, 69.0, 49.0, 68.0, 87.0]),
+            (None, (2, 3), &[39.0, 54.0, 69.0, 49.0, 68.0, 87.0]),
+        ],
+    );
+}
+
+#[test]
+fn runtime_shaped_f64_matrices_reach_the_existing_solve_semantics() {
+    variable_matrix_turns(
+        "solution := [1 2; 1 4] \\ [5; 9]\nsolution\n",
+        &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
+    );
+    variable_matrix_turns(
+        "first := [x | x <- [1 2]]\nsecond := [x | x <- [1 4]]\ncoefficients := [first; second]\nright-row := [x | x <- [5 9]]\nright := right-row'\nsolution := coefficients \\ right\n~state := solution\nstate\n",
+        &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
+    );
+}
+
+#[test]
+fn runtime_shaped_matrix_solve_accepts_fixed_dense_operands_in_both_positions() {
+    variable_matrix_turns(
+        "first := [x | x <- [1 2]]\nsecond := [x | x <- [1 4]]\ncoefficients := [first; second]\nsolution := coefficients \\ [5; 9]\nsolution\n",
+        &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
+    );
+    variable_matrix_turns(
+        "right-row := [x | x <- [5 9]]\nright := right-row'\nsolution := [1 2; 1 4] \\ right\nsolution\n",
+        &[(None, (2, 1), &[1.0, 2.0]), (None, (2, 1), &[1.0, 2.0])],
+    );
+}
+
+#[test]
+fn runtime_shaped_state_supports_whole_value_updates_after_initialization() {
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate += state\nstate\n",
+        &[
+            (None, (1, 3), &[2.0, 4.0, 6.0]),
+            (None, (1, 3), &[4.0, 8.0, 12.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nnext := state + 1\nstate = next\nstate\n",
+        &[
+            (None, (1, 3), &[2.0, 3.0, 4.0]),
+            (None, (1, 3), &[3.0, 4.0, 5.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate += 1\nstate\n",
+        &[
+            (None, (1, 3), &[2.0, 3.0, 4.0]),
+            (None, (1, 3), &[3.0, 4.0, 5.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate += [10 20 30]\nstate\n",
+        &[
+            (None, (1, 3), &[11.0, 22.0, 33.0]),
+            (None, (1, 3), &[21.0, 42.0, 63.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate = [10 20 30]\nstate\n",
+        &[
+            (None, (1, 3), &[10.0, 20.0, 30.0]),
+            (None, (1, 3), &[10.0, 20.0, 30.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=3\nvalues := [x | x <- samples]\n~state := values\nstate[2] = 10\nstate\n",
+        &[
+            (None, (1, 3), &[1.0, 10.0, 3.0]),
+            (None, (1, 3), &[1.0, 10.0, 3.0]),
+        ],
+    );
+    variable_matrix_turns(
+        "samples := 1..=2\nrow := [x | x <- samples]\nvalues := [row; row + 2]\n~state := values\nstate[2,:] = [10 20]\nstate\n",
+        &[
+            (None, (2, 2), &[1.0, 2.0, 10.0, 20.0]),
+            (None, (2, 2), &[1.0, 2.0, 10.0, 20.0]),
+        ],
+    );
+}
+
+#[test]
+fn runtime_shaped_state_resolves_snapshot_rhs_axes_for_indexed_assignment() {
+    closed_matrix_turns(
+        "samples := 1..=2\nraw-values := [x | x <- samples]\nvalues<[f32]> := raw-values\nreplacement-raw := [x | x <- [9]]\nreplacement-values<[f32]> := replacement-raw\nreplacement := replacement-values[1]\n~state := values\nstate[2] = replacement\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(f32_matrix_values(actual), [1.0, 9.0]);
+        },
+    );
+    let turn = std::cell::Cell::new(0);
+    closed_matrix_turns(
+        "samples := 1..=2\nrow := [x | x <- samples]\nvalues<[f32]> := [row; row + 2]\n~state := values\nstate[2,:] += [10 20]\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (2, 2));
+            let expected = if turn.get() % 2 == 0 {
+                [1.0, 2.0, 13.0, 24.0]
+            } else {
+                [1.0, 2.0, 23.0, 44.0]
+            };
+            assert_eq!(f32_matrix_values(actual), expected);
+            turn.set(turn.get() + 1);
+        },
+    );
+}
+
+#[test]
+fn runtime_shaped_state_assigns_all_dense_primitive_rhs_kinds() {
+    closed_matrix_turns(
+        "samples := [true false]\nvalues := [x | x <- samples]\n~state := values\nstate = [false true]\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(bool_matrix_values(actual), [false, true]);
+        },
+    );
+    closed_matrix_turns(
+        "samples := [1<index> 2<index>]\nvalues := [x | x <- samples]\n~state := values\nstate[2] = 7<index>\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            assert_eq!(index_matrix_values(actual), [1, 7]);
+        },
+    );
+    closed_matrix_turns(
+        "values := (true ? | true => [\"a\" \"b\"] | false => [\"c\" \"d\"])\n~state := values\nstate[2] = \"longer replacement\"\nstate\n",
+        |actual| {
+            assert_eq!(matrix_shape(actual), (1, 2));
+            let ValueData::Matrix(matrix) = actual.data() else {
+                panic!("expected String matrix: {actual:?}")
+            };
+            let SequenceView::String(values) = matrix.elements() else {
+                panic!("expected packed String matrix: {matrix:?}")
+            };
+            assert_eq!(
+                values.iter().map(AsRef::as_ref).collect::<Vec<&str>>(),
+                ["a", "longer replacement"]
+            );
+        },
+    );
+}
+
+#[test]
+fn runtime_shaped_matrices_use_semantic_strict_equality_with_dense_operands() {
+    for (source, expected) in [
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\nvalues === [1 2 3]\n",
+            true,
+        ),
+        (
+            "samples := 1..=3\nvalues := [x | x <- samples]\n[1 2 3] !== values\n",
+            false,
+        ),
+        (
+            "samples := 1..=2\nvalues := [x | x <- samples]\nvalues === [1 2 3]\n",
+            false,
+        ),
+        (
+            "values := [x | x <- [true false]]\nvalues === [true false]\n",
+            true,
+        ),
+        (
+            "values := [x | x <- [1<index> 2<index>]]\n[1<index> 2<index>] === values\n",
+            true,
+        ),
+        (
+            "values := (true ? | true => [\"a\" \"b\"] | false => [\"c\" \"d\"])\nvalues === [\"a\" \"b\"]\n",
+            true,
+        ),
+    ] {
+        let compiled = compiled(source);
+        let output = compiled
+            .document_outputs()
+            .iter()
+            .find(|binding| binding.kind == mech_engine::SourceDocumentOutputKind::Program)
+            .unwrap()
+            .output as usize;
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        for artifact in [
+            artifact,
+            mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap(),
+        ] {
+            let mut catalog = FunctionCatalogBuilder::new();
+            mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x570, 0),
+                &artifact,
+                &catalog.build().unwrap(),
+                &ActivationFacts::default(),
+            )
+            .unwrap_or_else(|error| panic!("{source:?}: strict activation: {error:?}"));
+            for _ in 0..2 {
+                instance
+                    .turn(&[])
+                    .unwrap_or_else(|error| panic!("{source:?}: strict turn: {error:?}"));
+                let actual = instance.copied_output(output).unwrap();
+                let ValueData::Bool(actual) = actual.data() else {
+                    panic!("{source:?}: expected Bool output: {actual:?}")
+                };
+                assert_eq!(*actual, expected, "{source:?}");
+            }
+        }
+    }
+}
+
+#[test]
+fn index_snapshot_comparisons_preserve_exact_values_and_broadcasting() {
+    for (comparison, expected) in [
+        ("values == 1<index>", &[true, false][..]),
+        ("values != 1<index>", &[false, true]),
+        ("values < 2<index>", &[true, false]),
+        ("values > 1<index>", &[false, true]),
+        ("values <= other", &[true, true]),
+        ("values >= other", &[true, true]),
+    ] {
+        let source = format!(
+            "xs := [1<index> 2<index>]\nvalues := [x | x <- xs]\nother := [x | x <- xs]\n{comparison}\n"
+        );
+        variable_bool_matrix_turns(
+            &source,
+            &[(None, (1, 2), expected), (None, (1, 2), expected)],
         );
     }
 }
