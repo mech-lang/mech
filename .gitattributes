@@ -1,0 +1,3 @@
+# Grammar fixtures are byte-exact parser inputs. Trailing spaces and blank
+# physical lines encode syntax and are validated against cases.tsv.
+src/syntax/tests/fixtures/grammar/** -whitespace

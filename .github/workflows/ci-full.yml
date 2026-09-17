@@ -1062,6 +1062,12 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Run syntax grammar suites
+        run: |
+          cargo test -p mech-syntax --tests
+          cargo test -p mech-syntax --tests --no-default-features --features base
+          cargo test -p mech-syntax --test grammar_conformance --no-default-features --features "baselib pretty_print serde compiler program statements_default subscript_default mechdown"
+
       - name: Check reduced core feature boundaries
         run: |
           cargo check --locked \

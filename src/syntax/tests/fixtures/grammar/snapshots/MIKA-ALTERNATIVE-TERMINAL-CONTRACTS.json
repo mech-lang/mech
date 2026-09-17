@@ -1,0 +1,454 @@
+{
+  "ast": {
+    "arms": [
+      {
+        "literal": "Ɔ∞",
+        "output": "BigGripperLeft",
+        "side": "left"
+      },
+      {
+        "literal": "›─",
+        "output": "GripperLeft",
+        "side": "left"
+      },
+      {
+        "literal": "›⌣",
+        "output": "GestureLeft",
+        "side": "left"
+      },
+      {
+        "literal": "·¬",
+        "output": "ShootLeft",
+        "side": "left"
+      },
+      {
+        "literal": "-◡",
+        "output": "ShrugLeft",
+        "side": "left"
+      },
+      {
+        "literal": "ᗑ",
+        "output": "BatWing",
+        "side": "left"
+      },
+      {
+        "literal": "ᕦ",
+        "output": "CurlLeft",
+        "side": "left"
+      },
+      {
+        "literal": "~",
+        "output": "Dance",
+        "side": "left"
+      },
+      {
+        "literal": "⌣",
+        "output": "GestureLeft",
+        "side": "left"
+      },
+      {
+        "literal": "╭",
+        "output": "Left",
+        "side": "left"
+      },
+      {
+        "literal": "⸌",
+        "output": "RaisedLeft",
+        "side": "left"
+      },
+      {
+        "literal": "⸸",
+        "output": "Sword",
+        "side": "left"
+      },
+      {
+        "literal": "─",
+        "output": "Point",
+        "side": "left"
+      },
+      {
+        "literal": "ᓂ",
+        "output": "PunchLeft",
+        "side": "left"
+      },
+      {
+        "literal": "ᓇ",
+        "output": "PunchLowLeft",
+        "side": "left"
+      },
+      {
+        "literal": "╰",
+        "output": "UpLeft",
+        "side": "left"
+      },
+      {
+        "literal": "∞C",
+        "output": "BigGripperRight",
+        "side": "right"
+      },
+      {
+        "literal": "─‹",
+        "output": "GripperRight",
+        "side": "right"
+      },
+      {
+        "literal": "⌣‹",
+        "output": "GestureRight",
+        "side": "right"
+      },
+      {
+        "literal": "⌐·",
+        "output": "ShootRight",
+        "side": "right"
+      },
+      {
+        "literal": "◡-",
+        "output": "ShrugRight",
+        "side": "right"
+      },
+      {
+        "literal": "ᗑ",
+        "output": "BatWing",
+        "side": "right"
+      },
+      {
+        "literal": "ᕤ",
+        "output": "CurlRight",
+        "side": "right"
+      },
+      {
+        "literal": "~",
+        "output": "Dance",
+        "side": "right"
+      },
+      {
+        "literal": "⌣",
+        "output": "GestureRight",
+        "side": "right"
+      },
+      {
+        "literal": "╮",
+        "output": "Right",
+        "side": "right"
+      },
+      {
+        "literal": "⸍",
+        "output": "RaisedRight",
+        "side": "right"
+      },
+      {
+        "literal": "ᗢ",
+        "output": "Shield",
+        "side": "right"
+      },
+      {
+        "literal": "─",
+        "output": "Point",
+        "side": "right"
+      },
+      {
+        "literal": "ᓀ",
+        "output": "PunchRight",
+        "side": "right"
+      },
+      {
+        "literal": "ᓄ",
+        "output": "PunchLowRight",
+        "side": "right"
+      },
+      {
+        "literal": "╯",
+        "output": "UpRight",
+        "side": "right"
+      }
+    ],
+    "left_eyes": [
+      {
+        "literal": "ˆ",
+        "output": "Content"
+      },
+      {
+        "literal": "ಠ",
+        "output": "Confused"
+      },
+      {
+        "literal": "╥",
+        "output": "Crying"
+      },
+      {
+        "literal": "⋇",
+        "output": "Dazed"
+      },
+      {
+        "literal": "✖",
+        "output": "Dead"
+      },
+      {
+        "literal": "≻",
+        "output": "EyesSqueezed"
+      },
+      {
+        "literal": "ᗒ",
+        "output": "SuperSqueezed"
+      },
+      {
+        "literal": "ㆆ",
+        "output": "Glaring"
+      },
+      {
+        "literal": "◜",
+        "output": "Happy"
+      },
+      {
+        "literal": "˙",
+        "output": "Normal"
+      },
+      {
+        "literal": "⚆",
+        "output": "PeerRight"
+      },
+      {
+        "literal": "☉",
+        "output": "PeerStraight"
+      },
+      {
+        "literal": "◠",
+        "output": "Pleased"
+      },
+      {
+        "literal": "◡̀",
+        "output": "Resolved"
+      },
+      {
+        "literal": "◕",
+        "output": "RollingEyes"
+      },
+      {
+        "literal": "◞",
+        "output": "Sad"
+      },
+      {
+        "literal": "Ͼ",
+        "output": "Scared"
+      },
+      {
+        "literal": "⌐▰",
+        "output": "Shades"
+      },
+      {
+        "literal": "⹇",
+        "output": "Sleeping"
+      },
+      {
+        "literal": "ᗣ",
+        "output": "Smiling"
+      },
+      {
+        "literal": "≖",
+        "output": "Squinting"
+      },
+      {
+        "literal": "°",
+        "output": "Surprised"
+      },
+      {
+        "literal": "ᗩ",
+        "output": "TearingUp"
+      },
+      {
+        "literal": "¬",
+        "output": "Unimpressed"
+      },
+      {
+        "literal": "◉",
+        "output": "Wired"
+      }
+    ],
+    "noses": [
+      {
+        "declared_variant": "Normal",
+        "literal": "⦿",
+        "output": "Normal"
+      },
+      {
+        "declared_variant": "Open",
+        "literal": "◯",
+        "output": "Open"
+      },
+      {
+        "declared_variant": "Back",
+        "literal": "⊕",
+        "output": "Back"
+      },
+      {
+        "declared_variant": "Stage1",
+        "literal": "∘",
+        "output": "Stage1"
+      },
+      {
+        "declared_variant": "Stage2",
+        "literal": "⦾",
+        "output": "Stage2"
+      },
+      {
+        "declared_variant": "Stage3",
+        "literal": "⦾",
+        "output": "Stage2"
+      },
+      {
+        "declared_variant": "Blink",
+        "literal": "⊖",
+        "output": "Blink"
+      },
+      {
+        "declared_variant": "Wide",
+        "literal": "⦵",
+        "output": "Wide"
+      },
+      {
+        "declared_variant": "Error",
+        "literal": "⊗",
+        "output": "Error"
+      },
+      {
+        "declared_variant": "Filled",
+        "literal": "⏺",
+        "output": "Filled"
+      },
+      {
+        "declared_variant": "FlatMouth",
+        "literal": "⍜",
+        "output": "FlatMouth"
+      },
+      {
+        "declared_variant": "Hexagon",
+        "literal": "⬢",
+        "output": "Hexagon"
+      },
+      {
+        "declared_variant": "Pentagon",
+        "literal": "⬟",
+        "output": "Pentagon"
+      },
+      {
+        "declared_variant": "Hexagon2",
+        "literal": "⬣",
+        "output": "Hexagon2"
+      },
+      {
+        "declared_variant": "HexagonOpen",
+        "literal": "⎔",
+        "output": "HexagonOpen"
+      }
+    ],
+    "right_eyes": [
+      {
+        "literal": "ˆ",
+        "output": "Content"
+      },
+      {
+        "literal": "ಠ",
+        "output": "Confused"
+      },
+      {
+        "literal": "╥",
+        "output": "Crying"
+      },
+      {
+        "literal": "⋇",
+        "output": "Dazed"
+      },
+      {
+        "literal": "✖",
+        "output": "Dead"
+      },
+      {
+        "literal": "≺",
+        "output": "EyesSqueezed"
+      },
+      {
+        "literal": "ᗕ",
+        "output": "SuperSqueezed"
+      },
+      {
+        "literal": "ㆆ",
+        "output": "Glaring"
+      },
+      {
+        "literal": "◝",
+        "output": "Happy"
+      },
+      {
+        "literal": "˙",
+        "output": "Normal"
+      },
+      {
+        "literal": "⚆",
+        "output": "PeerRight"
+      },
+      {
+        "literal": "☉",
+        "output": "PeerStraight"
+      },
+      {
+        "literal": "◠",
+        "output": "Pleased"
+      },
+      {
+        "literal": "◡́",
+        "output": "Resolved"
+      },
+      {
+        "literal": "◕",
+        "output": "RollingEyes"
+      },
+      {
+        "literal": "◟",
+        "output": "Sad"
+      },
+      {
+        "literal": "Ͽ",
+        "output": "Scared"
+      },
+      {
+        "literal": "▰",
+        "output": "Shades"
+      },
+      {
+        "literal": "⹇",
+        "output": "Sleeping"
+      },
+      {
+        "literal": "ᗣ",
+        "output": "Smiling"
+      },
+      {
+        "literal": "≖",
+        "output": "Squinting"
+      },
+      {
+        "literal": "°",
+        "output": "Surprised"
+      },
+      {
+        "literal": "ᗩ",
+        "output": "TearingUp"
+      },
+      {
+        "literal": "¬",
+        "output": "Unimpressed"
+      },
+      {
+        "literal": "◉",
+        "output": "Wired"
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 38,
+    "remaining_source": "",
+    "source_graphemes": 38
+  },
+  "entry_point": "mika-alternative-terminal-contracts",
+  "rule": "mika-alternative-terminals"
+}

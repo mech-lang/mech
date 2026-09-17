@@ -1,0 +1,32 @@
+{
+  "ast": {
+    "name": {
+      "chars": [
+        "a",
+        "l",
+        "p",
+        "h",
+        "a",
+        "&",
+        "$",
+        "%",
+        "/",
+        "#",
+        "\\",
+        "~",
+        "+",
+        "-",
+        "*",
+        "^"
+      ],
+      "kind": "Identifier"
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 16,
+    "remaining_source": "",
+    "source_graphemes": 16
+  },
+  "entry_point": "identifier",
+  "rule": "identifier"
+}

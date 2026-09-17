@@ -1,0 +1,80 @@
+{
+  "ast": {
+    "arms": [
+      {
+        "expression": {
+          "Literal": {
+            "String": {
+              "text": {
+                "chars": [
+                  "o",
+                  "n",
+                  "e"
+                ],
+                "kind": "String"
+              }
+            }
+          }
+        },
+        "guard": null,
+        "pattern": {
+          "Expression": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "1"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "expression": {
+          "Literal": {
+            "String": {
+              "text": {
+                "chars": [
+                  "o",
+                  "t",
+                  "h",
+                  "e",
+                  "r"
+                ],
+                "kind": "String"
+              }
+            }
+          }
+        },
+        "guard": null,
+        "pattern": "Wildcard"
+      }
+    ],
+    "source": {
+      "Var": {
+        "context": null,
+        "kind": null,
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 31,
+    "remaining_source": "",
+    "source_graphemes": 31
+  },
+  "entry_point": "match-expression",
+  "rule": "match-expression"
+}

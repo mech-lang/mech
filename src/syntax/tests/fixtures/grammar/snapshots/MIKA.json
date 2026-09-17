@@ -1,0 +1,53 @@
+{
+  "ast": [
+    {
+      "Micro": {
+        "left_arm": "Left",
+        "nose": "Normal",
+        "right_arm": "Right"
+      }
+    },
+    {
+      "elements": {
+        "elements": [
+          {
+            "Paragraph": {
+              "elements": [
+                {
+                  "Text": {
+                    "chars": [
+                      "H",
+                      "e",
+                      "l",
+                      "l",
+                      "o",
+                      " ",
+                      "f",
+                      "r",
+                      "o",
+                      "m",
+                      " ",
+                      "M",
+                      "i",
+                      "k",
+                      "a"
+                    ],
+                    "kind": "Text"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "subtitle": null
+      }
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 21,
+    "remaining_source": "",
+    "source_graphemes": 21
+  },
+  "entry_point": "mika",
+  "rule": "mika"
+}

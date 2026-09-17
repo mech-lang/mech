@@ -1,5 +1,5 @@
 use mech_syntax::document::{
-  DocumentId, ParseConfig, ParseLimits, Revision, TextSnapshot, parse_document,
+  DocumentId, NodeFlags, ParseConfig, ParseLimits, Revision, TextSnapshot, parse_document,
   reconstruct_source, validate_lossless,
 };
 
@@ -59,6 +59,45 @@ fn diagnostic_limit_suppresses_cascades_and_later_excess() {
   );
   validate_lossless(&snapshot.root, &snapshot.source).unwrap();
   assert_eq!(snapshot.diagnostics.len(), 1);
+  assert!(snapshot.stats.diagnostics_truncated);
+}
+
+#[test]
+fn zero_diagnostic_limit_records_suppressed_resource_diagnostic() {
+  let snapshot = parse_with_limits(
+    "ordinary prose\n",
+    ParseLimits {
+      max_diagnostics: 0,
+      fuel: 0,
+      ..ParseLimits::default()
+    },
+  );
+  assert!(snapshot.diagnostics.is_empty());
+  assert!(snapshot.stats.diagnostics_truncated);
+}
+
+#[test]
+fn every_small_fuel_budget_terminates_inside_token_scanners() {
+  for text in [
+    "ordinary prose with many characters\n",
+    "identifier := 123_456u64\n",
+    "typed<record<field: u8>> := 1\n",
+    "-- a long comment that exhausts fuel\n",
+    "```\nopaque fence content that exhausts fuel\n```\n",
+  ] {
+    for fuel in 0..32 {
+      let snapshot = parse_with_limits(
+        text,
+        ParseLimits {
+          fuel,
+          ..ParseLimits::default()
+        },
+      );
+      validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+      assert_eq!(reconstruct_source(&snapshot.root, &snapshot.source).unwrap(), text);
+      assert!(snapshot.stats.parser_steps <= fuel);
+    }
+  }
 }
 
 #[test]
@@ -77,6 +116,29 @@ fn event_limit_produces_structural_resource_error() {
     .diagnostics
     .iter()
     .any(|diagnostic| diagnostic.code.as_str() == "syntax/recovery-limit"));
+  assert!(snapshot.root.flags.contains(NodeFlags::ERROR));
+  assert!(snapshot.stats.events_emitted <= 8);
+}
+
+#[test]
+fn every_event_budget_is_a_hard_bound() {
+  let text = "x := (((1 + @\n1. Later\n--------\nprose\n";
+  for maximum in 0..32 {
+    let snapshot = parse_with_limits(
+      text,
+      ParseLimits {
+        max_events: maximum,
+        ..ParseLimits::default()
+      },
+    );
+    validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+    assert_eq!(reconstruct_source(&snapshot.root, &snapshot.source).unwrap(), text);
+    assert!(
+      snapshot.stats.events_emitted <= u64::from(maximum),
+      "{} events exceeded configured maximum {maximum}",
+      snapshot.stats.events_emitted
+    );
+  }
 }
 
 #[test]

@@ -1,0 +1,54 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "a"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "Set": "ElementOf"
+            },
+            {
+              "Expression": {
+                "Var": {
+                  "context": null,
+                  "kind": null,
+                  "name": {
+                    "name": {
+                      "chars": [
+                        "b"
+                      ],
+                      "kind": "Identifier"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "expression",
+  "rule": "element-of"
+}

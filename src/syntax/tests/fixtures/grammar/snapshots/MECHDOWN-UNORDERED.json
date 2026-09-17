@@ -1,0 +1,51 @@
+{
+  "ast": {
+    "Unordered": [
+      [
+        [
+          null,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "f",
+                    "i",
+                    "r",
+                    "s",
+                    "t"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ],
+        null
+      ],
+      [
+        [
+          null,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [],
+                  "kind": "Error"
+                }
+              }
+            ]
+          }
+        ],
+        null
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 16,
+    "remaining_source": "",
+    "source_graphemes": 16
+  },
+  "entry_point": "mechdown-list",
+  "rule": "mechdown-list"
+}

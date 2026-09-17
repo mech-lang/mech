@@ -5,6 +5,7 @@ use super::ChangeMap;
 const SUPPORTED_ROOTS: &[SyntaxKind] = &[
   SyntaxKind::VariableDefine,
   SyntaxKind::MechItem,
+  SyntaxKind::ParentheticalExpression,
   SyntaxKind::Paragraph,
   SyntaxKind::GenericFence,
   SyntaxKind::Subtitle,

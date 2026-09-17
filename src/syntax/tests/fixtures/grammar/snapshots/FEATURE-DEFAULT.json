@@ -1,0 +1,83 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "MechCode": [
+                [
+                  {
+                    "Statement": {
+                      "VariableDefine": {
+                        "expression": {
+                          "Literal": {
+                            "Boolean": {
+                              "chars": [
+                                "t",
+                                "r",
+                                "u",
+                                "e"
+                              ],
+                              "kind": "True"
+                            }
+                          }
+                        },
+                        "mutable": false,
+                        "var": {
+                          "context": null,
+                          "kind": null,
+                          "name": {
+                            "name": {
+                              "chars": [
+                                "d",
+                                "e",
+                                "f",
+                                "a",
+                                "u",
+                                "l",
+                                "t",
+                                "-",
+                                "f",
+                                "e",
+                                "a",
+                                "t",
+                                "u",
+                                "r",
+                                "e",
+                                "-",
+                                "s",
+                                "e",
+                                "n",
+                                "t",
+                                "i",
+                                "n",
+                                "e",
+                                "l"
+                              ],
+                              "kind": "Identifier"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  null
+                ]
+              ]
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": null
+  },
+  "consumption": {
+    "consumed_source_graphemes": 32,
+    "remaining_source": "",
+    "source_graphemes": 32
+  },
+  "entry_point": "parse",
+  "rule": "complete-document"
+}

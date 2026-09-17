@@ -1,0 +1,39 @@
+{
+  "ast": {
+    "VariableAssign": {
+      "expression": {
+        "Literal": {
+          "Number": {
+            "Real": {
+              "Integer": {
+                "chars": [
+                  "2"
+                ],
+                "kind": "Number"
+              }
+            }
+          }
+        }
+      },
+      "target": {
+        "context": null,
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        },
+        "subscript": null
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "",
+    "source_graphemes": 5
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

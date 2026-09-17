@@ -1,0 +1,54 @@
+{
+  "ast": {
+    "alias": {
+      "Context": {
+        "name": {
+          "chars": [
+            "u",
+            "i"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    },
+    "group_items": null,
+    "item": {
+      "segments": [
+        {
+          "Name": {
+            "name": {
+              "chars": [
+                "d",
+                "o",
+                "m"
+              ],
+              "kind": "Identifier"
+            }
+          }
+        }
+      ]
+    },
+    "kind": "Item",
+    "module": {
+      "name": {
+        "chars": [
+          "b",
+          "r",
+          "o",
+          "w",
+          "s",
+          "e",
+          "r"
+        ],
+        "kind": "Identifier"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 21,
+    "remaining_source": "",
+    "source_graphemes": 21
+  },
+  "entry_point": "module-import",
+  "rule": "module-import"
+}

@@ -1,0 +1,19 @@
+{
+  "ast": {
+    "Real": {
+      "Integer": {
+        "chars": [
+          "1"
+        ],
+        "kind": "Number"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": ".",
+    "source_graphemes": 2
+  },
+  "entry_point": "number",
+  "rule": "number"
+}

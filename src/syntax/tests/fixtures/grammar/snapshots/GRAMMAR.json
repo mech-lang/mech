@@ -1,0 +1,200 @@
+{
+  "ast": {
+    "rules": [
+      {
+        "expr": {
+          "Choice": [
+            {
+              "Terminal": {
+                "chars": [
+                  "a"
+                ],
+                "kind": "Any"
+              }
+            },
+            {
+              "Sequence": [
+                {
+                  "Group": {
+                    "Sequence": [
+                      {
+                        "Terminal": {
+                          "chars": [
+                            "b"
+                          ],
+                          "kind": "Any"
+                        }
+                      },
+                      {
+                        "Optional": {
+                          "Definition": {
+                            "name": {
+                              "chars": [
+                                "i",
+                                "t",
+                                "e",
+                                "m"
+                              ],
+                              "kind": "Alpha"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "Repeat0": {
+                    "Definition": {
+                      "name": {
+                        "chars": [
+                          "i",
+                          "t",
+                          "e",
+                          "m"
+                        ],
+                        "kind": "Alpha"
+                      }
+                    }
+                  }
+                },
+                {
+                  "Repeat1": {
+                    "Definition": {
+                      "name": {
+                        "chars": [
+                          "i",
+                          "t",
+                          "e",
+                          "m"
+                        ],
+                        "kind": "Alpha"
+                      }
+                    }
+                  }
+                },
+                {
+                  "Peek": {
+                    "Definition": {
+                      "name": {
+                        "chars": [
+                          "i",
+                          "t",
+                          "e",
+                          "m"
+                        ],
+                        "kind": "Alpha"
+                      }
+                    }
+                  }
+                },
+                {
+                  "Not": {
+                    "Definition": {
+                      "name": {
+                        "chars": [
+                          "i",
+                          "t",
+                          "e",
+                          "m"
+                        ],
+                        "kind": "Alpha"
+                      }
+                    }
+                  }
+                },
+                {
+                  "List": [
+                    {
+                      "Terminal": {
+                        "chars": [
+                          ","
+                        ],
+                        "kind": "Any"
+                      }
+                    },
+                    {
+                      "Definition": {
+                        "name": {
+                          "chars": [
+                            "i",
+                            "t",
+                            "e",
+                            "m"
+                          ],
+                          "kind": "Alpha"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "Range": [
+                    {
+                      "chars": [
+                        "0"
+                      ],
+                      "kind": "Any"
+                    },
+                    {
+                      "chars": [
+                        "9"
+                      ],
+                      "kind": "Any"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "v",
+              "a",
+              "l",
+              "u",
+              "e"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      },
+      {
+        "expr": {
+          "Definition": {
+            "name": {
+              "chars": [
+                "v",
+                "a",
+                "l",
+                "u",
+                "e"
+              ],
+              "kind": "Alpha"
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "i",
+              "t",
+              "e",
+              "m"
+            ],
+            "kind": "Alpha"
+          }
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 94,
+    "remaining_source": "",
+    "source_graphemes": 94
+  },
+  "entry_point": "grammar",
+  "rule": "grammar"
+}

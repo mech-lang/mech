@@ -1,0 +1,19 @@
+{
+  "ast": {
+    "Code": [
+      [
+        "repl",
+        {
+          "String": "x := 1"
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 9,
+    "remaining_source": "",
+    "source_graphemes": 9
+  },
+  "entry_point": "repl",
+  "rule": "repl-command"
+}

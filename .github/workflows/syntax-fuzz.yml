@@ -20,13 +20,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Rust nightly
+      - name: Install pinned Rust nightly
         run: |
-          rustup toolchain install nightly --profile minimal
-          rustup default nightly
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup default nightly-2026-03-03
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz --locked
+
+      - name: Refresh real target corpora
+        run: bash fuzz/scripts/refresh-corpus.sh
 
       - name: Run bounded target
         run: cargo fuzz run "${{ matrix.target }}" -- -runs=25000 -max_total_time=900

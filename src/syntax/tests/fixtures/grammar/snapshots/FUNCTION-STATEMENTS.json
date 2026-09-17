@@ -1,0 +1,166 @@
+{
+  "ast": {
+    "input": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "x"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      },
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "y"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "match_arms": [],
+    "name": {
+      "name": {
+        "chars": [
+          "a",
+          "d",
+          "d"
+        ],
+        "kind": "Identifier"
+      }
+    },
+    "output": [
+      {
+        "kind": {
+          "kind": {
+            "Scalar": {
+              "name": {
+                "chars": [
+                  "u",
+                  "6",
+                  "4"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        },
+        "name": {
+          "name": {
+            "chars": [
+              "o",
+              "u",
+              "t"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      }
+    ],
+    "statements": [
+      {
+        "VariableDefine": {
+          "expression": {
+            "Formula": {
+              "Term": {
+                "lhs": {
+                  "Expression": {
+                    "Var": {
+                      "context": null,
+                      "kind": null,
+                      "name": {
+                        "name": {
+                          "chars": [
+                            "x"
+                          ],
+                          "kind": "Identifier"
+                        }
+                      }
+                    }
+                  }
+                },
+                "rhs": [
+                  [
+                    {
+                      "AddSub": "Add"
+                    },
+                    {
+                      "Expression": {
+                        "Var": {
+                          "context": null,
+                          "kind": null,
+                          "name": {
+                            "name": {
+                              "chars": [
+                                "y"
+                              ],
+                              "kind": "Identifier"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          },
+          "mutable": false,
+          "var": {
+            "context": null,
+            "kind": null,
+            "name": {
+              "name": {
+                "chars": [
+                  "o",
+                  "u",
+                  "t"
+                ],
+                "kind": "Identifier"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 47,
+    "remaining_source": "",
+    "source_graphemes": 47
+  },
+  "entry_point": "function-define",
+  "rule": "function-define"
+}

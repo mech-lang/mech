@@ -1,7 +1,7 @@
 use mech_syntax::document::{
-  DiagnosticAnchor, DocumentSession, NodeMap, ParseConfig, Revision,
+  DiagnosticAnchor, DocumentSession, NodeMap, ParseConfig, ParseLimits, Revision,
   SyntaxKind, SyntaxNode, TextEdit, TextRange, TextSize, TextSnapshot, compact_debug_tree,
-  parse_document, reconstruct_source, validate_lossless,
+  normalize_diagnostics, parse_document, reconstruct_source, validate_lossless,
 };
 
 fn find_node(root: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
@@ -36,29 +36,6 @@ fn full_parse(
   )
 }
 
-fn normalized_diagnostics(
-  snapshot: &mech_syntax::document::SyntaxSnapshot,
-) -> Vec<String> {
-  snapshot
-    .diagnostics
-    .iter()
-    .map(|diagnostic| {
-      let range = diagnostic
-        .primary
-        .resolve(snapshot.revision, &snapshot.nodes);
-      format!(
-        "{}|{:?}|{:?}|{:?}|{:?}|{:?}",
-        diagnostic.code.as_str(),
-        diagnostic.rule,
-        range,
-        diagnostic.expected,
-        diagnostic.found,
-        diagnostic.recovery
-      )
-    })
-    .collect()
-}
-
 fn assert_incremental_equals_full(
   snapshot: &mech_syntax::document::SyntaxSnapshot,
 ) {
@@ -68,8 +45,8 @@ fn assert_incremental_equals_full(
     compact_debug_tree(&full.syntax())
   );
   assert_eq!(
-    normalized_diagnostics(snapshot),
-    normalized_diagnostics(&full)
+    normalize_diagnostics(&snapshot.diagnostics, snapshot.revision, &snapshot.nodes),
+    normalize_diagnostics(&full.diagnostics, full.revision, &full.nodes)
   );
   validate_lossless(&snapshot.root, &snapshot.source).unwrap();
   assert_eq!(
@@ -267,6 +244,57 @@ fn fence_content_edit_reuses_later_section_and_never_treats_inner_heading_as_res
     1
   );
   assert_incremental_equals_full(session.snapshot());
+}
+
+#[test]
+fn edit_that_opens_a_fence_reparses_across_the_following_section() {
+  let text = "text```\n2. Heading\n-\n";
+  let mut session = DocumentSession::new(text, ParseConfig::default());
+
+  session.apply_edits(&[TextEdit::insert(TextSize(4), "\n")]);
+
+  assert_incremental_equals_full(session.snapshot());
+  assert_eq!(
+    find_nodes(&session.snapshot().syntax(), SyntaxKind::Section).len(),
+    1
+  );
+  assert_eq!(
+    find_nodes(&session.snapshot().syntax(), SyntaxKind::GenericFence).len(),
+    1
+  );
+}
+
+#[test]
+fn editing_a_diagnostic_truncated_snapshot_recovers_later_diagnostics() {
+  let config = ParseConfig {
+    limits: ParseLimits {
+      max_diagnostics: 1,
+      ..ParseLimits::default()
+    },
+  };
+  let text = "`first`\n`later`\n";
+  let mut session = DocumentSession::new(text, config);
+  assert!(session.snapshot().stats.diagnostics_truncated);
+
+  let update = session.apply_edits(&[TextEdit::delete(TextRange::new(
+    TextSize(0),
+    TextSize(8),
+  ))]);
+
+  let snapshot = session.snapshot();
+  assert_incremental_equals_full(snapshot);
+  assert_eq!(update.stats.document_fallbacks, 1);
+  assert_eq!(snapshot.diagnostics.len(), 1);
+  assert_eq!(
+    snapshot
+      .diagnostics
+      .iter()
+      .next()
+      .unwrap()
+      .primary
+      .resolve(snapshot.revision, &snapshot.nodes),
+    Some(TextRange::new(TextSize(0), TextSize(7)))
+  );
 }
 
 #[test]

@@ -1,0 +1,214 @@
+{
+  "ast": {
+    "body": {
+      "sections": [
+        {
+          "elements": [
+            {
+              "QuestionBlock": [
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "Q",
+                          "u",
+                          "e",
+                          "s",
+                          "t",
+                          "i",
+                          "o",
+                          "n",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "(",
+                          "i",
+                          ")",
+                          ">",
+                          " ",
+                          "I",
+                          "n",
+                          "f",
+                          "o",
+                          "r",
+                          "m",
+                          "a",
+                          "t",
+                          "i",
+                          "o",
+                          "n",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "(",
+                          "!",
+                          ")",
+                          ">",
+                          " ",
+                          "W",
+                          "a",
+                          "r",
+                          "n",
+                          "i",
+                          "n",
+                          "g",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "(",
+                          "+",
+                          ")",
+                          ">",
+                          " ",
+                          "S",
+                          "u",
+                          "c",
+                          "c",
+                          "e",
+                          "s",
+                          "s",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "(",
+                          "x",
+                          ")",
+                          ">",
+                          " ",
+                          "E",
+                          "r",
+                          "r",
+                          "o",
+                          "r",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "IdeaBlock": [
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "I",
+                          "d",
+                          "e",
+                          "a",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "%",
+                          "%",
+                          " ",
+                          "A",
+                          "b",
+                          "s",
+                          "t",
+                          "r",
+                          "a",
+                          "c",
+                          "t",
+                          " ",
+                          "t",
+                          "e",
+                          "x",
+                          "t"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "subtitle": null
+        }
+      ]
+    },
+    "title": null
+  },
+  "consumption": {
+    "consumed_source_graphemes": 124,
+    "remaining_source": "",
+    "source_graphemes": 124
+  },
+  "entry_point": "parse",
+  "rule": "complete-document"
+}

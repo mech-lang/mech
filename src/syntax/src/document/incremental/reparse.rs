@@ -4,13 +4,13 @@ use alloc::vec::Vec;
 
 use crate::document::green::{child_text_len, hash_node, propagated_flags};
 use crate::document::parser::{
-  build_restart_index, parse_document, parse_document_with_ids,
+  Cursor, FragmentKind, FragmentSnapshot, ParseContext, ParseMode, build_restart_index,
+  parse_document_with_ids, parse_fragment,
 };
 use crate::document::{
-  Diagnostic, DiagnosticAnchor, DiagnosticId, DiagnosticStore, DocumentId, GreenElement,
-  GreenNode, IdGenerator, NodeFlags, NodeId, ParseConfig, RecoveryAction, Revision,
-  SourceError, SyntaxElementId, SyntaxKind, SyntaxSnapshot, TextEdit, TextRange, TextSize,
-  TextSnapshot,
+  Diagnostic, DiagnosticAnchor, DiagnosticId, DiagnosticStore, GreenElement, GreenNode,
+  IdGenerator, NodeFlags, NodeId, ParseConfig, RecoveryAction, Revision, SourceError,
+  SyntaxElementId, SyntaxKind, SyntaxSnapshot, TextEdit, TextRange, TextSize, TextSnapshot,
 };
 
 use super::change_map::{Affinity, ChangeMap};
@@ -85,24 +85,26 @@ fn try_reparse_root(
       fragment_stats,
     });
   }
+  if old.stats.diagnostics_truncated {
+    return None;
+  }
 
   let mapped = changes.map_range(root.range);
   if mapped.end.0 > source.byte_len().0 || !mapped.contains_range(changes.new_changed_range()) {
     return None;
   }
-  let fragment_text = source.text(mapped).ok()?;
-  let fragment_source = TextSnapshot::new(
-    source.document(),
-    source.revision(),
-    fragment_text.as_str(),
-  )
-  .ok()?;
-  let fragment = parse_document_with_ids(fragment_source, config, ids);
-  let (replacement, fragment_range) =
-    find_node_with_range(&fragment.root, root.kind, TextSize::ZERO)?;
-  if fragment_range != TextRange::new(TextSize::ZERO, mapped.len()) {
+  let kind = fragment_kind(root.kind)?;
+  let context = fragment_context(old, source, root, mapped, kind);
+  let fragment = parse_fragment(source, mapped, kind, context, config, ids);
+  if !fragment.matched
+    || !fragment.consumed_complete
+    || fragment.stats.diagnostics_truncated
+    || fragment.root.kind != root.kind
+    || fragment.root.text_len != mapped.len()
+  {
     return None;
   }
+  let replacement = fragment.root.clone();
   if root.kind == SyntaxKind::Section
     && root.range.len().0 > 0
     && replacement.text_len.0 == 0
@@ -117,6 +119,14 @@ fn try_reparse_root(
       return None;
     }
   }
+  if mapped.end < source.byte_len()
+    && fragment
+      .diagnostics
+      .iter()
+      .any(|diagnostic| diagnostic.code.as_str() == "syntax/unclosed-fence")
+  {
+    return None;
+  }
   if replacement
     .flags
     .intersects(NodeFlags::MISSING | NodeFlags::CONTAINS_MISSING)
@@ -129,12 +139,7 @@ fn try_reparse_root(
   let new_root = splice_node(&old.root, root.node, replacement, ids)?.0;
   if root.kind != SyntaxKind::Section
     && !section_envelope_matches(
-      old,
-      source,
-      changes,
-      root,
-      &new_root,
-      config,
+      old, source, changes, root, &new_root, config, ids,
     )
   {
     return None;
@@ -148,15 +153,69 @@ fn try_reparse_root(
     old,
     &fragment,
     &snapshot,
-    mapped.start,
     changes,
+    root.range,
   );
+  if snapshot.diagnostics.len() > config.limits.max_diagnostics as usize {
+    return None;
+  }
   snapshot.restarts = build_restart_index(&snapshot);
   snapshot.stats = fragment.stats;
   Some(RootResult {
     snapshot,
     fragment_stats: fragment.stats,
   })
+}
+
+fn fragment_kind(kind: SyntaxKind) -> Option<FragmentKind> {
+  match kind {
+    SyntaxKind::Document => Some(FragmentKind::Document),
+    SyntaxKind::Section => Some(FragmentKind::Section),
+    SyntaxKind::SectionElement => Some(FragmentKind::SectionElement),
+    SyntaxKind::Paragraph => Some(FragmentKind::Paragraph),
+    SyntaxKind::MechItem => Some(FragmentKind::MechItem),
+    SyntaxKind::VariableDefine => Some(FragmentKind::VariableDefine),
+    SyntaxKind::Expression | SyntaxKind::AdditiveExpression => Some(FragmentKind::Expression),
+    SyntaxKind::ParentheticalExpression => Some(FragmentKind::ParentheticalTerm),
+    SyntaxKind::GenericFence => Some(FragmentKind::CodeBlock),
+    _ => None,
+  }
+}
+
+fn fragment_context(
+  old: &SyntaxSnapshot,
+  source: &TextSnapshot,
+  root: ReparseRoot,
+  mapped: TextRange,
+  kind: FragmentKind,
+) -> ParseContext {
+  let restart = old.restarts.get(root.node);
+  let mode = restart
+    .map(|entry| match entry.mode {
+      crate::document::RestartMode::Document => ParseMode::Document,
+      crate::document::RestartMode::Paragraph => ParseMode::Paragraph,
+      crate::document::RestartMode::Mech => ParseMode::Mech,
+      crate::document::RestartMode::Fence => ParseMode::Fence,
+    })
+    .unwrap_or_else(|| kind.mode());
+  let enclosing_fence = (kind == FragmentKind::CodeBlock)
+    .then(|| {
+      let cursor = Cursor::for_range(source, mapped);
+      crate::document::parser::mechdown::fence_delimiter(&cursor)
+        .map(|start| start.delimiter)
+    })
+    .flatten();
+  ParseContext {
+    mode,
+    delimiter_depth: restart
+      .map(|entry| entry.delimiter_depth.min(u32::from(u16::MAX)) as u16)
+      .unwrap_or(0),
+    line_start: restart
+      .map(|entry| entry.line_start)
+      .unwrap_or_else(|| Cursor::for_range(source, mapped).is_line_start()),
+    indentation: restart.map(|entry| entry.indentation).unwrap_or(0),
+    enclosing_fence,
+  }
 }
 
 fn finish_result(
@@ -179,6 +238,7 @@ fn finish_result(
     parser_steps: result.fragment_stats.parser_steps,
     events_emitted: result.fragment_stats.events_emitted,
     diagnostics_emitted: result.snapshot.diagnostics.len() as u64,
+    diagnostics_truncated: result.snapshot.stats.diagnostics_truncated,
     recovery_bytes: result.fragment_stats.recovery_bytes,
     reparse_root_count: 1,
     reused_node_count: reused.len() as u64,
@@ -269,26 +329,6 @@ fn splice_node(
   Some((rebuilt, true))
 }
 
-fn find_node_with_range(
-  node: &Arc<GreenNode>,
-  kind: SyntaxKind,
-  start: TextSize,
-) -> Option<(Arc<GreenNode>, TextRange)> {
-  if node.kind == kind {
-    return Some((node.clone(), TextRange::at(start, node.text_len)));
-  }
-  let mut offset = start;
-  for child in node.children.iter() {
-    if let GreenElement::Node(child) = child {
-      if let Some(found) = find_node_with_range(child, kind, offset) {
-        return Some(found);
-      }
-    }
-    offset += child.text_len();
-  }
-  None
-}
-
 fn find_node_by_id(
   node: &Arc<GreenNode>,
   id: NodeId,
@@ -311,41 +351,11 @@ fn has_direct_child(node: &GreenNode, kind: SyntaxKind) -> bool {
 fn tail_starts_with_ul_subtitle(
   source: &TextSnapshot,
   start: TextSize,
-  config: ParseConfig,
+  _config: ParseConfig,
 ) -> bool {
   let tail = TextRange::new(start, source.byte_len());
-  let Ok(text) = source.text(tail) else {
-    return false;
-  };
-  let Ok(tail_source) = TextSnapshot::new(
-    source.document(),
-    source.revision(),
-    text.as_str(),
-  ) else {
-    return false;
-  };
-  let parsed = parse_document(tail_source, config);
-  parsed
-    .root
-    .children
-    .iter()
-    .find_map(|child| match child {
-      GreenElement::Node(child) if child.kind == SyntaxKind::Body => {
-        Some(child)
-      }
-      _ => None,
-    })
-    .and_then(|body| {
-      body.children.iter().find_map(|child| match child {
-        GreenElement::Node(child) if child.kind == SyntaxKind::Section => {
-          Some(child)
-        }
-        _ => None,
-      })
-    })
-    .is_some_and(|section| {
-      has_direct_child(section, SyntaxKind::UlSubtitle)
-    })
+  let cursor = Cursor::for_range(source, tail);
+  crate::document::parser::mechdown::is_ul_subtitle(&cursor)
 }
 
 fn section_envelope_matches(
@@ -355,6 +365,7 @@ fn section_envelope_matches(
   root: ReparseRoot,
   new_root: &Arc<GreenNode>,
   config: ParseConfig,
+  ids: &mut IdGenerator,
 ) -> bool {
   let Some(section) =
     ancestor_record(old, root.node, SyntaxKind::Section)
@@ -370,28 +381,25 @@ fn section_envelope_matches(
   else {
     return false;
   };
-  let Ok(text) = source.text(mapped) else {
-    return false;
+  let context = ParseContext {
+    mode: ParseMode::Document,
+    delimiter_depth: 0,
+    line_start: Cursor::for_range(source, mapped).is_line_start(),
+    indentation: 0,
+    enclosing_fence: None,
   };
-  let Ok(fragment_source) = TextSnapshot::new(
-    source.document(),
-    source.revision(),
-    text.as_str(),
-  ) else {
-    return false;
-  };
-  let expected_snapshot = parse_document(fragment_source, config);
-  let expected_range = TextRange::at(TextSize::ZERO, mapped.len());
-  let Some((expected, range)) = find_node_with_range(
-    &expected_snapshot.root,
-    SyntaxKind::Section,
-    TextSize::ZERO,
-  ) else {
-    return false;
-  };
-  range == expected_range
-    && actual.structural_hash == expected.structural_hash
-    && actual.flags == expected.flags
+  let expected = parse_fragment(
+    source,
+    mapped,
+    FragmentKind::Section,
+    context,
+    config,
+    ids,
+  );
+  expected.matched
+    && expected.consumed_complete
+    && actual.structural_hash == expected.root.structural_hash
+    && actual.flags == expected.root.flags
 }
 
 fn ancestor_record<'a>(
@@ -439,33 +447,47 @@ fn find_node_at_range(
 
 fn merge_diagnostics(
   old: &SyntaxSnapshot,
-  fragment: &SyntaxSnapshot,
+  fragment: &FragmentSnapshot,
   new_snapshot: &SyntaxSnapshot,
-  fragment_offset: TextSize,
   changes: &ChangeMap,
+  replaced_old_range: TextRange,
 ) -> DiagnosticStore {
   let mut diagnostics = Vec::new();
   for diagnostic in old.diagnostics.iter().cloned() {
+    if absolute_primary_belongs_to_replaced(
+      &diagnostic,
+      old,
+      replaced_old_range,
+    ) {
+      continue;
+    }
     let diagnostic =
       map_old_diagnostic(diagnostic, changes, new_snapshot.revision);
-    if matches!(diagnostic.primary, DiagnosticAnchor::Element { .. })
-      && diagnostic
-        .primary
-        .resolve(new_snapshot.revision, &new_snapshot.nodes)
-        .is_some()
+    if diagnostic
+      .primary
+      .resolve(new_snapshot.revision, &new_snapshot.nodes)
+      .is_some()
     {
       diagnostics.push(diagnostic);
     }
   }
   for diagnostic in fragment.diagnostics.iter().cloned() {
-    let shifted = shift_diagnostic(diagnostic, fragment_offset);
-    if shifted
+    if diagnostic
       .primary
       .resolve(new_snapshot.revision, &new_snapshot.nodes)
       .is_some()
     {
-      diagnostics.push(shifted);
+      diagnostics.push(diagnostic);
     }
+  }
+  let retained_ids = diagnostics
+    .iter()
+    .map(|diagnostic| diagnostic.id)
+    .collect::<BTreeSet<_>>();
+  for diagnostic in &mut diagnostics {
+    diagnostic
+      .related
+      .retain(|related| retained_ids.contains(related));
   }
   diagnostics.sort_by_key(|diagnostic| {
     diagnostic
@@ -479,6 +501,30 @@ fn merge_diagnostics(
     store.push(diagnostic);
   }
   store
+}
+
+fn absolute_primary_belongs_to_replaced(
+  diagnostic: &Diagnostic,
+  old: &SyntaxSnapshot,
+  replaced: TextRange,
+) -> bool {
+  let DiagnosticAnchor::Absolute { revision, range } = diagnostic.primary else {
+    return false;
+  };
+  if revision != old.revision {
+    return true;
+  }
+  ranges_touch(range, replaced)
+}
+
+fn ranges_touch(left: TextRange, right: TextRange) -> bool {
+  if left.is_empty() {
+    return right.contains_inclusive(left.start);
+  }
+  if right.is_empty() {
+    return left.contains_inclusive(right.start);
+  }
+  left.start < right.end && right.start < left.end
 }
 
 fn map_old_diagnostic(
@@ -525,38 +571,6 @@ fn map_old_anchor(
   }
 }
 
-fn shift_diagnostic(mut diagnostic: Diagnostic, offset: TextSize) -> Diagnostic {
-  shift_anchor(&mut diagnostic.primary, offset);
-  for label in &mut diagnostic.labels {
-    shift_anchor(&mut label.anchor, offset);
-  }
-  for fix in &mut diagnostic.fixes {
-    for edit in &mut fix.edits {
-      edit.delete.start += offset;
-      edit.delete.end += offset;
-    }
-  }
-  if let Some(recovery) = &mut diagnostic.recovery {
-    match recovery {
-      RecoveryAction::Insert { at, .. }
-      | RecoveryAction::Abandon { at, .. } => *at += offset,
-      RecoveryAction::Skip { range }
-      | RecoveryAction::ResourceLimit { range } => {
-        range.start += offset;
-        range.end += offset;
-      }
-    }
-  }
-  diagnostic
-}
-
-fn shift_anchor(anchor: &mut DiagnosticAnchor, offset: TextSize) {
-  if let DiagnosticAnchor::Absolute { range, .. } = anchor {
-    range.start += offset;
-    range.end += offset;
-  }
-}
-
 fn collect_node_ids(root: &GreenNode) -> BTreeSet<NodeId> {
   let mut ids = BTreeSet::new();
   collect_ids(root, &mut ids);
@@ -590,5 +604,99 @@ fn diagnostic_delta(
     added: new_ids.difference(&old_ids).copied().collect(),
     removed: old_ids.difference(&new_ids).copied().collect(),
     retained: old_ids.intersection(&new_ids).copied().collect(),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use alloc::string::String;
+
+  use crate::document::{
+    DiagnosticCode, DiagnosticPhase, DiagnosticTags, DocumentId, Revision, Severity,
+  };
+
+  use super::*;
+
+  fn absolute_diagnostic(
+    ids: &mut IdGenerator,
+    revision: Revision,
+    range: TextRange,
+    name: &str,
+  ) -> Diagnostic {
+    Diagnostic {
+      id: ids.diagnostic(),
+      code: DiagnosticCode::syntax(name),
+      phase: DiagnosticPhase::SyntaxValidation,
+      severity: Severity::Warning,
+      rule: None,
+      context: None,
+      primary: DiagnosticAnchor::Absolute { revision, range },
+      labels: Vec::new(),
+      expected: Vec::new(),
+      found: None,
+      fixes: Vec::new(),
+      related: Vec::new(),
+      recovery: None,
+      tags: DiagnosticTags::NONE,
+      message: String::from(name),
+    }
+  }
+
+  #[test]
+  fn unaffected_absolute_diagnostics_are_remapped_and_replaced_ones_are_dropped() {
+    let text = "x := 1\n1. Later\n--------\nstable\n";
+    let source = TextSnapshot::new(DocumentId(4), Revision(0), text).unwrap();
+    let mut ids = IdGenerator::new();
+    let mut old = parse_document_with_ids(source, ParseConfig::default(), &mut ids);
+    let replaced = absolute_diagnostic(
+      &mut ids,
+      Revision(0),
+      TextRange::new(TextSize(5), TextSize(6)),
+      "inside-replaced-root",
+    );
+    let later_start = text.find("stable").unwrap() as u32;
+    let retained = absolute_diagnostic(
+      &mut ids,
+      Revision(0),
+      TextRange::new(TextSize(later_start), TextSize(later_start + 6)),
+      "outside-replaced-root",
+    );
+    let retained_id = retained.id;
+    old.diagnostics.push(replaced);
+    old.diagnostics.push(retained);
+
+    let result = reparse(
+      &old,
+      &[TextEdit::replace(
+        TextRange::new(TextSize(5), TextSize(6)),
+        "123",
+      )],
+      ParseConfig::default(),
+      &mut ids,
+    )
+    .unwrap();
+
+    assert!(
+      result
+        .snapshot
+        .diagnostics
+        .iter()
+        .all(|diagnostic| diagnostic.code.as_str() != "syntax/inside-replaced-root")
+    );
+    let retained = result
+      .snapshot
+      .diagnostics
+      .iter()
+      .find(|diagnostic| diagnostic.id == retained_id)
+      .expect("unaffected absolute diagnostic must be retained");
+    assert_eq!(
+      retained
+        .primary
+        .resolve(result.snapshot.revision, &result.snapshot.nodes),
+      Some(TextRange::new(
+        TextSize(later_start + 2),
+        TextSize(later_start + 8),
+      ))
+    );
   }
 }

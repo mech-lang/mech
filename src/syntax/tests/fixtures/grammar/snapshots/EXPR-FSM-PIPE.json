@@ -1,0 +1,85 @@
+{
+  "ast": {
+    "FsmPipe": {
+      "start": {
+        "args": [
+          [
+            null,
+            {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ],
+        "name": {
+          "name": {
+            "chars": [
+              "C",
+              "o",
+              "u",
+              "n",
+              "t",
+              "e",
+              "r"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      },
+      "transitions": [
+        {
+          "Next": {
+            "TupleStruct": {
+              "name": {
+                "name": {
+                  "chars": [
+                    "D",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Identifier"
+                }
+              },
+              "patterns": [
+                {
+                  "Expression": {
+                    "Literal": {
+                      "Number": {
+                        "Real": {
+                          "Integer": {
+                            "chars": [
+                              "1"
+                            ],
+                            "kind": "Number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 23,
+    "remaining_source": "",
+    "source_graphemes": 23
+  },
+  "entry_point": "expression",
+  "rule": "expression"
+}

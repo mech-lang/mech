@@ -145,18 +145,26 @@ pub fn validate_lossless(
   root: &GreenNode,
   source: &TextSnapshot,
 ) -> Result<(), TreeInvariantError> {
-  if root.text_len != source.byte_len() {
+  validate_lossless_range(root, source, source.full_range())
+}
+
+pub fn validate_lossless_range(
+  root: &GreenNode,
+  source: &TextSnapshot,
+  range: TextRange,
+) -> Result<(), TreeInvariantError> {
+  if root.text_len != range.len() {
     return Err(TreeInvariantError::RootLength {
       tree: root.text_len,
-      source: source.byte_len(),
+      source: range.len(),
     });
   }
-  let mut offset = TextSize::ZERO;
+  let mut offset = range.start;
   validate_node(root, source, &mut offset)?;
-  if offset != source.byte_len() {
+  if offset != range.end {
     return Err(TreeInvariantError::RootLength {
-      tree: offset,
-      source: source.byte_len(),
+      tree: offset - range.start,
+      source: range.len(),
     });
   }
   Ok(())
@@ -166,9 +174,17 @@ pub fn reconstruct_source(
   root: &GreenNode,
   source: &TextSnapshot,
 ) -> Result<alloc::string::String, TreeInvariantError> {
-  validate_lossless(root, source)?;
-  let mut output = alloc::string::String::with_capacity(source.byte_len().to_usize());
-  let mut offset = TextSize::ZERO;
+  reconstruct_source_range(root, source, source.full_range())
+}
+
+pub fn reconstruct_source_range(
+  root: &GreenNode,
+  source: &TextSnapshot,
+  range: TextRange,
+) -> Result<alloc::string::String, TreeInvariantError> {
+  validate_lossless_range(root, source, range)?;
+  let mut output = alloc::string::String::with_capacity(range.len().to_usize());
+  let mut offset = range.start;
   collect_text(root, source, &mut offset, &mut output);
   Ok(output)
 }

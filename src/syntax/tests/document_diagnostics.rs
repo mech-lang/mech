@@ -1,8 +1,9 @@
 use mech_syntax::document::{
   Diagnostic, DiagnosticAnchor, DiagnosticCode, DiagnosticFix, DiagnosticId, DiagnosticLabel,
   DiagnosticPhase, DiagnosticStore, DiagnosticTags, DocumentId, ExpectedSyntax, FixApplicability,
-  FoundSyntax, GreenBuilder, IdGenerator, NodeIndex, RecoveryAction, Revision, RuleId, Severity,
-  SyntaxElementId, SyntaxKind, TextEdit, TextRange, TextSize, TextSnapshot, render_plain,
+  FoundSyntax, GreenBuilder, IdGenerator, NodeIndex, RecoveryAction, Revision, Severity,
+  SyntaxElementId, SyntaxKind, TextEdit, TextRange, TextSize, TextSnapshot, normalize_diagnostics,
+  render_plain,
 };
 
 fn paragraph_tree(text: &str) -> (std::sync::Arc<mech_syntax::document::GreenNode>, IdGenerator) {
@@ -47,7 +48,10 @@ fn structured_diagnostic_serializes_and_renders() {
     code: DiagnosticCode::syntax("missing-expression"),
     phase: DiagnosticPhase::Syntax,
     severity: Severity::Error,
-    rule: Some(RuleId(0xa11d_171e)),
+    rule: mech_syntax::document::parser::canonical_rule_id("expression"),
+    context: Some(mech_syntax::document::parser::parser_context_id(
+      "prototype-expression",
+    )),
     primary: DiagnosticAnchor::Absolute {
       revision: Revision(2),
       range: TextRange::empty(TextSize(text.len() as u32)),
@@ -89,4 +93,18 @@ fn structured_diagnostic_serializes_and_renders() {
   assert!(rendered.contains("syntax/missing-expression"));
   assert!(rendered.contains("1:9"));
   assert!(rendered.contains("right operand"));
+
+  let normalized = normalize_diagnostics(&store, Revision(2), &index);
+  assert_eq!(normalized.len(), 1);
+  assert_eq!(normalized[0].code, diagnostic.code);
+  assert_eq!(normalized[0].phase, diagnostic.phase);
+  assert_eq!(normalized[0].severity, diagnostic.severity);
+  assert_eq!(normalized[0].rule, diagnostic.rule);
+  assert_eq!(normalized[0].context, diagnostic.context);
+  assert_eq!(normalized[0].labels.len(), 1);
+  assert_eq!(normalized[0].expected, diagnostic.expected);
+  assert_eq!(normalized[0].found, diagnostic.found);
+  assert_eq!(normalized[0].fixes.len(), 1);
+  assert_eq!(normalized[0].recovery, diagnostic.recovery);
+  assert_eq!(normalized[0].tags, diagnostic.tags);
 }

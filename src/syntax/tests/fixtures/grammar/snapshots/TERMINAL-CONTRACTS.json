@@ -1,0 +1,1509 @@
+{
+  "ast": [
+    {
+      "function": "ampersand",
+      "inventory_id": "base.ampersand",
+      "parser_macro": "leaf",
+      "text": "&",
+      "token": {
+        "chars": [
+          "&"
+        ],
+        "kind": "Ampersand"
+      }
+    },
+    {
+      "function": "apostrophe",
+      "inventory_id": "base.apostrophe",
+      "parser_macro": "leaf",
+      "text": "'",
+      "token": {
+        "chars": [
+          "'"
+        ],
+        "kind": "Apostrophe"
+      }
+    },
+    {
+      "function": "asterisk",
+      "inventory_id": "base.asterisk",
+      "parser_macro": "leaf",
+      "text": "*",
+      "token": {
+        "chars": [
+          "*"
+        ],
+        "kind": "Asterisk"
+      }
+    },
+    {
+      "function": "at",
+      "inventory_id": "base.at",
+      "parser_macro": "leaf",
+      "text": "@",
+      "token": {
+        "chars": [
+          "@"
+        ],
+        "kind": "At"
+      }
+    },
+    {
+      "function": "bar",
+      "inventory_id": "base.bar",
+      "parser_macro": "leaf",
+      "text": "|",
+      "token": {
+        "chars": [
+          "|"
+        ],
+        "kind": "Bar"
+      }
+    },
+    {
+      "function": "backslash",
+      "inventory_id": "base.backslash",
+      "parser_macro": "leaf",
+      "text": "\\",
+      "token": {
+        "chars": [
+          "\\"
+        ],
+        "kind": "Backslash"
+      }
+    },
+    {
+      "function": "caret",
+      "inventory_id": "base.caret",
+      "parser_macro": "leaf",
+      "text": "^",
+      "token": {
+        "chars": [
+          "^"
+        ],
+        "kind": "Caret"
+      }
+    },
+    {
+      "function": "colon",
+      "inventory_id": "base.colon",
+      "parser_macro": "leaf",
+      "text": ":",
+      "token": {
+        "chars": [
+          ":"
+        ],
+        "kind": "Colon"
+      }
+    },
+    {
+      "function": "comma",
+      "inventory_id": "base.comma",
+      "parser_macro": "leaf",
+      "text": ",",
+      "token": {
+        "chars": [
+          ","
+        ],
+        "kind": "Comma"
+      }
+    },
+    {
+      "function": "dash",
+      "inventory_id": "base.dash",
+      "parser_macro": "leaf",
+      "text": "-",
+      "token": {
+        "chars": [
+          "-"
+        ],
+        "kind": "Dash"
+      }
+    },
+    {
+      "function": "dollar",
+      "inventory_id": "base.dollar",
+      "parser_macro": "leaf",
+      "text": "$",
+      "token": {
+        "chars": [
+          "$"
+        ],
+        "kind": "Dollar"
+      }
+    },
+    {
+      "function": "equal",
+      "inventory_id": "base.equal",
+      "parser_macro": "leaf",
+      "text": "=",
+      "token": {
+        "chars": [
+          "="
+        ],
+        "kind": "Equal"
+      }
+    },
+    {
+      "function": "exclamation",
+      "inventory_id": "base.exclamation",
+      "parser_macro": "leaf",
+      "text": "!",
+      "token": {
+        "chars": [
+          "!"
+        ],
+        "kind": "Exclamation"
+      }
+    },
+    {
+      "function": "grave",
+      "inventory_id": "base.grave",
+      "parser_macro": "leaf",
+      "text": "`",
+      "token": {
+        "chars": [
+          "`"
+        ],
+        "kind": "Grave"
+      }
+    },
+    {
+      "function": "hashtag",
+      "inventory_id": "base.hashtag",
+      "parser_macro": "leaf",
+      "text": "#",
+      "token": {
+        "chars": [
+          "#"
+        ],
+        "kind": "HashTag"
+      }
+    },
+    {
+      "function": "negate",
+      "inventory_id": "base.negate",
+      "parser_macro": "leaf",
+      "text": "¬",
+      "token": {
+        "chars": [
+          "¬"
+        ],
+        "kind": "Not"
+      }
+    },
+    {
+      "function": "percent",
+      "inventory_id": "base.percent",
+      "parser_macro": "leaf",
+      "text": "%",
+      "token": {
+        "chars": [
+          "%"
+        ],
+        "kind": "Percent"
+      }
+    },
+    {
+      "function": "period",
+      "inventory_id": "base.period",
+      "parser_macro": "leaf",
+      "text": ".",
+      "token": {
+        "chars": [
+          "."
+        ],
+        "kind": "Period"
+      }
+    },
+    {
+      "function": "plus",
+      "inventory_id": "base.plus",
+      "parser_macro": "leaf",
+      "text": "+",
+      "token": {
+        "chars": [
+          "+"
+        ],
+        "kind": "Plus"
+      }
+    },
+    {
+      "function": "question",
+      "inventory_id": "base.question",
+      "parser_macro": "leaf",
+      "text": "?",
+      "token": {
+        "chars": [
+          "?"
+        ],
+        "kind": "Question"
+      }
+    },
+    {
+      "function": "quote",
+      "inventory_id": "base.quote",
+      "parser_macro": "leaf",
+      "text": "\"",
+      "token": {
+        "chars": [
+          "\""
+        ],
+        "kind": "Quote"
+      }
+    },
+    {
+      "function": "semicolon",
+      "inventory_id": "base.semicolon",
+      "parser_macro": "leaf",
+      "text": ";",
+      "token": {
+        "chars": [
+          ";"
+        ],
+        "kind": "Semicolon"
+      }
+    },
+    {
+      "function": "slash",
+      "inventory_id": "base.slash",
+      "parser_macro": "leaf",
+      "text": "/",
+      "token": {
+        "chars": [
+          "/"
+        ],
+        "kind": "Slash"
+      }
+    },
+    {
+      "function": "tilde",
+      "inventory_id": "base.tilde",
+      "parser_macro": "leaf",
+      "text": "~",
+      "token": {
+        "chars": [
+          "~"
+        ],
+        "kind": "Tilde"
+      }
+    },
+    {
+      "function": "underscore",
+      "inventory_id": "base.underscore",
+      "parser_macro": "leaf",
+      "text": "_",
+      "token": {
+        "chars": [
+          "_"
+        ],
+        "kind": "Underscore"
+      }
+    },
+    {
+      "function": "check_mark",
+      "inventory_id": "base.check-mark",
+      "parser_macro": "leaf",
+      "text": "✓",
+      "token": {
+        "chars": [
+          "✓"
+        ],
+        "kind": "True"
+      }
+    },
+    {
+      "function": "cross",
+      "inventory_id": "base.cross",
+      "parser_macro": "leaf",
+      "text": "✗",
+      "token": {
+        "chars": [
+          "✗"
+        ],
+        "kind": "False"
+      }
+    },
+    {
+      "function": "english_true_literal",
+      "inventory_id": "base.english-true-literal",
+      "parser_macro": "leaf",
+      "text": "true",
+      "token": {
+        "chars": [
+          "t",
+          "r",
+          "u",
+          "e"
+        ],
+        "kind": "True"
+      }
+    },
+    {
+      "function": "english_false_literal",
+      "inventory_id": "base.english-false-literal",
+      "parser_macro": "leaf",
+      "text": "false",
+      "token": {
+        "chars": [
+          "f",
+          "a",
+          "l",
+          "s",
+          "e"
+        ],
+        "kind": "False"
+      }
+    },
+    {
+      "function": "space",
+      "inventory_id": "base.space",
+      "parser_macro": "leaf",
+      "text": " ",
+      "token": {
+        "chars": [
+          " "
+        ],
+        "kind": "Space"
+      }
+    },
+    {
+      "function": "nbsp",
+      "inventory_id": "base.nbsp",
+      "parser_macro": "leaf",
+      "text": " ",
+      "token": {
+        "chars": [
+          " "
+        ],
+        "kind": "Space"
+      }
+    },
+    {
+      "function": "thin_space",
+      "inventory_id": "base.thin-space",
+      "parser_macro": "leaf",
+      "text": " ",
+      "token": {
+        "chars": [
+          " "
+        ],
+        "kind": "Space"
+      }
+    },
+    {
+      "function": "new_line_char",
+      "inventory_id": "base.new-line-char",
+      "parser_macro": "leaf",
+      "text": "\n",
+      "token": {
+        "chars": [
+          "\n"
+        ],
+        "kind": "Newline"
+      }
+    },
+    {
+      "function": "carriage_return",
+      "inventory_id": "base.carriage-return",
+      "parser_macro": "leaf",
+      "text": "\r",
+      "token": {
+        "chars": [
+          "\r"
+        ],
+        "kind": "CarriageReturn"
+      }
+    },
+    {
+      "function": "carriage_return_new_line",
+      "inventory_id": "base.carriage-return-new-line",
+      "parser_macro": "leaf",
+      "text": "\r\n",
+      "token": {
+        "chars": [
+          "\r",
+          "\n"
+        ],
+        "kind": "CarriageReturn"
+      }
+    },
+    {
+      "function": "tab",
+      "inventory_id": "base.tab",
+      "parser_macro": "leaf",
+      "text": "\t",
+      "token": {
+        "chars": [
+          "\t"
+        ],
+        "kind": "Tab"
+      }
+    },
+    {
+      "function": "left_bracket",
+      "inventory_id": "base.left-bracket",
+      "parser_macro": "leaf",
+      "text": "[",
+      "token": {
+        "chars": [
+          "["
+        ],
+        "kind": "LeftBracket"
+      }
+    },
+    {
+      "function": "left_parenthesis",
+      "inventory_id": "base.left-parenthesis",
+      "parser_macro": "leaf",
+      "text": "(",
+      "token": {
+        "chars": [
+          "("
+        ],
+        "kind": "LeftParenthesis"
+      }
+    },
+    {
+      "function": "left_brace",
+      "inventory_id": "base.left-brace",
+      "parser_macro": "leaf",
+      "text": "{",
+      "token": {
+        "chars": [
+          "{"
+        ],
+        "kind": "LeftBrace"
+      }
+    },
+    {
+      "function": "left_angle1",
+      "inventory_id": "base.left-angle1",
+      "parser_macro": "leaf",
+      "text": "<",
+      "token": {
+        "chars": [
+          "<"
+        ],
+        "kind": "LeftAngle"
+      }
+    },
+    {
+      "function": "left_angle2",
+      "inventory_id": "base.left-angle2",
+      "parser_macro": "leaf",
+      "text": "⟨",
+      "token": {
+        "chars": [
+          "⟨"
+        ],
+        "kind": "LeftAngle"
+      }
+    },
+    {
+      "function": "right_bracket",
+      "inventory_id": "base.right-bracket",
+      "parser_macro": "leaf",
+      "text": "]",
+      "token": {
+        "chars": [
+          "]"
+        ],
+        "kind": "RightBracket"
+      }
+    },
+    {
+      "function": "right_parenthesis",
+      "inventory_id": "base.right-parenthesis",
+      "parser_macro": "leaf",
+      "text": ")",
+      "token": {
+        "chars": [
+          ")"
+        ],
+        "kind": "RightParenthesis"
+      }
+    },
+    {
+      "function": "right_brace",
+      "inventory_id": "base.right-brace",
+      "parser_macro": "leaf",
+      "text": "}",
+      "token": {
+        "chars": [
+          "}"
+        ],
+        "kind": "RightBrace"
+      }
+    },
+    {
+      "function": "right_angle1",
+      "inventory_id": "base.right-angle1",
+      "parser_macro": "leaf",
+      "text": ">",
+      "token": {
+        "chars": [
+          ">"
+        ],
+        "kind": "RightAngle"
+      }
+    },
+    {
+      "function": "right_angle2",
+      "inventory_id": "base.right-angle2",
+      "parser_macro": "leaf",
+      "text": "⟩",
+      "token": {
+        "chars": [
+          "⟩"
+        ],
+        "kind": "RightAngle"
+      }
+    },
+    {
+      "function": "box_tl_round",
+      "inventory_id": "base.box-tl-round",
+      "parser_macro": "leaf",
+      "text": "╭",
+      "token": {
+        "chars": [
+          "╭"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_tr_round",
+      "inventory_id": "base.box-tr-round",
+      "parser_macro": "leaf",
+      "text": "╮",
+      "token": {
+        "chars": [
+          "╮"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_bl_round",
+      "inventory_id": "base.box-bl-round",
+      "parser_macro": "leaf",
+      "text": "╰",
+      "token": {
+        "chars": [
+          "╰"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_br_round",
+      "inventory_id": "base.box-br-round",
+      "parser_macro": "leaf",
+      "text": "╯",
+      "token": {
+        "chars": [
+          "╯"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_tl_bold",
+      "inventory_id": "base.box-tl-bold",
+      "parser_macro": "leaf",
+      "text": "┏",
+      "token": {
+        "chars": [
+          "┏"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_tr_bold",
+      "inventory_id": "base.box-tr-bold",
+      "parser_macro": "leaf",
+      "text": "┓",
+      "token": {
+        "chars": [
+          "┓"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_bl_bold",
+      "inventory_id": "base.box-bl-bold",
+      "parser_macro": "leaf",
+      "text": "┗",
+      "token": {
+        "chars": [
+          "┗"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_br_bold",
+      "inventory_id": "base.box-br-bold",
+      "parser_macro": "leaf",
+      "text": "┛",
+      "token": {
+        "chars": [
+          "┛"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_tl",
+      "inventory_id": "base.box-tl",
+      "parser_macro": "leaf",
+      "text": "┌",
+      "token": {
+        "chars": [
+          "┌"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_tr",
+      "inventory_id": "base.box-tr",
+      "parser_macro": "leaf",
+      "text": "┐",
+      "token": {
+        "chars": [
+          "┐"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_bl",
+      "inventory_id": "base.box-bl",
+      "parser_macro": "leaf",
+      "text": "└",
+      "token": {
+        "chars": [
+          "└"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_br",
+      "inventory_id": "base.box-br",
+      "parser_macro": "leaf",
+      "text": "┘",
+      "token": {
+        "chars": [
+          "┘"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_cross",
+      "inventory_id": "base.box-cross",
+      "parser_macro": "leaf",
+      "text": "┼",
+      "token": {
+        "chars": [
+          "┼"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_horz",
+      "inventory_id": "base.box-horz",
+      "parser_macro": "leaf",
+      "text": "─",
+      "token": {
+        "chars": [
+          "─"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_t_left",
+      "inventory_id": "base.box-t-left",
+      "parser_macro": "leaf",
+      "text": "├",
+      "token": {
+        "chars": [
+          "├"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_t_right",
+      "inventory_id": "base.box-t-right",
+      "parser_macro": "leaf",
+      "text": "┤",
+      "token": {
+        "chars": [
+          "┤"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_t_top",
+      "inventory_id": "base.box-t-top",
+      "parser_macro": "leaf",
+      "text": "┬",
+      "token": {
+        "chars": [
+          "┬"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_t_bottom",
+      "inventory_id": "base.box-t-bottom",
+      "parser_macro": "leaf",
+      "text": "┴",
+      "token": {
+        "chars": [
+          "┴"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_vert",
+      "inventory_id": "base.box-vert",
+      "parser_macro": "leaf",
+      "text": "│",
+      "token": {
+        "chars": [
+          "│"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "box_vert_bold",
+      "inventory_id": "base.box-vert-bold",
+      "parser_macro": "leaf",
+      "text": "┃",
+      "token": {
+        "chars": [
+          "┃"
+        ],
+        "kind": "BoxDrawing"
+      }
+    },
+    {
+      "function": "abstract_sigil",
+      "inventory_id": "base.abstract-sigil",
+      "parser_macro": "leaf",
+      "text": "%%",
+      "token": {
+        "chars": [
+          "%",
+          "%"
+        ],
+        "kind": "AbstractSigil"
+      }
+    },
+    {
+      "function": "emphasis_sigil",
+      "inventory_id": "base.emphasis-sigil",
+      "parser_macro": "leaf",
+      "text": "*",
+      "token": {
+        "chars": [
+          "*"
+        ],
+        "kind": "EmphasisSigil"
+      }
+    },
+    {
+      "function": "equation_sigil",
+      "inventory_id": "base.equation-sigil",
+      "parser_macro": "leaf",
+      "text": "$$",
+      "token": {
+        "chars": [
+          "$",
+          "$"
+        ],
+        "kind": "EquationSigil"
+      }
+    },
+    {
+      "function": "footnote_prefix",
+      "inventory_id": "base.footnote-prefix",
+      "parser_macro": "leaf",
+      "text": "[^",
+      "token": {
+        "chars": [
+          "[",
+          "^"
+        ],
+        "kind": "FootnotePrefix"
+      }
+    },
+    {
+      "function": "float_left",
+      "inventory_id": "base.float-left",
+      "parser_macro": "leaf",
+      "text": "<<:",
+      "token": {
+        "chars": [
+          "<",
+          "<",
+          ":"
+        ],
+        "kind": "FloatLeft"
+      }
+    },
+    {
+      "function": "float_right",
+      "inventory_id": "base.float-right",
+      "parser_macro": "leaf",
+      "text": ":>>",
+      "token": {
+        "chars": [
+          ":",
+          ">",
+          ">"
+        ],
+        "kind": "FloatRight"
+      }
+    },
+    {
+      "function": "http_prefix",
+      "inventory_id": "base.http-prefix",
+      "parser_macro": "leaf",
+      "text": "http",
+      "token": {
+        "chars": [
+          "h",
+          "t",
+          "t",
+          "p"
+        ],
+        "kind": "HttpPrefix"
+      }
+    },
+    {
+      "function": "highlight_sigil",
+      "inventory_id": "base.highlight-sigil",
+      "parser_macro": "leaf",
+      "text": "!!",
+      "token": {
+        "chars": [
+          "!",
+          "!"
+        ],
+        "kind": "HighlightSigil"
+      }
+    },
+    {
+      "function": "img_prefix",
+      "inventory_id": "base.img-prefix",
+      "parser_macro": "leaf",
+      "text": "![",
+      "token": {
+        "chars": [
+          "!",
+          "["
+        ],
+        "kind": "ImgPrefix"
+      }
+    },
+    {
+      "function": "quote_sigil",
+      "inventory_id": "base.quote-sigil",
+      "parser_macro": "leaf",
+      "text": ">",
+      "token": {
+        "chars": [
+          ">"
+        ],
+        "kind": "QuoteSigil"
+      }
+    },
+    {
+      "function": "question_sigil",
+      "inventory_id": "base.question-sigil",
+      "parser_macro": "leaf",
+      "text": "(?)>",
+      "token": {
+        "chars": [
+          "(",
+          "?",
+          ")",
+          ">"
+        ],
+        "kind": "QuestionSigil"
+      }
+    },
+    {
+      "function": "info_sigil",
+      "inventory_id": "base.info-sigil",
+      "parser_macro": "leaf",
+      "text": "(i)>",
+      "token": {
+        "chars": [
+          "(",
+          "i",
+          ")",
+          ">"
+        ],
+        "kind": "InfoSigil"
+      }
+    },
+    {
+      "function": "idea_sigil",
+      "inventory_id": "base.idea-sigil",
+      "parser_macro": "leaf",
+      "text": "(*)>",
+      "token": {
+        "chars": [
+          "(",
+          "*",
+          ")",
+          ">"
+        ],
+        "kind": "IdeaSigil"
+      }
+    },
+    {
+      "function": "warning_sigil",
+      "inventory_id": "base.warning-sigil",
+      "parser_macro": "leaf",
+      "text": "(!)>",
+      "token": {
+        "chars": [
+          "(",
+          "!",
+          ")",
+          ">"
+        ],
+        "kind": "WarningSigil"
+      }
+    },
+    {
+      "function": "error_sigil",
+      "inventory_id": "base.error-sigil",
+      "parser_macro": "leaf",
+      "text": "(x)>",
+      "token": {
+        "chars": [
+          "(",
+          "x",
+          ")",
+          ">"
+        ],
+        "kind": "ErrorSigil"
+      }
+    },
+    {
+      "function": "error_alt_sigil",
+      "inventory_id": "base.error-alt-sigil",
+      "parser_macro": "leaf",
+      "text": "(✗)>",
+      "token": {
+        "chars": [
+          "(",
+          "✗",
+          ")",
+          ">"
+        ],
+        "kind": "ErrorSigil"
+      }
+    },
+    {
+      "function": "success_check_sigil",
+      "inventory_id": "base.success-check-sigil",
+      "parser_macro": "leaf",
+      "text": "(✓)>",
+      "token": {
+        "chars": [
+          "(",
+          "✓",
+          ")",
+          ">"
+        ],
+        "kind": "SuccessSigil"
+      }
+    },
+    {
+      "function": "success_sigil",
+      "inventory_id": "base.success-sigil",
+      "parser_macro": "leaf",
+      "text": "(+)>",
+      "token": {
+        "chars": [
+          "(",
+          "+",
+          ")",
+          ">"
+        ],
+        "kind": "SuccessSigil"
+      }
+    },
+    {
+      "function": "strike_sigil",
+      "inventory_id": "base.strike-sigil",
+      "parser_macro": "leaf",
+      "text": "~~",
+      "token": {
+        "chars": [
+          "~",
+          "~"
+        ],
+        "kind": "StrikeSigil"
+      }
+    },
+    {
+      "function": "strong_sigil",
+      "inventory_id": "base.strong-sigil",
+      "parser_macro": "leaf",
+      "text": "**",
+      "token": {
+        "chars": [
+          "*",
+          "*"
+        ],
+        "kind": "StrongSigil"
+      }
+    },
+    {
+      "function": "grave_codeblock_sigil",
+      "inventory_id": "base.grave-codeblock-sigil",
+      "parser_macro": "leaf",
+      "text": "```",
+      "token": {
+        "chars": [
+          "`",
+          "`",
+          "`"
+        ],
+        "kind": "GraveCodeBlockSigil"
+      }
+    },
+    {
+      "function": "tilde_codeblock_sigil",
+      "inventory_id": "base.tilde-codeblock-sigil",
+      "parser_macro": "leaf",
+      "text": "~~~",
+      "token": {
+        "chars": [
+          "~",
+          "~",
+          "~"
+        ],
+        "kind": "TildeCodeBlockSigil"
+      }
+    },
+    {
+      "function": "underline_sigil",
+      "inventory_id": "base.underline-sigil",
+      "parser_macro": "leaf",
+      "text": "__",
+      "token": {
+        "chars": [
+          "_",
+          "_"
+        ],
+        "kind": "UnderlineSigil"
+      }
+    },
+    {
+      "function": "section_sigil",
+      "inventory_id": "base.section-sigil",
+      "parser_macro": "leaf",
+      "text": "§",
+      "token": {
+        "chars": [
+          "§"
+        ],
+        "kind": "SectionSigil"
+      }
+    },
+    {
+      "function": "mika_section_open",
+      "inventory_id": "base.mika-section-open",
+      "parser_macro": "leaf",
+      "text": "⸢",
+      "token": {
+        "chars": [
+          "⸢"
+        ],
+        "kind": "MikaSectionOpen"
+      }
+    },
+    {
+      "function": "mika_section_close",
+      "inventory_id": "base.mika-section-close",
+      "parser_macro": "leaf",
+      "text": "⸥",
+      "token": {
+        "chars": [
+          "⸥"
+        ],
+        "kind": "MikaSectionClose"
+      }
+    },
+    {
+      "function": "prompt_sigil",
+      "inventory_id": "base.prompt-sigil",
+      "parser_macro": "leaf",
+      "text": ">:",
+      "token": {
+        "chars": [
+          ">",
+          ":"
+        ],
+        "kind": "PromptSigil"
+      }
+    },
+    {
+      "function": "module_import_sigil",
+      "inventory_id": "base.module-import-sigil",
+      "parser_macro": "leaf",
+      "text": "+>",
+      "token": {
+        "chars": [
+          "+",
+          ">"
+        ],
+        "kind": "ModuleImportSigil"
+      }
+    },
+    {
+      "function": "module_export_sigil",
+      "inventory_id": "base.module-export-sigil",
+      "parser_macro": "leaf",
+      "text": "<+",
+      "token": {
+        "chars": [
+          "<",
+          "+"
+        ],
+        "kind": "ModuleExportSigil"
+      }
+    },
+    {
+      "function": "assign_operator",
+      "inventory_id": "base.assign-operator",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " = ",
+        "text": "=",
+        "token": {
+          "chars": [
+            "="
+          ],
+          "kind": "AssignOperator"
+        }
+      },
+      "text": "=",
+      "token": {
+        "chars": [
+          "="
+        ],
+        "kind": "AssignOperator"
+      }
+    },
+    {
+      "function": "async_transition_operator",
+      "inventory_id": "base.async-transition-operator",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " ~> ",
+        "text": "~>",
+        "token": {
+          "chars": [
+            "~",
+            ">"
+          ],
+          "kind": "AsyncTransitionOperator"
+        }
+      },
+      "text": "~>",
+      "token": {
+        "chars": [
+          "~",
+          ">"
+        ],
+        "kind": "AsyncTransitionOperator"
+      }
+    },
+    {
+      "function": "define_operator",
+      "inventory_id": "base.define-operator",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " := ",
+        "text": ":=",
+        "token": {
+          "chars": [
+            ":",
+            "="
+          ],
+          "kind": "DefineOperator"
+        }
+      },
+      "text": ":=",
+      "token": {
+        "chars": [
+          ":",
+          "="
+        ],
+        "kind": "DefineOperator"
+      }
+    },
+    {
+      "function": "synth_operator",
+      "inventory_id": "base.synth-operator",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " ?= ",
+        "text": "?=",
+        "token": {
+          "chars": [
+            "?",
+            "="
+          ],
+          "kind": "SynthOperator"
+        }
+      },
+      "text": "?=",
+      "token": {
+        "chars": [
+          "?",
+          "="
+        ],
+        "kind": "SynthOperator"
+      }
+    },
+    {
+      "function": "gen_operator",
+      "inventory_id": "base.gen-operator",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " @= ",
+        "text": "@=",
+        "token": {
+          "chars": [
+            "@",
+            "="
+          ],
+          "kind": "GenOperator"
+        }
+      },
+      "text": "@=",
+      "token": {
+        "chars": [
+          "@",
+          "="
+        ],
+        "kind": "GenOperator"
+      }
+    },
+    {
+      "function": "output_operator_a",
+      "inventory_id": "base.output-operator-a",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " => ",
+        "text": "=>",
+        "token": {
+          "chars": [
+            "=",
+            ">"
+          ],
+          "kind": "OutputOperator"
+        }
+      },
+      "text": "=>",
+      "token": {
+        "chars": [
+          "=",
+          ">"
+        ],
+        "kind": "OutputOperator"
+      }
+    },
+    {
+      "function": "output_operator_u",
+      "inventory_id": "base.output-operator-u",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " ⇒ ",
+        "text": "⇒",
+        "token": {
+          "chars": [
+            "⇒"
+          ],
+          "kind": "OutputOperator"
+        }
+      },
+      "text": "⇒",
+      "token": {
+        "chars": [
+          "⇒"
+        ],
+        "kind": "OutputOperator"
+      }
+    },
+    {
+      "function": "transition_operator_a",
+      "inventory_id": "base.transition-operator-a",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " -> ",
+        "text": "->",
+        "token": {
+          "chars": [
+            "-",
+            ">"
+          ],
+          "kind": "TransitionOperator"
+        }
+      },
+      "text": "->",
+      "token": {
+        "chars": [
+          "-",
+          ">"
+        ],
+        "kind": "TransitionOperator"
+      }
+    },
+    {
+      "function": "transition_operator_u",
+      "inventory_id": "base.transition-operator-u",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " → ",
+        "text": "→",
+        "token": {
+          "chars": [
+            "→"
+          ],
+          "kind": "TransitionOperator"
+        }
+      },
+      "text": "→",
+      "token": {
+        "chars": [
+          "→"
+        ],
+        "kind": "TransitionOperator"
+      }
+    },
+    {
+      "function": "generator_arrow",
+      "inventory_id": "base.generator-arrow",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " <- ",
+        "text": "<-",
+        "token": {
+          "chars": [
+            "<",
+            "-"
+          ],
+          "kind": "GeneratorArrow"
+        }
+      },
+      "text": "<-",
+      "token": {
+        "chars": [
+          "<",
+          "-"
+        ],
+        "kind": "GeneratorArrow"
+      }
+    },
+    {
+      "function": "generator_arrow_u",
+      "inventory_id": "base.generator-arrow-u",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " ← ",
+        "text": "←",
+        "token": {
+          "chars": [
+            "←"
+          ],
+          "kind": "GeneratorArrow"
+        }
+      },
+      "text": "←",
+      "token": {
+        "chars": [
+          "←"
+        ],
+        "kind": "GeneratorArrow"
+      }
+    },
+    {
+      "function": "spread_operator_a",
+      "inventory_id": "base.spread-operator-a",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " ... ",
+        "text": "...",
+        "token": {
+          "chars": [
+            ".",
+            ".",
+            "."
+          ],
+          "kind": "SpreadOperator"
+        }
+      },
+      "text": "...",
+      "token": {
+        "chars": [
+          ".",
+          ".",
+          "."
+        ],
+        "kind": "SpreadOperator"
+      }
+    },
+    {
+      "function": "spread_operator_u",
+      "inventory_id": "base.spread-operator-u",
+      "parser_macro": "ws0_leaf",
+      "surrounded_whitespace": {
+        "source": " … ",
+        "text": "…",
+        "token": {
+          "chars": [
+            "…"
+          ],
+          "kind": "SpreadOperator"
+        }
+      },
+      "text": "…",
+      "token": {
+        "chars": [
+          "…"
+        ],
+        "kind": "SpreadOperator"
+      }
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 27,
+    "remaining_source": "",
+    "source_graphemes": 27
+  },
+  "entry_point": "terminal-contracts",
+  "rule": "fixed-terminals"
+}

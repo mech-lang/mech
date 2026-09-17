@@ -1,0 +1,16 @@
+{
+  "ast": {
+    "chars": [
+      "@",
+      "="
+    ],
+    "kind": "GenOperator"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "gen-operator",
+  "rule": "gen-operator"
+}

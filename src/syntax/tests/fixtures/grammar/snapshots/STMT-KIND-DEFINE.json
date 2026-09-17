@@ -1,0 +1,75 @@
+{
+  "ast": {
+    "KindDefine": {
+      "kind": {
+        "kind": {
+          "Record": [
+            [
+              {
+                "name": {
+                  "chars": [
+                    "x"
+                  ],
+                  "kind": "Identifier"
+                }
+              },
+              {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "f",
+                      "6",
+                      "4"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            ],
+            [
+              {
+                "name": {
+                  "chars": [
+                    "y"
+                  ],
+                  "kind": "Identifier"
+                }
+              },
+              {
+                "Scalar": {
+                  "name": {
+                    "chars": [
+                      "f",
+                      "6",
+                      "4"
+                    ],
+                    "kind": "Identifier"
+                  }
+                }
+              }
+            ]
+          ]
+        }
+      },
+      "name": {
+        "name": {
+          "chars": [
+            "p",
+            "o",
+            "i",
+            "n",
+            "t"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 29,
+    "remaining_source": "",
+    "source_graphemes": 29
+  },
+  "entry_point": "statement",
+  "rule": "statement"
+}

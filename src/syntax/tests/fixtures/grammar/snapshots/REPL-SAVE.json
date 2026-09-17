@@ -1,0 +1,12 @@
+{
+  "ast": {
+    "Save": "results/output.mec"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 24,
+    "remaining_source": "",
+    "source_graphemes": 24
+  },
+  "entry_point": "repl",
+  "rule": "repl-command"
+}

@@ -1,0 +1,10 @@
+{
+  "ast": "Normal",
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "mika-expression-inner",
+  "rule": "mika-expression-inner"
+}

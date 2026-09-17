@@ -1,0 +1,10 @@
+{
+  "ast": "Wildcard",
+  "consumption": {
+    "consumed_source_graphemes": 1,
+    "remaining_source": "",
+    "source_graphemes": 1
+  },
+  "entry_point": "pattern",
+  "rule": "pattern"
+}

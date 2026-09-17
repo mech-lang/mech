@@ -50,6 +50,7 @@ fn assert_snapshot_invariants(
     );
     assert_eq!(snapshot.root.text_len, TextSize(text.len() as u32));
     assert!(snapshot.stats.parser_steps <= limits.fuel);
+    assert!(snapshot.stats.events_emitted <= u64::from(limits.max_events));
     assert!(snapshot.diagnostics.len() <= limits.max_diagnostics as usize);
     assert_node_invariants(&snapshot.syntax(), snapshot.source.byte_len());
 
@@ -65,6 +66,20 @@ fn assert_snapshot_invariants(
     assert_eq!(covered, snapshot.source.byte_len());
 
     for diagnostic in snapshot.diagnostics.iter() {
+        if let Some(rule) = diagnostic.rule {
+            assert!(
+                mech_syntax::document::parser::canonical_rule_name(rule).is_some(),
+                "parser diagnostic used a RuleId outside the Phase 0 inventory"
+            );
+        }
+        if let Some(mech_syntax::document::RecoveryAction::Abandon { rule, .. }) =
+            diagnostic.recovery.as_ref()
+        {
+            assert!(
+                mech_syntax::document::parser::canonical_rule_name(*rule).is_some(),
+                "abandon recovery used a RuleId outside the Phase 0 inventory"
+            );
+        }
         let range = diagnostic
             .primary
             .resolve(snapshot.revision, &snapshot.nodes)

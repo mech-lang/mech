@@ -1,0 +1,12 @@
+{
+  "ast": {
+    "kind": "Empty"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "kind-annotation",
+  "rule": "kind-annotation"
+}

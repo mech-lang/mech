@@ -1,0 +1,35 @@
+{
+  "ast": {
+    "Comment": {
+      "paragraph": {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                " ",
+                "s",
+                "t",
+                "a",
+                "t",
+                "e",
+                " ",
+                "n",
+                "o",
+                "t",
+                "e"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 13,
+    "remaining_source": "",
+    "source_graphemes": 13
+  },
+  "entry_point": "fsm-comment-arm",
+  "rule": "fsm-comment-arm"
+}

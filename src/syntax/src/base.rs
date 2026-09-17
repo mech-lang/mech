@@ -180,19 +180,19 @@ ws0_leaf!(generator_arrow_u, "←", TokenKind::GeneratorArrow);
 ws0_leaf!(spread_operator_a, "...", TokenKind::SpreadOperator);
 ws0_leaf!(spread_operator_u, "…", TokenKind::SpreadOperator);
 
-// transition_operator := "->" | "→" ;
+// Grammar: docs/design/specification.mec, `transition-operator`.
 pub fn transition_operator(input: ParseString) -> ParseResult<Token> {
     let (input, operator) = alt((transition_operator_a, transition_operator_u))(input)?;
     Ok((input, operator))
 }
 
-// output_operator := "=>" | "⇒" ;
+// Grammar: docs/design/specification.mec, `output-operator`.
 pub fn output_operator(input: ParseString) -> ParseResult<Token> {
     let (input, operator) = alt((output_operator_a, output_operator_u))(input)?;
     Ok((input, operator))
 }
 
-// emoji-grapheme := ?emoji-grapheme-literal? ;
+// Grammar: docs/design/specification.mec, `emoji-grapheme`.
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_emoji() {
         Ok((input, matched))
@@ -204,7 +204,7 @@ pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
     }
 }
 
-// alpha := ?alpha-literal? ;
+// Grammar: docs/design/specification.mec, `alpha`.
 pub fn alpha(mut input: ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_alpha() {
         Ok((input, matched))
@@ -216,7 +216,7 @@ pub fn alpha(mut input: ParseString) -> ParseResult<String> {
     }
 }
 
-// digit := ?digit-literal? ;
+// Grammar: docs/design/specification.mec, `digit`.
 pub fn digit(mut input: ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_digit() {
         Ok((input, matched))
@@ -228,7 +228,7 @@ pub fn digit(mut input: ParseString) -> ParseResult<String> {
     }
 }
 
-// any := ?any-character? ;
+// Grammar: docs/design/specification.mec, `any`.
 pub fn any(mut input: ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_one() {
         Ok((input, matched))
@@ -259,7 +259,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
     }
 }
 
-// forbidden-emoji := box-drawing | other-forbidden-shapes ;
+// Grammar: docs/design/specification.mec, `forbidden-emoji`.
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
     alt((
         box_drawing_emoji,
@@ -272,7 +272,7 @@ pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
     ))(input)
 }
 
-// emoji := (!forbidden-emoji, emoji-grapheme) ;
+// Grammar: docs/design/specification.mec, `emoji`.
 pub fn emoji(input: ParseString) -> ParseResult<Token> {
     let start = input.loc();
     let (input, _) = is_not(forbidden_emoji)(input)?;
@@ -289,7 +289,7 @@ pub fn emoji(input: ParseString) -> ParseResult<Token> {
     ))
 }
 
-// alpha-token := alpha-literal-token ;
+// Grammar: docs/design/specification.mec, `alpha-token`.
 pub fn alpha_token(input: ParseString) -> ParseResult<Token> {
     let (input, (g, src_range)) = range(alpha)(input)?;
     Ok((
@@ -302,7 +302,7 @@ pub fn alpha_token(input: ParseString) -> ParseResult<Token> {
     ))
 }
 
-// digit-token := digit-literal-token ;
+// Grammar: docs/design/specification.mec, `digit-token`.
 pub fn digit_token(input: ParseString) -> ParseResult<Token> {
     let (input, (g, src_range)) = range(digit)(input)?;
     Ok((
@@ -315,20 +315,20 @@ pub fn digit_token(input: ParseString) -> ParseResult<Token> {
     ))
 }
 
-// alphanumeric := alpha | digit ;
+// Grammar: docs/design/specification.mec, `alphanumeric`.
 pub fn alphanumeric(input: ParseString) -> ParseResult<Token> {
     let (input, token) = alt((alpha_token, digit_token))(input)?;
     Ok((input, token))
 }
 
-// underscore-digit := underscore, digit ;
+// Grammar: docs/design/specification.mec, `underscore-digit`.
 pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
     let (input, _) = underscore(input)?;
     let (input, digit) = digit_token(input)?;
     Ok((input, digit))
 }
 
-// digit-sequence := digit, (underscore-digit | digit)* ;
+// Grammar: docs/design/specification.mec, `digit-sequence`.
 pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
     let (input, start) = digit_token(input)?;
     let (input, mut tokens) = many0(alt((underscore_digit, digit_token)))(input)?;
@@ -337,7 +337,7 @@ pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
     Ok((input, all))
 }
 
-// grouping-symbol := left-parenthesis | right-parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
+// Grammar: docs/design/specification.mec, `grouping-symbol`.
 pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
     let (input, grouping) = alt((
         left_parenthesis,
@@ -352,7 +352,7 @@ pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
     Ok((input, grouping))
 }
 
-// punctuation := period | exclamation | question | comma | colon | semicolon | quote | apostrophe ;
+// Grammar: docs/design/specification.mec, `punctuation`.
 pub fn punctuation(input: ParseString) -> ParseResult<Token> {
     let (input, punctuation) = alt((
         period,
@@ -432,7 +432,7 @@ fn unicode_escaped_char(input: ParseString) -> ParseResult<Token> {
     ))
 }
 
-// symbol := ampersand | dollar | bar | percent | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
+// Grammar: docs/design/specification.mec, `symbol`.
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
     let (input, symbol) = alt((
         ampersand, grave, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus,
@@ -441,7 +441,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
     Ok((input, symbol))
 }
 
-// identifier-symbol := ampersand | dollar | bar | percent | slash | hashtag | backslash | tilde | plus | dash | asterisk | caret ;
+// Grammar: docs/design/specification.mec, `identifier-symbol`.
 pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
     let (input, symbol) = alt((
         ampersand, dollar, percent, slash, hashtag, backslash, tilde, plus, dash, asterisk, caret,
@@ -449,7 +449,7 @@ pub fn identifier_symbol(input: ParseString) -> ParseResult<Token> {
     Ok((input, symbol))
 }
 
-// text := alpha | digit | space | emoji | forbidden_emoji | space | tab | escaped-char | punctuation | grouping-symbol | symbol ;
+// Grammar: docs/design/specification.mec, `text`.
 pub fn text(input: ParseString) -> ParseResult<Token> {
     let (input, text) = alt((
         alpha_token,
@@ -466,7 +466,7 @@ pub fn text(input: ParseString) -> ParseResult<Token> {
     Ok((input, text))
 }
 
-// raw-text := alpha | digit | emoji | forbidden_emoji | space | tab | punctuation | grouping_symbol | symbol ;
+// Grammar: docs/design/specification.mec, `raw-text`.
 pub fn raw_text(input: ParseString) -> ParseResult<Token> {
     let (input, text) = alt((
         alpha_token,
@@ -486,74 +486,74 @@ pub fn raw_text(input: ParseString) -> ParseResult<Token> {
 // ============================================================================
 // Ref: #35070717845239353
 
-// new-line := (carriage-return, new-line) | new-line-char | carriage-return ;
+// Grammar: docs/design/specification.mec, `new-line`.
 pub fn new_line(input: ParseString) -> ParseResult<Token> {
     let (input, result) = alt((carriage_return_new_line, new_line_char, carriage_return))(input)?;
     Ok((input, result))
 }
 
-// whitespace := space | new-line | tab ;
+// Grammar: docs/design/specification.mec, `whitespace`.
 pub fn whitespace(input: ParseString) -> ParseResult<Token> {
     let (input, space) = alt((space, tab, new_line))(input)?;
     Ok((input, space))
 }
 
-// ws0 := *whitespace ;
+// Grammar: docs/design/specification.mec, `whitespace0`.
 pub fn whitespace0(input: ParseString) -> ParseResult<()> {
     let (input, _) = many0(whitespace)(input)?;
     Ok((input, ()))
 }
 
-// ws1 := +whitespace ;
+// Grammar: docs/design/specification.mec, `whitespace1`.
 pub fn whitespace1(input: ParseString) -> ParseResult<()> {
     let (input, _) = many1(whitespace)(input)?;
     Ok((input, ()))
 }
 
-// newline-indent := new-line, *space-tab ;
+// Grammar: docs/design/specification.mec, `newline-indent`.
 pub fn newline_indent(input: ParseString) -> ParseResult<()> {
     let (input, _) = new_line(input)?;
     let (input, _) = many0(space_tab)(input)?;
     Ok((input, ()))
 }
 
-// ws1e := ws1, newline-indent? ;
+// Grammar: docs/design/specification.mec, `ws1e`.
 pub fn ws1e(input: ParseString) -> ParseResult<()> {
     let (input, _) = many1(space_tab)(input)?;
     Ok((input, ()))
 }
 
-// ws0e := ws0, newline-indent? ;
+// Grammar: docs/design/specification.mec, `ws0e`.
 pub fn ws0e(input: ParseString) -> ParseResult<()> {
     let (input, _) = many0(space_tab)(input)?;
     Ok((input, ()))
 }
 
-// space-tab := space | tab ;
+// Grammar: docs/design/specification.mec, `space-tab`.
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
     let (input, space) = alt((space, tab, nbsp, thin_space))(input)?;
     Ok((input, space))
 }
 
-// space-tab0 := *space-tab ;
+// Grammar: docs/design/specification.mec, `space-tab0`.
 pub fn space_tab0(input: ParseString) -> ParseResult<()> {
     let (input, _) = many0(space_tab)(input)?;
     Ok((input, ()))
 }
 
-// space-tab1 := +space-tab ;
+// Grammar: docs/design/specification.mec, `space-tab1`.
 pub fn space_tab1(input: ParseString) -> ParseResult<()> {
     let (input, _) = many1(space_tab)(input)?;
     Ok((input, ()))
 }
 
-// list-separator := ws0, ",", ws0 ;
+// Grammar: docs/design/specification.mec, `list-separator`.
 pub fn list_separator(input: ParseString) -> ParseResult<()> {
     let (input, _) = nom_tuple((whitespace0, tag(","), whitespace0))(input)?;
     Ok((input, ()))
 }
 
-// enum-separator := ws0*, "|", ws0 ;
+// Grammar: docs/design/specification.mec, `enum-separator`.
 pub fn enum_separator(input: ParseString) -> ParseResult<()> {
     let (input, _) = nom_tuple((whitespace0, tag("|"), whitespace0))(input)?;
     Ok((input, ()))
@@ -563,7 +563,7 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 // ----------------------------------------------------------------------------
 // Ref: #40075932908181571
 
-// identifier := (alpha | emoji), (alpha | digit | identifier_symbol | emoji)* ;
+// Grammar: docs/design/specification.mec, `identifier`.
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
     let (input, (first, mut rest)) = nom_tuple((
         alt((alpha_token, emoji)),

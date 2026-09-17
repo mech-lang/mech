@@ -1,0 +1,12 @@
+{
+  "ast": {
+    "Cd": "/tmp"
+  },
+  "consumption": {
+    "consumed_source_graphemes": 10,
+    "remaining_source": "",
+    "source_graphemes": 10
+  },
+  "entry_point": "repl-crlf",
+  "rule": "repl-command"
+}
