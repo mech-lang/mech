@@ -177,6 +177,7 @@ pub enum ActivatedMatchPattern {
         work: u64,
         binding_count: u64,
         equality_count: u64,
+        dense_finalization_count: u64,
         clone_depth: u64,
     },
 }
@@ -6481,6 +6482,9 @@ fn activate_match_pattern(
                 equality_count: u64::try_from(metrics.equalities).map_err(|_| {
                     ResidentActivationError::UnsupportedControlLayout { node: owner }
                 })?,
+                dense_finalization_count: u64::try_from(metrics.dense_finalizations).map_err(
+                    |_| ResidentActivationError::UnsupportedControlLayout { node: owner },
+                )?,
                 clone_depth: u64::try_from(metrics.depth).map_err(|_| {
                     ResidentActivationError::UnsupportedControlLayout { node: owner }
                 })?,

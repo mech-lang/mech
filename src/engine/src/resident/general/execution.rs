@@ -1683,6 +1683,17 @@ impl ReactiveInstance {
             };
             total.checked_add(*equality_count)
         });
+        let structural_dense_finalization_count =
+            matched.arms.iter().try_fold(0u64, |total, arm| {
+                let super::ActivatedMatchPattern::Structural {
+                    dense_finalization_count,
+                    ..
+                } = &arm.pattern
+                else {
+                    return Some(total);
+                };
+                total.checked_add(*dense_finalization_count)
+            });
         let mut structural_scrutinee = None;
         for arm_index in 0..arm_count {
             let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
@@ -1746,6 +1757,8 @@ impl ReactiveInstance {
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
                         let binding_count = structural_binding_count
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let dense_finalization_count = structural_dense_finalization_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
                         let scrutinee = self
                             .read_location(scrutinee_source, working_epoch)
                             .ok_or_else(fail)?;
@@ -1772,6 +1785,7 @@ impl ReactiveInstance {
                                 work,
                                 binding_count,
                                 equality_count,
+                                dense_finalization_count,
                                 clone_multiplicity,
                                 &self.plan.schemas,
                             )
