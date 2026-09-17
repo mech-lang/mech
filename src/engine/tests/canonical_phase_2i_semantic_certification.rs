@@ -96,6 +96,69 @@ fn certification_contracts() -> BTreeMap<String, CertificationContract> {
         .collect()
 }
 
+#[test]
+fn semantic_completion_record_keeps_artifact_evidence_from_opening_s6() {
+    let table = fs::read_to_string(
+        repository_root().join("docs/design/grammar-audit/phase-2i-semantic-completion.tsv"),
+    )
+    .unwrap();
+    let mut lines = table.lines();
+    assert_eq!(
+        lines.next(),
+        Some("capability\tgrammar-name\tresult\ttarget\towner\trequired-for-s6\tevidence")
+    );
+    let rows = lines
+        .map(|line| {
+            let fields = line.split('\t').collect::<Vec<_>>();
+            assert_eq!(fields.len(), 7, "{line}");
+            assert!(matches!(
+                fields[2],
+                "artifact-ready"
+                    | "behavior-demonstrated"
+                    | "intentionally-unavailable"
+                    | "unfinished-implementation"
+            ));
+            assert!(matches!(fields[5], "true" | "false"));
+            assert!(!fields[3].is_empty(), "completion target must be named");
+            let evidence_path = fields[6].split("::").next().unwrap();
+            assert!(
+                repository_root().join(evidence_path).is_file(),
+                "missing completion evidence {evidence_path}"
+            );
+            fields
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(rows.len(), 6);
+    let by_capability = rows
+        .iter()
+        .map(|fields| (fields[0], fields))
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(
+        by_capability.len(),
+        rows.len(),
+        "duplicate completion capability"
+    );
+    assert_eq!(by_capability["fsm-artifact"][2], "artifact-ready");
+    assert_eq!(by_capability["fsm-artifact"][5], "false");
+    assert_eq!(by_capability["fsm-runtime"][2], "intentionally-unavailable");
+    assert_eq!(by_capability["fsm-runtime"][3], "resident-artifact");
+    assert_eq!(by_capability["fsm-runtime"][5], "true");
+    let s6_ready = rows
+        .iter()
+        .filter(|fields| fields[5] == "true")
+        .all(|fields| fields[2] == "behavior-demonstrated");
+    assert!(
+        !s6_ready,
+        "artifact readiness cannot satisfy the S6 semantic-completion gate"
+    );
+    assert_eq!(
+        rows.iter()
+            .filter(|fields| fields[5] == "true" && fields[2] != "behavior-demonstrated")
+            .count(),
+        4
+    );
+}
+
 #[derive(Clone, Copy)]
 struct StableHash(u64);
 
@@ -243,6 +306,11 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
                 // The complete typed control body is sealed by the artifact
                 // bytecode below, including captures, guards, operations and yields.
                 hash.field("Match");
+            }
+            mech_engine::SourceNodeBody::Fsm(_) => {
+                // Machine identity, named arguments, stage kinds, and complete
+                // typed values are sealed by artifact bytecode below.
+                hash.field("Fsm");
             }
         }
         hash.usize(node.inputs.len());

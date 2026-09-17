@@ -436,7 +436,9 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                     Some(operation.contract),
                 )
             }
-            super::ExecutableNodeBody::Match(_) | super::ExecutableNodeBody::Comprehension(_) => {
+            super::ExecutableNodeBody::Match(_)
+            | super::ExecutableNodeBody::Comprehension(_)
+            | super::ExecutableNodeBody::Fsm(_) => {
                 let input_schemas = draft.bindings[inputs.clone()]
                     .iter()
                     .map(|binding| match binding {
@@ -476,6 +478,9 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                             &input_schemas,
                             output.schema,
                         )?
+                    }
+                    super::ExecutableNodeBody::Fsm(control) => {
+                        super::fsm::validate_fsm(node.node, control, &input_schemas)?
                     }
                     _ => unreachable!(),
                 }

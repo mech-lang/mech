@@ -686,7 +686,6 @@ fn diagnostic_evidence(
                 FixApplicability::HasPlaceholders => "has-placeholders",
             };
             serde_json::json!([
-                fix.title,
                 applicability,
                 fix.edits
                     .iter()
@@ -702,7 +701,7 @@ fn diagnostic_evidence(
         "expected": diagnostic.expected.iter().map(expected_evidence).collect::<Vec<_>>(),
         "found": diagnostic.found.as_ref().map(|found| serde_json::json!([found.kind.map(SyntaxKind::name), found.text])),
         "related": diagnostic.related, "recovery": recovery, "tags": diagnostic.tags.0,
-        "labels": diagnostic.labels.iter().map(|label| serde_json::json!([range_evidence(label.range), label.message])).collect::<Vec<_>>(),
+        "labels": diagnostic.labels.iter().map(|label| range_evidence(label.range)).collect::<Vec<_>>(),
         "fixes": fixes,
     })
 }
@@ -742,7 +741,7 @@ fn recovery_snapshot_hash(
     parsed: &mech_syntax::document::parser::canonical::CanonicalSourceRuleSnapshot,
 ) -> u64 {
     let mut hash = StableHash::new();
-    hash.field("canonical-recovery-v2");
+    hash.field("canonical-recovery-v3");
     hash.field(&serde_json::to_string(&canonical_tree_evidence(&parsed.syntax())).unwrap());
     let diagnostics =
         normalize_diagnostics(&parsed.diagnostics, parsed.source.revision(), &parsed.nodes);
@@ -778,6 +777,29 @@ fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes()
         recovery_snapshot_hash(&first),
         recovery_snapshot_hash(&second)
     );
+    let mut raw_wording = mech_syntax::document::DiagnosticStore::new(first.source.revision());
+    for (index, diagnostic) in first.diagnostics.iter().cloned().enumerate() {
+        let mut diagnostic = diagnostic;
+        if index == 0 {
+            diagnostic.message = "equivalent presentation wording".into();
+        }
+        raw_wording.push(diagnostic);
+    }
+    let original_normalized =
+        normalize_diagnostics(&first.diagnostics, first.source.revision(), &first.nodes);
+    let wording_normalized =
+        normalize_diagnostics(&raw_wording, first.source.revision(), &first.nodes);
+    assert_eq!(
+        original_normalized
+            .iter()
+            .map(diagnostic_evidence)
+            .collect::<Vec<_>>(),
+        wording_normalized
+            .iter()
+            .map(diagnostic_evidence)
+            .collect::<Vec<_>>(),
+        "main diagnostic wording is presentation, not recovery evidence"
+    );
     let mut diagnostic =
         normalize_diagnostics(&first.diagnostics, first.source.revision(), &first.nodes).remove(0);
     diagnostic.expected = vec![
@@ -806,8 +828,16 @@ fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes()
         evidence["expected"][0],
         serde_json::json!(["token", "RightBracket"])
     );
-    assert_eq!(evidence["fixes"][0][1], "machine-applicable");
-    for change in 0..8 {
+    assert_eq!(evidence["fixes"][0][0], "machine-applicable");
+    let mut wording_changed = diagnostic.clone();
+    wording_changed.labels[0].message = "same label, different words".into();
+    wording_changed.fixes[0].title = "same edit, different title".into();
+    assert_eq!(
+        evidence,
+        diagnostic_evidence(&wording_changed),
+        "label messages and fix titles are presentation-only"
+    );
+    for change in 0..10 {
         let mut changed = diagnostic.clone();
         match change {
             0 => changed.code = "syntax/different".into(),
@@ -822,6 +852,8 @@ fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes()
             }
             6 => changed.fixes[0].edits[0].insert = ")".into(),
             7 => changed.labels[0].range = None,
+            8 => changed.fixes[0].edits[0].delete = TextRange::new(TextSize(1), TextSize(2)),
+            9 => changed.fixes[0].applicability = FixApplicability::MaybeIncorrect,
             _ => unreachable!(),
         }
         assert_ne!(evidence, diagnostic_evidence(&changed), "change {change}");
@@ -1196,6 +1228,7 @@ fn certification_evidence_uses_only_canonical_authorities() {
         "src/syntax/tests/canonical_phase_2i_certification.rs",
         "src/engine/tests/canonical_phase_2i_semantic_certification.rs",
         "src/engine/tests/canonical_source_completion.rs",
+        "src/engine/tests/canonical_source_semantics.rs",
     ] {
         let path = repository_root().join(relative);
         let evidence = fs::read_to_string(&path).unwrap_or_else(|error| {
@@ -1462,6 +1495,11 @@ fn assert_canonical_only(path: &Path, evidence: &str) {
 
 fn behavioral_evidence(path: &Path) -> bool {
     path.ends_with("src/engine/tests/canonical_source_completion.rs")
+        || path.ends_with("src/engine/tests/canonical_source_semantics.rs")
+}
+
+fn source_semantic_evidence(path: &Path) -> bool {
+    path.ends_with("src/engine/tests/canonical_source_semantics.rs")
 }
 
 fn assert_allowed_mech_import(path: &Path, declaration: &str) {
@@ -1483,17 +1521,32 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
                 .split(',')
                 .filter(|item| !item.is_empty())
                 .all(|item| {
-                    matches!(
-                        item,
-                        "FunctionCatalogBuilder"
-                            | "ReactiveInstanceId"
-                            | "ResidentValueRef"
-                            | "ValueDataDraftasData"
-                    )
+                    if source_semantic_evidence(path) {
+                        matches!(
+                            item,
+                            "ChangeDetectionPolicy"
+                                | "FunctionCatalogBuilder"
+                                | "IntegerWidth"
+                                | "OutputConstruction"
+                                | "ReactiveInstanceId"
+                                | "SchemaBody"
+                                | "ShapeRule"
+                                | "ValueData"
+                        )
+                    } else {
+                        matches!(
+                            item,
+                            "FunctionCatalogBuilder"
+                                | "ReactiveInstanceId"
+                                | "ResidentValueRef"
+                                | "ValueDataDraftasData"
+                        )
+                    }
                 })
-        } else if let Some(items) = declaration
-            .strip_prefix(concat!("usemech_", "core::snapshot::{"))
-            .and_then(|items| items.strip_suffix("};"))
+        } else if !source_semantic_evidence(path)
+            && let Some(items) = declaration
+                .strip_prefix(concat!("usemech_", "core::snapshot::{"))
+                .and_then(|items| items.strip_suffix("};"))
         {
             items
                 .split(',')
@@ -1564,6 +1617,7 @@ fn assert_allowed_mech_import(path: &Path, declaration: &str) {
     {
         let allowed = [
             "DiagnosticPhase",
+            "DiagnosticStore",
             "FixApplicability",
             "FoundSyntax",
             "NormalizedDiagnostic",
@@ -1819,6 +1873,25 @@ fn behavioral_authority_allowance_excludes_parser_routes_and_unrelated_core_type
     ] {
         assert!(
             std::panic::catch_unwind(|| assert_canonical_only(path, evidence)).is_err(),
+            "{evidence}"
+        );
+    }
+
+    let semantic_path = Path::new("src/engine/tests/canonical_source_semantics.rs");
+    assert_canonical_only(
+        semantic_path,
+        concat!(
+            "use mech_",
+            "core::{ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, OutputConstruction, ReactiveInstanceId, SchemaBody, ShapeRule, ValueData};"
+        ),
+    );
+    for evidence in [
+        concat!("use mech_", "core::{Program};"),
+        concat!("use mech_", "core::*;"),
+        concat!("use mech_", "core::{SchemaBody, Program};"),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| assert_canonical_only(semantic_path, evidence)).is_err(),
             "{evidence}"
         );
     }

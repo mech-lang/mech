@@ -29,6 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
+const WIRE_GRAPH_REVISION: u32 = 6;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -191,6 +192,11 @@ enum WireNodeBody {
         yield_value: WireComprehensionValue,
     },
     Match(WireMatchDeclaration),
+    Fsm {
+        machine: String,
+        arguments: Box<[(Option<String>, u16)]>,
+        stages: Box<[WireFsmStage]>,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -199,6 +205,29 @@ struct WireMatchDeclaration {
     scrutinee: u16,
     captures: Box<[(u16, u32)]>,
     arms: Box<[WireMatchArm]>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireFsmStage {
+    kind: u8,
+    value: WireFsmValue,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum WireFsmValue {
+    Input(u16),
+    Tuple(Box<[WireFsmValue]>),
+    Array(Box<[WireFsmValue]>),
+    AtomStruct {
+        name: String,
+        items: Box<[WireFsmValue]>,
+    },
+    TupleStruct {
+        name: String,
+        items: Box<[WireFsmValue]>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -454,7 +483,7 @@ pub fn encode_program_artifact_sections(
         slots: encode(&slots)?,
         producers: encode(&producers)?,
         nodes: encode(&WireGraph {
-            revision: 5,
+            revision: WIRE_GRAPH_REVISION,
             requirements: artifact
                 .requirements()
                 .iter()
@@ -625,7 +654,7 @@ fn decode_program_artifact_sections_owned(
     }
     preflight_control_graph(&sections.nodes, &limits)?;
     let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
-    if graph.revision != 5 {
+    if graph.revision != WIRE_GRAPH_REVISION {
         return Err(ArtifactBytecodeError::InvalidWireTag {
             section: "graph revision",
             tag: graph.revision.min(255) as u8,
@@ -1730,6 +1759,26 @@ fn wire_node_body(
         super::ExecutableNodeBody::Match(control) => {
             WireNodeBody::Match(wire_match(control, operations))
         }
+        super::ExecutableNodeBody::Fsm(control) => WireNodeBody::Fsm {
+            machine: control.machine.clone(),
+            arguments: control
+                .arguments
+                .iter()
+                .map(|argument| (argument.name.clone(), argument.input))
+                .collect(),
+            stages: control
+                .stages
+                .iter()
+                .map(|stage| WireFsmStage {
+                    kind: match stage.kind {
+                        super::FsmStageKind::State => 0,
+                        super::FsmStageKind::Async => 1,
+                        super::FsmStageKind::Output => 2,
+                    },
+                    value: wire_fsm_value(&stage.value),
+                })
+                .collect(),
+        },
     }
 }
 
@@ -1760,6 +1809,46 @@ fn wire_match(
                 body: wire_control_block(&arm.body, operations),
             })
             .collect(),
+    }
+}
+
+fn wire_fsm_value(value: &super::FsmValue) -> WireFsmValue {
+    match value {
+        super::FsmValue::Input(input) => WireFsmValue::Input(*input),
+        super::FsmValue::Tuple(items) => {
+            WireFsmValue::Tuple(items.iter().map(wire_fsm_value).collect())
+        }
+        super::FsmValue::Array(items) => {
+            WireFsmValue::Array(items.iter().map(wire_fsm_value).collect())
+        }
+        super::FsmValue::AtomStruct { name, items } => WireFsmValue::AtomStruct {
+            name: name.clone(),
+            items: items.iter().map(wire_fsm_value).collect(),
+        },
+        super::FsmValue::TupleStruct { name, items } => WireFsmValue::TupleStruct {
+            name: name.clone(),
+            items: items.iter().map(wire_fsm_value).collect(),
+        },
+    }
+}
+
+fn fsm_value_from_wire(value: WireFsmValue) -> super::FsmValue {
+    match value {
+        WireFsmValue::Input(input) => super::FsmValue::Input(input),
+        WireFsmValue::Tuple(items) => {
+            super::FsmValue::Tuple(items.into_iter().map(fsm_value_from_wire).collect())
+        }
+        WireFsmValue::Array(items) => {
+            super::FsmValue::Array(items.into_iter().map(fsm_value_from_wire).collect())
+        }
+        WireFsmValue::AtomStruct { name, items } => super::FsmValue::AtomStruct {
+            name,
+            items: items.into_iter().map(fsm_value_from_wire).collect(),
+        },
+        WireFsmValue::TupleStruct { name, items } => super::FsmValue::TupleStruct {
+            name,
+            items: items.into_iter().map(fsm_value_from_wire).collect(),
+        },
     }
 }
 
@@ -1877,6 +1966,36 @@ fn node_body_from_wire(
         WireNodeBody::Match(control) => {
             super::ExecutableNodeBody::Match(match_from_wire(control, operation)?)
         }
+        WireNodeBody::Fsm {
+            machine,
+            arguments,
+            stages,
+        } => super::ExecutableNodeBody::Fsm(super::FsmDeclaration {
+            machine,
+            arguments: arguments
+                .into_iter()
+                .map(|(name, input)| super::FsmArgument { name, input })
+                .collect(),
+            stages: stages
+                .into_iter()
+                .map(|stage| {
+                    Ok(super::FsmStage {
+                        kind: match stage.kind {
+                            0 => super::FsmStageKind::State,
+                            1 => super::FsmStageKind::Async,
+                            2 => super::FsmStageKind::Output,
+                            tag => {
+                                return Err(ArtifactBytecodeError::InvalidWireTag {
+                                    section: "FSM stage kind",
+                                    tag,
+                                });
+                            }
+                        },
+                        value: fsm_value_from_wire(stage.value),
+                    })
+                })
+                .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        }),
     })
 }
 
@@ -1942,6 +2061,7 @@ fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationR
                     })
             })
             .collect(),
+        super::ExecutableNodeBody::Fsm(_) => Vec::new(),
     }
 }
 
@@ -1956,6 +2076,7 @@ fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
             })
             .collect(),
         WireNodeBody::Match(control) => wire_match_operation_ids(control),
+        WireNodeBody::Fsm { .. } => Vec::new(),
     }
 }
 
@@ -1982,6 +2103,11 @@ fn preflight_control_graph(
     bytes: &[u8],
     limits: &ArtifactDecodeLimits,
 ) -> Result<(), ArtifactBytecodeError> {
+    // A structured FSM value adds an enum object, a struct object, and an
+    // items array at each admitted semantic layer. The remaining allowance
+    // covers the graph, node, FSM body, stage, and leaf containers.
+    const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize = super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
+
     #[derive(Clone, Copy)]
     enum Field {
         Other,
@@ -2008,7 +2134,7 @@ fn preflight_control_graph(
         counts: &'a mut Counts,
         limits: &'a ArtifactDecodeLimits,
         field: Field,
-        depth: u8,
+        depth: usize,
         control_depth: usize,
     }
     impl Scan<'_> {
@@ -2044,9 +2170,11 @@ fn preflight_control_graph(
             mut self,
             deserializer: D,
         ) -> Result<(), D::Error> {
-            // A pattern layer can add an enum object and an array. Keep the
-            // complete declared pattern depth below serde_json's own bound.
-            if self.depth > 96 || self.control_depth > super::MAX_CONTROL_DEPTH {
+            // Keep the complete declared control depth below serde_json's own
+            // recursion bound while admitting every valid FSM value depth.
+            if self.depth > MAX_CONTROL_GRAPH_WIRE_DEPTH
+                || self.control_depth > super::MAX_CONTROL_DEPTH
+            {
                 return Err(D::Error::custom("control graph nesting limit"));
             }
             if matches!(self.field, Field::SingleOperand) {
@@ -2119,12 +2247,13 @@ fn preflight_control_graph(
                     "nodes" => Field::Nodes,
                     "requirements" => Field::Requirements,
                     "arms" => Field::Arms,
-                    "operations" | "steps" => Field::Operations,
-                    "inputs" | "parameters" | "captures" => Field::Operands,
+                    "operations" | "steps" | "stages" => Field::Operations,
+                    "inputs" | "parameters" | "captures" | "arguments" => Field::Operands,
                     "Generator" => Field::Generator,
                     "pattern" if matches!(self.field, Field::Generator) => Field::Pattern,
                     "rest" => Field::Pattern,
-                    "Tuple" | "prefix" | "suffix" => Field::PatternChildren,
+                    "value" => Field::Pattern,
+                    "Tuple" | "Array" | "items" | "prefix" | "suffix" => Field::PatternChildren,
                     "Filter" => Field::SingleOperand,
                     _ => Field::Other,
                 };
