@@ -62,6 +62,8 @@ pub struct MechRuntime {
     pub(super) capability_kernel: Box<dyn CapabilityKernel>,
     #[cfg(feature = "source")]
     pub(super) source_resolver: Box<dyn SourceResolver>,
+    #[cfg(feature = "source")]
+    pub(super) source_revisions: HashMap<String, mech_syntax::document::Revision>,
     pub(super) host_registry: Box<dyn HostRegistry>,
     pub(super) host_policy: Box<dyn HostCallPolicy>,
     pub(super) scheduler: Box<dyn Scheduler>,

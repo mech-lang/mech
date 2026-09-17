@@ -169,7 +169,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # closure explicit without pulling in the semantic compiler.
 formatter = [
       "cli_core", "formatter_core",
-      "mech-runtime", "mech-runtime/source", "mech-runtime/serde",
+      "mech-runtime", "mech-runtime/source", "mech-runtime/pretty_print", "mech-runtime/serde",
       ]
 async = []
 trace = ["mech-engine/trace"]

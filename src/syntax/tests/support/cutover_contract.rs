@@ -209,8 +209,71 @@ fn demonstrated_consumers_cannot_hide_missing_or_open_removal_dependencies() {
 // This audits test/example/helper files too; the frozen production census
 // deliberately excludes cfg(test), examples and their direct parser helpers.
 fn has_retiring_reference(source: &str) -> bool {
+    use syn::visit::Visit;
+    fn retiring_import(tree: &syn::UseTree, prefix: &[String]) -> bool {
+        match tree {
+            syn::UseTree::Path(path) => {
+                let mut prefix = prefix.to_vec();
+                prefix.push(path.ident.to_string());
+                retiring_import(&path.tree, &prefix)
+            }
+            syn::UseTree::Group(group) => {
+                group.items.iter().any(|tree| retiring_import(tree, prefix))
+            }
+            leaf => {
+                let mut path = prefix.to_vec();
+                match leaf {
+                    syn::UseTree::Name(name) => path.push(name.ident.to_string()),
+                    syn::UseTree::Rename(name) => path.push(name.ident.to_string()),
+                    syn::UseTree::Glob(_) => {}
+                    _ => unreachable!(),
+                }
+                (path.first().is_some_and(|name| name == "mech_syntax")
+                    && !path.get(1).is_some_and(|name| name == "document"))
+                    || path == ["mech_core", "Program"]
+                    || path == ["mech_core", "nodes", "Program"]
+            }
+        }
+    }
+    #[derive(Default)]
+    struct References(bool);
+    impl<'ast> Visit<'ast> for References {
+        fn visit_item_use(&mut self, item: &'ast syn::ItemUse) {
+            self.0 |= retiring_import(&item.tree, &[]);
+        }
+        fn visit_type_path(&mut self, path: &'ast syn::TypePath) {
+            self.0 |= path
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "Program");
+            syn::visit::visit_type_path(self, path);
+        }
+    }
+    let mut references = References::default();
+    if let Ok(file) = syn::parse_file(source) {
+        references.visit_file(&file);
+    }
     let tokens = super::rust_tokens(source);
-    tokens.iter().any(|token| token.text == "syntax_tree")
+    references.0
+        || tokens.iter().any(|token| {
+            matches!(
+                token.text,
+                "syntax_tree"
+                    | "compile_tree"
+                    | "compile_interactive_tree"
+                    | "compile_tree_artifact"
+                    | "compile_tree_artifact_with_inputs"
+                    | "compile_tree_artifact_with_input_initializers"
+                    | "evaluate_static_tree_symbols"
+                    | "evaluate_static_tree_symbols_with_inputs"
+                    | "compile_mixed_tree"
+                    | "load_tree_program"
+                    | "load_interactive_tree_program"
+                    | "from_tree"
+                    | "activate_tree"
+            )
+        })
         || tokens.windows(4).any(|path| {
             path[0].text == "mech_syntax"
                 && path[1].text == ":"
@@ -295,15 +358,15 @@ fn readiness_includes_cross_boundary_payload_and_cache_handoffs() {
             .split(';')
             .map(str::trim)
             .collect::<std::collections::BTreeSet<_>>();
-        let mut required = Vec::new();
+        let mut required = vec!["root-parser-exports"];
         if id == "bundle-web.project" || id.starts_with("wasm.") {
             required.extend(["bundle-payload", "browser-loader", "browser-features"]);
         }
         if id.starts_with("runtime.interactive-") || id.starts_with("wasm.") {
-            required.push("interactive-cache");
+            required.extend(["interactive-cache", "wasm-repl-transfer"]);
         }
         if id.starts_with("runtime.program-") || id.starts_with("runtime.interactive-") {
-            required.push("compiler-tree-apis");
+            required.extend(["compiler-tree-apis", "runtime-tree-loading"]);
         }
         if id.starts_with("runtime.") || id == "serve.workspace-render" || id.starts_with("wasm.") {
             required.extend([
@@ -334,4 +397,33 @@ fn completion_action_cannot_disguise_a_required_physical_deletion() {
     assert!(removal_state("retain-verified", true, "retained", sha, "pass").is_ok());
     assert!(removal_state("retain-verified", false, "removed", sha, "pass").is_err());
     assert!(removal_state("unknown", true, "inventoried", "pending", "pending").is_err());
+}
+
+#[test]
+fn supplemental_scan_covers_grouped_exports_and_typed_program_handoffs() {
+    for source in [
+        "pub use mech_syntax::{parse, parse_grammar, parser};",
+        "use mech_syntax::{parser::{parse as read}};",
+        "use mech_syntax::*;",
+        "use mech_core::{nodes::{Program as Stored}};",
+        "fn load(tree: &mech_core::Program) {}",
+        "fn activate(tree: Program) {}",
+        "fn load() { compiler.compile_interactive_tree(tree); }",
+        "fn activate() { ResidentReplSession::from_tree(tree); }",
+    ] {
+        assert!(
+            has_retiring_reference(source),
+            "missed retiring handoff: {source}"
+        );
+    }
+    for source in [
+        "use mech_syntax::document::{DocumentStream, DocumentSyntax};",
+        "fn lifetime() { let lifetime = MemoryLifetime::Program; }",
+        "fn grouping() { let source = MechSourceCode::Program(Vec::new()); }",
+    ] {
+        assert!(
+            !has_retiring_reference(source),
+            "misclassified retained owner: {source}"
+        );
+    }
 }

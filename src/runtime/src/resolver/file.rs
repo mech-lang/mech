@@ -1,15 +1,21 @@
+#[cfg(feature = "source")]
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
 #[cfg(windows)]
 use std::path::Prefix;
 use std::path::{Component, Path, PathBuf};
+#[cfg(feature = "source")]
+use std::sync::{Arc, Mutex};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
 
-use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
 #[cfg(feature = "source")]
-use crate::resolver::{SourceIndex, source_request_for_import};
+use crate::resolver::{
+    InvalidResolvedSourceError, SourceDocument, SourceIndex, source_request_for_import,
+};
+use crate::resolver::{ResolvedSource, SourceRequest, SourceResolver};
 use crate::{FS_IMPORT, FS_READ, FS_RESOLVE, SharedCapabilityKernel, check_fs_capability};
 
 use super::{
@@ -61,6 +67,8 @@ pub struct FileSourceResolver {
     roots: Vec<PathBuf>,
     capability_kernel: Option<SharedCapabilityKernel>,
     capability_subject: Option<String>,
+    #[cfg(feature = "source")]
+    source_revisions: Arc<Mutex<HashMap<String, (String, mech_syntax::document::Revision)>>>,
 }
 
 impl FileSourceResolver {
@@ -69,6 +77,8 @@ impl FileSourceResolver {
             roots: vec![root.into()],
             capability_kernel: None,
             capability_subject: None,
+            #[cfg(feature = "source")]
+            source_revisions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -77,6 +87,8 @@ impl FileSourceResolver {
             roots: Vec::new(),
             capability_kernel: None,
             capability_subject: None,
+            #[cfg(feature = "source")]
+            source_revisions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -108,6 +120,97 @@ impl FileSourceResolver {
 
     pub fn roots(&self) -> &[PathBuf] {
         &self.roots
+    }
+
+    /// Resolve a source through the prepared canonical authority only. This
+    /// path never invokes or consults the legacy parser and publishes no
+    /// resolver facts unless strict document admission succeeds.
+    #[cfg(feature = "source")]
+    pub fn resolve_canonical(&self, request: &SourceRequest) -> MResult<Option<ResolvedSource>> {
+        request.validate()?;
+        let Some(path) = self.resolve_path(request)? else {
+            return Ok(None);
+        };
+        let kind = SourceKind::from_path(&path);
+        let source = read_runtime_source_file_with_capabilities_and_import_checks(
+            &path,
+            self.capability_kernel.as_ref(),
+            self.capability_subject.as_deref(),
+            request.referrer.is_some(),
+        )?;
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("source")
+            .to_owned();
+        let canonical_uri = path_to_file_uri(&path)?;
+        let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        if resolved.kind == SourceKind::Mech
+            && let MechSourceCode::String(source_text) = &resolved.source
+        {
+            let document = SourceDocument::parse_resolved(
+                &canonical_uri,
+                self.proposed_source_revision(&canonical_uri, source_text)?,
+                source_text.as_str(),
+                mech_syntax::document::ParseConfig::default(),
+            )
+            .map_err(|_| {
+                MechError::new(
+                    InvalidResolvedSourceError {
+                        field: "source",
+                        reason: "exceeds the canonical retained-source range",
+                    },
+                    None,
+                )
+            })?;
+            let accepted_revision = document.source().revision();
+            let accepted_source = source_text.clone();
+            resolved = resolved
+                .with_source_document(document)?
+                .admit_canonical_document()?;
+            self.accept_source_revision(&canonical_uri, &accepted_source, accepted_revision)?;
+        }
+        Ok(Some(resolved))
+    }
+
+    #[cfg(feature = "source")]
+    fn proposed_source_revision(
+        &self,
+        canonical_uri: &str,
+        source: &str,
+    ) -> MResult<mech_syntax::document::Revision> {
+        let revisions = self.source_revisions.lock().map_err(|_| {
+            filesystem_specifier_error(canonical_uri, "source revision owner is poisoned")
+        })?;
+        let Some((previous_source, previous_revision)) = revisions.get(canonical_uri) else {
+            return Ok(mech_syntax::document::Revision(0));
+        };
+        if previous_source == source {
+            return Ok(*previous_revision);
+        }
+        previous_revision
+            .0
+            .checked_add(1)
+            .map(mech_syntax::document::Revision)
+            .ok_or_else(|| {
+                filesystem_specifier_error(canonical_uri, "source revision identity is exhausted")
+            })
+    }
+
+    #[cfg(feature = "source")]
+    fn accept_source_revision(
+        &self,
+        canonical_uri: &str,
+        source: &str,
+        revision: mech_syntax::document::Revision,
+    ) -> MResult<()> {
+        self.source_revisions
+            .lock()
+            .map_err(|_| {
+                filesystem_specifier_error(canonical_uri, "source revision owner is poisoned")
+            })?
+            .insert(canonical_uri.to_owned(), (source.to_owned(), revision));
+        Ok(())
     }
 
     fn resolve_path(&self, request: &SourceRequest) -> MResult<Option<PathBuf>> {
@@ -245,6 +348,21 @@ impl SourceResolver for FileSourceResolver {
             let mut resolved = resolved;
             if resolved.kind == SourceKind::Mech {
                 if let MechSourceCode::String(source_text) = &resolved.source {
+                    let document = SourceDocument::parse_resolved(
+                        &canonical_uri,
+                        self.proposed_source_revision(&canonical_uri, source_text)?,
+                        source_text.as_str(),
+                        mech_syntax::document::ParseConfig::default(),
+                    )
+                    .map_err(|_| {
+                        MechError::new(
+                            InvalidResolvedSourceError {
+                                field: "source",
+                                reason: "exceeds the canonical retained-source range",
+                            },
+                            None,
+                        )
+                    })?;
                     let tree = mech_syntax::parser::parse(source_text.trim())?;
                     let referrer = canonical_uri.clone();
                     let index = SourceIndex::from_program(&tree);
@@ -259,7 +377,14 @@ impl SourceResolver for FileSourceResolver {
                         .map(|import| source_request_for_import(import, Some(&referrer)))
                         .collect::<Vec<_>>();
 
+                    self.accept_source_revision(
+                        &canonical_uri,
+                        source_text,
+                        document.source().revision(),
+                    )?;
+
                     resolved = resolved
+                        .with_source_document(document)?
                         .with_syntax_tree(tree)
                         .with_imports(imports)
                         .with_exports(exports)
@@ -1067,6 +1192,64 @@ mod tests {
         assert_eq!(resolved.kind, SourceKind::Mech);
         assert!(resolved.canonical_uri.starts_with("file://"));
         assert!(resolved.is_executable_mech_source());
+        #[cfg(feature = "source")]
+        {
+            let document = resolved
+                .source_document()
+                .expect("file resolver retains the canonical source revision");
+            assert_eq!(document.source().to_contiguous_string(), "x := 1");
+            assert_eq!(
+                document.source().document().0,
+                mech_core::hash_str(&resolved.canonical_uri)
+            );
+        }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn canonical_file_replacement_advances_revision_and_rejection_preserves_history() {
+        let root = temp_root("mech-runtime-file-revision-test");
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("index.mec");
+        let resolver = FileSourceResolver::new(&root);
+        let request = SourceRequest::new("index.mec");
+
+        std::fs::write(&path, "value := 1\n").unwrap();
+        let before = resolver.resolve_canonical(&request).unwrap().unwrap();
+        std::fs::write(&path, "value := [\n").unwrap();
+        assert!(resolver.resolve_canonical(&request).is_err());
+        std::fs::write(&path, "value := 2\n").unwrap();
+        let after = resolver.resolve_canonical(&request).unwrap().unwrap();
+
+        let before = before.source_document().unwrap();
+        let after = after.source_document().unwrap();
+        assert_eq!(before.source().document(), after.source().document());
+        assert_eq!(
+            before.source().revision(),
+            mech_syntax::document::Revision(0)
+        );
+        assert_eq!(
+            after.source().revision(),
+            mech_syntax::document::Revision(1)
+        );
+        assert_eq!(before.source().to_contiguous_string(), "value := 1\n");
+        assert_eq!(after.source().to_contiguous_string(), "value := 2\n");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn canonical_file_resolution_never_falls_back_when_legacy_source_is_available() {
+        let root = temp_root("mech-runtime-canonical-file-admission-test");
+        std::fs::create_dir_all(&root).unwrap();
+        let source = include_str!("../../../../examples/gpu-particles/particles.mec");
+        std::fs::write(root.join("index.mec"), source).unwrap();
+        let resolver = FileSourceResolver::new(&root);
+        let request = SourceRequest::new("index.mec");
+
+        assert!(resolver.resolve(&request).unwrap().is_some());
+        assert!(resolver.resolve_canonical(&request).is_err());
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

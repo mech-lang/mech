@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use mech_syntax::document::{
     AstNode, DocumentScopeId, DocumentSession, DocumentStream, DocumentSyntax, ParseConfig,
-    StreamError, StreamState, SyntaxSnapshot, TextSnapshot, parser::parse_canonical_document,
+    Revision, SourceError, StreamError, StreamState, SyntaxSnapshot, TextSnapshot,
+    parser::parse_canonical_document,
 };
 
 use super::{CanonicalDocumentIndex, CanonicalSourceIndexError};
@@ -21,6 +22,21 @@ use super::{CanonicalDocumentIndex, CanonicalSourceIndexError};
 pub struct SourceDocument {
     snapshot: Arc<SyntaxSnapshot>,
 }
+
+impl PartialEq for SourceDocument {
+    fn eq(&self, other: &Self) -> bool {
+        self.snapshot.document == other.snapshot.document
+            && self.snapshot.revision == other.snapshot.revision
+            && self.snapshot.root.kind == other.snapshot.root.kind
+            && self.snapshot.root.flags == other.snapshot.root.flags
+            && self.snapshot.root.text_len == other.snapshot.root.text_len
+            && self.snapshot.root.structural_hash == other.snapshot.root.structural_hash
+            && self.snapshot.diagnostics == other.snapshot.diagnostics
+            && self.source().to_contiguous_string() == other.source().to_contiguous_string()
+    }
+}
+
+impl Eq for SourceDocument {}
 
 /// Admission distinguishes invalid syntax from conflicts in a local resolver owner.
 #[derive(Clone, Debug)]
@@ -44,7 +60,36 @@ impl std::fmt::Display for SourceDocumentIndexError {
 }
 impl std::error::Error for SourceDocumentIndexError {}
 
+impl mech_core::MechErrorKind for SourceDocumentIndexError {
+    fn name(&self) -> &str {
+        "SourceDocumentIndexError"
+    }
+
+    fn message(&self) -> String {
+        self.to_string()
+    }
+}
+
 impl SourceDocument {
+    /// Parse the exact resolver-owned text under a stable document identity.
+    /// The canonical URI selects the document owner; the caller supplies the
+    /// revision so replacements can retain an explicit revision sequence.
+    pub fn parse_resolved(
+        canonical_uri: &str,
+        revision: Revision,
+        source: impl Into<Arc<str>>,
+        config: ParseConfig,
+    ) -> Result<Self, SourceError> {
+        Ok(Self::parse(
+            TextSnapshot::new(
+                mech_syntax::document::DocumentId(mech_core::hash_str(canonical_uri)),
+                revision,
+                source,
+            )?,
+            config,
+        ))
+    }
+
     /// Retain exactly the supplied text and revision, without trimming. Malformed
     /// source is retained so infallible builders can report it at later admission.
     pub fn parse(source: TextSnapshot, config: ParseConfig) -> Self {

@@ -6,8 +6,8 @@ use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_syntax::document::{
     AstNode, CodeBlockSyntax, CodeFenceScope, DocumentScopeId, DocumentSyntax,
     EvalInlineMechCodeSyntax, IdentifierSyntax, InlineMechCodeSyntax, MechCodeSyntax,
-    MikaSectionSyntax, OptionMapSyntax, ParagraphSyntax, SectionElementSyntax, SectionSyntax,
-    SyntaxElement, SyntaxKind, SyntaxNode, TextRange, TitleSyntax, UlSubtitleSyntax,
+    MikaSectionSyntax, NodeFlags, OptionMapSyntax, ParagraphSyntax, SectionElementSyntax,
+    SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange, TitleSyntax, UlSubtitleSyntax,
 };
 
 use crate::RuntimeValueSnapshot;
@@ -124,6 +124,91 @@ impl CanonicalScopeResults {
 pub struct CanonicalDocumentRenderer;
 
 impl CanonicalDocumentRenderer {
+    /// Render one complete root-only REPL submission from canonical syntax.
+    /// Document prose, fences and Mika-local scopes are deliberately rejected:
+    /// the browser document renderer owns those presentation forms.
+    pub fn render_repl_source_html(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Option<String>, CanonicalDocumentRenderError> {
+        if document.syntax().flags().intersects(
+            NodeFlags::ERROR
+                | NodeFlags::MISSING
+                | NodeFlags::CONTAINS_ERROR
+                | NodeFlags::CONTAINS_MISSING,
+        ) {
+            return Err(CanonicalDocumentRenderError {
+                message: "cannot render an invalid canonical REPL source".to_owned(),
+                range: Some(document.syntax().range()),
+            });
+        }
+        if !document.contains_executable_source() {
+            return Ok(None);
+        }
+
+        let mut code = Vec::new();
+        let mut pending = vec![document.syntax().clone()];
+        while let Some(node) = pending.pop() {
+            if matches!(
+                node.kind(),
+                SyntaxKind::CodeBlock
+                    | SyntaxKind::Paragraph
+                    | SyntaxKind::InlineParagraph
+                    | SyntaxKind::EvalInlineMechCode
+                    | SyntaxKind::InlineMechCode
+                    | SyntaxKind::MikaSection
+            ) {
+                return Ok(None);
+            }
+            if let Some(mech_code) = MechCodeSyntax::cast(node.clone()) {
+                code.extend(
+                    mech_code
+                        .items()
+                        .into_iter()
+                        .filter_map(|item| item.value()),
+                );
+                continue;
+            }
+            pending.extend(node.children());
+        }
+        if code.is_empty() {
+            return Ok(None);
+        }
+        code.sort_by_key(|node| node.range().start);
+
+        let source = document.syntax().source();
+        let mut cursor = source.full_range().start;
+        let mut output = String::from("<div class='mech-code-block'><pre><code>");
+        for item in code {
+            let range = item.range();
+            let gap = source
+                .text(TextRange::new(cursor, range.start))
+                .map_err(|_| range_error(range))?;
+            render_repl_gap_html(&gap, &mut output);
+            output.push_str("<span class='");
+            output.push_str(repl_item_class(&item));
+            output.push_str("'>");
+            for token in item.tokens() {
+                let text = token.text().map_err(|_| range_error(token.range()))?;
+                if token.kind() == SyntaxKind::Semicolon {
+                    output.push_str("<span class='mech-code-terminal'>");
+                    output.push_str(&escape_html(&text));
+                    output.push_str("</span>");
+                } else {
+                    output.push_str(&escape_html(&text));
+                }
+            }
+            output.push_str("</span>");
+            cursor = range.end;
+        }
+        let tail = source
+            .text(TextRange::new(cursor, source.full_range().end))
+            .map_err(|_| range_error(source.full_range()))?;
+        render_repl_gap_html(&tail, &mut output);
+        output.push_str("</code></pre></div>");
+        Ok(Some(output))
+    }
+
     pub fn render_html(
         &self,
         document: &DocumentSyntax,
@@ -174,6 +259,74 @@ impl CanonicalDocumentRenderer {
             visible_root_program_range(document.syntax()),
         )?;
         Ok(output)
+    }
+}
+
+fn repl_item_class(item: &SyntaxNode) -> &'static str {
+    let mut kinds = vec![item.kind()];
+    let mut pending = item.children().collect::<Vec<_>>();
+    while let Some(node) = pending.pop() {
+        kinds.push(node.kind());
+        pending.extend(node.children());
+    }
+    let contains = |kind| kinds.contains(&kind);
+    if contains(SyntaxKind::VariableDefine) {
+        return "mech-variable-define";
+    }
+    if contains(SyntaxKind::VariableAssign) {
+        return "mech-variable-assign";
+    }
+    if contains(SyntaxKind::OpAssign) {
+        return "mech-op-assign";
+    }
+    if contains(SyntaxKind::FunctionDefine) {
+        return "mech-function-define";
+    }
+    if kinds.iter().any(|kind| {
+        matches!(
+            kind,
+            SyntaxKind::FsmImplementation
+                | SyntaxKind::FsmSpecification
+                | SyntaxKind::FsmStatementTransition
+                | SyntaxKind::FsmBlockTransition
+        )
+    }) {
+        return "mech-fsm";
+    }
+    match item.kind() {
+        SyntaxKind::Comment => "mech-comment",
+        SyntaxKind::ImportDeclaration | SyntaxKind::ModuleImport => "mech-import",
+        SyntaxKind::ExportDeclaration => "mech-export",
+        SyntaxKind::ContextDeclaration | SyntaxKind::ContextSend => "mech-context",
+        SyntaxKind::Statement => "mech-statement",
+        _ => "mech-expression",
+    }
+}
+
+fn render_repl_gap_html(gap: &str, output: &mut String) {
+    let mut remaining = gap;
+    while !remaining.is_empty() {
+        if let Some(comment) = remaining.strip_prefix("--") {
+            let end = comment.find('\n').map_or(remaining.len(), |end| end + 2);
+            output.push_str("<span class='mech-comment'>");
+            output.push_str(&escape_html(&remaining[..end]));
+            output.push_str("</span>");
+            remaining = &remaining[end..];
+        } else if let Some(after) = remaining.strip_prefix(';') {
+            output.push_str("<span class='mech-code-terminal'>;</span>");
+            remaining = after;
+        } else {
+            let next = remaining
+                .char_indices()
+                .skip(1)
+                .find_map(|(index, _)| {
+                    (remaining[index..].starts_with("--") || remaining[index..].starts_with(';'))
+                        .then_some(index)
+                })
+                .unwrap_or(remaining.len());
+            output.push_str(&escape_html(&remaining[..next]));
+            remaining = &remaining[next..];
+        }
     }
 }
 
