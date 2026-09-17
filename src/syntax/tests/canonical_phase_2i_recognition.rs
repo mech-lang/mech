@@ -229,8 +229,15 @@ fn incomplete_ranges_are_marker_safe_and_preserve_committed_children() {
     for rule in [rules::RANGE_EXPRESSION, rules::EXPRESSION] {
         let parsed = std::panic::catch_unwind(|| parse(rule, "\"unterminated"))
             .unwrap_or_else(|_| panic!("{rule:?} did not balance a committed literal"));
-        assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
-        assert!(!parsed.diagnostics.is_empty());
+        if rule == rules::RANGE_EXPRESSION {
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::NoMatch);
+            assert_eq!(parsed.consumed.end, TextSize(0));
+            assert!(parsed.diagnostics.is_empty());
+        } else {
+            assert_eq!(parsed.outcome, CanonicalRuleOutcome::Committed);
+            assert_eq!(parsed.consumed.end, TextSize(13));
+            assert!(!parsed.diagnostics.is_empty());
+        }
         assert!(!contains_kind(
             &parsed.syntax(),
             SyntaxKind::RangeExpression

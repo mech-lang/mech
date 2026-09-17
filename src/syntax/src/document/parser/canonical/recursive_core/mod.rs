@@ -12,6 +12,8 @@ mod structures;
 mod subscripts;
 mod variables;
 
+pub(crate) use kinds::parse_kind_annotation_candidate;
+
 use alloc::string::String;
 
 use crate::document::{ExpectedSyntax, RuleId, SyntaxKind};
@@ -271,7 +273,7 @@ fn recover_required_production_at_boundaries(
 ) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
     const RESTART_BOUNDARIES: &[char] = &[
-        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '?', '\n', '\r',
     ];
     let mut boundaries = alloc::vec::Vec::from(RESTART_BOUNDARIES);
     boundaries.extend_from_slice(owner_boundaries);
@@ -306,8 +308,9 @@ pub(super) fn recover_required_token(
     text: &str,
 ) -> Attempt {
     combinator::consume_grammar_horizontal_trivia(parser);
-    const RESTART_BOUNDARIES: &[char] =
-        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
     if parser.is_eof()
         || parser
             .cursor()
@@ -342,8 +345,9 @@ pub(super) fn recover_closer(
     _close_character: char,
     close_text: &str,
 ) -> Attempt {
-    const RESTART_BOUNDARIES: &[char] =
-        &[')', ']', '}', '>', '⟩', ',', ';', '|', '│', '┃', '\n', '\r'];
+    const RESTART_BOUNDARIES: &[char] = &[
+        ')', ']', '}', '>', '⟩', '╯', '┘', '┛', ',', ';', '|', '│', '┃', '\n', '\r',
+    ];
     let _ = recovery::abandon_to_restart(
         parser,
         target,

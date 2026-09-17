@@ -442,7 +442,7 @@ fn factor_body(parser: &mut Parser<'_>) -> Attempt {
         if slice {
             return subscripts::parse_slice(parser);
         }
-        return variables::parse_var(parser);
+        return variables::parse_factor_var(parser);
     }
     parser.rewind(stem);
     Attempt::NoMatch

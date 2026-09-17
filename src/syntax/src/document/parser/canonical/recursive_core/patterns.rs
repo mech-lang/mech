@@ -243,6 +243,18 @@ fn array_with_facts(parser: &mut Parser<'_>) -> FactAttempt<PatternFacts> {
                 match array_token(parser) {
                     FactAttempt::Matched(token) if parser.offset() > before => tokens.push(token),
                     FactAttempt::Matched(_) => return FactAttempt::NoMatch,
+                    FactAttempt::NoMatch if parser.cursor().starts_with(",") => {
+                        let element = parser.start();
+                        recover_required_production(
+                            parser,
+                            rules::PATTERN_ARRAY,
+                            "syntax/missing-pattern-array-item",
+                            "missing array pattern before separator",
+                            "pattern-array-token",
+                        );
+                        element.complete(parser, SyntaxKind::ArrayPatternElement);
+                        committed = true;
+                    }
                     FactAttempt::NoMatch => {
                         recover_closer(
                             parser,
