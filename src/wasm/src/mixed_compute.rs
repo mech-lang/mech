@@ -23,9 +23,10 @@ use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
     MechRuntime, RuntimeBuilder, RuntimeHostFactory, RuntimeHostInput, RuntimeHostInputDriver,
     RuntimeHostInputSource, RuntimeHostInputUpdate, RuntimeHostInputValue, RuntimeHostInstallation,
-    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, materialize_host_manifest,
-    parse_config_document,
+    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, SourceDocument,
+    materialize_host_manifest, parse_config_document,
 };
+use mech_syntax::document::{ParseConfig, Revision};
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
@@ -61,12 +62,26 @@ impl WasmMixedComputeProject {
         )
         .map_err(js_error)?;
         let parse_started = Instant::now();
-        let tree = mech_syntax::parse(source.trim()).map_err(js_error)?;
+        let source_document = SourceDocument::parse_resolved(
+            "browser:mixed-compute",
+            Revision(0),
+            Arc::<str>::from(source),
+            ParseConfig::default(),
+        )
+        .map_err(|error| js_error(mixed_error(format!("invalid retained source: {error:?}"))))?;
+        source_document
+            .index()
+            .map_err(|error| js_error(MechError::new(error, None)))?;
         let parsing = milliseconds(parse_started);
         let pointer_index = configured_host_index(&document, "pointer").map_err(js_error)?;
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
-        let prepared = compile_named_compute_region(&document, &tree, parsing, pointer.clone())
-            .map_err(js_error)?;
+        let prepared = compile_named_compute_document_region(
+            &document,
+            &source_document,
+            parsing,
+            pointer.clone(),
+        )
+        .map_err(js_error)?;
         let outputs = BrowserOutputHandle::default();
         let prepared = prepare_browser_compute_runtime(
             &document,
@@ -455,6 +470,7 @@ impl PreparedGpuKernel {
     }
 }
 
+#[cfg(test)]
 fn compile_named_compute_region(
     document: &MechConfigDocument,
     tree: &Program,
@@ -482,6 +498,44 @@ fn compile_named_compute_region(
     prepare_compute_region(&mut compiler, tree, parsing, catalog_setup)
 }
 
+fn compile_named_compute_document_region(
+    document: &MechConfigDocument,
+    source: &SourceDocument,
+    parsing: f64,
+    pointer: PointerInputHandle,
+) -> MResult<PreparedComputeRegion> {
+    let compiler_started = Instant::now();
+    let mut builder = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(PointerHostFactory::new(pointer)))?;
+    for host in document
+        .hosts
+        .iter()
+        .filter(|host| host.provider != "compute")
+    {
+        builder = builder.host_instance(host.clone());
+    }
+    if let Some(run) = &document.run {
+        for grant in &run.grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+    }
+    let mut compiler = builder.build_compiler()?;
+    let catalog_setup = milliseconds(compiler_started);
+    prepare_compute_document_region(&mut compiler, source, parsing, catalog_setup)
+}
+
+pub(crate) fn prepare_compute_document_region(
+    compiler: &mut mech_runtime::ProgramCompiler,
+    document: &SourceDocument,
+    parsing: f64,
+    catalog_setup: f64,
+) -> MResult<PreparedComputeRegion> {
+    let artifact_started = Instant::now();
+    let mixed = compiler.compile_mixed_document(document)?;
+    finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
+}
+
 pub(crate) fn prepare_compute_region(
     compiler: &mut mech_runtime::ProgramCompiler,
     tree: &Program,
@@ -490,6 +544,15 @@ pub(crate) fn prepare_compute_region(
 ) -> MResult<PreparedComputeRegion> {
     let artifact_started = Instant::now();
     let mixed = compiler.compile_mixed_tree(tree)?;
+    finish_prepared_compute_region(mixed, parsing, catalog_setup, artifact_started)
+}
+
+fn finish_prepared_compute_region(
+    mixed: mech_runtime::MixedProgramCompilation,
+    parsing: f64,
+    catalog_setup: f64,
+    artifact_started: Instant,
+) -> MResult<PreparedComputeRegion> {
     let artifact_compilation = milliseconds(artifact_started);
     let lowering_started = Instant::now();
     let initial_values =

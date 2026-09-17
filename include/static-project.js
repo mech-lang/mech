@@ -47,7 +47,7 @@ async function readProjectSourceManifest(moduleUrl) {
   }
 
   if (
-    manifest?.version !== 2 ||
+    manifest?.version !== 3 ||
     !Array.isArray(manifest.roots) ||
     manifest.roots.length === 0 ||
     manifest.roots.some(root => typeof root !== "string") ||
@@ -55,12 +55,18 @@ async function readProjectSourceManifest(moduleUrl) {
     manifest.sources.some(
       source =>
         typeof source?.specifier !== "string" ||
-        typeof source?.url !== "string",
+        typeof source?.url !== "string" ||
+        (source.artifactUrl !== undefined && typeof source.artifactUrl !== "string"),
     )
   ) {
     throw new Error("invalid project source manifest");
   }
 
+  for (const root of manifest.roots) {
+    if (!manifest.sources.some(source => source.specifier === root && typeof source.artifactUrl === "string")) {
+      throw new Error(`static bundle root artifact is missing: ${root}`);
+    }
+  }
   return manifest;
 }
 
@@ -76,16 +82,20 @@ async function main() {
   const config = await fetchText("mech.mcfg");
   const manifest = await readProjectSourceManifest(import.meta.url);
   const sources = {};
+  const artifacts = {};
 
   for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
+    if (source.artifactUrl !== undefined) {
+      artifacts[source.specifier] = await fetchText(source.artifactUrl);
+    }
   }
 
   if (!Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG")) {
     throw new Error("static bundle is missing injected browser host authority");
   }
 
-  project = WasmProject.fromServedBundle(config, sources, manifest.roots);
+  project = WasmProject.fromServedBundle(config, sources, artifacts, manifest.roots);
   project.start();
   running = true;
   requestAnimationFrame(frame);
