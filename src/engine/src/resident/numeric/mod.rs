@@ -5,8 +5,8 @@ mod selection_address;
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
 use mech_core::snapshot::{
-    F32Bits, F64Bits, SequenceView, SnapshotCanonicalizationBudget, SnapshotValidationContext,
-    SnapshotValueError, ValueDataDraft, ValueDraft, ValueFootprint,
+    Complex32Bits, Complex64Bits, F32Bits, F64Bits, SequenceView, SnapshotCanonicalizationBudget,
+    SnapshotValidationContext, SnapshotValueError, ValueDataDraft, ValueDraft, ValueFootprint,
     canonical_sequence_element_retained_footprint, canonical_snapshot_data_draft, compare_key_data,
     schema_data_language_eq, schema_data_partial_cmp,
 };
@@ -2683,7 +2683,7 @@ fn snapshot_arithmetic_element_supported(
     arithmetic: SemanticArithmetic,
     element: &SchemaBody,
 ) -> bool {
-    use mech_core::{FloatWidth, IntegerWidth};
+    use mech_core::FloatWidth;
     match arithmetic {
         SemanticArithmetic::Add
         | SemanticArithmetic::Subtract
@@ -2694,6 +2694,7 @@ fn snapshot_arithmetic_element_supported(
                 SchemaBody::UnsignedInteger(_)
                     | SchemaBody::SignedInteger(_)
                     | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
+                    | SchemaBody::Complex(FloatWidth::W32)
             ) || (cfg!(feature = "r64") && matches!(element, SchemaBody::Rational64))
                 || (cfg!(feature = "c64")
                     && matches!(element, SchemaBody::Complex(FloatWidth::W64)))
@@ -2704,11 +2705,17 @@ fn snapshot_arithmetic_element_supported(
                 | SchemaBody::SignedInteger(_)
                 | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
         ),
-        SemanticArithmetic::Power => matches!(
-            element,
-            SchemaBody::UnsignedInteger(IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32)
-                | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
-        ),
+        SemanticArithmetic::Power => {
+            matches!(
+                element,
+                SchemaBody::UnsignedInteger(_)
+                    | SchemaBody::SignedInteger(_)
+                    | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
+                    | SchemaBody::Complex(FloatWidth::W32)
+            ) || (cfg!(feature = "r64") && matches!(element, SchemaBody::Rational64))
+                || (cfg!(feature = "c64")
+                    && matches!(element, SchemaBody::Complex(FloatWidth::W64)))
+        }
     }
 }
 
@@ -2741,7 +2748,9 @@ fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
         element,
-        SchemaBody::SignedInteger(_) | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
+        SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
+            | SchemaBody::Complex(FloatWidth::W32)
     ) || (cfg!(feature = "r64") && matches!(element, SchemaBody::Rational64))
         || (cfg!(feature = "c64") && matches!(element, SchemaBody::Complex(FloatWidth::W64)))
 }
@@ -2753,6 +2762,7 @@ fn snapshot_abs_element_supported(element: &SchemaBody) -> bool {
         SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(FloatWidth::W32 | FloatWidth::W64)
+            | SchemaBody::Complex(FloatWidth::W32)
     ) || (cfg!(feature = "r64") && matches!(element, SchemaBody::Rational64))
         || (cfg!(feature = "c64") && matches!(element, SchemaBody::Complex(FloatWidth::W64)))
 }
@@ -3263,6 +3273,7 @@ fn is_snapshot_sum_element(body: &SchemaBody) -> bool {
             true
         }
         SchemaBody::Rational64 => cfg!(feature = "r64"),
+        SchemaBody::Complex(mech_core::FloatWidth::W32) => true,
         SchemaBody::Complex(mech_core::FloatWidth::W64) => cfg!(feature = "c64"),
         _ => false,
     }
@@ -5957,7 +5968,9 @@ fn is_dot_numeric_schema(body: &SchemaBody) -> bool {
         SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
-    )
+            | SchemaBody::Complex(mech_core::FloatWidth::W32)
+    ) || (cfg!(feature = "c64") && matches!(body, SchemaBody::Complex(mech_core::FloatWidth::W64)))
+        || (cfg!(feature = "r64") && matches!(body, SchemaBody::Rational64))
 }
 
 fn bind_matrix_dot(
@@ -17197,8 +17210,11 @@ fn numeric_zero(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError
             numerator: 0,
             denominator: 1,
         }),
+        SchemaBody::Complex(mech_core::FloatWidth::W32) => Ok(ValueDataDraft::Complex32(
+            Complex32Bits::new(F32Bits::from_f32(0.0), F32Bits::from_f32(0.0)),
+        )),
         SchemaBody::Complex(mech_core::FloatWidth::W64) => Ok(ValueDataDraft::Complex64(
-            mech_core::snapshot::Complex64Bits::new(F64Bits::from_f64(0.0), F64Bits::from_f64(0.0)),
+            Complex64Bits::new(F64Bits::from_f64(0.0), F64Bits::from_f64(0.0)),
         )),
         _ => Err(ResidentKernelError::InvalidInput),
     }
@@ -17227,8 +17243,11 @@ fn numeric_one(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError>
             numerator: 1,
             denominator: 1,
         }),
+        SchemaBody::Complex(mech_core::FloatWidth::W32) => Ok(ValueDataDraft::Complex32(
+            Complex32Bits::new(F32Bits::from_f32(1.0), F32Bits::from_f32(0.0)),
+        )),
         SchemaBody::Complex(mech_core::FloatWidth::W64) => Ok(ValueDataDraft::Complex64(
-            mech_core::snapshot::Complex64Bits::new(F64Bits::from_f64(1.0), F64Bits::from_f64(0.0)),
+            Complex64Bits::new(F64Bits::from_f64(1.0), F64Bits::from_f64(0.0)),
         )),
         _ => Err(ResidentKernelError::InvalidInput),
     }
@@ -17314,10 +17333,72 @@ fn complex_from_draft(value: ValueDataDraft) -> Result<mech_core::C64, ResidentK
 
 #[cfg(feature = "c64")]
 fn complex_to_draft(value: mech_core::C64) -> ValueDataDraft {
-    ValueDataDraft::Complex64(mech_core::snapshot::Complex64Bits::new(
+    ValueDataDraft::Complex64(Complex64Bits::new(
         F64Bits::from_f64(value.0.re),
         F64Bits::from_f64(value.0.im),
     ))
+}
+
+fn complex32_from_draft(value: ValueDataDraft) -> Result<(f32, f32), ResidentKernelError> {
+    let ValueDataDraft::Complex32(value) = value else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    Ok((value.real().to_f32(), value.imaginary().to_f32()))
+}
+
+fn complex32_to_draft(real: f32, imaginary: f32) -> ValueDataDraft {
+    ValueDataDraft::Complex32(Complex32Bits::new(
+        F32Bits::from_f32(real),
+        F32Bits::from_f32(imaginary),
+    ))
+}
+
+fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
+    (
+        left.0 * right.0 - left.1 * right.1,
+        left.0 * right.1 + left.1 * right.0,
+    )
+}
+
+fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
+    let denominator = right.0 * right.0 + right.1 * right.1;
+    (
+        (left.0 * right.0 + left.1 * right.1) / denominator,
+        (left.1 * right.0 - left.0 * right.1) / denominator,
+    )
+}
+
+#[cfg(feature = "c64")]
+fn complex64_parts(value: ValueDataDraft) -> Result<(f64, f64), ResidentKernelError> {
+    let ValueDataDraft::Complex64(value) = value else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    Ok((value.real().to_f64(), value.imaginary().to_f64()))
+}
+
+#[cfg(feature = "c64")]
+fn complex64_from_parts(real: f64, imaginary: f64) -> ValueDataDraft {
+    ValueDataDraft::Complex64(Complex64Bits::new(
+        F64Bits::from_f64(real),
+        F64Bits::from_f64(imaginary),
+    ))
+}
+
+#[cfg(feature = "c64")]
+fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    (
+        left.0 * right.0 - left.1 * right.1,
+        left.0 * right.1 + left.1 * right.0,
+    )
+}
+
+#[cfg(feature = "c64")]
+fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    let denominator = right.0 * right.0 + right.1 * right.1;
+    (
+        (left.0 * right.0 + left.1 * right.1) / denominator,
+        (left.1 * right.0 - left.0 * right.1) / denominator,
+    )
 }
 
 fn numeric_multiply(
@@ -17331,6 +17412,11 @@ fn numeric_multiply(
         (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
             F64Bits::from_f64(left.to_f64() * right.to_f64()),
         )),
+        (left @ ValueDataDraft::Complex32(_), right @ ValueDataDraft::Complex32(_)) => {
+            let product =
+                complex32_multiply(complex32_from_draft(left)?, complex32_from_draft(right)?);
+            Ok(complex32_to_draft(product.0, product.1))
+        }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
             let next = rational_from_draft(left)?
@@ -17359,6 +17445,11 @@ fn numeric_add(
         (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
             F64Bits::from_f64(left.to_f64() + right.to_f64()),
         )),
+        (left @ ValueDataDraft::Complex32(_), right @ ValueDataDraft::Complex32(_)) => {
+            let left = complex32_from_draft(left)?;
+            let right = complex32_from_draft(right)?;
+            Ok(complex32_to_draft(left.0 + right.0, left.1 + right.1))
+        }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
             let next = rational_from_draft(left)?
@@ -17387,6 +17478,11 @@ fn numeric_subtract(
         (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
             F64Bits::from_f64(left.to_f64() - right.to_f64()),
         )),
+        (left @ ValueDataDraft::Complex32(_), right @ ValueDataDraft::Complex32(_)) => {
+            let left = complex32_from_draft(left)?;
+            let right = complex32_from_draft(right)?;
+            Ok(complex32_to_draft(left.0 - right.0, left.1 - right.1))
+        }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
             let next = rational_from_draft(left)?
@@ -17415,6 +17511,11 @@ fn numeric_divide(
         (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
             F64Bits::from_f64(left.to_f64() / right.to_f64()),
         )),
+        (left @ ValueDataDraft::Complex32(_), right @ ValueDataDraft::Complex32(_)) => {
+            let quotient =
+                complex32_divide(complex32_from_draft(left)?, complex32_from_draft(right)?);
+            Ok(complex32_to_draft(quotient.0, quotient.1))
+        }
         #[cfg(feature = "r64")]
         (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
             let next = rational_from_draft(left)?
@@ -17453,38 +17554,172 @@ fn numeric_power(
     left: ValueDataDraft,
     right: ValueDataDraft,
 ) -> Result<ValueDataDraft, ResidentKernelError> {
+    macro_rules! checked_integer_power {
+        ($base:expr, $exponent:expr, $variant:ident) => {{
+            let exponent = u32::try_from($exponent).map_err(|_| ResidentKernelError::Arithmetic)?;
+            $base
+                .checked_pow(exponent)
+                .map(ValueDataDraft::$variant)
+                .ok_or(ResidentKernelError::Arithmetic)
+        }};
+    }
     match (left, right) {
-        (ValueDataDraft::U8(left), ValueDataDraft::U8(right)) => left
-            .checked_pow(u32::from(right))
-            .map(ValueDataDraft::U8)
-            .ok_or(ResidentKernelError::Arithmetic),
-        (ValueDataDraft::U16(left), ValueDataDraft::U16(right)) => left
-            .checked_pow(u32::from(right))
-            .map(ValueDataDraft::U16)
-            .ok_or(ResidentKernelError::Arithmetic),
-        (ValueDataDraft::U32(left), ValueDataDraft::U32(right)) => left
-            .checked_pow(right)
-            .map(ValueDataDraft::U32)
-            .ok_or(ResidentKernelError::Arithmetic),
+        (ValueDataDraft::U8(left), ValueDataDraft::U8(right)) => {
+            checked_integer_power!(left, right, U8)
+        }
+        (ValueDataDraft::U16(left), ValueDataDraft::U16(right)) => {
+            checked_integer_power!(left, right, U16)
+        }
+        (ValueDataDraft::U32(left), ValueDataDraft::U32(right)) => {
+            checked_integer_power!(left, right, U32)
+        }
+        (ValueDataDraft::U64(left), ValueDataDraft::U64(right)) => {
+            checked_integer_power!(left, right, U64)
+        }
+        (ValueDataDraft::U128(left), ValueDataDraft::U128(right)) => {
+            checked_integer_power!(left, right, U128)
+        }
+        (ValueDataDraft::I8(left), ValueDataDraft::I8(right)) => {
+            checked_integer_power!(left, right, I8)
+        }
+        (ValueDataDraft::I16(left), ValueDataDraft::I16(right)) => {
+            checked_integer_power!(left, right, I16)
+        }
+        (ValueDataDraft::I32(left), ValueDataDraft::I32(right)) => {
+            checked_integer_power!(left, right, I32)
+        }
+        (ValueDataDraft::I64(left), ValueDataDraft::I64(right)) => {
+            checked_integer_power!(left, right, I64)
+        }
+        (ValueDataDraft::I128(left), ValueDataDraft::I128(right)) => {
+            checked_integer_power!(left, right, I128)
+        }
         (ValueDataDraft::F32(left), ValueDataDraft::F32(right)) => Ok(ValueDataDraft::F32(
             F32Bits::from_f32(left.to_f32().powf(right.to_f32())),
         )),
         (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) => Ok(ValueDataDraft::F64(
             F64Bits::from_f64(left.to_f64().powf(right.to_f64())),
         )),
+        (left @ ValueDataDraft::Complex32(_), right @ ValueDataDraft::Complex32(_)) => {
+            let value = complex32_power(complex32_from_draft(left)?, complex32_from_draft(right)?);
+            Ok(complex32_to_draft(value.0, value.1))
+        }
+        #[cfg(feature = "c64")]
+        (left @ ValueDataDraft::Complex64(_), right @ ValueDataDraft::Complex64(_)) => {
+            let value = complex64_power(complex64_parts(left)?, complex64_parts(right)?);
+            Ok(complex64_from_parts(value.0, value.1))
+        }
+        #[cfg(feature = "r64")]
+        (left @ ValueDataDraft::Rational64 { .. }, right @ ValueDataDraft::Rational64 { .. }) => {
+            let ValueDataDraft::Rational64 {
+                numerator,
+                denominator: 1,
+            } = right
+            else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            numeric_rational_power_with_exponent(left, numerator)
+        }
         _ => Err(ResidentKernelError::InvalidInput),
     }
 }
 
+fn complex32_integer_power(mut base: (f32, f32), exponent: i32) -> (f32, f32) {
+    let negative = exponent < 0;
+    let mut exponent = exponent.unsigned_abs();
+    let mut result = (1.0, 0.0);
+    while exponent != 0 {
+        if exponent & 1 == 1 {
+            result = complex32_multiply(result, base);
+        }
+        exponent >>= 1;
+        if exponent != 0 {
+            base = complex32_multiply(base, base);
+        }
+    }
+    if negative {
+        complex32_divide((1.0, 0.0), result)
+    } else {
+        result
+    }
+}
+
+fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
+    if exponent.1 == 0.0
+        && exponent.0 >= -2_147_483_648.0
+        && exponent.0 < 2_147_483_648.0
+        && libm::truncf(exponent.0) == exponent.0
+    {
+        return complex32_integer_power(base, exponent.0 as i32);
+    }
+    if exponent == (0.0, 0.0) {
+        return (1.0, 0.0);
+    }
+    if base == (0.0, 0.0) && exponent.1 == 0.0 && exponent.0 > 0.0 {
+        return (0.0, 0.0);
+    }
+    let logarithmic_radius = libm::logf(libm::hypotf(base.0, base.1));
+    let angle = libm::atan2f(base.1, base.0);
+    let magnitude = libm::expf(exponent.0 * logarithmic_radius - exponent.1 * angle);
+    let result_angle = exponent.1 * logarithmic_radius + exponent.0 * angle;
+    (
+        magnitude * libm::cosf(result_angle),
+        magnitude * libm::sinf(result_angle),
+    )
+}
+
+#[cfg(feature = "c64")]
+fn complex64_integer_power(mut base: (f64, f64), exponent: i32) -> (f64, f64) {
+    let negative = exponent < 0;
+    let mut exponent = exponent.unsigned_abs();
+    let mut result = (1.0, 0.0);
+    while exponent != 0 {
+        if exponent & 1 == 1 {
+            result = complex64_multiply(result, base);
+        }
+        exponent >>= 1;
+        if exponent != 0 {
+            base = complex64_multiply(base, base);
+        }
+    }
+    if negative {
+        complex64_divide((1.0, 0.0), result)
+    } else {
+        result
+    }
+}
+
+#[cfg(feature = "c64")]
+fn complex64_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
+    if exponent.1 == 0.0
+        && exponent.0 >= -2_147_483_648.0
+        && exponent.0 < 2_147_483_648.0
+        && libm::trunc(exponent.0) == exponent.0
+    {
+        return complex64_integer_power(base, exponent.0 as i32);
+    }
+    if exponent == (0.0, 0.0) {
+        return (1.0, 0.0);
+    }
+    if base == (0.0, 0.0) && exponent.1 == 0.0 && exponent.0 > 0.0 {
+        return (0.0, 0.0);
+    }
+    let logarithmic_radius = libm::log(libm::hypot(base.0, base.1));
+    let angle = libm::atan2(base.1, base.0);
+    let magnitude = libm::exp(exponent.0 * logarithmic_radius - exponent.1 * angle);
+    let result_angle = exponent.1 * logarithmic_radius + exponent.0 * angle;
+    (
+        magnitude * libm::cos(result_angle),
+        magnitude * libm::sin(result_angle),
+    )
+}
+
 #[cfg(feature = "r64")]
-fn numeric_rational_power_impl(
+fn numeric_rational_power_with_exponent(
     left: ValueDataDraft,
-    right: ValueDataDraft,
+    exponent: i64,
 ) -> Result<ValueDataDraft, ResidentKernelError> {
     let mut base = rational_from_draft(left)?;
-    let ValueDataDraft::I32(exponent) = right else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
     let negative = exponent < 0;
     let mut exponent = exponent.unsigned_abs();
     let mut result = mech_core::R64::new(1, 1);
@@ -17507,6 +17742,17 @@ fn numeric_rational_power_impl(
             .ok_or(ResidentKernelError::Arithmetic)?;
     }
     rational_to_draft(result)
+}
+
+#[cfg(feature = "r64")]
+fn numeric_rational_power_impl(
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    let ValueDataDraft::I32(exponent) = right else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    numeric_rational_power_with_exponent(left, i64::from(exponent))
 }
 
 fn numeric_rational_power(
@@ -17558,6 +17804,10 @@ fn numeric_negate(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKerne
         }
         ValueDataDraft::F32(value) => ValueDataDraft::F32(F32Bits::from_f32(-value.to_f32())),
         ValueDataDraft::F64(value) => ValueDataDraft::F64(F64Bits::from_f64(-value.to_f64())),
+        value @ ValueDataDraft::Complex32(_) => {
+            let value = complex32_from_draft(value)?;
+            complex32_to_draft(-value.0, -value.1)
+        }
         #[cfg(feature = "r64")]
         value @ ValueDataDraft::Rational64 { .. } => rational_to_draft(
             rational_from_draft(value)?
@@ -17594,6 +17844,10 @@ fn numeric_abs(value: ValueDataDraft) -> Result<ValueDataDraft, ResidentKernelEr
         }
         ValueDataDraft::F32(value) => ValueDataDraft::F32(F32Bits::from_f32(value.to_f32().abs())),
         ValueDataDraft::F64(value) => ValueDataDraft::F64(F64Bits::from_f64(value.to_f64().abs())),
+        value @ ValueDataDraft::Complex32(_) => {
+            let value = complex32_from_draft(value)?;
+            complex32_to_draft(libm::hypotf(value.0, value.1), 0.0)
+        }
         #[cfg(feature = "r64")]
         value @ ValueDataDraft::Rational64 { .. } => {
             rational_to_draft(rational_from_draft(value)?.abs())?
@@ -17631,6 +17885,7 @@ fn snapshot_numeric_element_count(value: &mech_core::Value) -> Result<usize, Res
         | ValueData::I128(_)
         | ValueData::F32(_)
         | ValueData::F64(_)
+        | ValueData::Complex32(_)
         | ValueData::Complex64(_)
         | ValueData::Rational64(_) => Ok(1),
         _ => Err(ResidentKernelError::InvalidInput),
@@ -19029,7 +19284,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(parameters.to_vec().into_boxed_slice())
                 .unwrap(),
-            activation_fixed_shape: true,
+            activation_fixed_shape: parameters.is_empty(),
             resolved_selector: None,
         };
         let contract = test_contract(
@@ -21715,6 +21970,57 @@ mod tests {
             ),
             Ok(ValueDataDraft::U8(7))
         );
+    }
+
+    #[test]
+    fn canonical_numeric_power_preserves_exact_domains_and_errors() {
+        assert_eq!(
+            numeric_power(ValueDataDraft::I8(2), ValueDataDraft::I8(-1)),
+            Err(ResidentKernelError::Arithmetic)
+        );
+        assert_eq!(
+            numeric_power(ValueDataDraft::I8(12), ValueDataDraft::I8(2)),
+            Err(ResidentKernelError::Arithmetic)
+        );
+        assert_eq!(
+            numeric_power(
+                ValueDataDraft::U64(2),
+                ValueDataDraft::U64(u64::from(u32::MAX) + 1),
+            ),
+            Err(ResidentKernelError::Arithmetic)
+        );
+
+        let one_plus_i = ValueDataDraft::Complex32(Complex32Bits::new(
+            F32Bits::from_f32(1.0),
+            F32Bits::from_f32(1.0),
+        ));
+        let two = ValueDataDraft::Complex32(Complex32Bits::new(
+            F32Bits::from_f32(2.0),
+            F32Bits::from_f32(0.0),
+        ));
+        assert_eq!(
+            numeric_power(one_plus_i, two),
+            Ok(ValueDataDraft::Complex32(Complex32Bits::new(
+                F32Bits::from_f32(0.0),
+                F32Bits::from_f32(2.0),
+            )))
+        );
+
+        #[cfg(feature = "r64")]
+        {
+            let rational = |numerator, denominator| ValueDataDraft::Rational64 {
+                numerator,
+                denominator,
+            };
+            assert_eq!(
+                numeric_power(rational(2, 1), rational(-2, 1)),
+                Ok(rational(1, 4))
+            );
+            assert_eq!(
+                numeric_power(rational(2, 1), rational(1, 2)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+        }
     }
 
     #[test]
