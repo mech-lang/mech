@@ -366,12 +366,105 @@ impl PatternItem {
             };
             cursor = next;
         }
+        // Component selection also clones the open and closed bodies, builds a
+        // canonical component schema, solves its shape, and closes that schema
+        // again. A clone of the complete schema context is a conservative
+        // allocation bound for that one-component construction, including
+        // dimension declarations and their expression trees. Only one such
+        // construction is live at a time while the consumed parent item is
+        // replaced by its selected child.
+        if !path.is_empty() {
+            workspace = workspace
+                .checked_add(
+                    schemas
+                        .clone_allocation_bound_bytes()
+                        .and_then(|bytes| bytes.checked_mul(2))
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
         // The retained-footprint pass resolves a Dynamic at the selected leaf
         // even though `PatternItem::child` defers that final resolution.
         let _ = resolve_dynamic(cursor, schemas, &mut workspace)?;
         workspace
             .checked_mul(2)
             .ok_or(ResidentKernelError::InvalidShape)
+    }
+
+    fn binding_resolution_workspace(
+        &self,
+        binding_schema: SchemaId,
+        source_shape_values: &[u64],
+        schemas: &mech_core::SchemaTable,
+    ) -> Result<u64, ResidentKernelError> {
+        let binding = schemas
+            .get(binding_schema)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        let shape_bytes = budget::checked_u64(
+            binding
+                .dimension_parameters()
+                .len()
+                .max(source_shape_values.len()),
+        )?
+        .checked_mul(core::mem::size_of::<u64>() as u64)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+        let body_bytes = binding
+            .body()
+            .clone_allocation_bound_bytes()
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let mut workspace = schemas
+            .clone_allocation_bound_bytes()
+            .and_then(|bytes| bytes.checked_add(body_bytes.checked_mul(3)?))
+            .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        match self {
+            Self::Plain(_) | Self::Dynamic(None) => {}
+            Self::Component {
+                body, shape_values, ..
+            } => {
+                let component_shape_bytes = budget::checked_u64(shape_values.len())?
+                    .checked_mul(core::mem::size_of::<u64>() as u64)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                workspace = workspace
+                    .checked_add(
+                        body.clone_allocation_bound_bytes()
+                            .and_then(|bytes| bytes.checked_mul(2))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    )
+                    .and_then(|bytes| bytes.checked_add(component_shape_bytes.checked_mul(2)?))
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+            }
+            Self::Dynamic(Some(value)) => {
+                let mut current = Some(value.as_ref());
+                while let Some(value) = current {
+                    let schema = schemas
+                        .get(value.schema)
+                        .ok_or(ResidentKernelError::InvalidInput)?;
+                    let dynamic_shape_bytes = budget::checked_u64(value.shape_values.len())?
+                        .checked_mul(core::mem::size_of::<u64>() as u64)
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    workspace = workspace
+                        .checked_add(
+                            schema
+                                .body()
+                                .clone_allocation_bound_bytes()
+                                .and_then(|bytes| bytes.checked_mul(2))
+                                .ok_or(ResidentKernelError::InvalidShape)?,
+                        )
+                        .and_then(|bytes| bytes.checked_add(dynamic_shape_bytes.checked_mul(2)?))
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    if matches!(schema.body(), SchemaBody::Dynamic) {
+                        let ValueDataDraft::Dynamic(next) = &value.data else {
+                            return Err(ResidentKernelError::InvalidInput);
+                        };
+                        current = next.as_deref();
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        Ok(workspace)
     }
 
     fn into_binding(
@@ -906,6 +999,34 @@ fn admit_generator_schema_workspace(
     .admit()?
     .into_plan();
     Ok(())
+}
+
+fn schema_shape_resolution_workspace(
+    schema: &mech_core::Schema,
+    schemas: &mech_core::SchemaTable,
+    observed_shape_values: usize,
+) -> Result<u64, ResidentKernelError> {
+    let body_bytes = schema
+        .body()
+        .clone_allocation_bound_bytes()
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let shape_bytes = budget::checked_u64(
+        schema
+            .dimension_parameters()
+            .len()
+            .max(observed_shape_values),
+    )?
+    .checked_mul(core::mem::size_of::<u64>() as u64)
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    // The schema-context clone bound includes parameter declarations and
+    // their lower/upper expression trees. The remaining terms cover the open
+    // and closed body copies plus lower bounds, witnesses, ShapeInstance
+    // storage, and the retained parameter-value box.
+    schemas
+        .clone_allocation_bound_bytes()
+        .and_then(|bytes| bytes.checked_add(body_bytes.checked_mul(3)?))
+        .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
+        .ok_or(ResidentKernelError::InvalidShape)
 }
 
 fn generator_shape_values(
@@ -2378,6 +2499,25 @@ impl ReactiveInstance {
         let schema = schemas
             .get(control.output_schema)
             .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+        let shape_workspace = schema_shape_resolution_workspace(
+            schema,
+            &schemas,
+            schema.dimension_parameters().len(),
+        )
+        .map_err(fail)?;
+        let (live_bytes, live_nodes) = comprehension_nested_live_demand(
+            draft_count,
+            draft_capacity,
+            footprint,
+            schema.dimension_parameters().len(),
+            schema_arena_bytes,
+            published_output_footprint.retained_bytes,
+            live_locals,
+            meter,
+        )
+        .map_err(fail)?;
+        admit_generator_schema_workspace(shape_workspace, live_bytes, live_nodes, &mut meter)
+            .map_err(fail)?;
         let (count, footprint, shape_values, data) = match control.kind {
             crate::ComprehensionKind::Matrix => {
                 let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
@@ -2642,6 +2782,29 @@ impl ReactiveInstance {
         meter: &mut ResidentBudgetMeter,
     ) -> Result<bool, ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel { node, error };
+        let binding_workspace = item
+            .binding_resolution_workspace(binding.schema, source_shape_values, schemas)
+            .map_err(fail)?;
+        let live_locals = self
+            .comprehension_live_local_footprint(locals, None, schemas, meter)
+            .map_err(fail)?;
+        let live_item = selected_footprint
+            .checked_add(concrete_footprint)
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        let (live_bytes, live_nodes) = item_clone_live_demand(
+            live_item,
+            retained_count,
+            retained_capacity,
+            retained_footprint,
+            retained_shape_parameter_count,
+            schema_arena_bytes,
+            live_locals,
+            published_output_bytes,
+            *meter,
+        )
+        .map_err(fail)?;
+        admit_generator_schema_workspace(binding_workspace, live_bytes, live_nodes, meter)
+            .map_err(fail)?;
         let Some(PatternBindingItem {
             shape_values,
             data,
@@ -3606,10 +3769,99 @@ mod tests {
             .clone_allocation_bound_bytes()
             .unwrap();
 
+        let component_resolution = schemas.clone_allocation_bound_bytes().unwrap() * 4;
         assert_eq!(
             item.dynamic_descent_workspace(&[0], &schemas).unwrap(),
-            one_closure * 2,
+            one_closure * 2 + component_resolution,
         );
+    }
+
+    #[test]
+    fn parameterized_binding_preflights_schema_and_shape_resolution() {
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(8)),
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let (schemas, _) = build.into_parts();
+        let item = PatternItem::component(
+            matrix,
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                    .into_boxed_slice(),
+            },
+            vec![3].into_boxed_slice(),
+            ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        );
+        let workspace = item
+            .binding_resolution_workspace(matrix, &[3], &schemas)
+            .unwrap();
+        assert!(workspace > schemas.clone_allocation_bound_bytes().unwrap());
+        assert!(workspace >= 6 * core::mem::size_of::<u64>() as u64);
+    }
+
+    #[test]
+    fn output_shape_preflight_includes_retained_parameter_values() {
+        let mut builder = SchemaTableBuilder::new();
+        let schema = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Explicit,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(8)),
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let schema = build.resolve(schema).unwrap();
+        let (schemas, _) = build.into_parts();
+        let workspace =
+            schema_shape_resolution_workspace(schemas.get(schema).unwrap(), &schemas, 1).unwrap();
+        assert!(workspace > schemas.clone_allocation_bound_bytes().unwrap());
+        assert!(workspace >= 6 * core::mem::size_of::<u64>() as u64);
     }
 
     #[test]
