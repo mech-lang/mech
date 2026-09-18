@@ -4,13 +4,25 @@ use super::*;
 pub enum ActivatedCollectionStep {
     Generator {
         source: ResidentReadLocation,
-        pattern: crate::CollectionPattern<ResidentRegion, ResidentReadLocation>,
+        source_schema: SchemaId,
+        /// Wildcard generators never materialize or descend into an element,
+        /// so they do not require the element component to have its own
+        /// retained schema-table entry.
+        element_schema: Option<SchemaId>,
+        shape_values: Box<[u64]>,
+        pattern: crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
     },
     Operation {
         node: ActivatedNodeIndex,
         work: u64,
     },
     Filter(ResidentReadLocation),
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ActivatedPatternBinding {
+    pub region: ResidentRegion,
+    pub schema: SchemaId,
 }
 
 #[derive(Clone, Debug)]
@@ -22,7 +34,13 @@ pub struct ActivatedComprehensionNode {
     pub output_schema: SchemaId,
     pub steps: Box<[ActivatedCollectionStep]>,
     pub locals: Box<[ResidentRegion]>,
+    /// Constant-backed values referenced by the lexical declaration do not
+    /// appear in the artifact node's capture list. Retain their locations so
+    /// execution can import every schema owner reachable from the actual
+    /// comprehension inputs.
+    pub schema_reads: Box<[ResidentReadLocation]>,
     pub yield_value: ResidentReadLocation,
+    pub yield_schema: SchemaId,
 }
 
 pub(super) fn locals(control: &crate::ComprehensionDeclaration) -> Vec<SchemaId> {
@@ -72,15 +90,92 @@ fn primitive(body: &SchemaBody) -> bool {
     )
 }
 
-fn supported_pattern(pattern: &crate::CollectionPattern, schemas: &mech_core::SchemaTable) -> bool {
+fn equality_scalar(body: &SchemaBody) -> bool {
+    matches!(
+        body,
+        SchemaBody::Bool
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+            | SchemaBody::String
+            | SchemaBody::Id
+            | SchemaBody::Index
+            | SchemaBody::Atom(_)
+    )
+}
+
+fn canonical_component_schema(
+    parent: &mech_core::Schema,
+    body: &SchemaBody,
+) -> Option<mech_core::Schema> {
+    parent.canonical_component_schema(body).ok()
+}
+
+pub(super) fn canonical_component_schema_id(
+    parent: &mech_core::Schema,
+    body: &SchemaBody,
+    schemas: &mech_core::SchemaTable,
+) -> Option<SchemaId> {
+    schemas.find_by_key(canonical_component_schema(parent, body)?.key())
+}
+
+fn pattern_components_addressable(
+    pattern: &crate::CollectionPattern,
+    schema: SchemaId,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    let Some(parent) = schemas.get(schema) else {
+        return false;
+    };
+    match pattern {
+        // These forms consume the value already selected by their parent.
+        crate::CollectionPattern::Wildcard
+        | crate::CollectionPattern::Bind { .. }
+        | crate::CollectionPattern::Equal(_) => true,
+        crate::CollectionPattern::Tuple(patterns) => {
+            let SchemaBody::Tuple(items) = parent.body() else {
+                // Shape mismatch is an ordinary runtime nonmatch. There is no
+                // structural path to preflight in this schema.
+                return true;
+            };
+            patterns.iter().enumerate().all(|(index, pattern)| {
+                if matches!(pattern, crate::CollectionPattern::Wildcard) {
+                    return true;
+                }
+                let Some(body) = items.get(index) else {
+                    return true;
+                };
+                canonical_component_schema_id(parent, body, schemas)
+                    .is_some_and(|schema| pattern_components_addressable(pattern, schema, schemas))
+            })
+        }
+        crate::CollectionPattern::Array { prefix, suffix, .. } => {
+            let SchemaBody::Matrix { element, .. } = parent.body() else {
+                return true;
+            };
+            prefix.iter().chain(suffix.iter()).all(|pattern| {
+                if matches!(pattern, crate::CollectionPattern::Wildcard) {
+                    return true;
+                }
+                canonical_component_schema_id(parent, element, schemas)
+                    .is_some_and(|schema| pattern_components_addressable(pattern, schema, schemas))
+            })
+        }
+    }
+}
+
+fn supported_pattern_inner(
+    pattern: &crate::CollectionPattern,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
     match pattern {
         crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => true,
-        crate::CollectionPattern::Bind { schema, .. } => schemas
-            .get(*schema)
-            .is_some_and(|schema| primitive(schema.body())),
-        crate::CollectionPattern::Tuple(items) => {
-            items.iter().all(|item| supported_pattern(item, schemas))
-        }
+        crate::CollectionPattern::Bind { schema, .. } => schemas.get(*schema).is_some(),
+        crate::CollectionPattern::Tuple(items) => items
+            .iter()
+            .all(|item| supported_pattern_inner(item, schemas)),
         crate::CollectionPattern::Array {
             prefix,
             rest,
@@ -89,7 +184,7 @@ fn supported_pattern(pattern: &crate::CollectionPattern, schemas: &mech_core::Sc
             prefix
                 .iter()
                 .chain(suffix.iter())
-                .all(|item| supported_pattern(item, schemas))
+                .all(|item| supported_pattern_inner(item, schemas))
                 && rest
                     .as_deref()
                     .is_none_or(|rest| matches!(rest, crate::CollectionPattern::Wildcard))
@@ -97,27 +192,99 @@ fn supported_pattern(pattern: &crate::CollectionPattern, schemas: &mech_core::Sc
     }
 }
 
-fn supported_element(body: &SchemaBody) -> bool {
-    primitive(body)
-        || match body {
-            SchemaBody::Atom(_) => true,
-            SchemaBody::Tuple(fields) => fields.iter().all(supported_element),
-            SchemaBody::Matrix { element, .. } => supported_element(element),
-            _ => false,
+fn supported_pattern(
+    pattern: &crate::CollectionPattern,
+    element_schema: SchemaId,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    supported_pattern_inner(pattern, schemas)
+        && pattern_components_addressable(pattern, element_schema, schemas)
+}
+
+fn generator_element_schema(
+    pattern: &crate::CollectionPattern,
+    source: &mech_core::Schema,
+    schemas: &mech_core::SchemaTable,
+) -> Option<Option<SchemaId>> {
+    let element = match source.body() {
+        SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => element.as_ref(),
+        _ => return None,
+    };
+    if matches!(pattern, crate::CollectionPattern::Wildcard) {
+        return Some(None);
+    }
+    let element_schema = canonical_component_schema_id(source, element, schemas)?;
+    supported_pattern(pattern, element_schema, schemas).then_some(Some(element_schema))
+}
+
+fn visit_pattern_values(
+    pattern: &crate::CollectionPattern,
+    visit: &mut impl FnMut(crate::ComprehensionValue),
+) {
+    match pattern {
+        crate::CollectionPattern::Equal(value) => visit(*value),
+        crate::CollectionPattern::Tuple(items) => {
+            for item in items {
+                visit_pattern_values(item, visit);
+            }
         }
+        crate::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => {
+            for item in prefix
+                .iter()
+                .chain(rest.iter().map(Box::as_ref))
+                .chain(suffix.iter())
+            {
+                visit_pattern_values(item, visit);
+            }
+        }
+        crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => {}
+    }
+}
+
+fn comprehension_constant_ids(
+    control: &crate::ComprehensionDeclaration,
+) -> Vec<mech_core::ConstantId> {
+    let mut constants = Vec::new();
+    let mut visit = |value: crate::ComprehensionValue| {
+        if let crate::ComprehensionValue::Constant(id) = value
+            && !constants.contains(&id)
+        {
+            constants.push(id);
+        }
+    };
+    for step in &control.steps {
+        match step {
+            crate::ComprehensionStep::Generator { source, pattern } => {
+                visit(*source);
+                visit_pattern_values(pattern, &mut visit);
+            }
+            crate::ComprehensionStep::Operation(operation) => {
+                operation.inputs.iter().copied().for_each(&mut visit);
+            }
+            crate::ComprehensionStep::Filter(value) => visit(*value),
+        }
+    }
+    visit(control.yield_value);
+    constants
 }
 
 fn activate_pattern(
     pattern: &crate::CollectionPattern,
-    binding: &impl Fn(u32) -> ResidentRegion,
+    binding: &impl Fn(u32, SchemaId) -> ActivatedPatternBinding,
     value: &impl Fn(crate::ComprehensionValue) -> Result<ResidentReadLocation, ResidentActivationError>,
-) -> Result<crate::CollectionPattern<ResidentRegion, ResidentReadLocation>, ResidentActivationError>
-{
+) -> Result<
+    crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
+    ResidentActivationError,
+> {
     Ok(match pattern {
         crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
-        crate::CollectionPattern::Bind { local, .. } => crate::CollectionPattern::Bind {
+        crate::CollectionPattern::Bind { local, schema } => crate::CollectionPattern::Bind {
             local: *local,
-            schema: binding(*local),
+            schema: binding(*local, *schema),
         },
         crate::CollectionPattern::Equal(peer) => crate::CollectionPattern::Equal(value(*peer)?),
         crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
@@ -166,7 +333,9 @@ pub(super) fn bind(
     (
         Box<[ActivatedCollectionStep]>,
         Box<[ResidentRegion]>,
+        Box<[ResidentReadLocation]>,
         ResidentReadLocation,
+        SchemaId,
         mech_core::CallMemoryPlan,
     ),
     ResidentActivationError,
@@ -180,9 +349,8 @@ pub(super) fn bind(
             .schemas()
             .get(output.schema_id)
             .is_some_and(|schema| match schema.body() {
-                SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
-                    primitive(element)
-                }
+                SchemaBody::Matrix { .. } => true,
+                SchemaBody::Set { element, .. } => primitive(element),
                 _ => false,
             })
     {
@@ -223,31 +391,27 @@ pub(super) fn bind(
             } => {
                 let source = source(*value);
                 let input = port(source)?;
-                if !supported_pattern(pattern, artifact.schemas())
-                    || !artifact
-                        .schemas()
-                        .get(input.schema_id)
-                        .is_some_and(|schema| match schema.body() {
-                            SchemaBody::Matrix { element, .. }
-                            | SchemaBody::Set { element, .. } => supported_element(element),
-                            _ => false,
-                        })
-                {
+                let Some(source_schema) = artifact.schemas().get(input.schema_id) else {
                     return Err(unsupported());
-                }
+                };
+                let Some(element_schema) =
+                    generator_element_schema(pattern, source_schema, artifact.schemas())
+                else {
+                    return Err(unsupported());
+                };
                 let pattern = activate_pattern(
                     pattern,
-                    &|local| {
-                        layout.slots[layout.control_locals[&(owner, 0, local)].0.get() as usize]
-                            .region
+                    &|local, schema| ActivatedPatternBinding {
+                        region: layout.slots
+                            [layout.control_locals[&(owner, 0, local)].0.get() as usize]
+                            .region,
+                        schema,
                     },
                     &|value| {
                         let source = source_for_value(value, &captures, owner, layout);
                         let peer = port(source)?;
                         let schema = artifact.schemas().get(peer.schema_id).unwrap();
-                        if !primitive(schema.body())
-                            && !matches!(schema.body(), SchemaBody::Atom(_))
-                        {
+                        if !equality_scalar(schema.body()) {
                             return Err(unsupported());
                         }
                         resolve_read(layout, source)
@@ -255,6 +419,13 @@ pub(super) fn bind(
                 )?;
                 instructions.push(ActivatedCollectionStep::Generator {
                     source: resolve_read(layout, source)?,
+                    source_schema: input.schema_id,
+                    element_schema,
+                    shape_values: input
+                        .shape_instance
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice(),
                     pattern,
                 });
             }
@@ -357,7 +528,12 @@ pub(super) fn bind(
                         total.checked_add(input.shape.len()? as u64)
                     })
                     .ok_or_else(unsupported)?;
-                let work = if fixed_scalar {
+                let work = if output.region.kind == ResidentValueKind::Snapshot {
+                    // Snapshot-producing kernels carry their complete retained
+                    // and transient demand in the bound call plan. The control
+                    // meter owns only the repeated dispatch overhead here.
+                    0
+                } else if fixed_scalar {
                     256
                 } else if matches!(name.as_str(), "stats/sum/column" | "stats/sum/row") {
                     // Reduction kernels admit their complete scan before execution.
@@ -405,10 +581,17 @@ pub(super) fn bind(
         .map(port)
         .collect::<Result<Vec<_>, _>>()?;
     let memory = materialization_memory(artifact, control.kind, &inputs, &output)?;
+    let yielded = port(source(control.yield_value))?;
+    let schema_reads = comprehension_constant_ids(control)
+        .into_iter()
+        .map(|constant| resolve_read(layout, ArtifactSource::Constant(constant)))
+        .collect::<Result<Vec<_>, _>>()?;
     Ok((
         instructions.into_boxed_slice(),
         locals,
+        schema_reads.into_boxed_slice(),
         resolve_read(layout, source(control.yield_value))?,
+        yielded.schema_id,
         memory,
     ))
 }
@@ -509,5 +692,223 @@ fn materialization_memory(
 pub(super) fn materialization_construction() -> OutputConstruction {
     OutputConstruction::FullWrite {
         shape: ShapeRule::Declared,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_core::{
+        DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+        DimensionParameterOrigin, FloatWidth, SchemaDraft, SchemaTableBuilder,
+    };
+
+    fn parameter(id: u32) -> DimensionParameterDeclaration {
+        DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(8)),
+        }
+    }
+
+    #[test]
+    fn component_addressability_uses_canonical_parameter_numbering() {
+        assert!(equality_scalar(&SchemaBody::String));
+        assert!(equality_scalar(&SchemaBody::SignedInteger(
+            mech_core::IntegerWidth::W32,
+        )));
+        let component = |parameter| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: vec![
+                DimensionExpr::Constant(1),
+                DimensionExpr::Parameter(DimensionParameterId::new(parameter)),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let root = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(vec![component(0), component(1)].into_boxed_slice()),
+                    dimension_parameters: vec![parameter(0), parameter(1)].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: component(1),
+                    dimension_parameters: vec![parameter(0), parameter(1)].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let root = build.resolve(root).unwrap();
+        let schemas = build.table;
+        let pattern = crate::CollectionPattern::Tuple(
+            vec![
+                crate::CollectionPattern::Wildcard,
+                crate::CollectionPattern::Bind {
+                    local: 0,
+                    schema: root,
+                },
+            ]
+            .into_boxed_slice(),
+        );
+
+        assert!(pattern_components_addressable(&pattern, root, &schemas));
+    }
+
+    #[test]
+    fn structural_pattern_rejects_an_unaddressable_nested_component() {
+        let mut builder = SchemaTableBuilder::new();
+        let root = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::Tuple(Box::new([]))].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let root = build.resolve(root).unwrap();
+        let schemas = build.table;
+        let pattern = crate::CollectionPattern::Tuple(
+            vec![crate::CollectionPattern::Tuple(Box::new([]))].into_boxed_slice(),
+        );
+
+        assert!(!pattern_components_addressable(&pattern, root, &schemas));
+        assert!(!supported_pattern(&pattern, root, &schemas));
+    }
+
+    #[test]
+    fn wildcard_generator_does_not_require_a_retained_element_schema() {
+        let mut builder = SchemaTableBuilder::new();
+        let source = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Tuple(
+                            vec![SchemaBody::Bool].into_boxed_slice(),
+                        )),
+                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                            .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let source = build.resolve(source).unwrap();
+        let schemas = build.table;
+        let source = schemas.get(source).unwrap();
+
+        assert_eq!(
+            generator_element_schema(&crate::CollectionPattern::Wildcard, source, &schemas),
+            Some(None),
+        );
+        assert_eq!(
+            generator_element_schema(
+                &crate::CollectionPattern::Tuple(
+                    vec![crate::CollectionPattern::Wildcard].into_boxed_slice(),
+                ),
+                source,
+                &schemas,
+            ),
+            None,
+        );
+    }
+
+    #[test]
+    fn pattern_addressability_ignores_unrelated_incomplete_schemas() {
+        let mut builder = SchemaTableBuilder::new();
+        let root = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(vec![SchemaBody::Bool].into_boxed_slice()),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let boolean = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::Tuple(Box::new([]))].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let root = build.resolve(root).unwrap();
+        let boolean = build.resolve(boolean).unwrap();
+        let schemas = build.table;
+        let pattern = crate::CollectionPattern::Tuple(
+            vec![crate::CollectionPattern::Bind {
+                local: 0,
+                schema: boolean,
+            }]
+            .into_boxed_slice(),
+        );
+
+        assert!(supported_pattern(&pattern, root, &schemas));
+    }
+
+    #[test]
+    fn comprehension_schema_sources_include_constant_generator_and_yield() {
+        let generator = mech_core::ConstantId::new(3);
+        let peer = mech_core::ConstantId::new(5);
+        let yielded = mech_core::ConstantId::new(7);
+        let control = crate::ComprehensionDeclaration {
+            kind: crate::ComprehensionKind::Matrix,
+            steps: vec![crate::ComprehensionStep::Generator {
+                source: crate::ComprehensionValue::Constant(generator),
+                pattern: crate::CollectionPattern::Equal(crate::ComprehensionValue::Constant(peer)),
+            }]
+            .into_boxed_slice(),
+            yield_value: crate::ComprehensionValue::Constant(yielded),
+        };
+
+        assert_eq!(
+            comprehension_constant_ids(&control),
+            vec![generator, peer, yielded]
+        );
     }
 }
