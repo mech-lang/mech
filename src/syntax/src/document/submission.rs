@@ -4,7 +4,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use super::{
-    DocumentId, ParseConfig, Revision, SyntaxKind, TextSnapshot, parse_canonical_document,
+    DocumentId, ParseConfig, Revision, SyntaxElement, SyntaxKind, TextSnapshot,
+    parse_canonical_document,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,9 +47,12 @@ pub fn submission_terminal(source: &str) -> Option<SubmissionTerminal> {
     }
     let terminal = terminal?;
     let semicolon = terminal
-        .tokens()
+        .children_with_tokens()
         .into_iter()
-        .find(|token| token.kind() == SyntaxKind::Semicolon);
+        .find_map(|element| match element {
+            SyntaxElement::Token(token) if token.kind() == SyntaxKind::Semicolon => Some(token),
+            _ => None,
+        });
     Some(match semicolon {
         Some(token) => SubmissionTerminal {
             byte_offset: token.range().start.0 as usize,

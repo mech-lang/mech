@@ -34,7 +34,6 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: >-
           python3 scripts/ci-impact.py
@@ -266,8 +265,6 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch the locked dependency graph
@@ -277,7 +274,6 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: python3 -B scripts/run-owner-tests.py --owners "${{ matrix.owners }}"
 
@@ -413,6 +409,13 @@ jobs:
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
+      - name: Verify canonical document bundle activation and replacement
+        env:
+          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-document-bundles
+        run: |
+          cargo fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          cargo run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech

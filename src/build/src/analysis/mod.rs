@@ -4,6 +4,7 @@
 //! bytecode model.  It does not inspect source-level exports or infer Cargo
 //! metadata from names embedded in a program.
 
+pub(crate) mod artifact;
 pub(crate) mod bytecode;
 pub(crate) mod requirements;
 pub(crate) mod runtime_types;
