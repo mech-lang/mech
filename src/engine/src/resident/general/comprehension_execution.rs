@@ -163,11 +163,12 @@ fn admit_output(count: usize, meter: ResidentBudgetMeter) -> Result<(), Resident
         .checked_mul(4)
         .and_then(|bytes| bytes.checked_add(core::mem::size_of::<Value>() + 64))
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let admitted_bytes = budget::checked_u64(temporary)?;
     PreparedKernel::new((), budget::resident_cost! {
         output_elements: count,
-        output_bytes: temporary,
-        temporary_bytes: temporary,
-        container_bytes: temporary,
+        output_bytes: admitted_bytes,
+        temporary_bytes: admitted_bytes,
+        container_bytes: admitted_bytes,
         retained_nodes: count.checked_mul(2).and_then(|count| count.checked_add(2)).ok_or(ResidentKernelError::InvalidShape)?,
         ..meter.estimate()
     }).admit()?.into_plan();
@@ -224,9 +225,12 @@ impl ReactiveInstance {
         if control.kind == crate::ComprehensionKind::Set {
             meter.charge_comparison_work(canonical_work).map_err(fail)?;
         }
-        if let ResidentValueRef::Snapshot([Some(current)]) =
-            self.workspace.scratch.read(control.write.region)
-        {
+        let target = if control.write.storage == ResidentStorageClass::Constant {
+            &self.activation
+        } else {
+            &self.workspace.scratch
+        };
+        if let ResidentValueRef::Snapshot([Some(current)]) = target.read(control.write.region) {
             let footprint =
                 budget::published_canonical_footprint(&mut meter, current, &self.plan.schemas)
                     .map_err(fail)?;
@@ -234,69 +238,83 @@ impl ReactiveInstance {
                 .charge_comparison_work(footprint.encoded_bytes)
                 .map_err(fail)?;
         }
+        // `with_kernel_turn_plan` owns the one payload scope for this output.
+        // Admitting the concrete control plan below charges that enclosing
+        // scope; opening another same-region scope here would reserve the
+        // materialization peak twice while both reservations are live.
         admit_output(count, meter).map_err(fail)?;
-        let schema = self
-            .plan
-            .schemas
-            .get(control.output_schema)
-            .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
-        let (shape_values, data) = match control.kind {
-            crate::ComprehensionKind::Matrix => {
-                let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
-                    return Err(fail(ResidentKernelError::InvalidOutput));
-                };
-                let shape = super::super::matrix_shape_for_extents(schema, &[1, count as u64])
-                    .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-                if dimensions.len() != 2 {
-                    return Err(fail(ResidentKernelError::InvalidShape));
+        let next = {
+            let schema = self
+                .plan
+                .schemas
+                .get(control.output_schema)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+            let (shape_values, data) = match control.kind {
+                crate::ComprehensionKind::Matrix => {
+                    let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+                        return Err(fail(ResidentKernelError::InvalidOutput));
+                    };
+                    let shape = super::super::matrix_shape_for_extents(schema, &[1, count as u64])
+                        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+                    if dimensions.len() != 2 {
+                        return Err(fail(ResidentKernelError::InvalidShape));
+                    }
+                    (
+                        shape.parameter_values().to_vec().into_boxed_slice(),
+                        ValueDataDraft::Matrix(values.into_iter().map(Item::draft).collect()),
+                    )
                 }
-                (
-                    shape.parameter_values().to_vec().into_boxed_slice(),
-                    ValueDataDraft::Matrix(values.into_iter().map(Item::draft).collect()),
-                )
+                crate::ComprehensionKind::Set => {
+                    let mech_core::SchemaBody::Set { element, .. } = schema.body() else {
+                        return Err(fail(ResidentKernelError::InvalidOutput));
+                    };
+                    // The core key relation owns float normalization and set identity.
+                    // Admission above covers sorting and finalization before either runs.
+                    let compare = |left: &Item, right: &Item| {
+                        mech_core::snapshot::compare_key_data(element, &left.data(), &right.data())
+                            .expect("validated primitive collection element")
+                    };
+                    values.sort_unstable_by(compare);
+                    values.dedup_by(|left, right| compare(left, right).is_eq());
+                    (
+                        Box::new([]) as Box<[u64]>,
+                        ValueDataDraft::Set(values.into_iter().map(Item::draft).collect()),
+                    )
+                }
+            };
+            let canonical_budget = SnapshotCanonicalizationBudget::new(canonical_work);
+            ValueDraft {
+                schema: control.output_schema,
+                shape_values,
+                data,
             }
-            crate::ComprehensionKind::Set => {
-                let mech_core::SchemaBody::Set { element, .. } = schema.body() else {
-                    return Err(fail(ResidentKernelError::InvalidOutput));
-                };
-                // The core key relation owns float normalization and set identity.
-                // Admission above covers sorting and finalization before either runs.
-                let compare = |left: &Item, right: &Item| {
-                    mech_core::snapshot::compare_key_data(element, &left.data(), &right.data())
-                        .expect("validated primitive collection element")
-                };
-                values.sort_unstable_by(compare);
-                values.dedup_by(|left, right| compare(left, right).is_eq());
-                (
-                    Box::new([]) as Box<[u64]>,
-                    ValueDataDraft::Set(values.into_iter().map(Item::draft).collect()),
-                )
-            }
+            .finalize(
+                &SnapshotValidationContext::new(&self.plan.schemas)
+                    .with_canonicalization_budget(&canonical_budget),
+            )
+            .map_err(|_| fail(ResidentKernelError::InvalidOutput))
+        }?;
+        let target = if control.write.storage == ResidentStorageClass::Constant {
+            &mut self.activation
+        } else {
+            &mut self.workspace.scratch
         };
-        let canonical_budget = SnapshotCanonicalizationBudget::new(canonical_work);
-        let next = ValueDraft {
-            schema: control.output_schema,
-            shape_values,
-            data,
-        }
-        .finalize(
-            &SnapshotValidationContext::new(&self.plan.schemas)
-                .with_canonicalization_budget(&canonical_budget),
-        )
-        .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
-        let ResidentValueMut::Snapshot([target]) =
-            self.workspace.scratch.write(control.write.region)
-        else {
-            return Err(fail(ResidentKernelError::InvalidOutput));
-        };
-        let changed = target
-            .as_ref()
-            .map_or(Ok(true), |old| {
+        let changed = match target.read(control.write.region) {
+            ResidentValueRef::Snapshot([current]) => current.as_ref().map_or(Ok(true), |old| {
                 old.snapshot_eq(&self.plan.schemas, &next, &self.plan.schemas)
                     .map(|equal| !equal)
-            })
-            .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
-        *target = Some(next);
+                    .map_err(|_| ())
+            }),
+            _ => Err(()),
+        };
+        let changed = match changed {
+            Ok(changed) => changed,
+            Err(_) => return Err(fail(ResidentKernelError::InvalidOutput)),
+        };
+        let ResidentValueMut::Snapshot([target_value]) = target.write(control.write.region) else {
+            return Err(fail(ResidentKernelError::InvalidOutput));
+        };
+        *target_value = Some(next);
         set_bit(
             &mut self.workspace.initialized_output_bits,
             index.get() as usize,

@@ -547,6 +547,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         }
     }
