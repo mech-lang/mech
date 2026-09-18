@@ -6449,6 +6449,9 @@ fn activated_pattern_snapshot_finalizations(
                     count = count.checked_add(1)?;
                 }
             }
+            crate::CollectionPattern::Enum { payload, .. } => {
+                pending.extend(payload.iter().map(Box::as_ref));
+            }
             crate::CollectionPattern::Tuple(items) => pending.extend(items.iter()),
             crate::CollectionPattern::Array {
                 prefix,
@@ -6510,6 +6513,15 @@ fn activate_match_pattern(
                     schema: slot.schema,
                 })
             }
+            crate::CollectionPattern::Enum { ordinal, payload } => crate::CollectionPattern::Enum {
+                ordinal: *ordinal,
+                payload: payload
+                    .as_deref()
+                    .map(|item| {
+                        structural(artifact, owner, owner_block, item, layout).map(Box::new)
+                    })
+                    .transpose()?,
+            },
             crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
                 items
                     .iter()
@@ -6621,6 +6633,11 @@ fn bind_match_arms(
                 match pattern {
                     crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => {}
                     crate::CollectionPattern::Bind { schema, .. } => regions.push(schema.region),
+                    crate::CollectionPattern::Enum { payload, .. } => {
+                        if let Some(payload) = payload {
+                            collect_binding_regions(payload, regions);
+                        }
+                    }
                     crate::CollectionPattern::Tuple(items) => {
                         for item in items {
                             collect_binding_regions(item, regions);

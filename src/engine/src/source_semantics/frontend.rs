@@ -15,8 +15,8 @@ mod document_lowering;
 mod output_projection;
 
 use mech_core::snapshot::{
-    Complex32Bits, Complex64Bits, F32Bits, F64Bits, OptionDraft, ReifiedKind, ReifiedTypeDraft,
-    SnapshotValidationContext,
+    Complex32Bits, Complex64Bits, EnumDraft, F32Bits, F64Bits, OptionDraft, ReifiedKind,
+    ReifiedTypeDraft, SnapshotValidationContext,
 };
 use mech_core::{
     BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath, CardinalitySpec,
@@ -24,7 +24,7 @@ use mech_core::{
     DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
     DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerWidth, KindExpr, KindField,
     KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
-    ResolvedOutputSchemaRule, ResolvedType, Schema, SchemaBody, SchemaDraft, SchemaField, SchemaId,
+    ResolvedOutputSchemaRule, ResolvedType, SchemaBody, SchemaDraft, SchemaField, SchemaId,
     SchemaTable, SchemaTableBuilder, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate,
     Value, ValueDataDraft, ValueDraft, execute_conversion_draft, plan_explicit_cast,
     plan_numeric_promotion,
@@ -1093,27 +1093,21 @@ fn retain_schema_tree(
         .clone()
         .finalize()
         .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
-    retain_finalized_schema_tree(anchor, builder, schema)
-}
-
-fn retain_finalized_schema_tree(
-    anchor: SourceSemanticAnchor,
-    builder: &mut SchemaTableBuilder,
-    schema: Schema,
-) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
     let handle = builder
-        .insert(schema.clone())
+        .insert(schema)
         .map_err(|error| internal(anchor, format!("unable to retain source schema: {error:?}")))?;
     let mut retain = |body: &SchemaBody| {
-        let component = schema.canonical_component_schema(body).map_err(|error| {
-            internal(
-                anchor,
-                format!("unable to derive retained component schema: {error:?}"),
-            )
-        })?;
-        retain_finalized_schema_tree(anchor, builder, component).map(drop)
+        retain_schema_tree(
+            anchor,
+            builder,
+            &SchemaDraft {
+                body: body.clone(),
+                dimension_parameters: draft.dimension_parameters.clone(),
+            },
+        )
+        .map(drop)
     };
-    match schema.body() {
+    match &draft.body {
         SchemaBody::Enum { variants, .. } => {
             for payload in variants
                 .iter()
@@ -2315,6 +2309,13 @@ impl NamedKindPathResolver for BuiltinKindPaths {
     }
 }
 
+#[derive(Clone)]
+struct DeclaredEnumVariant {
+    schema: SchemaDraft,
+    ordinal: u32,
+    payload: Option<SchemaBody>,
+}
+
 struct SemanticBuilder {
     function_catalog: Option<Arc<mech_core::FunctionCatalog>>,
     function_environment: Option<crate::FunctionEnvironment>,
@@ -2326,6 +2327,8 @@ struct SemanticBuilder {
     inputs: Vec<PendingInput>,
     input_by_name: BTreeMap<String, u32>,
     input_declarations: BTreeMap<String, SchemaDraft>,
+    declared_kinds: BTreeMap<String, SchemaDraft>,
+    declared_variants: BTreeMap<String, Vec<DeclaredEnumVariant>>,
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
@@ -2342,6 +2345,46 @@ struct SemanticBuilder {
 }
 
 impl SemanticBuilder {
+    fn annotation_schema_draft(
+        &self,
+        annotation: &KindAnnotationSyntax,
+    ) -> Result<SchemaDraft, SourceSemanticError> {
+        annotation_schema_draft_with_declarations(
+            annotation,
+            &self.declared_kinds,
+            &BTreeSet::new(),
+        )
+    }
+
+    fn declared_enum_variant(
+        &self,
+        name: &str,
+        expected: Option<&SchemaDraft>,
+        syntax: &SyntaxNode,
+    ) -> Result<Option<DeclaredEnumVariant>, SourceSemanticError> {
+        let Some(variants) = self.declared_variants.get(name) else {
+            return Ok(None);
+        };
+        let selected = variants
+            .iter()
+            .filter(|variant| expected.is_none_or(|expected| expected == &variant.schema))
+            .cloned()
+            .collect::<Vec<_>>();
+        match selected.as_slice() {
+            [] => Err(SourceSemanticError {
+                code: "source-semantics/unknown-enum-variant",
+                message: format!("variant {name} does not belong to the expected enum"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            }),
+            [variant] => Ok(Some(variant.clone())),
+            _ => Err(SourceSemanticError {
+                code: "source-semantics/ambiguous-enum-variant",
+                message: format!("variant {name} requires an enum kind annotation"),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            }),
+        }
+    }
+
     fn new(anchor: SourceSemanticAnchor) -> Self {
         Self {
             function_catalog: None,
@@ -2354,6 +2397,8 @@ impl SemanticBuilder {
             inputs: Vec::new(),
             input_by_name: BTreeMap::new(),
             input_declarations: BTreeMap::new(),
+            declared_kinds: BTreeMap::new(),
+            declared_variants: BTreeMap::new(),
             nodes: Vec::new(),
             states: Vec::new(),
             outputs: Vec::new(),
@@ -2487,7 +2532,7 @@ impl SemanticBuilder {
             if !bindings.contains(&name)
                 && let Some(annotation) = variable.annotation()
             {
-                let mut schema = annotation_schema_draft(&annotation)?;
+                let mut schema = self.annotation_schema_draft(&annotation)?;
                 if let Some(existing) = self.input_declarations.get(&name) {
                     if !is_dynamic_schema_draft(existing)
                         && !is_dynamic_schema_draft(&schema)
@@ -3774,7 +3819,7 @@ impl SemanticBuilder {
         };
         let annotation = variable
             .annotation()
-            .map(|annotation| annotation_schema_draft(&annotation))
+            .map(|annotation| self.annotation_schema_draft(&annotation))
             .transpose()?;
         if let Some(value) = self.bindings.get(&name).copied() {
             let value = self.read_document_binding(value, variable.syntax())?;
@@ -3883,7 +3928,7 @@ impl SemanticBuilder {
         )?;
         let expected = variable
             .annotation()
-            .map(|annotation| annotation_schema_draft(&annotation))
+            .map(|annotation| self.annotation_schema_draft(&annotation))
             .transpose()?;
         let initializer_nodes = self.nodes.len();
         let initializer_states = self.states.len();
@@ -3985,7 +4030,7 @@ impl SemanticBuilder {
                 PendingValue::UnresolvedEmpty(SourceSemanticAnchor::for_node(value.syntax()));
             return match literal.annotation() {
                 Some(annotation) => {
-                    let expected = annotation_schema_draft(&annotation)?;
+                    let expected = self.annotation_schema_draft(&annotation)?;
                     if !matches!(expected.body, SchemaBody::Option(_)) {
                         return Err(SourceSemanticError {
                             code: "source-semantics/incompatible-literal-kind",
@@ -4007,6 +4052,29 @@ impl SemanticBuilder {
         }
         if let Some(LiteralValueSyntax::Atom(value)) = literal.value() {
             let source = node_text(value.syntax())?;
+            let annotation = literal
+                .annotation()
+                .map(|annotation| self.annotation_schema_draft(&annotation))
+                .transpose()?;
+            let variant_name = source.trim_start_matches(':');
+            if let Some(variant) =
+                self.declared_enum_variant(variant_name, annotation.as_ref(), value.syntax())?
+            {
+                if variant.payload.is_some() {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/missing-enum-payload",
+                        message: format!("enum variant {variant_name} requires a payload"),
+                        anchor: SourceSemanticAnchor::for_node(value.syntax()),
+                    });
+                }
+                return Ok(self.constant_draft(
+                    variant.schema,
+                    ValueDataDraft::Enum(EnumDraft {
+                        ordinal: variant.ordinal,
+                        payload: None,
+                    }),
+                ));
+            }
             let path = CanonicalNominalPath::new(
                 source
                     .trim_start_matches(':')
@@ -4023,10 +4091,10 @@ impl SemanticBuilder {
             })?;
             let key = NominalKey::from_path(NominalKind::Atom, &path);
             let atom = self.constant_exact(SchemaBody::Atom(key), ValueDataDraft::Atom);
-            return match literal.annotation() {
+            return match annotation {
                 Some(annotation) => self.conform_schema_draft(
                     atom,
-                    &annotation_schema_draft(&annotation)?,
+                    &annotation,
                     value.syntax(),
                     "source-semantics/incompatible-literal-kind",
                     "atom literal does not satisfy its exact kind annotation",
@@ -4739,7 +4807,7 @@ impl SemanticBuilder {
                             self.required(field.name(), field.syntax(), "a table field name")?;
                         let schema = field
                             .annotation()
-                            .map(|annotation| annotation_schema_draft(&annotation))
+                            .map(|annotation| self.annotation_schema_draft(&annotation))
                             .transpose()?;
                         Ok((node_text(name.syntax())?, schema))
                     })
@@ -4762,7 +4830,7 @@ impl SemanticBuilder {
                         )?;
                         Ok((
                             node_text(name.syntax())?,
-                            Some(annotation_schema_draft(&annotation)?),
+                            Some(self.annotation_schema_draft(&annotation)?),
                         ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
@@ -4784,7 +4852,7 @@ impl SemanticBuilder {
                         )?;
                         Ok((
                             node_text(name.syntax())?,
-                            Some(annotation_schema_draft(&annotation)?),
+                            Some(self.annotation_schema_draft(&annotation)?),
                         ))
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?,
@@ -5016,7 +5084,7 @@ impl SemanticBuilder {
             let name = node_text(name.syntax())?;
             let context = binding
                 .annotation()
-                .map(|annotation| annotation_schema_draft(&annotation))
+                .map(|annotation| self.annotation_schema_draft(&annotation))
                 .transpose()?
                 .or_else(|| {
                     expected.and_then(|schema| match &schema.body {
@@ -5209,6 +5277,47 @@ impl SemanticBuilder {
     ) -> Result<PendingValue, SourceSemanticError> {
         let name = self.required(tuple.name(), tuple.syntax(), "a tuple-structure name")?;
         let value = self.required(tuple.value(), tuple.syntax(), "a tuple-structure value")?;
+        let variant_name = node_text(name.syntax())?;
+        if let Some(variant) =
+            self.declared_enum_variant(&variant_name, expected, tuple.syntax())?
+        {
+            let payload = variant.payload.clone().ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/unexpected-enum-payload",
+                message: format!("enum variant {variant_name} does not accept a payload"),
+                anchor: SourceSemanticAnchor::for_node(tuple.syntax()),
+            })?;
+            let payload_schema = SchemaDraft {
+                body: payload,
+                dimension_parameters: Box::new([]),
+            };
+            let value = self.contextual_expression(
+                &value,
+                Some(&payload_schema),
+                "source-semantics/incompatible-enum-payload",
+                "enum payload does not satisfy its declared kind",
+            )?;
+            if let PendingValue::Constant(index) = value {
+                return Ok(self.constant_draft(
+                    variant.schema,
+                    ValueDataDraft::Enum(EnumDraft {
+                        ordinal: variant.ordinal,
+                        payload: Some(Box::new(self.constants[index].data.clone())),
+                    }),
+                ));
+            }
+            let ordinal = self.constant(
+                BuiltinSchema::Index,
+                ValueDataDraft::Index(u64::from(variant.ordinal) + 1),
+            );
+            return Ok(self.emit_with_schema_draft(
+                "core/enum-pack",
+                vec![ordinal, value],
+                variant.schema,
+                tuple.syntax(),
+                "enum-constructor",
+                Some(variant_name),
+            ));
+        }
         let context = expected.and_then(|schema| match &schema.body {
             SchemaBody::Tuple(items) if items.len() == 2 => {
                 Some(schema_component(schema, &items[1]))
@@ -6963,8 +7072,16 @@ fn builtin_schema_for_annotation_body(body: &SchemaBody) -> Option<BuiltinSchema
 fn annotation_schema_draft(
     annotation: &KindAnnotationSyntax,
 ) -> Result<SchemaDraft, SourceSemanticError> {
+    annotation_schema_draft_with_declarations(annotation, &BTreeMap::new(), &BTreeSet::new())
+}
+
+fn annotation_schema_draft_with_declarations(
+    annotation: &KindAnnotationSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
+) -> Result<SchemaDraft, SourceSemanticError> {
     let mut dimensions = DimensionEnvironmentBuilder::new();
-    let body = annotation_schema_body(annotation, &mut dimensions)?;
+    let body = annotation_schema_body(annotation, &mut dimensions, declarations, pending)?;
     Ok(SchemaDraft {
         body,
         dimension_parameters: dimensions.into_declarations(),
@@ -6974,6 +7091,8 @@ fn annotation_schema_draft(
 fn annotation_schema_body(
     annotation: &KindAnnotationSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<SchemaBody, SourceSemanticError> {
     let kind = annotation
         .kind()
@@ -6981,7 +7100,7 @@ fn annotation_schema_body(
     let inner = kind
         .kind()
         .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
-    let mut body = kind_schema_body(&inner, dimensions)?;
+    let mut body = kind_schema_body(&inner, dimensions, declarations, pending)?;
     if kind.question_mark().is_some() {
         body = SchemaBody::Option(Box::new(body));
     }
@@ -6991,6 +7110,8 @@ fn annotation_schema_body(
 fn kind_schema_body(
     kind: &KindSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<SchemaBody, SourceSemanticError> {
     let value = kind
         .value()
@@ -7038,13 +7159,35 @@ fn kind_schema_body(
             match name.as_str() {
                 "ix" | "index" => SchemaBody::Index,
                 "id" => SchemaBody::Id,
-                _ => builtin_kind_named(&name)
-                    .map(BuiltinScalarKind::schema_body)
-                    .ok_or_else(|| SourceSemanticError {
-                        code: "source-semantics/unsupported-kind-annotation",
-                        message: format!("unknown builtin scalar kind {name:?}"),
-                        anchor,
-                    })?,
+                _ => match builtin_kind_named(&name) {
+                    Some(kind) => kind.schema_body(),
+                    None => {
+                        if let Some(declaration) = declarations.get(&name) {
+                            if !declaration.dimension_parameters.is_empty() {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/declared-kind-requires-dimensions",
+                                    message: format!(
+                                        "declared kind {name:?} requires reified dimension lowering"
+                                    ),
+                                    anchor,
+                                });
+                            }
+                            declaration.body.clone()
+                        } else if pending.contains(&name) {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/pending-kind-declaration",
+                                message: format!("declared kind {name:?} is not resolved yet"),
+                                anchor,
+                            });
+                        } else {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/unsupported-kind-annotation",
+                                message: format!("unknown scalar or declared kind {name:?}"),
+                                anchor,
+                            });
+                        }
+                    }
+                },
             }
         }
         KindValueSyntax::Map(map) => SchemaBody::Map {
@@ -7052,11 +7195,15 @@ fn kind_schema_body(
                 &map.key()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
                 dimensions,
+                declarations,
+                pending,
             )?),
             value: Box::new(kind_schema_body(
                 &map.value()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
                 dimensions,
+                declarations,
+                pending,
             )?),
             cardinality: CardinalitySpec::Dynamic { upper_bound: None },
         },
@@ -7065,6 +7212,8 @@ fn kind_schema_body(
                 &set.element()
                     .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
                 dimensions,
+                declarations,
+                pending,
             )?),
             cardinality: kind_extent(set.literal_constraint().as_ref())?,
         },
@@ -7075,7 +7224,7 @@ fn kind_schema_body(
             let element_kind = element
                 .kind()
                 .ok_or_else(|| missing_kind_child(element.syntax(), "matrix element kind"))?;
-            let mut element = kind_schema_body(&element_kind, dimensions)?;
+            let mut element = kind_schema_body(&element_kind, dimensions, declarations, pending)?;
             if matrix
                 .element()
                 .is_some_and(|element| element.question_mark().is_some())
@@ -7113,7 +7262,7 @@ fn kind_schema_body(
             tuple
                 .items()
                 .iter()
-                .map(|kind| kind_schema_body(kind, dimensions))
+                .map(|kind| kind_schema_body(kind, dimensions, declarations, pending))
                 .collect::<Result<Vec<_>, _>>()?
                 .into_boxed_slice(),
         ),
@@ -7130,7 +7279,12 @@ fn kind_schema_body(
                     .map(|(name, kind)| {
                         Ok(SchemaField {
                             name: node_text(name.syntax())?,
-                            schema: annotation_schema_body(kind, dimensions)?,
+                            schema: annotation_schema_body(
+                                kind,
+                                dimensions,
+                                declarations,
+                                pending,
+                            )?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -7150,7 +7304,12 @@ fn kind_schema_body(
                     .map(|(name, kind)| {
                         Ok(SchemaField {
                             name: node_text(name.syntax())?,
-                            schema: annotation_schema_body(kind, dimensions)?,
+                            schema: annotation_schema_body(
+                                kind,
+                                dimensions,
+                                declarations,
+                                pending,
+                            )?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -7764,54 +7923,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn retained_components_follow_the_finalized_parent_parameter_order() {
-        let anchor = SourceSemanticAnchor {
-            document: DocumentId(0x549),
-            revision: Revision(1),
-            range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
-        };
-        let first = DimensionParameterId::new(0);
-        let second = DimensionParameterId::new(1);
-        let parameter = |id| DimensionParameterDeclaration {
-            id,
-            origin: DimensionParameterOrigin::Inferred,
-            lifetime: DimensionLifetime::Turn,
-            lower_bound: DimensionExpr::Constant(0),
-            upper_bound: None,
-        };
-        let matrix = |rows, columns| SchemaBody::Matrix {
-            element: Box::new(SchemaBody::Bool),
-            dimensions: vec![
-                DimensionExpr::Parameter(rows),
-                DimensionExpr::Parameter(columns),
-            ]
-            .into_boxed_slice(),
-        };
-        let draft = SchemaDraft {
-            dimension_parameters: vec![parameter(first), parameter(second)].into_boxed_slice(),
-            body: SchemaBody::Tuple(
-                vec![matrix(second, first), matrix(first, second)].into_boxed_slice(),
-            ),
-        };
-        let mut builder = SchemaTableBuilder::new();
-        let handle = retain_schema_tree(anchor, &mut builder, &draft).unwrap();
-        let build = builder.finish().unwrap();
-        let root = build.table.get(build.resolve(handle).unwrap()).unwrap();
-        let SchemaBody::Tuple(children) = root.body() else {
-            panic!("root schema remains a tuple")
-        };
-        assert_eq!(children.len(), 2);
-        assert_ne!(children[0], children[1]);
-        for child in children {
-            let expected = root.canonical_component_schema(child).unwrap();
-            assert!(
-                build.table.find_by_key(expected.key()).is_some(),
-                "every child retained by the source frontend uses its finalized parent numbering",
-            );
-        }
-    }
-
-    #[test]
     fn unresolved_source_never_allocates_placeholder_nodes_or_constants() {
         fn find_expression(node: SyntaxNode) -> Option<ExpressionSyntax> {
             ExpressionSyntax::cast(node.clone())
@@ -7945,6 +8056,16 @@ impl SemanticBuilder {
                 };
                 crate::CollectionPattern::Equal(value)
             }
+            crate::CollectionPattern::Enum { ordinal, payload } => crate::CollectionPattern::Enum {
+                ordinal: *ordinal,
+                payload: payload
+                    .as_deref()
+                    .map(|payload| {
+                        self.resolve_structural_match_pattern(payload, binding_start)
+                            .map(Box::new)
+                    })
+                    .transpose()?,
+            },
             crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
                 items
                     .iter()
@@ -8018,7 +8139,7 @@ impl SemanticBuilder {
                                 ));
                             };
                             if let Some(annotation) = variable.annotation() {
-                                let mut schema = annotation_schema_draft(&annotation)?;
+                                let mut schema = self.annotation_schema_draft(&annotation)?;
                                 if !schema.dimension_parameters.is_empty() {
                                     schema = specialize_annotation_dimensions(
                                         &scrutinee_schema,
