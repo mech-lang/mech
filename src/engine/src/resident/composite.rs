@@ -983,6 +983,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         }
     }
@@ -1404,6 +1405,7 @@ mod tests {
             shape_instance: output_shape.clone(),
             shape: ResidentShape::SCALAR,
             kind: ResidentValueKind::Snapshot,
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let dimensions = vec![

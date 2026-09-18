@@ -1040,6 +1040,9 @@ pub fn schema_data_partial_cmp(
         };
     }
     match (schema, left, right) {
+        (SchemaBody::Index, ValueData::Index(left), ValueData::Index(right)) => {
+            left.partial_cmp(right)
+        }
         (SchemaBody::UnsignedInteger(_), _, _) | (SchemaBody::SignedInteger(_), _, _) => {
             ordinary!(U8);
             ordinary!(U16);

@@ -1620,7 +1620,10 @@ fn derive_scratch_allocations(
             let [rows, columns] = coefficients.value.axes.as_ref() else {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             };
-            if rows.current != columns.current {
+            if rows.current != columns.current
+                && rows.evolution == ExtentEvolution::Fixed
+                && columns.evolution == ExtentEvolution::Fixed
+            {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             }
             let [solution] = outputs else {
@@ -1898,7 +1901,10 @@ fn apply_implementation_demand(
             let [rows, columns] = coefficients.value.axes.as_ref() else {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             };
-            if rows.current != columns.current {
+            if rows.current != columns.current
+                && rows.evolution == ExtentEvolution::Fixed
+                && columns.evolution == ExtentEvolution::Fixed
+            {
                 return Err(MemoryPlanError::MatrixSolveLayoutInvalid);
             }
             let rhs_columns = rhs.value.axes.get(1).map_or(1, |axis| axis.current);

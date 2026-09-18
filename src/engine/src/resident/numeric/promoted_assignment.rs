@@ -10,14 +10,12 @@ struct Plan {
     mode: u8,
     arithmetic: SemanticArithmetic,
     rational_power: bool,
-    rows: usize,
-    columns: usize,
+    target_dimensions: Option<(usize, usize)>,
     source_dimensions: Option<(usize, usize)>,
     logical_selector: bool,
     source: SnapshotAccessSelectorLayout,
     target: SnapshotAccessSelectorLayout,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
-    max_writes: usize,
     promote: ConversionPlan,
     assign: ConversionPlan,
 }
@@ -97,39 +95,31 @@ pub(super) fn bind(
         shape: port.shape_instance.clone(),
         resident_shape: port.shape,
     };
-    let mut axis_capacities = Vec::new();
     let mut logical_selector = false;
     for selector in &request.inputs[2..] {
         if !positional_selector_layout(request, selector) {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
-        let axis_capacity = declared_selector_cardinality(request, selector)?;
+        declared_selector_cardinality(request, selector)?;
         logical_selector |= request
             .schemas
             .get(selector.schema_id)
             .is_some_and(|schema| is_logical_selector_schema(schema.body()));
-        axis_capacities.push(axis_capacity);
     }
-    let max_writes = match mode {
-        0 => Some(axis_capacities[0]),
-        1 => axis_capacities[0].checked_mul(columns),
-        2 => axis_capacities[0].checked_mul(rows),
-        _ => axis_capacities[0].checked_mul(axis_capacities[1]),
-    }
-    .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let target_dimensions = (base.kind != ResidentValueKind::Snapshot
+        || base.activation_fixed_shape)
+        .then_some((rows, columns));
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             mode,
             arithmetic,
             rational_power,
-            rows,
-            columns,
+            target_dimensions,
             source_dimensions,
             logical_selector,
             source: layout(source),
             target: layout(&request.output),
             selectors: request.inputs[2..].iter().map(layout).collect(),
-            max_writes,
             promote,
             assign,
         }))
@@ -151,15 +141,37 @@ fn execute(
     if inputs.len() != plan.selectors.len() + 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let count = plan
-        .rows
-        .checked_mul(plan.columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let current_ref = match &output {
         ResidentValueMut::F64(values) => ResidentValueRef::F64(values),
         ResidentValueMut::Snapshot(values) => ResidentValueRef::Snapshot(values),
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
+    let target_schema = schemas
+        .get(plan.target.schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = match (target_schema.body(), current_ref) {
+        (body @ SchemaBody::Matrix { .. }, ResidentValueRef::Snapshot([Some(value)])) => {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            snapshot_matrix_dimensions(value, body)?
+        }
+        (SchemaBody::Matrix { .. }, ResidentValueRef::Snapshot(_)) => {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        (SchemaBody::Matrix { .. }, _) => plan
+            .target_dimensions
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    if let Some(expected) = plan.target_dimensions
+        && expected != (rows, columns)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let source_ref = input(inputs, 0)?;
     let source_schema = schemas
         .get(plan.source.schema)
@@ -196,23 +208,38 @@ fn execute(
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut selector_cost = SelectorMaterializationCost::default();
+    let mut selector_populations = Vec::with_capacity(plan.selectors.len());
     for (index, selector) in plan.selectors.iter().enumerate() {
-        selector_cost = add_selector_cost(
-            selector_cost,
-            snapshot_selector_materialization_cost(
-                schemas,
-                selector,
-                input(inputs, index + 1)?,
-                &mut meter,
-            )?,
+        let cost = snapshot_selector_materialization_cost(
+            schemas,
+            selector,
+            input(inputs, index + 1)?,
+            &mut meter,
         )?;
+        selector_populations.push(cost.elements);
+        selector_cost = add_selector_cost(selector_cost, cost)?;
     }
+    let max_writes = match plan.mode {
+        0 => selector_populations.first().copied(),
+        1 => selector_populations
+            .first()
+            .and_then(|capacity| capacity.checked_mul(columns)),
+        2 => selector_populations
+            .first()
+            .and_then(|capacity| capacity.checked_mul(rows)),
+        3 => selector_populations
+            .first()
+            .zip(selector_populations.get(1))
+            .and_then(|(rows, columns)| rows.checked_mul(*columns)),
+        _ => None,
+    }
+    .ok_or(ResidentKernelError::InvalidShape)?;
     // Numeric snapshots have fixed scalar payloads. Admit the complete draft,
     // selector, conversion and publication storage before materializing it.
     let elements = count
         .checked_add(source_len)
         .and_then(|n| n.checked_add(selector_cost.elements))
-        .and_then(|n| n.checked_add(plan.max_writes))
+        .and_then(|n| n.checked_add(max_writes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let draft_bytes = elements
         .checked_mul(core::mem::size_of::<ValueDataDraft>())
@@ -308,35 +335,36 @@ fn execute(
         (
             physical
                 .into_iter()
-                .map(|p| (p % plan.rows) * plan.columns + p / plan.rows)
+                .map(|p| (p % rows) * columns + p / rows)
                 .collect::<Vec<_>>(),
             length,
             1,
         )
     } else {
-        let rows = if plan.mode == 2 {
-            (0..plan.rows).collect()
+        let selected_rows = if plan.mode == 2 {
+            (0..rows).collect()
         } else {
-            access_indices(&selectors[0], plan.rows)?
+            access_indices(&selectors[0], rows)?
         };
-        let columns = if plan.mode == 1 {
-            (0..plan.columns).collect()
+        let selected_columns = if plan.mode == 1 {
+            (0..columns).collect()
         } else {
-            access_indices(&selectors[usize::from(plan.mode == 3)], plan.columns)?
+            access_indices(&selectors[usize::from(plan.mode == 3)], columns)?
         };
         (
-            rows.iter()
-                .flat_map(|r| columns.iter().map(move |c| r * plan.columns + c))
+            selected_rows
+                .iter()
+                .flat_map(|r| selected_columns.iter().map(move |c| r * columns + c))
                 .collect::<Vec<_>>(),
-            rows.len(),
-            columns.len(),
+            selected_rows.len(),
+            selected_columns.len(),
         )
     };
     let source_index = |ordinal: usize, destination: usize| -> Result<usize, ResidentKernelError> {
         if source.len() == 1 {
             return Ok(0);
         }
-        if plan.logical_selector && source_rows == plan.rows && source_columns == plan.columns {
+        if plan.logical_selector && source_rows == rows && source_columns == columns {
             return Ok(destination);
         }
         if plan.mode == 0 {
@@ -373,7 +401,12 @@ fn execute(
         next[destination] = execute_conversion_draft(value, &plan.assign.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
     }
-    let next = finalize_snapshot_data_with_work_budget(kernel, ValueDataDraft::Matrix(next), None)?;
+    let next = finalize_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        current.shape(),
+        ValueDataDraft::Matrix(next),
+        None,
+    )?;
     let changed = match output {
         ResidentValueMut::Snapshot([target]) => {
             let changed = !current
@@ -393,10 +426,10 @@ fn execute(
                 return Err(ResidentKernelError::InvalidShape);
             }
             let mut changed = false;
-            for row in 0..plan.rows {
-                for column in 0..plan.columns {
-                    let destination = &mut target[column * plan.rows + row];
-                    let value = values[row * plan.columns + column].to_f64();
+            for row in 0..rows {
+                for column in 0..columns {
+                    let destination = &mut target[column * rows + row];
+                    let value = values[row * columns + column].to_f64();
                     changed |= destination.to_bits() != value.to_bits();
                     *destination = value;
                 }

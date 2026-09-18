@@ -107,6 +107,11 @@ pub struct ResidentPortLayout {
     pub shape: ResidentShape,
     /// Fully resolved semantic shape for self-describing dynamic values.
     pub shape_instance: ShapeInstance,
+    /// Whether activation established this semantic shape as invariant for
+    /// the lifetime of the resident instance. Snapshot storage is scalar even
+    /// when its carried matrix shape is fixed, so the physical layout alone
+    /// cannot communicate this constraint to a binder.
+    pub activation_fixed_shape: bool,
     /// Present only when the input is an immutable artifact constant whose
     /// selector identity can be embedded in the execution plan.
     pub resolved_selector: Option<ResidentResolvedSelector>,

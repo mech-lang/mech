@@ -769,13 +769,10 @@ fn captured_source_identity_and_guard_changes_change_revision() {
 
 #[cfg(feature = "resident-artifact")]
 #[test]
-fn portable_scalar_match_target_capability_is_separate_from_artifact_validity() {
+fn portable_scalar_match_target_executes_snapshot_backed_literals() {
     let compiled = compile("flag<u8> ? | 1u8 => 1u8 | * => 2u8");
     let artifact = compiled.compile_artifact().unwrap();
-    let artifact = decode_program_artifact_bytecode_v1(
-        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
-    )
-    .unwrap();
+    let encoded = encode_program_artifact_bytecode_v1(&artifact).unwrap();
     assert_eq!(
         artifact
             .schemas()
@@ -786,17 +783,47 @@ fn portable_scalar_match_target_capability_is_separate_from_artifact_validity() 
     );
     let mut catalog = mech_core::FunctionCatalogBuilder::new();
     install_intrinsic_resident(&mut catalog).unwrap();
-    let result = mech_engine::resident::preflight_resident_target(
-        &artifact,
-        &catalog.build().unwrap(),
-        &mech_engine::resident::ActivationFacts::default(),
-        mech_engine::resident::ResidentActivationOptions::default(),
-    )
-    .err()
-    .expect("expected rejection");
-    assert_eq!(result.node, Some(NodeId(0)));
-    assert_eq!(result.target, mech_core::ExecutionTarget::ResidentCpu);
-    assert!(result.reason.contains("UnsupportedControlLayout"));
+    let catalog = catalog.build().unwrap();
+    for artifact in [
+        artifact,
+        decode_program_artifact_bytecode_v1(&encoded).unwrap(),
+    ] {
+        mech_engine::resident::preflight_resident_target(
+            &artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+            mech_engine::resident::ResidentActivationOptions::default(),
+        )
+        .unwrap();
+        let schema = artifact.inputs()[0].schema;
+        let mut instance = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(0x4d415443, 8),
+            &artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        for (input, expected) in [(1, 1), (2, 2), (1, 1)] {
+            let input = mech_core::ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data: mech_core::ValueDataDraft::U8(input),
+            }
+            .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+                artifact.schemas(),
+            ))
+            .unwrap();
+            instance
+                .turn(&[mech_engine::resident::CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: mech_core::ResidentValueRef::Snapshot(&[Some(input)]),
+                }])
+                .unwrap();
+            assert!(
+                matches!(instance.copied_output(0).unwrap().data(), mech_core::ValueData::U8(actual) if *actual == expected)
+            );
+        }
+    }
 }
 
 #[cfg(feature = "resident-artifact")]
@@ -1513,16 +1540,13 @@ fn nested_capability_witnesses_preserve_constant_and_local_selector_provenance()
     let artifact = compile("flag<bool> ? | * => (signal<u8> ? | 1u8 => 1 | * => 2)")
         .compile_artifact()
         .unwrap();
-    let error = preflight_resident_target(
+    preflight_resident_target(
         &artifact,
         &catalog,
         &ActivationFacts::default(),
         ResidentActivationOptions::default(),
     )
-    .err()
-    .unwrap();
-    assert_eq!(error.node, Some(NodeId(0)));
-    assert!(error.reason.contains("UnsupportedControlLayout"));
+    .expect("nested snapshot-backed scalar literals have resident capability");
 }
 
 #[test]

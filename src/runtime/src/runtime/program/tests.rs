@@ -6265,6 +6265,113 @@ fn canonical_interactive_uses_configured_resource_planning() {
 }
 
 #[test]
+fn canonical_product_closed_control_lifecycle_survives_rejection_and_reset() {
+    struct ConstantDocumentFactory {
+        supplied: BTreeMap<String, RuntimeHostInputValue>,
+    }
+
+    impl crate::ResidentReplRuntimeFactory for ConstantDocumentFactory {
+        fn build(&self, _: crate::MechEventBuffer) -> MResult<crate::MechRuntime> {
+            Ok(runtime())
+        }
+
+        fn activate_document(
+            &self,
+            events: crate::MechEventBuffer,
+            document: &crate::SourceDocument,
+        ) -> MResult<(crate::MechRuntime, crate::RuntimeProgramLoadOutcome)> {
+            let mut runtime = self.build(events)?;
+            let mut compiler = RuntimeBuilder::new()
+                .function_catalog(mech_stdlib::source_native_plan_catalog())
+                .build_compiler()?;
+            let product = compiler.compile_document_artifact_with_inputs(
+                document,
+                &self.supplied,
+                &BTreeSet::new(),
+            )?;
+            let outcome = runtime.load_compiled_program(
+                product.into_artifact(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )?;
+            Ok((runtime, outcome))
+        }
+    }
+
+    let supplied = BTreeMap::from([(
+        "seed".to_owned(),
+        RuntimeHostInputValue::F64Matrix {
+            rows: 1,
+            columns: 3,
+            values: vec![1.0, 2.0, 3.0],
+        },
+    )]);
+    let accepted = canonical_planning_test_document(
+        "values := [x | x <- seed]\n~state := values\nstate += [1 1 1]\n<+ state\nstate\n",
+    );
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_document_artifact_with_inputs(&accepted, &supplied, &BTreeSet::new())
+        .unwrap();
+    assert!(
+        product.artifact().inputs().is_empty(),
+        "the detached host seed must be compiled as a constant"
+    );
+    assert!(
+        product
+            .artifact()
+            .nodes()
+            .iter()
+            .any(|node| { matches!(node.body, mech_engine::ExecutableNodeBody::Comprehension(_)) })
+    );
+
+    let mut session = crate::ResidentReplSession::from_document(
+        ConstantDocumentFactory {
+            supplied: supplied.clone(),
+        },
+        accepted,
+    )
+    .unwrap();
+    let state = |session: &crate::ResidentReplSession<ConstantDocumentFactory>| {
+        session.symbol("state").unwrap().unwrap()
+    };
+    let first = state(&session);
+    assert_eq!(canonical_matrix_shape(first.value()), (1, 3));
+    assert_eq!(canonical_f64_matrix(first.value()), [2.0, 3.0, 4.0]);
+    session.step(1).unwrap();
+    assert_eq!(
+        canonical_f64_matrix(state(&session).value()),
+        [3.0, 4.0, 5.0]
+    );
+
+    let rejected = canonical_planning_test_document(
+        "values := [x | x <- seed]\nbad := values + [1 1]\n~state := bad\n<+ state\nstate\n",
+    );
+    assert!(session.replace_document(rejected).is_err());
+    assert_eq!(
+        canonical_f64_matrix(state(&session).value()),
+        [3.0, 4.0, 5.0]
+    );
+    session.step(1).unwrap();
+    assert_eq!(
+        canonical_f64_matrix(state(&session).value()),
+        [4.0, 5.0, 6.0]
+    );
+
+    session.reset().unwrap();
+    let reset = state(&session);
+    assert_eq!(canonical_matrix_shape(reset.value()), (1, 3));
+    assert_eq!(canonical_f64_matrix(reset.value()), [2.0, 3.0, 4.0]);
+    session.step(1).unwrap();
+    assert_eq!(
+        canonical_f64_matrix(state(&session).value()),
+        [3.0, 4.0, 5.0]
+    );
+}
+
+#[test]
 fn canonical_interactive_resource_planning_does_not_execute_host_effects() {
     let plans = Arc::new(AtomicUsize::new(0));
     let reads = Arc::new(AtomicUsize::new(0));

@@ -11,8 +11,8 @@ use mech_core::snapshot::{
     schema_data_language_eq, schema_data_partial_cmp,
 };
 use mech_core::{
-    AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
+    AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, CurrentMemoryFootprint,
+    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
     OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
     ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput,
     ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract,
@@ -374,11 +374,13 @@ struct ResolvedAccessGeometry {
 
 #[derive(Clone, Debug)]
 struct SnapshotAccessPlan {
+    dense_source: Option<SnapshotAccessSelectorLayout>,
     matrix_constructor: Option<Arc<mech_core::snapshot::MatrixSnapshotConstructor>>,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
     matrix_mode: Option<ResolvedSelectionMode>,
     source_dimensions: Option<(usize, usize)>,
     output_dimensions: Option<(usize, usize)>,
+    output_dimensions_dynamic: bool,
     output_geometry: ResolvedAccessGeometry,
     aggregate_ordinal: Option<usize>,
     output_schema: SchemaId,
@@ -1231,10 +1233,20 @@ fn bind_hold_state(
                 SchemaBody::Matrix { element: output, .. },
             ) if input == output
         );
-    if !schema_compatible
-        || input.kind != request.output.kind
-        || input.shape != request.output.shape
-    {
+    if !schema_compatible {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if input.kind != request.output.kind || input.shape != request.output.shape {
+        // A state whose closed initializer resolves aggregate dimensions only
+        // during activation is snapshot-backed. Its turn candidate may still
+        // have a fixed dense layout, so publish that single matrix through the
+        // canonical snapshot constructor instead of inventing another state
+        // conversion path.
+        if request.output.kind == ResidentValueKind::Snapshot
+            && request.output.shape == ResidentShape::SCALAR
+        {
+            return bind_matrix_constructor(request, true);
+        }
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let kernel = bound(hold_state, Vec::<u64>::new().into_boxed_slice())?;
@@ -1273,22 +1285,40 @@ fn bind_unary_f64(
     bound(executor, Vec::<u64>::new().into_boxed_slice())
 }
 
-fn bind_unary_f32_snapshot(
+fn bind_unary_float_snapshot(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let [input] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let (input_element, input_shape) = comparison_logical_layout(request, input)?;
-    let (output_element, output_shape) = comparison_logical_layout(request, &request.output)?;
+    let input_schema = request
+        .schemas
+        .get(input.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let input_element = match input_schema.body() {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        body => body,
+    };
+    let output_element = match output_schema.body() {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        body => body,
+    };
     if input.kind != ResidentValueKind::Snapshot
         || request.output.kind != ResidentValueKind::Snapshot
         || input.shape != ResidentShape::SCALAR
         || request.output.shape != ResidentShape::SCALAR
-        || input_element != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W32)
+        || !matches!(
+            input_element,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
+        )
         || input_element != output_element
-        || input_shape != output_shape
+        || core::mem::discriminant(input_schema.body())
+            != core::mem::discriminant(output_schema.body())
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -1298,12 +1328,9 @@ fn bind_unary_f32_snapshot(
         ShapeRule::SameAsInput { input: 0 },
         snapshot_output_change_detection(request)?,
     )?;
-    Ok(bound(
-        executor,
-        vec![output_shape.rows as u64, output_shape.columns as u64].into_boxed_slice(),
-    )?
-    .with_snapshot_output(snapshot_output_metadata(request))
-    .with_snapshot_schemas(request.schemas.clone()))
+    Ok(bound(executor, Vec::<u64>::new().into_boxed_slice())?
+        .with_snapshot_output(snapshot_output_metadata(request))
+        .with_snapshot_schemas(request.schemas.clone()))
 }
 
 fn bind_unary_float(
@@ -1312,7 +1339,7 @@ fn bind_unary_float(
     f32_executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_unary_f64(request, f64_executor)
-        .or_else(|_| bind_unary_f32_snapshot(request, f32_executor))
+        .or_else(|_| bind_unary_float_snapshot(request, f32_executor))
 }
 
 macro_rules! float_unary_resident {
@@ -1336,7 +1363,7 @@ macro_rules! float_unary_resident {
             inputs: &dyn ResidentKernelInputs,
             output: ResidentValueMut<'_>,
         ) -> Result<bool, ResidentKernelError> {
-            unary_f32_snapshot(kernel, inputs, output, $f32_operation)
+            unary_float_snapshot(kernel, inputs, output, $f64_operation, $f32_operation)
         }
     };
 }
@@ -1596,95 +1623,122 @@ fn bind_sin(
 fn bind_atan2(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, atan2).or_else(|_| bind_binary_f32_snapshot(request, atan2_f32))
+    bind_binary(request, atan2).or_else(|_| bind_binary_float_snapshot(request, atan2_snapshot))
 }
 
 fn bind_math_copysign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_copysign)
-        .or_else(|_| bind_binary_f32_snapshot(request, math_copysign_f32))
+        .or_else(|_| bind_binary_float_snapshot(request, math_copysign_snapshot))
 }
 
 fn bind_math_fdim(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, math_fdim).or_else(|_| bind_binary_f32_snapshot(request, math_fdim_f32))
+    bind_binary(request, math_fdim)
+        .or_else(|_| bind_binary_float_snapshot(request, math_fdim_snapshot))
 }
 
 fn bind_math_fmod(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_binary(request, math_fmod).or_else(|_| bind_binary_f32_snapshot(request, math_fmod_f32))
+    bind_binary(request, math_fmod)
+        .or_else(|_| bind_binary_float_snapshot(request, math_fmod_snapshot))
 }
 
 fn bind_math_nextafter(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_nextafter)
-        .or_else(|_| bind_binary_f32_snapshot(request, math_nextafter_f32))
+        .or_else(|_| bind_binary_float_snapshot(request, math_nextafter_snapshot))
 }
 
 fn bind_math_remainder(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_remainder)
-        .or_else(|_| bind_binary_f32_snapshot(request, math_remainder_f32))
+        .or_else(|_| bind_binary_float_snapshot(request, math_remainder_snapshot))
 }
 
 fn bind_math_bessel_jn(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_bessel_jn)
-        .or_else(|_| bind_binary_f32_snapshot(request, math_bessel_jn_f32))
+        .or_else(|_| bind_binary_float_snapshot(request, math_bessel_jn_snapshot))
 }
 
 fn bind_math_bessel_yn(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, math_bessel_yn)
-        .or_else(|_| bind_binary_f32_snapshot(request, math_bessel_yn_f32))
+        .or_else(|_| bind_binary_float_snapshot(request, math_bessel_yn_snapshot))
 }
 
-fn bind_binary_f32_snapshot(
+fn bind_binary_float_snapshot(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    let output_schema = request
-        .schemas
-        .get(request.output.schema_id)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let change = match output_schema.body() {
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => ChangeDetectionPolicy::ExactScalar,
-        SchemaBody::Matrix { element, .. }
-            if element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) =>
-        {
-            ChangeDetectionPolicy::KernelReported
-        }
-        _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+    let [left, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    validate_full_write(request, 2, ShapeRule::Declared, change)?;
-    require_kind(
+    validate_full_write(
         request,
-        &[ResidentValueKind::Snapshot, ResidentValueKind::Snapshot],
-        ResidentValueKind::Snapshot,
+        2,
+        ShapeRule::Declared,
+        snapshot_output_change_detection(request)?,
     )?;
-    if request.output.shape != ResidentShape::SCALAR
-        || request.inputs.iter().any(|input| {
-            input.shape != ResidentShape::SCALAR || input.schema_key != request.output.schema_key
-        })
+    let (left_element, left_shape) = comparison_logical_layout(request, left)?;
+    let (right_element, right_shape) = comparison_logical_layout(request, right)?;
+    let (output_element, output_shape) = comparison_logical_layout(request, &request.output)?;
+    let left_snapshot = left.kind == ResidentValueKind::Snapshot;
+    let right_snapshot = right.kind == ResidentValueKind::Snapshot;
+    let snapshot_output = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR;
+    let dense_output = request.output.kind == ResidentValueKind::F64
+        && request.output.shape == output_shape
+        && output_element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    let dense_f64 = |port: &mech_core::ResidentPortLayout,
+                     element: &SchemaBody,
+                     logical_shape: ResidentShape| {
+        port.kind == ResidentValueKind::F64
+            && port.shape == logical_shape
+            && element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    };
+    if (!snapshot_output && !dense_output)
+        || (left_snapshot && left.shape != ResidentShape::SCALAR)
+        || (right_snapshot && right.shape != ResidentShape::SCALAR)
+        || (!left_snapshot && !dense_f64(left, left_element, left_shape))
+        || (!right_snapshot && !dense_f64(right, right_element, right_shape))
+        || (!left_snapshot && !right_snapshot)
+        || left_element != right_element
+        || left_element != output_element
+        || !matches!(
+            output_element,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
+        )
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    Ok(bound(executor, Vec::<u64>::new())?
-        .with_snapshot_output(ResidentSnapshotOutput {
-            schema: request.output.schema_id,
-            schema_key: request.output.schema_key,
-            shape: request.output.shape_instance.clone(),
-            exact_cardinality: None,
-            maximum_cardinality: None,
-        })
-        .with_snapshot_schemas(request.schemas.clone()))
+    let kernel = bound(
+        executor,
+        vec![
+            u64::from(snapshot_output),
+            u64::from(left_snapshot),
+            u64::from(right_snapshot),
+            left_shape.rows as u64,
+            left_shape.columns as u64,
+            right_shape.rows as u64,
+            right_shape.columns as u64,
+        ]
+        .into_boxed_slice(),
+    )?
+    .with_snapshot_schemas(request.schemas.clone());
+    if snapshot_output {
+        Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)))
+    } else {
+        Ok(kernel)
+    }
 }
 
 fn bind_sub(
@@ -1807,6 +1861,26 @@ fn comparison_logical_layout<'a>(
     }
 }
 
+fn comparison_element_body(body: &SchemaBody) -> &SchemaBody {
+    match body {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        body => body,
+    }
+}
+
+fn dense_kind_matches_schema_body(kind: ResidentValueKind, body: &SchemaBody) -> bool {
+    matches!(
+        (kind, body),
+        (ResidentValueKind::Bool, SchemaBody::Bool)
+            | (ResidentValueKind::Index, SchemaBody::Index)
+            | (
+                ResidentValueKind::F64,
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            )
+            | (ResidentValueKind::String, SchemaBody::String)
+    )
+}
+
 fn validate_semantic_comparison_contract(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<ResidentShape, ResidentKernelBindError> {
@@ -1904,6 +1978,7 @@ fn snapshot_comparison_element_supported(
         matches!(
             element,
             SchemaBody::Bool
+                | SchemaBody::Index
                 | SchemaBody::String
                 | SchemaBody::UnsignedInteger(_)
                 | SchemaBody::SignedInteger(_)
@@ -1914,7 +1989,8 @@ fn snapshot_comparison_element_supported(
     } else {
         matches!(
             element,
-            SchemaBody::UnsignedInteger(_)
+            SchemaBody::Index
+                | SchemaBody::UnsignedInteger(_)
                 | SchemaBody::SignedInteger(_)
                 | SchemaBody::FloatingPoint(_)
                 | SchemaBody::Rational64
@@ -1927,40 +2003,100 @@ fn bind_snapshot_comparison(
     request: &ResidentKernelBindRequest<'_>,
     comparison: SemanticComparison,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    let output = validate_semantic_comparison_contract(request)?;
     let [left, right] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if left.kind != ResidentValueKind::Snapshot
-        || right.kind != ResidentValueKind::Snapshot
-        || left.shape != ResidentShape::SCALAR
-        || right.shape != ResidentShape::SCALAR
+    let snapshot_output = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR;
+    let dense_output = if snapshot_output {
+        validate_full_write(
+            request,
+            2,
+            ShapeRule::Declared,
+            snapshot_output_change_detection(request)?,
+        )?;
+        None
+    } else {
+        Some(validate_semantic_comparison_contract(request)?)
+    };
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (left_element, left_shape) = comparison_logical_layout(request, left)?;
+    let (right_element, right_shape) = comparison_logical_layout(request, right)?;
+    let output_element = match output_schema.body() {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        body => body,
+    };
+    if snapshot_output && !matches!(output_schema.body(), SchemaBody::Matrix { .. }) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let dense = |port: &mech_core::ResidentPortLayout,
+                 element: &SchemaBody,
+                 logical_shape: ResidentShape| {
+        port.shape == logical_shape
+            && matches!(
+                (port.kind, element),
+                (
+                    ResidentValueKind::F64,
+                    SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+                ) | (ResidentValueKind::Bool, SchemaBody::Bool)
+                    | (ResidentValueKind::Index, SchemaBody::Index)
+                    | (ResidentValueKind::String, SchemaBody::String)
+            )
+    };
+    let left_snapshot =
+        left.kind == ResidentValueKind::Snapshot && left.shape == ResidentShape::SCALAR;
+    let right_snapshot =
+        right.kind == ResidentValueKind::Snapshot && right.shape == ResidentShape::SCALAR;
+    if (!left_snapshot && !dense(left, left_element, left_shape))
+        || (!right_snapshot && !dense(right, right_element, right_shape))
+        || (!left_snapshot && !right_snapshot)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let (left_element, left_shape) = comparison_logical_layout(request, left)?;
-    let (right_element, right_shape) = comparison_logical_layout(request, right)?;
     if left_element != right_element
+        || output_element != &SchemaBody::Bool
         || !snapshot_comparison_element_supported(left_element, comparison)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let left_mode = binary_broadcast_mode(left_shape, output)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let right_mode = binary_broadcast_mode(right_shape, output)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    Ok(bound(
-        snapshot_comparison,
-        vec![
+    let mut parameters = vec![
+        comparison as u64,
+        u64::from(snapshot_output),
+        u64::from(left_snapshot),
+        u64::from(right_snapshot),
+        left_shape.rows as u64,
+        left_shape.columns as u64,
+        right_shape.rows as u64,
+        right_shape.columns as u64,
+    ];
+    if let Some(output) = dense_output {
+        let bound_mode = |snapshot: bool, shape| {
+            if snapshot {
+                // The snapshot's axes are runtime values. The executor checks
+                // their resolved broadcast mode against the fixed output.
+                Ok(u64::MAX)
+            } else {
+                binary_broadcast_mode(shape, output)
+                    .ok_or(ResidentKernelBindError::UnsupportedLayout)
+            }
+        };
+        parameters.extend([
             output.rows as u64,
             output.columns as u64,
-            left_mode,
-            right_mode,
-            comparison as u64,
-        ]
-        .into_boxed_slice(),
-    )?
-    .with_snapshot_schemas(request.schemas.clone()))
+            bound_mode(left_snapshot, left_shape)?,
+            bound_mode(right_snapshot, right_shape)?,
+        ]);
+    }
+    let kernel = bound(snapshot_comparison, parameters.into_boxed_slice())?
+        .with_snapshot_schemas(request.schemas.clone());
+    if snapshot_output {
+        Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)))
+    } else {
+        Ok(kernel)
+    }
 }
 
 fn bind_snapshot_equality(
@@ -2147,7 +2283,9 @@ fn bind_bool_and(
 fn bind_semantic_bool_and(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_bool_and(request).or_else(|_| bind_bool_vector_and(request))
+    bind_bool_and(request)
+        .or_else(|_| bind_bool_vector_and(request))
+        .or_else(|_| bind_snapshot_bool_binary(request, 0))
 }
 
 fn bind_bool_vector_and(
@@ -2203,7 +2341,9 @@ fn bind_bool_or(
 fn bind_semantic_bool_or(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_bool_or(request).or_else(|_| bind_bool_vector_binary(request, bool_vector_or))
+    bind_bool_or(request)
+        .or_else(|_| bind_bool_vector_binary(request, bool_vector_or))
+        .or_else(|_| bind_snapshot_bool_binary(request, 1))
 }
 
 fn bind_bool_xor(
@@ -2215,10 +2355,83 @@ fn bind_bool_xor(
 fn bind_semantic_bool_xor(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_bool_xor(request).or_else(|_| bind_bool_vector_binary(request, bool_vector_xor))
+    bind_bool_xor(request)
+        .or_else(|_| bind_bool_vector_binary(request, bool_vector_xor))
+        .or_else(|_| bind_snapshot_bool_binary(request, 2))
+}
+
+fn bind_snapshot_bool_binary(
+    request: &ResidentKernelBindRequest<'_>,
+    operation: u64,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        snapshot_output_change_detection(request)?,
+    )?;
+    let [left, right] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let left_snapshot =
+        left.kind == ResidentValueKind::Snapshot && left.shape == ResidentShape::SCALAR;
+    let right_snapshot =
+        right.kind == ResidentValueKind::Snapshot && right.shape == ResidentShape::SCALAR;
+    let dense_bool = |port: &mech_core::ResidentPortLayout| {
+        port.kind == ResidentValueKind::Bool && port.shape.len().is_some()
+    };
+    if (!left_snapshot && !dense_bool(left))
+        || (!right_snapshot && !dense_bool(right))
+        || (!left_snapshot && !right_snapshot)
+        || request.output.kind != ResidentValueKind::Snapshot
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    for port in [left, right, &request.output] {
+        let schema = request
+            .schemas
+            .get(port.schema_id)
+            .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+        let element = match schema.body() {
+            SchemaBody::Matrix { element, .. } => element.as_ref(),
+            body => body,
+        };
+        if element != &SchemaBody::Bool {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        }
+    }
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if !matches!(output_schema.body(), SchemaBody::Matrix { .. }) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(bound(
+        snapshot_bool_binary,
+        vec![
+            operation,
+            u64::from(left_snapshot),
+            u64::from(right_snapshot),
+            u64::from(left.shape.rows),
+            u64::from(left.shape.columns),
+            u64::from(right.shape.rows),
+            u64::from(right.shape.columns),
+        ]
+        .into_boxed_slice(),
+    )?
+    .with_snapshot_output(snapshot_output_metadata(request))
+    .with_snapshot_schemas(request.schemas.clone()))
 }
 
 fn bind_bool_not(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_dense_bool_not(request).or_else(|_| bind_snapshot_bool_not(request))
+}
+
+fn bind_dense_bool_not(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let [input] = request.inputs else {
@@ -2258,6 +2471,58 @@ fn bind_bool_not(
     )
 }
 
+fn bind_snapshot_bool_not(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        snapshot_output_change_detection(request)?,
+    )?;
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if input.kind != ResidentValueKind::Snapshot
+        || request.output.kind != ResidentValueKind::Snapshot
+        || input.shape != ResidentShape::SCALAR
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    for port in [input, &request.output] {
+        let schema = request
+            .schemas
+            .get(port.schema_id)
+            .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+        let element = match schema.body() {
+            SchemaBody::Matrix { element, .. } => element.as_ref(),
+            body => body,
+        };
+        if element != &SchemaBody::Bool {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        }
+    }
+    let input_schema = request
+        .schemas
+        .get(input.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if !matches!(input_schema.body(), SchemaBody::Matrix { .. })
+        || !matches!(output_schema.body(), SchemaBody::Matrix { .. })
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(
+        bound(snapshot_bool_not, Vec::<u64>::new().into_boxed_slice())?
+            .with_snapshot_output(snapshot_output_metadata(request))
+            .with_snapshot_schemas(request.schemas.clone()),
+    )
+}
+
 fn bind_strict_comparison(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
@@ -2281,6 +2546,9 @@ fn bind_strict_comparison(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     if !strict_inputs_share_identity(request) {
+        if let Some(parameters) = strict_mixed_layout_parameters(request) {
+            return Ok(bound(executor, parameters)?.with_snapshot_schemas(request.schemas.clone()));
+        }
         return bound(mismatch_executor, Vec::<u64>::new().into_boxed_slice());
     }
     let kernel = bound(executor, Vec::<u64>::new().into_boxed_slice())?;
@@ -2293,6 +2561,60 @@ fn bind_strict_comparison(
     } else {
         Ok(kernel)
     }
+}
+
+fn strict_mixed_layout_parameters(request: &ResidentKernelBindRequest<'_>) -> Option<Box<[u64]>> {
+    let [left, right] = request.inputs else {
+        return None;
+    };
+    let left_snapshot =
+        left.kind == ResidentValueKind::Snapshot && left.shape == ResidentShape::SCALAR;
+    let right_snapshot =
+        right.kind == ResidentValueKind::Snapshot && right.shape == ResidentShape::SCALAR;
+    if left_snapshot == right_snapshot {
+        return None;
+    }
+    let (snapshot, dense, snapshot_left) = if left_snapshot {
+        (left, right, true)
+    } else {
+        (right, left, false)
+    };
+    let snapshot_schema = request.schemas.get(snapshot.schema_id)?;
+    let dense_schema = request.schemas.get(dense.schema_id)?;
+    let (
+        SchemaBody::Matrix {
+            element: snapshot_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: dense_element,
+            dimensions,
+        },
+    ) = (snapshot_schema.body(), dense_schema.body())
+    else {
+        return None;
+    };
+    if snapshot_element != dense_element
+        || dimensions.len() != 2
+        || !dense_kind_matches_schema_body(dense.kind, dense_element)
+    {
+        return None;
+    }
+    let rows = dense
+        .shape_instance
+        .resolve_dimension(&dimensions[0])
+        .ok()?;
+    let columns = dense
+        .shape_instance
+        .resolve_dimension(&dimensions[1])
+        .ok()?;
+    let resident_shape =
+        resident_shape_from_dimensions(usize::try_from(rows).ok()?, usize::try_from(columns).ok()?)
+            .ok()?;
+    if dense.shape != resident_shape {
+        return None;
+    }
+    Some(vec![u64::from(snapshot_left), rows, columns].into_boxed_slice())
 }
 
 fn strict_inputs_share_identity(request: &ResidentKernelBindRequest<'_>) -> bool {
@@ -2390,6 +2712,31 @@ fn snapshot_arithmetic_element_supported(
     }
 }
 
+fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
+    use mech_core::{FloatWidth, IntegerWidth};
+    match element {
+        SchemaBody::Bool
+        | SchemaBody::UnsignedInteger(IntegerWidth::W8)
+        | SchemaBody::SignedInteger(IntegerWidth::W8) => Some(1),
+        SchemaBody::UnsignedInteger(IntegerWidth::W16)
+        | SchemaBody::SignedInteger(IntegerWidth::W16) => Some(2),
+        SchemaBody::UnsignedInteger(IntegerWidth::W32)
+        | SchemaBody::SignedInteger(IntegerWidth::W32)
+        | SchemaBody::FloatingPoint(FloatWidth::W32) => Some(4),
+        SchemaBody::UnsignedInteger(IntegerWidth::W64)
+        | SchemaBody::SignedInteger(IntegerWidth::W64)
+        | SchemaBody::FloatingPoint(FloatWidth::W64)
+        | SchemaBody::Complex(FloatWidth::W32) => Some(8),
+        SchemaBody::Id | SchemaBody::Index => Some(8),
+        SchemaBody::UnsignedInteger(IntegerWidth::W128)
+        | SchemaBody::SignedInteger(IntegerWidth::W128)
+        | SchemaBody::Complex(FloatWidth::W64)
+        | SchemaBody::Rational64 => Some(16),
+        SchemaBody::Atom(_) => Some(0),
+        _ => None,
+    }
+}
+
 fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
@@ -2449,18 +2796,34 @@ fn bind_snapshot_numeric_binary(
     let [left, right] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if left.kind != ResidentValueKind::Snapshot
-        || right.kind != ResidentValueKind::Snapshot
-        || request.output.kind != ResidentValueKind::Snapshot
-        || left.shape != ResidentShape::SCALAR
-        || right.shape != ResidentShape::SCALAR
-        || request.output.shape != ResidentShape::SCALAR
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    let left_snapshot = left.kind == ResidentValueKind::Snapshot;
+    let right_snapshot = right.kind == ResidentValueKind::Snapshot;
     let (left_element, left_shape) = comparison_logical_layout(request, left)?;
     let (right_element, right_shape) = comparison_logical_layout(request, right)?;
     let (output_element, output_shape) = comparison_logical_layout(request, &request.output)?;
+    let snapshot_output = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR;
+    let dense_output = request.output.kind == ResidentValueKind::F64
+        && request.output.shape == output_shape
+        && output_element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    if !snapshot_output && !dense_output {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let dense_f64 = |port: &mech_core::ResidentPortLayout,
+                     element: &SchemaBody,
+                     logical_shape: ResidentShape| {
+        port.kind == ResidentValueKind::F64
+            && port.shape == logical_shape
+            && element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    };
+    if (left_snapshot && left.shape != ResidentShape::SCALAR)
+        || (right_snapshot && right.shape != ResidentShape::SCALAR)
+        || (!left_snapshot && !dense_f64(left, left_element, left_shape))
+        || (!right_snapshot && !dense_f64(right, right_element, right_shape))
+        || (!left_snapshot && !right_snapshot)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     let rational_power = cfg!(feature = "r64")
         && arithmetic == SemanticArithmetic::Power
         && left_shape == ResidentShape::SCALAR
@@ -2476,24 +2839,27 @@ fn bind_snapshot_numeric_binary(
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let left_mode = binary_broadcast_mode(left_shape, output_shape)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let right_mode = binary_broadcast_mode(right_shape, output_shape)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    Ok(bound(
+    let kernel = bound(
         snapshot_numeric_binary,
         vec![
-            output_shape.rows as u64,
-            output_shape.columns as u64,
-            left_mode,
-            right_mode,
             arithmetic as u64,
             u64::from(rational_power),
+            u64::from(snapshot_output),
+            u64::from(left_snapshot),
+            u64::from(right_snapshot),
+            left_shape.rows as u64,
+            left_shape.columns as u64,
+            right_shape.rows as u64,
+            right_shape.columns as u64,
         ]
         .into_boxed_slice(),
     )?
-    .with_snapshot_output(snapshot_output_metadata(request))
-    .with_snapshot_schemas(request.schemas.clone()))
+    .with_snapshot_schemas(request.schemas.clone());
+    if snapshot_output {
+        Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)))
+    } else {
+        Ok(kernel)
+    }
 }
 
 fn bind_snapshot_numeric_negate(
@@ -2669,24 +3035,55 @@ fn bind_add_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_assign(request, add_assign)
+        .or_else(|_| bind_snapshot_whole_numeric_assign(request, SemanticArithmetic::Add))
 }
 
 fn bind_sub_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_assign(request, sub_assign)
+        .or_else(|_| bind_snapshot_whole_numeric_assign(request, SemanticArithmetic::Subtract))
 }
 
 fn bind_mul_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_assign(request, mul_assign)
+        .or_else(|_| bind_snapshot_whole_numeric_assign(request, SemanticArithmetic::Multiply))
 }
 
 fn bind_div_assign(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_assign(request, div_assign)
+        .or_else(|_| bind_snapshot_whole_numeric_assign(request, SemanticArithmetic::Divide))
+}
+
+fn bind_snapshot_whole_numeric_assign(
+    request: &ResidentKernelBindRequest<'_>,
+    arithmetic: SemanticArithmetic,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let kernel = bind_matrix_selection_assign(
+        request,
+        RegionPolicy::WholeValue,
+        ResolvedSelectionMode::Whole,
+    )?;
+    let schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let SchemaBody::Matrix { element, .. } = schema.body() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if !snapshot_arithmetic_element_supported(arithmetic, element) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let mut plan = kernel
+        .retained_state::<MatrixSelectionAssignPlan>()
+        .ok_or(ResidentKernelBindError::InvalidParameters)?
+        .clone();
+    plan.arithmetic = Some(arithmetic);
+    Ok(kernel.with_retained_state(Arc::new(plan)))
 }
 
 fn bind_semantic_add_assign(
@@ -2878,11 +3275,7 @@ fn bind_snapshot_sum(
     let [input] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if input.kind != ResidentValueKind::Snapshot
-        || request.output.kind != ResidentValueKind::Snapshot
-        || input.shape != ResidentShape::SCALAR
-        || request.output.shape != ResidentShape::SCALAR
-    {
+    if input.kind != ResidentValueKind::Snapshot || input.shape != ResidentShape::SCALAR {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let input_schema = request
@@ -2906,27 +3299,37 @@ fn bind_snapshot_sum(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let (rows, columns) = declared_matrix_dimensions(request, input)?;
-    let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
-    let expected = if column { (rows, 1) } else { (1, columns) };
+    let snapshot_output = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR;
+    let dense_f64_output = request.output.kind == ResidentValueKind::F64
+        && output_element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        && request.output.shape.len().is_some();
     if input_element != output_element
         || !is_snapshot_sum_element(input_element)
-        || output_dimensions != expected
+        || (!snapshot_output && !dense_f64_output)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    Ok(bound(
-        sum_snapshot,
-        vec![rows as u64, columns as u64, u64::from(column)].into_boxed_slice(),
-    )?
-    .with_snapshot_output(ResidentSnapshotOutput {
-        schema: request.output.schema_id,
-        schema_key: request.output.schema_key,
-        shape: request.output.shape_instance.clone(),
-        exact_cardinality: None,
-        maximum_cardinality: None,
-    })
-    .with_snapshot_schemas(request.schemas.clone()))
+    let mut parameters = vec![u64::from(column), u64::from(snapshot_output)];
+    if dense_f64_output {
+        parameters.extend([
+            request.output.shape.rows as u64,
+            request.output.shape.columns as u64,
+        ]);
+    }
+    let kernel = bound(sum_snapshot, parameters.into_boxed_slice())?
+        .with_snapshot_schemas(request.schemas.clone());
+    if snapshot_output {
+        Ok(kernel.with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        }))
+    } else {
+        Ok(kernel)
+    }
 }
 
 fn bind_horizontal(
@@ -3528,6 +3931,112 @@ fn validate_snapshot_access_geometry(
             }
             _ => return Err(ResidentKernelBindError::UnsupportedLayout),
         }
+    } else if source_dimensions.is_none() {
+        match selection_mode {
+            None => {
+                let (rows, columns) = output_dimensions.unwrap_or((1, 1));
+                ResolvedAccessGeometry {
+                    logical_output_rows: rows,
+                    logical_output_columns: columns,
+                }
+            }
+            Some(mode) => {
+                let (first_count, first_logical) = selector(0)?;
+                match mode {
+                    ResolvedSelectionMode::LinearScalar
+                        if output_dimensions.is_none() && !first_logical && first_count == 1 =>
+                    {
+                        ResolvedAccessGeometry {
+                            logical_output_rows: 1,
+                            logical_output_columns: 1,
+                        }
+                    }
+                    ResolvedSelectionMode::LinearGather => {
+                        let (output_rows, output_columns) =
+                            output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+                        if output_columns != 1
+                            || if first_logical {
+                                output_rows > first_count
+                            } else {
+                                output_rows != first_count
+                            }
+                        {
+                            return Err(ResidentKernelBindError::UnsupportedLayout);
+                        }
+                        ResolvedAccessGeometry {
+                            logical_output_rows: output_rows,
+                            logical_output_columns: 1,
+                        }
+                    }
+                    ResolvedSelectionMode::Rows => {
+                        let (output_rows, output_columns) =
+                            output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+                        if if first_logical {
+                            output_rows > first_count
+                        } else {
+                            output_rows != first_count
+                        } {
+                            return Err(ResidentKernelBindError::UnsupportedLayout);
+                        }
+                        ResolvedAccessGeometry {
+                            logical_output_rows: output_rows,
+                            logical_output_columns: output_columns,
+                        }
+                    }
+                    ResolvedSelectionMode::Columns => {
+                        let (output_rows, output_columns) =
+                            output_dimensions.ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+                        if if first_logical {
+                            output_columns > first_count
+                        } else {
+                            output_columns != first_count
+                        } {
+                            return Err(ResidentKernelBindError::UnsupportedLayout);
+                        }
+                        ResolvedAccessGeometry {
+                            logical_output_rows: output_rows,
+                            logical_output_columns: output_columns,
+                        }
+                    }
+                    ResolvedSelectionMode::Rectangle => {
+                        let (second_count, second_logical) = selector(1)?;
+                        match output_dimensions {
+                            None if !first_logical
+                                && !second_logical
+                                && first_count == 1
+                                && second_count == 1 =>
+                            {
+                                ResolvedAccessGeometry {
+                                    logical_output_rows: 1,
+                                    logical_output_columns: 1,
+                                }
+                            }
+                            Some((output_rows, output_columns)) => {
+                                let rows_supported = if first_logical {
+                                    output_rows <= first_count
+                                } else {
+                                    output_rows == first_count
+                                };
+                                let columns_supported = if second_logical {
+                                    output_columns <= second_count
+                                } else {
+                                    output_columns == second_count
+                                };
+                                if !rows_supported || !columns_supported {
+                                    return Err(ResidentKernelBindError::UnsupportedLayout);
+                                }
+                                ResolvedAccessGeometry {
+                                    logical_output_rows: output_rows,
+                                    logical_output_columns: output_columns,
+                                }
+                            }
+                            _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+                        }
+                    }
+                    _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+                }
+            }
+        }
     } else {
         if source_dimensions.is_some() || selection_mode.is_some() {
             return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -3710,9 +4219,6 @@ fn bind_indexed_assign_with_region(
     }
     if base.kind == ResidentValueKind::Snapshot {
         let (rows, columns) = declared_matrix_dimensions(request, base)?;
-        let output_len = rows
-            .checked_mul(columns)
-            .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
         let (source_rows, source_columns) = match request
             .schemas
             .get(source.schema_id)
@@ -3726,22 +4232,17 @@ fn bind_indexed_assign_with_region(
             .checked_mul(source_columns)
             .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
         let selector_len = declared_selector_cardinality(request, selector)?;
-        let source_shape_supported = source_len == 1
-            || source_len == output_len
-            || if selector.kind == ResidentValueKind::Bool {
-                source_len <= selector_len
-            } else {
-                source_len == selector_len
-            };
+        let snapshot_source =
+            source.kind == ResidentValueKind::Snapshot && source.shape == ResidentShape::SCALAR;
+        let dense_snapshot_source = source.kind != ResidentValueKind::Snapshot
+            && source.shape.len() == Some(source_len)
+            && dense_kind_matches_schema_body(source.kind, element);
         if !is_snapshot_index_assign_element(element)
-            || source.kind != ResidentValueKind::Snapshot
+            || (!snapshot_source && !dense_snapshot_source)
             || request.output.kind != ResidentValueKind::Snapshot
             || base.shape != ResidentShape::SCALAR
-            || source.shape != ResidentShape::SCALAR
             || request.output.shape != ResidentShape::SCALAR
             || !positional_selector_layout(request, selector)
-            || (selector.kind == ResidentValueKind::Bool && selector_len != output_len)
-            || !source_shape_supported
         {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
@@ -3755,7 +4256,11 @@ fn bind_indexed_assign_with_region(
             ResolvedSourceRouting::Positional
         };
         return Ok(bound(
-            indexed_assign_snapshot,
+            if dense_snapshot_source {
+                indexed_assign_snapshot_dense
+            } else {
+                indexed_assign_snapshot
+            },
             vec![
                 rows as u64,
                 columns as u64,
@@ -3922,6 +4427,10 @@ fn bind_matrix_selection_assign(
         _ => return Err(ResidentKernelBindError::UnsupportedLayout),
     };
     let (rows, columns) = declared_matrix_dimensions(request, base)?;
+    let snapshot_base_output = base.kind == ResidentValueKind::Snapshot
+        && request.output.kind == ResidentValueKind::Snapshot
+        && base.shape == ResidentShape::SCALAR
+        && request.output.shape == ResidentShape::SCALAR;
     if declared_matrix_dimensions(request, &request.output)? != (rows, columns)
         || selectors
             .iter()
@@ -3976,17 +4485,18 @@ fn bind_matrix_selection_assign(
     } else {
         source_len == selector_capacity
     };
-    if !selector_axes_match
-        || (source_len != 1 && source_len != output_len && !compact_source_matches)
+    if !snapshot_base_output
+        && (!selector_axes_match
+            || (source_len != 1 && source_len != output_len && !compact_source_matches))
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let snapshot_layout = base.kind == ResidentValueKind::Snapshot
-        && source.kind == ResidentValueKind::Snapshot
-        && request.output.kind == ResidentValueKind::Snapshot
-        && base.shape == ResidentShape::SCALAR
-        && source.shape == ResidentShape::SCALAR
-        && request.output.shape == ResidentShape::SCALAR;
+    let snapshot_source =
+        source.kind == ResidentValueKind::Snapshot && source.shape == ResidentShape::SCALAR;
+    let dense_snapshot_source = source.kind != ResidentValueKind::Snapshot
+        && source.shape.len() == Some(source_len)
+        && dense_kind_matches_schema_body(source.kind, element);
+    let snapshot_layout = snapshot_base_output && (snapshot_source || dense_snapshot_source);
     let dense_layout = matches!(
         base.kind,
         ResidentValueKind::Bool
@@ -4046,9 +4556,12 @@ fn bind_matrix_selection_assign(
 fn is_snapshot_index_assign_element(body: &SchemaBody) -> bool {
     matches!(
         body,
-        SchemaBody::UnsignedInteger(_)
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::String
+            | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
-            | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32)
+            | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64
             | SchemaBody::Record(_)
@@ -4155,7 +4668,8 @@ fn bind_range_increment_exclusive(
 fn is_range_snapshot_element(body: &SchemaBody) -> bool {
     matches!(
         body,
-        SchemaBody::UnsignedInteger(_)
+        SchemaBody::Index
+            | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
     )
@@ -4168,9 +4682,6 @@ fn bind_snapshot_range(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let expected_inputs = if incremented { 3 } else { 2 };
     if request.inputs.len() != expected_inputs
-        || request.inputs.iter().any(|input| {
-            input.kind != ResidentValueKind::Snapshot || input.shape != ResidentShape::SCALAR
-        })
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
     {
@@ -4182,10 +4693,21 @@ fn bind_snapshot_range(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     if !is_range_snapshot_element(input_schema.body())
         || request.inputs.iter().any(|input| {
-            request
+            let same_body = request
                 .schemas
                 .get(input.schema_id)
-                .is_none_or(|schema| schema.body() != input_schema.body())
+                .is_some_and(|schema| schema.body() == input_schema.body());
+            let supported_layout = input.shape == ResidentShape::SCALAR
+                && match input.kind {
+                    ResidentValueKind::Snapshot => true,
+                    ResidentValueKind::Index => input_schema.body() == &SchemaBody::Index,
+                    ResidentValueKind::F64 => {
+                        input_schema.body()
+                            == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+                    }
+                    _ => false,
+                };
+            !same_body || !supported_layout
         })
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4198,12 +4720,27 @@ fn bind_snapshot_range(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
     let (rows, columns) = declared_matrix_dimensions(request, &request.output)?;
-    if rows != 1 || columns == 0 || element.as_ref() != input_schema.body() {
+    if rows != 1 || element.as_ref() != input_schema.body() {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    let declared_count = if request.output.activation_fixed_shape {
+        if columns == 0 {
+            return Err(ResidentKernelBindError::UnsupportedLayout);
+        }
+        columns
+    } else {
+        // Zero is a safe dynamic sentinel because resident ranges reject an
+        // empty result before publication.
+        0
+    };
     Ok(bound(
         range_snapshot,
-        vec![u64::from(inclusive), u64::from(incremented), columns as u64].into_boxed_slice(),
+        vec![
+            u64::from(inclusive),
+            u64::from(incremented),
+            declared_count as u64,
+        ]
+        .into_boxed_slice(),
     )?
     .with_snapshot_output(ResidentSnapshotOutput {
         schema: request.output.schema_id,
@@ -4359,12 +4896,9 @@ fn bind_snapshot_n_choose_k_matrix(
     let [input, selection] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if input.kind != ResidentValueKind::Snapshot
-        || selection.kind != ResidentValueKind::Snapshot
-        || request.output.kind != ResidentValueKind::Snapshot
-        || input.shape != ResidentShape::SCALAR
-        || selection.shape != ResidentShape::SCALAR
+    if request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
+        || selection.shape != ResidentShape::SCALAR
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -4393,23 +4927,33 @@ fn bind_snapshot_n_choose_k_matrix(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let input_snapshot = input.kind == ResidentValueKind::Snapshot;
     let (input_rows, input_columns) = declared_matrix_dimensions(request, input)?;
-    let input_len = input_rows
-        .checked_mul(input_columns)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let (k, combinations) = declared_matrix_dimensions(request, &request.output)?;
-    if k == 0
-        || k > input_len
-        || checked_combination_count(input_len, k) != Some(combinations)
-        || input_element != output_element
-        || selection_schema.body() != input_element.as_ref()
+    let input_dense_f64 = input.kind == ResidentValueKind::F64
+        && input.shape == resident_shape_from_dimensions(input_rows, input_columns)?
+        && input_element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    let selection_snapshot = selection.kind == ResidentValueKind::Snapshot;
+    let selection_dense_f64 = selection.kind == ResidentValueKind::F64
+        && selection_schema.body() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        && input_element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    if input_element != output_element
+        || (!input_snapshot && !input_dense_f64)
+        || (input_snapshot && input.shape != ResidentShape::SCALAR)
+        || (!selection_snapshot && !selection_dense_f64)
+        || (selection_snapshot && selection_schema.body() != input_element.as_ref())
         || !is_n_choose_k_snapshot_element(input_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     Ok(bound(
         n_choose_k_snapshot,
-        vec![k as u64, combinations as u64].into_boxed_slice(),
+        vec![
+            u64::from(input_snapshot),
+            u64::from(selection_snapshot),
+            input_rows as u64,
+            input_columns as u64,
+        ]
+        .into_boxed_slice(),
     )?
     .with_snapshot_output(ResidentSnapshotOutput {
         schema: request.output.schema_id,
@@ -4505,6 +5049,12 @@ fn bind_scalar_access_1d(
 fn bind_scalar_index(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_dense_scalar_index(request).or_else(|_| bind_snapshot_scalar_index(request))
+}
+
+fn bind_dense_scalar_index(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
         request,
         1,
@@ -4520,6 +5070,43 @@ fn bind_scalar_index(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     bound(scalar_index, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_snapshot_scalar_index(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        snapshot_output_change_detection(request)?,
+    )?;
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if input.kind != ResidentValueKind::Snapshot
+        || request.output.kind != ResidentValueKind::Snapshot
+        || input.shape != ResidentShape::SCALAR
+        || request.output.shape != ResidentShape::SCALAR
+        || !numeric_positional_selector_layout(request, input)
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if !matches!(
+        output_schema.body(),
+        SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Index
+    ) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(
+        bound(snapshot_scalar_index, Vec::<u64>::new().into_boxed_slice())?
+            .with_snapshot_output(snapshot_output_metadata(request))
+            .with_snapshot_schemas(request.schemas.clone()),
+    )
 }
 
 fn bind_semantic_scalar_access(
@@ -4632,19 +5219,33 @@ fn bind_all_elements_range(
     if source.shape != ResidentShape::SCALAR || request.output.shape != ResidentShape::SCALAR {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let constructor = mech_core::snapshot::MatrixSnapshotConstructor::bind(
-        request.output.schema_id,
-        request.output.shape_instance.clone(),
-        (source.schema_id, source.shape_instance.clone()),
-        Arc::new(request.schemas.clone()),
-    )
-    .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    let fixed_geometry = [source, &request.output].into_iter().all(|port| {
+        port.activation_fixed_shape
+            || request
+                .schemas
+                .get(port.schema_id)
+                .is_some_and(|schema| schema.dimension_parameters().is_empty())
+    });
+    let matrix_constructor = fixed_geometry
+        .then(|| {
+            mech_core::snapshot::MatrixSnapshotConstructor::bind(
+                request.output.schema_id,
+                request.output.shape_instance.clone(),
+                (source.schema_id, source.shape_instance.clone()),
+                Arc::new(request.schemas.clone()),
+            )
+            .map(Arc::new)
+        })
+        .transpose()
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let plan = SnapshotAccessPlan {
-        matrix_constructor: Some(Arc::new(constructor)),
+        dense_source: None,
+        matrix_constructor,
         selectors: Box::new([]),
         matrix_mode: Some(ResolvedSelectionMode::LinearGather),
-        source_dimensions: Some((rows, columns)),
+        source_dimensions: fixed_geometry.then_some((rows, columns)),
         output_dimensions: Some((count, 1)),
+        output_dimensions_dynamic: !fixed_geometry,
         output_geometry: ResolvedAccessGeometry {
             logical_output_rows: count,
             logical_output_columns: 1,
@@ -4755,6 +5356,128 @@ fn bind_snapshot_access(
     bind_snapshot_access_mode(request, None)
 }
 
+fn bind_dense_source_snapshot_access_mode(
+    request: &ResidentKernelBindRequest<'_>,
+    explicit_matrix_mode: Option<ResolvedSelectionMode>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let source = &request.inputs[0];
+    let source_schema = request
+        .schemas
+        .get(source.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let (
+        SchemaBody::Matrix {
+            element: source_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: output_element,
+            ..
+        },
+    ) = (source_schema.body(), output_schema.body())
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let source_dimensions = declared_matrix_dimensions(request, source)?;
+    let source_shape = resident_shape_from_dimensions(source_dimensions.0, source_dimensions.1)?;
+    let selectors = &request.inputs[1..];
+    let selector_count = selectors.len();
+    let selector_schemas = selectors
+        .iter()
+        .map(|selector| {
+            request
+                .schemas
+                .get(selector.schema_id)
+                .ok_or(ResidentKernelBindError::UnsupportedLayout)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let selector_layouts_valid = selectors
+        .iter()
+        .zip(&selector_schemas)
+        .all(|(layout, schema)| {
+            is_access_positional_selector_schema(schema.body())
+                && access_selector_layout_matches_schema(layout, schema.body())
+        });
+    let has_snapshot_selector = selectors.iter().any(|selector| {
+        selector.kind == ResidentValueKind::Snapshot && selector.shape == ResidentShape::SCALAR
+    });
+    if source.kind == ResidentValueKind::Snapshot
+        || source.shape != source_shape
+        || !dense_kind_matches_schema_body(source.kind, source_element)
+        || source_element != output_element
+        || request.output.kind != ResidentValueKind::Snapshot
+        || request.output.shape != ResidentShape::SCALAR
+        || !selector_layouts_valid
+        || !has_snapshot_selector
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let inferred_mode = if selector_count == 2 {
+        ResolvedSelectionMode::Rectangle
+    } else if selector_count == 1 {
+        ResolvedSelectionMode::LinearGather
+    } else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let matrix_mode = explicit_matrix_mode.unwrap_or(inferred_mode);
+    let expected_selectors = match matrix_mode {
+        ResolvedSelectionMode::Rectangle => 2,
+        ResolvedSelectionMode::LinearGather
+        | ResolvedSelectionMode::Rows
+        | ResolvedSelectionMode::Columns => 1,
+        _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+    };
+    if selector_count != expected_selectors {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output_dimensions = Some(declared_matrix_dimensions(request, &request.output)?);
+    let output_geometry = validate_snapshot_access_geometry(
+        request,
+        Some(source_dimensions),
+        output_dimensions,
+        Some(matrix_mode),
+        selectors,
+        None,
+    )?;
+    let plan = SnapshotAccessPlan {
+        dense_source: Some(SnapshotAccessSelectorLayout {
+            schema: source.schema_id,
+            shape: source.shape_instance.clone(),
+            resident_shape: source.shape,
+        }),
+        matrix_constructor: None,
+        selectors: selectors
+            .iter()
+            .map(|selector| SnapshotAccessSelectorLayout {
+                schema: selector.schema_id,
+                shape: selector.shape_instance.clone(),
+                resident_shape: selector.shape,
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+        matrix_mode: Some(matrix_mode),
+        source_dimensions: Some(source_dimensions),
+        output_dimensions,
+        // At least one selector is activation-derived. Its committed
+        // population, rather than its lower-bound placeholder, determines the
+        // result axes at execution.
+        output_dimensions_dynamic: true,
+        output_geometry,
+        aggregate_ordinal: None,
+        output_schema: request.output.schema_id,
+    };
+    Ok(
+        bound(snapshot_access, Vec::<u64>::new().into_boxed_slice())?
+            .with_retained_state(Arc::new(plan))
+            .with_snapshot_output(snapshot_output_metadata(request))
+            .with_snapshot_schemas(request.schemas.clone()),
+    )
+}
+
 fn bind_snapshot_access_mode(
     request: &ResidentKernelBindRequest<'_>,
     explicit_matrix_mode: Option<ResolvedSelectionMode>,
@@ -4769,7 +5492,10 @@ fn bind_snapshot_access_mode(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let source = &request.inputs[0];
-    if source.kind != ResidentValueKind::Snapshot || source.shape != ResidentShape::SCALAR {
+    if source.kind != ResidentValueKind::Snapshot {
+        return bind_dense_source_snapshot_access_mode(request, explicit_matrix_mode);
+    }
+    if source.shape != ResidentShape::SCALAR {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     let source_schema = request
@@ -4915,7 +5641,7 @@ fn bind_snapshot_access_mode(
                 )
             }
             SchemaBody::Matrix { element, .. } if (1..=2).contains(&selector_count) => {
-                let source_dimensions = declared_matrix_dimensions(request, source)?;
+                let declared_source_dimensions = declared_matrix_dimensions(request, source)?;
                 let output_dimensions = match output_schema.body() {
                     body if body == element.as_ref() => None,
                     SchemaBody::Matrix {
@@ -4925,6 +5651,11 @@ fn bind_snapshot_access_mode(
                         Some(declared_matrix_dimensions(request, &request.output)?)
                     }
                     _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+                };
+                let source_dimensions = if !source_schema.dimension_parameters().is_empty() {
+                    None
+                } else {
+                    Some(declared_source_dimensions)
                 };
                 let inferred_mode = if selector_count == 2 {
                     ResolvedSelectionMode::Rectangle
@@ -4943,13 +5674,7 @@ fn bind_snapshot_access_mode(
                     }
                 }
                 let mode = explicit_matrix_mode.unwrap_or(inferred_mode);
-                (
-                    Some(mode),
-                    Some(source_dimensions),
-                    output_dimensions,
-                    None,
-                    true,
-                )
+                (Some(mode), source_dimensions, output_dimensions, None, true)
             }
             _ => return Err(ResidentKernelBindError::UnsupportedLayout),
         };
@@ -4974,6 +5699,10 @@ fn bind_snapshot_access_mode(
         &request.inputs[1..],
         table_rows,
     )?;
+    let output_dimensions_dynamic = matches!(source_schema.body(), SchemaBody::Matrix { .. })
+        && matches!(output_schema.body(), SchemaBody::Matrix { .. })
+        && !output_schema.dimension_parameters().is_empty()
+        && !request.output.activation_fixed_shape;
     let selectors = request.inputs[1..]
         .iter()
         .map(|selector| SnapshotAccessSelectorLayout {
@@ -4984,11 +5713,13 @@ fn bind_snapshot_access_mode(
         .collect::<Vec<_>>()
         .into_boxed_slice();
     let plan = SnapshotAccessPlan {
+        dense_source: None,
         matrix_constructor: None,
         selectors,
         matrix_mode,
         source_dimensions,
         output_dimensions,
+        output_dimensions_dynamic,
         output_geometry,
         aggregate_ordinal,
         output_schema: request.output.schema_id,
@@ -5048,52 +5779,119 @@ fn bind_matmul(
         .schemas
         .get(request.output.schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
-    let (
-        SchemaBody::Matrix {
-            element: lhs_element,
-            ..
-        },
-        SchemaBody::Matrix {
-            element: rhs_element,
-            ..
-        },
-        SchemaBody::Matrix {
-            element: output_element,
-            ..
-        },
-    ) = (lhs_schema.body(), rhs_schema.body(), output_schema.body())
+    let SchemaBody::Matrix {
+        element: lhs_element,
+        ..
+    } = lhs_schema.body()
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let (rows, inner) = declared_matrix_dimensions(request, lhs)?;
-    let (rhs_rows, columns) = declared_matrix_dimensions(request, rhs)?;
-    let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
+    let SchemaBody::Matrix {
+        element: rhs_element,
+        ..
+    } = rhs_schema.body()
+    else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let (lhs_logical_element, lhs_logical_shape) = comparison_logical_layout(request, lhs)?;
+    let (rhs_logical_element, rhs_logical_shape) = comparison_logical_layout(request, rhs)?;
+    let (output_logical_element, output_logical_shape) =
+        comparison_logical_layout(request, &request.output)?;
+    let lhs_snapshot = lhs.kind == ResidentValueKind::Snapshot;
+    let rhs_snapshot = rhs.kind == ResidentValueKind::Snapshot;
+    let snapshot_output = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR;
+    let dense_output = request.output.kind == ResidentValueKind::F64
+        && request.output.shape == output_logical_shape
+        && output_logical_element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    let dense_f64 = |port: &mech_core::ResidentPortLayout,
+                     element: &SchemaBody,
+                     logical_shape: ResidentShape| {
+        port.kind == ResidentValueKind::F64
+            && port.shape == logical_shape
+            && element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    };
+    if lhs_snapshot != rhs_snapshot
+        && (lhs_snapshot && lhs.shape == ResidentShape::SCALAR
+            || dense_f64(lhs, lhs_logical_element, lhs_logical_shape))
+        && (rhs_snapshot && rhs.shape == ResidentShape::SCALAR
+            || dense_f64(rhs, rhs_logical_element, rhs_logical_shape))
+        && lhs_logical_element == rhs_logical_element
+        && lhs_logical_element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        && (snapshot_output || dense_output)
+        && matches!(
+            output_schema.body(),
+            SchemaBody::Matrix { element, .. } if element.as_ref() == lhs_logical_element
+        )
+    {
+        let kernel = bound(
+            matrix_multiply_snapshot_mixed,
+            vec![
+                u64::from(snapshot_output),
+                u64::from(lhs_snapshot),
+                u64::from(rhs_snapshot),
+                lhs_logical_shape.rows as u64,
+                lhs_logical_shape.columns as u64,
+                rhs_logical_shape.rows as u64,
+                rhs_logical_shape.columns as u64,
+            ]
+            .into_boxed_slice(),
+        )?
+        .with_snapshot_schemas(request.schemas.clone());
+        if snapshot_output {
+            return Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)));
+        }
+        return Ok(kernel);
+    }
     if lhs.kind != ResidentValueKind::Snapshot
         || rhs.kind != ResidentValueKind::Snapshot
-        || request.output.kind != ResidentValueKind::Snapshot
         || lhs.shape != ResidentShape::SCALAR
         || rhs.shape != ResidentShape::SCALAR
         || request.output.shape != ResidentShape::SCALAR
-        || inner != rhs_rows
-        || output_dimensions != (rows, columns)
         || lhs_element != rhs_element
-        || lhs_element != output_element
         || !is_dot_numeric_schema(lhs_element)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    Ok(bound(
-        matrix_multiply_snapshot,
-        vec![rows as u64, inner as u64, columns as u64].into_boxed_slice(),
-    )?
-    .with_snapshot_output(ResidentSnapshotOutput {
-        schema: request.output.schema_id,
-        schema_key: request.output.schema_key,
-        shape: request.output.shape_instance.clone(),
-        exact_cardinality: None,
-        maximum_cardinality: None,
-    })
-    .with_snapshot_schemas(request.schemas.clone()))
+    match (request.output.kind, output_schema.body()) {
+        (
+            ResidentValueKind::Snapshot,
+            SchemaBody::Matrix {
+                element: output_element,
+                ..
+            },
+        ) if lhs_element == output_element => Ok(bound(
+            matrix_multiply_snapshot,
+            Vec::<u64>::new().into_boxed_slice(),
+        )?
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape: request.output.shape_instance.clone(),
+            exact_cardinality: None,
+            maximum_cardinality: None,
+        })
+        .with_snapshot_schemas(request.schemas.clone())),
+        (
+            ResidentValueKind::F64,
+            SchemaBody::Matrix {
+                element: output_element,
+                ..
+            },
+        ) if lhs_element == output_element
+            && matches!(
+                lhs_element.as_ref(),
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            ) =>
+        {
+            Ok(bound(
+                matrix_multiply_snapshot_f64,
+                Vec::<u64>::new().into_boxed_slice(),
+            )?
+            .with_snapshot_schemas(request.schemas.clone()))
+        }
+        _ => Err(ResidentKernelBindError::UnsupportedLayout),
+    }
 }
 
 fn dot_element_schema(body: &SchemaBody) -> &SchemaBody {
@@ -5138,21 +5936,21 @@ fn bind_matrix_dot(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let left_element = dot_element_schema(left_schema.body());
     let right_element = dot_element_schema(right_schema.body());
-    if left_schema.body() != right_schema.body()
-        || left_element != right_element
+    if left_element != right_element
         || left_element != output_schema.body()
         || !is_dot_numeric_schema(left_element)
-        || left.shape != right.shape
         || request.output.shape != ResidentShape::SCALAR
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     match (left.kind, right.kind, request.output.kind) {
-        (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64) => {
+        (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64)
+            if left.shape == right.shape =>
+        {
             bound(matrix_dot_f64, Vec::<u64>::new().into_boxed_slice())
         }
         (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::Snapshot)
-            if left.shape == ResidentShape::SCALAR =>
+            if left.shape == ResidentShape::SCALAR && right.shape == ResidentShape::SCALAR =>
         {
             Ok(
                 bound(matrix_dot_snapshot, Vec::<u64>::new().into_boxed_slice())?
@@ -5165,6 +5963,51 @@ fn bind_matrix_dot(
                     })
                     .with_snapshot_schemas(request.schemas.clone()),
             )
+        }
+        (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::F64)
+            if left.shape == ResidentShape::SCALAR && right.shape == ResidentShape::SCALAR =>
+        {
+            Ok(bound(
+                matrix_dot_snapshot_f64,
+                Vec::<u64>::new().into_boxed_slice(),
+            )?
+            .with_snapshot_schemas(request.schemas.clone()))
+        }
+        (ResidentValueKind::Snapshot, ResidentValueKind::F64, ResidentValueKind::F64)
+        | (ResidentValueKind::F64, ResidentValueKind::Snapshot, ResidentValueKind::F64)
+            if left_element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) =>
+        {
+            let (left_logical_element, left_shape) = comparison_logical_layout(request, left)?;
+            let (right_logical_element, right_shape) = comparison_logical_layout(request, right)?;
+            let left_snapshot = left.kind == ResidentValueKind::Snapshot;
+            let right_snapshot = right.kind == ResidentValueKind::Snapshot;
+            if left_snapshot == right_snapshot
+                || (left_snapshot && left.shape != ResidentShape::SCALAR)
+                || (right_snapshot && right.shape != ResidentShape::SCALAR)
+                || (!left_snapshot
+                    && (left.shape != left_shape
+                        || left_logical_element
+                            != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)))
+                || (!right_snapshot
+                    && (right.shape != right_shape
+                        || right_logical_element
+                            != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)))
+            {
+                return Err(ResidentKernelBindError::UnsupportedLayout);
+            }
+            Ok(bound(
+                matrix_dot_snapshot_mixed_f64,
+                vec![
+                    u64::from(left_snapshot),
+                    u64::from(right_snapshot),
+                    left_shape.rows as u64,
+                    left_shape.columns as u64,
+                    right_shape.rows as u64,
+                    right_shape.columns as u64,
+                ]
+                .into_boxed_slice(),
+            )?
+            .with_snapshot_schemas(request.schemas.clone()))
         }
         _ => Err(ResidentKernelBindError::UnsupportedLayout),
     }
@@ -5213,6 +6056,7 @@ fn admit_matrix_solve(
     coefficient_copies: usize,
     right_copies: usize,
     output_container_bytes: usize,
+    runtime_pivot: bool,
     supplemental: super::budget::KernelCostEstimate,
 ) -> Result<(), ResidentKernelError> {
     let coefficient_count = rows
@@ -5235,6 +6079,14 @@ fn admit_matrix_solve(
                 .and_then(|right| bytes.checked_add(right))
         })
         .and_then(|bytes| bytes.checked_add(output_container_bytes))
+        .and_then(|bytes| {
+            if runtime_pivot {
+                rows.checked_mul(core::mem::size_of::<usize>())
+                    .and_then(|pivot| bytes.checked_add(pivot))
+            } else {
+                Some(bytes)
+            }
+        })
         .ok_or(ResidentKernelError::InvalidShape)?;
     super::budget::PreparedKernel::new(
         (),
@@ -5276,9 +6128,6 @@ fn bind_matrix_solve(
     let [coefficients, right] = request.inputs else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let (rows, columns) = declared_matrix_dimensions(request, coefficients)?;
-    let (right_rows, right_columns) = declared_matrix_dimensions(request, right)?;
-    let (output_rows, output_columns) = declared_matrix_dimensions(request, &request.output)?;
     let coefficient_schema = request
         .schemas
         .get(coefficients.schema_id)
@@ -5312,38 +6161,114 @@ fn bind_matrix_solve(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    if rows != columns
-        || right_rows != rows
-        || (output_rows, output_columns) != (right_rows, right_columns)
-        || coefficient_element != right_element
+    if coefficient_element != right_element
         || coefficient_element != output_element
         || !matches!(
             coefficient_element.as_ref(),
             SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
         )
-        || matrix_solve_work(rows, right_columns).is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let parameters = vec![rows as u64, right_columns as u64].into_boxed_slice();
+    let coefficient_snapshot = coefficients.kind == ResidentValueKind::Snapshot;
+    let right_snapshot = right.kind == ResidentValueKind::Snapshot;
+    if coefficient_snapshot != right_snapshot {
+        let (coefficient_logical_element, coefficient_shape) =
+            comparison_logical_layout(request, coefficients)?;
+        let (right_logical_element, right_shape) = comparison_logical_layout(request, right)?;
+        let (output_logical_element, output_shape) =
+            comparison_logical_layout(request, &request.output)?;
+        let dense_f64 = |port: &mech_core::ResidentPortLayout,
+                         element: &SchemaBody,
+                         logical_shape: ResidentShape| {
+            port.kind == ResidentValueKind::F64
+                && port.shape == logical_shape
+                && element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        };
+        let snapshot_output = request.output.kind == ResidentValueKind::Snapshot
+            && request.output.shape == ResidentShape::SCALAR;
+        let dense_output = dense_f64(&request.output, output_logical_element, output_shape);
+        if (coefficient_snapshot && coefficients.shape == ResidentShape::SCALAR
+            || dense_f64(coefficients, coefficient_logical_element, coefficient_shape))
+            && (right_snapshot && right.shape == ResidentShape::SCALAR
+                || dense_f64(right, right_logical_element, right_shape))
+            && coefficient_logical_element == right_logical_element
+            && coefficient_logical_element == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            && (snapshot_output || dense_output)
+        {
+            let kernel = bound(
+                matrix_solve_snapshot_mixed_f64,
+                vec![
+                    u64::from(snapshot_output),
+                    u64::from(coefficient_snapshot),
+                    u64::from(right_snapshot),
+                    coefficient_shape.rows as u64,
+                    coefficient_shape.columns as u64,
+                    right_shape.rows as u64,
+                    right_shape.columns as u64,
+                ]
+                .into_boxed_slice(),
+            )?
+            .with_snapshot_schemas(request.schemas.clone());
+            if snapshot_output {
+                return Ok(kernel.with_snapshot_output(snapshot_output_metadata(request)));
+            }
+            return Ok(kernel);
+        }
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
     match (coefficients.kind, right.kind, request.output.kind) {
         (ResidentValueKind::F64, ResidentValueKind::F64, ResidentValueKind::F64) => {
-            bound(matrix_solve_f64, parameters)
+            let (rows, columns) = declared_matrix_dimensions(request, coefficients)?;
+            let (right_rows, right_columns) = declared_matrix_dimensions(request, right)?;
+            let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
+            if rows != columns
+                || right_rows != rows
+                || output_dimensions != (right_rows, right_columns)
+                || matrix_solve_work(rows, right_columns)
+                    .is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+            {
+                return Err(ResidentKernelBindError::UnsupportedLayout);
+            }
+            bound(
+                matrix_solve_f64,
+                vec![rows as u64, right_columns as u64].into_boxed_slice(),
+            )
         }
         (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::Snapshot)
             if coefficients.shape == ResidentShape::SCALAR
                 && right.shape == ResidentShape::SCALAR
                 && request.output.shape == ResidentShape::SCALAR =>
         {
-            Ok(bound(matrix_solve_f32_snapshot, parameters)?
-                .with_snapshot_output(ResidentSnapshotOutput {
-                    schema: request.output.schema_id,
-                    schema_key: request.output.schema_key,
-                    shape: request.output.shape_instance.clone(),
-                    exact_cardinality: None,
-                    maximum_cardinality: None,
-                })
-                .with_snapshot_schemas(request.schemas.clone()))
+            Ok(
+                bound(matrix_solve_snapshot, vec![1_u64].into_boxed_slice())?
+                    .with_snapshot_output(ResidentSnapshotOutput {
+                        schema: request.output.schema_id,
+                        schema_key: request.output.schema_key,
+                        shape: request.output.shape_instance.clone(),
+                        exact_cardinality: None,
+                        maximum_cardinality: None,
+                    })
+                    .with_snapshot_schemas(request.schemas.clone()),
+            )
+        }
+        (ResidentValueKind::Snapshot, ResidentValueKind::Snapshot, ResidentValueKind::F64)
+            if coefficients.shape == ResidentShape::SCALAR
+                && right.shape == ResidentShape::SCALAR
+                && matches!(
+                    output_element.as_ref(),
+                    SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+                )
+                && declared_matrix_dimensions(request, &request.output)?
+                    == (
+                        request.output.shape.rows as usize,
+                        request.output.shape.columns as usize,
+                    ) =>
+        {
+            Ok(
+                bound(matrix_solve_snapshot, vec![0_u64].into_boxed_slice())?
+                    .with_snapshot_schemas(request.schemas.clone()),
+            )
         }
         _ => Err(ResidentKernelBindError::UnsupportedLayout),
     }
@@ -5921,6 +6846,135 @@ enum SnapshotComparisonValues<'a> {
     Matrix(Vec<ValueData>),
 }
 
+enum DenseComparisonValues<'a> {
+    F64(&'a [f64], usize, usize),
+    Bool(&'a [u8], usize, usize),
+    Index(&'a [u64], usize, usize),
+    String(&'a [String], usize, usize),
+}
+
+impl<'a> DenseComparisonValues<'a> {
+    fn from_resident(
+        value: ResidentValueRef<'a>,
+        rows: usize,
+        columns: usize,
+    ) -> Result<Self, ResidentKernelError> {
+        let len = rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let values = match value {
+            ResidentValueRef::F64(values) if values.len() == len => {
+                Self::F64(values, rows, columns)
+            }
+            ResidentValueRef::Bool(values)
+                if values.len() == len && values.iter().all(|value| *value <= 1) =>
+            {
+                Self::Bool(values, rows, columns)
+            }
+            ResidentValueRef::Index(values) if values.len() == len => {
+                Self::Index(values, rows, columns)
+            }
+            ResidentValueRef::String(values) if values.len() == len => {
+                Self::String(values, rows, columns)
+            }
+            _ => return Err(ResidentKernelError::InvalidInput),
+        };
+        Ok(values)
+    }
+
+    fn len(&self) -> usize {
+        match self {
+            Self::F64(values, ..) => values.len(),
+            Self::Bool(values, ..) => values.len(),
+            Self::Index(values, ..) => values.len(),
+            Self::String(values, ..) => values.len(),
+        }
+    }
+
+    fn resident_index(&self, canonical_index: usize) -> Result<usize, ResidentKernelError> {
+        let (rows, columns) = match self {
+            Self::F64(_, rows, columns)
+            | Self::Bool(_, rows, columns)
+            | Self::Index(_, rows, columns)
+            | Self::String(_, rows, columns) => (*rows, *columns),
+        };
+        if canonical_index >= self.len() || columns == 0 {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let row = canonical_index / columns;
+        let column = canonical_index % columns;
+        row.checked_add(
+            column
+                .checked_mul(rows)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)
+    }
+
+    fn comparison_work(
+        &self,
+        index: usize,
+        meter: &mut super::budget::ResidentBudgetMeter,
+    ) -> Result<u64, ResidentKernelError> {
+        let index = self.resident_index(index)?;
+        let work = match self {
+            Self::String(values, ..) => super::budget::checked_u64(
+                values
+                    .get(index)
+                    .ok_or(ResidentKernelError::InvalidShape)?
+                    .len(),
+            )?
+            .checked_add(core::mem::size_of::<u64>() as u64)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+            Self::F64(..) | Self::Bool(..) | Self::Index(..) => 1,
+        }
+        .max(1);
+        meter.charge_comparison_work(work)?;
+        Ok(work)
+    }
+
+    fn cloned_bytes(&self) -> Result<u64, ResidentKernelError> {
+        match self {
+            Self::String(values, ..) => values.iter().try_fold(0_u64, |bytes, value| {
+                bytes
+                    .checked_add(super::budget::checked_u64(value.len())?)
+                    .ok_or(ResidentKernelError::InvalidShape)
+            }),
+            Self::F64(..) | Self::Bool(..) | Self::Index(..) => Ok(0),
+        }
+    }
+
+    fn retained_nodes(&self) -> Result<u64, ResidentKernelError> {
+        match self {
+            Self::String(values, ..) => super::budget::checked_u64(values.len()),
+            Self::F64(..) | Self::Bool(..) | Self::Index(..) => Ok(0),
+        }
+    }
+
+    fn materialize(&self) -> Result<Vec<ValueData>, ResidentKernelError> {
+        (0..self.len())
+            .map(|canonical_index| {
+                let index = self.resident_index(canonical_index)?;
+                match self {
+                    Self::F64(values, ..) => values
+                        .get(index)
+                        .copied()
+                        .map(|value| ValueData::F64(F64Bits::from_f64(value))),
+                    Self::Bool(values, ..) => values
+                        .get(index)
+                        .copied()
+                        .map(|value| ValueData::Bool(value != 0)),
+                    Self::Index(values, ..) => values.get(index).copied().map(ValueData::Index),
+                    Self::String(values, ..) => values
+                        .get(index)
+                        .map(|value| ValueData::String(value.as_str().into())),
+                }
+                .ok_or(ResidentKernelError::InvalidShape)
+            })
+            .collect()
+    }
+}
+
 impl SnapshotComparisonValues<'_> {
     fn len(&self) -> usize {
         match self {
@@ -5943,147 +6997,367 @@ fn snapshot_comparison(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let (
-        Some(ResidentValueRef::Snapshot([Some(left)])),
-        Some(ResidentValueRef::Snapshot([Some(right)])),
-    ) = (inputs.get(0), inputs.get(1))
+    let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let [
+        comparison,
+        snapshot_output,
+        left_snapshot,
+        right_snapshot,
+        bound_left_rows,
+        bound_left_columns,
+        bound_right_rows,
+        bound_right_columns,
+        tail @ ..,
+    ] = kernel.parameters()
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let ResidentValueMut::Bool(output) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
-    };
-    let [rows, columns, left_mode, right_mode, comparison] = kernel.parameters() else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let output_len = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    if output.len() != output_len {
-        return Err(ResidentKernelError::InvalidShape);
-    }
     let comparison =
         SemanticComparison::from_parameter(*comparison).ok_or(ResidentKernelError::InvalidInput)?;
+    let snapshot_output = match *snapshot_output {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let left_snapshot = flag(*left_snapshot)?;
+    let right_snapshot = flag(*right_snapshot)?;
+    let bound_dimensions = |rows: u64, columns: u64| {
+        Ok::<_, ResidentKernelError>((
+            usize::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ))
+    };
+    let bound_left_dimensions = bound_dimensions(*bound_left_rows, *bound_left_columns)?;
+    let bound_right_dimensions = bound_dimensions(*bound_right_rows, *bound_right_columns)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let snapshot_value = |input, expected| match (input, expected) {
+        (ResidentValueRef::Snapshot([Some(value)]), true) => Ok(Some(value)),
+        (ResidentValueRef::Snapshot(_), _) | (_, true) => Err(ResidentKernelError::InvalidInput),
+        (_, false) => Ok(None),
+    };
+    let left = snapshot_value(left_input, left_snapshot)?;
+    let right = snapshot_value(right_input, right_snapshot)?;
     let left_schema = left
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
     let right_schema = right
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let (left_element, left_count, left_matrix) = match (left_schema.body(), left.data()) {
-        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => (
-            element.as_ref(),
-            matrix.elements().len(),
-            Some(matrix.elements()),
-        ),
-        (body, _) => (body, 1, None),
-    };
-    let (right_element, right_count, right_matrix) = match (right_schema.body(), right.data()) {
-        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => (
-            element.as_ref(),
-            matrix.elements().len(),
-            Some(matrix.elements()),
-        ),
-        (body, _) => (body, 1, None),
-    };
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let snapshot_element = left_schema
+        .map(|schema| comparison_element_body(schema.body()))
+        .or_else(|| right_schema.map(|schema| comparison_element_body(schema.body())))
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let left_element = left_schema.map_or(snapshot_element, |schema| {
+        comparison_element_body(schema.body())
+    });
+    let right_element = right_schema.map_or(snapshot_element, |schema| {
+        comparison_element_body(schema.body())
+    });
     if left_element != right_element
         || !snapshot_comparison_element_supported(left_element, comparison)
     {
         return Err(ResidentKernelError::InvalidInput);
     }
-    validate_binary_broadcast_len(left_count, *left_mode, rows, columns)?;
-    validate_binary_broadcast_len(right_count, *right_mode, rows, columns)?;
+    let left_dimensions = match (left, left_schema) {
+        (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
+        _ => bound_left_dimensions,
+    };
+    let right_dimensions = match (right, right_schema) {
+        (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
+        _ => bound_right_dimensions,
+    };
+    let (rows, columns) = snapshot_broadcast_dimensions(left_dimensions, right_dimensions)?;
+    let logical_output = resident_shape_for_dimensions(rows, columns)?;
+    let left_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(left_dimensions.0, left_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(right_dimensions.0, right_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let snapshot_count = |value: &mech_core::Value| match value.data() {
+        ValueData::Matrix(matrix) => matrix.elements().len(),
+        _ => 1,
+    };
+    let left_dense = left
+        .is_none()
+        .then(|| {
+            DenseComparisonValues::from_resident(left_input, left_dimensions.0, left_dimensions.1)
+        })
+        .transpose()?;
+    let right_dense = right
+        .is_none()
+        .then(|| {
+            DenseComparisonValues::from_resident(
+                right_input,
+                right_dimensions.0,
+                right_dimensions.1,
+            )
+        })
+        .transpose()?;
+    let left_count = left.map_or_else(
+        || left_dense.as_ref().map_or(0, DenseComparisonValues::len),
+        snapshot_count,
+    );
+    let right_count = right.map_or_else(
+        || right_dense.as_ref().map_or(0, DenseComparisonValues::len),
+        snapshot_count,
+    );
+    validate_binary_broadcast_len(left_count, left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right_count, right_mode, rows, columns)?;
+    let output_shape = if snapshot_output {
+        if !tail.is_empty() {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        Some(resolved_snapshot_output_shape(kernel, rows, columns)?)
+    } else {
+        let [bound_rows, bound_columns, bound_left_mode, bound_right_mode] = tail else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        if usize::try_from(*bound_rows).ok() != Some(rows)
+            || usize::try_from(*bound_columns).ok() != Some(columns)
+            || (!left_snapshot && *bound_left_mode != left_mode)
+            || (!right_snapshot && *bound_right_mode != right_mode)
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let ResidentValueMut::Bool(values) = &output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if values.len() != output_len {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        None
+    };
 
-    let staged_elements = left_matrix
-        .map_or(0, SequenceView::len)
-        .checked_add(right_matrix.map_or(0, SequenceView::len))
+    let staged_elements = left_count
+        .checked_add(right_count)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    let (left_bytes, left_nodes) = snapshot_clone_cost(&mut footprint_meter, left, schemas)?;
-    let (right_bytes, right_nodes) = snapshot_clone_cost(&mut footprint_meter, right, schemas)?;
+    let (left_bytes, left_nodes) = match left {
+        Some(value) => snapshot_clone_cost(&mut footprint_meter, value, schemas)?,
+        None => (0, 0),
+    };
+    let (right_bytes, right_nodes) = match right {
+        Some(value) => snapshot_clone_cost(&mut footprint_meter, value, schemas)?,
+        None => (0, 0),
+    };
+    let left_dense_bytes = left_dense
+        .as_ref()
+        .map(DenseComparisonValues::cloned_bytes)
+        .transpose()?
+        .unwrap_or(0);
+    let right_dense_bytes = right_dense
+        .as_ref()
+        .map(DenseComparisonValues::cloned_bytes)
+        .transpose()?
+        .unwrap_or(0);
     let cloned_bytes = left_bytes
         .checked_add(right_bytes)
+        .and_then(|bytes| bytes.checked_add(left_dense_bytes))
+        .and_then(|bytes| bytes.checked_add(right_dense_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let left_dense_nodes = left_dense
+        .as_ref()
+        .map(DenseComparisonValues::retained_nodes)
+        .transpose()?
+        .unwrap_or(0);
+    let right_dense_nodes = right_dense
+        .as_ref()
+        .map(DenseComparisonValues::retained_nodes)
+        .transpose()?
+        .unwrap_or(0);
     let retained_nodes = left_nodes
         .checked_add(right_nodes)
+        .and_then(|nodes| nodes.checked_add(left_dense_nodes))
+        .and_then(|nodes| nodes.checked_add(right_dense_nodes))
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let comparison_index = |mode: u64, index: usize| {
-        let row = index % rows;
-        let column = index / rows;
-        match mode {
-            BINARY_BROADCAST_SCALAR => 0,
-            BINARY_BROADCAST_EXACT => row * columns + column,
-            BINARY_BROADCAST_COLUMN => row,
-            BINARY_BROADCAST_ROW => column,
-            _ => unreachable!("validated snapshot broadcast mode"),
+    let logical_coordinates = |index: usize| {
+        if snapshot_output {
+            (index / columns, index % columns)
+        } else {
+            (index % rows, index / rows)
         }
+    };
+    let comparison_index = |mode: u64, row: usize, column: usize| match mode {
+        BINARY_BROADCAST_SCALAR => 0,
+        BINARY_BROADCAST_EXACT => row * columns + column,
+        BINARY_BROADCAST_COLUMN => row,
+        BINARY_BROADCAST_ROW => column,
+        _ => unreachable!("validated snapshot broadcast mode"),
     };
     // Measure every comparison occurrence, including repeated scalar/row/
     // column broadcasts. Recursive planning is incrementally metered and the
     // actual comparison scan is charged once per output pair.
     for index in 0..output_len {
-        let left_work = snapshot_element_comparison_work(
-            &mut footprint_meter,
-            left_schema.body(),
-            left.data(),
-            comparison_index(*left_mode, index),
-        )?;
-        let right_work = snapshot_element_comparison_work(
-            &mut footprint_meter,
-            right_schema.body(),
-            right.data(),
-            comparison_index(*right_mode, index),
-        )?;
+        let (row, column) = logical_coordinates(index);
+        let left_index = comparison_index(left_mode, row, column);
+        let right_index = comparison_index(right_mode, row, column);
+        let left_work = match (left, left_schema) {
+            (Some(value), Some(schema)) => snapshot_element_comparison_work(
+                &mut footprint_meter,
+                schema.body(),
+                value.data(),
+                left_index,
+            )?,
+            _ => left_dense
+                .as_ref()
+                .ok_or(ResidentKernelError::InvalidInput)?
+                .comparison_work(left_index, &mut footprint_meter)?,
+        };
+        let right_work = match (right, right_schema) {
+            (Some(value), Some(schema)) => snapshot_element_comparison_work(
+                &mut footprint_meter,
+                schema.body(),
+                value.data(),
+                right_index,
+            )?,
+            _ => right_dense
+                .as_ref()
+                .ok_or(ResidentKernelError::InvalidInput)?
+                .comparison_work(right_index, &mut footprint_meter)?,
+        };
         footprint_meter.charge_comparison_work(left_work.max(right_work).max(1))?;
     }
-    let footprint_work = footprint_meter.estimate();
     let container_bytes = super::budget::checked_u64(
         staged_elements
             .checked_mul(core::mem::size_of::<ValueData>())
             .ok_or(ResidentKernelError::InvalidShape)?,
     )?;
+    let output_draft_bytes = super::budget::checked_u64(
+        output_len
+            .checked_mul(core::mem::size_of::<ValueDataDraft>())
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let output_nodes = if snapshot_output { 3_u64 } else { 0 };
+    let output_footprint = ValueFootprint {
+        encoded_bytes: super::budget::checked_u64(output_len)?
+            .checked_add(output_nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_bytes: super::budget::checked_u64(output_len)?,
+        node_count: output_nodes,
+    };
+    let publication_work = if snapshot_output {
+        let metadata = kernel
+            .snapshot_output()
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let ResidentValueMut::Snapshot(values) = &output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        match values.first().and_then(|value| value.as_ref()) {
+            Some(previous) => {
+                let prior = super::budget::measure_canonical_value_footprint(
+                    &mut footprint_meter,
+                    previous,
+                    schemas,
+                )?;
+                super::budget::projected_language_equality_work(
+                    schemas,
+                    previous,
+                    prior,
+                    metadata.schema,
+                    output_shape
+                        .as_ref()
+                        .ok_or(ResidentKernelError::InvalidOutput)?
+                        .parameter_values()
+                        .len(),
+                    output_footprint,
+                )?
+            }
+            None => 0,
+        }
+    } else {
+        super::budget::checked_u64(output_len)?
+    };
+    let footprint_work = footprint_meter.estimate();
     super::budget::PreparedKernel::new(
         (),
         super::budget::resident_cost! {
-            comparison_work: footprint_work.comparison_work(),
+            comparison_work: footprint_work.comparison_work()
+                .checked_add(publication_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             compute_work: footprint_work.compute_work()
                 .checked_add(super::budget::checked_u64(output_len)?)
+                .and_then(|work| work.checked_add(publication_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             output_elements: output_len,
             output_bytes: output_len,
             temporary_bytes: cloned_bytes
                 .checked_add(container_bytes)
+                .and_then(|bytes| bytes.checked_add(output_draft_bytes))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes,
-            retained_nodes,
+            retained_nodes: retained_nodes
+                .checked_add(output_nodes.checked_mul(2).ok_or(ResidentKernelError::InvalidShape)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             ..super::budget::KernelCostEstimate::default()
         },
     )
     .admit()?
     .into_plan();
 
-    let left_values = match left_matrix {
-        Some(values) => SnapshotComparisonValues::Matrix(values.to_values()),
-        None => SnapshotComparisonValues::Scalar(left.data()),
+    let left_dense_values = left_dense
+        .as_ref()
+        .map(DenseComparisonValues::materialize)
+        .transpose()?;
+    let right_dense_values = right_dense
+        .as_ref()
+        .map(DenseComparisonValues::materialize)
+        .transpose()?;
+    let left_values = match left {
+        Some(value) => match value.data() {
+            ValueData::Matrix(matrix) => {
+                SnapshotComparisonValues::Matrix(matrix.elements().to_values())
+            }
+            value => SnapshotComparisonValues::Scalar(value),
+        },
+        None => SnapshotComparisonValues::Matrix(
+            left_dense_values.ok_or(ResidentKernelError::InvalidInput)?,
+        ),
     };
-    let right_values = match right_matrix {
-        Some(values) => SnapshotComparisonValues::Matrix(values.to_values()),
-        None => SnapshotComparisonValues::Scalar(right.data()),
+    let right_values = match right {
+        Some(value) => match value.data() {
+            ValueData::Matrix(matrix) => {
+                SnapshotComparisonValues::Matrix(matrix.elements().to_values())
+            }
+            value => SnapshotComparisonValues::Scalar(value),
+        },
+        None => SnapshotComparisonValues::Matrix(
+            right_dense_values.ok_or(ResidentKernelError::InvalidInput)?,
+        ),
     };
     debug_assert_eq!(left_values.len(), left_count);
     debug_assert_eq!(right_values.len(), right_count);
-    let mut changed = false;
-    for (index, target) in output.iter_mut().enumerate() {
+    let mut result = Vec::with_capacity(output_len);
+    for index in 0..output_len {
+        let (row, column) = logical_coordinates(index);
         let left = left_values
-            .get(comparison_index(*left_mode, index))
+            .get(comparison_index(left_mode, row, column))
             .ok_or(ResidentKernelError::InvalidShape)?;
         let right = right_values
-            .get(comparison_index(*right_mode, index))
+            .get(comparison_index(right_mode, row, column))
             .ok_or(ResidentKernelError::InvalidShape)?;
         let equal = schema_data_language_eq(left_element, left, right);
         let ordered = || schema_data_partial_cmp(left_element, left, right);
@@ -6103,11 +7377,34 @@ fn snapshot_comparison(
                 Some(core::cmp::Ordering::Greater | core::cmp::Ordering::Equal)
             ),
         };
-        let next = u8::from(next);
-        changed |= *target != next;
-        *target = next;
+        result.push(ValueDataDraft::Bool(next));
     }
-    Ok(changed)
+    if let Some(output_shape) = output_shape {
+        write_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            output,
+            &output_shape,
+            ValueDataDraft::Matrix(result.into_boxed_slice()),
+            Some(0),
+        )
+    } else {
+        let ResidentValueMut::Bool(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != result.len() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let mut changed = false;
+        for (target, next) in output.iter_mut().zip(result) {
+            let ValueDataDraft::Bool(next) = next else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            let next = u8::from(next);
+            changed |= *target != next;
+            *target = next;
+        }
+        Ok(changed)
+    }
 }
 
 fn hold_state(
@@ -6592,6 +7889,384 @@ fn indexed_assign(
     }
 }
 
+#[derive(Clone, Copy)]
+enum DenseSnapshotAssignmentSource<'a> {
+    Bool(&'a [u8]),
+    Index(&'a [u64]),
+    F64(&'a [f64]),
+    String(&'a [String]),
+}
+
+impl<'a> DenseSnapshotAssignmentSource<'a> {
+    fn new(value: ResidentValueRef<'a>, element: &SchemaBody) -> Result<Self, ResidentKernelError> {
+        match (value, element) {
+            (ResidentValueRef::Bool(values), SchemaBody::Bool) => {
+                if values.iter().any(|value| *value > 1) {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                Ok(Self::Bool(values))
+            }
+            (ResidentValueRef::Index(values), SchemaBody::Index) => Ok(Self::Index(values)),
+            (
+                ResidentValueRef::F64(values),
+                SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            ) => Ok(Self::F64(values)),
+            (ResidentValueRef::String(values), SchemaBody::String) => Ok(Self::String(values)),
+            _ => Err(ResidentKernelError::InvalidInput),
+        }
+    }
+
+    fn len(self) -> usize {
+        match self {
+            Self::Bool(values) => values.len(),
+            Self::Index(values) => values.len(),
+            Self::F64(values) => values.len(),
+            Self::String(values) => values.len(),
+        }
+    }
+
+    fn draft_at(self, index: usize) -> Result<ValueDataDraft, ResidentKernelError> {
+        match self {
+            Self::Bool(values) => values
+                .get(index)
+                .map(|value| ValueDataDraft::Bool(*value != 0)),
+            Self::Index(values) => values.get(index).copied().map(ValueDataDraft::Index),
+            Self::F64(values) => values
+                .get(index)
+                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(*value))),
+            Self::String(values) => values
+                .get(index)
+                .map(|value| ValueDataDraft::String(value.clone())),
+        }
+        .ok_or(ResidentKernelError::InvalidShape)
+    }
+
+    fn string_at(self, index: usize) -> Result<&'a str, ResidentKernelError> {
+        let Self::String(values) = self else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        values
+            .get(index)
+            .map(String::as_str)
+            .ok_or(ResidentKernelError::InvalidShape)
+    }
+
+    fn retained_nodes(self) -> Result<u64, ResidentKernelError> {
+        let nodes = match self {
+            Self::String(values) => values.len().saturating_add(1),
+            _ => self.len(),
+        };
+        super::budget::checked_u64(nodes)
+    }
+}
+
+fn projected_dense_snapshot_matrix_output(
+    meter: &mut super::budget::ResidentBudgetMeter,
+    current_schema: &SchemaBody,
+    current_data: &ValueData,
+    current_footprint: ValueFootprint,
+    source: DenseSnapshotAssignmentSource<'_>,
+    output_len: usize,
+    mut selected_source: impl FnMut(
+        usize,
+        &mut super::budget::ResidentBudgetMeter,
+    ) -> Result<Option<usize>, ResidentKernelError>,
+) -> Result<(ValueFootprint, u64), ResidentKernelError> {
+    let (SchemaBody::Matrix { element, .. }, ValueData::Matrix(current_matrix)) =
+        (current_schema, current_data)
+    else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if current_matrix.elements().len() != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let finalization_work = snapshot_data_finalization_work(meter, current_schema, current_data)?;
+    if element.as_ref() == &SchemaBody::String {
+        let SequenceView::String(current_values) = current_matrix.elements() else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let container_bytes = super::budget::checked_u64(
+            output_len
+                .checked_mul(core::mem::size_of::<Box<str>>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        let current_payload = current_values.iter().try_fold(0u64, |total, value| {
+            total
+                .checked_add(super::budget::checked_u64(value.len())?)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })?;
+        let sequence_nodes = super::budget::checked_u64(
+            output_len
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
+        let base_bytes = current_footprint
+            .retained_bytes
+            .checked_sub(container_bytes)
+            .and_then(|bytes| bytes.checked_sub(current_payload))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let base_nodes = current_footprint
+            .node_count
+            .checked_sub(sequence_nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let mut final_payload = 0u64;
+        let mut encoded_bytes = 0u64;
+        for (destination, current) in current_values.iter().enumerate() {
+            let next = match selected_source(destination, meter)? {
+                Some(source_index) => source.string_at(source_index)?,
+                None => current.as_ref(),
+            };
+            let bytes = super::budget::checked_u64(next.len())?;
+            final_payload = final_payload
+                .checked_add(bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            encoded_bytes = encoded_bytes
+                .checked_add(
+                    bytes
+                        .checked_add(8)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?;
+        }
+        return Ok((
+            ValueFootprint {
+                encoded_bytes,
+                retained_bytes: base_bytes
+                    .checked_add(container_bytes)
+                    .and_then(|bytes| bytes.checked_add(final_payload))
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                node_count: base_nodes
+                    .checked_add(sequence_nodes)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            },
+            finalization_work,
+        ));
+    }
+    let storage_matches = matches!(
+        (current_matrix.elements(), source),
+        (
+            SequenceView::Bool(_),
+            DenseSnapshotAssignmentSource::Bool(_)
+        ) | (
+            SequenceView::Index(_),
+            DenseSnapshotAssignmentSource::Index(_)
+        ) | (SequenceView::F64(_), DenseSnapshotAssignmentSource::F64(_))
+    );
+    if !storage_matches {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    for destination in 0..output_len {
+        if let Some(source_index) = selected_source(destination, meter)?
+            && source_index >= source.len()
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+    }
+    Ok((current_footprint, finalization_work))
+}
+
+fn indexed_assign_snapshot_dense(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let [
+        _bound_rows,
+        _bound_columns,
+        source_rows,
+        source_columns,
+        bound_source_routing,
+    ] = kernel.parameters()
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let source_rows =
+        usize::try_from(*source_rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let source_columns =
+        usize::try_from(*source_columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let bound_source_routing = ResolvedSourceRouting::from_parameter(*bound_source_routing)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let source_ref = input(inputs, 0)?;
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let current_schema = current
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    let SchemaBody::Matrix { element, .. } = current_schema.body() else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let source = DenseSnapshotAssignmentSource::new(source_ref, element)?;
+    let (rows, columns) = snapshot_matrix_dimensions(current, current_schema.body())?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let source_len = source_rows
+        .checked_mul(source_columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if source.len() != source_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let positions = ValidatedPositions::new(input(inputs, 1)?, output_len)?;
+    let source_routing = if source_len == 1 {
+        ResolvedSourceRouting::ScalarBroadcast
+    } else if source_len == output_len {
+        ResolvedSourceRouting::Positional
+    } else if source_len == positions.len() {
+        ResolvedSourceRouting::CompactSelectionOrder
+    } else if bound_source_routing == ResolvedSourceRouting::Positional
+        && positions
+            .maximum_position()
+            .is_none_or(|position| position < source_len)
+    {
+        ResolvedSourceRouting::Positional
+    } else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if positions.len() == 0 {
+        return Ok(false);
+    }
+    let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
+    let current_footprint =
+        super::budget::measure_canonical_value_footprint(&mut footprint_meter, current, schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    let source_index = |ordinal: usize, position: usize| {
+        Ok::<usize, ResidentKernelError>(match source_routing {
+            ResolvedSourceRouting::ScalarBroadcast => 0,
+            ResolvedSourceRouting::Positional => position,
+            ResolvedSourceRouting::CompactSelectionOrder => {
+                if source_columns == 0 {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                let row = ordinal / source_columns;
+                let column = ordinal % source_columns;
+                column
+                    .checked_mul(source_rows)
+                    .and_then(|offset| offset.checked_add(row))
+                    .ok_or(ResidentKernelError::InvalidShape)?
+            }
+        })
+    };
+    let (final_footprint, finalization_work) = projected_dense_snapshot_matrix_output(
+        &mut footprint_meter,
+        current_schema.body(),
+        current.data(),
+        current_footprint,
+        source,
+        output_len,
+        |canonical_destination, meter| {
+            meter.charge_compute_work(super::budget::checked_u64(positions.traversal_len())?)?;
+            let row = canonical_destination / columns;
+            let column = canonical_destination % columns;
+            let physical_destination = column
+                .checked_mul(rows)
+                .and_then(|offset| offset.checked_add(row))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            last_source_for_destination(positions, physical_destination, |ordinal, position| {
+                source_index(ordinal, position).unwrap_or(usize::MAX)
+            })
+        },
+    )?;
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let publication_equality_work = super::budget::projected_language_equality_work(
+        schemas,
+        current,
+        current_footprint,
+        metadata.schema,
+        current.shape().parameter_values().len(),
+        final_footprint,
+    )?;
+    let container_bytes = super::budget::checked_u64(
+        output_len
+            .checked_mul(core::mem::size_of::<ValueDataDraft>())
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let source_nodes = source.retained_nodes()?;
+    let measured = footprint_meter.estimate();
+    let canonicalization_work_limit = super::budget::PreparedMutationPlan::new(
+        finalization_work,
+        super::budget::PublishedOutputFootprint {
+            elements: super::budget::checked_u64(output_len)?,
+            retained_bytes: final_footprint.retained_bytes,
+            retained_nodes: final_footprint.node_count,
+        },
+        super::budget::MutationRetainedNodeFootprint {
+            current_persistent: current_footprint
+                .node_count
+                .checked_add(source_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            normalized_plan: 0,
+            temporary_draft: current_footprint
+                .node_count
+                .checked_add(source_nodes)
+                .and_then(|nodes| nodes.checked_add(final_footprint.node_count))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        },
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work()
+                .checked_add(publication_equality_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_work: measured.compute_work()
+                .checked_add(super::budget::checked_u64(output_len)?)
+                .and_then(|work| work.checked_add(super::budget::checked_u64(positions.len()).ok()?))
+                .and_then(|work| work.checked_add(publication_equality_work))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            temporary_bytes: current_footprint.retained_bytes
+                .checked_add(container_bytes)
+                .and_then(|bytes| bytes.checked_add(final_footprint.retained_bytes))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: current_footprint.retained_bytes
+                .checked_add(final_footprint.retained_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )?
+    .admit()?
+    .into_plan();
+    let ValueDataDraft::Matrix(mut next) = current
+        .canonical_data_draft()
+        .map_err(|_| ResidentKernelError::InvalidOutput)?
+    else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    positions.try_for_each(|ordinal, position| {
+        let row = position % rows;
+        let column = position / rows;
+        let destination = row
+            .checked_mul(columns)
+            .and_then(|offset| offset.checked_add(column))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let incoming = source.draft_at(source_index(ordinal, position)?)?;
+        next[destination] = match kernel.retained_state::<SemanticArithmetic>() {
+            Some(arithmetic) => {
+                numeric_arithmetic(*arithmetic, next[destination].clone(), incoming)?
+            }
+            None => incoming,
+        };
+        Ok::<(), ResidentKernelError>(())
+    })?;
+    let next = finalize_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        current.shape(),
+        ValueDataDraft::Matrix(next),
+        Some(canonicalization_work_limit),
+    )?;
+    let changed = !current
+        .snapshot_eq(schemas, &next, schemas)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    *target = Some(next);
+    Ok(changed)
+}
+
 fn indexed_assign_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -6600,23 +8275,39 @@ fn indexed_assign_snapshot(
     if inputs.len() != 2 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let [rows, columns, source_rows, source_columns, source_routing] = kernel.parameters() else {
+    let [_, _, _, _, bound_source_routing] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let source_rows =
-        usize::try_from(*source_rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let source_columns =
-        usize::try_from(*source_columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let source_routing = ResolvedSourceRouting::from_parameter(*source_routing)
+    let bound_source_routing = ResolvedSourceRouting::from_parameter(*bound_source_routing)
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let Some(ResidentValueRef::Snapshot([Some(source)])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let current_schema = current
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+    let source_schema = source
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    if comparison_element_body(current_schema.body())
+        != comparison_element_body(source_schema.body())
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let (rows, columns) = snapshot_matrix_dimensions(current, current_schema.body())?;
     let output_len = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let positions = ValidatedPositions::new(input(inputs, 1)?, output_len)?;
-    let Some(ResidentValueRef::Snapshot([Some(source)])) = inputs.get(0) else {
-        return Err(ResidentKernelError::InvalidInput);
+    let (source_rows, source_columns) = match source_schema.body() {
+        SchemaBody::Matrix { .. } => snapshot_matrix_dimensions(source, source_schema.body())?,
+        _ => (1, 1),
     };
     let source_len = match source.data() {
         ValueData::Matrix(matrix) => matrix.elements().len(),
@@ -6625,20 +8316,22 @@ fn indexed_assign_snapshot(
     if source_rows.checked_mul(source_columns) != Some(source_len) {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let source_shape_valid = match source_routing {
-        ResolvedSourceRouting::ScalarBroadcast => source_len == 1,
-        ResolvedSourceRouting::Positional => positions
+    let positions = ValidatedPositions::new(input(inputs, 1)?, output_len)?;
+    let source_routing = if source_len == 1 {
+        ResolvedSourceRouting::ScalarBroadcast
+    } else if source_len == output_len {
+        ResolvedSourceRouting::Positional
+    } else if source_len == positions.len() {
+        ResolvedSourceRouting::CompactSelectionOrder
+    } else if bound_source_routing == ResolvedSourceRouting::Positional
+        && positions
             .maximum_position()
-            .is_none_or(|position| position < source_len),
-        ResolvedSourceRouting::CompactSelectionOrder => source_len == positions.len(),
-    };
-    if !source_shape_valid {
+            .is_none_or(|position| position < source_len)
+    {
+        ResolvedSourceRouting::Positional
+    } else {
         return Err(ResidentKernelError::InvalidShape);
-    }
-    let ResidentValueMut::Snapshot([target]) = output else {
-        return Err(ResidentKernelError::InvalidOutput);
     };
-    let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
     let ValueData::Matrix(current_matrix) = current.data() else {
         return Err(ResidentKernelError::InvalidOutput);
     };
@@ -6648,9 +8341,6 @@ fn indexed_assign_snapshot(
     if positions.len() == 0 {
         return Ok(false);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
     let current_footprint =
         super::budget::measure_canonical_value_footprint(&mut footprint_meter, current, schemas)
@@ -6661,12 +8351,6 @@ fn indexed_assign_snapshot(
     let current_nodes = current_footprint.node_count;
     let source_bytes = source_footprint.retained_bytes;
     let source_nodes = source_footprint.node_count;
-    let current_schema = current
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
-    let source_schema = source
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
     let canonical_source_index = |position: usize| {
         let row = position % source_rows;
         let column = position / source_rows;
@@ -6681,9 +8365,15 @@ fn indexed_assign_snapshot(
         source_schema.body(),
         source.data(),
         output_len,
-        |destination, meter| {
+        |canonical_destination, meter| {
             meter.charge_compute_work(super::budget::checked_u64(positions.traversal_len())?)?;
-            last_source_for_destination(positions, destination, |ordinal, position| {
+            let row = canonical_destination / columns;
+            let column = canonical_destination % columns;
+            let physical_destination = column
+                .checked_mul(rows)
+                .and_then(|offset| offset.checked_add(row))
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            last_source_for_destination(positions, physical_destination, |ordinal, position| {
                 match source_routing {
                     ResolvedSourceRouting::ScalarBroadcast => 0,
                     ResolvedSourceRouting::Positional => canonical_source_index(position),
@@ -6803,8 +8493,9 @@ fn indexed_assign_snapshot(
         };
         Ok::<(), ResidentKernelError>(())
     })?;
-    let next = finalize_snapshot_data_with_work_budget(
+    let next = finalize_snapshot_data_for_shape_with_work_budget(
         kernel,
+        current.shape(),
         ValueDataDraft::Matrix(next),
         Some(canonicalization_work_limit),
     )?;
@@ -6922,6 +8613,36 @@ fn matrix_selection_last_source(
                 ResolvedSourceRouting::ScalarBroadcast => 0,
                 ResolvedSourceRouting::Positional => candidate,
                 ResolvedSourceRouting::CompactSelectionOrder if snapshot_layout => ordinal,
+                ResolvedSourceRouting::CompactSelectionOrder => {
+                    dense_compact_source_index(ordinal, plan)?
+                }
+            });
+        }
+        Ok(())
+    })?;
+    Ok(selected)
+}
+
+fn matrix_selection_last_dense_source(
+    plan: &MatrixSelectionAssignPlan,
+    inputs: &dyn ResidentKernelInputs,
+    destination: usize,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<Option<usize>, ResidentKernelError> {
+    let mut selected = None;
+    matrix_selection_for_each_coordinate(plan, inputs, |ordinal, row, column| {
+        meter.charge_compute_work(1)?;
+        let candidate = row
+            .checked_mul(plan.columns)
+            .and_then(|offset| offset.checked_add(column))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if candidate == destination {
+            selected = Some(match plan.source_routing {
+                ResolvedSourceRouting::ScalarBroadcast => 0,
+                ResolvedSourceRouting::Positional => column
+                    .checked_mul(plan.source_rows)
+                    .and_then(|offset| offset.checked_add(row))
+                    .ok_or(ResidentKernelError::InvalidShape)?,
                 ResolvedSourceRouting::CompactSelectionOrder => {
                     dense_compact_source_index(ordinal, plan)?
                 }
@@ -7084,15 +8805,106 @@ fn indexed_assign_matrix_selection(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let plan = kernel
+    let declared_plan = kernel
         .retained_state::<MatrixSelectionAssignPlan>()
         .ok_or(ResidentKernelError::InvalidInput)?;
-    if inputs.len() != plan.selectors.len() + 1 {
+    if inputs.len() != declared_plan.selectors.len() + 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidInput)?;
+    let source_ref = input(inputs, 0)?;
+    let mut resolved_plan = None;
+    if let ResidentValueMut::Snapshot([Some(current)]) = &output {
+        let current_schema = current
+            .validate_against(schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        let (rows, columns) = snapshot_matrix_dimensions(current, current_schema.body())?;
+        let (source_rows, source_columns) = match source_ref {
+            ResidentValueRef::Snapshot([Some(source)]) => {
+                let source_schema = source
+                    .validate_against(schemas)
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                match source_schema.body() {
+                    SchemaBody::Matrix { .. } => {
+                        snapshot_matrix_dimensions(source, source_schema.body())?
+                    }
+                    _ => (1, 1),
+                }
+            }
+            ResidentValueRef::Bool(values) => {
+                if values.iter().any(|value| *value > 1) {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                let declared_len = declared_plan
+                    .source_rows
+                    .checked_mul(declared_plan.source_columns)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                if values.len() != declared_len {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                (declared_plan.source_rows, declared_plan.source_columns)
+            }
+            ResidentValueRef::Index(values) => {
+                let declared_len = declared_plan
+                    .source_rows
+                    .checked_mul(declared_plan.source_columns)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                if values.len() != declared_len {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                (declared_plan.source_rows, declared_plan.source_columns)
+            }
+            ResidentValueRef::F64(values) => {
+                let declared_len = declared_plan
+                    .source_rows
+                    .checked_mul(declared_plan.source_columns)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                if values.len() != declared_len {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                (declared_plan.source_rows, declared_plan.source_columns)
+            }
+            ResidentValueRef::String(values) => {
+                let declared_len = declared_plan
+                    .source_rows
+                    .checked_mul(declared_plan.source_columns)
+                    .ok_or(ResidentKernelError::InvalidShape)?;
+                if values.len() != declared_len {
+                    return Err(ResidentKernelError::InvalidShape);
+                }
+                (declared_plan.source_rows, declared_plan.source_columns)
+            }
+            _ => return Err(ResidentKernelError::InvalidInput),
+        };
+        let source_len = source_rows
+            .checked_mul(source_columns)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let output_len = rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if declared_plan.mode == ResolvedSelectionMode::Whole
+            && source_len != 1
+            && (source_rows, source_columns) != (rows, columns)
+        {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let mut plan = declared_plan.clone();
+        plan.rows = rows;
+        plan.columns = columns;
+        plan.source_rows = source_rows;
+        plan.source_columns = source_columns;
+        plan.source_routing = if source_len == 1 {
+            ResolvedSourceRouting::ScalarBroadcast
+        } else if source_len == output_len {
+            ResolvedSourceRouting::Positional
+        } else {
+            ResolvedSourceRouting::CompactSelectionOrder
+        };
+        resolved_plan = Some(plan);
+    }
+    let plan = resolved_plan.as_ref().unwrap_or(declared_plan);
     let output_len = plan
         .rows
         .checked_mul(plan.columns)
@@ -7187,7 +8999,6 @@ fn indexed_assign_matrix_selection(
             }
         }
     };
-    let source_ref = input(inputs, 0)?;
     if let ResidentValueRef::Bool(values) = source_ref
         && values.iter().any(|value| *value > 1)
     {
@@ -7248,6 +9059,18 @@ fn indexed_assign_matrix_selection(
     let write_count = selected_rows_count
         .checked_mul(selected_columns_count)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    if let Some(plan) = resolved_plan.as_mut() {
+        plan.source_routing = if source_len == 1 {
+            ResolvedSourceRouting::ScalarBroadcast
+        } else if source_len == output_len {
+            ResolvedSourceRouting::Positional
+        } else if source_len == write_count {
+            ResolvedSourceRouting::CompactSelectionOrder
+        } else {
+            return Err(ResidentKernelError::InvalidShape);
+        };
+    }
+    let plan = resolved_plan.as_ref().unwrap_or(declared_plan);
     let source_shape_valid = match plan.source_routing {
         ResolvedSourceRouting::ScalarBroadcast => source_len == 1,
         ResolvedSourceRouting::Positional => source_len == output_len,
@@ -7464,6 +9287,54 @@ fn indexed_assign_matrix_selection(
             additional_cloned_bytes = final_footprint.retained_bytes;
             Some(finalization_work)
         }
+        (
+            source @ (ResidentValueRef::Bool(_)
+            | ResidentValueRef::Index(_)
+            | ResidentValueRef::F64(_)
+            | ResidentValueRef::String(_)),
+            ResidentValueMut::Snapshot([Some(current)]),
+        ) => {
+            let current_schema = current
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            let SchemaBody::Matrix { element, .. } = current_schema.body() else {
+                return Err(ResidentKernelError::InvalidOutput);
+            };
+            let source = DenseSnapshotAssignmentSource::new(source, element)?;
+            let current_footprint = super::budget::measure_canonical_value_footprint(
+                &mut footprint_meter,
+                current,
+                schemas,
+            )
+            .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            let (final_footprint, finalization_work) = projected_dense_snapshot_matrix_output(
+                &mut footprint_meter,
+                current_schema.body(),
+                current.data(),
+                current_footprint,
+                source,
+                output_len,
+                |destination, meter| {
+                    matrix_selection_last_dense_source(plan, inputs, destination, meter)
+                },
+            )?;
+            let metadata = kernel
+                .snapshot_output()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            publication_comparison_work = super::budget::projected_language_equality_work(
+                schemas,
+                current,
+                current_footprint,
+                metadata.schema,
+                current.shape().parameter_values().len(),
+                final_footprint,
+            )?;
+            final_output_bytes = final_footprint.retained_bytes;
+            final_output_nodes = final_footprint.node_count;
+            additional_temporary_bytes = final_footprint.retained_bytes;
+            additional_cloned_bytes = final_footprint.retained_bytes;
+            Some(finalization_work)
+        }
         (ResidentValueRef::Bool(_), ResidentValueMut::Bool(_))
         | (ResidentValueRef::Index(_), ResidentValueMut::Index(_))
         | (ResidentValueRef::F64(_), ResidentValueMut::F64(_)) => None,
@@ -7601,6 +9472,73 @@ fn indexed_assign_matrix_selection(
                 |_, right| Ok(right.clone()),
             )
         }
+        (
+            source @ (ResidentValueRef::Bool(_)
+            | ResidentValueRef::Index(_)
+            | ResidentValueRef::F64(_)
+            | ResidentValueRef::String(_)),
+            ResidentValueMut::Snapshot([target]),
+        ) => {
+            let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
+            let current_schema = current
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            let SchemaBody::Matrix { element, .. } = current_schema.body() else {
+                return Err(ResidentKernelError::InvalidOutput);
+            };
+            let source = DenseSnapshotAssignmentSource::new(source, element)?;
+            let ValueDataDraft::Matrix(mut next) = current
+                .canonical_data_draft()
+                .map_err(|_| ResidentKernelError::InvalidOutput)?
+            else {
+                return Err(ResidentKernelError::InvalidOutput);
+            };
+            if next.len() != output_len || source.len() != source_len {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let mut ordinal = 0usize;
+            for row in &selected_rows {
+                for column in &selected_columns {
+                    let destination = row
+                        .checked_mul(plan.columns)
+                        .and_then(|offset| offset.checked_add(*column))
+                        .filter(|destination| *destination < output_len)
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                    let source_index = match plan.source_routing {
+                        ResolvedSourceRouting::ScalarBroadcast => 0,
+                        ResolvedSourceRouting::Positional => column
+                            .checked_mul(plan.source_rows)
+                            .and_then(|offset| offset.checked_add(*row))
+                            .filter(|source_index| *source_index < source_len)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        ResolvedSourceRouting::CompactSelectionOrder => {
+                            dense_compact_source_index(ordinal, plan)?
+                        }
+                    };
+                    let incoming = source.draft_at(source_index)?;
+                    next[destination] = match plan.arithmetic {
+                        Some(arithmetic) => {
+                            numeric_arithmetic(arithmetic, next[destination].clone(), incoming)?
+                        }
+                        None => incoming,
+                    };
+                    ordinal = ordinal
+                        .checked_add(1)
+                        .ok_or(ResidentKernelError::InvalidShape)?;
+                }
+            }
+            let next = finalize_snapshot_data_for_shape_with_work_budget(
+                kernel,
+                current.shape(),
+                ValueDataDraft::Matrix(next),
+                Some(snapshot_finalization_work.ok_or(ResidentKernelError::InvalidOutput)?),
+            )?;
+            let changed = !current
+                .snapshot_eq(schemas, &next, schemas)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            *target = Some(next);
+            Ok(changed)
+        }
         (ResidentValueRef::Snapshot([Some(source)]), ResidentValueMut::Snapshot([target])) => {
             let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
             let ValueDataDraft::Matrix(mut next) = current
@@ -7656,8 +9594,9 @@ fn indexed_assign_matrix_selection(
                         .ok_or(ResidentKernelError::InvalidShape)?;
                 }
             }
-            let next = finalize_snapshot_data_with_work_budget(
+            let next = finalize_snapshot_data_for_shape_with_work_budget(
                 kernel,
+                current.shape(),
                 ValueDataDraft::Matrix(next),
                 Some(snapshot_finalization_work.ok_or(ResidentKernelError::InvalidOutput)?),
             )?;
@@ -8296,29 +10235,33 @@ fn unary_f64(
     Ok(replace_f64(output, |index| operation(input[index])))
 }
 
-fn unary_f32_snapshot(
+fn unary_float_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
-    operation: impl Fn(f32) -> f32,
+    operation_f64: impl Fn(f64) -> f64,
+    operation_f32: impl Fn(f32) -> f32,
 ) -> Result<bool, ResidentKernelError> {
     let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let [rows, columns] = kernel.parameters() else {
+    let [] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let output_len = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    if f32_snapshot_len(input) != Some(output_len) {
-        return Err(ResidentKernelError::InvalidShape);
-    }
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let input_schema = input
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = snapshot_numeric_dimensions(input, input_schema.body())?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if snapshot_numeric_element_count(input)? != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_shape = resolved_snapshot_numeric_output_shape(kernel, rows, columns)?;
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
@@ -8328,12 +10271,18 @@ fn unary_f32_snapshot(
         output_len,
         0,
     )?;
-    let values = f32_snapshot_values(input)
-        .ok_or(ResidentKernelError::InvalidInput)?
+    let values = snapshot_numeric_elements(input)?
         .into_iter()
-        .map(operation)
-        .map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
-        .collect::<Vec<_>>();
+        .map(|value| match value {
+            ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+                operation_f32(value.to_f32()),
+            ))),
+            ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+                operation_f64(value.to_f64()),
+            ))),
+            _ => Err(ResidentKernelError::InvalidInput),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let output_schema = schemas
         .get(
             kernel
@@ -8350,7 +10299,7 @@ fn unary_f32_snapshot(
         };
         value.clone()
     };
-    write_snapshot_data_with_work_budget(kernel, output, data, Some(0))
+    write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
 }
 
 fn cosine(
@@ -8366,7 +10315,7 @@ fn cosine_f32(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_f32_snapshot(kernel, inputs, output, libm::cosf)
+    unary_float_snapshot(kernel, inputs, output, libm::cos, libm::cosf)
 }
 
 fn absolute(
@@ -8382,7 +10331,7 @@ fn absolute_f32(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_f32_snapshot(kernel, inputs, output, f32::abs)
+    unary_float_snapshot(kernel, inputs, output, f64::abs, f32::abs)
 }
 
 fn floor(
@@ -8398,7 +10347,7 @@ fn floor_f32(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_f32_snapshot(kernel, inputs, output, libm::floorf)
+    unary_float_snapshot(kernel, inputs, output, libm::floor, libm::floorf)
 }
 
 fn square_root(
@@ -8414,7 +10363,7 @@ fn square_root_f32(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_f32_snapshot(kernel, inputs, output, libm::sqrtf)
+    unary_float_snapshot(kernel, inputs, output, libm::sqrt, libm::sqrtf)
 }
 
 fn sine(
@@ -8430,7 +10379,7 @@ fn sine_f32(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    unary_f32_snapshot(kernel, inputs, output, libm::sinf)
+    unary_float_snapshot(kernel, inputs, output, libm::sin, libm::sinf)
 }
 
 fn atan2(
@@ -8501,72 +10450,80 @@ fn math_bessel_yn(
     })
 }
 
-fn math_copysign_f32(
+fn math_copysign_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, libm::copysignf)
+    binary_float_snapshot(kernel, inputs, output, libm::copysign, libm::copysignf)
 }
 
-fn atan2_f32(
+fn atan2_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, libm::atan2f)
+    binary_float_snapshot(kernel, inputs, output, libm::atan2, libm::atan2f)
 }
 
-fn math_fdim_f32(
+fn math_fdim_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, libm::fdimf)
+    binary_float_snapshot(kernel, inputs, output, libm::fdim, libm::fdimf)
 }
 
-fn math_fmod_f32(
+fn math_fmod_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, libm::fmodf)
+    binary_float_snapshot(kernel, inputs, output, libm::fmod, libm::fmodf)
 }
 
-fn math_nextafter_f32(
+fn math_nextafter_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, libm::nextafterf)
+    binary_float_snapshot(kernel, inputs, output, libm::nextafter, libm::nextafterf)
 }
 
-fn math_remainder_f32(
+fn math_remainder_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, libm::remainderf)
+    binary_float_snapshot(kernel, inputs, output, libm::remainder, libm::remainderf)
 }
 
-fn math_bessel_jn_f32(
+fn math_bessel_jn_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, |order, value| {
-        libm::jnf(order as i32, value)
-    })
+    binary_float_snapshot(
+        kernel,
+        inputs,
+        output,
+        |order, value| libm::jn(order as i32, value),
+        |order, value| libm::jnf(order as i32, value),
+    )
 }
 
-fn math_bessel_yn_f32(
+fn math_bessel_yn_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    binary_f32_snapshot(kernel, inputs, output, |order, value| {
-        libm::ynf(order as i32, value)
-    })
+    binary_float_snapshot(
+        kernel,
+        inputs,
+        output,
+        |order, value| libm::yn(order as i32, value),
+        |order, value| libm::ynf(order as i32, value),
+    )
 }
 
 fn f32_snapshot_values(value: &mech_core::Value) -> Option<Vec<f32>> {
@@ -8582,84 +10539,310 @@ fn f32_snapshot_values(value: &mech_core::Value) -> Option<Vec<f32>> {
     }
 }
 
-fn f32_snapshot_len(value: &mech_core::Value) -> Option<usize> {
-    match value.data() {
-        ValueData::F32(_) => Some(1),
-        ValueData::Matrix(matrix) => match matrix.elements() {
-            SequenceView::F32(values) => Some(values.len()),
-            _ => None,
-        },
-        _ => None,
+fn dense_f64_canonical_values(
+    input: ResidentValueRef<'_>,
+    rows: usize,
+    columns: usize,
+) -> Result<Vec<f64>, ResidentKernelError> {
+    let ResidentValueRef::F64(values) = input else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if values.len()
+        != rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
+        return Err(ResidentKernelError::InvalidShape);
     }
+    Ok((0..rows)
+        .flat_map(|row| (0..columns).map(move |column| values[row + column * rows]))
+        .collect())
 }
 
-fn binary_f32_snapshot(
+fn dense_f64_canonical_drafts(
+    input: ResidentValueRef<'_>,
+    rows: usize,
+    columns: usize,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    let ResidentValueRef::F64(values) = input else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if values.len()
+        != rows
+            .checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok((0..rows)
+        .flat_map(|row| {
+            (0..columns).map(move |column| {
+                ValueDataDraft::F64(F64Bits::from_f64(values[row + column * rows]))
+            })
+        })
+        .collect())
+}
+
+fn binary_float_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
-    operation: impl Fn(f32, f32) -> f32,
+    operation_f64: impl Fn(f64, f64) -> f64,
+    operation_f32: impl Fn(f32, f32) -> f32,
 ) -> Result<bool, ResidentKernelError> {
-    let (
-        Some(ResidentValueRef::Snapshot([Some(left)])),
-        Some(ResidentValueRef::Snapshot([Some(right)])),
-    ) = (inputs.get(0), inputs.get(1))
+    let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let [
+        snapshot_output,
+        left_snapshot,
+        right_snapshot,
+        bound_left_rows,
+        bound_left_columns,
+        bound_right_rows,
+        bound_right_columns,
+    ] = kernel.parameters()
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let left_len = f32_snapshot_len(left).ok_or(ResidentKernelError::InvalidInput)?;
-    let right_len = f32_snapshot_len(right).ok_or(ResidentKernelError::InvalidInput)?;
-    if left_len != right_len {
-        return Err(ResidentKernelError::InvalidShape);
-    }
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let snapshot_output = flag(*snapshot_output)?;
+    let left_snapshot = flag(*left_snapshot)?;
+    let right_snapshot = flag(*right_snapshot)?;
+    let snapshot_value = |input, expected| match (input, expected) {
+        (ResidentValueRef::Snapshot([Some(value)]), true) => Ok(Some(value)),
+        (ResidentValueRef::Snapshot(_), _) | (_, true) => Err(ResidentKernelError::InvalidInput),
+        (_, false) => Ok(None),
+    };
+    let left = snapshot_value(left_input, left_snapshot)?;
+    let right = snapshot_value(right_input, right_snapshot)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    preflight_snapshot_arithmetic(
-        kernel,
-        schemas,
-        &[left, right],
-        &output,
-        left_len
-            .checked_add(right_len)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        left_len,
-        0,
-    )?;
-    let left = f32_snapshot_values(left).ok_or(ResidentKernelError::InvalidInput)?;
-    let right = f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
-    debug_assert_eq!(left.len(), right.len());
-    let values = left
-        .into_iter()
-        .zip(right)
-        .map(|(left, right)| operation(left, right))
-        .collect::<Vec<_>>();
-    let metadata = kernel
-        .snapshot_output()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let schema = schemas
-        .get(metadata.schema)
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let data = match schema.body() {
-        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
-            let [value] = values.as_slice() else {
-                return Err(ResidentKernelError::InvalidShape);
-            };
-            ValueDataDraft::F32(F32Bits::from_f32(*value))
-        }
-        SchemaBody::Matrix { element, .. }
-            if element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) =>
-        {
-            ValueDataDraft::Matrix(
-                values
-                    .into_iter()
-                    .map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
-            )
-        }
-        _ => return Err(ResidentKernelError::InvalidOutput),
+    let left_schema = left
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let right_schema = right
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let float_element = left_schema
+        .map(|schema| comparison_element_body(schema.body()))
+        .or_else(|| right_schema.map(|schema| comparison_element_body(schema.body())))
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if left_schema.is_some_and(|schema| comparison_element_body(schema.body()) != float_element)
+        || right_schema
+            .is_some_and(|schema| comparison_element_body(schema.body()) != float_element)
+        || !matches!(
+            float_element,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
+        )
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let left_dimensions = match (left, left_schema) {
+        (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
+        (None, None) => (
+            usize::try_from(*bound_left_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_left_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
     };
-    write_snapshot_data_with_work_budget(kernel, output, data, Some(0))
+    let right_dimensions = match (right, right_schema) {
+        (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
+        (None, None) => (
+            usize::try_from(*bound_right_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_right_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let (rows, columns) = snapshot_broadcast_dimensions(left_dimensions, right_dimensions)?;
+    let logical_output = resident_shape_for_dimensions(rows, columns)?;
+    let left_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(left_dimensions.0, left_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(right_dimensions.0, right_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let left_len = match left {
+        Some(value) => match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        },
+        None => left_dimensions
+            .0
+            .checked_mul(left_dimensions.1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    };
+    let right_len = match right {
+        Some(value) => match value.data() {
+            ValueData::Matrix(matrix) => matrix.elements().len(),
+            _ => 1,
+        },
+        None => right_dimensions
+            .0
+            .checked_mul(right_dimensions.1)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    };
+    validate_binary_broadcast_len(left_len, left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right_len, right_mode, rows, columns)?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_shape = snapshot_output
+        .then(|| resolved_snapshot_numeric_output_shape(kernel, rows, columns))
+        .transpose()?;
+    let input_elements = left_len
+        .checked_add(right_len)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    match (left, right, snapshot_output) {
+        (Some(left), Some(right), true) => preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[left, right],
+            &output,
+            input_elements,
+            output_len,
+            0,
+        )?,
+        (Some(input), None, true) | (None, Some(input), true) => preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[input],
+            &output,
+            input_elements,
+            output_len,
+            0,
+        )?,
+        (Some(left), Some(right), false) => preflight_snapshot_dense_f64_output(
+            schemas,
+            &[left, right],
+            input_elements,
+            output_len,
+            0,
+        )?,
+        (Some(input), None, false) | (None, Some(input), false) => {
+            preflight_snapshot_dense_f64_output(schemas, &[input], input_elements, output_len, 0)?
+        }
+        (None, None, _) => return Err(ResidentKernelError::InvalidInput),
+    }
+    let at = |mode, row, column| snapshot_binary_broadcast_index(mode, row, column, columns);
+    let output_schema = kernel
+        .snapshot_output()
+        .map(|metadata| {
+            schemas
+                .get(metadata.schema)
+                .ok_or(ResidentKernelError::InvalidOutput)
+        })
+        .transpose()?;
+    let scalar_or_matrix = |values: Vec<ValueDataDraft>| {
+        if output_schema.is_none_or(|schema| matches!(schema.body(), SchemaBody::Matrix { .. })) {
+            Ok(ValueDataDraft::Matrix(values.into_boxed_slice()))
+        } else {
+            let [value] = values
+                .try_into()
+                .map_err(|_| ResidentKernelError::InvalidShape)?;
+            Ok(value)
+        }
+    };
+    let data = match float_element {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            let left = left
+                .and_then(f32_snapshot_values)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let right = right
+                .and_then(f32_snapshot_values)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let mut values = Vec::with_capacity(output_len);
+            for row in 0..rows {
+                for column in 0..columns {
+                    values.push(ValueDataDraft::F32(F32Bits::from_f32(operation_f32(
+                        *left
+                            .get(at(left_mode, row, column))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        *right
+                            .get(at(right_mode, row, column))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    ))));
+                }
+            }
+            scalar_or_matrix(values)?
+        }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            let snapshot_f64 = |value: &mech_core::Value| match value.data() {
+                ValueData::F64(value) => Ok(vec![value.to_f64()]),
+                ValueData::Matrix(matrix) => match matrix.elements() {
+                    SequenceView::F64(values) => {
+                        Ok(values.iter().map(|value| value.to_f64()).collect())
+                    }
+                    _ => Err(ResidentKernelError::InvalidInput),
+                },
+                _ => Err(ResidentKernelError::InvalidInput),
+            };
+            let left = match left {
+                Some(value) => snapshot_f64(value)?,
+                None => {
+                    dense_f64_canonical_values(left_input, left_dimensions.0, left_dimensions.1)?
+                }
+            };
+            let right = match right {
+                Some(value) => snapshot_f64(value)?,
+                None => {
+                    dense_f64_canonical_values(right_input, right_dimensions.0, right_dimensions.1)?
+                }
+            };
+            let mut values = Vec::with_capacity(output_len);
+            for row in 0..rows {
+                for column in 0..columns {
+                    values.push(ValueDataDraft::F64(F64Bits::from_f64(operation_f64(
+                        *left
+                            .get(at(left_mode, row, column))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        *right
+                            .get(at(right_mode, row, column))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                    ))));
+                }
+            }
+            scalar_or_matrix(values)?
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    if let Some(output_shape) = output_shape {
+        write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
+    } else {
+        let ValueDataDraft::Matrix(values) = data else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let ResidentValueMut::F64(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != output_len {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(replace_f64(output, |index| {
+            let row = index % rows;
+            let column = index / rows;
+            let ValueDataDraft::F64(value) = values[row * columns + column] else {
+                unreachable!("dense mixed binary float binds only F64 output")
+            };
+            value.to_f64()
+        }))
+    }
 }
 
 fn binary_f64(
@@ -9097,6 +11280,226 @@ fn bool_vector_not(
     Ok(changed)
 }
 
+fn snapshot_bool_elements(value: &mech_core::Value) -> Result<Vec<bool>, ResidentKernelError> {
+    match value.data() {
+        ValueData::Bool(value) => Ok(vec![*value]),
+        ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::Bool(values) => Ok(values.to_vec()),
+            SequenceView::Values(values) => values
+                .iter()
+                .map(|value| match value {
+                    ValueData::Bool(value) => Ok(*value),
+                    _ => Err(ResidentKernelError::InvalidInput),
+                })
+                .collect(),
+            _ => Err(ResidentKernelError::InvalidInput),
+        },
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn snapshot_bool_binary(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let [
+        operation,
+        left_snapshot,
+        right_snapshot,
+        bound_left_rows,
+        bound_left_columns,
+        bound_right_rows,
+        bound_right_columns,
+    ] = kernel.parameters()
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let left_snapshot = flag(*left_snapshot)?;
+    let right_snapshot = flag(*right_snapshot)?;
+    let snapshot_value = |input, expected| match (input, expected) {
+        (ResidentValueRef::Snapshot([Some(value)]), true) => Ok(Some(value)),
+        (ResidentValueRef::Snapshot(_), _) | (_, true) => Err(ResidentKernelError::InvalidInput),
+        (_, false) => Ok(None),
+    };
+    let left = snapshot_value(left_input, left_snapshot)?;
+    let right = snapshot_value(right_input, right_snapshot)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let left_schema = left
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let right_schema = right
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let left_dimensions = match (left, left_schema) {
+        (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
+        (None, None) => (
+            usize::try_from(*bound_left_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_left_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let right_dimensions = match (right, right_schema) {
+        (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
+        (None, None) => (
+            usize::try_from(*bound_right_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_right_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let (rows, columns) = snapshot_broadcast_dimensions(left_dimensions, right_dimensions)?;
+    let logical_output = resident_shape_for_dimensions(rows, columns)?;
+    let left_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(left_dimensions.0, left_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(right_dimensions.0, right_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let dimension_count = |(rows, columns): (usize, usize)| {
+        rows.checked_mul(columns)
+            .ok_or(ResidentKernelError::InvalidShape)
+    };
+    let left_count = dimension_count(left_dimensions)?;
+    let right_count = dimension_count(right_dimensions)?;
+    validate_binary_broadcast_len(left_count, left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right_count, right_mode, rows, columns)?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_shape = resolved_snapshot_output_shape(kernel, rows, columns)?;
+    let snapshot_inputs = [left, right].into_iter().flatten().collect::<Vec<_>>();
+    preflight_snapshot_arithmetic(
+        kernel,
+        schemas,
+        &snapshot_inputs,
+        &output,
+        left_count
+            .checked_add(right_count)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        output_len,
+        0,
+    )?;
+    let dense_bool = |value: ResidentValueRef<'_>, (rows, columns): (usize, usize)| match value {
+        ResidentValueRef::Bool(values)
+            if values.iter().all(|value| *value <= 1)
+                && values.len() == rows.checked_mul(columns).unwrap_or(usize::MAX) =>
+        {
+            super::composite::canonical_matrix_elements(
+                values,
+                resident_shape_for_dimensions(rows, columns)?,
+                |value| (*value <= 1).then_some(*value != 0),
+            )
+            .map(|values| values.into_vec())
+            .ok_or(ResidentKernelError::InvalidInput)
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let left_values = match left {
+        Some(value) => snapshot_bool_elements(value)?,
+        None => dense_bool(left_input, left_dimensions)?,
+    };
+    let right_values = match right {
+        Some(value) => snapshot_bool_elements(value)?,
+        None => dense_bool(right_input, right_dimensions)?,
+    };
+    if left_values.len() != left_count || right_values.len() != right_count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let at = |values: &[bool], mode, row, column| {
+        values[snapshot_binary_broadcast_index(mode, row, column, columns)]
+    };
+    let mut result = Vec::with_capacity(output_len);
+    for row in 0..rows {
+        for column in 0..columns {
+            let left = at(&left_values, left_mode, row, column);
+            let right = at(&right_values, right_mode, row, column);
+            let value = match *operation {
+                0 => left && right,
+                1 => left || right,
+                2 => left ^ right,
+                _ => return Err(ResidentKernelError::InvalidInput),
+            };
+            result.push(ValueDataDraft::Bool(value));
+        }
+    }
+    write_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        output,
+        &output_shape,
+        ValueDataDraft::Matrix(result.into_boxed_slice()),
+        Some(0),
+    )
+}
+
+fn snapshot_bool_not(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let [] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = input
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = snapshot_value_dimensions(input, schema.body())?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_shape = resolved_snapshot_output_shape(kernel, rows, columns)?;
+    preflight_snapshot_arithmetic(
+        kernel,
+        schemas,
+        &[input],
+        &output,
+        output_len,
+        output_len,
+        0,
+    )?;
+    let values = snapshot_bool_elements(input)?;
+    if values.len() != output_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let result = values
+        .into_iter()
+        .map(|value| ValueDataDraft::Bool(!value))
+        .collect::<Vec<_>>();
+    write_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        output,
+        &output_shape,
+        ValueDataDraft::Matrix(result.into_boxed_slice()),
+        Some(0),
+    )
+}
+
 fn admit_snapshot_equality_work(
     kernel: &BoundResidentKernel,
     left: &mech_core::Value,
@@ -9173,6 +11576,127 @@ fn admit_snapshot_equality_work(
     .map(super::budget::AdmittedKernel::into_plan)
 }
 
+fn strict_mixed_snapshot_dense_equal(
+    kernel: &BoundResidentKernel,
+    snapshot: &mech_core::Value,
+    dense: ResidentValueRef<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [_, bound_rows, bound_columns] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let bound_rows = usize::try_from(*bound_rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let bound_columns =
+        usize::try_from(*bound_columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let schema = snapshot
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let SchemaBody::Matrix { element, .. } = schema.body() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if !dense_kind_matches_schema_body(dense.kind(), element) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let (rows, columns) = snapshot_matrix_dimensions(snapshot, schema.body())?;
+    if (rows, columns) != (bound_rows, bound_columns) {
+        return Ok(false);
+    }
+    let len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let ValueData::Matrix(matrix) = snapshot.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if matrix.elements().len() != len || dense.len() != len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let snapshot_footprint =
+        super::budget::measure_canonical_value_footprint(&mut meter, snapshot, schemas)?;
+    let dense_work = match dense {
+        ResidentValueRef::String(values) => values.iter().try_fold(0u64, |work, value| {
+            work.checked_add(super::budget::checked_u64(value.len().max(1))?)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })?,
+        ResidentValueRef::Bool(values) => {
+            if values.iter().any(|value| *value > 1) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            super::budget::checked_u64(values.len())?
+        }
+        ResidentValueRef::Index(values) => super::budget::checked_u64(values.len())?,
+        ResidentValueRef::F64(values) => super::budget::checked_u64(values.len())?,
+        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+    };
+    let equality_work = snapshot_footprint
+        .encoded_bytes
+        .max(snapshot_footprint.node_count)
+        .checked_add(dense_work)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let measured = meter.estimate();
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work()
+                .checked_add(equality_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_work: measured.compute_work()
+                .checked_add(equality_work)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements: 1,
+            output_bytes: core::mem::size_of::<u8>(),
+            retained_nodes: measured.retained_nodes(),
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    let resident_index = |canonical_index: usize| {
+        let row = canonical_index / columns;
+        let column = canonical_index % columns;
+        row.checked_add(
+            column
+                .checked_mul(rows)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )
+        .ok_or(ResidentKernelError::InvalidShape)
+    };
+    match (matrix.elements(), dense) {
+        (SequenceView::Bool(snapshot), ResidentValueRef::Bool(dense)) => {
+            for (index, snapshot) in snapshot.iter().enumerate() {
+                if *snapshot != (dense[resident_index(index)?] != 0) {
+                    return Ok(false);
+                }
+            }
+        }
+        (SequenceView::Index(snapshot), ResidentValueRef::Index(dense)) => {
+            for (index, snapshot) in snapshot.iter().enumerate() {
+                if *snapshot != dense[resident_index(index)?] {
+                    return Ok(false);
+                }
+            }
+        }
+        (SequenceView::F64(snapshot), ResidentValueRef::F64(dense)) => {
+            for (index, snapshot) in snapshot.iter().enumerate() {
+                if snapshot.to_f64() != dense[resident_index(index)?] {
+                    return Ok(false);
+                }
+            }
+        }
+        (SequenceView::String(snapshot), ResidentValueRef::String(dense)) => {
+            for (index, snapshot) in snapshot.iter().enumerate() {
+                if snapshot.as_ref() != dense[resident_index(index)?].as_str() {
+                    return Ok(false);
+                }
+            }
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    }
+    Ok(true)
+}
+
 fn strict_value_equal(
     kernel: &BoundResidentKernel,
     left: ResidentValueRef<'_>,
@@ -9202,6 +11726,27 @@ fn strict_value_equal(
             .map_err(|_| ResidentKernelError::InvalidInput)?
         }
         (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        (ResidentValueRef::Snapshot([Some(snapshot)]), dense) => {
+            let [snapshot_left, ..] = kernel.parameters() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if *snapshot_left != 1 {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            strict_mixed_snapshot_dense_equal(kernel, snapshot, dense)?
+        }
+        (dense, ResidentValueRef::Snapshot([Some(snapshot)])) => {
+            let [snapshot_left, ..] = kernel.parameters() else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if *snapshot_left != 0 {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            strict_mixed_snapshot_dense_equal(kernel, snapshot, dense)?
+        }
+        (ResidentValueRef::Snapshot(_), _) | (_, ResidentValueRef::Snapshot(_)) => {
             return Err(ResidentKernelError::InvalidInput);
         }
         _ => false,
@@ -9621,14 +12166,15 @@ fn sum_snapshot(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [rows, columns, column] = kernel.parameters() else {
+    let [column, snapshot_output, tail @ ..] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let (rows, columns) = (
-        usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?,
-        usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?,
-    );
     let column = match *column {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let snapshot_output = match *snapshot_output {
         0 => false,
         1 => true,
         _ => return Err(ResidentKernelError::InvalidInput),
@@ -9636,13 +12182,6 @@ fn sum_snapshot(
     let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let input_count = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_count = if column { rows } else { columns };
-    if snapshot_numeric_element_count(input)? != input_count {
-        return Err(ResidentKernelError::InvalidShape);
-    }
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -9652,15 +12191,78 @@ fn sum_snapshot(
     let SchemaBody::Matrix { element, .. } = schema.body() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    preflight_snapshot_arithmetic(
-        kernel,
-        schemas,
-        &[input],
-        &output,
-        input_count,
-        output_count,
-        input_count,
-    )?;
+    let (rows, columns) = snapshot_matrix_dimensions(input, schema.body())?;
+    let input_count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_count = if column { rows } else { columns };
+    if snapshot_numeric_element_count(input)? != input_count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let (output_rows, output_columns) = if column { (rows, 1) } else { (1, columns) };
+    let output_shape = snapshot_output
+        .then(|| resolved_snapshot_output_shape(kernel, output_rows, output_columns))
+        .transpose()?;
+    if snapshot_output {
+        if !tail.is_empty() {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[input],
+            &output,
+            input_count,
+            output_count,
+            input_count,
+        )?;
+    } else {
+        let [bound_rows, bound_columns] = tail else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        let bound_rows =
+            usize::try_from(*bound_rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+        let bound_columns =
+            usize::try_from(*bound_columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+        if (bound_rows, bound_columns) != (output_rows, output_columns) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let ResidentValueMut::F64(values) = &output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if values.len() != output_count {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let mut meter = super::budget::ResidentBudgetMeter::default();
+        let (cloned_bytes, retained_nodes) = snapshot_clone_cost(&mut meter, input, schemas)?;
+        let measured = meter.estimate();
+        let output_bytes = output_count
+            .checked_mul(core::mem::size_of::<f64>())
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let draft_bytes = input_count
+            .checked_add(output_count)
+            .and_then(|elements| elements.checked_mul(core::mem::size_of::<ValueDataDraft>()))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        super::budget::PreparedKernel::new(
+            (),
+            super::budget::resident_cost! {
+                comparison_work: output_count,
+                compute_work: measured.compute_work()
+                    .checked_add(super::budget::checked_u64(input_count)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                output_elements: output_count,
+                output_bytes,
+                temporary_bytes: cloned_bytes
+                    .checked_add(super::budget::checked_u64(draft_bytes)?)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+                cloned_bytes,
+                retained_nodes,
+                ..super::budget::KernelCostEstimate::default()
+            },
+        )
+        .admit()?
+        .into_plan();
+    }
     let values = snapshot_numeric_elements(input)?;
     let mut sums = Vec::with_capacity(output_count);
     if column {
@@ -9680,12 +12282,38 @@ fn sum_snapshot(
             sums.push(sum);
         }
     }
-    write_snapshot_data_with_work_budget(
-        kernel,
-        output,
-        ValueDataDraft::Matrix(sums.into_boxed_slice()),
-        Some(0),
-    )
+    if let Some(output_shape) = output_shape {
+        write_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            output,
+            &output_shape,
+            ValueDataDraft::Matrix(sums.into_boxed_slice()),
+            Some(0),
+        )
+    } else {
+        let ResidentValueMut::F64(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != sums.len() {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        if sums
+            .iter()
+            .any(|value| !matches!(value, ValueDataDraft::F64(_)))
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        let mut changed = false;
+        for (target, next) in output.iter_mut().zip(sums) {
+            let ValueDataDraft::F64(next) = next else {
+                unreachable!("snapshot F64 reduction was validated before publication")
+            };
+            let next = next.to_f64();
+            changed |= target.to_bits() != next.to_bits();
+            *target = next;
+        }
+        Ok(changed)
+    }
 }
 
 fn admit_dense_concatenation(
@@ -9975,6 +12603,88 @@ fn snapshot_matrix_dimensions(
         return Err(ResidentKernelError::InvalidShape);
     }
     Ok((rows, columns))
+}
+
+fn snapshot_numeric_dimensions(
+    value: &mech_core::Value,
+    schema: &SchemaBody,
+) -> Result<(usize, usize), ResidentKernelError> {
+    match schema {
+        SchemaBody::Matrix { .. } => snapshot_matrix_dimensions(value, schema),
+        SchemaBody::UnsignedInteger(_)
+        | SchemaBody::SignedInteger(_)
+        | SchemaBody::FloatingPoint(_)
+        | SchemaBody::Complex(_)
+        | SchemaBody::Rational64 => {
+            if snapshot_numeric_element_count(value)? == 1 {
+                Ok((1, 1))
+            } else {
+                Err(ResidentKernelError::InvalidShape)
+            }
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn snapshot_value_dimensions(
+    value: &mech_core::Value,
+    schema: &SchemaBody,
+) -> Result<(usize, usize), ResidentKernelError> {
+    match schema {
+        SchemaBody::Matrix { .. } => snapshot_matrix_dimensions(value, schema),
+        _ => Ok((1, 1)),
+    }
+}
+
+fn resident_shape_for_dimensions(
+    rows: usize,
+    columns: usize,
+) -> Result<ResidentShape, ResidentKernelError> {
+    Ok(ResidentShape {
+        rows: u32::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+        columns: u32::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+    })
+}
+
+fn snapshot_broadcast_dimensions(
+    left: (usize, usize),
+    right: (usize, usize),
+) -> Result<(usize, usize), ResidentKernelError> {
+    let dimension = |left, right| {
+        if left == right {
+            Ok(left)
+        } else if left == 1 {
+            Ok(right)
+        } else if right == 1 {
+            Ok(left)
+        } else {
+            Err(ResidentKernelError::InvalidShape)
+        }
+    };
+    Ok((dimension(left.0, right.0)?, dimension(left.1, right.1)?))
+}
+
+fn resolved_snapshot_numeric_output_shape(
+    kernel: &BoundResidentKernel,
+    rows: usize,
+    columns: usize,
+) -> Result<ShapeInstance, ResidentKernelError> {
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+        resolved_snapshot_output_shape(kernel, rows, columns)
+    } else if (rows, columns) == (1, 1) {
+        Ok(metadata.shape.clone())
+    } else {
+        Err(ResidentKernelError::InvalidShape)
+    }
 }
 
 fn resolved_snapshot_output_shape(
@@ -10670,6 +13380,25 @@ fn snapshot_range_number(data: &ValueData) -> Option<SnapshotRangeNumber> {
     })
 }
 
+fn draft_range_number(data: &ValueDataDraft) -> Option<SnapshotRangeNumber> {
+    Some(match data {
+        ValueDataDraft::Index(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
+        ValueDataDraft::U8(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
+        ValueDataDraft::U16(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
+        ValueDataDraft::U32(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
+        ValueDataDraft::U64(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
+        ValueDataDraft::U128(value) => SnapshotRangeNumber::Unsigned(*value),
+        ValueDataDraft::I8(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
+        ValueDataDraft::I16(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
+        ValueDataDraft::I32(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
+        ValueDataDraft::I64(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
+        ValueDataDraft::I128(value) => SnapshotRangeNumber::Signed(*value),
+        ValueDataDraft::F32(value) => SnapshotRangeNumber::Float(f64::from(value.to_f32())),
+        ValueDataDraft::F64(value) => SnapshotRangeNumber::Float(value.to_f64()),
+        _ => return None,
+    })
+}
+
 fn integer_snapshot_range_size(magnitude: u128, step: u128, inclusive: bool) -> Option<usize> {
     let size = if inclusive {
         magnitude.checked_div(step)?.checked_add(1)?
@@ -10795,6 +13524,65 @@ pub(super) fn canonical_range_cardinality(
     snapshot_range_size(&numbers, inclusive, incremented)
 }
 
+fn range_input_draft(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    index: usize,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    let descriptor = kernel
+        .bound_call()
+        .and_then(|call| call.inputs().get(index))
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    match (descriptor.schema().body(), inputs.get(index)) {
+        (SchemaBody::Index, Some(ResidentValueRef::Index([value]))) => {
+            Ok(ValueDataDraft::Index(*value))
+        }
+        (
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            Some(ResidentValueRef::F64([value])),
+        ) => Ok(ValueDataDraft::F64(F64Bits::from_f64(*value))),
+        (_, Some(ResidentValueRef::Snapshot([Some(value)]))) => {
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            let schema = value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            if schema != descriptor.schema() {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            let data = value
+                .canonical_data_draft()
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            if matches!(data, ValueDataDraft::Matrix(_)) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(data)
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn range_one(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError> {
+    match body {
+        SchemaBody::Index => Ok(ValueDataDraft::Index(1)),
+        _ => numeric_one(body),
+    }
+}
+
+fn range_add(
+    left: ValueDataDraft,
+    right: ValueDataDraft,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    match (left, right) {
+        (ValueDataDraft::Index(left), ValueDataDraft::Index(right)) => left
+            .checked_add(right)
+            .map(ValueDataDraft::Index)
+            .ok_or(ResidentKernelError::Arithmetic),
+        (left, right) => numeric_add(left, right),
+    }
+}
+
 fn range_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -10820,55 +13608,62 @@ fn range_snapshot(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    let value = |index| match inputs.get(index) {
-        Some(ResidentValueRef::Snapshot([Some(value)])) => {
-            value
-                .validate_against(schemas)
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
-            Ok(value)
-        }
-        _ => Err(ResidentKernelError::InvalidInput),
+    let first = range_input_draft(kernel, inputs, 0)?;
+    let second = range_input_draft(kernel, inputs, 1)?;
+    let third = if incremented {
+        range_input_draft(kernel, inputs, 2)?
+    } else {
+        second.clone()
     };
-    let first = value(0)?;
-    let second = value(1)?;
-    let third = if incremented { value(2)? } else { second };
-    let values = [first, second, third];
-    let values = &values[..expected_inputs];
     let numbers = [
-        snapshot_range_number(first.data()).ok_or(ResidentKernelError::InvalidInput)?,
-        snapshot_range_number(second.data()).ok_or(ResidentKernelError::InvalidInput)?,
-        snapshot_range_number(third.data()).ok_or(ResidentKernelError::InvalidInput)?,
+        draft_range_number(&first).ok_or(ResidentKernelError::InvalidInput)?,
+        draft_range_number(&second).ok_or(ResidentKernelError::InvalidInput)?,
+        draft_range_number(&third).ok_or(ResidentKernelError::InvalidInput)?,
     ];
     let count = snapshot_range_size(&numbers[..expected_inputs], inclusive, incremented)
         .filter(|count| *count != 0)
         .ok_or(ResidentKernelError::InvalidInput)?;
-    if u64::try_from(count).ok() != Some(*declared_count) {
+    if *declared_count != 0 && u64::try_from(count).ok() != Some(*declared_count) {
         return Err(ResidentKernelError::InvalidShape);
     }
-    preflight_snapshot_arithmetic(kernel, schemas, &values, &output, values.len(), count, 0)?;
-    let schema = first
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let mut current = first
-        .canonical_data_draft()
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let snapshot_inputs = (0..expected_inputs)
+        .filter_map(|index| match inputs.get(index) {
+            Some(ResidentValueRef::Snapshot([Some(value)])) => Some(value),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    preflight_snapshot_arithmetic(
+        kernel,
+        schemas,
+        &snapshot_inputs,
+        &output,
+        expected_inputs,
+        count,
+        0,
+    )?;
+    let input_schema = kernel
+        .bound_call()
+        .and_then(|call| call.inputs().first())
+        .ok_or(ResidentKernelError::InvalidInput)?
+        .schema();
+    let mut current = first;
     let step = if incremented {
         second
-            .canonical_data_draft()
-            .map_err(|_| ResidentKernelError::InvalidInput)?
     } else {
-        numeric_one(schema.body())?
+        range_one(input_schema.body())?
     };
     let mut elements = Vec::with_capacity(count);
     for index in 0..count {
         elements.push(current.clone());
         if index + 1 < count {
-            current = numeric_add(current, step.clone())?;
+            current = range_add(current, step.clone())?;
         }
     }
-    write_snapshot_data_with_work_budget(
+    let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         output,
+        &output_shape,
         ValueDataDraft::Matrix(elements.into_boxed_slice()),
         Some(0),
     )
@@ -11223,56 +14018,136 @@ fn n_choose_k_snapshot(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [declared_k, declared_combinations] = kernel.parameters() else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    let (
-        Some(ResidentValueRef::Snapshot([Some(values)])),
-        Some(ResidentValueRef::Snapshot([Some(selection)])),
-    ) = (inputs.get(0), inputs.get(1))
+    let [
+        input_snapshot,
+        selection_snapshot,
+        bound_rows,
+        bound_columns,
+    ] = kernel.parameters()
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let input_snapshot = flag(*input_snapshot)?;
+    let selection_snapshot = flag(*selection_snapshot)?;
+    let values_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let selection = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    let values_schema = values
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    selection
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let SchemaBody::Matrix { element, .. } = values_schema.body() else {
-        return Err(ResidentKernelError::InvalidInput);
+    let output_schema = schemas
+        .get(
+            kernel
+                .snapshot_output()
+                .ok_or(ResidentKernelError::InvalidOutput)?
+                .schema,
+        )
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let SchemaBody::Matrix { element, .. } = output_schema.body() else {
+        return Err(ResidentKernelError::InvalidOutput);
     };
-    let available = snapshot_numeric_element_count(values)?;
-    let (requested, _) = canonical_n_choose_k_selection(selection.data())
-        .ok_or(ResidentKernelError::InvalidInput)?;
+    let values_snapshot = match (input_snapshot, values_input) {
+        (true, ResidentValueRef::Snapshot([Some(values)])) => {
+            let values_schema = values
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            let SchemaBody::Matrix {
+                element: input_element,
+                ..
+            } = values_schema.body()
+            else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if input_element != element {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Some(values)
+        }
+        (false, ResidentValueRef::F64(_))
+            if element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) =>
+        {
+            None
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let bound_rows = usize::try_from(*bound_rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let bound_columns =
+        usize::try_from(*bound_columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let available = match values_snapshot {
+        Some(values) => snapshot_numeric_element_count(values)?,
+        None => {
+            let available = bound_rows
+                .checked_mul(bound_columns)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            if values_input.len() != available {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            available
+        }
+    };
+    let (requested, selection_value) = match (selection_snapshot, selection) {
+        (true, ResidentValueRef::Snapshot([Some(selection)])) => {
+            let selection_schema = selection
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            if selection_schema.body() != element.as_ref() {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            (
+                canonical_n_choose_k_selection(selection.data())
+                    .ok_or(ResidentKernelError::InvalidInput)?
+                    .0,
+                Some(selection),
+            )
+        }
+        (false, ResidentValueRef::F64([selection])) => {
+            if !selection.is_finite()
+                || *selection < 0.0
+                || selection.fract() != 0.0
+                || *selection > u128::MAX as f64
+            {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            (*selection as u128, None)
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
     let requested = usize::try_from(requested).map_err(|_| ResidentKernelError::InvalidShape)?;
     let combinations =
         checked_combination_count(available, requested).ok_or(ResidentKernelError::InvalidShape)?;
-    if requested == 0
-        || requested > available
-        || u64::try_from(requested).ok() != Some(*declared_k)
-        || u64::try_from(combinations).ok() != Some(*declared_combinations)
-    {
+    if requested == 0 || requested > available {
         return Err(ResidentKernelError::InvalidShape);
     }
     let output_count = requested
         .checked_mul(combinations)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_shape = resolved_snapshot_output_shape(kernel, requested, combinations)?;
+    let input_elements = available
+        .checked_add(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let snapshot_inputs = match (values_snapshot, selection_value) {
+        (Some(values), Some(selection)) => vec![values, selection],
+        (Some(values), None) => vec![values],
+        (None, Some(selection)) => vec![selection],
+        (None, None) => Vec::new(),
+    };
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
-        &[values, selection],
+        &snapshot_inputs,
         &output,
-        available
-            .checked_add(1)
-            .ok_or(ResidentKernelError::InvalidShape)?,
+        input_elements,
         output_count,
-        0,
+        output_count,
     )?;
-    let values = snapshot_numeric_elements(values)?;
+    let values = match values_snapshot {
+        Some(values) => snapshot_numeric_elements(values)?,
+        None => dense_f64_canonical_drafts(values_input, bound_rows, bound_columns)?,
+    };
     let mut selected = (0..requested).collect::<Vec<_>>();
     let mut next = vec![values[0].clone(); output_count];
     for column in 0..combinations {
@@ -11286,9 +14161,10 @@ fn n_choose_k_snapshot(
     if !is_n_choose_k_snapshot_element(element) {
         return Err(ResidentKernelError::IncompleteOutput);
     }
-    write_snapshot_data_with_work_budget(
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         output,
+        &output_shape,
         ValueDataDraft::Matrix(next.into_boxed_slice()),
         Some(0),
     )
@@ -11447,6 +14323,61 @@ fn scalar_index(
     let changed = output != next;
     output.copy_from_slice(&next);
     Ok(changed)
+}
+
+fn snapshot_scalar_index(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let [] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    input
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let input_len = match input.data() {
+        ValueData::Matrix(matrix) => matrix.elements().len(),
+        _ => 1,
+    };
+    let output_shape = resolved_snapshot_output_shape(kernel, input_len, 1)?;
+    preflight_snapshot_arithmetic(
+        kernel,
+        schemas,
+        &[input],
+        &output,
+        input_len,
+        input_len,
+        input_len,
+    )?;
+    let next = (0..input_len)
+        .map(|ordinal| {
+            portable_data_index_at(input.data(), ordinal)
+                .map(ValueDataDraft::Index)
+                .ok_or(ResidentKernelError::InvalidInput)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    write_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        output,
+        &output_shape,
+        ValueDataDraft::Matrix(next.into_boxed_slice()),
+        Some(0),
+    )
+}
+
+fn portable_data_index_at(value: &ValueData, ordinal: usize) -> Option<u64> {
+    match value {
+        ValueData::Matrix(matrix) => portable_sequence_index_at(matrix.elements(), ordinal),
+        value if ordinal == 0 => portable_data_index(value),
+        _ => None,
+    }
 }
 
 fn scalar_access_2d(
@@ -11835,8 +14766,24 @@ fn selector_value(
     layout: &SnapshotAccessSelectorLayout,
     value: ResidentValueRef<'_>,
 ) -> Result<mech_core::Value, ResidentKernelError> {
+    resident_value_to_snapshot(
+        schemas,
+        layout.schema,
+        &layout.shape,
+        layout.resident_shape,
+        value,
+    )
+}
+
+pub(crate) fn resident_value_to_snapshot(
+    schemas: &mech_core::SchemaTable,
+    schema_id: SchemaId,
+    shape: &ShapeInstance,
+    resident_shape: ResidentShape,
+    value: ResidentValueRef<'_>,
+) -> Result<mech_core::Value, ResidentKernelError> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
-        if value.schema() != layout.schema {
+        if value.schema() != schema_id {
             return Err(ResidentKernelError::InvalidInput);
         }
         value
@@ -11845,11 +14792,11 @@ fn selector_value(
         return Ok(value.clone());
     }
     let schema = schemas
-        .get(layout.schema)
+        .get(schema_id)
         .ok_or(ResidentKernelError::InvalidInput)?;
     let matrix = matches!(schema.body(), SchemaBody::Matrix { .. });
-    let rows = layout.resident_shape.rows as usize;
-    let columns = layout.resident_shape.columns as usize;
+    let rows = resident_shape.rows as usize;
+    let columns = resident_shape.columns as usize;
     let count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -11917,12 +14864,102 @@ fn selector_value(
         ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
     };
     ValueDraft {
-        schema: layout.schema,
-        shape_values: layout.shape.parameter_values().to_vec().into_boxed_slice(),
+        schema: schema_id,
+        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
     }
     .finalize(&SnapshotValidationContext::new(schemas))
     .map_err(|_| ResidentKernelError::InvalidInput)
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ResidentSnapshotMaterializationCost {
+    pub persistent_bytes: u64,
+    pub temporary_bytes: u64,
+    pub cloned_bytes: u64,
+    pub output_elements: u64,
+    pub retained_nodes: u64,
+    pub compute_work: u64,
+    pub comparison_work: u64,
+}
+
+/// Computes the complete peak for dense-to-snapshot conversion without
+/// cloning any payload. The caller must hold this admission while building
+/// the draft and final immutable value.
+pub(crate) fn resident_value_snapshot_materialization_cost(
+    schemas: &mech_core::SchemaTable,
+    schema: SchemaId,
+    shape: &ShapeInstance,
+    value: ResidentValueRef<'_>,
+) -> Result<ResidentSnapshotMaterializationCost, ResidentKernelError> {
+    if matches!(value, ResidentValueRef::Snapshot(_)) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let overflow = || ResidentKernelError::InvalidShape;
+    let elements = u64::try_from(value.len()).map_err(|_| overflow())?;
+    let mut payload_bytes = elements
+        .checked_mul(core::mem::size_of::<ValueData>() as u64)
+        .ok_or_else(overflow)?;
+    let mut string_bytes = 0_u64;
+    if let ResidentValueRef::String(values) = value {
+        for value in values {
+            string_bytes = string_bytes
+                .checked_add(value.len() as u64)
+                .ok_or_else(overflow)?;
+            payload_bytes = payload_bytes
+                .checked_add(value.len() as u64)
+                .ok_or_else(overflow)?;
+        }
+    }
+    let schema = schemas
+        .get(schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let body = schema
+        .closed_body(shape)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let retained_nodes = match (&body, value) {
+        (SchemaBody::Matrix { element, .. }, ResidentValueRef::String(_))
+            if element.as_ref() == &SchemaBody::String =>
+        {
+            elements.checked_add(3).ok_or_else(overflow)?
+        }
+        (SchemaBody::Matrix { .. }, _) => 3,
+        (_, _) => 2,
+    };
+    let footprint = CurrentMemoryFootprint {
+        logical_elements: elements,
+        payload_bytes,
+        encoded_bytes: payload_bytes,
+        retained_nodes,
+        schema_bytes: schemas
+            .clone_allocation_bound_bytes()
+            .ok_or_else(overflow)?,
+        shape_parameter_count: shape.parameter_values().len() as u64,
+        ..CurrentMemoryFootprint::default()
+    };
+    let temporary_bytes =
+        mech_core::canonical_snapshot_draft_bytes(footprint).map_err(|_| overflow())?;
+    let persistent_bytes = mech_core::canonical_snapshot_finalization_bytes(footprint)
+        .map_err(|_| overflow())?
+        .checked_add(mech_core::Value::memory_budget_claim_metadata_bytes())
+        .ok_or_else(overflow)?;
+    Ok(ResidentSnapshotMaterializationCost {
+        persistent_bytes,
+        temporary_bytes,
+        cloned_bytes: payload_bytes,
+        output_elements: elements,
+        retained_nodes: footprint.retained_nodes,
+        // Draft construction and canonical finalization each visit every
+        // element. Strings additionally copy and validate their complete
+        // retained byte population.
+        compute_work: elements
+            .checked_mul(2)
+            .and_then(|work| work.checked_add(string_bytes))
+            .ok_or_else(overflow)?,
+        // Snapshot publication compares every canonical cell and may scan the
+        // complete retained byte population of equal or common-prefix strings.
+        comparison_work: elements.checked_add(string_bytes).ok_or_else(overflow)?,
+    })
 }
 
 fn access_index(data: &ValueData, upper: usize) -> Result<usize, ResidentKernelError> {
@@ -12023,6 +15060,7 @@ struct SnapshotAccessOutputCost {
     index_elements: usize,
     selected_ordinal: Option<usize>,
     finalization_work: u64,
+    output_dimensions: Option<(usize, usize)>,
 }
 
 fn named_schema_ordinal_with_meter<'a>(
@@ -12111,7 +15149,20 @@ fn snapshot_scalar_access_cost(
         index_elements: 1,
         selected_ordinal: None,
         finalization_work: snapshot_data_finalization_work(meter, schema, data)?,
+        output_dimensions: None,
     })
+}
+
+fn snapshot_access_source_dimensions(
+    source: &mech_core::Value,
+    source_schema: &SchemaBody,
+    plan: &SnapshotAccessPlan,
+) -> Result<(usize, usize), ResidentKernelError> {
+    match plan.source_dimensions {
+        Some(dimensions) => Ok(dimensions),
+        None if plan.matrix_mode.is_some() => snapshot_matrix_dimensions(source, source_schema),
+        None => Err(ResidentKernelError::InvalidInput),
+    }
 }
 
 fn snapshot_access_output_cost(
@@ -12207,12 +15258,11 @@ fn snapshot_access_output_cost(
                 index_elements: 0,
                 selected_ordinal: Some(index),
                 finalization_work,
+                output_dimensions: Some((values.len(), 1)),
             })
         }
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(matrix)) => {
-            let (rows, columns) = plan
-                .source_dimensions
-                .ok_or(ResidentKernelError::InvalidInput)?;
+            let (rows, columns) = snapshot_access_source_dimensions(source, source_schema, plan)?;
             let elements = matrix.elements();
             let source_len = rows
                 .checked_mul(columns)
@@ -12220,7 +15270,48 @@ fn snapshot_access_output_cost(
             if elements.len() != source_len {
                 return Err(ResidentKernelError::InvalidShape);
             }
-            let expected_count = match plan.output_dimensions {
+            let resolved_output_dimensions = if plan.matrix_constructor.is_some() {
+                plan.output_dimensions
+            } else {
+                match plan.matrix_mode {
+                    Some(ResolvedSelectionMode::LinearScalar) => None,
+                    Some(ResolvedSelectionMode::LinearGather) => Some((
+                        if plan.selectors.is_empty() {
+                            source_len
+                        } else {
+                            selector_access_count(selector(0)?, source_len)?
+                        },
+                        1,
+                    )),
+                    Some(ResolvedSelectionMode::Rows) => {
+                        Some((selector_access_count(selector(0)?, rows)?, columns))
+                    }
+                    Some(ResolvedSelectionMode::Columns) => {
+                        Some((rows, selector_access_count(selector(0)?, columns)?))
+                    }
+                    Some(ResolvedSelectionMode::Rectangle) => {
+                        let selected = (
+                            selector_access_count(selector(0)?, rows)?,
+                            selector_access_count(selector(1)?, columns)?,
+                        );
+                        if plan.output_dimensions.is_none() {
+                            if selected != (1, 1) {
+                                return Err(ResidentKernelError::InvalidShape);
+                            }
+                            None
+                        } else {
+                            Some(selected)
+                        }
+                    }
+                    _ => return Err(ResidentKernelError::InvalidInput),
+                }
+            };
+            if !plan.output_dimensions_dynamic
+                && plan.output_dimensions != resolved_output_dimensions
+            {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let expected_count = match resolved_output_dimensions {
                 Some((rows, columns)) => rows
                     .checked_mul(columns)
                     .ok_or(ResidentKernelError::InvalidShape)?,
@@ -12253,12 +15344,13 @@ fn snapshot_access_output_cost(
                     index_elements: 0,
                     selected_ordinal: None,
                     finalization_work,
+                    output_dimensions: resolved_output_dimensions,
                 });
             }
             let mut footprint = ValueFootprint::zero();
             let mut finalization_work = 0_u64;
             let (count, index_elements) = match plan.matrix_mode {
-                Some(ResolvedSelectionMode::LinearScalar | ResolvedSelectionMode::LinearGather) => {
+                Some(ResolvedSelectionMode::LinearScalar) => {
                     let mut count = 0usize;
                     selector_for_each_access_index(selector(0)?, source_len, |linear| {
                         let row = linear % rows;
@@ -12278,14 +15370,38 @@ fn snapshot_access_output_cost(
                     })?;
                     (count, count)
                 }
+                Some(ResolvedSelectionMode::LinearGather) => {
+                    let mut count = 0usize;
+                    let mut visit = |linear: usize| {
+                        let row = linear % rows;
+                        let column = linear / rows;
+                        selected_sequence_footprint_with_finalization(
+                            &mut footprint,
+                            &mut finalization_work,
+                            meter,
+                            element,
+                            elements,
+                            row * columns + column,
+                        )?;
+                        count = count
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        Ok::<(), ResidentKernelError>(())
+                    };
+                    if plan.selectors.is_empty() {
+                        for linear in 0..source_len {
+                            visit(linear)?;
+                        }
+                    } else {
+                        selector_for_each_access_index(selector(0)?, source_len, visit)?;
+                    }
+                    (count, count)
+                }
                 Some(ResolvedSelectionMode::Rows) => {
                     let selected_rows = selector_access_count(selector(0)?, rows)?;
                     let count = selected_rows
                         .checked_mul(columns)
                         .ok_or(ResidentKernelError::InvalidShape)?;
-                    if count != expected_count {
-                        return Err(ResidentKernelError::InvalidShape);
-                    }
                     selector_for_each_access_index(selector(0)?, rows, |row| {
                         for column in 0..columns {
                             selected_sequence_footprint_with_finalization(
@@ -12311,9 +15427,6 @@ fn snapshot_access_output_cost(
                     let count = rows
                         .checked_mul(selected_columns)
                         .ok_or(ResidentKernelError::InvalidShape)?;
-                    if count != expected_count {
-                        return Err(ResidentKernelError::InvalidShape);
-                    }
                     for row in 0..rows {
                         selector_for_each_access_index(selector(0)?, columns, |column| {
                             selected_sequence_footprint_with_finalization(
@@ -12338,9 +15451,6 @@ fn snapshot_access_output_cost(
                     let count = selected_rows
                         .checked_mul(selected_columns)
                         .ok_or(ResidentKernelError::InvalidShape)?;
-                    if count != expected_count {
-                        return Err(ResidentKernelError::InvalidShape);
-                    }
                     selector_for_each_access_index(selector(0)?, rows, |row| {
                         selector_for_each_access_index(selector(1)?, columns, |column| {
                             selected_sequence_footprint_with_finalization(
@@ -12371,6 +15481,7 @@ fn snapshot_access_output_cost(
                 index_elements,
                 selected_ordinal: None,
                 finalization_work,
+                output_dimensions: resolved_output_dimensions,
             })
         }
         _ => Err(ResidentKernelError::InvalidInput),
@@ -12448,9 +15559,7 @@ fn snapshot_access_data(
             Ok(ValueDataDraft::Matrix(output.into_boxed_slice()))
         }
         SchemaBody::Matrix { element, .. } => {
-            let (rows, columns) = plan
-                .source_dimensions
-                .ok_or(ResidentKernelError::InvalidInput)?;
+            let (rows, columns) = snapshot_access_source_dimensions(source, source_schema, plan)?;
             let ValueData::Matrix(matrix) = source.data() else {
                 return Err(ResidentKernelError::InvalidInput);
             };
@@ -12475,8 +15584,12 @@ fn snapshot_access_data(
                     return sequence_data_draft_at(element, elements, row * columns + column);
                 }
                 Some(ResolvedSelectionMode::LinearGather) => {
-                    let selected = access_indices(&selectors[0], source_len)?;
-                    let output_elements = plan
+                    let selected = if selectors.is_empty() {
+                        (0..source_len).collect::<Vec<_>>()
+                    } else {
+                        access_indices(&selectors[0], source_len)?
+                    };
+                    let output_elements = output_cost
                         .output_dimensions
                         .and_then(|(rows, columns)| rows.checked_mul(columns))
                         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -12526,7 +15639,8 @@ fn snapshot_access_data(
                     selected_rows[0] * columns + selected_columns[0],
                 );
             }
-            if plan.output_dimensions != Some((selected_rows.len(), selected_columns.len())) {
+            if output_cost.output_dimensions != Some((selected_rows.len(), selected_columns.len()))
+            {
                 return Err(ResidentKernelError::InvalidShape);
             }
             let values = selected_rows
@@ -12546,12 +15660,21 @@ fn snapshot_access_data(
 fn write_access_output(
     kernel: &BoundResidentKernel,
     plan: &SnapshotAccessPlan,
-    canonicalization_work_limit: u64,
+    output_cost: &SnapshotAccessOutputCost,
+    output_shape: Option<&ShapeInstance>,
     data: ValueDataDraft,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let next =
-        finalize_snapshot_data_with_work_budget(kernel, data, Some(canonicalization_work_limit))?;
+    let next = if let Some(shape) = output_shape {
+        finalize_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            shape,
+            data,
+            Some(output_cost.finalization_work),
+        )?
+    } else {
+        finalize_snapshot_data_with_work_budget(kernel, data, Some(output_cost.finalization_work))?
+    };
     if next.schema() != plan.output_schema {
         return Err(ResidentKernelError::InvalidOutput);
     }
@@ -12568,8 +15691,10 @@ fn write_access_output(
         *target = Some(next);
         return Ok(changed);
     }
-    let rows = plan.output_geometry.logical_output_rows;
-    let columns = plan.output_geometry.logical_output_columns;
+    let (rows, columns) = output_cost.output_dimensions.unwrap_or((
+        plan.output_geometry.logical_output_rows,
+        plan.output_geometry.logical_output_columns,
+    ));
     let count = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -12666,6 +15791,75 @@ fn write_access_output(
     }
 }
 
+fn dense_snapshot_access_source(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    plan: &SnapshotAccessPlan,
+    layout: &SnapshotAccessSelectorLayout,
+) -> Result<(mech_core::Value, u64), ResidentKernelError> {
+    let source = input(inputs, 0)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(layout.schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let dimensions = plan
+        .source_dimensions
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let constructor_plan = SnapshotConstructorInputPlan {
+        schema: layout.schema,
+        kind: source.kind(),
+        dimensions: Some(dimensions),
+        matrix: true,
+        shape_parameters: layout.shape.parameter_values().len(),
+    };
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let footprint = dense_constructor_input_footprint(source, &constructor_plan, &mut meter)?;
+    let count = dimensions
+        .0
+        .checked_mul(dimensions.1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let draft_bytes = count
+        .checked_mul(core::mem::size_of::<ValueDataDraft>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let measured = meter.estimate();
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work(),
+            compute_work: measured.compute_work()
+                .checked_add(super::budget::checked_u64(count)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            temporary_bytes: footprint.retained_bytes
+                .checked_add(super::budget::checked_u64(draft_bytes)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: footprint.retained_bytes,
+            container_bytes: draft_bytes,
+            retained_nodes: measured.retained_nodes(),
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    let value = resident_value_to_snapshot(
+        schemas,
+        layout.schema,
+        &layout.shape,
+        layout.resident_shape,
+        source,
+    )?;
+    if value
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?
+        .body()
+        != schema.body()
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    Ok((value, footprint.retained_bytes))
+}
+
 fn snapshot_access(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -12677,9 +15871,24 @@ fn snapshot_access(
     if inputs.len() != plan.selectors.len() + 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
+    if let Some(layout) = &plan.dense_source {
+        let (source, temporary_bytes) = dense_snapshot_access_source(kernel, inputs, plan, layout)?;
+        return snapshot_access_from_source(kernel, inputs, output, plan, &source, temporary_bytes);
+    }
     let Some(ResidentValueRef::Snapshot([Some(source)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    snapshot_access_from_source(kernel, inputs, output, plan, source, 0)
+}
+
+fn snapshot_access_from_source(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+    plan: &SnapshotAccessPlan,
+    source: &mech_core::Value,
+    source_temporary_bytes: u64,
+) -> Result<bool, ResidentKernelError> {
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -12767,6 +15976,13 @@ fn snapshot_access(
         inputs,
         &mut footprint_meter,
     )?;
+    // Resolve parameterized result axes before admission. This validates
+    // fixed axes independently even when a compensating axis would preserve
+    // the same total element count.
+    let resolved_output_shape = output_cost
+        .output_dimensions
+        .map(|(rows, columns)| resolved_snapshot_output_shape(kernel, rows, columns))
+        .transpose()?;
     let footprint_work = footprint_meter.estimate();
     let publication_equality_work = match prior_output_footprint {
         Some(prior) => prior_schema_comparison_work
@@ -12829,6 +16045,7 @@ fn snapshot_access(
         .cloned_bytes
         .checked_add(output_data_retained_bytes)
         .and_then(|bytes| bytes.checked_add(dense_string_publication_bytes))
+        .and_then(|bytes| bytes.checked_add(source_temporary_bytes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let staged_value_nodes = published_output_footprint.node_count;
     let final_output_nodes = if snapshot_output {
@@ -12863,6 +16080,7 @@ fn snapshot_access(
                 .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes: output_retained_bytes
                 .checked_mul(2)
+                .and_then(|bytes| bytes.checked_add(source_temporary_bytes))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes,
             container_bytes: output_draft_bytes
@@ -12928,7 +16146,14 @@ fn snapshot_access(
         &output_cost,
         schemas,
     )?;
-    write_access_output(kernel, plan, output_cost.finalization_work, data, output)
+    write_access_output(
+        kernel,
+        plan,
+        &output_cost,
+        resolved_output_shape.as_ref(),
+        data,
+        output,
+    )
 }
 
 fn snapshot_access_node_phases(
@@ -13002,6 +16227,181 @@ fn matrix_multiply(
     }))
 }
 
+fn matrix_multiply_snapshot_mixed(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let lhs_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let rhs_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let [
+        snapshot_output,
+        lhs_snapshot,
+        rhs_snapshot,
+        bound_lhs_rows,
+        bound_lhs_columns,
+        bound_rhs_rows,
+        bound_rhs_columns,
+    ] = kernel.parameters()
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let snapshot_output = flag(*snapshot_output)?;
+    let lhs_snapshot = flag(*lhs_snapshot)?;
+    let rhs_snapshot = flag(*rhs_snapshot)?;
+    if lhs_snapshot == rhs_snapshot {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let snapshot_value = |input, expected| match (input, expected) {
+        (ResidentValueRef::Snapshot([Some(value)]), true) => Ok(Some(value)),
+        (ResidentValueRef::Snapshot(_), _) | (_, true) => Err(ResidentKernelError::InvalidInput),
+        (_, false) => Ok(None),
+    };
+    let lhs = snapshot_value(lhs_input, lhs_snapshot)?;
+    let rhs = snapshot_value(rhs_input, rhs_snapshot)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let lhs_schema = lhs
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let rhs_schema = rhs
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let bound_dimensions = |rows: u64, columns: u64| {
+        Ok::<_, ResidentKernelError>((
+            usize::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ))
+    };
+    let lhs_dimensions = match (lhs, lhs_schema) {
+        (Some(value), Some(schema)) => snapshot_matrix_dimensions(value, schema.body())?,
+        (None, None) => bound_dimensions(*bound_lhs_rows, *bound_lhs_columns)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let rhs_dimensions = match (rhs, rhs_schema) {
+        (Some(value), Some(schema)) => snapshot_matrix_dimensions(value, schema.body())?,
+        (None, None) => bound_dimensions(*bound_rhs_rows, *bound_rhs_columns)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let (rows, inner) = lhs_dimensions;
+    let (rhs_rows, columns) = rhs_dimensions;
+    if inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    for schema in [lhs_schema, rhs_schema].into_iter().flatten() {
+        if comparison_element_body(schema.body())
+            != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+    }
+    let lhs_len = rows
+        .checked_mul(inner)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let rhs_len = inner
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let compute_work = output_len
+        .checked_mul(inner)
+        .and_then(|work| work.checked_mul(2))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let input_elements = lhs_len
+        .checked_add(rhs_len)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    match (lhs, rhs, snapshot_output) {
+        (Some(value), None, true) | (None, Some(value), true) => preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[value],
+            &output,
+            input_elements,
+            output_len,
+            compute_work.saturating_sub(output_len),
+        )?,
+        (Some(value), None, false) | (None, Some(value), false) => {
+            preflight_snapshot_dense_f64_output(
+                schemas,
+                &[value],
+                input_elements,
+                output_len,
+                compute_work.saturating_sub(output_len),
+            )?
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    }
+    // Snapshot cloning and dense canonicalization both allocate input-sized
+    // staging vectors. Keep them behind the complete mixed-operation permit.
+    let lhs_values = match lhs {
+        Some(value) => snapshot_numeric_elements(value)?,
+        None => dense_f64_canonical_drafts(lhs_input, rows, inner)?,
+    };
+    let rhs_values = match rhs {
+        Some(value) => snapshot_numeric_elements(value)?,
+        None => dense_f64_canonical_drafts(rhs_input, inner, columns)?,
+    };
+    if lhs_values.len() != lhs_len || rhs_values.len() != rhs_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_shape = snapshot_output
+        .then(|| resolved_snapshot_output_shape(kernel, rows, columns))
+        .transpose()?;
+    let mut result = Vec::with_capacity(output_len);
+    for row in 0..rows {
+        for column in 0..columns {
+            let mut sum = ValueDataDraft::F64(F64Bits::from_f64(0.0));
+            for offset in 0..inner {
+                let product = numeric_multiply(
+                    lhs_values[row * inner + offset].clone(),
+                    rhs_values[offset * columns + column].clone(),
+                )?;
+                sum = numeric_add(sum, product)?;
+            }
+            result.push(sum);
+        }
+    }
+    if let Some(output_shape) = output_shape {
+        write_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            output,
+            &output_shape,
+            ValueDataDraft::Matrix(result.into_boxed_slice()),
+            Some(0),
+        )
+    } else {
+        let ResidentValueMut::F64(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != output_len {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(replace_f64(output, |index| {
+            let row = index % rows;
+            let column = index / rows;
+            let ValueDataDraft::F64(value) = result[row * columns + column] else {
+                unreachable!("dense mixed matrix product binds only F64 output")
+            };
+            value.to_f64()
+        }))
+    }
+}
+
 fn matrix_multiply_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13014,12 +16414,24 @@ fn matrix_multiply_snapshot(
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let [rows, inner, columns] = kernel.parameters() else {
+    let [] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let inner = usize::try_from(*inner).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let lhs_schema = lhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let rhs_schema = rhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, inner) = snapshot_matrix_dimensions(lhs, lhs_schema.body())?;
+    let (rhs_rows, columns) = snapshot_matrix_dimensions(rhs, rhs_schema.body())?;
+    if inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_shape = resolved_snapshot_output_shape(kernel, rows, columns)?;
     let lhs_len = rows
         .checked_mul(inner)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -13036,9 +16448,6 @@ fn matrix_multiply_snapshot(
     if lhs_matrix.elements().len() != lhs_len || rhs_matrix.elements().len() != rhs_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
     let compute_work = output_len
         .checked_mul(inner)
         .and_then(|work| work.checked_mul(2))
@@ -13089,12 +16498,42 @@ fn matrix_multiply_snapshot(
             result.push(sum);
         }
     }
-    write_snapshot_data_with_work_budget(
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         output,
+        &output_shape,
         ValueDataDraft::Matrix(result.into_boxed_slice()),
         Some(0),
     )
+}
+
+fn matrix_multiply_snapshot_f64(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let (
+        Some(ResidentValueRef::Snapshot([Some(lhs)])),
+        Some(ResidentValueRef::Snapshot([Some(rhs)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let lhs_schema = lhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let rhs_schema = rhs
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, inner) = snapshot_matrix_dimensions(lhs, lhs_schema.body())?;
+    let (rhs_rows, columns) = snapshot_matrix_dimensions(rhs, rhs_schema.body())?;
+    if rows != 1 || columns != 1 || inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    matrix_dot_snapshot_f64_impl(kernel, inputs, output, false)
 }
 
 fn matrix_dot_f64(
@@ -13184,13 +16623,25 @@ fn preflight_snapshot_arithmetic(
     let output_metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    let output_nodes = super::budget::checked_u64(output_elements)?
-        .checked_add(2)
+    let output_schema = schemas
+        .get(output_metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    // Canonical primitive matrices retain a value, matrix, and packed-sequence
+    // node regardless of population. Scalars retain the value and scalar body.
+    let (output_element, output_nodes) = match output_schema.body() {
+        SchemaBody::Matrix { element, .. } => (element.as_ref(), 3),
+        scalar => (scalar, 2),
+    };
+    let output_encoded_bytes = output_elements
+        .checked_mul(
+            snapshot_fixed_element_encoded_bytes(output_element)
+                .ok_or(ResidentKernelError::InvalidOutput)?,
+        )
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_footprint = ValueFootprint {
-        // Numeric scalar/matrix equality visits each element once. Container
-        // tags add only constant work, covered by the two wrapper nodes.
-        encoded_bytes: output_nodes,
+        // Fixed-width primitive matrices encode as the packed element
+        // population; wrapper and packed-sequence visits use node_count.
+        encoded_bytes: super::budget::checked_u64(output_encoded_bytes)?,
         retained_bytes: output_bytes,
         node_count: output_nodes,
     };
@@ -13240,34 +16691,88 @@ fn preflight_snapshot_arithmetic(
     Ok(())
 }
 
+fn preflight_snapshot_dense_f64_output(
+    schemas: &mech_core::SchemaTable,
+    inputs: &[&mech_core::Value],
+    input_elements: usize,
+    output_elements: usize,
+    additional_compute_work: usize,
+) -> Result<(), ResidentKernelError> {
+    let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
+    let (cloned_bytes, retained_nodes) =
+        inputs
+            .iter()
+            .try_fold((0_u64, 0_u64), |(bytes, nodes), value| {
+                let (next_bytes, next_nodes) =
+                    snapshot_clone_cost(&mut footprint_meter, value, schemas)?;
+                Ok::<_, ResidentKernelError>((
+                    bytes
+                        .checked_add(next_bytes)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    nodes
+                        .checked_add(next_nodes)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+            })?;
+    let draft_elements = input_elements
+        .checked_add(output_elements)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let draft_bytes = super::budget::checked_u64(
+        draft_elements
+            .checked_mul(core::mem::size_of::<ValueDataDraft>())
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    )?;
+    let measured = footprint_meter.estimate();
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work()
+                .checked_add(super::budget::checked_u64(output_elements)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_work: measured.compute_work()
+                .checked_add(super::budget::checked_u64(output_elements)?)
+                .and_then(|work| work.checked_add(
+                    super::budget::checked_u64(additional_compute_work).ok()?
+                ))
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements,
+            output_bytes: output_elements
+                .checked_mul(core::mem::size_of::<f64>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            temporary_bytes: cloned_bytes
+                .checked_add(draft_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes,
+            retained_nodes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
 fn snapshot_numeric_binary(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let (
-        Some(ResidentValueRef::Snapshot([Some(left)])),
-        Some(ResidentValueRef::Snapshot([Some(right)])),
-    ) = (inputs.get(0), inputs.get(1))
-    else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
+    let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
     let [
-        rows,
-        columns,
-        left_mode,
-        right_mode,
         arithmetic,
         rational_power,
+        snapshot_output,
+        left_snapshot,
+        right_snapshot,
+        bound_left_rows,
+        bound_left_columns,
+        bound_right_rows,
+        bound_right_columns,
     ] = kernel.parameters()
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let output_len = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let arithmetic =
         SemanticArithmetic::from_parameter(*arithmetic).ok_or(ResidentKernelError::InvalidInput)?;
     let rational_power = match *rational_power {
@@ -13275,46 +16780,146 @@ fn snapshot_numeric_binary(
         1 => true,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
-    let left_len = snapshot_numeric_element_count(left)?;
-    let right_len = snapshot_numeric_element_count(right)?;
-    validate_binary_broadcast_len(left_len, *left_mode, rows, columns)?;
-    validate_binary_broadcast_len(right_len, *right_mode, rows, columns)?;
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let left_snapshot = flag(*left_snapshot)?;
+    let right_snapshot = flag(*right_snapshot)?;
+    let snapshot_output = flag(*snapshot_output)?;
+    let snapshot_value = |input, expected| match (input, expected) {
+        (ResidentValueRef::Snapshot([Some(value)]), true) => Ok(Some(value)),
+        (ResidentValueRef::Snapshot(_), _) | (_, true) => Err(ResidentKernelError::InvalidInput),
+        (_, false) => Ok(None),
+    };
+    let left = snapshot_value(left_input, left_snapshot)?;
+    let right = snapshot_value(right_input, right_snapshot)?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    left.validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    right
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    preflight_snapshot_arithmetic(
-        kernel,
-        schemas,
-        &[left, right],
-        &output,
-        left_len
-            .checked_add(right_len)
-            .ok_or(ResidentKernelError::InvalidShape)?,
-        output_len,
-        0,
+    let left_schema = left
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let right_schema = right
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let left_dimensions = match (left, left_schema) {
+        (Some(value), Some(schema)) => snapshot_numeric_dimensions(value, schema.body())?,
+        (None, None) => (
+            usize::try_from(*bound_left_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_left_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let right_dimensions = match (right, right_schema) {
+        (Some(value), Some(schema)) => snapshot_numeric_dimensions(value, schema.body())?,
+        (None, None) => (
+            usize::try_from(*bound_right_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(*bound_right_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let (rows, columns) = snapshot_broadcast_dimensions(left_dimensions, right_dimensions)?;
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let logical_output = resident_shape_for_dimensions(rows, columns)?;
+    let left_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(left_dimensions.0, left_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_mode = binary_broadcast_mode(
+        resident_shape_for_dimensions(right_dimensions.0, right_dimensions.1)?,
+        logical_output,
+    )
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let left_len = left.map_or_else(
+        || {
+            left_dimensions
+                .0
+                .checked_mul(left_dimensions.1)
+                .ok_or(ResidentKernelError::InvalidShape)
+        },
+        snapshot_numeric_element_count,
     )?;
-    let left = snapshot_numeric_elements(left)?;
-    let right = snapshot_numeric_elements(right)?;
+    let right_len = right.map_or_else(
+        || {
+            right_dimensions
+                .0
+                .checked_mul(right_dimensions.1)
+                .ok_or(ResidentKernelError::InvalidShape)
+        },
+        snapshot_numeric_element_count,
+    )?;
+    validate_binary_broadcast_len(left_len, left_mode, rows, columns)?;
+    validate_binary_broadcast_len(right_len, right_mode, rows, columns)?;
+    let output_shape = snapshot_output
+        .then(|| resolved_snapshot_numeric_output_shape(kernel, rows, columns))
+        .transpose()?;
+    let input_elements = left_len
+        .checked_add(right_len)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    match (left, right, snapshot_output) {
+        (Some(left), Some(right), true) => preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[left, right],
+            &output,
+            input_elements,
+            output_len,
+            0,
+        )?,
+        (Some(input), None, true) | (None, Some(input), true) => preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[input],
+            &output,
+            input_elements,
+            output_len,
+            0,
+        )?,
+        (Some(left), Some(right), false) => preflight_snapshot_dense_f64_output(
+            schemas,
+            &[left, right],
+            input_elements,
+            output_len,
+            0,
+        )?,
+        (Some(input), None, false) | (None, Some(input), false) => {
+            preflight_snapshot_dense_f64_output(schemas, &[input], input_elements, output_len, 0)?
+        }
+        (None, None, _) => return Err(ResidentKernelError::InvalidInput),
+    }
+    let left = match left {
+        Some(value) => snapshot_numeric_elements(value)?,
+        None => dense_f64_canonical_drafts(left_input, left_dimensions.0, left_dimensions.1)?,
+    };
+    let right = match right {
+        Some(value) => snapshot_numeric_elements(value)?,
+        None => dense_f64_canonical_drafts(right_input, right_dimensions.0, right_dimensions.1)?,
+    };
     let mut result = Vec::with_capacity(output_len);
     for row in 0..rows {
         for column in 0..columns {
             let left = left
                 .get(snapshot_binary_broadcast_index(
-                    *left_mode, row, column, columns,
+                    left_mode, row, column, columns,
                 ))
                 .ok_or(ResidentKernelError::InvalidShape)?
                 .clone();
             let right = right
                 .get(snapshot_binary_broadcast_index(
-                    *right_mode,
-                    row,
-                    column,
-                    columns,
+                    right_mode, row, column, columns,
                 ))
                 .ok_or(ResidentKernelError::InvalidShape)?
                 .clone();
@@ -13325,23 +16930,40 @@ fn snapshot_numeric_binary(
             });
         }
     }
-    let output_schema = schemas
-        .get(
-            kernel
-                .snapshot_output()
-                .ok_or(ResidentKernelError::InvalidOutput)?
-                .schema,
-        )
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let data = if matches!(output_schema.body(), SchemaBody::Matrix { .. }) {
-        ValueDataDraft::Matrix(result.into_boxed_slice())
-    } else {
-        let [value] = result.as_slice() else {
-            return Err(ResidentKernelError::InvalidShape);
+    if let Some(output_shape) = output_shape {
+        let output_schema = schemas
+            .get(
+                kernel
+                    .snapshot_output()
+                    .ok_or(ResidentKernelError::InvalidOutput)?
+                    .schema,
+            )
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let data = if matches!(output_schema.body(), SchemaBody::Matrix { .. }) {
+            ValueDataDraft::Matrix(result.into_boxed_slice())
+        } else {
+            let [value] = result.as_slice() else {
+                return Err(ResidentKernelError::InvalidShape);
+            };
+            value.clone()
         };
-        value.clone()
-    };
-    write_snapshot_data_with_work_budget(kernel, output, data, Some(0))
+        write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
+    } else {
+        let ResidentValueMut::F64(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != output_len {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(replace_f64(output, |index| {
+            let row = index % rows;
+            let column = index / rows;
+            let ValueDataDraft::F64(value) = result[row * columns + column] else {
+                unreachable!("dense mixed arithmetic binds only F64 output")
+            };
+            value.to_f64()
+        }))
+    }
 }
 
 fn snapshot_numeric_negate(
@@ -13352,11 +16974,16 @@ fn snapshot_numeric_negate(
     let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let [rows, columns] = kernel.parameters() else {
+    let [_bound_rows, _bound_columns] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let input_schema = input
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = snapshot_numeric_dimensions(input, input_schema.body())?;
     let output_len = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -13364,12 +16991,7 @@ fn snapshot_numeric_negate(
     if input_len != output_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    input
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let output_shape = resolved_snapshot_numeric_output_shape(kernel, rows, columns)?;
     preflight_snapshot_arithmetic(kernel, schemas, &[input], &output, input_len, output_len, 0)?;
     let result = snapshot_numeric_elements(input)?
         .into_iter()
@@ -13391,7 +17013,7 @@ fn snapshot_numeric_negate(
         };
         value.clone()
     };
-    write_snapshot_data_with_work_budget(kernel, output, data, Some(0))
+    write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
 }
 
 fn snapshot_numeric_abs(
@@ -13402,11 +17024,16 @@ fn snapshot_numeric_abs(
     let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let [rows, columns] = kernel.parameters() else {
+    let [_bound_rows, _bound_columns] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let input_schema = input
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = snapshot_numeric_dimensions(input, input_schema.body())?;
     let output_len = rows
         .checked_mul(columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
@@ -13414,12 +17041,7 @@ fn snapshot_numeric_abs(
     if input_len != output_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    input
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let output_shape = resolved_snapshot_numeric_output_shape(kernel, rows, columns)?;
     preflight_snapshot_arithmetic(kernel, schemas, &[input], &output, input_len, output_len, 0)?;
     let result = snapshot_numeric_elements(input)?
         .into_iter()
@@ -13441,7 +17063,7 @@ fn snapshot_numeric_abs(
         };
         value.clone()
     };
-    write_snapshot_data_with_work_budget(kernel, output, data, Some(0))
+    write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
 }
 
 fn numeric_zero(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError> {
@@ -14021,14 +17643,25 @@ fn matrix_dot_snapshot(
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let left_schema = left
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let right_schema = right
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let left_dimensions = snapshot_numeric_dimensions(left, left_schema.body())?;
+    let right_dimensions = snapshot_numeric_dimensions(right, right_schema.body())?;
+    if left_dimensions != right_dimensions {
+        return Err(ResidentKernelError::InvalidShape);
+    }
     let left_count = snapshot_numeric_element_count(left)?;
     let right_count = snapshot_numeric_element_count(right)?;
     if left_count != right_count {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
     preflight_snapshot_arithmetic(
         kernel,
         schemas,
@@ -14056,6 +17689,218 @@ fn matrix_dot_snapshot(
         next = numeric_add(next, numeric_multiply(left, right)?)?;
     }
     write_snapshot_data_with_work_budget(kernel, output, next, Some(0))
+}
+
+fn matrix_dot_snapshot_f64(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    matrix_dot_snapshot_f64_impl(kernel, inputs, output, true)
+}
+
+fn preflight_snapshot_dot_f64(
+    schemas: &mech_core::SchemaTable,
+    snapshots: &[&mech_core::Value],
+    element_count: usize,
+) -> Result<(), ResidentKernelError> {
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let (cloned_bytes, retained_nodes) =
+        snapshots
+            .iter()
+            .try_fold((0_u64, 0_u64), |(bytes, nodes), snapshot| {
+                let (next_bytes, next_nodes) = snapshot_clone_cost(&mut meter, snapshot, schemas)?;
+                Ok::<_, ResidentKernelError>((
+                    bytes
+                        .checked_add(next_bytes)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    nodes
+                        .checked_add(next_nodes)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+            })?;
+    let draft_bytes = element_count
+        .checked_mul(2)
+        .and_then(|elements| elements.checked_mul(core::mem::size_of::<ValueDataDraft>()))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let arithmetic_work = element_count
+        .checked_mul(2)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let measured = meter.estimate();
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work()
+                .checked_add(1)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            compute_work: measured.compute_work()
+                .checked_add(super::budget::checked_u64(arithmetic_work)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            output_elements: 1,
+            output_bytes: core::mem::size_of::<f64>(),
+            temporary_bytes: cloned_bytes
+                .checked_add(super::budget::checked_u64(draft_bytes)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes,
+            retained_nodes,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    Ok(())
+}
+
+fn matrix_dot_snapshot_f64_impl(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+    require_same_axes: bool,
+) -> Result<bool, ResidentKernelError> {
+    let (
+        Some(ResidentValueRef::Snapshot([Some(left)])),
+        Some(ResidentValueRef::Snapshot([Some(right)])),
+    ) = (inputs.get(0), inputs.get(1))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let left_schema = left
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let right_schema = right
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let left_dimensions = snapshot_numeric_dimensions(left, left_schema.body())?;
+    let right_dimensions = snapshot_numeric_dimensions(right, right_schema.body())?;
+    if require_same_axes && left_dimensions != right_dimensions {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let left_count = snapshot_numeric_element_count(left)?;
+    let right_count = snapshot_numeric_element_count(right)?;
+    if left_count != right_count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output = f64_output(output)?;
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    preflight_snapshot_dot_f64(schemas, &[left, right], left_count)?;
+    let left = snapshot_numeric_elements(left)?;
+    let right = snapshot_numeric_elements(right)?;
+    let mut next = 0.0;
+    for (left, right) in left.into_iter().zip(right) {
+        let (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) = (left, right) else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        next += left.to_f64() * right.to_f64();
+    }
+    let changed = target.to_bits() != next.to_bits();
+    *target = next;
+    Ok(changed)
+}
+
+fn matrix_dot_snapshot_mixed_f64(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [
+        left_snapshot,
+        right_snapshot,
+        left_rows,
+        left_columns,
+        right_rows,
+        right_columns,
+    ] = kernel.parameters()
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let left_snapshot = flag(*left_snapshot)?;
+    let right_snapshot = flag(*right_snapshot)?;
+    if left_snapshot == right_snapshot {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let snapshot = match (left_input, right_input, left_snapshot, right_snapshot) {
+        (ResidentValueRef::Snapshot([Some(value)]), ResidentValueRef::F64(_), true, false)
+        | (ResidentValueRef::F64(_), ResidentValueRef::Snapshot([Some(value)]), false, true) => {
+            value
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let snapshot_schema = snapshot
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    if comparison_element_body(snapshot_schema.body())
+        != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let bound_dimensions = |rows: u64, columns: u64| {
+        Ok::<_, ResidentKernelError>((
+            usize::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ))
+    };
+    let left_dimensions = if left_snapshot {
+        snapshot_numeric_dimensions(snapshot, snapshot_schema.body())?
+    } else {
+        bound_dimensions(*left_rows, *left_columns)?
+    };
+    let right_dimensions = if right_snapshot {
+        snapshot_numeric_dimensions(snapshot, snapshot_schema.body())?
+    } else {
+        bound_dimensions(*right_rows, *right_columns)?
+    };
+    if left_dimensions != right_dimensions {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let element_count = left_dimensions
+        .0
+        .checked_mul(left_dimensions.1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let dense = if left_snapshot {
+        right_input
+    } else {
+        left_input
+    };
+    if dense.len() != element_count || snapshot_numeric_element_count(snapshot)? != element_count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output = f64_output(output)?;
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    preflight_snapshot_dot_f64(schemas, &[snapshot], element_count)?;
+    let snapshot_values = snapshot_numeric_elements(snapshot)?;
+    let dense_values = dense_f64_canonical_drafts(dense, left_dimensions.0, left_dimensions.1)?;
+    let (left, right) = if left_snapshot {
+        (snapshot_values, dense_values)
+    } else {
+        (dense_values, snapshot_values)
+    };
+    let mut next = 0.0;
+    for (left, right) in left.into_iter().zip(right) {
+        let (ValueDataDraft::F64(left), ValueDataDraft::F64(right)) = (left, right) else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        next += left.to_f64() * right.to_f64();
+    }
+    let changed = target.to_bits() != next.to_bits();
+    *target = next;
+    Ok(changed)
 }
 
 trait ResidentSolveFloat:
@@ -14183,6 +18028,7 @@ fn matrix_solve_f64(
         1,
         1,
         0,
+        false,
         super::budget::KernelCostEstimate::default(),
     )?;
     let next = solve_dense(
@@ -14203,13 +18049,197 @@ fn matrix_solve_f64(
     Ok(changed)
 }
 
-fn matrix_solve_f32_snapshot(
+fn matrix_solve_snapshot_mixed_f64(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
-    let [rows, right_columns] = kernel.parameters() else {
+    let [
+        snapshot_output,
+        coefficient_snapshot,
+        right_snapshot,
+        bound_coefficient_rows,
+        bound_coefficient_columns,
+        bound_right_rows,
+        bound_right_columns,
+    ] = kernel.parameters()
+    else {
         return Err(ResidentKernelError::InvalidInput);
+    };
+    let flag = |value| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let snapshot_output = flag(*snapshot_output)?;
+    let coefficient_snapshot = flag(*coefficient_snapshot)?;
+    let right_snapshot = flag(*right_snapshot)?;
+    if coefficient_snapshot == right_snapshot {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let coefficient_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
+    let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let snapshot_value = |input, expected| match (input, expected) {
+        (ResidentValueRef::Snapshot([Some(value)]), true) => Ok(Some(value)),
+        (ResidentValueRef::Snapshot(_), _) | (_, true) => Err(ResidentKernelError::InvalidInput),
+        (ResidentValueRef::F64(_), false) => Ok(None),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let coefficients = snapshot_value(coefficient_input, coefficient_snapshot)?;
+    let right = snapshot_value(right_input, right_snapshot)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let coefficient_schema = coefficients
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let right_schema = right
+        .map(|value| {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)
+        })
+        .transpose()?;
+    let bound_dimensions = |rows: u64, columns: u64| {
+        Ok::<_, ResidentKernelError>((
+            usize::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?,
+            usize::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?,
+        ))
+    };
+    let coefficient_dimensions = match (coefficients, coefficient_schema) {
+        (Some(value), Some(schema)) => snapshot_matrix_dimensions(value, schema.body())?,
+        (None, None) => bound_dimensions(*bound_coefficient_rows, *bound_coefficient_columns)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let right_dimensions = match (right, right_schema) {
+        (Some(value), Some(schema)) => snapshot_matrix_dimensions(value, schema.body())?,
+        (None, None) => bound_dimensions(*bound_right_rows, *bound_right_columns)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    for schema in [coefficient_schema, right_schema].into_iter().flatten() {
+        if comparison_element_body(schema.body())
+            != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+    }
+    let (rows, columns) = coefficient_dimensions;
+    let (right_rows, right_columns) = right_dimensions;
+    let solve_work = matrix_solve_work(rows, right_columns)
+        .filter(|work| *work <= MAX_MATRIX_SOLVE_WORK)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if rows != columns || right_rows != rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let coefficient_count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let right_count = right_rows
+        .checked_mul(right_columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_count = rows
+        .checked_mul(right_columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let input_elements = coefficient_count
+        .checked_add(right_count)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let snapshot_input = coefficients
+        .or(right)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if snapshot_output {
+        preflight_snapshot_arithmetic(
+            kernel,
+            schemas,
+            &[snapshot_input],
+            &output,
+            input_elements,
+            output_count,
+            solve_work.saturating_sub(output_count),
+        )?;
+    } else {
+        preflight_snapshot_dense_f64_output(
+            schemas,
+            &[snapshot_input],
+            input_elements,
+            output_count,
+            solve_work.saturating_sub(output_count),
+        )?;
+    }
+    let snapshot_column_major =
+        |value: &mech_core::Value, rows: usize, columns: usize| match value.data() {
+            ValueData::Matrix(matrix) => match matrix.elements() {
+                SequenceView::F64(values) if values.len() == rows.saturating_mul(columns) => Ok((0
+                    ..columns)
+                    .flat_map(|column| {
+                        (0..rows).map(move |row| values[row * columns + column].to_f64())
+                    })
+                    .collect::<Vec<_>>()),
+                _ => Err(ResidentKernelError::InvalidInput),
+            },
+            _ => Err(ResidentKernelError::InvalidInput),
+        };
+    let dense_column_major = |input: ResidentValueRef<'_>, expected: usize| match input {
+        ResidentValueRef::F64(values) if values.len() == expected => Ok(values.to_vec()),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let coefficient_values = match coefficients {
+        Some(value) => snapshot_column_major(value, rows, columns)?,
+        None => dense_column_major(coefficient_input, coefficient_count)?,
+    };
+    let right_values = match right {
+        Some(value) => snapshot_column_major(value, right_rows, right_columns)?,
+        None => dense_column_major(right_input, right_count)?,
+    };
+    let next = solve_dense(coefficient_values, right_values, rows, right_columns)?;
+    if snapshot_output {
+        let output_shape = resolved_snapshot_output_shape(kernel, rows, right_columns)?;
+        let data = (0..rows)
+            .flat_map(|row| {
+                let next = &next;
+                (0..right_columns).map(move |column| {
+                    ValueDataDraft::F64(F64Bits::from_f64(next[row + column * rows]))
+                })
+            })
+            .collect::<Vec<_>>();
+        write_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            output,
+            &output_shape,
+            ValueDataDraft::Matrix(data.into_boxed_slice()),
+            Some(0),
+        )
+    } else {
+        let ResidentValueMut::F64(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != output_count {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let changed = output
+            .iter()
+            .zip(&next)
+            .any(|(current, next)| current.to_bits() != next.to_bits());
+        output.copy_from_slice(&next);
+        Ok(changed)
+    }
+}
+
+fn matrix_solve_snapshot(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [snapshot_output] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let snapshot_output = match *snapshot_output {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
     };
     let (
         Some(ResidentValueRef::Snapshot([Some(coefficients)])),
@@ -14218,23 +18248,67 @@ fn matrix_solve_f32_snapshot(
     else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let rows = *rows as usize;
-    let right_columns = *right_columns as usize;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let coefficient_schema = coefficients
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let right_schema = right
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (
+        SchemaBody::Matrix {
+            element: coefficient_element,
+            ..
+        },
+        SchemaBody::Matrix {
+            element: right_element,
+            ..
+        },
+    ) = (coefficient_schema.body(), right_schema.body())
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let output_element = if snapshot_output {
+        let metadata = kernel
+            .snapshot_output()
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let output_schema = schemas
+            .get(metadata.schema)
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        let SchemaBody::Matrix { element, .. } = output_schema.body() else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        element.as_ref()
+    } else {
+        &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+    };
+    if coefficient_element != right_element || coefficient_element.as_ref() != output_element {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let (rows, columns) = snapshot_matrix_dimensions(coefficients, coefficient_schema.body())?;
+    let (right_rows, right_columns) = snapshot_matrix_dimensions(right, right_schema.body())?;
+    if rows != columns
+        || right_rows != rows
+        || matrix_solve_work(rows, right_columns).is_none_or(|work| work > MAX_MATRIX_SOLVE_WORK)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_shape = snapshot_output
+        .then(|| resolved_snapshot_output_shape(kernel, rows, right_columns))
+        .transpose()?;
+    let element_bytes = match coefficient_element.as_ref() {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => core::mem::size_of::<f32>(),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => core::mem::size_of::<f64>(),
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
     let output_count = rows
         .checked_mul(right_columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_container_bytes = output_count
         .checked_mul(core::mem::size_of::<ValueDataDraft>())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let schemas = kernel
-        .snapshot_schemas()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    coefficients
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
-    right
-        .validate_against(schemas)
-        .map_err(|_| ResidentKernelError::InvalidInput)?;
     let mut meter = super::budget::ResidentBudgetMeter::default();
     super::budget::measure_canonical_value_footprint(&mut meter, coefficients, schemas)?;
     super::budget::measure_canonical_value_footprint(&mut meter, right, schemas)?;
@@ -14246,26 +18320,23 @@ fn matrix_solve_f32_snapshot(
             )?),
             None => None,
         },
+        ResidentValueMut::F64(values) if !snapshot_output && values.len() == output_count => None,
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
-    let metadata = kernel
-        .snapshot_output()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
-    let output_nodes = super::budget::checked_u64(output_count)?
-        .checked_add(2)
+    // Canonical primitive matrices retain one value, one matrix, and one
+    // packed sequence regardless of their population. Per-element drafts are
+    // temporary storage and are charged separately below.
+    let output_nodes = if snapshot_output { 3 } else { 0 };
+    let output_payload_bytes = output_count
+        .checked_mul(element_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_footprint = ValueFootprint {
-        encoded_bytes: output_nodes,
-        retained_bytes: super::budget::checked_u64(
-            output_count
-                .checked_mul(core::mem::size_of::<f32>())
-                .and_then(|bytes| bytes.checked_add(output_container_bytes))
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )?,
+        encoded_bytes: super::budget::checked_u64(output_payload_bytes)?,
+        retained_bytes: super::budget::checked_u64(output_payload_bytes)?,
         node_count: output_nodes,
     };
-    let publication_work = match (&output, previous_footprint) {
-        (ResidentValueMut::Snapshot(values), Some(previous_footprint)) => {
+    let publication_work = match (&output, previous_footprint, output_shape.as_ref()) {
+        (ResidentValueMut::Snapshot(values), Some(previous_footprint), Some(output_shape)) => {
             let previous = values
                 .first()
                 .and_then(|value| value.as_ref())
@@ -14274,8 +18345,11 @@ fn matrix_solve_f32_snapshot(
                 schemas,
                 previous,
                 previous_footprint,
-                metadata.schema,
-                metadata.shape.parameter_values().len(),
+                kernel
+                    .snapshot_output()
+                    .ok_or(ResidentKernelError::InvalidOutput)?
+                    .schema,
+                output_shape.parameter_values().len(),
                 output_footprint,
             )?
         }
@@ -14307,44 +18381,101 @@ fn matrix_solve_f32_snapshot(
     admit_matrix_solve(
         rows,
         right_columns,
-        core::mem::size_of::<f32>(),
+        element_bytes,
         2,
         3,
         output_container_bytes,
+        true,
         supplemental,
     )?;
-    let canonical_coefficients =
-        f32_snapshot_values(coefficients).ok_or(ResidentKernelError::InvalidInput)?;
-    let canonical_right = f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
-    let to_column_major = |values: &[f32], columns: usize| {
+    let to_column_major_f32 = |values: &[f32], columns: usize| {
         (0..columns)
             .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
             .collect::<Vec<_>>()
     };
-    let next = solve_dense(
-        to_column_major(&canonical_coefficients, rows),
-        to_column_major(&canonical_right, right_columns),
-        rows,
-        right_columns,
-    )?;
-    let canonical_next = (0..rows)
-        .flat_map(|row| {
-            let next = &next;
-            (0..right_columns).map(move |column| next[row + column * rows])
-        })
-        .collect::<Vec<_>>();
-    write_snapshot_data_with_work_budget(
-        kernel,
-        output,
-        ValueDataDraft::Matrix(
-            canonical_next
-                .into_iter()
-                .map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        ),
-        Some(0),
-    )
+    let to_column_major_f64 = |values: &[f64], columns: usize| {
+        (0..columns)
+            .flat_map(|column| (0..rows).map(move |row| values[row * columns + column]))
+            .collect::<Vec<_>>()
+    };
+    let data = match coefficient_element.as_ref() {
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            let canonical_coefficients =
+                f32_snapshot_values(coefficients).ok_or(ResidentKernelError::InvalidInput)?;
+            let canonical_right =
+                f32_snapshot_values(right).ok_or(ResidentKernelError::InvalidInput)?;
+            let next = solve_dense(
+                to_column_major_f32(&canonical_coefficients, rows),
+                to_column_major_f32(&canonical_right, right_columns),
+                rows,
+                right_columns,
+            )?;
+            ValueDataDraft::Matrix(
+                (0..rows)
+                    .flat_map(|row| {
+                        let next = &next;
+                        (0..right_columns).map(move |column| {
+                            ValueDataDraft::F32(F32Bits::from_f32(next[row + column * rows]))
+                        })
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        }
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+            let snapshot_f64 = |value: &mech_core::Value| match value.data() {
+                ValueData::Matrix(matrix) => match matrix.elements() {
+                    SequenceView::F64(values) => Ok(values
+                        .iter()
+                        .map(|value| value.to_f64())
+                        .collect::<Vec<_>>()),
+                    _ => Err(ResidentKernelError::InvalidInput),
+                },
+                _ => Err(ResidentKernelError::InvalidInput),
+            };
+            let canonical_coefficients = snapshot_f64(coefficients)?;
+            let canonical_right = snapshot_f64(right)?;
+            let next = solve_dense(
+                to_column_major_f64(&canonical_coefficients, rows),
+                to_column_major_f64(&canonical_right, right_columns),
+                rows,
+                right_columns,
+            )?;
+            ValueDataDraft::Matrix(
+                (0..rows)
+                    .flat_map(|row| {
+                        let next = &next;
+                        (0..right_columns).map(move |column| {
+                            ValueDataDraft::F64(F64Bits::from_f64(next[row + column * rows]))
+                        })
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            )
+        }
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    if let Some(output_shape) = output_shape {
+        write_snapshot_data_for_shape_with_work_budget(kernel, output, &output_shape, data, Some(0))
+    } else {
+        let ValueDataDraft::Matrix(values) = data else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        let ResidentValueMut::F64(output) = output else {
+            return Err(ResidentKernelError::InvalidOutput);
+        };
+        if output.len() != output_count {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        Ok(replace_f64(output, |index| {
+            let row = index % rows;
+            let column = index / rows;
+            let ValueDataDraft::F64(value) = values[row * right_columns + column] else {
+                unreachable!("dense snapshot solve output is F64")
+            };
+            value.to_f64()
+        }))
+    }
 }
 
 fn all_rows_columns(
@@ -14532,6 +18663,28 @@ mod tests {
         }
     }
 
+    #[test]
+    fn projected_fixed_snapshot_payload_uses_canonical_element_widths() {
+        use mech_core::{FloatWidth, IntegerWidth};
+
+        for (element, width) in [
+            (SchemaBody::Bool, 1),
+            (SchemaBody::UnsignedInteger(IntegerWidth::W8), 1),
+            (SchemaBody::SignedInteger(IntegerWidth::W16), 2),
+            (SchemaBody::FloatingPoint(FloatWidth::W32), 4),
+            (SchemaBody::Index, 8),
+            (SchemaBody::Complex(FloatWidth::W32), 8),
+            (SchemaBody::UnsignedInteger(IntegerWidth::W128), 16),
+            (SchemaBody::Rational64, 16),
+        ] {
+            assert_eq!(snapshot_fixed_element_encoded_bytes(&element), Some(width));
+        }
+        assert_eq!(
+            snapshot_fixed_element_encoded_bytes(&SchemaBody::String),
+            None
+        );
+    }
+
     fn test_schema(body: SchemaBody) -> mech_core::Schema {
         mech_core::SchemaDraft {
             dimension_parameters: Box::new([]),
@@ -14574,6 +18727,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         }
     }
@@ -14747,6 +18901,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(parameters.to_vec().into_boxed_slice())
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = test_contract(
@@ -15222,6 +19377,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(values)
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let input = layout(0, vec![2].into_boxed_slice());
@@ -15336,6 +19492,90 @@ mod tests {
         }
         .finalize(&SnapshotValidationContext::new(schemas))
         .unwrap()
+    }
+
+    #[test]
+    fn dense_string_snapshot_materialization_charges_every_comparison_byte() {
+        let (schemas, ids) = test_schema_table([SchemaBody::Matrix {
+            element: Box::new(SchemaBody::String),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        }]);
+        let schema = ids[0];
+        let shape = schemas
+            .get(schema)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let values = ["x".repeat(40_000), "y".repeat(40_000)];
+        let string_bytes = values.iter().map(String::len).sum::<usize>() as u64;
+        let cost = resident_value_snapshot_materialization_cost(
+            &schemas,
+            schema,
+            &shape,
+            ResidentValueRef::String(&values),
+        )
+        .unwrap();
+
+        assert_eq!(cost.output_elements, 2);
+        assert_eq!(cost.comparison_work, string_bytes + 2);
+        assert_eq!(cost.compute_work, string_bytes + 4);
+        assert_eq!(cost.retained_nodes, 5);
+        assert!(cost.comparison_work > super::super::budget::MAX_RESIDENT_COMPARISON_WORK);
+    }
+
+    #[test]
+    fn dense_snapshot_materialization_counts_canonical_sequence_nodes() {
+        let (schemas, ids) = test_schema_table([
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(65_536),
+                ]
+                .into_boxed_slice(),
+            },
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::String),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(65_534),
+                ]
+                .into_boxed_slice(),
+            },
+        ]);
+        let numeric_shape = schemas
+            .get(ids[0])
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let numeric = vec![0.0; 65_536];
+        let numeric_cost = resident_value_snapshot_materialization_cost(
+            &schemas,
+            ids[0],
+            &numeric_shape,
+            ResidentValueRef::F64(&numeric),
+        )
+        .unwrap();
+        assert_eq!(numeric_cost.retained_nodes, 3);
+
+        let string_shape = schemas
+            .get(ids[1])
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        let strings = vec![String::new(); 65_534];
+        let string_cost = resident_value_snapshot_materialization_cost(
+            &schemas,
+            ids[1],
+            &string_shape,
+            ResidentValueRef::String(&strings),
+        )
+        .unwrap();
+        assert_eq!(string_cost.retained_nodes, 65_537);
     }
 
     #[test]
@@ -15610,6 +19850,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let row_shape = ResidentShape {
@@ -15843,7 +20084,7 @@ mod tests {
     }
 
     #[test]
-    fn indexed_assignment_capability_supports_maps_but_rejects_nested_matrix_members() {
+    fn indexed_assignment_capability_supports_maps_and_nested_matrix_members() {
         fn schema(body: SchemaBody) -> mech_core::Schema {
             mech_core::SchemaDraft {
                 dimension_parameters: Box::new([]),
@@ -15889,6 +20130,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
@@ -15954,7 +20196,7 @@ mod tests {
                 .into_boxed_slice(),
                 interaction: ExternalInteraction::Pure,
             });
-        assert!(matches!(
+        assert!(
             bind_indexed_assign(&ResidentKernelBindRequest {
                 contract: &matrix_contract,
                 schemas: &schemas,
@@ -15964,9 +20206,9 @@ mod tests {
                     port(index, ResidentValueKind::Index),
                 ],
                 output: port(tuple_matrix, ResidentValueKind::Snapshot),
-            }),
-            Err(ResidentKernelBindError::UnsupportedLayout)
-        ));
+            })
+            .is_ok()
+        );
     }
 
     #[test]
@@ -16212,6 +20454,104 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_boolean_logic_accepts_dense_matrix_operands_in_both_orders() {
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([matrix]);
+        let schema = ids[0];
+        let contract = test_contract(
+            &[schema, schema],
+            schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let snapshot = test_layout(
+            &schemas,
+            schema,
+            ResidentValueKind::Snapshot,
+            ResidentShape::SCALAR,
+        );
+        let dense = test_layout(
+            &schemas,
+            schema,
+            ResidentValueKind::Bool,
+            ResidentShape {
+                rows: 2,
+                columns: 2,
+            },
+        );
+        let output = snapshot.clone();
+        let snapshot_value = Some(test_value(
+            &schemas,
+            schema,
+            ValueDataDraft::Matrix(
+                [true, false, true, false]
+                    .into_iter()
+                    .map(ValueDataDraft::Bool)
+                    .collect(),
+            ),
+        ));
+        // Dense resident matrices are column-major; this is the canonical
+        // row-major matrix [true true; false false].
+        let dense_values = [1_u8, 0, 1, 0];
+        for (operation, expected) in [
+            (0, [true, false, false, false]),
+            (1, [true, true, true, false]),
+            (2, [false, true, true, false]),
+        ] {
+            for snapshot_first in [true, false] {
+                let layouts = if snapshot_first {
+                    [snapshot.clone(), dense.clone()]
+                } else {
+                    [dense.clone(), snapshot.clone()]
+                };
+                let kernel = bind_snapshot_bool_binary(
+                    &ResidentKernelBindRequest {
+                        contract: &contract,
+                        schemas: &schemas,
+                        inputs: &layouts,
+                        output: output.clone(),
+                    },
+                    operation,
+                )
+                .unwrap();
+                let snapshot_values = [snapshot_value.clone()];
+                let inputs = if snapshot_first {
+                    [
+                        ResidentValueRef::Snapshot(&snapshot_values),
+                        ResidentValueRef::Bool(&dense_values),
+                    ]
+                } else {
+                    [
+                        ResidentValueRef::Bool(&dense_values),
+                        ResidentValueRef::Snapshot(&snapshot_values),
+                    ]
+                };
+                let mut actual = [None];
+                kernel
+                    .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut actual))
+                    .unwrap();
+                assert_eq!(
+                    actual[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+                    ValueDataDraft::Matrix(
+                        expected.into_iter().map(ValueDataDraft::Bool).collect()
+                    )
+                );
+            }
+        }
+    }
+
+    #[test]
     fn boolean_matrix_not_preserves_shape_and_rejects_noncanonical_input_atomically() {
         let kernel = BoundResidentKernel::new(bool_vector_not, Box::new([]));
         let input = [1_u8, 0, 0, 1];
@@ -16266,6 +20606,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
@@ -16426,6 +20767,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
@@ -16600,6 +20942,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let inputs = [
@@ -16747,6 +21090,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let output = mech_core::ResidentPortLayout {
@@ -16759,6 +21103,7 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(Box::new([]))
                 .unwrap(),
+            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
@@ -16856,6 +21201,7 @@ mod tests {
                     .unwrap()
                     .instantiate_shape(Box::new([]))
                     .unwrap(),
+                activation_fixed_shape: true,
                 resolved_selector: None,
             };
             let request = ResidentKernelBindRequest {
@@ -17217,6 +21563,123 @@ mod tests {
             conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
             Err(ResidentKernelError::InvalidInput)
         );
+    }
+
+    #[test]
+    fn snapshot_index_conversion_publishes_runtime_cardinality() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft,
+        };
+        let parameter = || DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let input_handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![parameter()].into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let output_handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![parameter()].into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Index),
+                        dimensions: vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let input_schema = built.resolve(input_handle).unwrap();
+        let output_schema = built.resolve(output_handle).unwrap();
+        let (schemas, _) = built.into_parts();
+        let layout = |schema_id| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind: ResidentValueKind::Snapshot,
+            shape: ResidentShape::SCALAR,
+            shape_instance: schemas
+                .get(schema_id)
+                .unwrap()
+                .instantiate_shape(vec![0].into_boxed_slice())
+                .unwrap(),
+            activation_fixed_shape: true,
+            resolved_selector: None,
+        };
+        let contract = test_contract(
+            &[input_schema],
+            output_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_scalar_index(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[layout(input_schema)],
+            output: layout(output_schema),
+        })
+        .unwrap();
+        let input = ValueDraft {
+            schema: input_schema,
+            shape_values: vec![3].into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0]
+                    .into_iter()
+                    .map(F64Bits::from_f64)
+                    .map(ValueDataDraft::F64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let input = [Some(input)];
+        let inputs = [ResidentValueRef::Snapshot(&input)];
+        let mut output = [None];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true)
+        );
+        let output = output[0].as_ref().unwrap();
+        assert_eq!(
+            snapshot_matrix_dimensions(output, schemas.get(output_schema).unwrap().body()),
+            Ok((3, 1))
+        );
+        let ValueData::Matrix(matrix) = output.data() else {
+            panic!("index conversion must publish a matrix")
+        };
+        let SequenceView::Index(values) = matrix.elements() else {
+            panic!("index conversion must retain packed indices")
+        };
+        assert_eq!(values, &[1, 2, 3]);
     }
 
     #[test]
@@ -19432,6 +23895,122 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_access_rejects_compensating_runtime_axis_errors() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft,
+        };
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                DimensionExpr::Constant(rows),
+                DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let source_handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: (0..2)
+                        .map(|index| DimensionParameterDeclaration {
+                            id: DimensionParameterId::new(index),
+                            origin: DimensionParameterOrigin::Inferred,
+                            lifetime: DimensionLifetime::Turn,
+                            lower_bound: DimensionExpr::Constant(0),
+                            upper_bound: None,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(
+                            mech_core::IntegerWidth::W64,
+                        )),
+                        dimensions: vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let selector_handle = builder
+            .insert(test_schema(matrix(SchemaBody::Bool, 3, 1)))
+            .unwrap();
+        let output_handle = builder
+            .insert(test_schema(matrix(
+                SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
+                1,
+                4,
+            )))
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let source_schema = built.resolve(source_handle).unwrap();
+        let selector_schema = built.resolve(selector_handle).unwrap();
+        let output_schema = built.resolve(output_handle).unwrap();
+        let (schemas, _) = built.into_parts();
+        let source = ValueDraft {
+            schema: source_schema,
+            shape_values: vec![3, 2].into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                (1..=6)
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&schemas))
+        .unwrap();
+        let selector = test_value(
+            &schemas,
+            selector_schema,
+            ValueDataDraft::Matrix(
+                [true, true, false]
+                    .into_iter()
+                    .map(ValueDataDraft::Bool)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let plan = SnapshotAccessPlan {
+            dense_source: None,
+            matrix_constructor: None,
+            selectors: Box::new([]),
+            matrix_mode: Some(ResolvedSelectionMode::Rows),
+            source_dimensions: None,
+            // The element count agrees with the selected 2x2 result, but the
+            // individual axes do not.
+            output_dimensions: Some((1, 4)),
+            output_dimensions_dynamic: false,
+            output_geometry: ResolvedAccessGeometry {
+                logical_output_rows: 1,
+                logical_output_columns: 4,
+            },
+            aggregate_ordinal: None,
+            output_schema,
+        };
+        let source_input = Some(source.clone());
+        let selector_input = Some(selector);
+        let inputs = [
+            ResidentValueRef::Snapshot(core::slice::from_ref(&source_input)),
+            ResidentValueRef::Snapshot(core::slice::from_ref(&selector_input)),
+        ];
+        assert!(matches!(
+            snapshot_access_output_cost(
+                &source,
+                schemas.get(source_schema).unwrap().body(),
+                &plan,
+                &Inputs(&inputs),
+                &mut super::super::budget::ResidentBudgetMeter::default(),
+            ),
+            Err(ResidentKernelError::InvalidShape),
+        ));
+    }
+
+    #[test]
     fn missing_map_key_is_admitted_before_the_first_comparison() {
         let string_body = SchemaBody::String;
         let u64_body = SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64);
@@ -20836,11 +25415,18 @@ mod tests {
         let kernel = BoundResidentKernel::new(
             snapshot_comparison,
             vec![
-                100,
-                100,
-                BINARY_BROADCAST_SCALAR,
-                BINARY_BROADCAST_SCALAR,
                 SemanticComparison::Equal as u64,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                100,
+                100,
+                BINARY_BROADCAST_SCALAR,
+                BINARY_BROADCAST_SCALAR,
             ]
             .into_boxed_slice(),
         )
@@ -20852,6 +25438,90 @@ mod tests {
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(output.iter().all(|value| *value == 9));
+    }
+
+    #[test]
+    fn snapshot_string_matrix_compares_with_dense_scalar_into_snapshot_output() {
+        let matrix = |element| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(2),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([
+            matrix(SchemaBody::String),
+            SchemaBody::String,
+            matrix(SchemaBody::Bool),
+        ]);
+        let [input_schema, scalar_schema, output_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*input_schema, *scalar_schema],
+            *output_schema,
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_semantic_equal(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                test_layout(
+                    &schemas,
+                    *input_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+                test_layout(
+                    &schemas,
+                    *scalar_schema,
+                    ResidentValueKind::String,
+                    ResidentShape::SCALAR,
+                ),
+            ],
+            output: test_layout(
+                &schemas,
+                *output_schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let input = test_value(
+            &schemas,
+            *input_schema,
+            ValueDataDraft::Matrix(
+                ["a", "b", "a", "c"]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::String(value.into()))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        );
+        let input = [Some(input)];
+        let scalar = [String::from("a")];
+        let inputs = [
+            ResidentValueRef::Snapshot(&input),
+            ResidentValueRef::String(&scalar),
+        ];
+        let mut output = [None];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true),
+        );
+        let ValueData::Matrix(output) = output[0].as_ref().unwrap().data() else {
+            panic!("comparison must publish a Bool matrix")
+        };
+        let SequenceView::Bool(values) = output.elements() else {
+            panic!("comparison must use packed Bool storage")
+        };
+        assert_eq!(values, &[true, false, true, false]);
     }
 
     #[test]
@@ -21000,8 +25670,8 @@ mod tests {
         let [f32_matrix, u64_scalar, u64_matrix] = ids.as_slice() else {
             unreachable!()
         };
-        let snapshot_kernel = |executor, output_schema| {
-            BoundResidentKernel::new(executor, Box::new([]))
+        let snapshot_kernel = |executor, output_schema, parameters| {
+            BoundResidentKernel::new(executor, parameters)
                 .with_snapshot_output(ResidentSnapshotOutput {
                     schema: output_schema,
                     schema_key: schemas.entry(output_schema).unwrap().key(),
@@ -21033,8 +25703,12 @@ mod tests {
         ];
         let mut output = [None];
         assert_eq!(
-            snapshot_kernel(math_copysign_f32, *f32_matrix)
-                .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output),),
+            snapshot_kernel(
+                math_copysign_snapshot,
+                *f32_matrix,
+                vec![1, 1, 1, 65_537, 1, 65_537, 1].into_boxed_slice(),
+            )
+            .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output),),
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(output[0].is_none());
@@ -21057,11 +25731,80 @@ mod tests {
         ];
         let mut output = [None];
         assert_eq!(
-            snapshot_kernel(matrix_dot_snapshot, *u64_scalar)
+            snapshot_kernel(matrix_dot_snapshot, *u64_scalar, Box::new([]))
                 .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output),),
             Err(ResidentKernelError::InvalidShape),
         );
         assert!(output[0].is_none());
+    }
+
+    #[test]
+    fn snapshot_dot_rejects_equal_cardinality_with_different_live_axes() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft,
+        };
+
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let matrix_handle = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: (0..2)
+                        .map(|index| DimensionParameterDeclaration {
+                            id: DimensionParameterId::new(index),
+                            origin: DimensionParameterOrigin::Inferred,
+                            lifetime: DimensionLifetime::Turn,
+                            lower_bound: DimensionExpr::Constant(0),
+                            upper_bound: None,
+                        })
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let matrix_schema = built.resolve(matrix_handle).unwrap();
+        let (schemas, _) = built.into_parts();
+        let value = |shape_values: [u64; 2]| {
+            ValueDraft {
+                schema: matrix_schema,
+                shape_values: shape_values.into(),
+                data: ValueDataDraft::Matrix(
+                    [1.0, 2.0, 3.0, 4.0]
+                        .into_iter()
+                        .map(F64Bits::from_f64)
+                        .map(ValueDataDraft::F64)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap()
+        };
+        let left = [Some(value([2, 2]))];
+        let right = [Some(value([1, 4]))];
+        let inputs = [
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ];
+        let kernel = BoundResidentKernel::new(matrix_dot_snapshot_f64, Box::new([]))
+            .with_snapshot_schemas(schemas);
+        let mut output = [99.0];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(output, [99.0]);
     }
 
     #[test]
