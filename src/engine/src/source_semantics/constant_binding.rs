@@ -97,7 +97,11 @@ impl CanonicalSourceProgram {
                     .schemas
                     .get(schema)
                     .expect("canonical input schema is validated");
-                let rebound = if matches!(target.body(), SchemaBody::Dynamic) {
+                // A Dynamic input already carries its payload identity. Only a
+                // concrete supplied value needs the boundary's Dynamic wrapper.
+                let rebound = if matches!(target.body(), SchemaBody::Dynamic)
+                    && !matches!(value.data(), mech_core::ValueData::Dynamic(_))
+                {
                     let concrete_schema = self
                         .schemas
                         .find_by_key(value.schema_key())
