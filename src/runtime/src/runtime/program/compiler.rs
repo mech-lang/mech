@@ -3434,10 +3434,7 @@ fn canonical_resource_send_operations(
         .collect()
 }
 
-fn resource_send_path_specificity(
-    declared: Option<&str>,
-    requested: &str,
-) -> Option<u8> {
+fn resource_send_path_specificity(declared: Option<&str>, requested: &str) -> Option<u8> {
     match declared {
         None => Some(0),
         Some(path) if path == requested => Some(2),

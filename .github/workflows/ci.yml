@@ -427,6 +427,12 @@ jobs:
             bash scripts/smoke-served-resident-ekf-browser.sh
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+            MECH_EKF_FILTER_COUNT=1 \
+            MECH_EKF_CONTINUITY_EDIT=false \
+            MECH_EKF_RESULT_FILE=/tmp/ekf-cpu-single-no-edit.json \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+          MECH_BIN=target/debug/mech \
+            MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
             MECH_EKF_CONTINUITY_EDIT=false \
             MECH_EKF_RESULT_FILE=/tmp/ekf-cpu-no-edit.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
@@ -449,6 +455,8 @@ jobs:
 
           with open("/tmp/ekf-cpu-single.json") as source:
               cpu_single = json.load(source)
+          with open("/tmp/ekf-cpu-single-no-edit.json") as source:
+              cpu_single_no_edit = json.load(source)
           with open("/tmp/ekf-cpu-no-edit.json") as source:
               cpu_no_edit = json.load(source)
           with open("/tmp/ekf-cpu.json") as source:
@@ -460,10 +468,11 @@ jobs:
           # Each smoke independently proves that its asynchronous live robot
           # remains bounded and trackable. The continuity oracle is the first
           # completed filter turn after the edit boundary and is compared to
-          # an independent no-edit run on the same backend; unlike a later
-          # display frame, it is anchored to compute progress.
+          # an independent no-edit run on the same backend and filter count;
+          # unlike a later display frame, it is anchored to compute progress.
           if (
               cpu_single["backend"] != "cpu-scalar"
+              or cpu_single_no_edit["backend"] != "cpu-scalar"
               or cpu_no_edit["backend"] != "cpu-scalar"
               or cpu["backend"] != "cpu-scalar"
               or wgpu_no_edit["backend"] != "wgpu"
@@ -475,7 +484,7 @@ jobs:
           if len(cpu["output"]) != 15 or len(wgpu["output"]) != 15:
               raise SystemExit("the EKF checkpoint must contain state, covariance, and prediction")
           if any(len(result["continuity_output"]) != 15 for result in (
-              cpu_single, cpu_no_edit, cpu, wgpu_no_edit, wgpu,
+              cpu_single, cpu_single_no_edit, cpu_no_edit, cpu, wgpu_no_edit, wgpu,
           )):
               raise SystemExit("the EKF continuity checkpoint must contain one complete lane")
           relative_tolerance = 5e-5
@@ -483,7 +492,11 @@ jobs:
           continuity_failures = []
           continuity_oracles = (
               ("CPU-1000 edited", cpu_no_edit["continuity_output"], cpu["continuity_output"]),
-              ("CPU-1", cpu_no_edit["continuity_output"], cpu_single["continuity_output"]),
+              (
+                  "CPU-1 edited",
+                  cpu_single_no_edit["continuity_output"],
+                  cpu_single["continuity_output"],
+              ),
               (
                   "WebGPU-1000 edited",
                   wgpu_no_edit["continuity_output"],
@@ -523,6 +536,8 @@ jobs:
                       f"cpu={left}, wgpu={right}, error={error}, tolerance={tolerance}"
                   )
           print("EKF_WEBGPU_PARITY", json.dumps({
+              "cpu_single_no_edit": cpu_single_no_edit,
+              "cpu_single": cpu_single,
               "cpu_no_edit": cpu_no_edit,
               "cpu": cpu,
               "wgpu_no_edit": wgpu_no_edit,

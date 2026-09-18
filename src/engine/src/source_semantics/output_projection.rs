@@ -104,12 +104,10 @@ impl CanonicalSourceProgram {
         self.source_map.inputs = retain(self.source_map.inputs, &inputs);
         self.program.nodes = retain(self.program.nodes, &nodes);
         self.program.requirements =
-            retain_node_requirements(&mut self.program.nodes, &self.program.requirements)
-                .map_err(|error| SourceSemanticError {
+            retain_node_requirements(&mut self.program.nodes, &self.program.requirements).map_err(
+                |error| SourceSemanticError {
                     code: "source-semantics/invalid-static-requirements",
-                    message: format!(
-                        "retained static requirement table is invalid: {error:?}"
-                    ),
+                    message: format!("retained static requirement table is invalid: {error:?}"),
                     anchor: self.source_map.outputs.first().copied().unwrap_or(
                         SourceSemanticAnchor {
                             document: DocumentId(0),
@@ -117,7 +115,8 @@ impl CanonicalSourceProgram {
                             range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
                         },
                     ),
-                })?;
+                },
+            )?;
         self.contracts = retain(self.contracts, &nodes);
         self.source_map.nodes = retain(self.source_map.nodes, &nodes);
         self.program.states = retain(self.program.states, &states);
@@ -191,12 +190,7 @@ fn retain_node_requirements(
     let remap = retained
         .iter()
         .enumerate()
-        .map(|(new, old)| {
-            (
-                *old,
-                mech_core::ApplicationRequirementId::new(new as u32),
-            )
-        })
+        .map(|(new, old)| (*old, mech_core::ApplicationRequirementId::new(new as u32)))
         .collect::<BTreeMap<_, _>>();
     let entries = retained
         .iter()
@@ -266,8 +260,7 @@ mod requirement_projection_tests {
         let mut nodes = vec![SourceNode {
             body: crate::SourceNodeBody::Operation {
                 operation: OperationReference {
-                    module_path: vec!["resource".to_owned(), "read".to_owned()]
-                        .into_boxed_slice(),
+                    module_path: vec!["resource".to_owned(), "read".to_owned()].into_boxed_slice(),
                     operation_name: "read".to_owned(),
                 },
                 requirement: Some(retained_old),
