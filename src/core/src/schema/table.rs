@@ -82,6 +82,14 @@ impl SchemaTableBuilder {
         self.finish_with(u32::MAX as usize, Schema::key)
     }
 
+    #[cfg(test)]
+    pub(crate) fn finish_with_test_key(
+        self,
+        key: SchemaKey,
+    ) -> Result<SchemaTableBuild, SemanticModelError> {
+        self.finish_with(u32::MAX as usize, |_| key)
+    }
+
     fn finish_with(
         self,
         unique_limit: usize,

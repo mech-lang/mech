@@ -129,6 +129,16 @@ struct ResolvedPatternItem {
     source_contexts: Option<Arc<[Arc<SourceSchemaContext>]>>,
 }
 
+struct ResolvedPatternItemView<'a> {
+    projection_schema: Option<SchemaId>,
+    shape_values: Box<[u64]>,
+    body: SchemaBody,
+    data: &'a ValueDataDraft,
+    source_data: Option<&'a ValueData>,
+    source_context: Option<Arc<SourceSchemaContext>>,
+    source_contexts: Option<Arc<[Arc<SourceSchemaContext>]>>,
+}
+
 fn projection_declarations(
     schema: &Schema,
 ) -> Result<Box<[DimensionParameterDeclaration]>, SemanticModelError> {
@@ -788,6 +798,138 @@ fn resolve_pattern_item(
     }
 }
 
+fn resolve_pattern_item_view<'a>(
+    item: &'a PatternItem,
+    schemas: &SchemaTable,
+) -> Result<Option<ResolvedPatternItemView<'a>>, ResidentKernelError> {
+    match item {
+        PatternItem::Plain(_) => Err(ResidentKernelError::InvalidInput),
+        PatternItem::Component {
+            schema,
+            body,
+            shape_values,
+            data,
+        } => Ok(Some(ResolvedPatternItemView {
+            projection_schema: *schema,
+            shape_values: shape_values.clone(),
+            body: body.clone(),
+            data,
+            source_data: None,
+            source_context: None,
+            source_contexts: None,
+        })),
+        PatternItem::SourceComponent {
+            projection_schema,
+            value_schema,
+            body,
+            shape_values,
+            data,
+            source_data,
+            context,
+            contexts,
+        } => {
+            let mut projection_schema = *projection_schema;
+            let mut value_schema = *value_schema;
+            let mut body = body.clone();
+            let mut shape_values = shape_values.clone();
+            let mut data = data;
+            let mut source_data = source_data.as_ref();
+            let mut context = Arc::clone(context);
+            loop {
+                if !matches!(body, SchemaBody::Dynamic) {
+                    if let Some(schema) = value_schema {
+                        let key = context
+                            .schemas
+                            .entry(schema)
+                            .ok_or(ResidentKernelError::InvalidInput)?
+                            .key();
+                        indexed_schema_id(&context.binding_schema_index, key)
+                            .ok_or(ResidentKernelError::InvalidInput)?;
+                    }
+                    return Ok(Some(ResolvedPatternItemView {
+                        projection_schema,
+                        shape_values,
+                        body,
+                        data,
+                        source_data,
+                        source_context: Some(context),
+                        source_contexts: Some(Arc::clone(contexts)),
+                    }));
+                }
+                let ValueDataDraft::Dynamic(Some(draft)) = data else {
+                    return Ok(None);
+                };
+                let Some(ValueData::Dynamic(canonical)) = source_data else {
+                    return Err(ResidentKernelError::InvalidInput);
+                };
+                let value = canonical.value().ok_or(ResidentKernelError::InvalidInput)?;
+                let owner = value.schemas().ok_or(ResidentKernelError::InvalidInput)?;
+                context = source_context_for_owner(contexts, &owner)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                let schema = value.schema();
+                if draft.schema != schema
+                    || value.schema_key()
+                        != context
+                            .schemas
+                            .entry(schema)
+                            .ok_or(ResidentKernelError::InvalidInput)?
+                            .key()
+                {
+                    return Err(ResidentKernelError::InvalidInput);
+                }
+                let definition = context
+                    .schemas
+                    .get(schema)
+                    .ok_or(ResidentKernelError::InvalidInput)?;
+                body = definition
+                    .closed_body(value.shape())
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                shape_values = value.shape().parameter_values().to_vec().into_boxed_slice();
+                data = &draft.data;
+                source_data = Some(value.data());
+                projection_schema = Some(schema);
+                value_schema = Some(schema);
+            }
+        }
+        PatternItem::Dynamic(None) => Ok(None),
+        PatternItem::Dynamic(Some(value)) => {
+            let mut value = value.as_ref();
+            loop {
+                let schema = value.schema;
+                let shape = schemas
+                    .get(schema)
+                    .ok_or(ResidentKernelError::InvalidInput)?
+                    .instantiate_shape(value.shape_values.clone())
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                let body = schemas
+                    .get(schema)
+                    .ok_or(ResidentKernelError::InvalidInput)?
+                    .closed_body(&shape)
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                if matches!(body, SchemaBody::Dynamic) {
+                    match &value.data {
+                        ValueDataDraft::Dynamic(Some(next)) => {
+                            value = next.as_ref();
+                            continue;
+                        }
+                        ValueDataDraft::Dynamic(None) => return Ok(None),
+                        _ => {}
+                    }
+                }
+                return Ok(Some(ResolvedPatternItemView {
+                    projection_schema: Some(schema),
+                    shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+                    body,
+                    data: &value.data,
+                    source_data: None,
+                    source_context: None,
+                    source_contexts: None,
+                }));
+            }
+        }
+    }
+}
+
 fn adapt_resolved_pattern_item(
     item: ResolvedPatternItem,
     target: &SchemaBody,
@@ -1313,16 +1455,16 @@ impl PatternItem {
             },
             Self::Dynamic(None) => None,
             Self::Dynamic(Some(_)) | Self::Component { .. } | Self::SourceComponent { .. } => {
-                let resolved = resolve_pattern_item(self.clone(), schemas).ok()??;
+                let resolved = resolve_pattern_item_view(self, schemas).ok()??;
                 selected(
                     resolved.projection_schema,
                     &resolved.body,
                     &resolved.shape_values,
-                    &resolved.data,
+                    resolved.data,
                     index,
                     schemas,
                     projections,
-                    resolved.source_data.as_ref(),
+                    resolved.source_data,
                     resolved.source_context,
                     resolved.source_contexts,
                 )
@@ -1419,17 +1561,17 @@ impl PatternItem {
             }
             Self::Plain(_) | Self::Dynamic(None) => None,
             Self::Dynamic(Some(_)) | Self::Component { .. } | Self::SourceComponent { .. } => {
-                let resolved = resolve_pattern_item(self.clone(), schemas).ok()??;
+                let resolved = resolve_pattern_item_view(self, schemas).ok()??;
                 selected(
                     resolved.projection_schema,
                     &resolved.body,
                     &resolved.shape_values,
-                    &resolved.data,
+                    resolved.data,
                     prefix,
                     suffix,
                     schemas,
                     projections,
-                    resolved.source_data.as_ref(),
+                    resolved.source_data,
                     resolved.source_context,
                     resolved.source_contexts,
                 )
@@ -6577,22 +6719,42 @@ mod tests {
     }
 
     #[test]
-    fn borrowed_pattern_descent_clones_only_the_selected_child() {
+    fn component_pattern_descent_borrows_parent_and_clones_only_the_selected_child() {
         let payload = "payload".repeat(1 << 12);
-        let item = PatternItem::new(ValueDataDraft::Tuple(
-            vec![
-                ValueDataDraft::String(payload.clone()),
-                ValueDataDraft::String("unselected".repeat(1 << 12)),
-            ]
-            .into_boxed_slice(),
-        ));
+        let item = PatternItem::component(
+            None,
+            SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::String].into_boxed_slice()),
+            Box::new([]),
+            ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::String(payload.clone()),
+                    ValueDataDraft::String("unselected".repeat(1 << 12)),
+                ]
+                .into_boxed_slice(),
+            ),
+        );
         let schemas = SchemaTableBuilder::new().finish().unwrap().table;
+        let parent_data = match &item {
+            PatternItem::Component { data, .. } => data,
+            _ => panic!("expected component"),
+        };
+        let resolved = resolve_pattern_item_view(&item, &schemas)
+            .unwrap()
+            .expect("component resolves");
+        assert!(
+            core::ptr::eq(resolved.data, parent_data),
+            "descent must borrow the complete parent instead of cloning it",
+        );
 
         let child = item
             .child(0, &schemas, &StructuralProjectionTable::default())
             .expect("tuple child");
-        let PatternItem::Plain(ValueDataDraft::String(selected)) = child else {
-            panic!("expected String child")
+        let PatternItem::Component {
+            data: ValueDataDraft::String(selected),
+            ..
+        } = child
+        else {
+            panic!("expected String component child")
         };
         assert_eq!(selected, payload);
         assert_eq!(item.structural_len(true), Some(2));

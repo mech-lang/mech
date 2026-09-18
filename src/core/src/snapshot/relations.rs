@@ -58,11 +58,7 @@ impl Value {
         if self.shape() != other.shape() {
             return Ok(false);
         }
-        Ok(language_data_eq(
-            self_schema.body(),
-            self.data(),
-            other.data(),
-        ))
+        language_data_eq(self_schema.body(), self.data(), other.data())
     }
 
     pub fn key_cmp(
@@ -1015,7 +1011,7 @@ fn lexicographic(
 /// Applies the canonical language equality rules to two already-validated
 /// payloads under one shared schema.
 pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
-    language_data_eq(schema, left, right)
+    language_data_eq(schema, left, right).unwrap_or(false)
 }
 
 /// Compares the complete canonical representation of two already-validated
@@ -1091,117 +1087,125 @@ pub fn schema_data_partial_cmp(
     }
 }
 
-fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+fn language_data_eq(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+) -> Result<bool, SnapshotValueError> {
     match (schema, left, right) {
         (SchemaBody::Dynamic, ValueData::Dynamic(left), ValueData::Dynamic(right)) => {
             match (left.value(), right.value()) {
-                (None, None) => true,
+                (None, None) => Ok(true),
                 (Some(left), Some(right)) => {
                     let Some(left_schemas) = left.schemas() else {
-                        return false;
+                        return Ok(false);
                     };
                     let Some(right_schemas) = right.schemas() else {
-                        return false;
+                        return Ok(false);
                     };
                     left.language_eq(&left_schemas, right, &right_schemas)
-                        .unwrap_or(false)
                 }
-                _ => false,
+                _ => Ok(false),
             }
         }
         (
             SchemaBody::FloatingPoint(FloatWidth::W32),
             ValueData::F32(left),
             ValueData::F32(right),
-        ) => left.to_f32() == right.to_f32(),
+        ) => Ok(left.to_f32() == right.to_f32()),
         (
             SchemaBody::FloatingPoint(FloatWidth::W64),
             ValueData::F64(left),
             ValueData::F64(right),
-        ) => left.to_f64() == right.to_f64(),
+        ) => Ok(left.to_f64() == right.to_f64()),
         (
             SchemaBody::Complex(FloatWidth::W32),
             ValueData::Complex32(left),
             ValueData::Complex32(right),
-        ) => {
-            left.real().to_f32() == right.real().to_f32()
-                && left.imaginary().to_f32() == right.imaginary().to_f32()
-        }
+        ) => Ok(left.real().to_f32() == right.real().to_f32()
+            && left.imaginary().to_f32() == right.imaginary().to_f32()),
         (
             SchemaBody::Complex(FloatWidth::W64),
             ValueData::Complex64(left),
             ValueData::Complex64(right),
-        ) => {
-            left.real().to_f64() == right.real().to_f64()
-                && left.imaginary().to_f64() == right.imaginary().to_f64()
-        }
+        ) => Ok(left.real().to_f64() == right.real().to_f64()
+            && left.imaginary().to_f64() == right.imaginary().to_f64()),
         (SchemaBody::Option(element), ValueData::Option(left), ValueData::Option(right)) => {
             match (left, right) {
-                (None, None) => true,
+                (None, None) => Ok(true),
                 (Some(left), Some(right)) => language_data_eq(element, left, right),
-                _ => false,
+                _ => Ok(false),
             }
         }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
-            left.ordinal == right.ordinal
-                && match (
-                    variants[left.ordinal as usize].payload.as_ref(),
-                    left.payload.as_deref(),
-                    right.payload.as_deref(),
-                ) {
-                    (None, None, None) => true,
-                    (Some(schema), Some(left), Some(right)) => {
-                        language_data_eq(schema, left, right)
-                    }
-                    _ => false,
-                }
+            if left.ordinal != right.ordinal {
+                return Ok(false);
+            }
+            match (
+                variants[left.ordinal as usize].payload.as_ref(),
+                left.payload.as_deref(),
+                right.payload.as_deref(),
+            ) {
+                (None, None, None) => Ok(true),
+                (Some(schema), Some(left), Some(right)) => language_data_eq(schema, left, right),
+                _ => Ok(false),
+            }
         }
-        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => elements
-            .iter()
-            .zip(left)
-            .zip(right)
-            .all(|((schema, left), right)| language_data_eq(schema, left, right)),
-        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => fields
-            .iter()
-            .zip(left.fields())
-            .zip(right.fields())
-            .all(|((field, left), right)| language_data_eq(&field.schema, left, right)),
+        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
+            for ((schema, left), right) in elements.iter().zip(left).zip(right) {
+                if !language_data_eq(schema, left, right)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
+            for ((field, left), right) in fields.iter().zip(left.fields()).zip(right.fields()) {
+                if !language_data_eq(&field.schema, left, right)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(left), ValueData::Matrix(right)) => {
             language_sequence_eq(element, &left.elements, &right.elements)
         }
         (SchemaBody::Table { columns, .. }, ValueData::Table(left), ValueData::Table(right)) => {
-            columns
+            for (column, (left, right)) in columns
                 .iter()
                 .zip(left.columns.iter().zip(right.columns.iter()))
-                .all(|(column, (left, right))| language_sequence_eq(&column.schema, left, right))
+            {
+                if !language_sequence_eq(&column.schema, left, right)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
         }
         (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
-            left.elements.len() == right.elements.len()
-                && left
-                    .elements
-                    .iter()
-                    .zip(right.elements.iter())
-                    .all(|(left, right)| {
-                        matches!(
-                            compare_key_data(element, left.data(), right.data()),
-                            Ok(Ordering::Equal)
-                        )
-                    })
+            if left.elements.len() != right.elements.len() {
+                return Ok(false);
+            }
+            for (left, right) in left.elements.iter().zip(right.elements.iter()) {
+                if compare_key_data(element, left.data(), right.data())? != Ordering::Equal {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
         }
         (SchemaBody::Map { key, value, .. }, ValueData::Map(left), ValueData::Map(right)) => {
-            left.entries.len() == right.entries.len()
-                && left
-                    .entries
-                    .iter()
-                    .zip(right.entries.iter())
-                    .all(|(left, right)| {
-                        matches!(
-                            compare_key_data(key, left.key().data(), right.key().data()),
-                            Ok(Ordering::Equal)
-                        ) && language_data_eq(value, left.value(), right.value())
-                    })
+            if left.entries.len() != right.entries.len() {
+                return Ok(false);
+            }
+            for (left, right) in left.entries.iter().zip(right.entries.iter()) {
+                if compare_key_data(key, left.key().data(), right.key().data())? != Ordering::Equal
+                    || !language_data_eq(value, left.value(), right.value())?
+                {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
         }
-        _ => exact_leaf_eq(left, right),
+        _ => Ok(exact_leaf_eq(left, right)),
     }
 }
 
@@ -1330,33 +1334,37 @@ fn language_sequence_eq(
     schema: &SchemaBody,
     left: &SequenceStorage,
     right: &SequenceStorage,
-) -> bool {
+) -> Result<bool, SnapshotValueError> {
     match (left, right) {
-        (SequenceStorage::F32(left), SequenceStorage::F32(right)) => left
+        (SequenceStorage::F32(left), SequenceStorage::F32(right)) => Ok(left
             .iter()
             .zip(right.iter())
-            .all(|(left, right)| left.to_f32() == right.to_f32()),
-        (SequenceStorage::F64(left), SequenceStorage::F64(right)) => left
+            .all(|(left, right)| left.to_f32() == right.to_f32())),
+        (SequenceStorage::F64(left), SequenceStorage::F64(right)) => Ok(left
             .iter()
             .zip(right.iter())
-            .all(|(left, right)| left.to_f64() == right.to_f64()),
+            .all(|(left, right)| left.to_f64() == right.to_f64())),
         (SequenceStorage::Complex32(left), SequenceStorage::Complex32(right)) => {
-            left.iter().zip(right.iter()).all(|(left, right)| {
+            Ok(left.iter().zip(right.iter()).all(|(left, right)| {
                 left.real().to_f32() == right.real().to_f32()
                     && left.imaginary().to_f32() == right.imaginary().to_f32()
-            })
+            }))
         }
         (SequenceStorage::Complex64(left), SequenceStorage::Complex64(right)) => {
-            left.iter().zip(right.iter()).all(|(left, right)| {
+            Ok(left.iter().zip(right.iter()).all(|(left, right)| {
                 left.real().to_f64() == right.real().to_f64()
                     && left.imaginary().to_f64() == right.imaginary().to_f64()
-            })
+            }))
         }
-        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => left
-            .iter()
-            .zip(right.iter())
-            .all(|(left, right)| language_data_eq(schema, left, right)),
-        _ => sequence_exact_eq(left, right),
+        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => {
+            for (left, right) in left.iter().zip(right.iter()) {
+                if !language_data_eq(schema, left, right)? {
+                    return Ok(false);
+                }
+            }
+            Ok(true)
+        }
+        _ => Ok(sequence_exact_eq(left, right)),
     }
 }
 
@@ -1494,10 +1502,10 @@ mod tests {
         let positive = ValueData::F32(F32Bits::from_f32(0.0));
         let negative = ValueData::F32(F32Bits::from_f32(-0.0));
         let float = SchemaBody::FloatingPoint(FloatWidth::W32);
-        assert!(language_data_eq(&float, &positive, &negative));
+        assert!(language_data_eq(&float, &positive, &negative).unwrap());
         assert!(!exact_data_eq(&float, &positive, &negative));
         let nan = ValueData::F32(F32Bits::from_bits(0x7fc0_0001));
-        assert!(!language_data_eq(&float, &nan, &nan));
+        assert!(!language_data_eq(&float, &nan, &nan).unwrap());
         assert!(exact_data_eq(&float, &nan, &nan));
 
         let positive = ValueData::Complex64(Complex64Bits::new(
@@ -1509,8 +1517,85 @@ mod tests {
             F64Bits::from_f64(-0.0),
         ));
         let complex = SchemaBody::Complex(FloatWidth::W64);
-        assert!(language_data_eq(&complex, &positive, &negative));
+        assert!(language_data_eq(&complex, &positive, &negative).unwrap());
         assert!(!exact_data_eq(&complex, &positive, &negative));
+    }
+
+    #[test]
+    fn nested_dynamic_language_equality_propagates_schema_definition_collision() {
+        fn forced_value(
+            body: SchemaBody,
+            data: crate::snapshot::ValueDataDraft,
+            key: crate::SchemaKey,
+        ) -> Value {
+            let mut builder = crate::SchemaTableBuilder::new();
+            let handle = builder
+                .insert(
+                    crate::SchemaDraft {
+                        body,
+                        dimension_parameters: Box::new([]),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap();
+            let build = builder.finish_with_test_key(key).unwrap();
+            let schema = build.resolve(handle).unwrap();
+            let schemas = std::sync::Arc::new(build.table);
+            crate::snapshot::ValueDraft {
+                schema,
+                shape_values: Box::new([]),
+                data,
+            }
+            .finalize(&crate::snapshot::SnapshotValidationContext::with_shared_schemas(&schemas))
+            .unwrap()
+        }
+
+        let forced = crate::SchemaKey::from_bytes([9; 32]);
+        let left_inner = forced_value(
+            SchemaBody::Bool,
+            crate::snapshot::ValueDataDraft::Bool(true),
+            forced,
+        );
+        let right_inner = forced_value(
+            SchemaBody::String,
+            crate::snapshot::ValueDataDraft::String("true".into()),
+            forced,
+        );
+
+        let mut builder = crate::SchemaTableBuilder::new();
+        let dynamic = builder
+            .insert(
+                crate::SchemaDraft {
+                    body: SchemaBody::Dynamic,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let dynamic = build.resolve(dynamic).unwrap();
+        let schemas = std::sync::Arc::new(build.table);
+        let left = crate::snapshot::wrap_resident_dynamic_value(
+            dynamic,
+            Box::new([]),
+            std::sync::Arc::clone(&schemas),
+            Some(left_inner),
+        )
+        .unwrap();
+        let right = crate::snapshot::wrap_resident_dynamic_value(
+            dynamic,
+            Box::new([]),
+            std::sync::Arc::clone(&schemas),
+            Some(right_inner),
+        )
+        .unwrap();
+
+        assert!(matches!(
+            left.language_eq(&schemas, &right, &schemas),
+            Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { key }) if key == forced
+        ));
     }
 }
 

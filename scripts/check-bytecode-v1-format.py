@@ -887,6 +887,11 @@ def validate_fixture(entry: dict[str, object]) -> None:
         instruction_count == sections[4]["item_count"],
         f"{name}: instruction section count disagrees with header",
     )
+    if sections[4]["item_count"] == 0:
+        require(
+            not section_payloads[4],
+            f"{name}: zero-count instruction section contains payload bytes",
+        )
     artifact_present = [bool(payload) for payload in section_payloads[7:]]
     require(
         all(artifact_present) or not any(artifact_present),
