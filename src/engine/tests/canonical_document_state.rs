@@ -38,6 +38,43 @@ fn compiled(source: &str) -> CanonicalSourceProgram {
         .unwrap_or_else(|error| panic!("{source:?}: {error}"))
 }
 
+#[test]
+fn canonical_documents_emit_complete_equivalent_bytecode_artifacts() {
+    let mut executable_node_count = 0;
+    for source in [
+        include_str!("fixtures/program-artifact/scalar-alias.mec"),
+        include_str!("fixtures/program-artifact/state-register.mec"),
+        include_str!("fixtures/program-artifact/matrix-literal.mec"),
+        include_str!("fixtures/program-artifact/comparison-output.mec"),
+        include_str!("fixtures/program-artifact/integrity-constraint.mec"),
+    ] {
+        let artifact = compiled(source).compile_artifact().unwrap();
+        let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytecode).unwrap();
+        let reencoded = mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap();
+
+        assert_eq!(bytecode, reencoded);
+        assert_eq!(artifact.contracts(), decoded.contracts());
+        assert_eq!(artifact.inputs(), decoded.inputs());
+        assert_eq!(artifact.slots(), decoded.slots());
+        assert_eq!(artifact.bindings(), decoded.bindings());
+        assert_eq!(artifact.outputs(), decoded.outputs());
+        assert_eq!(artifact.constraints(), decoded.constraints());
+        assert_eq!(artifact.nodes(), decoded.nodes());
+        assert_eq!(artifact.revision(), decoded.revision());
+        assert!(!artifact.schemas().is_empty());
+        executable_node_count += artifact.nodes().len();
+        assert!(artifact.nodes().iter().all(|node| {
+            let operation = node.as_operation().expect("ordinary canonical operation");
+            matches!(
+                artifact.contracts().get(operation.contract),
+                Some(mech_core::ResolvedOperationContract::Declared(_))
+            )
+        }));
+    }
+    assert!(executable_node_count > 0);
+}
+
 fn turns(source: &str, expected: &[f64]) {
     turns_for_output(
         source,

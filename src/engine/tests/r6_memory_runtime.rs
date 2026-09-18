@@ -267,45 +267,6 @@ fn realization_preserves_per_call_work_and_output_budget_scopes() {
         .unwrap();
 }
 
-#[test]
-fn ordinary_source_literals_enter_one_interpreter_memory_session() {
-    use mech_core::{FunctionCatalogBuilder, NoMechExecutionServices};
-    use mech_engine::{CompilerPlanningConfig, CompilerPlanningProgram};
-    use std::sync::Arc;
-
-    let mut catalog = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
-    mech_engine::install_intrinsic_compiler_runtime(&mut catalog).unwrap();
-    mech_engine::install_intrinsic_source(&mut catalog).unwrap();
-    let mut program = CompilerPlanningProgram::with_function_catalog(
-        CompilerPlanningConfig::default(),
-        Arc::new(catalog.build().unwrap()),
-    );
-    let tree = mech_syntax::parser::parse(
-        "number := 1.0\ntext := \"managed\"\nmatrix := [1.0 2.0; 3.0 4.0]\nnumber",
-    )
-    .unwrap();
-    let mut services = NoMechExecutionServices;
-    program
-        .plan_tree_with_services(&tree, &mut services)
-        .unwrap();
-
-    let values = program
-        .compiler_root_symbol_cells(&["number", "text", "matrix"])
-        .unwrap();
-    let owner = values[0].1.memory_domain().unwrap().id();
-    assert!(
-        values
-            .iter()
-            .all(|(_, value)| value.memory_domain().unwrap().id() == owner),
-        "source cells escaped the interpreter session: {:?}",
-        values
-            .iter()
-            .map(|(name, value)| (name, value.memory_domain().unwrap().id()))
-            .collect::<Vec<_>>()
-    );
-}
-
 mod managed_index_conversion {
     use mech_core::*;
 

@@ -57,7 +57,7 @@ fn token_fingerprint(parsed: &CanonicalSourceRuleSnapshot) -> Vec<(SyntaxKind, S
         .collect()
 }
 
-fn assert_piece_equivalent(rule: RuleId, parts: &[&str], expected_lowered_text: Option<&str>) {
+fn assert_piece_equivalent(rule: RuleId, parts: &[&str]) {
     let joined = parts.concat();
     let contiguous = parse(source(&joined), rule, ParseConfig::default());
     let piece_backed = parse(piece_source(parts), rule, ParseConfig::default());
@@ -80,34 +80,6 @@ fn assert_piece_equivalent(rule: RuleId, parts: &[&str], expected_lowered_text: 
     );
     assert!(contiguous.diagnostics.is_empty(), "{rule:?}");
     assert!(piece_backed.diagnostics.is_empty(), "{rule:?}");
-
-    if let Some(expected) = expected_lowered_text {
-        use mech_syntax::document::{
-            AstNode, ImportDeclarationSyntax, lower_legacy_import_declaration,
-        };
-
-        let contiguous_declaration = ImportDeclarationSyntax::cast(
-            contiguous
-                .syntax()
-                .children()
-                .find(|child| child.kind() == SyntaxKind::ImportDeclaration)
-                .unwrap(),
-        )
-        .unwrap();
-        let piece_backed_declaration = ImportDeclarationSyntax::cast(
-            piece_backed
-                .syntax()
-                .children()
-                .find(|child| child.kind() == SyntaxKind::ImportDeclaration)
-                .unwrap(),
-        )
-        .unwrap();
-        let contiguous_lowered = lower_legacy_import_declaration(&contiguous_declaration).unwrap();
-        let piece_backed_lowered =
-            lower_legacy_import_declaration(&piece_backed_declaration).unwrap();
-        assert_eq!(contiguous_lowered, piece_backed_lowered);
-        assert_eq!(contiguous_lowered.specifier.to_string(), expected);
-    }
 }
 
 fn assert_invariants(parsed: &CanonicalSourceRuleSnapshot, config: ParseConfig) {
@@ -171,22 +143,19 @@ fn zero_width_wildcard_suffix_and_piece_backed_inputs_are_deterministic() {
         assert_eq!(parsed.consumed, TextRange::empty(TextSize::ZERO));
     }
 
-    let cases: &[(RuleId, &[&str], Option<&str>)] = &[
-        (rules::SOURCE_MEC_PATH, &["foo", ".", "mec"], None),
+    let cases: &[(RuleId, &[&str])] = &[
+        (rules::SOURCE_MEC_PATH, &["foo", ".", "mec"]),
         (
             rules::BARE_SOURCE_IMPORT_SPECIFIER,
             &["foo.m", "ec", "/", "*"],
-            None,
         ),
         (
             rules::RELATIVE_SOURCE_IMPORT_SPECIFIER,
             &[".", ".", "/", "lib/", "dep.mec"],
-            None,
         ),
         (
             rules::IMPORT_DECLARATION,
             &["+", ">", "\u{2009}", "dep.mec"],
-            Some("dep.mec"),
         ),
         (
             rules::URI_SOURCE_IMPORT_SPECIFIER,
@@ -199,7 +168,6 @@ fn zero_width_wildcard_suffix_and_piece_backed_inputs_are_deterministic() {
                 "\u{00a0}",
                 "\u{2009}",
             ],
-            None,
         ),
         (
             rules::IMPORT_DECLARATION,
@@ -215,13 +183,11 @@ fn zero_width_wildcard_suffix_and_piece_backed_inputs_are_deterministic() {
                 "\u{00a0}",
                 "\u{2009}",
             ],
-            Some("https://example.com/dep"),
         ),
-        (rules::EXPORT_DECLARATION, &["<", "+", "\n", "value"], None),
+        (rules::EXPORT_DECLARATION, &["<", "+", "\n", "value"]),
         (
             rules::CONTEXT_DECLARATION,
             &["@", "ui", " := ", "fs", "://", "workspace"],
-            None,
         ),
         (
             rules::CONTEXT_DECLARATION,
@@ -236,12 +202,11 @@ fn zero_width_wildcard_suffix_and_piece_backed_inputs_are_deterministic() {
                 "*",
                 ")}",
             ],
-            None,
         ),
-        (rules::CONTEXT_CAPABILITY_PATH, &["users", "/", "*"], None),
+        (rules::CONTEXT_CAPABILITY_PATH, &["users", "/", "*"]),
     ];
-    for (rule, parts, expected_lowered_text) in cases {
-        assert_piece_equivalent(*rule, parts, *expected_lowered_text);
+    for (rule, parts) in cases {
+        assert_piece_equivalent(*rule, parts);
     }
 }
 

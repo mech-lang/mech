@@ -1,12 +1,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use mech_core::{Grammar, GrammarExpression, Token};
 use mech_syntax::document::parser::canonical_rule_name;
 use mech_syntax::document::{
     DocumentId, FixApplicability, NodeFlags, ParseConfig, RecoveryAction, Revision, SyntaxKind,
-    SyntaxNode, SyntaxSnapshot, TextSnapshot, compact_debug_tree, lower_legacy_grammar,
-    parse_canonical_grammar, reconstruct_source, validate_lossless,
+    SyntaxNode, SyntaxSnapshot, TextSnapshot, compact_debug_tree, parse_canonical_grammar,
+    reconstruct_source, validate_lossless,
 };
 
 fn fixture_root() -> PathBuf {
@@ -50,53 +49,6 @@ fn assert_tree_fixture(name: &str, snapshot: &SyntaxSnapshot) {
     assert_eq!(actual, expected);
 }
 
-fn normalize_token_source(token: &mut Token) {
-    token.src_range = Default::default();
-}
-
-fn normalize_expression_source(expression: &mut GrammarExpression) {
-    match expression {
-        GrammarExpression::Choice(items) | GrammarExpression::Sequence(items) => {
-            for item in items {
-                normalize_expression_source(item);
-            }
-        }
-        GrammarExpression::Definition(identifier) => normalize_token_source(&mut identifier.name),
-        GrammarExpression::Group(item)
-        | GrammarExpression::Not(item)
-        | GrammarExpression::Optional(item)
-        | GrammarExpression::Peek(item)
-        | GrammarExpression::Repeat0(item)
-        | GrammarExpression::Repeat1(item) => normalize_expression_source(item),
-        GrammarExpression::List(first, second) => {
-            normalize_expression_source(first);
-            normalize_expression_source(second);
-        }
-        GrammarExpression::Range(start, end) => {
-            normalize_token_source(start);
-            normalize_token_source(end);
-        }
-        GrammarExpression::Terminal(token) => normalize_token_source(token),
-    }
-}
-
-fn normalize_grammar_source(mut grammar: Grammar) -> Grammar {
-    for rule in &mut grammar.rules {
-        normalize_token_source(&mut rule.name.name);
-        normalize_expression_source(&mut rule.expr);
-    }
-    grammar
-}
-
-fn assert_legacy_parity(text: &str, snapshot: &SyntaxSnapshot) {
-    let canonical = lower_legacy_grammar(snapshot).unwrap();
-    let legacy = mech_syntax::parse_grammar(text).unwrap();
-    assert_eq!(
-        normalize_grammar_source(canonical),
-        normalize_grammar_source(legacy)
-    );
-}
-
 fn assert_canonical_diagnostics(snapshot: &SyntaxSnapshot) {
     assert!(!snapshot.diagnostics.is_empty());
     for diagnostic in snapshot.diagnostics.iter() {
@@ -138,7 +90,7 @@ fn assert_canonical_diagnostics(snapshot: &SyntaxSnapshot) {
 }
 
 #[test]
-fn accepted_expression_fixture_is_lossless_and_has_legacy_parity() {
+fn accepted_expression_fixture_is_lossless() {
     let text = fixture("accepted", "core-expressions.mec");
     let snapshot = parse(&text);
     assert!(
@@ -147,11 +99,10 @@ fn accepted_expression_fixture_is_lossless_and_has_legacy_parity() {
         snapshot.diagnostics.as_slice()
     );
     assert_lossless(&text, &snapshot);
-    assert_legacy_parity(&text, &snapshot);
 }
 
 #[test]
-fn grammar_filtering_fixture_is_lossless_and_has_legacy_parity() {
+fn grammar_filtering_fixture_is_lossless() {
     let text = fixture("accepted", "filtered-trivia.mec");
     let snapshot = parse(&text);
     assert!(
@@ -160,16 +111,14 @@ fn grammar_filtering_fixture_is_lossless_and_has_legacy_parity() {
         snapshot.diagnostics.as_slice()
     );
     assert_lossless(&text, &snapshot);
-    assert_legacy_parity(&text, &snapshot);
 }
 
 #[test]
-fn terminal_with_filtered_space_has_an_exact_tree_and_legacy_parity() {
+fn terminal_with_filtered_space_has_an_exact_tree() {
     let text = fixture("accepted", "terminal-with-space.mec");
     let snapshot = parse(&text);
     assert!(snapshot.diagnostics.is_empty());
     assert_lossless(&text, &snapshot);
-    assert_legacy_parity(&text, &snapshot);
     assert_tree_fixture("terminal-with-space.tree", &snapshot);
 }
 
@@ -223,11 +172,6 @@ fn malformed_fixtures_have_bounded_structural_recovery() {
                 .intersects(NodeFlags::CONTAINS_ERROR | NodeFlags::CONTAINS_MISSING),
             "{name} did not retain structural recovery"
         );
-        assert!(
-            lower_legacy_grammar(&snapshot).is_err(),
-            "{name} unexpectedly lowered despite syntax diagnostics"
-        );
-
         if machine_fix {
             let diagnostic = snapshot
                 .diagnostics
@@ -308,8 +252,6 @@ fn unclosed_terminal_synchronizes_before_a_later_rule() {
             .iter()
             .any(|diagnostic| diagnostic.code.as_str() == "syntax/unclosed-grammar-terminal")
     );
-    assert!(lower_legacy_grammar(&snapshot).is_err());
-
     let rule_text = nodes_of_kind(&snapshot.syntax(), SyntaxKind::GrammarRule)
         .into_iter()
         .map(|node| node.text().unwrap())

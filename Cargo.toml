@@ -125,7 +125,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 cli_core = []
 cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
 cli = ["cli-product"]
-formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+formatter_core = ["serde", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 build = [
       "cli_core", "compiler",
       "dep:mech-build",
@@ -163,7 +163,7 @@ serve = [
       "mech-syntax/program",
       "mech-stdlib/standard_compiler",
       "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
-      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source", "mech-runtime/pretty_print",
       "mech-runtime/watcher", "ignore",
       ]
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-browser", "mech-browser/delegation"]

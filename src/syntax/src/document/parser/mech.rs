@@ -518,7 +518,8 @@ fn at_expression_boundary(parser: &Parser<'_>) -> bool {
 }
 
 fn ancestor_restart_rule() -> crate::document::RuleId {
-    canonical_rule_id("section-element").expect("Phase 0 inventory must contain section-element")
+    canonical_rule_id("section-element")
+        .expect("canonical rule registry must contain section-element")
 }
 
 fn consume_horizontal_lookahead(cursor: &mut Cursor<'_>) {

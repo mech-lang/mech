@@ -1,7 +1,9 @@
 //! Resolver facts projected directly from the canonical retained document.
 
 use super::*;
-use crate::resolver::{SourceImportAlias, imports::classified_module_import};
+use crate::resolver::{
+    SourceImportAlias, classify_import_specifier, imports::classified_module_import,
+};
 use mech_syntax::document::{
     AstNode, CanonicalContextBaseSyntax, CanonicalContextCapabilityScopeSyntax,
     CanonicalModuleImportBodySyntax, CodeBlockSyntax, CodeFenceScope, ContextDeclarationSyntax,
@@ -111,8 +113,8 @@ impl SourceIndex {
                 }
                 continue;
             }
-            // Assignment and send destination bases are writes, not addressed
-            // reads. Assignment subscripts and right-hand values are reads.
+            // Assignment and send destinations are writes, not addressed reads.
+            // Match the established Program index by traversing only their values.
             if let Some(send) = ContextSendSyntax::cast(node.clone()) {
                 let expression = required(send.expression(), &node)?;
                 pending.push((expression.syntax().clone(), scope, publish_declarations));
@@ -124,29 +126,13 @@ impl SourceIndex {
                 continue;
             }
             if let Some(assign) = VariableAssignSyntax::cast(node.clone()) {
-                let target = required(assign.target(), &node)?;
                 let expression = required(assign.value(), &node)?;
-                pending.push((
-                    expression.syntax().clone(),
-                    scope.clone(),
-                    publish_declarations,
-                ));
-                if let Some(subscripts) = target.subscripts() {
-                    pending.push((subscripts.syntax().clone(), scope, publish_declarations));
-                }
+                pending.push((expression.syntax().clone(), scope, publish_declarations));
                 continue;
             }
             if let Some(assign) = OpAssignSyntax::cast(node.clone()) {
-                let target = required(assign.target(), &node)?;
                 let expression = required(assign.value(), &node)?;
-                pending.push((
-                    expression.syntax().clone(),
-                    scope.clone(),
-                    publish_declarations,
-                ));
-                if let Some(subscripts) = target.subscripts() {
-                    pending.push((subscripts.syntax().clone(), scope, publish_declarations));
-                }
+                pending.push((expression.syntax().clone(), scope, publish_declarations));
                 continue;
             }
             // FSM formal inputs are declarations, not reads. Specifications
