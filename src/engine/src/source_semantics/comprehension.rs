@@ -13,7 +13,7 @@ pub(super) enum PendingCollectionValue {
 
 pub(super) type PendingComprehension =
     ComprehensionDeclaration<OperationContractDeclaration, SchemaDraft, PendingCollectionValue>;
-type SourcePattern = CollectionPattern<PendingValue, PendingValue>;
+pub(super) type SourcePattern = CollectionPattern<PendingValue, PendingValue>;
 
 enum Qualifier {
     Generator {
@@ -61,6 +61,32 @@ fn canonical_component_schema_draft(
                 upper_bound: parameter.upper_bound().cloned(),
             })
             .collect(),
+    })
+}
+
+fn array_rest_schema(
+    element: &SchemaDraft,
+    syntax: &SyntaxNode,
+) -> Result<SchemaDraft, SourceSemanticError> {
+    let mut parameters = element.dimension_parameters.to_vec();
+    let extent =
+        DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
+            unsupported(syntax, "array-rest dimension identity space was exhausted")
+        })?);
+    parameters.push(DimensionParameterDeclaration {
+        id: extent,
+        origin: DimensionParameterOrigin::Inferred,
+        lifetime: DimensionLifetime::Turn,
+        lower_bound: DimensionExpr::Constant(0),
+        upper_bound: None,
+    });
+    Ok(SchemaDraft {
+        dimension_parameters: parameters.into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element.body.clone()),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
+                .into_boxed_slice(),
+        },
     })
 }
 
@@ -326,7 +352,7 @@ impl SemanticBuilder {
         Ok(PendingValue::Node(node))
     }
 
-    fn collection_pattern(
+    pub(super) fn collection_pattern(
         &mut self,
         pattern: &PatternSyntax,
         expected: &SchemaDraft,
@@ -469,6 +495,7 @@ impl SemanticBuilder {
                     let mut suffix = Vec::new();
                     let mut rest = None;
                     let mut bind_rest = false;
+                    let rest_schema = array_rest_schema(&element, array.syntax())?;
                     for item in array.elements() {
                         if item.spread().is_some() || item.rest().is_some() {
                             if rest.is_some() || bind_rest {
@@ -480,7 +507,7 @@ impl SemanticBuilder {
                             if let Some(pattern) = item.pattern() {
                                 rest = Some(Box::new(self.collection_pattern(
                                     &pattern,
-                                    &builtin_schema_draft(BuiltinSchema::Dynamic),
+                                    &rest_schema,
                                     start,
                                     names,
                                 )?));
@@ -493,7 +520,7 @@ impl SemanticBuilder {
                             if bind_rest {
                                 rest = Some(Box::new(self.collection_pattern(
                                     &pattern,
-                                    &builtin_schema_draft(BuiltinSchema::Dynamic),
+                                    &rest_schema,
                                     start,
                                     names,
                                 )?));
@@ -1230,6 +1257,19 @@ mod tests {
                     (
                         vec![row(&[7.0, 8.0, 9.0]), row(&[10.0, 11.0, 12.0])],
                         vec![16.0, 22.0],
+                    ),
+                ],
+            ),
+            (
+                "[rest[1] + rest[2] | [head | rest] <- signal<[[f64]:1,3]:1,2>]",
+                vec![
+                    (
+                        vec![row(&[1.0, 2.0, 3.0]), row(&[4.0, 5.0, 6.0])],
+                        vec![5.0, 11.0],
+                    ),
+                    (
+                        vec![row(&[7.0, 8.0, 9.0]), row(&[10.0, 11.0, 12.0])],
+                        vec![17.0, 23.0],
                     ),
                 ],
             ),

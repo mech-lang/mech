@@ -883,6 +883,81 @@ fn dynamic_structural_patterns_preserve_child_wrappers_and_skip_absent_values() 
 }
 
 #[test]
+fn root_schema_adapting_comprehension_bindings_build_child_projections() {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft as D};
+    use mech_core::{FloatWidth, SchemaId, ValueDraft};
+
+    let source = "shape := (1, true)\nout := [x | x<(*,*)> <- signal<[*]:1,1>]\n(shape,out)\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap(),
+    ] {
+        let input_schema = artifact.inputs()[0].schema;
+        let tuple = (0..artifact.schemas().len())
+            .map(|raw| SchemaId::new(raw as u32))
+            .find(|id| {
+                matches!(
+                    artifact.schemas().get(*id).unwrap().body(),
+                    SchemaBody::Tuple(fields)
+                        if matches!(fields.as_ref(), [SchemaBody::FloatingPoint(FloatWidth::W64), SchemaBody::Bool])
+                )
+            })
+            .expect("the shape witness retains the concrete tuple schema");
+        let input = Some(
+            ValueDraft {
+                schema: input_schema,
+                shape_values: Box::new([]),
+                data: D::Matrix(
+                    vec![D::Dynamic(Some(Box::new(ValueDraft {
+                        schema: tuple,
+                        shape_values: Box::new([]),
+                        data: D::Tuple(
+                            vec![D::F64(F64Bits::from_f64(7.0)), D::Bool(true)].into_boxed_slice(),
+                        ),
+                    })))]
+                    .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap(),
+        );
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x5aa, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::Snapshot(core::slice::from_ref(&input)),
+            }])
+            .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::Tuple(outputs) = output.data() else {
+            panic!("expected document tuple: {output:?}")
+        };
+        let ValueData::Matrix(matrix) = &outputs[1] else {
+            panic!("expected comprehension matrix: {:?}", outputs[1])
+        };
+        let SequenceView::Values([ValueData::Tuple(fields)]) = matrix.elements() else {
+            panic!("expected one projected tuple: {matrix:?}")
+        };
+        assert!(matches!(
+            fields.as_ref(),
+            [ValueData::Dynamic(number), ValueData::Dynamic(flag)]
+                if matches!(number.value().map(|value| value.data()), Some(ValueData::F64(value)) if value.to_f64() == 7.0)
+                    && matches!(flag.value().map(|value| value.data()), Some(ValueData::Bool(true)))
+        ));
+    }
+}
+
+#[test]
 fn dynamic_comprehension_component_binding_uses_addressable_schema_and_selected_footprint() {
     use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft as D};
     use mech_core::{FloatWidth, SchemaId, ValueDraft};

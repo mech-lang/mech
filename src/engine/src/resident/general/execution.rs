@@ -3,6 +3,14 @@
 #[path = "comprehension_execution.rs"]
 mod comprehension_execution;
 
+pub(super) use comprehension_execution::StructuralProjectionTable;
+
+pub(super) fn structural_projection_schema_context(
+    schemas: &mech_core::SchemaTable,
+) -> Result<(mech_core::SchemaTable, StructuralProjectionTable), mech_core::SemanticModelError> {
+    comprehension_execution::structural_projection_schema_context(schemas)
+}
+
 use crate::resident::budget;
 use core::ops::Range;
 use core::sync::atomic::Ordering;
@@ -1645,61 +1653,191 @@ impl ReactiveInstance {
             node,
             error: ResidentKernelError::InvalidInput,
         };
+        let kernel_fail = |error| ResidentExecutionError::Kernel { node, error };
         let scrutinee_source = matched.scrutinee;
+        let scrutinee_schema = matched.scrutinee_schema;
+        let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
+        let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { work, .. } = &arm.pattern else {
+                return Some(total);
+            };
+            total.checked_add(*work)
+        });
+        let structural_clone_multiplicity = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { clone_depth, .. } = &arm.pattern else {
+                return Some(total);
+            };
+            total.checked_add(*clone_depth)
+        });
+        let structural_binding_count = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { binding_count, .. } = &arm.pattern
+            else {
+                return Some(total);
+            };
+            total.checked_add(*binding_count)
+        });
+        let structural_equality_count = matched.arms.iter().try_fold(0u64, |total, arm| {
+            let super::ActivatedMatchPattern::Structural { equality_count, .. } = &arm.pattern
+            else {
+                return Some(total);
+            };
+            total.checked_add(*equality_count)
+        });
+        let structural_dense_finalization_count =
+            matched.arms.iter().try_fold(0u64, |total, arm| {
+                let super::ActivatedMatchPattern::Structural {
+                    dense_finalization_count,
+                    ..
+                } = &arm.pattern
+                else {
+                    return Some(total);
+                };
+                total.checked_add(*dense_finalization_count)
+            });
+        let mut structural_scrutinee = None;
         for arm_index in 0..arm_count {
             let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
                 unreachable!()
             };
             let arm = &matched.arms[arm_index];
-            if let Some(literal) = arm.literal {
-                let scrutinee = self
-                    .read_location(scrutinee_source, working_epoch)
-                    .ok_or_else(fail)?;
-                let matches = match (scrutinee, self.activation.read(literal)) {
-                    (
-                        ResidentValueRef::Bool([left @ (0 | 1)]),
-                        ResidentValueRef::Bool([right @ (0 | 1)]),
-                    ) => left == right,
-                    (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
-                        left == right
-                    }
-                    (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
-                        left == right
-                    }
-                    (
-                        ResidentValueRef::Snapshot([Some(left)]),
-                        ResidentValueRef::Snapshot([Some(right)]),
-                    ) => {
-                        let left_schema = left
-                            .validate_against(&self.plan.schemas)
-                            .map_err(|_| fail())?;
-                        let right_schema = right
-                            .validate_against(&self.plan.schemas)
-                            .map_err(|_| fail())?;
-                        if !crate::is_control_scalar_schema(left_schema)
-                            || left_schema != right_schema
-                        {
-                            return Err(fail());
-                        }
-                        left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
-                            .map_err(|_| fail())?
-                    }
-                    _ => return Err(fail()),
-                };
-                if !matches {
-                    continue;
-                }
-            }
+            let pattern = arm.pattern.clone();
+            let binding_regions = arm.binding_regions.clone();
+            let guard_regions = arm.guard_regions.clone();
             let guard = arm.guard.clone();
             let body = arm.body.clone();
+            let pattern_matches = match pattern {
+                super::ActivatedMatchPattern::Literal(literal) => {
+                    let scrutinee = self
+                        .read_location(scrutinee_source, working_epoch)
+                        .ok_or_else(fail)?;
+                    match (
+                        scrutinee,
+                        self.read_location(literal, working_epoch)
+                            .ok_or_else(fail)?,
+                    ) {
+                        (
+                            ResidentValueRef::Bool([left @ (0 | 1)]),
+                            ResidentValueRef::Bool([right @ (0 | 1)]),
+                        ) => left == right,
+                        (ResidentValueRef::Index([left]), ResidentValueRef::Index([right])) => {
+                            left == right
+                        }
+                        (ResidentValueRef::F64([left]), ResidentValueRef::F64([right])) => {
+                            left == right
+                        }
+                        (
+                            ResidentValueRef::Snapshot([Some(left)]),
+                            ResidentValueRef::Snapshot([Some(right)]),
+                        ) => {
+                            let left_schema = left
+                                .validate_against(&self.plan.schemas)
+                                .map_err(|_| fail())?;
+                            let right_schema = right
+                                .validate_against(&self.plan.schemas)
+                                .map_err(|_| fail())?;
+                            if !crate::is_control_scalar_schema(left_schema)
+                                || left_schema != right_schema
+                            {
+                                return Err(fail());
+                            }
+                            left.language_eq(&self.plan.schemas, right, &self.plan.schemas)
+                                .map_err(|_| fail())?
+                        }
+                        _ => return Err(fail()),
+                    }
+                }
+                super::ActivatedMatchPattern::Wildcard | super::ActivatedMatchPattern::Bind => true,
+                super::ActivatedMatchPattern::Structural { pattern, .. } => {
+                    if structural_scrutinee.is_none() {
+                        let work = structural_work
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let clone_multiplicity = structural_clone_multiplicity
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let equality_count = structural_equality_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let binding_count = structural_binding_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let dense_finalization_count = structural_dense_finalization_count
+                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let scrutinee = self
+                            .read_location(scrutinee_source, working_epoch)
+                            .ok_or_else(fail)?;
+                        let shape_values = match scrutinee {
+                            ResidentValueRef::Snapshot([Some(value)]) => {
+                                value.shape().parameter_values().to_vec().into_boxed_slice()
+                            }
+                            _ => scrutinee_shape_values.clone(),
+                        };
+                        let structural_array = matches!(
+                            self.plan
+                                .schemas
+                                .get(scrutinee_schema)
+                                .ok_or_else(fail)?
+                                .body(),
+                            mech_core::SchemaBody::Matrix { .. }
+                        );
+                        let canonical_finalization_work =
+                            comprehension_execution::admit_pattern_item_materialization(
+                                scrutinee,
+                                scrutinee_source.region(),
+                                scrutinee_schema,
+                                structural_array,
+                                work,
+                                binding_count,
+                                equality_count,
+                                dense_finalization_count,
+                                clone_multiplicity,
+                                &self.plan.schemas,
+                            )
+                            .map_err(kernel_fail)?;
+                        let item = comprehension_execution::resident_pattern_item(
+                            scrutinee,
+                            scrutinee_source.region(),
+                            scrutinee_schema,
+                            &shape_values,
+                            &self.plan.schemas,
+                            structural_array,
+                        )
+                        .ok_or_else(fail)?;
+                        structural_scrutinee =
+                            Some((item, shape_values, canonical_finalization_work));
+                    }
+                    let (item, source_shape_values, canonical_finalization_work) =
+                        structural_scrutinee.as_ref().ok_or_else(fail)?;
+                    let matched = self.match_structural_pattern_item(
+                        node,
+                        &pattern,
+                        item,
+                        source_shape_values,
+                        *canonical_finalization_work,
+                        working_epoch,
+                    )?;
+                    matched
+                }
+            };
+            if !pattern_matches {
+                for region in &binding_regions {
+                    self.workspace.scratch.discard_payload_write(*region);
+                }
+                continue;
+            }
             if let Some(guard) = guard {
                 for step in guard.steps.iter().copied() {
                     self.execute_step(step, before_epoch, working_epoch, probe)?;
                 }
-                match self.read_location(guard.yield_value, working_epoch) {
-                    Some(ResidentValueRef::Bool([1])) => {}
-                    Some(ResidentValueRef::Bool([0])) => continue,
+                let guard_matches = match self.read_location(guard.yield_value, working_epoch) {
+                    Some(ResidentValueRef::Bool([1])) => true,
+                    Some(ResidentValueRef::Bool([0])) => false,
                     _ => return Err(fail()),
+                };
+                for region in &guard_regions {
+                    self.workspace.scratch.discard_payload_write(*region);
+                }
+                if !guard_matches {
+                    for region in &binding_regions {
+                        self.workspace.scratch.discard_payload_write(*region);
+                    }
+                    continue;
                 }
             }
             for step in body.steps.iter().copied() {
@@ -1939,6 +2077,354 @@ impl ReactiveInstance {
         Err(fail())
     }
 
+    fn match_structural_pattern_item(
+        &mut self,
+        node: NodeId,
+        pattern: &crate::CollectionPattern<
+            super::ActivatedPatternBinding,
+            super::ActivatedPatternValue,
+        >,
+        item: &comprehension_execution::PatternItem,
+        source_shape_values: &[u64],
+        canonical_finalization_work: u64,
+        working: InstanceEpoch,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel { node, error };
+        match pattern {
+            crate::CollectionPattern::Wildcard => Ok(true),
+            crate::CollectionPattern::Bind {
+                schema: binding, ..
+            } => self.bind_match_pattern_item(
+                node,
+                *binding,
+                item.clone(),
+                source_shape_values,
+                canonical_finalization_work,
+            ),
+            crate::CollectionPattern::Equal(peer) => {
+                let peer_value = self
+                    .read_location(peer.location, working)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                item.language_equals(
+                    peer_value,
+                    peer.location.region(),
+                    peer.schema,
+                    source_shape_values,
+                    canonical_finalization_work,
+                    &self.plan.schemas,
+                    &self.plan.structural_projections,
+                )
+                .map_err(fail)?
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))
+            }
+            crate::CollectionPattern::Tuple(items) => {
+                if item.structural_len(true) != Some(items.len()) {
+                    return Ok(false);
+                }
+                for (index, pattern) in items.iter().enumerate() {
+                    let Some(child) =
+                        item.child(index, &self.plan.schemas, &self.plan.structural_projections)
+                    else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                let Some(count) = item.structural_len(false) else {
+                    return Ok(false);
+                };
+                let required = prefix
+                    .len()
+                    .checked_add(suffix.len())
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                if count < required || (rest.is_none() && count != required) {
+                    return Ok(false);
+                }
+                for (index, pattern) in prefix.iter().enumerate() {
+                    let Some(child) =
+                        item.child(index, &self.plan.schemas, &self.plan.structural_projections)
+                    else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                if let Some(rest) = rest {
+                    let Some(middle) = item.middle(
+                        prefix.len(),
+                        suffix.len(),
+                        &self.plan.schemas,
+                        &self.plan.structural_projections,
+                    ) else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        rest,
+                        &middle,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                for (index, pattern) in suffix.iter().enumerate() {
+                    let Some(child) = item.child(
+                        count - suffix.len() + index,
+                        &self.plan.schemas,
+                        &self.plan.structural_projections,
+                    ) else {
+                        return Ok(false);
+                    };
+                    if !self.match_structural_pattern_item(
+                        node,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        canonical_finalization_work,
+                        working,
+                    )? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+        }
+    }
+
+    fn bind_match_pattern_item(
+        &mut self,
+        node: NodeId,
+        binding: super::ActivatedPatternBinding,
+        item: comprehension_execution::PatternItem,
+        source_shape_values: &[u64],
+        binding_finalization_work: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel { node, error };
+        fn dense_values<T: Default>(values: Vec<T>, region: ResidentRegion) -> Option<Vec<T>> {
+            if values.len() != region.len {
+                return None;
+            }
+            let mut dense = (0..values.len()).map(|_| T::default()).collect::<Vec<_>>();
+            for (ordinal, value) in values.into_iter().enumerate() {
+                let offset = comprehension_execution::dense_collection_offset(region, ordinal)?;
+                *dense.get_mut(offset)? = value;
+            }
+            Some(dense)
+        }
+        let Some(comprehension_execution::PatternBindingItem {
+            shape_values,
+            data,
+            schemas: source_schemas,
+            schema_index: source_schema_index,
+            ..
+        }) = item
+            .into_binding(
+                binding.schema,
+                source_shape_values,
+                &self.plan.schemas,
+                &self.plan.structural_projections,
+            )
+            .map_err(fail)?
+        else {
+            return Ok(false);
+        };
+        match (data, binding.region.kind) {
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::Bool) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::Bool(value) => Some(u8::from(value)),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let ResidentValueMut::Bool(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                target.copy_from_slice(&values);
+            }
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::Index) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::Index(value) => Some(value),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let ResidentValueMut::Index(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                target.copy_from_slice(&values);
+            }
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::F64) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::F64(value) => Some(value.to_f64()),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let ResidentValueMut::F64(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                target.copy_from_slice(&values);
+            }
+            (mech_core::ValueDataDraft::Matrix(values), ResidentValueKind::String) => {
+                let values = values
+                    .into_vec()
+                    .into_iter()
+                    .map(|value| match value {
+                        mech_core::ValueDataDraft::String(value) => Some(value),
+                        _ => None,
+                    })
+                    .collect::<Option<Vec<_>>>()
+                    .and_then(|values| dense_values(values, binding.region))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+                let scope = self
+                    .workspace
+                    .scratch
+                    .prepare_payload_write(binding.region)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                if let Some(scope) = &scope {
+                    scope
+                        .admit_copy(ResidentValueRef::String(&values), 0)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    scope.start();
+                }
+                let ResidentValueMut::String(target) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                for (target, value) in target.iter_mut().zip(values) {
+                    *target = value;
+                }
+                self.workspace
+                    .scratch
+                    .finish_payload_write(binding.region, scope)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            (mech_core::ValueDataDraft::Bool(value), ResidentValueKind::Bool) => {
+                let ResidentValueMut::Bool([target]) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = u8::from(value);
+            }
+            (mech_core::ValueDataDraft::Index(value), ResidentValueKind::Index) => {
+                let ResidentValueMut::Index([target]) =
+                    self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = value;
+            }
+            (mech_core::ValueDataDraft::F64(value), ResidentValueKind::F64) => {
+                let ResidentValueMut::F64([target]) = self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = value.to_f64();
+            }
+            (mech_core::ValueDataDraft::String(value), ResidentValueKind::String) => {
+                let scope = self
+                    .workspace
+                    .scratch
+                    .prepare_payload_write(binding.region)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                if let Some(scope) = &scope {
+                    scope
+                        .admit_copy(ResidentValueRef::String(core::slice::from_ref(&value)), 0)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    scope.start();
+                }
+                let ResidentValueMut::String([target]) =
+                    self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = value;
+                self.workspace
+                    .scratch
+                    .finish_payload_write(binding.region, scope)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            (data, ResidentValueKind::Snapshot) => {
+                let canonical_budget = mech_core::snapshot::SnapshotCanonicalizationBudget::new(
+                    binding_finalization_work,
+                );
+                let next = comprehension_execution::finalize_pattern_binding(
+                    binding.schema,
+                    &shape_values,
+                    data,
+                    source_schemas,
+                    source_schema_index,
+                    &self.plan.schemas,
+                    &canonical_budget,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+                let scope = self
+                    .workspace
+                    .scratch
+                    .prepare_payload_write(binding.region)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                if let Some(scope) = &scope {
+                    scope
+                        .admit_value(&next)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    scope.start();
+                }
+                let ResidentValueMut::Snapshot([target]) =
+                    self.workspace.scratch.write(binding.region)
+                else {
+                    unreachable!("binding kind was validated")
+                };
+                *target = Some(next);
+                self.workspace
+                    .scratch
+                    .finish_payload_write(binding.region, scope)
+                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+            }
+            _ => return Err(fail(ResidentKernelError::InvalidOutput)),
+        }
+        Ok(true)
+    }
+
     fn stage_external(
         &mut self,
         node_index: ActivatedNodeIndex,
@@ -2000,23 +2486,6 @@ impl ReactiveInstance {
                 self.workspace.scratch.read(region),
             ),
         }
-    }
-
-    #[inline(always)]
-    fn kernel_scratch_output_region(
-        &self,
-        node_index: ActivatedNodeIndex,
-    ) -> Option<ResidentRegion> {
-        let index = node_index.get() as usize;
-        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
-            nodes.get(index)?
-        } else {
-            let ActivatedTurnStep::Kernel(node) = self.plan.steps.get(index)? else {
-                return None;
-            };
-            node
-        };
-        (node.write.storage == ResidentStorageClass::Scratch).then_some(node.write.region)
     }
 
     #[inline(always)]
@@ -3446,7 +3915,7 @@ fn hash_string(value: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resident::general::{ActivatedCollectionStep, ResidentArenaSizes, StateVersion};
+    use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
     #[cfg(feature = "source")]
@@ -3557,34 +4026,6 @@ mod tests {
 
     #[cfg(feature = "source")]
     #[test]
-    fn nested_comprehension_operation_identifies_its_replaceable_local_output() {
-        let instance = source_instance("[(item, true) | item <- signal<[f64]:1,2>]");
-        let control = instance
-            .plan
-            .steps
-            .iter()
-            .find_map(|step| match step {
-                ActivatedTurnStep::Comprehension(control) => Some(control),
-                _ => None,
-            })
-            .expect("source must contain a comprehension");
-        let operation = control
-            .steps
-            .iter()
-            .find_map(|step| match step {
-                ActivatedCollectionStep::Operation { node, .. } => Some(*node),
-                _ => None,
-            })
-            .expect("tuple yield must contain a nested operation");
-        let output = instance
-            .kernel_scratch_output_region(operation)
-            .expect("nested operation must write a scratch local");
-
-        assert!(control.locals.contains(&output));
-    }
-
-    #[cfg(feature = "source")]
-    #[test]
     fn match_payload_locals_are_released_after_commit_failure_and_abort() {
         for source in [
             "(values<[f64]:1,2>, flag<bool> ? | true => ((signal<f64>, true), 1) | false => ((signal, false), values[index<f64>]))",
@@ -3673,6 +4114,53 @@ mod tests {
                 released(&instance);
             }
         }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn rejected_structural_arm_releases_its_payload_bindings_before_fallthrough() {
+        let mut instance = source_instance(
+            "(\"payload\", 2) ? | (first, 0) => first | (second, *) => second | * => \"\"",
+        );
+        let node_index = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .and_then(|index| u32::try_from(index).ok())
+            .map(ActivatedNodeIndex)
+            .expect("structural match step");
+        let (rejected, selected) = {
+            let ActivatedTurnStep::Match(control) = &instance.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            assert_eq!(control.arms[0].binding_regions.len(), 1);
+            assert_eq!(control.arms[1].binding_regions.len(), 1);
+            (
+                control.arms[0].binding_regions[0],
+                control.arms[1].binding_regions[0],
+            )
+        };
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        instance
+            .execute_match_expression(
+                node_index,
+                before,
+                working,
+                &mut ResidentStructuralProbe::default(),
+            )
+            .unwrap();
+
+        assert!(matches!(
+            instance.workspace.scratch.read(rejected),
+            ResidentValueRef::String([value]) if value.is_empty()
+        ));
+        assert!(matches!(
+            instance.workspace.scratch.read(selected),
+            ResidentValueRef::String([value]) if value == "payload"
+        ));
     }
 
     #[cfg(feature = "source")]

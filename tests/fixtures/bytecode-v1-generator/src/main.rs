@@ -16,12 +16,13 @@ use sha2::{Digest, Sha256};
 
 type AppResult<T> = Result<T, Box<dyn Error>>;
 
-const FIXTURE_FILES: [&str; 20] = [
+const FIXTURE_FILES: [&str; 21] = [
     "canonical-scalars.mecb",
     "canonical-matrices.mecb",
     "canonical-composites.mecb",
     "literal-f64.mecb",
     "scalar-add-f64.mecb",
+    "structural-match.mecb",
     "fixed-matrix-add-f64.mecb",
     "dynamic-matrix-add-f64.mecb",
     "variadic-horzcat-f64.mecb",
@@ -39,9 +40,10 @@ const FIXTURE_FILES: [&str; 20] = [
     "synthetic-live-read.mecb",
 ];
 const SOURCE_DIRECTORY: &str = "sources";
-const SOURCE_FILES: [&str; 17] = [
+const SOURCE_FILES: [&str; 18] = [
     "literal-f64.mec",
     "scalar-add.mec",
+    "structural-match.mec",
     "fixed-matrix-add-f64.mec",
     "dynamic-matrix-add-f64.mec",
     "variadic-horzcat-f64.mec",
@@ -61,6 +63,8 @@ const SOURCE_FILES: [&str; 17] = [
 const DEFAULT_DETERMINISM_RUNS: usize = 5;
 const LITERAL_SOURCE: &str = "42.0";
 const SCALAR_SOURCE: &str = "1.0 + 2.0";
+const STRUCTURAL_MATCH_SOURCE: &str =
+    "(1, 2) ? | (left, right), left > 0 => left + right | * => 0";
 const FIXED_MATRIX_SOURCE: &str = "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]";
 const DYNAMIC_MATRIX_SOURCE: &str = concat!(
     "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; ",
@@ -154,6 +158,8 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
     let (literal, literal_functions) =
         compile_source(&source_compiler, "standard", LITERAL_SOURCE)?;
     let (scalar, scalar_functions) = compile_source(&source_compiler, "standard", SCALAR_SOURCE)?;
+    let (structural_match, structural_match_functions) =
+        compile_source(&source_compiler, "structural-match", STRUCTURAL_MATCH_SOURCE)?;
     let (fixed, fixed_runtime_functions) = compile_fixed_source(FIXED_MATRIX_SOURCE)?;
     let (dynamic, dynamic_functions) =
         compile_source(&source_compiler, "standard", DYNAMIC_MATRIX_SOURCE)?;
@@ -226,6 +232,15 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: scalar_functions,
             bytes: scalar,
+            expected_output: json!(3.0),
+        },
+        Fixture {
+            file: "structural-match.mecb",
+            source_file: Some("structural-match.mec"),
+            source: Some(STRUCTURAL_MATCH_SOURCE),
+            construction: None,
+            runtime_functions: structural_match_functions,
+            bytes: structural_match,
             expected_output: json!(3.0),
         },
         Fixture {

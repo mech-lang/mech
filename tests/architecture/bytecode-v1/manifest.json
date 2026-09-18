@@ -1593,7 +1593,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "3fd8f7df9daa659e5e88f7374dcd7e36ebd39dbd1de37c1c797343d294ee3fe4",
+      "sha256": "a40b80ff0fab0d3a480b8c23f13eec9759fc604ff3f4ca74ee05279b62f9a3ee",
       "source": "42.0",
       "source_file": "literal-f64.mec"
     },
@@ -1812,9 +1812,215 @@
           "reserved": 0
         }
       ],
-      "sha256": "a1c43f488106e4ce0d6a04a1ec607db3c8ad649f3022f814609073ba58e39a38",
+      "sha256": "dc2ec6633e660d2be8af19c4e8fcaedb920f3be2cc315d2588bf04125e0e828b",
       "source": "1.0 + 2.0",
       "source_file": "scalar-add.mec"
+    },
+    {
+      "application_requirements": [],
+      "construction": null,
+      "expected_output": 3.0,
+      "file": "structural-match.mecb",
+      "header": {
+        "checksum_offset": 3067,
+        "file_len": 3071,
+        "flags": 0,
+        "header_size": 64,
+        "instruction_count": 0,
+        "magic": "MECH",
+        "mech_major": 0,
+        "mech_minor": 3,
+        "mech_patch": 5,
+        "register_count": 0,
+        "reserved": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "reserved0": 0,
+        "section_count": 18,
+        "section_table_offset": 64,
+        "version": 1
+      },
+      "origin": "source-compiler",
+      "runtime_function_ids": [],
+      "runtime_types": [],
+      "sections": [
+        {
+          "flags": 0,
+          "id": 1,
+          "item_count": 0,
+          "kind": "Types",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 2,
+          "item_count": 0,
+          "kind": "ConstantTable",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 3,
+          "item_count": 0,
+          "kind": "ConstantBlob",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 4,
+          "item_count": 0,
+          "kind": "Symbols",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 5,
+          "item_count": 0,
+          "kind": "Instructions",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 6,
+          "item_count": 0,
+          "kind": "Dictionary",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 7,
+          "item_count": 0,
+          "kind": "ApplicationRequirements",
+          "length": 0,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 8,
+          "item_count": 1,
+          "kind": "ArtifactSchemas",
+          "length": 197,
+          "offset": 640,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 9,
+          "item_count": 1,
+          "kind": "ArtifactConstants",
+          "length": 181,
+          "offset": 840,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 10,
+          "item_count": 1,
+          "kind": "ArtifactInputs",
+          "length": 2,
+          "offset": 1024,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 11,
+          "item_count": 1,
+          "kind": "ArtifactSlots",
+          "length": 151,
+          "offset": 1032,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 12,
+          "item_count": 1,
+          "kind": "ArtifactProducers",
+          "length": 135,
+          "offset": 1184,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 13,
+          "item_count": 1,
+          "kind": "ArtifactNodes",
+          "length": 1082,
+          "offset": 1320,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 14,
+          "item_count": 1,
+          "kind": "ArtifactBindings",
+          "length": 318,
+          "offset": 2408,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 15,
+          "item_count": 1,
+          "kind": "ArtifactOutputs",
+          "length": 52,
+          "offset": 2728,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 16,
+          "item_count": 1,
+          "kind": "ArtifactIntegrityConstraints",
+          "length": 2,
+          "offset": 2784,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 17,
+          "item_count": 1,
+          "kind": "ArtifactOperations",
+          "length": 158,
+          "offset": 2792,
+          "reserved": 0
+        },
+        {
+          "flags": 0,
+          "id": 18,
+          "item_count": 1,
+          "kind": "ArtifactOperationContracts",
+          "length": 115,
+          "offset": 2952,
+          "reserved": 0
+        }
+      ],
+      "sha256": "0c5d1ca80c42425831ac79c9266fc2174fcfb624d23d41600c34a82a67cda92b",
+      "source": "(1, 2) ? | (left, right), left > 0 => left + right | * => 0",
+      "source_file": "structural-match.mec"
     },
     {
       "application_requirements": [],
@@ -2076,7 +2282,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "d9aeffc68f48d999f87cf5ebd9967fb451762ceb8e5d73b3678862b4c424b59a",
+      "sha256": "310463b08585e144884fc79ff29bfb97b4b615634a1e015c4fe33aeac8f1ff59",
       "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
       "source_file": "fixed-matrix-add-f64.mec"
     },
@@ -2367,7 +2573,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "15cf15fcf07fdf2ad9707bcc7b0f3865466214969c12ccc62bd4211458b8b70d",
+      "sha256": "b07849cef75893d0d019dcbda7ae0c9f0cf2d83c416ee52cd5e35340ca6655fc",
       "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]",
       "source_file": "dynamic-matrix-add-f64.mec"
     },
@@ -2607,7 +2813,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "a1a0663a6654c3fb31dee8fb7237d226bd36ff5bd14eccd02807babefa8c9264",
+      "sha256": "ea2243c3dff395736da4bd69724ba28608d92666c1220f03c06e885967f789ac",
       "source": "[1.0 2.0 3.0 4.0 5.0]",
       "source_file": "variadic-horzcat-f64.mec"
     },
@@ -2820,7 +3026,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "0b21399fdb95eaf8e12d807d6d60054f9a59c063ff918376b09c8d1a34c6322d",
+      "sha256": "d742e1c7f16ff9b97c183e939c0bc8509e7cb510fb2dadec71982ea4eb7cef48",
       "source": "\"bytecode-v1\"",
       "source_file": "string.mec"
     },
@@ -3054,7 +3260,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "70590b0e98a6235c452f41a018d0147187016dffa859d2e4e0b342665cbfe4f8",
+      "sha256": "63a2445c34df030b278a991fc7385815d8ca0a3c0aacd652ead876260076bf5b",
       "source": "[9.0]",
       "source_file": "unary.mec"
     },
@@ -3291,7 +3497,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "3fe6a426b4c251b15e94fd563d0c5c2715c5241d7c90a30317617678756222e7",
+      "sha256": "1f4d4dc68bf9a019af276b1d780f618c8dad2bc87edccd99babc7187cda94cec",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },
@@ -3587,7 +3793,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "688abbf3e78f1762a05bf4db6549c13b7c7586ab254d54e6562f125058abb6b2",
+      "sha256": "b97017b8110e2b742eba3503512a30fe6e30e5ea9dea383c9963815916ec4a40",
       "source": "a := [1.0 2.0 3.0 4.0 5.0]; b := [6.0 7.0 8.0 9.0 10.0]; c := [11.0 12.0 13.0 14.0 15.0]; d := [16.0 17.0 18.0 19.0 20.0]; [a; b; c; d]",
       "source_file": "quaternary.mec"
     },
@@ -3806,7 +4012,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "d2d00a8c5a397ffc68e04f4670cb9e4746053078d5d6bcafd6cb36c343eb2853",
+      "sha256": "bb0207103edb50af01925114bb5994b438f00f70aee505fd183ea6f1d50ac085",
       "source": "+> math\nmath/sin(0.0)",
       "source_file": "named-module-operation.mec"
     },
@@ -4037,7 +4243,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "2a18c360d1d52a7192575f62478e40307ed263594ea230dd5aeb676819cdd0fb",
+      "sha256": "c9502b7ab057c7e617082b150c8a390452137209a51bec894f4e7506301c4282",
       "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
       "source_file": "cli-stdout.mec"
     },
@@ -4268,7 +4474,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "78ca711545bf078a20fed6099152bc390eb28e1c9dab9cf6f66c8850f6d5855b",
+      "sha256": "a6de1256c5250c4d2b7dd886f0fce086fcc6b85813b3b86ec7f27bde5c52aaff",
       "source": "@out := console://console/output{:write(line)}\n@out/line <- \"bytecode-v1-console\"\n\"console-done\"",
       "source_file": "console.mec"
     },
@@ -4505,7 +4711,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "efd64c497ff89770472599d12397a00d32eaeb7886beb4b07ce253fe36bf3295",
+      "sha256": "e7111aeec438f21348be072aa794f97f45c3a64957fbe3b39b87f71b0f236a29",
       "source": "@clock := time://clock/clock{:read(second)}\nsecond := @clock/second\n\"time-done\"",
       "source_file": "time.mec"
     },
@@ -4742,7 +4948,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "2bb725959230a85176122a9cfc5a30568d9b5e5312ae7ac7ece268606c4a91fe",
+      "sha256": "302091b0a3695c3305b0705aaf331af484ced4bdbef8fe0d3c166332f5c24549",
       "source": "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick\n\"timer-done\"",
       "source_file": "timer.mec"
     },
@@ -5017,7 +5223,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "26395c552758654776d8356b3be41b46f342988345762d76e74c03fb1e80e716",
+      "sha256": "ae95dd406274e007088a6ed9d10a7a51c5f2b973559187b804e395c0199f7c22",
       "source": "@frame := scene://scene/frame{:write(replace)}\nframe := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- frame\n\"scene-done\"",
       "source_file": "scene.mec"
     },
@@ -5254,7 +5460,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "122fb44b70c93923225bee1791c8fda16427d28300182f470fdaca1fea4ea228",
+      "sha256": "9c0bd0c4cbd61bb1a6defdc61eff9ad07200864cdb0a81ce413bf77bca878608",
       "source": "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
       "source_file": "robot-arm.mec"
     },
@@ -5571,7 +5777,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "757428e2adb8d492bd9e74270b523f7eb8b393c38421523f65866a6fb8aedaad",
+      "sha256": "123158424489435896f5742db037c4a1970f2e2844b24cc9e4378508747d257c",
       "source": "+> @clock := test-live/clock\n\n+> @out := test-live/output\n\nvalue := @clock/value\ndoubled := value + value\n\npayload := (value, doubled)\nframe := {rotation: value}\n@out/tuple <- payload\n@out/frame <- frame\n\npayload",
       "source_file": "synthetic-live-read.mec"
     }

@@ -265,6 +265,100 @@ fn match_publishes_the_selected_compound_result_across_turns() {
 }
 
 #[test]
+fn structural_match_patterns_bind_guard_and_fall_through_after_roundtrip() {
+    execute(
+        "x := (1, 2) ? | (left, right), left > 0 => left + right | * => 0",
+        [(Vec::new(), f(3.0)), (Vec::new(), f(3.0))],
+    );
+    execute(
+        "x := (1, 2) ? | (same, same) => 99 | * => 0",
+        [(Vec::new(), f(0.0)), (Vec::new(), f(0.0))],
+    );
+    execute(
+        "x := [1 2 3] ? | [head, ..., tail] => head + tail | * => 0",
+        [(Vec::new(), f(4.0)), (Vec::new(), f(4.0))],
+    );
+    execute(
+        "x := [1 2 3] ? | [head | [2, 3]] => head | * => 0",
+        [(Vec::new(), f(1.0)), (Vec::new(), f(1.0))],
+    );
+    execute(
+        "x := [1 2 3] ? | [head | rest] => head | * => 0",
+        [(Vec::new(), f(1.0)), (Vec::new(), f(1.0))],
+    );
+    execute(
+        "x := [1 2 3] ? | [head | rest] => rest[1] + rest[2] | * => 0",
+        [(Vec::new(), f(5.0)), (Vec::new(), f(5.0))],
+    );
+    execute(
+        "x := :Point((1, 2)) ? | :Point(left, right) => left + right | * => 0",
+        [(Vec::new(), f(3.0)), (Vec::new(), f(3.0))],
+    );
+    execute(
+        "x := ((1, 2), 3) ? | (pair, *) => pair | * => (0, 0)",
+        [
+            (
+                Vec::new(),
+                Data::Tuple(vec![f(1.0), f(2.0)].into_boxed_slice()),
+            ),
+            (
+                Vec::new(),
+                Data::Tuple(vec![f(1.0), f(2.0)].into_boxed_slice()),
+            ),
+        ],
+    );
+}
+
+#[test]
+fn structural_match_patterns_follow_live_scrutinee_values_without_binding_leaks() {
+    let source = "x := signal<(f64,f64)> ? | (left, right), left > 0 => left + right | * => 0";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let input_schema = artifact.inputs()[0].schema;
+    let value = |left, right| {
+        mech_core::ValueDraft {
+            schema: input_schema,
+            shape_values: Box::new([]),
+            data: Data::Tuple(vec![f(left), f(right)].into_boxed_slice()),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            artifact.schemas(),
+        ))
+        .unwrap()
+    };
+    let inputs = [[Some(value(1.0, 2.0))], [Some(value(-1.0, 4.0))]];
+    execute(
+        source,
+        inputs
+            .iter()
+            .zip([f(3.0), f(0.0)])
+            .map(|(input, expected)| (vec![ResidentValueRef::Snapshot(input)], expected)),
+    );
+
+    let source = "x := signal<(f64,f64)> ? | (same, same) => 99 | * => 0";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let input_schema = artifact.inputs()[0].schema;
+    let value = |left, right| {
+        mech_core::ValueDraft {
+            schema: input_schema,
+            shape_values: Box::new([]),
+            data: Data::Tuple(vec![f(left), f(right)].into_boxed_slice()),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            artifact.schemas(),
+        ))
+        .unwrap()
+    };
+    let inputs = [[Some(value(2.0, 2.0))], [Some(value(2.0, 3.0))]];
+    execute(
+        source,
+        inputs
+            .iter()
+            .zip([f(99.0), f(0.0)])
+            .map(|(input, expected)| (vec![ResidentValueRef::Snapshot(input)], expected)),
+    );
+}
+
+#[test]
 fn identical_key_tables_join_after_artifact_roundtrip() {
     execute(
         "x := (|a<u8>|1u8|) ⋈ (|a<u8>|1u8|)",
@@ -347,6 +441,9 @@ fn unresolved_empty_and_unknown_calls_are_anchored_user_errors() {
 #[test]
 fn structured_patterns_read_live_components_and_reject_partial_matches() {
     let tuple = |a, b| Data::Tuple(vec![f(a), f(b)].into_boxed_slice());
+    let row_pair = |left: &[f64], right: &[f64]| {
+        Data::Tuple(vec![matrix(left), matrix(right)].into_boxed_slice())
+    };
     for (source, inputs, expected) in [
         (
             "out := [x + y | (x,y) <- signal<[(f64,f64)]:1,2>]",
@@ -371,6 +468,28 @@ fn structured_patterns_read_live_components_and_reject_partial_matches() {
                 vec![matrix(&[8.0, 2.0]), matrix(&[3.0, 3.0])],
             ],
             [vec![2.0, 3.0], vec![3.0]],
+        ),
+        (
+            "out := [rest[1] + rest[2] | [head | rest] <- signal<[[f64]:1,3]:1,2>]",
+            [
+                vec![matrix(&[1.0, 2.0, 3.0]), matrix(&[4.0, 5.0, 6.0])],
+                vec![matrix(&[7.0, 8.0, 9.0]), matrix(&[10.0, 11.0, 12.0])],
+            ],
+            [vec![5.0, 11.0], vec![17.0, 23.0]],
+        ),
+        (
+            "out := [head | ([head | rest], [other | rest]) <- signal<[([f64]:1,3,[f64]:1,3)]:1,2>]",
+            [
+                vec![
+                    row_pair(&[1.0, 2.0, 3.0], &[9.0, 2.0, 3.0]),
+                    row_pair(&[4.0, 5.0, 6.0], &[8.0, 5.0, 7.0]),
+                ],
+                vec![
+                    row_pair(&[7.0, 8.0, 9.0], &[0.0, 8.0, 9.0]),
+                    row_pair(&[10.0, 11.0, 12.0], &[1.0, 11.0, 13.0]),
+                ],
+            ],
+            [vec![1.0], vec![7.0]],
         ),
     ] {
         let artifact = compile(source).compile_artifact().unwrap();

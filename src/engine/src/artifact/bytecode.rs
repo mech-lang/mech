@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 6;
+const WIRE_GRAPH_REVISION: u32 = 7;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -284,13 +284,43 @@ enum WirePattern {
     Literal(u32),
     Wildcard,
     Bind,
+    Structural(WireStructuralMatchPattern),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WireMatchPatternValue {
+    Literal(u32),
+    Binding(u32),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WireStructuralMatchPattern {
+    Wildcard,
+    Bind {
+        local: u32,
+        schema: u32,
+    },
+    Equal(WireMatchPatternValue),
+    Tuple(Box<[WireStructuralMatchPattern]>),
+    Array {
+        prefix: Box<[WireStructuralMatchPattern]>,
+        rest: Option<Box<WireStructuralMatchPattern>>,
+        suffix: Box<[WireStructuralMatchPattern]>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+enum WireControlParameterSource {
+    Scrutinee,
+    PatternBinding(u32),
+    Capture(u16),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireControlBlock {
     id: u32,
-    parameters: Box<[(Option<u16>, u32)]>,
+    parameters: Box<[(WireControlParameterSource, u32)]>,
     operations: Box<[WireControlOperation]>,
     yield_value: WireControlValue,
 }
@@ -1599,8 +1629,15 @@ fn wire_control_block(
             .map(|parameter| {
                 (
                     match parameter.source {
-                        super::ControlParameterSource::Scrutinee => None,
-                        super::ControlParameterSource::Capture(index) => Some(index),
+                        super::ControlParameterSource::Scrutinee => {
+                            WireControlParameterSource::Scrutinee
+                        }
+                        super::ControlParameterSource::PatternBinding(local) => {
+                            WireControlParameterSource::PatternBinding(local)
+                        }
+                        super::ControlParameterSource::Capture(index) => {
+                            WireControlParameterSource::Capture(index)
+                        }
                     },
                     parameter.schema.get(),
                 )
@@ -1712,6 +1749,80 @@ fn collection_pattern_from_wire(pattern: WireCollectionPattern) -> super::Collec
     }
 }
 
+fn wire_structural_match_pattern(
+    pattern: &super::CollectionPattern<SchemaId, super::MatchPatternValue>,
+) -> WireStructuralMatchPattern {
+    match pattern {
+        super::CollectionPattern::Wildcard => WireStructuralMatchPattern::Wildcard,
+        super::CollectionPattern::Bind { local, schema } => WireStructuralMatchPattern::Bind {
+            local: *local,
+            schema: schema.get(),
+        },
+        super::CollectionPattern::Equal(super::MatchPatternValue::Literal(constant)) => {
+            WireStructuralMatchPattern::Equal(WireMatchPatternValue::Literal(constant.get()))
+        }
+        super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local)) => {
+            WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(*local))
+        }
+        super::CollectionPattern::Tuple(items) => WireStructuralMatchPattern::Tuple(
+            items.iter().map(wire_structural_match_pattern).collect(),
+        ),
+        super::CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => WireStructuralMatchPattern::Array {
+            prefix: prefix.iter().map(wire_structural_match_pattern).collect(),
+            rest: rest
+                .as_deref()
+                .map(wire_structural_match_pattern)
+                .map(Box::new),
+            suffix: suffix.iter().map(wire_structural_match_pattern).collect(),
+        },
+    }
+}
+
+fn structural_match_pattern_from_wire(
+    pattern: WireStructuralMatchPattern,
+) -> super::CollectionPattern<SchemaId, super::MatchPatternValue> {
+    match pattern {
+        WireStructuralMatchPattern::Wildcard => super::CollectionPattern::Wildcard,
+        WireStructuralMatchPattern::Bind { local, schema } => super::CollectionPattern::Bind {
+            local,
+            schema: SchemaId::new(schema),
+        },
+        WireStructuralMatchPattern::Equal(WireMatchPatternValue::Literal(constant)) => {
+            super::CollectionPattern::Equal(super::MatchPatternValue::Literal(ConstantId::new(
+                constant,
+            )))
+        }
+        WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(local)) => {
+            super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local))
+        }
+        WireStructuralMatchPattern::Tuple(items) => super::CollectionPattern::Tuple(
+            items
+                .into_iter()
+                .map(structural_match_pattern_from_wire)
+                .collect(),
+        ),
+        WireStructuralMatchPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => super::CollectionPattern::Array {
+            prefix: prefix
+                .into_iter()
+                .map(structural_match_pattern_from_wire)
+                .collect(),
+            rest: rest.map(|rest| Box::new(structural_match_pattern_from_wire(*rest))),
+            suffix: suffix
+                .into_iter()
+                .map(structural_match_pattern_from_wire)
+                .collect(),
+        },
+    }
+}
+
 fn wire_node_body(
     body: &super::ExecutableNodeBody,
     operations: &BTreeMap<OperationReference, u32>,
@@ -1797,10 +1908,13 @@ fn wire_match(
             .arms
             .iter()
             .map(|arm| WireMatchArm {
-                pattern: match arm.pattern {
+                pattern: match &arm.pattern {
                     super::MatchPattern::Literal(constant) => WirePattern::Literal(constant.get()),
                     super::MatchPattern::Wildcard => WirePattern::Wildcard,
                     super::MatchPattern::Bind => WirePattern::Bind,
+                    super::MatchPattern::Structural(pattern) => {
+                        WirePattern::Structural(wire_structural_match_pattern(pattern))
+                    }
                 },
                 guard: arm
                     .guard
@@ -1861,11 +1975,18 @@ fn control_block_from_wire(
         parameters: block
             .parameters
             .into_iter()
-            .map(|(capture, schema)| super::ControlParameter {
-                source: capture.map_or(
-                    super::ControlParameterSource::Scrutinee,
-                    super::ControlParameterSource::Capture,
-                ),
+            .map(|(source, schema)| super::ControlParameter {
+                source: match source {
+                    WireControlParameterSource::Scrutinee => {
+                        super::ControlParameterSource::Scrutinee
+                    }
+                    WireControlParameterSource::PatternBinding(local) => {
+                        super::ControlParameterSource::PatternBinding(local)
+                    }
+                    WireControlParameterSource::Capture(index) => {
+                        super::ControlParameterSource::Capture(index)
+                    }
+                },
                 schema: SchemaId::new(schema),
             })
             .collect(),
@@ -2027,6 +2148,9 @@ fn match_from_wire(
                         }
                         WirePattern::Wildcard => super::MatchPattern::Wildcard,
                         WirePattern::Bind => super::MatchPattern::Bind,
+                        WirePattern::Structural(pattern) => super::MatchPattern::Structural(
+                            structural_match_pattern_from_wire(pattern),
+                        ),
                     },
                     guard: arm
                         .guard
@@ -2251,6 +2375,7 @@ fn preflight_control_graph(
                     "inputs" | "parameters" | "captures" | "arguments" => Field::Operands,
                     "Generator" => Field::Generator,
                     "pattern" if matches!(self.field, Field::Generator) => Field::Pattern,
+                    "Structural" => Field::Pattern,
                     "rest" => Field::Pattern,
                     "value" => Field::Pattern,
                     "Tuple" | "Array" | "items" | "prefix" | "suffix" => Field::PatternChildren,

@@ -3137,3 +3137,35 @@ fn committed_source_bytecode_fixtures_pass_current_artifact_validation() {
         "the manifest must contain source artifact fixtures"
     );
 }
+
+#[test]
+fn committed_structural_match_fixture_freezes_revision_7_control_tags() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/architecture/bytecode-v1/structural-match.mecb");
+    let artifact = decode_program_artifact_bytecode_v1(&std::fs::read(path).unwrap()).unwrap();
+    let declaration = artifact
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            ExecutableNodeBody::Match(declaration) => Some(declaration),
+            _ => None,
+        })
+        .expect("fixture must contain a canonical match node");
+
+    assert!(matches!(
+        declaration.arms.first().map(|arm| &arm.pattern),
+        Some(MatchPattern::Structural(_))
+    ));
+    let sources = declaration
+        .arms
+        .iter()
+        .flat_map(|arm| {
+            arm.guard
+                .iter()
+                .chain(core::iter::once(&arm.body))
+                .flat_map(|block| block.parameters.iter().map(|parameter| parameter.source))
+        })
+        .collect::<Vec<_>>();
+    assert!(sources.contains(&ControlParameterSource::PatternBinding(0)));
+    assert!(sources.contains(&ControlParameterSource::PatternBinding(1)));
+}

@@ -508,11 +508,11 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             });
         }
     }
-    let mut revision_five = sections.clone();
-    revision_five.nodes = graph
-        .replacen("\"revision\":6", "\"revision\":5", 1)
+    let mut revision_six = sections.clone();
+    revision_six.nodes = graph
+        .replacen("\"revision\":7", "\"revision\":6", 1)
         .into_bytes();
-    assert!(mech_engine::decode_program_artifact_sections(&revision_five).is_err());
+    assert!(mech_engine::decode_program_artifact_sections(&revision_six).is_err());
     // Artifact admission must enforce the complete canonical forbidden-emoji
     // terminal set in all three identifier roles, including a forbidden
     // grapheme after a valid prefix.

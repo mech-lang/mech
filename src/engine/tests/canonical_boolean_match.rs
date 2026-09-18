@@ -165,6 +165,22 @@ fn control(draft: &mut ProgramArtifactDraft) -> &mut MatchDeclaration {
     control
 }
 
+fn draft_from(artifact: &ProgramArtifact) -> ProgramArtifactDraft {
+    ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().into(),
+        slots: artifact.slots().into(),
+        nodes: artifact.nodes().into(),
+        bindings: artifact.bindings().into(),
+        outputs: artifact.outputs().into(),
+        constraints: artifact.constraints().into(),
+        compute_regions: artifact.compute_regions().into(),
+    }
+}
+
 #[test]
 fn typed_match_roundtrip_and_revision_own_all_branch_semantics() {
     let draft = fixture();
@@ -178,8 +194,8 @@ fn typed_match_roundtrip_and_revision_own_all_branch_semantics() {
         let matched = control(&mut changed);
         match change {
             0 => {
-                let first = matched.arms[0].pattern;
-                matched.arms[0].pattern = matched.arms[1].pattern;
+                let first = matched.arms[0].pattern.clone();
+                matched.arms[0].pattern = matched.arms[1].pattern.clone();
                 matched.arms[1].pattern = first;
             }
             1 => {
@@ -200,7 +216,7 @@ fn typed_match_rejects_invalid_scope_coverage_schema_and_writer() {
         let boolean = draft.inputs[0].schema;
         match mutation {
             0 => {
-                let first = control(&mut draft).arms[0].pattern;
+                let first = control(&mut draft).arms[0].pattern.clone();
                 control(&mut draft).arms[1].pattern = first;
             }
             1 => control(&mut draft).arms[0].body.id = ControlBlockId(9),
@@ -242,6 +258,34 @@ fn typed_match_rejects_invalid_scope_coverage_schema_and_writer() {
 }
 
 #[test]
+fn typed_match_rejects_scalar_schema_for_array_rest_binding() {
+    let artifact = compile("[1 2 3] ? | [head | rest], flag<bool> => rest[1] + rest[2] | * => 0")
+        .compile_artifact()
+        .unwrap();
+    let boolean = artifact.inputs()[0].schema;
+    let mut draft = draft_from(&artifact);
+    let matched = draft
+        .nodes
+        .iter_mut()
+        .find_map(|node| match &mut node.body {
+            ExecutableNodeBody::Match(matched) => Some(matched),
+            _ => None,
+        })
+        .unwrap();
+    let MatchPattern::Structural(CollectionPattern::Array {
+        rest: Some(rest), ..
+    }) = &mut matched.arms[0].pattern
+    else {
+        panic!("expected an array rest pattern")
+    };
+    let CollectionPattern::Bind { schema, .. } = rest.as_mut() else {
+        panic!("expected the rest to bind")
+    };
+    *schema = boolean;
+    assert!(draft.finalize().is_err());
+}
+
+#[test]
 fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
     let artifact = fixture().finalize().unwrap();
     let sections = encode_program_artifact_sections(&artifact).unwrap();
@@ -279,7 +323,7 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
         let mut sections = sections.clone();
         let text = String::from_utf8(sections.nodes.clone()).unwrap();
         let text = if key == "revision" {
-            text.replace("\"revision\":6", "\"revision\":5")
+            text.replace("\"revision\":7", "\"revision\":6")
         } else {
             text.replace("\"Literal\":", "\"Unknown\":")
         };
@@ -401,6 +445,98 @@ fn resident_typed_match_switches_true_false_true_without_eager_blocks() {
         };
         assert_eq!(value.to_f64(), expected[usize::from(index == 1)]);
     }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn structural_match_falls_through_for_foreign_dynamic_payloads() {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_core::{
+        DimensionExpr, FloatWidth, FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef,
+        SchemaDraft, SchemaTableBuilder, ValueData,
+    };
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+
+    let artifact = compile("signal<[*]:1,1> ? | [true] => 1 | * => 0")
+        .compile_artifact()
+        .unwrap();
+    let mut foreign = SchemaTableBuilder::new();
+    let tuple = foreign
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Tuple(
+                    vec![SchemaBody::FloatingPoint(FloatWidth::W64), SchemaBody::Bool]
+                        .into_boxed_slice(),
+                ),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let matrix = foreign
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Dynamic),
+                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                        .into_boxed_slice(),
+                },
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let foreign = foreign.finish().unwrap();
+    let tuple = foreign.resolve(tuple).unwrap();
+    let matrix = foreign.resolve(matrix).unwrap();
+    let (foreign, _) = foreign.into_parts();
+    assert!(
+        artifact
+            .schemas()
+            .find_by_key(foreign.entry(tuple).unwrap().key())
+            .is_none()
+    );
+    let input = ValueDraft {
+        schema: matrix,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::Matrix(
+            vec![ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                schema: tuple,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Tuple(
+                    vec![
+                        ValueDataDraft::F64(F64Bits::from_f64(7.0)),
+                        ValueDataDraft::Bool(false),
+                    ]
+                    .into_boxed_slice(),
+                ),
+            })))]
+            .into_boxed_slice(),
+        ),
+    }
+    .finalize(&SnapshotValidationContext::new(&foreign))
+    .unwrap();
+
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x4d, 3),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance
+        .turn(&[CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::Snapshot(&[Some(input)]),
+        }])
+        .unwrap();
+    let output = instance.copied_output(0).unwrap();
+    assert!(matches!(output.data(), ValueData::F64(value) if value.to_f64() == 0.0));
 }
 
 #[cfg(feature = "resident-artifact")]
@@ -1817,4 +1953,92 @@ fn wildcard_matches_do_not_impose_a_scalar_type_on_unused_scrutinees() {
     assert!(
         matches!(instance.copied_output(0).unwrap().data(), ValueData::F64(value) if value.to_f64() == 1.0)
     );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn root_structural_bind_and_equality_materialize_dense_matrix_scrutinees() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData};
+    use mech_engine::resident::{
+        ActivationFacts, CapturedSignalInput, ResidentValueBorrow, activate,
+    };
+
+    let compiled = compile("signal<[f64]:1,2> ? | [1 2] => template<[f64]:1,2> | * => [30 40]");
+    let template_schema = compiled.program().inputs[1].schema;
+    let template = mech_core::ValueDraft {
+        schema: template_schema,
+        shape_values: Box::new([]),
+        data: mech_core::ValueDataDraft::Matrix(
+            [10.0, 20.0]
+                .map(|value| {
+                    mech_core::ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value))
+                })
+                .into(),
+        ),
+    }
+    .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+        compiled.schemas(),
+    ))
+    .unwrap();
+    let artifact = compiled
+        .bind_input_constants(&[(1, template)])
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let matrix_schema = artifact.inputs()[0].schema;
+    let matrix_literal = (0..artifact.constants().len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| {
+            let value = artifact.constants().get(*id).unwrap();
+            value.schema() == matrix_schema && matches!(value.data(), ValueData::Matrix(_))
+        })
+        .expect("the selected-arm result contributes a matrix constant");
+    let sections = encode_program_artifact_sections(&artifact).unwrap();
+    let catalog = {
+        let mut catalog = FunctionCatalogBuilder::new();
+        install_intrinsic_resident(&mut catalog).unwrap();
+        catalog.build().unwrap()
+    };
+
+    for (case, (pattern, turns)) in [
+        (
+            serde_json::json!({"Structural":{"Equal":{"Literal":matrix_literal.get()}}}),
+            vec![
+                (&[10.0, 20.0][..], &[10.0, 20.0][..]),
+                (&[9.0, 8.0][..], &[30.0, 40.0][..]),
+            ],
+        ),
+        (
+            serde_json::json!({"Structural":{"Bind":{"local":0,"schema":matrix_schema.get()}}}),
+            vec![(&[9.0, 8.0][..], &[10.0, 20.0][..])],
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let mut sections = sections.clone();
+        let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+        graph["nodes"][0]["body"]["Match"]["arms"][0]["pattern"] = pattern;
+        sections.nodes = serde_json::to_vec(&graph).unwrap();
+        let artifact = decode_program_artifact_sections(&sections).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(822, 46),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for (input, expected) in turns {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(input),
+                }])
+                .unwrap_or_else(|error| panic!("case {case}, input {input:?}: {error:?}"));
+            assert!(matches!(
+                instance.output_borrow(0),
+                Some(ResidentValueBorrow::F64 { values, .. }) if values == expected
+            ));
+        }
+    }
 }

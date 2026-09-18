@@ -154,15 +154,40 @@ pub struct ActivatedControlBlock {
 
 #[derive(Clone, Debug)]
 pub struct ActivatedMatchArm {
-    pub literal: Option<ResidentRegion>,
+    pub pattern: ActivatedMatchPattern,
+    pub binding_regions: Box<[ResidentRegion]>,
+    pub guard_regions: Box<[ResidentRegion]>,
     pub guard: Option<ActivatedControlBlock>,
     pub body: ActivatedControlBlock,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ActivatedPatternValue {
+    pub location: ResidentReadLocation,
+    pub schema: SchemaId,
+}
+
+#[derive(Clone, Debug)]
+pub enum ActivatedMatchPattern {
+    Literal(ResidentReadLocation),
+    Wildcard,
+    Bind,
+    Structural {
+        pattern: crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+        work: u64,
+        binding_count: u64,
+        equality_count: u64,
+        dense_finalization_count: u64,
+        clone_depth: u64,
+    },
 }
 
 #[derive(Clone, Debug)]
 pub struct ActivatedMatchNode {
     pub artifact_node: NodeId,
     pub scrutinee: ResidentReadLocation,
+    pub scrutinee_schema: SchemaId,
+    pub scrutinee_shape_values: Box<[u64]>,
     pub write: ResidentWriteLocation,
     pub arms: Box<[ActivatedMatchArm]>,
     pub locals: Box<[ResidentRegion]>,
@@ -356,6 +381,7 @@ pub struct ActivatedPlan {
     pub activation_nodes: Box<[NodeId]>,
     activation_steps: Box<[ActivatedOnceNode]>,
     pub(crate) schemas: std::sync::Arc<mech_core::SchemaTable>,
+    pub(crate) structural_projections: execution::StructuralProjectionTable,
     pub(crate) constant_regions: Box<[ResidentRegion]>,
     pub(crate) state_slots: Box<[CellSlotId]>,
     pub(crate) rmw_state_slots: Box<[CellSlotId]>,
@@ -1934,6 +1960,7 @@ fn append_match_execution_cases(
                     crate::ControlValue::Parameter { ordinal, .. } => {
                         let input = match block.parameters[ordinal as usize].source {
                             crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                            crate::ControlParameterSource::PatternBinding(_) => return None,
                             crate::ControlParameterSource::Capture(index) => {
                                 control.captures[index as usize].input
                             }
@@ -3459,6 +3486,7 @@ fn complete_activation_shape_facts(
 
 struct LayoutBuild {
     control_locals: BTreeMap<(NodeId, u32, u32), (CellSlotId, NodeId)>,
+    match_bindings: BTreeMap<(NodeId, u32, u32), (CellSlotId, NodeId)>,
     slots: Box<[ResolvedSlot]>,
     constant_regions: Box<[ResidentRegion]>,
     memory_plan: ProgramMemoryPlan,
@@ -3606,6 +3634,7 @@ fn build_layout(
         ));
     }
     let mut control_locals = BTreeMap::new();
+    let mut match_bindings = BTreeMap::new();
     let mut next_local = 0u32;
     for node in artifact.nodes() {
         let local_definitions = match &node.body {
@@ -3613,21 +3642,30 @@ fn build_layout(
                 .blocks()
                 .into_iter()
                 .flat_map(|block| {
-                    block
-                        .operations
-                        .iter()
-                        .map(move |operation| (block.id.0, operation.node, operation.schema))
+                    block.operations.iter().map(move |operation| {
+                        (false, false, block.id.0, operation.node, operation.schema)
+                    })
                 })
+                .chain(
+                    control
+                        .pattern_bindings()
+                        .into_iter()
+                        .map(|(block, local, schema)| (true, true, block, local, schema)),
+                )
                 .collect::<Vec<_>>(),
-            crate::ExecutableNodeBody::Comprehension(control) => comprehension::locals(control)
-                .into_iter()
-                .enumerate()
-                .map(|(local, schema)| (0, local as u32, schema))
-                .collect(),
+            crate::ExecutableNodeBody::Comprehension(control) => {
+                comprehension::local_definitions(control)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(local, (turn_shaped_binding, schema))| {
+                        (false, turn_shaped_binding, 0, local as u32, schema)
+                    })
+                    .collect()
+            }
             _ => continue,
         };
         let mut ordinal = 0usize;
-        for (block, local, schema_id) in local_definitions {
+        for (pattern_binding, turn_shaped_binding, block, local, schema_id) in local_definitions {
             let slot = CellSlotId(
                 u32::try_from(slot_layouts.len())
                     .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
@@ -3642,13 +3680,24 @@ fn build_layout(
                 .checked_add(1)
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
             let schema = artifact.schemas().entry(schema_id).unwrap();
-            let shape = schema
-                .schema()
-                .instantiate_shape(Box::new([]))
-                .map_err(|_| ResidentActivationError::UnsupportedControlLayout {
-                    node: node.node,
+            let shape =
+                mech_core::shape_for_declared_lower_bounds(schema.schema()).map_err(|_| {
+                    ResidentActivationError::UnsupportedControlLayout { node: node.node }
                 })?;
-            let (kind, resident_shape) = schema_layout(artifact, schema_id, &shape, true, None)?;
+            let has_fixed_shape = schema.schema().dimension_parameters().is_empty();
+            let variable_dense_matrix = matches!(
+                schema.schema().body(),
+                SchemaBody::Matrix { element, dimensions }
+                    if dimensions.len() == 2 && dense_resident_kind(element).is_some()
+            ) && !has_fixed_shape;
+            let (kind, resident_shape) = if turn_shaped_binding && variable_dense_matrix {
+                // A middle-slice binding carries its live turn extent in the
+                // canonical snapshot; the scratch arena itself remains one
+                // fixed snapshot lane.
+                (ResidentValueKind::Snapshot, ResidentShape::SCALAR)
+            } else {
+                schema_layout(artifact, schema_id, &shape, has_fixed_shape, None)?
+            };
             let len = resident_shape
                 .len()
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
@@ -3676,7 +3725,11 @@ fn build_layout(
                 lifetime: mech_core::MemoryLifetime::Turn { first, last },
                 producer: Some(node.node),
             });
-            control_locals.insert((node.node, block, local), (slot, physical_node));
+            if pattern_binding {
+                match_bindings.insert((node.node, block, local), (slot, physical_node));
+            } else {
+                control_locals.insert((node.node, block, local), (slot, physical_node));
+            }
             slot_layouts.push((
                 crate::SlotDeclaration {
                     slot,
@@ -3758,6 +3811,7 @@ fn build_layout(
         .collect::<Result<Vec<_>, ResidentActivationError>>()?;
     Ok(LayoutBuild {
         control_locals,
+        match_bindings,
         slots: slots.into_boxed_slice(),
         constant_regions: constant_regions.into_boxed_slice(),
         memory_plan: projection.plan,
@@ -4720,6 +4774,30 @@ fn build_plan(
     attach_resident_call_memory_template(&mut layout.memory_plan, &call_template)
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     ensure_resident_plan_admitted(&layout.memory_plan)?;
+    let structural_match = steps.iter().find_map(|step| match step {
+        ActivatedTurnStep::Match(control) => control
+            .arms
+            .iter()
+            .any(|arm| matches!(arm.pattern, ActivatedMatchPattern::Structural { .. }))
+            .then_some(control.artifact_node),
+        ActivatedTurnStep::Comprehension(control)
+            if comprehension::uses_structural_patterns(control, artifact.schemas()) =>
+        {
+            Some(control.artifact_node)
+        }
+        ActivatedTurnStep::Comprehension(_)
+        | ActivatedTurnStep::Kernel(_)
+        | ActivatedTurnStep::External(_) => None,
+    });
+    let (schemas, structural_projections) = if let Some(node) = structural_match {
+        execution::structural_projection_schema_context(artifact.schemas())
+            .map_err(|_| ResidentActivationError::UnsupportedControlLayout { node })?
+    } else {
+        (
+            artifact.schemas().clone(),
+            execution::StructuralProjectionTable::default(),
+        )
+    };
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
         activation_facts_fingerprint,
@@ -4743,7 +4821,8 @@ fn build_plan(
         constraints,
         activation_nodes,
         activation_steps,
-        schemas: std::sync::Arc::new(artifact.schemas().clone()),
+        schemas: std::sync::Arc::new(schemas),
+        structural_projections,
         constant_regions: layout.constant_regions,
         state_slots,
         rmw_state_slots,
@@ -6225,11 +6304,35 @@ fn prepare_match_node(
     output_slot: CellSlotId,
     layout: &LayoutBuild,
 ) -> Result<ActivatedMatchNode, ResidentActivationError> {
-    let scrutinee = resolve_read(layout, inputs[control.scrutinee as usize])?;
+    let scrutinee_source = inputs[control.scrutinee as usize];
+    let scrutinee = resolve_read(layout, scrutinee_source)?;
+    let (scrutinee_schema, scrutinee_shape_values) = match scrutinee_source {
+        ArtifactSource::Constant(constant) => {
+            let value = artifact
+                .constants()
+                .get(constant)
+                .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+            (
+                value.schema(),
+                value.shape().parameter_values().to_vec().into_boxed_slice(),
+            )
+        }
+        ArtifactSource::Slot(slot) => {
+            let resolved = &layout.slots[slot.get() as usize];
+            (
+                resolved.schema,
+                resolved
+                    .shape
+                    .parameter_values()
+                    .to_vec()
+                    .into_boxed_slice(),
+            )
+        }
+    };
     if control
         .arms
         .iter()
-        .any(|arm| matches!(arm.pattern, crate::MatchPattern::Literal(_)))
+        .any(|arm| matches!(&arm.pattern, crate::MatchPattern::Literal(_)))
     {
         let region = scrutinee.region();
         let source = inputs[control.scrutinee as usize];
@@ -6253,6 +6356,8 @@ fn prepare_match_node(
     Ok(ActivatedMatchNode {
         artifact_node: owner,
         scrutinee,
+        scrutinee_schema,
+        scrutinee_shape_values,
         write: ResidentWriteLocation {
             slot: output_slot,
             storage: output.storage,
@@ -6271,7 +6376,120 @@ fn prepare_match_node(
             .map(|(block, local)| {
                 layout.slots[layout.control_locals[&(owner, block, local)].0.get() as usize].region
             })
+            .chain(
+                control
+                    .pattern_bindings()
+                    .into_iter()
+                    .map(|(block, local, _)| {
+                        layout.slots[layout.match_bindings[&(owner, block, local)].0.get() as usize]
+                            .region
+                    }),
+            )
             .collect(),
+    })
+}
+
+fn activate_match_pattern(
+    artifact: &ProgramArtifact,
+    owner: NodeId,
+    owner_block: u32,
+    pattern: &crate::MatchPattern,
+    layout: &LayoutBuild,
+) -> Result<ActivatedMatchPattern, ResidentActivationError> {
+    fn structural(
+        artifact: &ProgramArtifact,
+        owner: NodeId,
+        owner_block: u32,
+        pattern: &crate::CollectionPattern<SchemaId, crate::MatchPatternValue>,
+        layout: &LayoutBuild,
+    ) -> Result<
+        crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+        ResidentActivationError,
+    > {
+        Ok(match pattern {
+            crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
+            crate::CollectionPattern::Bind { local, schema } => {
+                let (slot, _) = layout.match_bindings[&(owner, owner_block, *local)];
+                crate::CollectionPattern::Bind {
+                    local: *local,
+                    schema: ActivatedPatternBinding {
+                        region: layout.slots[slot.get() as usize].region,
+                        schema: *schema,
+                    },
+                }
+            }
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Literal(constant)) => {
+                crate::CollectionPattern::Equal(ActivatedPatternValue {
+                    location: ResidentReadLocation::Constant(
+                        layout.constant_regions[constant.get() as usize],
+                    ),
+                    schema: artifact.constants().get(*constant).unwrap().schema(),
+                })
+            }
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Binding(local)) => {
+                let (slot, _) = layout.match_bindings[&(owner, owner_block, *local)];
+                let slot = &layout.slots[slot.get() as usize];
+                crate::CollectionPattern::Equal(ActivatedPatternValue {
+                    location: ResidentReadLocation::Scratch(slot.region),
+                    schema: slot.schema,
+                })
+            }
+            crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
+                items
+                    .iter()
+                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .collect::<Result<_, _>>()?,
+            ),
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => crate::CollectionPattern::Array {
+                prefix: prefix
+                    .iter()
+                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .collect::<Result<_, _>>()?,
+                rest: rest
+                    .as_deref()
+                    .map(|item| {
+                        structural(artifact, owner, owner_block, item, layout).map(Box::new)
+                    })
+                    .transpose()?,
+                suffix: suffix
+                    .iter()
+                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .collect::<Result<_, _>>()?,
+            },
+        })
+    }
+    Ok(match pattern {
+        crate::MatchPattern::Literal(id) => ActivatedMatchPattern::Literal(
+            ResidentReadLocation::Constant(layout.constant_regions[id.get() as usize]),
+        ),
+        crate::MatchPattern::Wildcard => ActivatedMatchPattern::Wildcard,
+        crate::MatchPattern::Bind => ActivatedMatchPattern::Bind,
+        crate::MatchPattern::Structural(pattern) => {
+            let metrics = crate::pattern_metrics(pattern)
+                .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+            ActivatedMatchPattern::Structural {
+                pattern: structural(artifact, owner, owner_block, pattern, layout)?,
+                work: u64::try_from(metrics.nodes).map_err(|_| {
+                    ResidentActivationError::UnsupportedControlLayout { node: owner }
+                })?,
+                binding_count: u64::try_from(metrics.bindings).map_err(|_| {
+                    ResidentActivationError::UnsupportedControlLayout { node: owner }
+                })?,
+                equality_count: u64::try_from(metrics.equalities).map_err(|_| {
+                    ResidentActivationError::UnsupportedControlLayout { node: owner }
+                })?,
+                dense_finalization_count: u64::try_from(metrics.dense_finalizations).map_err(
+                    |_| ResidentActivationError::UnsupportedControlLayout { node: owner },
+                )?,
+                clone_depth: u64::try_from(metrics.depth).map_err(|_| {
+                    ResidentActivationError::UnsupportedControlLayout { node: owner }
+                })?,
+            }
+        }
     })
 }
 
@@ -6294,20 +6512,77 @@ fn bind_match_arms(
         .arms
         .iter()
         .map(|arm| {
+            let owner_block = arm.body.id.0;
             let mut bind = |block: &crate::ControlBlock| {
                 bind_control_block(
-                    artifact, catalog, owner, control, block, captures, layout, steps, reads, calls,
+                    artifact,
+                    catalog,
+                    owner,
+                    owner_block,
+                    control,
+                    block,
+                    captures,
+                    layout,
+                    steps,
+                    reads,
+                    calls,
                 )
             };
             let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
             let body = bind(&arm.body)?;
-            Ok(ActivatedMatchArm {
-                literal: match arm.pattern {
-                    crate::MatchPattern::Literal(id) => {
-                        Some(layout.constant_regions[id.get() as usize])
+            let pattern =
+                activate_match_pattern(artifact, owner, owner_block, &arm.pattern, layout)?;
+            fn collect_binding_regions(
+                pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+                regions: &mut Vec<ResidentRegion>,
+            ) {
+                match pattern {
+                    crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => {}
+                    crate::CollectionPattern::Bind { schema, .. } => regions.push(schema.region),
+                    crate::CollectionPattern::Tuple(items) => {
+                        for item in items {
+                            collect_binding_regions(item, regions);
+                        }
                     }
-                    crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => None,
-                },
+                    crate::CollectionPattern::Array {
+                        prefix,
+                        rest,
+                        suffix,
+                    } => {
+                        for item in prefix {
+                            collect_binding_regions(item, regions);
+                        }
+                        if let Some(rest) = rest {
+                            collect_binding_regions(rest, regions);
+                        }
+                        for item in suffix {
+                            collect_binding_regions(item, regions);
+                        }
+                    }
+                }
+            }
+            let mut binding_regions = Vec::new();
+            if let ActivatedMatchPattern::Structural { pattern, .. } = &pattern {
+                collect_binding_regions(pattern, &mut binding_regions);
+            }
+            let guard_regions = arm
+                .guard
+                .iter()
+                .flat_map(|block| {
+                    block
+                        .operations
+                        .iter()
+                        .map(move |operation| (block.id.0, operation.node))
+                })
+                .map(|(block, node)| {
+                    let (slot, _) = layout.control_locals[&(owner, block, node)];
+                    layout.slots[slot.get() as usize].region
+                })
+                .collect();
+            Ok(ActivatedMatchArm {
+                pattern,
+                binding_regions: binding_regions.into_boxed_slice(),
+                guard_regions,
                 guard,
                 body,
             })
@@ -6319,6 +6594,7 @@ fn bind_control_block(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
     owner: NodeId,
+    pattern_owner: u32,
     control: &crate::MatchDeclaration,
     block: &crate::ControlBlock,
     captures: &[ArtifactSource],
@@ -6337,6 +6613,11 @@ fn bind_control_block(
             crate::ControlValue::Parameter { ordinal, .. } => {
                 let input = match block.parameters[ordinal as usize].source {
                     crate::ControlParameterSource::Scrutinee => control.scrutinee,
+                    crate::ControlParameterSource::PatternBinding(local) => {
+                        return ArtifactSource::Slot(
+                            layout.match_bindings[&(owner, pattern_owner, local)].0,
+                        );
+                    }
                     crate::ControlParameterSource::Capture(index) => {
                         control.captures[index as usize].input
                     }

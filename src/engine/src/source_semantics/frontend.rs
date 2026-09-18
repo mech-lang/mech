@@ -223,7 +223,7 @@ impl CanonicalSourceProgram {
     }
 
     /// Choose the public identity of the implicit result when adapting a frozen program contract.
-    #[cfg(feature = "resident-artifact")]
+    #[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
     pub(crate) fn with_primary_output_name(mut self, name: &str) -> Self {
         self.program.outputs[0].name = name.to_owned();
         self
@@ -1187,6 +1187,17 @@ impl SourceSchemas {
                 }
             }
             if let PendingNodeBody::Match(control) = &node.body {
+                let mut failure = None;
+                control.visit_pattern_binding_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
+                    }
+                });
+                if let Some(error) = failure {
+                    return Err(error);
+                }
                 for block in control.blocks() {
                     for (_, schema) in &block.parameters {
                         insert(schema)?;
@@ -2178,10 +2189,28 @@ impl PendingMatch {
         append(self, &mut output);
         output
     }
+
+    fn visit_pattern_binding_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        fn append(control: &PendingMatch, visit: &mut impl FnMut(&SchemaDraft)) {
+            for arm in &control.arms {
+                if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
+                    pattern.bindings(&mut |_, schema| visit(schema));
+                }
+                for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                    for operation in &block.operations {
+                        if let PendingControlOperationBody::Match(nested) = &operation.body {
+                            append(nested, visit);
+                        }
+                    }
+                }
+            }
+        }
+        append(self, visit);
+    }
 }
 
 struct PendingMatchArm {
-    pattern: crate::MatchPattern<usize>,
+    pattern: crate::MatchPattern<usize, SchemaDraft>,
     guard: Option<PendingControlBlock>,
     body: PendingControlBlock,
 }
@@ -7866,6 +7895,71 @@ mod review_tests;
 mod mask_review_tests;
 
 impl SemanticBuilder {
+    fn resolve_structural_match_pattern(
+        &self,
+        pattern: &comprehension::SourcePattern,
+        binding_start: usize,
+    ) -> Result<
+        crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
+        SourceSemanticError,
+    > {
+        let invalid = || SourceSemanticError {
+            code: "source-semantics/unsupported-match",
+            message: "structural match patterns require constants and lexical bindings".to_owned(),
+            anchor: self.anchor,
+        };
+        Ok(match pattern {
+            crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
+            crate::CollectionPattern::Bind { local, schema } => crate::CollectionPattern::Bind {
+                local: *local,
+                schema: self.schema_draft_of(*schema)?,
+            },
+            crate::CollectionPattern::Equal(value) => {
+                let value = match value {
+                    PendingValue::Constant(index) => crate::MatchPatternValue::Literal(*index),
+                    PendingValue::Node(index)
+                        if (*index as usize) >= binding_start
+                            && matches!(
+                                self.nodes[*index as usize].body,
+                                PendingNodeBody::CollectionBinding
+                            ) =>
+                    {
+                        crate::MatchPatternValue::Binding(*index - binding_start as u32)
+                    }
+                    _ => return Err(invalid()),
+                };
+                crate::CollectionPattern::Equal(value)
+            }
+            crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
+                items
+                    .iter()
+                    .map(|item| self.resolve_structural_match_pattern(item, binding_start))
+                    .collect::<Result<_, _>>()?,
+            ),
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => crate::CollectionPattern::Array {
+                prefix: prefix
+                    .iter()
+                    .map(|item| self.resolve_structural_match_pattern(item, binding_start))
+                    .collect::<Result<_, _>>()?,
+                rest: rest
+                    .as_deref()
+                    .map(|item| {
+                        self.resolve_structural_match_pattern(item, binding_start)
+                            .map(Box::new)
+                    })
+                    .transpose()?,
+                suffix: suffix
+                    .iter()
+                    .map(|item| self.resolve_structural_match_pattern(item, binding_start))
+                    .collect::<Result<_, _>>()?,
+            },
+        })
+    }
+
     fn match_expression(
         &mut self,
         scrutinee: PendingValue,
@@ -7887,99 +7981,132 @@ impl SemanticBuilder {
             self.next_control_block = 0;
         }
         for arm in arms {
-            let pattern = self.required(arm.pattern(), arm.syntax(), "match pattern")?;
-            let value = self.required(pattern.value(), pattern.syntax(), "pattern value")?;
-            let mut binding = None;
-            let pattern = match value {
-                PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
-                PatternValueSyntax::Expression(expression) => {
-                    if let Some(variable) = standalone_pattern_variable(&expression) {
-                        let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
-                        else {
-                            return Err(error(
-                                "match binding requires a lexical identifier",
-                                variable.syntax(),
-                            ));
-                        };
-                        if let Some(annotation) = variable.annotation() {
-                            let mut schema = annotation_schema_draft(&annotation)?;
-                            if !schema.dimension_parameters.is_empty() {
-                                schema = specialize_annotation_dimensions(
-                                    &scrutinee_schema,
-                                    &schema,
-                                    variable.syntax(),
-                                )?;
-                            }
-                            if schema != scrutinee_schema {
+            let saved = self.bindings.clone();
+            let binding_start = self.nodes.len();
+            let lowered_arm = (|| -> Result<PendingMatchArm, SourceSemanticError> {
+                let pattern_syntax = self.required(arm.pattern(), arm.syntax(), "match pattern")?;
+                let value = self.required(
+                    pattern_syntax.value(),
+                    pattern_syntax.syntax(),
+                    "pattern value",
+                )?;
+                let mut pattern_bindings = BTreeMap::new();
+                let pattern = match value {
+                    PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
+                    PatternValueSyntax::Expression(expression) => {
+                        if let Some(variable) = standalone_pattern_variable(&expression) {
+                            let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+                            else {
                                 return Err(error(
-                                    "match binding requires the scrutinee schema",
+                                    "match binding requires a lexical identifier",
                                     variable.syntax(),
                                 ));
+                            };
+                            if let Some(annotation) = variable.annotation() {
+                                let mut schema = annotation_schema_draft(&annotation)?;
+                                if !schema.dimension_parameters.is_empty() {
+                                    schema = specialize_annotation_dimensions(
+                                        &scrutinee_schema,
+                                        &schema,
+                                        variable.syntax(),
+                                    )?;
+                                }
+                                if schema != scrutinee_schema {
+                                    return Err(error(
+                                        "match binding requires the scrutinee schema",
+                                        variable.syntax(),
+                                    ));
+                                }
                             }
+                            self.bindings.insert(
+                                node_text(identifier.syntax())?,
+                                PendingBinding::Value(scrutinee),
+                            );
+                            crate::MatchPattern::Bind
+                        } else {
+                            let start = self.nodes.len();
+                            let literal = self.expression(&expression)?.0;
+                            let PendingValue::Constant(index) = literal else {
+                                return Err(error(
+                                    "match literal patterns must be constant",
+                                    expression.syntax(),
+                                ));
+                            };
+                            if self.constants[index].schema != scrutinee_schema {
+                                return Err(error(
+                                    "match literal pattern must have the scrutinee schema",
+                                    expression.syntax(),
+                                ));
+                            }
+                            if self.nodes.len() != start {
+                                return Err(error(
+                                    "match literal pattern cannot execute operations",
+                                    expression.syntax(),
+                                ));
+                            }
+                            crate::MatchPattern::Literal(index)
                         }
-                        binding = Some(node_text(identifier.syntax())?);
-                        crate::MatchPattern::Bind
-                    } else {
-                        let start = self.nodes.len();
-                        let literal = self.expression(&expression)?.0;
-                        let PendingValue::Constant(index) = literal else {
-                            return Err(error(
-                                "only scalar literal, wildcard and bind patterns are lowered",
-                                expression.syntax(),
-                            ));
-                        };
-                        if self.constants[index].schema != scrutinee_schema {
-                            return Err(error(
-                                "match literal pattern must have the scrutinee schema",
-                                expression.syntax(),
-                            ));
-                        }
-                        if self.nodes.len() != start {
-                            return Err(error(
-                                "match literal pattern cannot execute operations",
-                                expression.syntax(),
-                            ));
-                        }
-                        crate::MatchPattern::Literal(index)
                     }
-                }
-                _ => {
+                    _ => {
+                        let mut names = BTreeMap::new();
+                        let source = self.collection_pattern(
+                            &pattern_syntax,
+                            &scrutinee_schema,
+                            binding_start,
+                            &mut names,
+                        )?;
+                        if self.nodes[binding_start..]
+                            .iter()
+                            .any(|node| !matches!(node.body, PendingNodeBody::CollectionBinding))
+                        {
+                            return Err(error(
+                                "computed structural patterns belong to the computed-pattern owner",
+                                pattern_syntax.syntax(),
+                            ));
+                        }
+                        source.bindings(&mut |local, schema| {
+                            let PendingValue::Node(index) = schema else {
+                                unreachable!("source pattern binding is a lexical node")
+                            };
+                            pattern_bindings.insert(*index, local);
+                        });
+                        crate::MatchPattern::Structural(
+                            self.resolve_structural_match_pattern(&source, binding_start)?,
+                        )
+                    }
+                };
+                if matches!(pattern, crate::MatchPattern::Literal(_))
+                    && !scrutinee_schema
+                        .clone()
+                        .finalize()
+                        .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
+                {
                     return Err(error(
-                        "only scalar literal, wildcard and bind patterns are lowered",
-                        pattern.syntax(),
+                        "literal patterns require a concrete scalar scrutinee",
+                        syntax,
                     ));
                 }
-            };
-            if matches!(pattern, crate::MatchPattern::Literal(_))
-                && !scrutinee_schema
-                    .clone()
-                    .finalize()
-                    .is_ok_and(|schema| crate::is_control_scalar_schema(&schema))
-            {
-                return Err(error(
-                    "non-wildcard patterns require a concrete scalar scrutinee",
-                    syntax,
-                ));
-            }
-            if pattern == crate::MatchPattern::Bind
-                && !scrutinee_schema
-                    .clone()
-                    .finalize()
-                    .is_ok_and(|schema| crate::is_control_value_schema(&schema))
-            {
-                return Err(error(
-                    "match bindings require a closed value schema",
-                    syntax,
-                ));
-            }
-            let saved = self.bindings.clone();
-            if let Some(name) = binding {
-                self.bindings.insert(name, PendingBinding::Value(scrutinee));
-            }
-            let lowered_arm = (|| {
+                if (matches!(pattern, crate::MatchPattern::Bind)
+                    || matches!(pattern, crate::MatchPattern::Structural(_)))
+                    && !scrutinee_schema
+                        .clone()
+                        .finalize()
+                        .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+                {
+                    return Err(error(
+                        "match bindings require a closed value schema",
+                        syntax,
+                    ));
+                }
                 let guard = if let Some(guard) = arm.guard() {
-                    let (block, schema) =
-                        self.control_block(&guard, pattern, scrutinee, &mut inputs, &mut captures)?;
+                    let (block, schema) = self.control_block(
+                        &guard,
+                        &pattern,
+                        &pattern_bindings,
+                        scrutinee,
+                        &mut inputs,
+                        &mut captures,
+                    )?;
                     if schema.body != SchemaBody::Bool {
                         return Err(SourceSemanticError {
                             code: "source-semantics/non-boolean-operator-kind",
@@ -7992,8 +8119,14 @@ impl SemanticBuilder {
                     None
                 };
                 let result = self.required(arm.value(), arm.syntax(), "match result")?;
-                let (body, schema) =
-                    self.control_block(&result, pattern, scrutinee, &mut inputs, &mut captures)?;
+                let (body, schema) = self.control_block(
+                    &result,
+                    &pattern,
+                    &pattern_bindings,
+                    scrutinee,
+                    &mut inputs,
+                    &mut captures,
+                )?;
                 if result_schema
                     .as_ref()
                     .is_some_and(|expected| expected != &schema)
@@ -8012,17 +8145,19 @@ impl SemanticBuilder {
                 })
             })();
             self.bindings = saved;
+            self.nodes.truncate(binding_start);
             let lowered_arm = lowered_arm?;
             if lowered_arm.guard.is_none() {
-                match pattern {
+                match &lowered_arm.pattern {
                     crate::MatchPattern::Literal(index) => {
-                        if let ValueDataDraft::Bool(value) = self.constants[index].data {
+                        if let ValueDataDraft::Bool(value) = self.constants[*index].data {
                             coverage[value as usize] = true;
                         }
                     }
                     crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {
                         coverage = [true; 2]
                     }
+                    crate::MatchPattern::Structural(_) => {}
                 }
             }
             lowered.push(lowered_arm);
@@ -8059,7 +8194,8 @@ impl SemanticBuilder {
     fn control_block(
         &mut self,
         expression: &ExpressionSyntax,
-        pattern: crate::MatchPattern<usize>,
+        pattern: &crate::MatchPattern<usize, SchemaDraft>,
+        pattern_bindings: &BTreeMap<u32, u32>,
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
         captures: &mut Vec<(u16, SchemaDraft)>,
@@ -8110,35 +8246,47 @@ impl SemanticBuilder {
                             return Ok(PendingControlValue::Parameter(index as u16));
                         }
                         let schema = self.schema_draft_of(value)?;
-                        if !closed_value(&schema) {
+                        let pattern_binding = if let PendingValue::Node(index) = value {
+                            pattern_bindings.get(&index).copied()
+                        } else {
+                            None
+                        };
+                        // Pattern bindings have already been checked against their
+                        // projected schema. Array-rest bindings deliberately carry
+                        // a per-turn dimension, so they are not ordinary closed
+                        // captures and must retain that live schema into the block.
+                        if pattern_binding.is_none() && !closed_value(&schema) {
                             return Err(unsupported());
                         }
-                        let source = if pattern == crate::MatchPattern::Bind && value == scrutinee {
-                            crate::ControlParameterSource::Scrutinee
-                        } else {
-                            let input = match inputs.iter().position(|existing| *existing == value)
-                            {
-                                Some(index) => index,
-                                None => {
-                                    inputs.push(value);
-                                    inputs.len() - 1
-                                }
+                        let source =
+                            if matches!(pattern, crate::MatchPattern::Bind) && value == scrutinee {
+                                crate::ControlParameterSource::Scrutinee
+                            } else if let Some(local) = pattern_binding {
+                                crate::ControlParameterSource::PatternBinding(local)
+                            } else {
+                                let input =
+                                    match inputs.iter().position(|existing| *existing == value) {
+                                        Some(index) => index,
+                                        None => {
+                                            inputs.push(value);
+                                            inputs.len() - 1
+                                        }
+                                    };
+                                let input = u16::try_from(input).map_err(|_| unsupported())?;
+                                let capture = match captures
+                                    .iter()
+                                    .position(|(existing, _)| *existing == input)
+                                {
+                                    Some(index) => index,
+                                    None => {
+                                        captures.push((input, schema.clone()));
+                                        captures.len() - 1
+                                    }
+                                };
+                                crate::ControlParameterSource::Capture(
+                                    u16::try_from(capture).map_err(|_| unsupported())?,
+                                )
                             };
-                            let input = u16::try_from(input).map_err(|_| unsupported())?;
-                            let capture = match captures
-                                .iter()
-                                .position(|(existing, _)| *existing == input)
-                            {
-                                Some(index) => index,
-                                None => {
-                                    captures.push((input, schema.clone()));
-                                    captures.len() - 1
-                                }
-                            };
-                            crate::ControlParameterSource::Capture(
-                                u16::try_from(capture).map_err(|_| unsupported())?,
-                            )
-                        };
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| unsupported())?;
                         parameter_values.push(value);
                         parameters.push((source, schema));
@@ -8267,12 +8415,22 @@ fn resolve_pending_match(
             .arms
             .iter()
             .map(|arm| crate::ControlMatchArm {
-                pattern: match arm.pattern {
+                pattern: match &arm.pattern {
                     crate::MatchPattern::Literal(index) => {
-                        crate::MatchPattern::Literal(constants[index])
+                        crate::MatchPattern::Literal(constants[*index])
                     }
                     crate::MatchPattern::Wildcard => crate::MatchPattern::Wildcard,
                     crate::MatchPattern::Bind => crate::MatchPattern::Bind,
+                    crate::MatchPattern::Structural(pattern) => crate::MatchPattern::Structural(
+                        pattern.map(&|draft| schema(draft), &|value| match value {
+                            crate::MatchPatternValue::Literal(index) => {
+                                crate::MatchPatternValue::Literal(constants[*index])
+                            }
+                            crate::MatchPatternValue::Binding(local) => {
+                                crate::MatchPatternValue::Binding(*local)
+                            }
+                        }),
+                    ),
                 },
                 guard: arm.guard.as_ref().map(block),
                 body: block(&arm.body),
