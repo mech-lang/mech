@@ -342,7 +342,7 @@ fn call_transaction_identity_selects_published_and_mutated_state_stages() {
             ..CurrentMemoryFootprint::default()
         });
         let operation = ResolvedOperationDescriptor::from_name(
-            "test/r5-published-output",
+            "test/memory-published-output",
             OperationContractDeclaration {
                 inputs: InputPortLayout::Fixed(
                     vec![InputPortPolicy {
@@ -640,7 +640,7 @@ fn shadow_audit_distinguishes_exact_and_deferred_capacity() {
     .unwrap();
     assert_eq!(
         deferred.statuses[0].1,
-        MemoryPlanAuditStatus::CapacityDeferredToR6
+        MemoryPlanAuditStatus::DeferredCapacity
     );
     deferred.assert_conformant().unwrap();
 }
@@ -811,7 +811,7 @@ fn deferred_transaction_payload_is_replaced_inside_a_turn_arena() {
     let input = ValueCell::from_exact("input".to_owned()).unwrap();
     let output = ValueCell::from_exact("output".to_owned()).unwrap();
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-turn-placement",
+        "test/memory-turn-placement",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![InputPortPolicy {
@@ -1073,7 +1073,7 @@ fn call_budget_template(
             ..CurrentMemoryFootprint::default()
         });
         let operation = ResolvedOperationDescriptor::from_name(
-            "test/r5-instantiated-call-budget",
+            "test/memory-instantiated-call-budget",
             OperationContractDeclaration {
                 inputs: InputPortLayout::Fixed(
                     vec![InputPortPolicy {

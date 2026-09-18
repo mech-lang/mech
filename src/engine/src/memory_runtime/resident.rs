@@ -9,7 +9,7 @@ use crate::memory_planner::ProgramMemoryPlan;
 
 use super::ManagedProgramMemory;
 
-/// Resident activation uses the same R5-to-R6 realization authority as every
+/// Resident activation uses the same plan-to-runtime realization authority as every
 /// other CPU host. It may not construct a call-local synthetic memory plan.
 pub fn realize_resident_memory(
     plan: &ProgramMemoryPlan,

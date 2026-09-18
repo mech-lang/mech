@@ -118,7 +118,7 @@ enum PlannedHostArenaAllocatorKind {
 }
 
 /// Sealed allocator that projects one typed resident container over an
-/// already-realized contiguous R5 arena. It never acquires another block and
+/// already-realized contiguous planned arena. It never acquires another block and
 /// therefore cannot become a second physical memory authority.
 struct PlannedHostArenaAllocator {
     kind: PlannedHostArenaAllocatorKind,

@@ -26,7 +26,7 @@ use mech_core::{
     TransferPlan, evaluate_aggregate_memory_budget,
 };
 
-/// Existing GPU execution plan paired with the process-local, non-wire R5
+/// Existing GPU execution plan paired with the process-local, non-wire memory
 /// allocation plan used to admit every backing before device creation.
 #[derive(Clone, Debug)]
 pub struct PlannedGpuExecution {
@@ -62,7 +62,7 @@ pub struct GpuBackingMemoryPlan {
 
 /// Process-local realization of the subordinate GPU backing plan. It keeps
 /// logical plan objects separate from backend buffers while making every
-/// buffer registration and submission pin pass through the R6 domain.
+/// buffer registration and submission pin pass through the managed-memory domain.
 pub struct ManagedGpuMemory {
     domain: MemoryDomain,
     realized: RealizedMemoryPlan,

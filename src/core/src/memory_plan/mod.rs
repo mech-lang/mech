@@ -1,6 +1,6 @@
 //! Deterministic, process-local physical memory planning.
 //!
-//! R5 plans describe allocations owned by the existing runtime. They contain
+//! Memory plans describe allocations owned by the existing runtime. They contain
 //! no allocation handles, pointers, backing storage, or wire representation.
 
 mod budget;

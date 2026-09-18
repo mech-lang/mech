@@ -369,7 +369,7 @@ pub struct ValueLayoutPlanningRequest<'a> {
     pub target: &'a TargetMemoryProfile,
 }
 
-/// The single-value form of the existing R5 layout and publication plan,
+/// The single-value form of the existing planned layout and publication plan,
 /// used by owned-value ingress before a program call has been bound.
 /// Object IDs are local to this plan, just as for a standalone call.
 #[derive(Clone, Debug)]

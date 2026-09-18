@@ -7,15 +7,15 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "check-r5-memory-planner.py"
-SPEC = importlib.util.spec_from_file_location("check_r5_memory_planner", SCRIPT)
+SCRIPT = Path(__file__).resolve().parents[1] / "check-memory-planning.py"
+SPEC = importlib.util.spec_from_file_location("check_memory_planning", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 REPOSITORY = SCRIPT.parents[1]
 
 
-class R5MemoryPlannerCheckerTests(unittest.TestCase):
+class MemoryPlanningCheckerTests(unittest.TestCase):
     def fixture(self) -> Path:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -67,7 +67,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
             "pub register_count: u32,",
             "pub register_count: u32,\n    pub memory: ProgramMemoryPlan,",
         )
-        self.assert_failure(root, "BytecodeProgram carries R5 plan field")
+        self.assert_failure(root, "BytecodeProgram carries memory-plan field")
 
     def test_03_program_artifact_plan_field_fails(self):
         root = self.fixture()
@@ -77,7 +77,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
             "pub struct ProgramArtifact {",
             "pub struct ProgramArtifact {\n    pub memory: ProgramMemoryPlan,",
         )
-        self.assert_failure(root, "ProgramArtifact carries R5 plan field")
+        self.assert_failure(root, "ProgramArtifact carries memory-plan field")
 
     def test_04_native_build_plan_field_fails(self):
         root = self.fixture()
@@ -87,7 +87,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
             "pub struct NativeBuildPlan {",
             "pub struct NativeBuildPlan {\n    pub memory: ProgramMemoryPlan,",
         )
-        self.assert_failure(root, "NativeBuildPlan carries R5 plan field")
+        self.assert_failure(root, "NativeBuildPlan carries memory-plan field")
 
     def test_05_gpu_execution_plan_field_fails(self):
         root = self.fixture()
@@ -97,7 +97,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
             "pub struct GpuExecutionPlan {",
             "pub struct GpuExecutionPlan {\n    pub memory: ProgramMemoryPlan,",
         )
-        self.assert_failure(root, "GpuExecutionPlan carries R5 plan field")
+        self.assert_failure(root, "GpuExecutionPlan carries memory-plan field")
 
     def test_06_bound_call_memory_policy_field_fails(self):
         root = self.fixture()
@@ -143,7 +143,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         root = self.fixture()
         self.write(
             root,
-            "machines/r5_probe.rs",
+            "machines/memory_plan_probe.rs",
             "struct Bad; impl MechFunctionFactory for Bad { fn new() {} }\n",
         )
         self.assert_failure(root, "MechFunctionFactory omits implementation_memory_class")
@@ -201,7 +201,7 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
             "src/engine/src/resident/general/mod.rs",
             "\nfn bad() { TypedResidentArena::allocate(ResidentArenaSizes::default()); }\n",
         )
-        self.assert_failure(root, "resident arena sizing bypasses R5 plan")
+        self.assert_failure(root, "resident arena sizing bypasses memory plan")
 
     def test_16_unplanned_gpu_instruction_expansion_fails(self):
         root = self.fixture()
@@ -233,17 +233,17 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "second Resident resource authority")
 
-    def test_19_r6_allocator_concept_fails(self):
+    def test_19_managed_memory_allocator_concept_fails(self):
         root = self.fixture()
         self.append(root, "src/compute/src/memory.rs", "\nstruct AllocationHandle;\n")
-        self.assert_failure(root, "R6 concept introduced during R5")
+        self.assert_failure(root, "managed-memory concept introduced in memory planning")
 
     def test_20_package_version_change_fails(self):
         root = self.fixture()
         self.replace(root, "Cargo.toml", 'version = "0.3.6"', 'version = "0.4.0"')
         self.assert_failure(root, "root package version changed")
 
-    def test_21_incomplete_r5_status_fails(self):
+    def test_21_incomplete_memory_planning_status_fails(self):
         root = self.fixture()
         for relative in (
             "README.md",
@@ -254,8 +254,8 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         ):
             path = root / relative
             source = path.read_text(encoding="utf-8")
-            self.write(root, relative, source.replace("R5 Memory planner — complete", "R5 Memory planner — incomplete"))
-        self.assert_failure(root, "does not mark R5 complete")
+            self.write(root, relative, source.replace("Memory Planning — complete", "Memory Planning — incomplete"))
+        self.assert_failure(root, "does not mark Memory Planning complete")
 
     def test_22_c64_layout_alias_fails(self):
         root = self.fixture()

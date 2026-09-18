@@ -1,17 +1,17 @@
-# R5 memory planner
+# memory planner
 
 ## 1. Status
 
-R5 Memory planner — complete. R6 Memory runtime cutover — in progress.
+Memory Planning — complete. Managed Memory — in progress.
 
-R5 defines the deterministic memory plan consumed by the existing runtime. R5
+Memory Planning defines the deterministic memory plan consumed by the existing runtime. It
 predicts and validates
 storage, capacity, placement, lifetime, aliasing, reuse eligibility,
 transactions, budgets, and transfers. It does not introduce an allocator or
 replace any backing.
 
-The R5 branch is stacked on the exact R4 authority cutover. The root package
-remains `0.3.6`, workspace package versions remain unchanged, and R5 metadata
+Memory Planning consumes the exact R4 authority cutover. The root package
+remains `0.3.6`, workspace package versions remain unchanged, and planning metadata
 is process-local and non-wire.
 
 ## 2. Sources of authority
@@ -25,7 +25,7 @@ ResolvedCall
   -> physical storage description
   -> existing compute placement
   -> target and implementation memory requirements
-  -> R5 memory plan
+  -> memory plan
   -> existing runtime allocation
   -> shadow audit
 ```
@@ -40,7 +40,7 @@ names, pointers, cell allocation order, or catalog insertion order.
 
 ## 3. Program, activation, and turn planning
 
-R5 has exactly three stages:
+Memory Planning has exactly three stages:
 
 - `ProgramMemoryPlanTemplate` records immutable graph facts, symbolic capacity,
   lifetimes, aliases, reuse groups, transactions, placement, transfers, and
@@ -72,7 +72,7 @@ The physical layout vocabulary is deliberately closed:
 - enums, options, tuples, records, tables, sets, maps, dynamic values, and
   reified types use canonical snapshots with their R2 topology.
 
-R5 supports rank-two dense matrices. It does not add row-major host matrices,
+Memory Planning supports rank-two dense matrices. It does not add row-major host matrices,
 arbitrary striding, packed records, user-selected alignment, or backend layout
 plugins. Fixed byte arithmetic is checked. Host zero-sized values occupy zero
 bytes; GPU storage bindings may not be zero-sized.
@@ -88,9 +88,9 @@ dimensions and unbounded dynamic collections reserve the current witnessed
 extent and require replanning before growth. Variable-width payloads reserve
 their measured current payload and require replanning before payload growth.
 
-A target policy limit is never promoted into a semantic bound. During R5 the
+A target policy limit is never promoted into a semantic bound. During planning the
 existing runtime may allocate only current capacity; a smaller runtime capacity
-than the planned future requirement is reported as `CapacityDeferredToR6`.
+than the planned future requirement is reported as `DeferredCapacity`.
 
 Dimension bounds are evaluated recursively through constants, parameters,
 addition, multiplication, minimum, and maximum with checked arithmetic and
@@ -119,7 +119,7 @@ undo snapshot; an unavailable required alias rejects planning.
 
 Alias groups use deterministic union-find and the smallest memory-object ID as
 their identity. Reuse is a plan result only. Eligible fixed-width turn
-temporaries use deterministic first-fit by lifetime and object ID. R5 neither
+temporaries use deterministic first-fit by lifetime and object ID. The planner neither
 reuses nor frees an allocation.
 
 Call-local port, scratch, and transaction identities are remapped into one
@@ -147,7 +147,7 @@ atomicity or rollback requires their coexistence.
 ## 9. Host/device placement and transfers
 
 Memory spaces are `Host`, `ResidentCpu`, and backend-neutral `Device { region }`.
-R5 consumes the existing compute placement; it does not choose a different
+Memory Planning consumes the existing compute placement; it does not choose a different
 target in response to a limit.
 
 Transfers are planned only across an existing host/device boundary or when a
@@ -205,13 +205,13 @@ cloning for read-modify-write.
 ## 12. Shadow audit
 
 The existing runtime continues to create `Vec`, nalgebra, canonical `Value`,
-resident arena, and wgpu buffer allocations. R5 observes those allocations and
+resident arena, and wgpu buffer allocations. The planner observes those allocations and
 compares current bytes, capacity bytes, payload, nodes, and logical elements
 with the immutable plan.
 
 Fixed Resident and GPU observations must match exactly. Missing, unexpected,
 or oversized observations are mismatches. A current allocation that is smaller
-than future planned capacity is accepted only as `CapacityDeferredToR6`.
+than future planned capacity is accepted only as `DeferredCapacity`.
 Production does not fail solely for that deferred capacity; tests and CI reject
 all actual mismatches.
 Resident String and canonical Snapshot constants and initializers contribute
@@ -221,7 +221,7 @@ its observations.
 
 ## 13. Resident/GPU hard safety preflight
 
-R5 remains a shadow planner except for existing safety boundaries. Resident
+The planner remains a shadow planner except for existing safety boundaries. Resident
 arena and turn limits are evaluated before the corresponding oversized arena,
 clone, draft, finalization, comparison, stage, or write begins. One accumulated
 turn plan covers all phases of a value-dependent operation. Empty indexed
@@ -244,31 +244,31 @@ collections unchanged.
 
 ## 14. Preserved compatibility
 
-R5 does not change bytecode-v1, canonical encoding v1, `ProgramArtifact`,
+Memory Planning does not change bytecode-v1, canonical encoding v1, `ProgramArtifact`,
 `GpuExecutionPlan` v1, `NativeBuildPlan`, dynamic-module ABI v1, operation IDs,
 runtime IDs, native linkage names, package versions, or `Cargo.lock`. Memory
 plans and compiler sidecars deliberately implement no serialization format.
 
-R5 also introduces no allocator, pool, free list, reclamation, copy-on-write,
+Memory Planning also introduces no allocator, pool, free list, reclamation, copy-on-write,
 backing replacement, pointer identity, buffer movement, language syntax,
 conversion, overload, placement policy, backend, or user memory annotation.
 
-## 15. R6 handoff
+## 15. Managed Memory handoff
 
-R6 is in progress and consumes the R5 layouts, capacities, arena placements, lifetimes, alias
+Managed Memory is in progress and consumes the planned layouts, capacities, arena placements, lifetimes, alias
 groups, reuse groups, transaction requirements, budgets, and transfer
-requirements. R6 may implement allocation handles, pools, managed backing,
-actual reuse, movement, publication, and reclamation. R6 may not silently
+requirements. Managed Memory may implement allocation handles, pools, managed backing,
+actual reuse, movement, publication, and reclamation. Managed Memory may not silently
 derive a different physical plan.
 
 ## 16. Completion criteria
 
-R5 closes when every maintained value, call, artifact slot, implementation,
+Memory Planning is complete when every maintained value, call, artifact slot, implementation,
 resident arena, compute transfer, and GPU buffer has one deterministic plan;
 all variable work has an explicit witness; all current allocations conform to
 the shadow audit; the deferred Resident and GPU safety gaps reject before
 materialization; fresh processes produce byte-for-byte identical diagnostics;
-and the R1 through R5 architecture contracts and exact-head CI are green.
+and the earlier architecture contracts, Memory Planning contract, and exact-head CI are green.
 
 Given the same semantic program, selected implementations, target profile, and
 activation/turn facts, the plan must be independent of pointers, cell

@@ -42,8 +42,8 @@ to traverse `SchemaBody`.
 | Can the combination coexist? | R2 compatibility checks |
 | What concrete runtime factory/backing is selected today? | exact R4 operation binding after semantic validation |
 | When does R2 compatibility become binding authority? | before every R4 physical binding |
-| What physical byte layout is chosen? | the complete R5 memory plan |
-| How is memory allocated, reused, and reclaimed? | R6, which is in progress |
+| What physical byte layout is chosen? | the complete memory plan |
+| How is memory allocated, reused, and reclaimed? | Managed Memory, which is in progress |
 
 ## 3. One-way boundary
 
@@ -230,15 +230,15 @@ R4 consumes the complete R2 compatibility boundary in production. Semantic
 descriptors are validated before physical selection and allocation;
 `RowDVector` and `DVector` expose their invariant axes as `Constant(1)`.
 
-## 18. R5/R6 handoff
+## 18. Memory planning / managed memory handoff
 
-R5 Memory planner — complete. R5 owns deterministic physical layouts; sizes,
+Memory Planning — complete. Memory Planning owns deterministic physical layouts; sizes,
 alignment, strides, offsets, and placement; lifetimes and alias plans; and
-allocation and resource plans. R6 Memory runtime cutover — in progress. R6 consumes
-the R5 layouts, capacities, arena placements, lifetimes, alias groups, reuse
-groups, transaction requirements, budgets, and transfer requirements. R6 may
+allocation and resource plans. Managed Memory — in progress. Managed Memory consumes
+the planned layouts, capacities, arena placements, lifetimes, alias groups, reuse
+groups, transaction requirements, budgets, and transfer requirements. Managed Memory may
 implement allocation handles, pools, managed backing, actual reuse, movement,
-publication, and reclamation. R6 may not silently derive a different physical
+publication, and reclamation. Managed Memory may not silently derive a different physical
 plan. R2 contains none of those mechanisms.
 
 ## 19. Non-goals
@@ -276,5 +276,5 @@ R2 is complete when:
 21. Normal CI runs the architecture checker.
 22. Full CI runs the architecture checker.
 23. Checker changes themselves trigger Full CI.
-24. ROADMAP, type-memory design, and v0.4 endgame agree that R5 is complete and R6 is next.
+24. ROADMAP, type-memory design, and v0.4 endgame agree that Memory Planning is complete and Managed Memory is next.
 25. Package version remains `0.3.6`.

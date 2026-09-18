@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the permanent R6 managed-memory runtime boundary."""
+"""Enforce the permanent managed-memory runtime boundary."""
 
 from __future__ import annotations
 
@@ -63,15 +63,15 @@ REQUIRED = (
     "hosts/gpu/src/native.rs",
     "hosts/gpu/src/batched/mod.rs",
     "include/browser-compute.js",
-    "src/core/tests/r6_memory_runtime.rs",
-    "src/core/tests/r6_memory_safety.rs",
-    "src/engine/tests/r6_memory_runtime.rs",
-    "src/stdlib/tests/r6_managed_functions.rs",
-    "src/compute/tests/r6_memory_runtime.rs",
-    "hosts/gpu/tests/r6_memory_runtime.rs",
-    "scripts/check-r6-memory-runtime.py",
-    "scripts/tests/test_check_r6_memory_runtime.py",
-    "docs/design/r6-memory-runtime-cutover.md",
+    "src/core/tests/managed_memory.rs",
+    "src/core/tests/managed_memory_safety.rs",
+    "src/engine/tests/managed_memory.rs",
+    "src/stdlib/tests/managed_memory_functions.rs",
+    "src/compute/tests/managed_memory.rs",
+    "hosts/gpu/tests/managed_memory.rs",
+    "scripts/check-managed-memory.py",
+    "scripts/tests/test_check_managed_memory.py",
+    "docs/design/managed-memory.md",
     ".github/workflows/ci.yml",
     ".github/workflows/ci-full.yml",
     ".github/ci/owners.toml",
@@ -320,7 +320,7 @@ def failures(root: Path) -> list[str]:
     )
     for authority in AUTHORITIES:
         if not re.search(rf"\b{re.escape(authority)}\b", runtime_source):
-            found.append(f"required R6 runtime authority is missing: {authority}")
+            found.append(f"required managed-memory authority is missing: {authority}")
 
     # Runtime ownership is process-local and cannot leak into wire artifacts.
     for relative, source in rust_files(
@@ -341,14 +341,14 @@ def failures(root: Path) -> list[str]:
             if re.search(rf"\b{re.escape(receipt)}\b", body):
                 found.append(f"{relative}: {declaration} serializes runtime receipt {receipt}")
 
-    # R5 semantic/physical plan records remain free of runtime handles.
+    # semantic/physical memory-plan records remain free of runtime handles.
     specialization = root / "src/core/src/function/specialization.rs"
     if specialization.is_file():
         body = balanced_body(rust_code(specialization.read_text(encoding="utf-8")), "BoundCall")
         if body is not None:
             for receipt in RUNTIME_RECEIPTS:
                 if re.search(rf"\b{re.escape(receipt)}\b", body):
-                    found.append(f"BoundCall carries forbidden R6 runtime field {receipt}")
+                    found.append(f"BoundCall carries forbidden managed-memory field {receipt}")
 
     domain = rust_code(sources.get("src/core/src/memory_runtime/domain.rs", ""))
     for operation in (
@@ -1073,7 +1073,7 @@ def failures(root: Path) -> list[str]:
         found.append("runtime plan member authority is not one-to-one")
     member_regression_paths = list(
         function_bodies(
-            sources.get("src/core/tests/r6_memory_runtime.rs", ""),
+            sources.get("src/core/tests/managed_memory.rs", ""),
             "plan_member_identity_validation_handles_many_zero_byte_objects_exactly",
         )
     )
@@ -1329,7 +1329,7 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("variable-definition factory marker restores a parallel executor")
 
-    # Resident lanes must project the realized R5 arenas themselves. A second
+    # Resident lanes must project the realized planned arenas themselves. A second
     # Box/Vec arena would make the domain ledger an accounting sidecar rather
     # than the storage used by execution.
     resident_relative = "src/engine/src/resident/general/mod.rs"
@@ -1338,7 +1338,7 @@ def failures(root: Path) -> list[str]:
     reactive = balanced_body(resident, "ReactiveInstance")
     resident_lane_paths = list(function_bodies(resident, "resident_lane"))
     if lane is None or "PlannedArenaProjection" not in lane:
-        found.append("Resident lanes do not project their realized R5 host arenas")
+        found.append("Resident lanes do not project their realized planned host arenas")
     if (
         not resident_lane_paths
         or "project_host_arena(memory.realized(), arena.id, len)"
@@ -1428,7 +1428,7 @@ def failures(root: Path) -> list[str]:
             found.append(f"{relative}: unsafe escapes the sealed allocation/access boundary")
 
     # Production may not hide an incomplete cutover behind a feature or legacy
-    # fallback, nor accept the R5 placeholder capacity disposition.
+    # fallback, nor accept the planner placeholder capacity disposition.
     production = tuple(
         relative
         for relative in ("src/core/src", "src/engine/src", "src/runtime/src", "src/compute/src", "hosts/gpu/src")
@@ -1441,14 +1441,14 @@ def failures(root: Path) -> list[str]:
             code + "\n" + source,
         ):
             found.append(f"{relative}: production exposes an unmanaged-memory bypass")
-        if "CapacityDeferredToR6" in code and not relative.endswith(
+        if "DeferredCapacity" in code and not relative.endswith(
             ("/memory_plan/model.rs", "/memory_planner/audit.rs")
         ):
-            found.append(f"{relative}: production accepts CapacityDeferredToR6 after cutover")
+            found.append(f"{relative}: production accepts DeferredCapacity after managed-memory activation")
 
-    docs = sources.get("docs/design/r6-memory-runtime-cutover.md", "")
+    docs = sources.get("docs/design/managed-memory.md", "")
     if "Status: implementation in progress" not in docs and "Status: complete" not in docs:
-        found.append("R6 design status is missing")
+        found.append("managed-memory design status is missing")
 
     return found
 
@@ -1459,11 +1459,11 @@ def main() -> int:
     args = parser.parse_args()
     found = failures(args.root)
     if found:
-        print("R6 memory-runtime contract violations:", file=sys.stderr)
+        print("Managed-memory contract violations:", file=sys.stderr)
         for item in found:
             print(f"- {item}", file=sys.stderr)
         return 1
-    print("R6 memory-runtime contract is satisfied.")
+    print("Managed-memory contract is satisfied.")
     return 0
 
 

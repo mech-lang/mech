@@ -335,7 +335,7 @@ impl PreparedFrozenSnapshotAdmission {
 /// The retained candidate and its finalization workspace are admitted before
 /// this value can be obtained. Maintained builders request any additional
 /// draft/container storage through the fallible helpers below, which debit the
-/// remaining R5 scratch authority before asking the global allocator for it.
+/// remaining planned scratch authority before asking the global allocator for it.
 /// Dropping this value before `complete` releases the retained candidate charge.
 pub struct FrozenSnapshotConstruction {
     admission: Option<PreparedFrozenSnapshotAdmission>,
@@ -344,7 +344,7 @@ pub struct FrozenSnapshotConstruction {
     charged_temporary_bytes: Cell<u64>,
 }
 
-/// Call-scoped authority for external argument marshalling. The R5 call plan
+/// Call-scoped authority for external argument marshalling. The planned call memory
 /// owns the finite scratch capacity; this token debits that capacity at every
 /// argument-container, numeric-draft, and canonical-finalization allocation.
 /// It owns no published data and is dropped before provider result adoption.

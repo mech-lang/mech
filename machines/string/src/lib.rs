@@ -15,7 +15,7 @@ use mech_core::*;
 use std::sync::LazyLock;
 
 #[cfg(test)]
-#[path = "../tests/support/r6_allocation_probe.rs"]
+#[path = "../tests/support/managed_memory_probe.rs"]
 mod allocation_probe;
 
 #[cfg(test)]

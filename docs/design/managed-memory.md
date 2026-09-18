@@ -1,9 +1,9 @@
-# R6 memory runtime cutover
+# managed memory
 
-Status: implementation in progress. R5 is complete; R6 is not complete until
+Status: implementation in progress. Memory Planning is complete; Managed Memory is not complete until
 the qualification gates in this document pass on one exact candidate.
 
-R6 consumes the R4 semantic certificate and the R5 physical memory plan. It
+Managed Memory consumes the R4 semantic certificate and the physical memory plan. It
 changes who owns and realizes storage; it does not infer types, choose
 operations, change placement, or introduce another planner.
 
@@ -15,7 +15,7 @@ The completed cutover has one chain of authority:
 ResolvedCall
   -> BoundCall
   -> R2 type and operation memory contracts
-  -> R5 ProgramMemoryPlan / TurnMemoryPlan
+  -> ProgramMemoryPlan / TurnMemoryPlan
   -> borrowed RuntimePlanView
   -> MemoryReservation
   -> RealizedMemoryPlan
@@ -27,7 +27,7 @@ process-local runtime records. They are not serialized planning stages and do
 not change `ProgramArtifact`, bytecode-v1, `GpuExecutionPlan`, or
 `NativeBuildPlan`.
 
-R6 implements the storage described by R5. It may reject a malformed, stale,
+Managed Memory implements the storage described by Memory Planning. It may reject a malformed, stale,
 unrealizable, or over-budget plan. It may not repair one by selecting a new
 layout, offset, capacity, alias, lifetime, transaction, transfer, or target.
 
@@ -41,7 +41,7 @@ The following identities are independent:
 
 - `CanonicalCellId`: stable logical language cell identity;
 - `MemoryPlanRevision`: one validated physical-plan revision;
-- `PlanObjectKey`: an R5 `MemoryObjectId` under a plan revision;
+- `PlanObjectKey`: a planned `MemoryObjectId` under a plan revision;
 - `AllocationHandle`: domain-local physical ownership slot and generation;
 - `PublishedValueVersion`: semantic publication/change version;
 - `RegionIncarnation`: validity epoch for a reused arena region.
@@ -65,7 +65,7 @@ compatibility.
 
 ## 3. Arena realization
 
-R5 declares `ArenaBackingKind` for every arena:
+Memory Planning declares `ArenaBackingKind` for every arena:
 
 - `ContiguousBytes` owns one alignment-correct block and uses literal planned
   offsets for fixed storage, scratch, transfers, and device buffers.
@@ -142,15 +142,15 @@ copy through explicit coordinates.
 
 ## 6. Growth and plan replacement
 
-Activation realizes R5 required capacity, including bounded dimensions. A
-managed production audit cannot report `CapacityDeferredToR6`.
+Activation realizes planned required capacity, including bounded dimensions. A
+managed production audit cannot report `DeferredCapacity`.
 
 Growth within capacity initializes only newly exposed elements and publishes
 shape plus binding atomically without allocation. Growth beyond capacity is:
 
 ```text
 measure bounded current and candidate facts
-  -> request a revised R5 plan
+  -> request a revised memory plan
   -> reserve old + replacement + staging coexistence
   -> allocate replacement
   -> initialize or copy the complete candidate
@@ -167,7 +167,7 @@ publication, shape, identity, and ledger unchanged.
 
 ## 7. Publication and transactions
 
-R6 executes the exact R5 transaction requirement:
+Managed Memory executes the exact planned transaction requirement:
 
 - `StageAndSwap`: publish a fully validated candidate binding;
 - `DoubleBuffer`: write the non-published state buffer, then switch identity;
@@ -184,9 +184,9 @@ arena ownership.
 
 ## 8. Reuse, retention, and reclamation
 
-R6 obeys R5 reuse groups only after executor retention facts prove an object is
+Managed Memory obeys planned reuse groups only after executor retention facts prove an object is
 ephemeral. Cached incremental values remain retained when a later turn can use
-them while their producer is skipped. R6 never forces execution or silently
+them while their producer is skipped. Managed Memory never forces execution or silently
 allocates replacement storage to make reuse convenient.
 
 Owned records transition only through `Reserved`, `Initialized`, `Live`,
@@ -216,7 +216,7 @@ planned export bookkeeping.
 
 Payload-dependent calls measure current inputs, the separately retained
 published output, and the prospective candidate even when schemas and shapes
-are unchanged. The complete R5 call plan is re-derived from those witnesses;
+are unchanged. The complete call memory plan is re-derived from those witnesses;
 fixed-width calls whose requirements are invariant keep the cached fast path.
 Maintained canonical builders receive their charged payload admission before
 allocating result Strings, containers, or finalization storage, and complete
@@ -245,25 +245,25 @@ from mutation through commit or rollback.
 
 ## 10. Backends and compatibility
 
-GPU realization extends the subordinate R5 backing projection. Every managed
+GPU realization extends the subordinate planned backing projection. Every managed
 buffer tracks plan object, capacity, usage, mapping, content version, handle
 generation, and last submitted use. Submission completion updates an
 `Arc`-owned atomic watermark; the owner thread performs reclamation. Queued
 uploads, readbacks, copies, compute, and mapped views retain and charge their
 storage until the existing completion boundary.
 
-The browser uses its existing promise/event-loop completion path. R6 introduces
+The browser uses its existing promise/event-loop completion path. Managed Memory introduces
 no per-kernel blocking wait, new GPU backend, placement policy, batching
 policy, or unbounded input queue.
 
 The V1 ABI remains call-scoped. Native/direct wrappers acquire leases for the
-whole ABI call, and non-contiguous values use R5-planned contiguous bridge
+whole ABI call, and non-contiguous values use planned contiguous bridge
 storage. Existing `Ref<T>` constructors remain explicit pinned-external
 boundaries; ordinary maintained kernels do not retain `Ref` payloads.
 
 ## 11. Errors and observability
 
-R6 reports structured `MemoryRuntimeError` values for invalid revisions,
+Managed Memory reports structured `MemoryRuntimeError` values for invalid revisions,
 objects, handles, generations, incarnations, domains, layouts, lifetimes,
 reuse, access, capacity, budgets, allocation, initialization, publication,
 device loss, closure, and accounting invariants. Allocation/admission errors
@@ -281,24 +281,24 @@ third-party module's private heap.
 
 ## 12. Compatibility and non-goals
 
-R6 preserves package versions, dependency versions, `Cargo.lock`, the pinned
+Managed Memory preserves package versions, dependency versions, `Cargo.lock`, the pinned
 `nightly-2026-03-03` toolchain, canonical encoding v1, bytecode-v1, operation
 and runtime IDs, native linkage names, module ABI v1, and every maintained
 semantic oracle.
 
-R6 adds no type rule, syntax, scheduler, automatic placement, kernel fusion,
+Managed Memory adds no type rule, syntax, scheduler, automatic placement, kernel fusion,
 NUMA or remote memory, process-global pool, compactor, tracing GC, general
 copy-on-write framework, allocator plugin, or global allocator interception.
-R7—not R6—performs release qualification and version changes.
+Release qualification—not Managed Memory—performs version and packaging changes.
 
 ## 13. Completion gate
 
-R6 is complete only when one exact candidate proves all maintained direct,
+Managed Memory is complete only when one exact candidate proves all maintained direct,
 source, Resident, bytecode, native, WASM, compute, GPU, and browser paths use
 managed realization; growth preserves logical identity and previously bound
 consumers; failed growth and publication are atomic; admitted reuse is physical
 and safe; detached snapshots survive instance close; all unretained ownership
 is reclaimed; Miri passes the safety suite; and normal plus Full CI are green.
 
-Until that gate passes, documentation and roadmaps continue to say R6 is in
+Until that gate passes, documentation and roadmaps continue to say Managed Memory is in
 progress and R7 has not begun.

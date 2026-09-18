@@ -36,7 +36,7 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertEqual(result["owner_shards"], [])
                 self.assertFalse(result["browser_canary_required"])
 
-    def test_machine_change_runs_r6_catalog_integration_not_machine_private_tests(self):
+    def test_machine_change_runs_managed_memory_catalog_integration_not_machine_private_tests(self):
         result = self.classify(["machines/math/src/add.rs"])
         self.assertEqual(result["changed_owners"], ["mech-math"])
         command = OWNERS["mech-math"]["command"]
@@ -109,7 +109,7 @@ class ImpactClassifierTests(unittest.TestCase):
         self.assertFalse(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
 
-    def test_machine_changes_select_the_r6_catalog_owner_suite(self):
+    def test_machine_changes_select_the_managed_memory_catalog_owner_suite(self):
         for owner in (
             "mech-math",
             "mech-compare",
@@ -126,9 +126,9 @@ class ImpactClassifierTests(unittest.TestCase):
                 result = self.classify([f"machines/{package}/src/lib.rs"])
                 self.assertEqual(result["changed_owners"], [owner])
                 command = OWNERS[owner]["command"]
-                self.assertIn("r6_managed_functions", command)
+                self.assertIn("managed_memory_functions", command)
                 self.assertIn(
-                    "catalog_inventory_is_classified_into_r6_implementation_families",
+                    "catalog_inventory_is_classified_into_managed_memory_families",
                     command,
                 )
 

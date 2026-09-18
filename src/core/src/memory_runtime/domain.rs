@@ -29,7 +29,7 @@ use super::{
     PublishedValueVersion, RegionIncarnation,
 };
 
-/// Borrowed adapter over one existing R5 plan.
+/// Borrowed adapter over one existing memory plan.
 #[derive(Clone, Copy, Debug)]
 pub struct RuntimePlanView<'a> {
     revision: MemoryPlanRevision,
@@ -292,7 +292,7 @@ pub struct ManagedAllocationObservation {
     pub device_lost: bool,
 }
 
-/// Cold-path visibility used by the R6 reclamation regressions. These counts
+/// Cold-path visibility used by the managed-memory reclamation regressions. These counts
 /// describe metadata that owns heap storage; they are not part of execution
 /// planning or a substitute for the byte ledger.
 #[doc(hidden)]
@@ -562,7 +562,7 @@ enum PlanRevisionLifecycle {
     Retired,
 }
 
-/// Non-forgeable authority to realize exactly one validated R5 plan view.
+/// Non-forgeable authority to realize exactly one validated memory plan view.
 pub struct MemoryReservation {
     domain: Rc<RefCell<DomainState>>,
     domain_id: MemoryDomainId,
@@ -780,7 +780,7 @@ impl Drop for DeviceSubmissionHold {
     }
 }
 
-/// Receipt mapping every R5 plan object to its current live runtime binding.
+/// Receipt mapping every memory plan object to its current live runtime binding.
 #[derive(Clone)]
 pub struct RealizedMemoryPlan {
     domain: MemoryDomainId,

@@ -120,7 +120,7 @@ impl AllocationHandle {
     }
 }
 
-/// Stable R5 object coordinate scoped to one realized plan revision.
+/// Stable memory-plan object coordinate scoped to one realized plan revision.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct PlanObjectKey {
     domain: MemoryDomainId,

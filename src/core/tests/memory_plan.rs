@@ -438,7 +438,7 @@ fn scalar_call_plan(
     let input_descriptor = input.resolved_descriptor().unwrap();
     let output_descriptor = output.resolved_descriptor().unwrap();
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-scalar-plan",
+        "test/memory-scalar-plan",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![InputPortPolicy {
@@ -504,7 +504,7 @@ fn call_plans_cover_full_replace_build_and_read_modify_write_publication() {
         OutputConstruction::Build {
             postcondition: ShapeContractReference {
                 module_path: vec!["test".into()].into_boxed_slice(),
-                contract_name: "r5-build".into(),
+                contract_name: "memory-build".into(),
             },
         },
         OutputConstruction::ReadModifyWrite {
@@ -642,7 +642,7 @@ fn required_in_place_undo_uses_the_old_variable_payload_footprint() {
     let output = ValueCell::from_exact("x".to_owned()).unwrap();
     let target = TargetMemoryProfile::current_direct_host().unwrap();
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-in-place-string",
+        "test/memory-in-place-string",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![InputPortPolicy {
@@ -748,7 +748,7 @@ fn required_in_place_calls_use_one_exclusive_view_and_restore_before_publication
         }
 
         fn to_string(&self) -> String {
-            "R6 managed undo increment".into()
+            "managed-memory undo increment".into()
         }
     }
 
@@ -877,7 +877,7 @@ fn repeated_same_cell_inputs_share_the_required_in_place_lease() {
         }
 
         fn to_string(&self) -> String {
-            "R6 repeated in-place input".into()
+            "managed-memory repeated in-place input".into()
         }
     }
 
@@ -894,7 +894,7 @@ fn repeated_same_cell_inputs_share_the_required_in_place_lease() {
     let cell = ValueCell::from_exact(1.0_f64).unwrap();
     let descriptor = cell.resolved_descriptor().unwrap();
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r6-repeated-in-place-input",
+        "test/managed-repeated-in-place-input",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![
@@ -1086,7 +1086,7 @@ fn deferred_footprints_rederive_clone_hash_and_canonical_demand() {
     let input_descriptor = input.resolved_descriptor().unwrap();
     let output_descriptor = output.resolved_descriptor().unwrap();
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-deferred-canonical",
+        "test/memory-deferred-canonical",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![InputPortPolicy {
@@ -1219,7 +1219,7 @@ fn deferred_footprints_rederive_clone_hash_and_canonical_demand() {
 #[test]
 fn unit_external_effect_has_no_storage_transaction() {
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-unit-effect",
+        "test/memory-unit-effect",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(Box::new([])),
             outputs: Box::new([]),
@@ -1282,7 +1282,7 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
     ];
     let outputs = [output.resolved_descriptor().unwrap()];
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-matrix-solve",
+        "test/memory-matrix-solve",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![
@@ -1369,7 +1369,7 @@ fn matrix_solve_and_indexed_mutation_have_explicit_scratch_and_regions() {
     );
 
     let indexed_operation = ResolvedOperationDescriptor::from_name(
-        "test/r5-indexed-mutation",
+        "test/memory-indexed-mutation",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![InputPortPolicy {

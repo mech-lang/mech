@@ -73,7 +73,7 @@ fn assert_realized(memory: &ManagedProgramMemory) {
 }
 
 #[test]
-fn direct_and_resident_adapters_share_the_r5_realization_boundary() {
+fn direct_and_resident_adapters_share_the_memory_plan_realization_boundary() {
     let direct = ManagedProgramMemory::realize(&plan()).unwrap();
     assert_realized(&direct);
     direct.close().unwrap();
@@ -131,7 +131,7 @@ fn solve_program(call_count: u32) -> ProgramMemoryPlan {
         }),
     ];
     let operation = ResolvedOperationDescriptor::from_name(
-        "test/r6-program-budget-scope",
+        "test/managed-program-budget-scope",
         OperationContractDeclaration {
             inputs: InputPortLayout::Fixed(
                 vec![

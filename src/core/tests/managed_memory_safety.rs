@@ -24,7 +24,7 @@ use mech_core::{
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
-#[path = "support/r6_allocation_probe.rs"]
+#[path = "support/managed_memory_probe.rs"]
 mod allocation_probe;
 
 #[global_allocator]

@@ -116,8 +116,8 @@ jobs:
           python3 scripts/check-r2-type-memory-boundary.py
           python3 scripts/check-r3-type-system.py
           python3 scripts/check-r4-type-cutover.py
-          python3 scripts/check-r5-memory-planner.py
-          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-memory-planning.py
+          python3 scripts/check-managed-memory.py
           python3 scripts/check-compiler-planning-quarantine.py
       - name: Execute resident external publication contract
         run: >-
@@ -189,15 +189,15 @@ jobs:
             scripts/tests/test_check_r2_type_memory_boundary.py \
             scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_r4_type_cutover.py \
-            scripts/tests/test_check_r5_memory_planner.py \
-            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_check_memory_planning.py \
+            scripts/tests/test_check_managed_memory.py \
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_check_compiler_planning_quarantine.py
 
   memory-planner-contract:
-    name: Memory planner contract
+    name: Memory planning
     runs-on: ubuntu-latest
     env:
       CARGO_INCREMENTAL: 0
@@ -214,16 +214,16 @@ jobs:
       - name: Execute the complete memory-planner conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
-            --all-features --test r5_memory_plan
+            --all-features --test memory_plan
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler \
-            --test r5_memory_plan
+            --test memory_plan
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r5_memory_contract
+            --test memory_plan_contract
           cargo +nightly-2026-03-03 test --locked -p mech-compute
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --test r5_memory_plan
+            --test memory_plan
 
   managed-memory-runtime:
     name: Managed memory runtime
@@ -246,19 +246,19 @@ jobs:
       - name: Execute the complete managed-memory conformance boundary
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core \
-            --all-features --test r6_memory_runtime
+            --all-features --test managed_memory
           cargo +nightly-2026-03-03 test --locked -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test managed_memory_safety
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
             cargo +nightly-2026-03-03 test --locked --release -p mech-core \
             --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test managed_memory_safety
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
-            --test r6_memory_runtime
+            --test managed_memory
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
             --lib resident::general::live::
@@ -267,16 +267,16 @@ jobs:
             --lib memory_planner::resident::tests
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features standard_compiler \
-            --test r6_managed_functions
+            --test managed_memory_functions
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test r6_managed_functions
+            --test managed_memory_functions
           cargo +nightly-2026-03-03 test --locked -p mech-compute \
-            --test r6_memory_runtime
+            --test managed_memory
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --test r6_memory_runtime
+            --test managed_memory
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
-            --features jit --test r6_memory_runtime
+            --features jit --test managed_memory
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
 
   managed-memory-fixed-profiles:
@@ -316,7 +316,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features "full_compiler,${{ matrix.feature }}" \
-            --test r6_managed_functions
+            --test managed_memory_functions
 
   managed-memory-miri:
     name: Managed memory safety (Miri)
@@ -341,7 +341,7 @@ jobs:
           cargo +nightly-2026-03-03 miri test --locked \
             -p mech-core --no-default-features \
             --features functions,u8,u64,f64,string,matrixd,bool \
-            --test r6_memory_safety
+            --test managed_memory_safety
 
   cargo-features:
     name: Cargo feature and example checks

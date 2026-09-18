@@ -57,11 +57,11 @@ sidecars and are not added to bytecode-v1.
 
 ## Later phases
 
-R5 Memory planner — complete. It consumes R4's authoritative descriptors and
+Memory Planning — complete. It consumes R4's authoritative descriptors and
 compatible physical requirements to derive deterministic capacity, placement,
-reuse, liveness, transfer, and budget plans. R6 Memory runtime cutover — next.
-R6 consumes the R5 layouts, capacities, arena placements, lifetimes, alias
+reuse, liveness, transfer, and budget plans. Managed Memory — next.
+Managed Memory consumes the planned layouts, capacities, arena placements, lifetimes, alias
 groups, reuse groups, transaction requirements, budgets, and transfer
-requirements. R6 may implement allocation handles, pools, managed backing,
-actual reuse, movement, publication, and reclamation. R6 may not silently
+requirements. Managed Memory may implement allocation handles, pools, managed backing,
+actual reuse, movement, publication, and reclamation. Managed Memory may not silently
 derive a different physical plan.

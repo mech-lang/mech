@@ -7,15 +7,15 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "check-r6-memory-runtime.py"
-SPEC = importlib.util.spec_from_file_location("check_r6_memory_runtime", SCRIPT)
+SCRIPT = Path(__file__).resolve().parents[1] / "check-managed-memory.py"
+SPEC = importlib.util.spec_from_file_location("check_managed_memory", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 REPOSITORY = SCRIPT.parents[1]
 
 
-class R6MemoryRuntimeCheckerTests(unittest.TestCase):
+class ManagedMemoryCheckerTests(unittest.TestCase):
     def fixture(self) -> Path:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -77,7 +77,7 @@ class R6MemoryRuntimeCheckerTests(unittest.TestCase):
             "pub struct BoundCall {",
             "pub struct BoundCall {\n    runtime: AllocationHandle,",
         )
-        self.assert_failure(root, "BoundCall carries forbidden R6 runtime field")
+        self.assert_failure(root, "BoundCall carries forbidden managed-memory field")
 
     def test_04_realization_reservation_cannot_be_removed(self):
         root = self.fixture()
@@ -204,9 +204,9 @@ class R6MemoryRuntimeCheckerTests(unittest.TestCase):
         self.append(
             root,
             "src/engine/src/memory_runtime/realize.rs",
-            "\nfn accept() { let _ = CapacityDeferredToR6; }\n",
+            "\nfn accept() { let _ = DeferredCapacity; }\n",
         )
-        self.assert_failure(root, "accepts CapacityDeferredToR6")
+        self.assert_failure(root, "accepts DeferredCapacity")
 
     def test_14_production_bypass_flag_fails(self):
         root = self.fixture()
@@ -225,7 +225,7 @@ class R6MemoryRuntimeCheckerTests(unittest.TestCase):
             "Managed(PlannedArenaProjection<T>),",
             "Managed(Box<[T]>),",
         )
-        self.assert_failure(root, "do not project their realized R5 host arenas")
+        self.assert_failure(root, "do not project their realized planned host arenas")
 
     def test_16_resident_realization_owner_cannot_be_removed(self):
         root = self.fixture()
@@ -1350,7 +1350,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);\n",
             "",
         )
@@ -1363,13 +1363,13 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    let wrong_arena_ledger = wrong_arena_domain.ledger();\n",
             "",
         )
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
             """    let wrong_arena_ledger = wrong_arena_domain.ledger();
     assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",
@@ -1412,7 +1412,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
             """    if false {
         assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);
@@ -1527,7 +1527,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    let cross_listed_ledger = cross_listed_domain.ledger();",
             """    if false {
         let cross_listed_ledger = cross_listed_domain.ledger();
@@ -1536,7 +1536,7 @@ impl MechFunctionImpl for Bypass {
         )
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    assert_eq!(cross_listed_domain.ledger(), cross_listed_ledger);",
             """    let cross_listed_ledger = cross_listed_domain.ledger();
     assert_eq!(cross_listed_domain.ledger(), cross_listed_ledger);""",
@@ -1550,7 +1550,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
             """    if false {
     assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);
@@ -1667,7 +1667,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             """    assert!(matches!(
         wrong_arena_domain.prepare_realization(runtime_plan_view(""",
             """    if false {
@@ -1676,7 +1676,7 @@ impl MechFunctionImpl for Bypass {
         )
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             """        }) if object == MemoryObjectId::new(0)
     ));
     assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",
@@ -1726,7 +1726,7 @@ impl MechFunctionImpl for Bypass {
         root = self.fixture()
         self.replace(
             root,
-            "src/core/tests/r6_memory_runtime.rs",
+            "src/core/tests/managed_memory.rs",
             "    assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);",
             """    let wrong_arena_ledger = wrong_arena_domain.ledger();
     assert_eq!(wrong_arena_domain.ledger(), wrong_arena_ledger);""",

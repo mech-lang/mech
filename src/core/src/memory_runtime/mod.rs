@@ -1,7 +1,7 @@
-//! Managed realization of deterministic R5 memory plans.
+//! Managed realization of deterministic memory plans.
 //!
 //! This module owns process-local allocation identity, reservations, leases,
-//! publication records, and reclamation. It consumes R5 plan records through
+//! publication records, and reclamation. It consumes memory-plan records through
 //! a borrowed [`RuntimePlanView`] and never derives a second physical policy.
 
 mod access;

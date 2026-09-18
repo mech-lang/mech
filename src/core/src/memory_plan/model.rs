@@ -416,7 +416,7 @@ pub struct CallMemoryPlan {
 pub enum MemoryPlanAuditStatus {
     Exact,
     WithinPlannedCapacity,
-    CapacityDeferredToR6,
+    DeferredCapacity,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

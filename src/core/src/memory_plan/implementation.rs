@@ -31,7 +31,7 @@ use super::{
     TargetMemoryProfile,
 };
 
-/// Adapts the exact R4 runtime representation to the closed R5 physical-slot
+/// Adapts the exact R4 runtime representation to the closed planned physical-slot
 /// vocabulary. Semantic topology and dimensions continue to come from the
 /// resolved descriptor and are never inferred here.
 pub fn physical_storage_descriptor(

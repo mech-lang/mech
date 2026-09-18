@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the permanent R5 deterministic memory-planner boundary."""
+"""Enforce the permanent deterministic memory-planning boundary."""
 
 from __future__ import annotations
 
@@ -42,15 +42,15 @@ REQUIRED = (
     "hosts/gpu/src/memory.rs",
     "hosts/gpu/src/batched/mod.rs",
     "src/build/src/plan/model.rs",
-    "src/core/tests/r5_memory_plan.rs",
-    "src/engine/tests/r5_memory_plan.rs",
-    "src/stdlib/tests/r5_memory_contract.rs",
-    "src/compute/tests/r5_memory_plan.rs",
-    "hosts/gpu/tests/r5_memory_plan.rs",
-    "scripts/check-r5-memory-planner.py",
-    "scripts/check-r6-memory-runtime.py",
-    "scripts/tests/test_check_r5_memory_planner.py",
-    "docs/design/r5-memory-planner.md",
+    "src/core/tests/memory_plan.rs",
+    "src/engine/tests/memory_plan.rs",
+    "src/stdlib/tests/memory_plan_contract.rs",
+    "src/compute/tests/memory_plan.rs",
+    "hosts/gpu/tests/memory_plan.rs",
+    "scripts/check-memory-planning.py",
+    "scripts/check-managed-memory.py",
+    "scripts/tests/test_check_memory_planning.py",
+    "docs/design/memory-planning.md",
     "docs/design/type-memory-boundary.md",
     "docs/design/r4-type-system-cutover.md",
     "docs/design/ROADMAP.mec",
@@ -105,7 +105,7 @@ WIRE_TYPES = {
     "src/build/src/plan/model.rs": "NativeBuildPlan",
     "hosts/gpu/src/execution_plan.rs": "GpuExecutionPlan",
 }
-R5_PLAN_NAMES = (
+PLAN_NAMES = (
     "ProgramMemoryPlanTemplate",
     "ProgramMemoryPlan",
     "TurnMemoryPlan",
@@ -123,7 +123,7 @@ CORE_PLANNER_FORBIDDEN = (
     "Rc",
     "RefCell",
 )
-R6_FORBIDDEN = (
+MANAGED_MEMORY_FORBIDDEN = (
     "AllocationHandle",
     "AllocatorPool",
     "ArenaPool",
@@ -264,7 +264,7 @@ def function_bodies(source: str, prefix: str):
 def failures(root: Path) -> list[str]:
     root = root.resolve()
     found: list[str] = []
-    r6_active = (root / "scripts/check-r6-memory-runtime.py").is_file()
+    managed_memory_active = (root / "scripts/check-managed-memory.py").is_file()
     sources: dict[str, str] = {}
     for relative in REQUIRED:
         path = root / relative
@@ -281,13 +281,13 @@ def failures(root: Path) -> list[str]:
     )
     for authority in PLAN_AUTHORITIES:
         if not re.search(rf"\b{re.escape(authority)}\b", all_required):
-            found.append(f"required R5 authority is missing: {authority}")
+            found.append(f"required memory-planning authority is missing: {authority}")
 
     # 1. Plans are process-local and non-wire.
     for relative, source in rust_files(root, ("src/core/src/memory_plan", "src/engine/src/memory_planner")):
         code = rust_code(source)
         if re.search(r"\b(?:Serialize|Deserialize)\b", code):
-            found.append(f"{relative}: R5 plan derives serialization")
+            found.append(f"{relative}: memory plan derives serialization")
 
     # 2-5. Existing wire/build schemas may not acquire plan fields.
     for relative, declaration in WIRE_TYPES.items():
@@ -295,9 +295,9 @@ def failures(root: Path) -> list[str]:
         if body is None:
             found.append(f"{relative}: {declaration} declaration is missing")
             continue
-        for plan_name in R5_PLAN_NAMES:
+        for plan_name in PLAN_NAMES:
             if re.search(rf"\b{re.escape(plan_name)}\b", body):
-                found.append(f"{relative}: {declaration} carries R5 plan field {plan_name}")
+                found.append(f"{relative}: {declaration} carries memory-plan field {plan_name}")
 
     # 6. BoundCall remains semantic/physical selection, not memory policy.
     bound = balanced_body(
@@ -318,7 +318,7 @@ def failures(root: Path) -> list[str]:
     for relative, source in rust_files(root, PLANNER_ROOTS):
         code = rust_code(source)
         if re.search(r"\bHashMap\b", code):
-            found.append(f"{relative}: R5 planner uses nondeterministic HashMap")
+            found.append(f"{relative}: memory planner uses nondeterministic HashMap")
         if re.search(r"\b(?:as_ptr|from_ptr|pointer_identity|CanonicalCellId|cell_identity)\b", code):
             found.append(f"{relative}: plan identity derives from pointer or cell identity")
         if re.search(r"\b(?:factory_name|runtime_factory_name)\b", code):
@@ -340,7 +340,7 @@ def failures(root: Path) -> list[str]:
     # 13. Specialized functions cannot drop their call plan.
     specialization = rust_code(sources.get("src/core/src/function/specialization.rs", ""))
     specialized = balanced_body(specialization, "SpecializedFunction") or ""
-    if r6_active:
+    if managed_memory_active:
         function_runtime_path = root / "src/core/src/function/mod.rs"
         function_runtime = rust_code(
             function_runtime_path.read_text(encoding="utf-8")
@@ -364,7 +364,7 @@ def failures(root: Path) -> list[str]:
         constructor_names = ["new"]
         if "fn new_with_managed_inputs" in specialized_impl:
             constructor_names.append("new_with_managed_inputs")
-        r6_constructor_retains_plan = (
+        runtime_constructor_retains_plan = (
             all(constructor_requires_call_plan(name) for name in constructor_names)
             and "let memory_plan = Rc::new(memory_plan);" in specialized_impl
             and "FunctionInstance::new(implementation, invocation, memory_plan)"
@@ -377,10 +377,10 @@ def failures(root: Path) -> list[str]:
         if not (
             re.search(r"\binstance\s*:\s*FunctionInstance\b", specialized)
             and re.search(r"struct\s+ManagedFunctionBinding\s*\{[^}]*\bplan\s*:\s*Rc<CallMemoryPlan>", function_runtime, re.DOTALL)
-            and r6_constructor_retains_plan
+            and runtime_constructor_retains_plan
         ):
             found.append("SpecializedFunction omits CallMemoryPlan")
-        if not r6_constructor_retains_plan:
+        if not runtime_constructor_retains_plan:
             found.append("production SpecializedFunction constructor omits CallMemoryPlan")
     else:
         if not re.search(r"\bmemory_plan\s*:\s*CallMemoryPlan\b", specialized):
@@ -406,7 +406,7 @@ def failures(root: Path) -> list[str]:
         "ResidentArenaSizes::from_dimensions",
     ):
         if forbidden in resident:
-            found.append(f"resident arena sizing bypasses R5 plan: {forbidden}")
+            found.append(f"resident arena sizing bypasses memory plan: {forbidden}")
 
     # 16. GPU Cartesian expansion is admitted before appending.
     batched = rust_code(sources.get("hosts/gpu/src/batched/mod.rs", ""))
@@ -610,27 +610,27 @@ def failures(root: Path) -> list[str]:
             "resident_state_buffer(allocation)"
         )
 
-    # 20. R6 backing and allocator concepts remain outside the R5 planner and
-    # ordinary production owners. The closed R6 runtime owner is allowed to
+    # 20. Managed-memory backing and allocator concepts remain outside the memory planner and
+    # ordinary production owners. The closed managed-memory runtime owner is allowed to
     # realize the plan without weakening this boundary everywhere else.
     for relative, source in rust_files(root, PRODUCTION_ROOTS):
         if relative.startswith("src/core/src/memory_runtime/"):
             continue
         code = rust_code(source)
-        for identifier in R6_FORBIDDEN:
-            allowed_r6_owner = r6_active and (
+        for identifier in MANAGED_MEMORY_FORBIDDEN:
+            allowed_runtime_owner = managed_memory_active and (
                 relative,
                 identifier,
             ) == ("hosts/gpu/src/memory.rs", "AllocationHandle")
-            if re.search(rf"\b{re.escape(identifier)}\b", code) and not allowed_r6_owner:
-                found.append(f"{relative}: R6 concept introduced during R5: {identifier}")
+            if re.search(rf"\b{re.escape(identifier)}\b", code) and not allowed_runtime_owner:
+                found.append(f"{relative}: managed-memory concept introduced in memory planning: {identifier}")
 
     # 21. Package versions remain on the existing release line.
     cargo = sources.get("Cargo.toml", "")
     if not re.search(r"(?m)^version\s*=\s*\"0\.3\.6\"\s*$", cargo):
-        found.append("root package version changed during R5")
+        found.append("root package version changed during memory planning")
     if not re.search(r"(?m)^mech-core\s*=\s*\{\s*version\s*=\s*\"0\.3\.5\"", cargo):
-        found.append("workspace component versions changed during R5")
+        found.append("workspace component versions changed during memory planning")
 
     # 22. Final status and workflow ownership are permanent.
     status_sources = "\n".join(
@@ -643,22 +643,22 @@ def failures(root: Path) -> list[str]:
             "docs/design/r4-type-system-cutover.md",
         )
     )
-    if "R5 Memory planner — complete" not in status_sources or "R6 Memory runtime cutover — next" not in status_sources:
-        found.append("documentation does not mark R5 complete and R6 next")
-    if re.search(r"(?i)\b(?:TODO[^\n]*R5|R5[^\n]*(?:incomplete|follow-up|required later))\b", status_sources):
-        found.append("documentation leaves required R5 work incomplete")
+    if "Memory Planning — complete" not in status_sources or "Managed Memory — next" not in status_sources:
+        found.append("documentation does not mark Memory Planning complete and Managed Memory next")
+    if re.search(r"(?i)\b(?:TODO[^\n]*Memory Planning|Memory Planning[^\n]*(?:incomplete|follow-up|required later))\b", status_sources):
+        found.append("documentation leaves required memory-planning work incomplete")
     owners = sources.get(".github/ci/owners.toml", "")
     for owner in ("[owners.mech-compute]", "[owners.mech-gpu]"):
         if owner not in owners:
-            found.append(f"R5 owner registration is missing: {owner}")
+            found.append(f"memory-planning owner registration is missing: {owner}")
     for workflow in (".github/workflows/ci.yml", ".github/workflows/ci-full.yml"):
         source = sources.get(workflow, "")
-        if "python3 scripts/check-r5-memory-planner.py" not in source:
-            found.append(f"{workflow}: does not run the R5 checker")
-        if "scripts/tests/test_check_r5_memory_planner.py" not in source:
-            found.append(f"{workflow}: does not run the R5 checker mutation suite")
+        if "python3 scripts/check-memory-planning.py" not in source:
+            found.append(f"{workflow}: does not run the memory-planning checker")
+        if "scripts/tests/test_check_memory_planning.py" not in source:
+            found.append(f"{workflow}: does not run the memory-planning checker mutation suite")
     full = sources.get(".github/workflows/ci-full.yml", "")
-    if "name: Memory planner contract" not in full:
+    if "name: Memory planning" not in full:
         found.append("Full CI omits the memory planner contract job")
 
     return sorted(set(found))
@@ -670,11 +670,11 @@ def main() -> int:
     args = parser.parse_args()
     found = failures(args.root)
     if found:
-        print("R5 memory planner check failed:", file=sys.stderr)
+        print("Memory planning check failed:", file=sys.stderr)
         for failure in found:
             print(f"- {failure}", file=sys.stderr)
         return 1
-    print("R5 memory planner check passed")
+    print("Memory planning check passed")
     return 0
 
 

@@ -96,8 +96,8 @@ jobs:
           python3 scripts/check-r2-type-memory-boundary.py
           python3 scripts/check-r3-type-system.py
           python3 scripts/check-r4-type-cutover.py
-          python3 scripts/check-r5-memory-planner.py
-          python3 scripts/check-r6-memory-runtime.py
+          python3 scripts/check-memory-planning.py
+          python3 scripts/check-managed-memory.py
           python3 scripts/check-bytecode-v1-format.py
 
   static-mutations:
@@ -137,8 +137,8 @@ jobs:
             scripts/tests/test_check_r2_type_memory_boundary.py \
             scripts/tests/test_check_r3_type_system.py \
             scripts/tests/test_check_r4_type_cutover.py \
-            scripts/tests/test_check_r5_memory_planner.py \
-            scripts/tests/test_check_r6_memory_runtime.py \
+            scripts/tests/test_check_memory_planning.py \
+            scripts/tests/test_check_managed_memory.py \
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_value_execution_boundary.py \
             scripts/tests/test_warning_policy.py

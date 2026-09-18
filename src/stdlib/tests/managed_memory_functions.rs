@@ -21,7 +21,7 @@ fn maintained_catalog_has_no_open_or_unclassified_memory_implementation() {
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
-fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static str> {
+fn managed_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static str> {
     use mech_core::{
         FunctionMatrixElement, FunctionMatrixStoragePattern, FunctionValueRepresentation,
     };
@@ -125,7 +125,7 @@ fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
-fn r6_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
+fn managed_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
     if intrinsic {
         return if name.starts_with("access/") {
             Some("F04")
@@ -173,26 +173,26 @@ fn r6_source_family(name: &str, intrinsic: bool) -> Option<&'static str> {
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
 #[test]
-fn catalog_inventory_is_classified_into_r6_implementation_families() {
+fn catalog_inventory_is_classified_into_managed_memory_families() {
     let catalog = mech_stdlib::source_catalog();
     let mut family_counts = std::collections::BTreeMap::<&str, usize>::new();
     let mut unclassified = Vec::new();
     for entry in catalog.runtime_entries() {
-        if let Some(family) = r6_runtime_family(entry) {
+        if let Some(family) = managed_runtime_family(entry) {
             *family_counts.entry(family).or_default() += 1;
         } else {
             unclassified.push(format!("runtime {} {:?}", entry.name, entry.signature()));
         }
     }
     for entry in catalog.specializer_entries() {
-        if let Some(family) = r6_source_family(&entry.operation.canonical_name, false) {
+        if let Some(family) = managed_source_family(&entry.operation.canonical_name, false) {
             *family_counts.entry(family).or_default() += 1;
         } else {
             unclassified.push(format!("source {}", entry.operation.canonical_name));
         }
     }
     for entry in catalog.intrinsic_specializer_entries() {
-        if let Some(family) = r6_source_family(&entry.operation.canonical_name, true) {
+        if let Some(family) = managed_source_family(&entry.operation.canonical_name, true) {
             *family_counts.entry(family).or_default() += 1;
         } else {
             unclassified.push(format!("intrinsic {}", entry.operation.canonical_name));
@@ -205,7 +205,7 @@ fn catalog_inventory_is_classified_into_r6_implementation_families() {
     );
     assert!(
         unclassified.is_empty(),
-        "unclassified maintained R6 registrations:\n{}",
+        "unclassified maintained Managed Memory registrations:\n{}",
         unclassified.join("\n"),
     );
     for family in ["F01", "F02", "F03", "F04", "F05", "F06", "F07", "F09"] {
@@ -215,7 +215,7 @@ fn catalog_inventory_is_classified_into_r6_implementation_families() {
         );
     }
     eprintln!(
-        "R6 catalog coverage: runtime={} capabilities={} specializers={} intrinsics={} families={family_counts:?}",
+        "Managed Memory catalog coverage: runtime={} capabilities={} specializers={} intrinsics={} families={family_counts:?}",
         catalog.runtime_entries().len(),
         catalog.runtime_execution_capabilities().len(),
         catalog.specializer_entries().len(),

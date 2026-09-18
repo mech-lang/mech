@@ -118,7 +118,7 @@ pub fn audit_program_memory_plan(
             if current_exact && allocation.capacity_bytes == observation.capacity_bytes {
                 MemoryPlanAuditStatus::Exact
             } else if observation.capacity_bytes < allocation.capacity_bytes {
-                MemoryPlanAuditStatus::CapacityDeferredToR6
+                MemoryPlanAuditStatus::DeferredCapacity
             } else {
                 MemoryPlanAuditStatus::WithinPlannedCapacity
             },
@@ -132,7 +132,7 @@ pub fn audit_program_memory_plan(
     })
 }
 
-/// Public R5 audit entry point named by the architecture contract.
+/// Public memory-plan audit entry point named by the architecture contract.
 pub fn audit_memory_plan(
     plan: &ProgramMemoryPlan,
     observations: &[MemoryPlanObservation],

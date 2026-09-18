@@ -12,7 +12,7 @@ use mech_engine::memory_planner::{
 use mech_engine::memory_runtime::ManagedProgramMemory;
 
 #[test]
-fn compute_activation_realizes_its_subordinate_r5_storage() {
+fn compute_activation_realizes_its_subordinate_planned_storage() {
     let slot = CellSlotId::new(0);
     let value = ValueCell::from_exact(3.0_f32).unwrap();
     let descriptor = value.resolved_descriptor().unwrap();

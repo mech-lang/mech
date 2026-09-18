@@ -12,3 +12,5 @@ Design Documents
 - [Program artifact resident activation contract](/design/program-artifact-resident-activation.html)
 - [Type-memory boundary](/design/type-memory-boundary.html)
 - [Type System v1](/design/type-system-v1.html)
+- [Memory Planning](/design/memory-planning.html)
+- [Managed Memory](/design/managed-memory.html)

@@ -438,7 +438,7 @@
           "--test",
           "canonical_document_state",
           "--test",
-          "r6_memory_runtime"
+          "managed_memory"
         ]
       ],
       "base": "codex/syntax-s8r04-dynamic-binding"
