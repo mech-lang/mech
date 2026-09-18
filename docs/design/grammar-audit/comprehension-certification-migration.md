@@ -95,6 +95,12 @@ Graph payload revision 11 gives recursive pattern functions one typed lexical
 function match; execution binds it to admitted resident call frames. Revision
 10 remains rejected without a compatibility reader.
 
+Graph payload revision 12 adds typed lexical `Suspend` and `Publish` operations
+for declared FSM continuations. `Suspend` preserves the enclosing state schema;
+`Publish` preserves the enclosing output schema. The validator rejects either
+operation outside its owning match or with malformed inputs. Revision 11 remains
+rejected without a compatibility reader.
+
 ## Complete syntax evidence
 
 Clean-tree fingerprints use canonical-clean-tree-v2: an explicit traversal

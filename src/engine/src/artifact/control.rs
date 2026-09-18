@@ -75,6 +75,13 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// callable lookup. Activation binds it to the enclosing match and the
     /// resident executor admits a bounded call frame before following it.
     Recur,
+    /// Suspend the enclosing declared FSM with the operation's single state
+    /// input. Suspension publishes no result in the current turn; resident
+    /// execution resumes the same lexical match on a later turn.
+    Suspend,
+    /// Stage an FSM output while control continues to a later transition in
+    /// the same arm. Publication commits atomically with any suspension.
+    Publish,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -446,10 +453,17 @@ pub(super) fn validate_match_inner(
                                 next_block,
                             )?
                         }
-                        ControlOperationBody::Recur => {
+                        ControlOperationBody::Recur | ControlOperationBody::Suspend => {
                             if inputs.as_slice() != [scrutinee] || operation.schema != output {
                                 return Err(invalid(
-                                    "recursive call must preserve the enclosing input and output schemas",
+                                    "recursive or suspended control must preserve the enclosing input and output schemas",
+                                ));
+                            }
+                        }
+                        ControlOperationBody::Publish => {
+                            if inputs.as_slice() != [output] || operation.schema != output {
+                                return Err(invalid(
+                                    "FSM publication must preserve the enclosing output schema",
                                 ));
                             }
                         }
@@ -618,7 +632,9 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     depth.checked_add(1)?,
                                 )),
                                 ControlOperationBody::Operation { .. }
-                                | ControlOperationBody::Recur => {}
+                                | ControlOperationBody::Recur
+                                | ControlOperationBody::Suspend
+                                | ControlOperationBody::Publish => {}
                             }
                         }
                     }
@@ -647,7 +663,9 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     depth.checked_add(1)?,
                                 )),
                                 ControlOperationBody::Operation { .. }
-                                | ControlOperationBody::Recur => {}
+                                | ControlOperationBody::Recur
+                                | ControlOperationBody::Suspend
+                                | ControlOperationBody::Publish => {}
                             }
                         }
                     }
@@ -719,6 +737,24 @@ pub(super) fn validate_control_counts(
 }
 
 impl<C> MatchDeclaration<C> {
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) fn contains_suspend(&self) -> bool {
+        self.arms.iter().any(|arm| {
+            arm.guard
+                .iter()
+                .chain(core::iter::once(&arm.body))
+                .flat_map(|block| &block.operations)
+                .any(|operation| match &operation.body {
+                    ControlOperationBody::Suspend => true,
+                    ControlOperationBody::Match(nested) => nested.contains_suspend(),
+                    ControlOperationBody::Comprehension(_)
+                    | ControlOperationBody::Operation { .. }
+                    | ControlOperationBody::Recur
+                    | ControlOperationBody::Publish => false,
+                })
+        })
+    }
+
     pub(super) fn validate_depth(
         &self,
         node: mech_core::NodeId,
@@ -787,6 +823,8 @@ impl<C> MatchDeclaration<C> {
                                     )
                                 }
                                 ControlOperationBody::Recur => ControlOperationBody::Recur,
+                                ControlOperationBody::Suspend => ControlOperationBody::Suspend,
+                                ControlOperationBody::Publish => ControlOperationBody::Publish,
                             },
                             inputs: operation.inputs.clone(),
                             schema: operation.schema,

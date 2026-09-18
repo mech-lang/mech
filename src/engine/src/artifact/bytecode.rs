@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 11;
+const WIRE_GRAPH_REVISION: u32 = 12;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -354,6 +354,8 @@ enum WireControlOperationBody {
     Match(WireMatchDeclaration),
     Comprehension(WireComprehensionDeclaration),
     Recur,
+    Suspend,
+    Publish,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -1696,6 +1698,8 @@ fn wire_control_operation_body(
             WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
         }
         super::ControlOperationBody::Recur => WireControlOperationBody::Recur,
+        super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
+        super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
     }
 }
 
@@ -2089,6 +2093,8 @@ fn control_operation_body_from_wire(
             super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
         }
         WireControlOperationBody::Recur => super::ControlOperationBody::Recur,
+        WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
+        WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
     })
 }
 
@@ -2261,7 +2267,9 @@ fn control_body_operation_references(
         super::ControlOperationBody::Comprehension(control) => {
             comprehension_operation_references(control)
         }
-        super::ControlOperationBody::Recur => Vec::new(),
+        super::ControlOperationBody::Recur
+        | super::ControlOperationBody::Suspend
+        | super::ControlOperationBody::Publish => Vec::new(),
     }
 }
 
@@ -2304,7 +2312,9 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Comprehension(control) => {
             wire_comprehension_operation_ids(control)
         }
-        WireControlOperationBody::Recur => Vec::new(),
+        WireControlOperationBody::Recur
+        | WireControlOperationBody::Suspend
+        | WireControlOperationBody::Publish => Vec::new(),
     }
 }
 

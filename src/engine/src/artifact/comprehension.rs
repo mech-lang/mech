@@ -138,6 +138,12 @@ impl<C> ComprehensionDeclaration<C> {
                                     super::ControlOperationBody::Recur => {
                                         super::ControlOperationBody::Recur
                                     }
+                                    super::ControlOperationBody::Suspend => {
+                                        super::ControlOperationBody::Suspend
+                                    }
+                                    super::ControlOperationBody::Publish => {
+                                        super::ControlOperationBody::Publish
+                                    }
                                 },
                                 inputs: operation.inputs.clone(),
                                 schema: operation.schema,
@@ -432,9 +438,11 @@ pub(super) fn validate_comprehension_inner(
                             next_block,
                         )?;
                     }
-                    super::ControlOperationBody::Recur => {
+                    super::ControlOperationBody::Recur
+                    | super::ControlOperationBody::Suspend
+                    | super::ControlOperationBody::Publish => {
                         return Err(invalid(
-                            "recursive calls cannot escape their function match",
+                            "recursive or suspended control cannot escape its enclosing match",
                         ));
                     }
                 }
