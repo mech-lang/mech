@@ -36,9 +36,9 @@ mod query_tests;
 #[cfg(all(feature = "resident-routing-source", feature = "serde"))]
 pub use bundle::{CANONICAL_PROGRAM_BUNDLE_VERSION, CanonicalProgramBundle};
 #[cfg(feature = "resident-routing-source")]
-pub(crate) use compiler::ProgramCompilerView;
+pub use compiler::ProgramCompiler;
 #[cfg(feature = "resident-routing-source")]
-pub use compiler::{CompilerImportValueUnsupported, ProgramCompiler};
+pub(crate) use compiler::ProgramCompilerView;
 #[cfg(feature = "compute")]
 pub use compiler::{ComputeRegionCompilation, MixedProgramCompilation};
 #[cfg(feature = "resident-external")]

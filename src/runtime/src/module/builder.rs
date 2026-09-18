@@ -107,7 +107,6 @@ impl ModuleBuilder {
             resolved.source,
             #[cfg(feature = "source")]
             resolved.source_document,
-            resolved.syntax_tree,
             compiler_version,
             language_edition,
             target,

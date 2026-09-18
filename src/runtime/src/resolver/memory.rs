@@ -304,13 +304,7 @@ impl InMemorySourceResolver {
         let source = source.into();
         #[cfg(feature = "source")]
         {
-            self.insert_prepared_string(specifier, source, |resolved| {
-                let MechSourceCode::String(source) = &resolved.source else {
-                    unreachable!()
-                };
-                let tree = mech_syntax::parser::parse(source.trim())?;
-                Ok(resolved.with_syntax_tree(tree))
-            })
+            self.insert_prepared_string(specifier, source, ResolvedSource::admit_canonical_document)
         }
         #[cfg(not(feature = "source"))]
         self.insert_source(
@@ -344,18 +338,7 @@ impl InMemorySourceResolver {
         let specifier = specifier.into();
         let source = source.into();
         #[cfg(feature = "source")]
-        let result = self.insert_prepared_string(specifier, source, |resolved| {
-            // This infallible builder retains malformed source for diagnostics.
-            // The shipping parser projection remains frozen until cutover.
-            let MechSourceCode::String(source) = &resolved.source else {
-                unreachable!()
-            };
-            if let Ok(tree) = mech_syntax::parser::parse(source.trim()) {
-                Ok(resolved.with_syntax_tree(tree))
-            } else {
-                Ok(resolved)
-            }
-        });
+        let result = self.insert_prepared_string(specifier, source, Ok);
         #[cfg(not(feature = "source"))]
         let result = self.insert_string(specifier, source);
         if result.is_err() {
@@ -769,7 +752,7 @@ mod tests {
 
     #[cfg(feature = "source")]
     #[test]
-    fn insert_string_retains_a_document_without_requiring_canonical_indexing() {
+    fn insert_string_strictly_admits_one_retained_document() {
         let source = r#"delta := 0.25
 rows := |id<string> x<f64>|
   | "row-a" 1 + delta |
@@ -790,7 +773,7 @@ rows := |id<string> x<f64>|
                 .to_contiguous_string(),
             source
         );
-        assert!(resolved.syntax_tree.is_some());
+        assert!(resolved.canonical_document_index().is_ok());
     }
 
     #[cfg(feature = "source")]
@@ -803,7 +786,6 @@ rows := |id<string> x<f64>|
             .unwrap()
             .expect("malformed source must remain resolvable");
 
-        assert!(resolved.syntax_tree.is_none());
         let document = resolved
             .source_document()
             .expect("malformed source keeps its canonical diagnostic owner");
@@ -877,7 +859,6 @@ rows := |id<string> x<f64>|
             .resolve(&SourceRequest::new("main.mec"))
             .unwrap()
             .unwrap();
-        assert!(before.syntax_tree.is_none());
 
         assert!(
             resolver
@@ -908,7 +889,6 @@ rows := |id<string> x<f64>|
         assert!(resolved.source_document().is_some());
         assert!(!resolved.source_document().unwrap().is_strictly_clean());
         assert!(resolved.canonical_document_index().is_err());
-        assert!(resolved.syntax_tree.is_none());
         assert!(resolved.imports.is_empty());
         assert!(resolved.exports.is_empty());
         assert!(resolved.contexts.is_empty());
@@ -930,7 +910,6 @@ rows := |id<string> x<f64>|
             .unwrap()
             .unwrap();
 
-        assert!(resolved.syntax_tree.is_none());
         assert_eq!(resolved.imports.len(), 1);
         assert_eq!(resolved.dependencies.len(), 1);
         assert_eq!(resolved.dependencies[0].specifier, "./root.mec");
