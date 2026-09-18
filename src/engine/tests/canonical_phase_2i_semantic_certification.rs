@@ -5,9 +5,11 @@ use std::fs;
 use std::path::PathBuf;
 
 use mech_engine::{
-    CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec, DimensionExpr, FloatWidth,
-    IntegerWidth, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, ProgramArtifact, SchemaBody,
-    SourceNodeOutput, SourceSemanticAnchor, SourceValue, canonical_application_requirement_bytes,
+    CanonicalSourceFrontend, CanonicalSourceProgram, CardinalitySpec, DimensionExpr,
+    DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+    DimensionParameterOrigin, FloatWidth, IntegerWidth, PHASE_2I_SEMANTIC_RULES,
+    Phase2iSemanticDisposition, ProgramArtifact, SchemaBody, SchemaDraft, SourceNodeOutput,
+    SourceSemanticAnchor, SourceValue, canonical_application_requirement_bytes,
     encode_program_artifact_bytecode_v1,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
@@ -530,13 +532,23 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
 
 #[test]
 fn semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership() {
-    let compiled = CanonicalSourceFrontend
-        .compile_expression(&expression("1..3"))
-        .unwrap();
-    let schema = compiled
-        .schemas()
-        .get(compiled.program().outputs[0].schema)
-        .unwrap();
+    let parameter = DimensionParameterId::new(0);
+    let schema = SchemaDraft {
+        dimension_parameters: vec![DimensionParameterDeclaration {
+            id: parameter,
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(1),
+            upper_bound: None,
+        }]
+        .into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: vec![DimensionExpr::Parameter(parameter)].into_boxed_slice(),
+        },
+    }
+    .finalize()
+    .unwrap();
     assert_eq!(schema.dimension_parameters().len(), 1);
     let two = schema.instantiate_shape(Box::new([2])).unwrap();
     let three = schema.instantiate_shape(Box::new([3])).unwrap();
