@@ -42,13 +42,15 @@ changed from 4 to 5 and every other section payload remained byte-identical. Onl
 those 50 semantic hashes changed; sources, dispositions and required outcomes did
 not. Positive compound-match, nested-match and exact table-join behavior remains
 in the completion suite. The required FSM executable witness now reaches a
-typed revision-six artifact rather than an ordinary source operation. Revision 6
-adds the FSM body variant; revision 5 remains the closed nested-match graph grammar.
+typed revision-seven artifact rather than an ordinary source operation. Revision 7
+retains the FSM body variant introduced in revision 6; revision 5 remains the closed
+nested-match graph grammar.
 
 ## FSM graph revision
 
-Graph payload revision 6 closes the representation introduced by typed FSM bodies.
-The 51 artifact-bearing semantic witnesses were regenerated with the revision-six
+Graph payload revision 7 retains typed FSM bodies and adds explicit
+structural-pattern parameter sources.
+The 51 artifact-bearing semantic witnesses were regenerated with the revision-seven
 producer; their semantic hashes changed because the complete artifact bytecode is
 part of each witness fingerprint. The source programs, dispositions, required
 outcomes, and non-graph artifact sections are unchanged. Revision 5 remains rejected
