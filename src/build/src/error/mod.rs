@@ -95,6 +95,9 @@ pub enum NativeBuildErrorKind {
         instruction: u32,
         reason: String,
     },
+    NativeProgramArtifactInvalid {
+        reason: String,
+    },
     NativeActorBootstrapMissing,
     NativeActorBootstrapUnused,
     NativeActorBootstrapUnsupported,
@@ -209,6 +212,7 @@ impl MechErrorKind for NativeBuildErrorKind {
             Self::NativeApplicationInstructionInvalid { .. } => {
                 "NativeApplicationInstructionInvalid"
             }
+            Self::NativeProgramArtifactInvalid { .. } => "NativeProgramArtifactInvalid",
             Self::NativeActorBootstrapMissing => "NativeActorBootstrapMissing",
             Self::NativeActorBootstrapUnused => "NativeActorBootstrapUnused",
             Self::NativeActorBootstrapUnsupported => "NativeActorBootstrapUnsupported",
@@ -284,6 +288,9 @@ impl MechErrorKind for NativeBuildErrorKind {
             } => format!(
                 "native application bytecode instruction {instruction} is invalid: {reason}"
             ),
+            Self::NativeProgramArtifactInvalid { reason } => {
+                format!("native canonical program artifact is invalid: {reason}")
+            }
             Self::NativeActorBootstrapMissing => {
                 "an actor-turn native application requires an explicit actor bootstrap".to_owned()
             }

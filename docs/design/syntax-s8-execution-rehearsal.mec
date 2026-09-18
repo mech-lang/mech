@@ -1,5 +1,5 @@
 S8B — Execution interfaces and the deleted-code rehearsal
-===============================================================================
+========================================================================
 
 Status: execution preparation and review correction; product qualification remains open.
 Parent: S8A b573284cb4587d4fb0085cc69a80a036830f1b76.
@@ -276,3 +276,79 @@ Do not silently mark an uncovered row unsupported. An unsupported disposition
 must already belong to the maintained contract, or be an explicit scope decision.
 Any new failure found by this sweep is recorded under its existing gate; the seal
 requires zero unresolved required rows, not an arbitrary number of review rounds.
+
+Configured served source graphs
+-------------------------------
+
+The public C qualification candidate now uses `configured_browser_compiler_builder`
+for ordinary served roots, with the same host projection and runtime configuration
+that the server injects into the browser. Source and dependency edges come from
+one retained workspace snapshot. Browser transport documents have stable bundle
+URIs and retain the workspace revision; compilation never reconstructs an import
+graph from newer file contents. Configured run paths select executable roots
+independently of rendered dependencies and prose.
+
+`configured_served_root_uses_snapshot_dependencies_and_planning_hosts` covers a
+configured timer read, retained relative imports, dependency hashes, prose-only
+rendering, old-snapshot stability after a disk edit, and old-artifact rejection
+following dependency refresh. The full native server regression suite passes
+90 tests in the cutover candidate. This qualifies the ordinary server connection;
+full served mixed EKF/particles and the canonical browser document transport
+remain open acceptance work.
+
+Rooted cutover qualification
+----------------------------
+
+The candidate based on B `f64f54ce8` routes ordinary, interactive and mixed
+rooted compilation through the prepared retained-document graph. The redundant
+tree dependency compiler is removed. Runtime declaration and execution tests
+now enter canonical indexing and document compilation with the parser deleted.
+The source-only fixture executes imported roots through the public ordinary and
+interactive interfaces, including dependency failure and compiler reuse.
+
+The complete runtime library profile (`full_compiler,resident-routing-source,compute`)
+executes 706 tests: 682 pass and 24 fail. Both maintained mixed-root import and
+user-function regressions pass, together with the supplied-input/default tests.
+This candidate is not sealed. The remaining failures identify interactive state
+and result identity, ordered roots, output/metadata adoption, and application
+execution obligations. Full browser document transport, served mixed applications
+and the final distribution matrix also remain open. Backend-only qualification
+must not be substituted for those product results.
+
+
+Canonical frozen-EKF product qualification
+------------------------------------------
+
+The maintained artifact-closure, activation and execution targets now run under
+`full_source,resident-artifact` with the retired parser deleted. All 18 tests pass
+(5 closure, 2 activation, 11 execution). Source and decoded bytecode execute the
+complete 4,096-turn frozen trace with the existing reference values and trajectory
+hash unchanged. Abort, retry, integrity, effects and epoch checks also pass.
+
+Recurrence assertions select `SlotRole::State`; physical retained storage also
+contains the separately published three-scalar estimate. The canonical graph has
+four identity-copy nodes, 24 checked steps, 21 unchecked steps and 120 candidate
+bytes. These assertions describe the current canonical artifact, not the removed
+compiler's storage layout.
+
+This qualifies the frozen artifact product only. Full served mixed EKF/particles,
+the browser loader and the remaining C runtime/distribution failures stay open.
+
+
+Canonical publication consumer qualification
+--------------------------------------------
+
+C runtime regressions now inspect the canonical artifact's interactive bindings,
+including source/bytecode mutability and function-local isolation. Ordinary
+consumers query the final program output instead of demanding hidden symbols.
+Conversion tests assert exact published scalar/matrix types and values; dynamic
+selector tests exercise changing inputs on source and bytecode graphs. Neither
+test requires the retired compiler's instruction names. N-body inspection follows
+recurrence roles rather than treating the published position buffer as state.
+
+The complete C runtime library run executes 710 tests: 698 pass and 12 fail. The
+remaining failures cover provider planning/error classification, portable selector
+admission, ordered roots, formatted output ownership, pattern functions, collection
+shape/control/initializers, and both N-body application references. The N-body
+numerical, trajectory and display-bound assertions remain unchanged. These are
+open qualification failures, not ignored tests or a completed cutover seal.

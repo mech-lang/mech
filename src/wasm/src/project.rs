@@ -23,8 +23,6 @@ use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode,
 use mech_engine::{
     CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_program_output_id,
 };
-#[cfg(feature = "served_project_authority")]
-use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
@@ -83,6 +81,11 @@ impl WasmProject {
 
     #[wasm_bindgen(js_name = supportsServedAuthority)]
     pub fn supports_served_authority() -> bool {
+        cfg!(feature = "served_project_authority")
+    }
+
+    #[wasm_bindgen(js_name = supportsServedDocumentResolutions)]
+    pub fn supports_served_document_resolutions() -> bool {
         cfg!(feature = "served_project_authority")
     }
 
@@ -154,80 +157,47 @@ impl WasmProject {
     }
 
     #[cfg(feature = "served_project_authority")]
-    #[wasm_bindgen(js_name = fromServedBundle)]
-    pub fn from_served_bundle(
+    #[wasm_bindgen(js_name = fromServedDocuments)]
+    pub fn from_served_documents(
         config_source: &str,
         sources: JsValue,
-        artifacts: JsValue,
+        documents: JsValue,
         roots: JsValue,
+        resolutions: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        let artifact_map = source_map_from_js(artifacts)?;
+        let document_map = source_map_from_js(documents)?;
         let roots = bundle_roots_from_js(roots)?;
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
         replace_bundle_run_paths(&mut document, roots.clone())?;
-        Self::from_served_project_bundle(document, source_map, artifact_map, roots)
+        Self::from_served_project_documents(document, source_map, document_map, roots, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
-    fn from_served_project_bundle(
+    fn from_served_project_documents(
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
-        artifact_map: HashMap<String, String>,
+        document_map: HashMap<String, String>,
         roots: Vec<String>,
+        resolutions: Vec<SourceResolutionEntry>,
     ) -> Result<WasmProject, JsValue> {
-        let authority = served_browser_authority()?;
-        validate_served_authority(&document, &authority).map_err(to_js_error)?;
-        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
-        #[cfg(feature = "browser_host_scene")]
-        let scenes = BrowserSceneRegistry::new();
-        let source_resolver =
-            project_source_resolver_with_resolutions(&source_map, &[]).map_err(to_js_error)?;
-        let mut runtime = build_runtime_from_authority(
-            &document,
-            &authority,
-            source_resolver,
-            #[cfg(feature = "browser_host_scene")]
-            scenes.clone(),
-        )?;
         let [root] = roots.as_slice() else {
             return Err(to_js_error(MechError::new(
                 GenericError {
-                    msg: "canonical browser bundles require exactly one root artifact".to_owned(),
+                    msg: "canonical browser projects require exactly one root document".to_owned(),
                 },
                 None,
             )));
         };
-        let source = source_map.get(root).ok_or_else(|| {
-            JsValue::from_str(&format!("canonical bundle root source is missing: {root}"))
-        })?;
-        let encoded = artifact_map.get(root).ok_or_else(|| {
+        let encoded = document_map.get(root).ok_or_else(|| {
             JsValue::from_str(&format!(
-                "canonical bundle root artifact is missing: {root}"
+                "canonical browser root document is missing: {root}"
             ))
         })?;
-        let bundle = CanonicalProgramBundle::decode(encoded, Some(source)).map_err(to_js_error)?;
-        bundle
-            .validate_dependency_sources(|uri| {
-                uri.strip_prefix("bundle:///")
-                    .and_then(|specifier| source_map.get(specifier))
-                    .map(String::as_str)
-            })
-            .map_err(to_js_error)?;
-        if bundle.canonical_uri != format!("bundle:///{root}") {
-            return Err(JsValue::from_str(
-                "canonical bundle root identity is stale; regenerate the bundle",
-            ));
-        }
-        let durability = runtime.config().resident_durability;
-        runtime
-            .load_bytecode_program(&bundle.bytecode, durability)
-            .map_err(to_js_error)?;
-        Ok(Self::from_runtime(
-            runtime,
-            #[cfg(feature = "browser_host_scene")]
-            scenes,
-        ))
+        let payload = decode_document_payload(encoded)?;
+        validate_document_payload(&payload, root, &source_map)?;
+        Self::from_served_project(document, source_map, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -993,37 +963,52 @@ mod document {
     use super::*;
 
     pub(super) fn document_output_ordinals(
-        bootstrap: &WasmDocumentBootstrap,
-    ) -> MResult<HashMap<u64, u64>> {
-        let program = match CanonicalSourceFrontend
-            .compile_document(&bootstrap.document.document().document())
-        {
-            Ok(program) => program,
-            Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
-            Err(error) => return Err(document_runtime_error(error.to_string())),
-        };
-        let outputs = program
-            .document_outputs()
-            .iter()
-            .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
-            .collect::<Vec<_>>();
-        if outputs.len() != bootstrap.presentation_output_ids.len() {
-            return Err(document_runtime_error(format!(
-                "browser presentation payload has {} addresses for {} canonical outputs",
-                bootstrap.presentation_output_ids.len(),
-                outputs.len(),
-            )));
+        document: &SourceDocument,
+        runtime: &MechRuntime,
+        program_output: Option<OutputId>,
+    ) -> HashMap<u64, u64> {
+        use mech_syntax::document::{AstNode, SyntaxKind};
+
+        let mut names = HashMap::new();
+        for ordinal in 0..u32::MAX {
+            let Some(name) = runtime.output_name(OutputId::new(ordinal)) else {
+                break;
+            };
+            names.insert(name, u64::from(ordinal));
         }
-        let mut ordinals = bootstrap
-            .presentation_output_ids
-            .iter()
-            .copied()
-            .zip(outputs.into_iter().map(|output| u64::from(output.output)))
-            .collect::<HashMap<_, _>>();
-        if let Some(output) = bootstrap.program_output_id()? {
-            ordinals.insert(root_document_program_output_id(), u64::from(output.0));
+        let mut outputs = HashMap::new();
+        if let Some(output) = program_output {
+            outputs.insert(root_document_program_output_id(), u64::from(output.0));
         }
-        Ok(ordinals)
+        let mut pending = vec![document.document().syntax().clone()];
+        while let Some(node) = pending.pop() {
+            let role = match node.kind() {
+                SyntaxKind::EvalInlineMechCode => {
+                    Some(("inline", SourceDocumentOutputKind::Inline))
+                }
+                SyntaxKind::CodeBlock => Some(("fence", SourceDocumentOutputKind::Fence)),
+                _ => None,
+            };
+            if let Some((role, kind)) = role {
+                let local_name = format!("document:{role}:{}", node.range().start.0);
+                let ordered_name = format!(
+                    "document:{}:{role}:{}",
+                    node.source().document().0,
+                    node.range().start.0
+                );
+                if let Some(ordinal) = names
+                    .get(local_name.as_str())
+                    .or_else(|| names.get(ordered_name.as_str()))
+                {
+                    outputs.insert(
+                        mech_runtime::canonical_document_output_id(kind, node.range()),
+                        *ordinal,
+                    );
+                }
+            }
+            pending.extend(node.children());
+        }
+        outputs
     }
 
     fn selected_value_response(
@@ -1186,9 +1171,16 @@ mod document {
         pub(super) fn try_from_bootstrap(
             bootstrap: WasmDocumentBootstrap,
         ) -> MResult<WasmDocument> {
-            let document_output_ordinals = document_output_ordinals(&bootstrap)?;
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
+            let program_output_id = bootstrap.program_output_id()?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
+            let document_output_ordinals = document_output_ordinals(
+                bootstrap.document.document(),
+                repl.session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?,
+                program_output_id,
+            );
             Ok(Self {
                 repl,
                 bootstrap,
@@ -1289,6 +1281,11 @@ mod document {
                     authority,
                 }),
             })
+        }
+
+        #[wasm_bindgen(js_name = runtimeInfo)]
+        pub fn runtime_info(&self) -> Result<JsValue, JsValue> {
+            runtime_info_value(&self.runtime()?.program_execution_info())
         }
 
         #[wasm_bindgen(js_name = renderedOutput)]
@@ -1986,18 +1983,31 @@ mod document {
                 .ok_or_else(|| js_error("document runtime is not active"))
         }
 
-        fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
+        pub(super) fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
             let current =
                 self.repl.session.source_document().ok_or_else(|| {
                     document_runtime_error("document session has no retained source")
                 })?;
             let (_, output_id) = runtime_document(self.bootstrap.source(), current)?;
+            self.document_output_ordinals = document_output_ordinals(
+                current,
+                self.repl
+                    .session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?,
+                output_id,
+            );
             if let (Some(program_output), Some(output_id)) =
                 (self.program_output.as_mut(), output_id)
             {
                 program_output.output_id = output_id;
             }
             Ok(())
+        }
+
+        #[cfg(test)]
+        pub(super) fn document_output_ordinal(&self, output_id: u64) -> Option<u64> {
+            self.document_output_ordinals.get(&output_id).copied()
         }
 
         fn runtime_output_id(&self, output_id: u64) -> Option<OutputId> {
@@ -2983,22 +2993,8 @@ mod tests {
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
+        let presentation_output_ids =
+            mech_runtime::canonical_document_presentation_output_ids(&document.document()).unwrap();
         BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)
@@ -3043,13 +3039,20 @@ mod tests {
             include_str!("../../../tests/fixtures/shims/all-slots.mec"),
         ] {
             let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
-            let outputs = document::document_output_ordinals(&bootstrap).unwrap();
+            let repl = crate::repl::WasmRepl::from_document(bootstrap.clone()).unwrap();
+            let runtime = repl.session.runtime().unwrap();
+            let program_output = bootstrap.program_output_id().unwrap();
+            let outputs = document::document_output_ordinals(
+                bootstrap.document.document(),
+                runtime,
+                program_output,
+            );
             for output_id in &bootstrap.presentation_output_ids {
                 assert!(outputs.contains_key(output_id));
             }
             assert_eq!(
                 outputs.contains_key(&root_document_program_output_id()),
-                bootstrap.program_output_id().unwrap().is_some(),
+                runtime.program_output_id().is_some(),
             );
         }
     }
@@ -3127,6 +3130,7 @@ mod tests {
         );
 
         document.repl.session.submit("40 + 2").unwrap();
+        document.refresh_document_output_ordinals().unwrap();
 
         assert_eq!(
             document
@@ -3138,6 +3142,11 @@ mod tests {
                 .to_string(),
             "7",
             "a console result must not replace the fixed document output",
+        );
+        assert_eq!(
+            document.document_output_ordinal(root_document_program_output_id()),
+            Some(u64::from(output_id.0)),
+            "the canonical document mount must remain mapped to the captured result",
         );
     }
 
@@ -5525,9 +5534,13 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_project_reports_served_authority_capability() {
+    fn wasm_project_reports_served_project_capabilities() {
         assert_eq!(
             WasmProject::supports_served_authority(),
+            cfg!(feature = "served_project_authority")
+        );
+        assert_eq!(
+            WasmProject::supports_served_document_resolutions(),
             cfg!(feature = "served_project_authority")
         );
     }

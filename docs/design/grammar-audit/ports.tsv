@@ -75,7 +75,7 @@ code-terminal	parser	certified	syntax-only	active	node:CodeTerminal	S7	S7 canoni
 codeblock-sigil	mechdown	certified	syntax-only	active	transparent	2B	Phase 2B closed Mechdown grammar island
 colon	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
 comma	base	certified	syntax-only	active	token	2A	Phase 2A canonical base closure
-comment	statements	certified	syntax-only	active	node:Comment	2B	rich comment semantics wait for the complete paragraph-element grammar
+comment	statements	certified	syntax-only	active	node:Comment	2B	rich comment bodies use the complete canonical paragraph-element grammar
 comment-sigil	statements	certified	syntax-only	active	transparent	2B	Phase 2B closed Mechdown grammar island
 comparison-operator	expressions	certified	certified	active	node:ComparisonOperator	2D	Phase 2D closed expression-operator layer
 complement	expressions	certified	certified	active	node:ComplementOperation	2D	Phase 2D closed expression-operator layer

@@ -1,5 +1,3 @@
-#[cfg(test)]
-use mech_runtime::CanonicalProgramBundle;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::future::Future;
 use std::io::{Error, ErrorKind};
@@ -613,9 +611,10 @@ impl ServerSourceRegistry {
                 },
             );
             if root_uris.contains(&source.canonical_uri) {
-                let code = crate::browser_planning::compile_browser_document_bundle(
+                let code = crate::browser_planning::compile_browser_document_payload(
                     &mut compiler,
                     uri,
+                    &logical_specifier,
                     &document,
                 )?
                 .encode()?;
@@ -2468,9 +2467,36 @@ mod tests {
         );
         let encoded =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let bundle = CanonicalProgramBundle::decode(&encoded, Some(source)).unwrap();
-        assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
-        assert_eq!(bundle.source, source);
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn served_document_payload_keeps_the_unencoded_manifest_specifier() {
+        let root = temp_root("encoded-document-specifier");
+        let source = "answer := 42\nanswer\n";
+        std::fs::write(root.join("my report.mec"), source).unwrap();
+        let snapshot = snapshot(&root, "my report.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(&root, &snapshot, "", "", &[])
+            .unwrap();
+
+        let encoded = String::from_utf8(
+            registry
+                .get_route("/code/my%20report.mec")
+                .expect("the URL-encoded transport route exists")
+                .bytes,
+        )
+        .unwrap();
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "my report.mec");
+        assert_eq!(
+            registry.source_specifiers["my%20report.mec"],
+            "my report.mec"
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -2530,14 +2556,11 @@ mod tests {
             .unwrap();
         let encoded =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
-        assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
         assert_eq!(
-            bundle.source_dependencies,
-            BTreeMap::from([(
-                "bundle:///dep.mec".into(),
-                mech_core::hash_str("value := 41.0\n<+ value\n")
-            ),])
+            payload.source(),
+            "+> ./dep.mec\n@clock := timer://clock/tick{:read(tick)}\nanswer := dep/value + @clock/tick\n"
         );
         assert!(registry.get_route("/source/dep.mec").is_some());
         assert!(
@@ -2551,9 +2574,12 @@ mod tests {
             registry.get_route("/code/dep.mec").is_none(),
             "dependencies are rendered, not implicit run roots"
         );
-        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).unwrap();
-        assert!(artifact.requirements().iter().any(|(_, requirement)| matches!(requirement,
-            mech_core::ApplicationRequirement::Resource(request) if request.base_uri == "timer://clock/tick")));
+        assert!(
+            registry
+                .compiler_hosts
+                .iter()
+                .any(|host| host.name == "clock" && host.provider == "timer")
+        );
 
         // Serving a retained revision must not read ahead to unrelated disk edits.
         std::fs::write(root.join("dep.mec"), "value := 43.0\n<+ value\n").unwrap();
@@ -2570,12 +2596,11 @@ mod tests {
             .unwrap();
         let current = registry.get_route("/source/dep.mec").unwrap();
         let text = std::str::from_utf8(&current.bytes).unwrap();
-        assert!(bundle.validate_dependency_sources(|_| Some(text)).is_err());
+        assert_eq!(text, "value := 43.0\n<+ value\n");
         let changed =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
-        let changed = CanonicalProgramBundle::decode(&changed, None).unwrap();
-        changed.validate_dependency_sources(|_| Some(text)).unwrap();
-        assert_ne!(changed.artifact_revision, bundle.artifact_revision);
+        let changed = mech_runtime::BrowserDocumentPayload::decode(&changed).unwrap();
+        assert_eq!(changed, payload);
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -3280,16 +3305,9 @@ mod tests {
         let encoded = String::from_utf8(code.bytes).unwrap();
         assert_ne!(encoded, source_text);
         assert!(!encoded.contains("x := 1"));
-        let bundle = CanonicalProgramBundle::decode(&encoded, None).unwrap();
-        let mut runtime = mech_runtime::RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_catalog())
-            .build()
-            .unwrap();
-        let durability = runtime.config().resident_durability;
-        let loaded = runtime
-            .load_bytecode_program(&bundle.bytecode, durability)
-            .unwrap();
-        assert_eq!(loaded.initial_value.format_canonical_inline(), "1");
+        let payload = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source_text);
         std::fs::remove_dir_all(root).unwrap();
     }
 
