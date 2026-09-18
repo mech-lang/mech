@@ -427,22 +427,22 @@ fn comprehensions_execute_nested_canonical_control() {
 }
 
 #[test]
-fn parameterized_operation_over_nested_comprehension_activates() {
-    let source = "out := [[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]";
-    let artifact = compile(source).compile_artifact().unwrap();
-    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
-    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
-    let mut catalog = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
-    activate(
-        ReactiveInstanceId::new(0x557, 0),
-        &decoded,
-        &catalog.build().unwrap(),
-        &ActivationFacts::default(),
-    )
-    .unwrap_or_else(|error| {
-        panic!("turn-shaped ordinary-operation local must activate: {error:?}")
-    });
+fn comprehension_computed_patterns_evaluate_in_lexical_order() {
+    execute(
+        "y := [1 | signal<f64> + 1 <- [2 3]]",
+        [
+            (vec![ResidentValueRef::F64(&[1.0])], matrix(&[1.0])),
+            (vec![ResidentValueRef::F64(&[2.0])], matrix(&[1.0])),
+            (
+                vec![ResidentValueRef::F64(&[3.0])],
+                Data::Matrix(Box::new([])),
+            ),
+        ],
+    );
+    execute(
+        "y := [x | x <- [1 2], x + 1 <- [2 4]]",
+        [(vec![], matrix(&[1.0]))],
+    );
 }
 
 #[test]
