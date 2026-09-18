@@ -12,8 +12,9 @@ The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations, nested match declarations and yields. Source text and diagnostic strings are not
 execution operands. The artifact uses one tagged node body for ordinary
 operations, scalar matches, or lexical comprehensions. The bytecode-v1 graph payload now uses
-revision 7 after structural pattern parameters gained explicit sources; revision 6 remains the
-closed typed-FSM grammar.
+revision 8 after control-local operations gained one recursive body grammar for
+ordinary calls, matches, and comprehensions; revision 7 remains the closed
+structural-parameter grammar.
 All durable fixtures are regenerated with the current producer.
 
 Resident match literal comparisons admit Bool, Index and F64 scalar layouts.
@@ -55,9 +56,9 @@ allocation. Failed turns preserve published values and can recover on a smaller
 subsequent input. Pattern depth and generator nesting are bounded in artifacts;
 bytecode population limits apply before graph allocation.
 
-This remains an S4 increment. Comprehension composite bindings and yields,
-computed pattern evaluation blocks, control nested in or containing
-comprehensions, and FSM lowering still require implementation. Matches can nest
-in match bodies and guards, with at most eight declarations on a path.
-Unsupported cases remain explicit errors and do not count as executable
-completion evidence.
+The later S8 control revisions extend this S4 foundation with composite
+comprehension bindings and yields plus recursive match/comprehension operation
+bodies. Matches can nest in match bodies and guards, and either control form can
+contain the other, with at most eight declarations on a path. Computed pattern
+evaluation blocks and FSM lowering still require implementation. Unsupported
+cases remain explicit errors and do not count as executable completion evidence.

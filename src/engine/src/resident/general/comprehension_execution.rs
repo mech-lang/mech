@@ -62,12 +62,69 @@ fn allocation_capacity_bytes<T>(capacity: usize) -> Result<u64, ResidentKernelEr
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+fn retained_collection_draft_demand(
+    values: &Vec<ValueDataDraft>,
+    footprint: ValueFootprint,
+) -> Result<(u64, u64), ResidentKernelError> {
+    let bytes = allocation_capacity_bytes::<ValueDataDraft>(values.capacity())?
+        .checked_add(footprint.retained_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let nodes = footprint
+        .node_count
+        .checked_add(u64::from(values.capacity() > 0))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((bytes, nodes))
+}
+
 fn completed_set_shape_values(
     schema: &mech_core::Schema,
     data: &ValueDataDraft,
 ) -> Result<Box<[u64]>, ResidentKernelError> {
     mech_core::shape_for_value_data(schema, data, &[], None)
         .map(|shape| shape.parameter_values().to_vec().into_boxed_slice())
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn closed_yield_body(
+    value: ResidentValueRef<'_>,
+    region: ResidentRegion,
+    schema: SchemaId,
+    schemas: &SchemaTable,
+) -> Result<SchemaBody, ResidentKernelError> {
+    let schema = schemas
+        .get(schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let shape = match value {
+        ResidentValueRef::Snapshot([Some(value)]) => value.shape().clone(),
+        _ if schema.dimension_parameters().is_empty() => return Ok(schema.body().clone()),
+        _ if matches!(schema.body(), SchemaBody::Matrix { .. }) => {
+            mech_core::shape_for_resolved_extents(
+                schema,
+                &[
+                    u64::from(region.shape.rows),
+                    u64::from(region.shape.columns),
+                ],
+            )
+            .map_err(|_| ResidentKernelError::InvalidShape)?
+        }
+        _ => return Err(ResidentKernelError::InvalidShape),
+    };
+    schema
+        .closed_body(&shape)
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn lower_bound_yield_body(
+    schema: SchemaId,
+    schemas: &SchemaTable,
+) -> Result<SchemaBody, ResidentKernelError> {
+    let schema = schemas
+        .get(schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let shape = mech_core::shape_for_declared_lower_bounds(schema)
+        .map_err(|_| ResidentKernelError::InvalidShape)?;
+    schema
+        .closed_body(&shape)
         .map_err(|_| ResidentKernelError::InvalidShape)
 }
 
@@ -125,16 +182,6 @@ struct ResolvedPatternItem {
     data: ValueDataDraft,
     schemas: Option<std::sync::Arc<SchemaTable>>,
     source_data: Option<ValueData>,
-    source_context: Option<Arc<SourceSchemaContext>>,
-    source_contexts: Option<Arc<[Arc<SourceSchemaContext>]>>,
-}
-
-struct ResolvedPatternItemView<'a> {
-    projection_schema: Option<SchemaId>,
-    shape_values: Box<[u64]>,
-    body: SchemaBody,
-    data: &'a ValueDataDraft,
-    source_data: Option<&'a ValueData>,
     source_context: Option<Arc<SourceSchemaContext>>,
     source_contexts: Option<Arc<[Arc<SourceSchemaContext>]>>,
 }
@@ -4055,15 +4102,32 @@ impl ReactiveInstance {
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        self.execute_comprehension_with_live_demand(index, before, working, probe, 0, 0)
+    }
+
+    pub(super) fn execute_comprehension_with_live_demand(
+        &mut self,
+        index: ActivatedNodeIndex,
+        before: InstanceEpoch,
+        working: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
         let ActivatedTurnStep::Comprehension(control) = &self.plan.steps[index.get() as usize]
         else {
             unreachable!()
         };
         let control = control.clone();
         let result = budget::with_control_work_budget(|| {
-            self.with_kernel_turn_plan(index, before, working, |this| {
-                this.execute_collection_planned(index, &control, before, working, probe)
-            })
+            self.with_kernel_turn_plan_and_live_demand(
+                index,
+                before,
+                working,
+                live_bytes,
+                live_nodes,
+                |this| this.execute_collection_planned(index, &control, before, working, probe),
+            )
         });
         // Lexical payloads have no consumers after this control invocation.
         // This also releases every completed inner allocation on a failed turn.
@@ -4092,12 +4156,14 @@ impl ReactiveInstance {
         let mut values = Vec::new();
         let mut footprint = ValueFootprint::zero();
         let mut nested_finalization_work = 0_u64;
+        let mut element_body = None;
         self.collection_from(
             control,
             0,
             &mut values,
             &mut footprint,
             &mut nested_finalization_work,
+            &mut element_body,
             &mut meter,
             &schemas,
             &projections,
@@ -4155,15 +4221,27 @@ impl ReactiveInstance {
             .map_err(fail)?;
         let (count, footprint, shape_values, data) = match control.kind {
             crate::ComprehensionKind::Matrix => {
-                let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+                let mech_core::SchemaBody::Matrix { .. } = schema.body() else {
                     return Err(fail(ResidentKernelError::InvalidOutput));
                 };
-                let shape =
-                    super::super::matrix_shape_for_extents(schema, &[1, draft_count as u64])
-                        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-                if dimensions.len() != 2 {
-                    return Err(fail(ResidentKernelError::InvalidShape));
-                }
+                let element = element_body
+                    .map(Ok)
+                    .unwrap_or_else(|| lower_bound_yield_body(control.yield_schema, &schemas))
+                    .map_err(fail)?;
+                let actual = SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Constant(draft_count as u64),
+                    ]
+                    .into_boxed_slice(),
+                };
+                let shape = mech_core::shape_for_schema_components(
+                    schema,
+                    &[(schema.body(), actual)],
+                    None,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
                 (
                     draft_count,
                     footprint,
@@ -5143,6 +5221,7 @@ impl ReactiveInstance {
         values: &mut Vec<ValueDataDraft>,
         footprint: &mut ValueFootprint,
         nested_finalization_work: &mut u64,
+        element_body: &mut Option<SchemaBody>,
         meter: &mut ResidentBudgetMeter,
         schemas: &Arc<mech_core::SchemaTable>,
         projections: &StructuralProjectionTable,
@@ -5158,15 +5237,29 @@ impl ReactiveInstance {
         for position in start..control.steps.len() {
             meter.charge_compute_work(1).map_err(fail)?;
             match &control.steps[position] {
-                ActivatedCollectionStep::Operation { node, work } => {
+                ActivatedCollectionStep::Operation {
+                    node,
+                    work,
+                    retained_locals,
+                } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
-                    self.execute_kernel_with_live_demand(
-                        *node,
-                        before,
-                        working,
-                        probe,
-                        schema_arena_bytes,
-                        meter.estimate().retained_nodes(),
+                    let (draft_bytes, draft_nodes) =
+                        retained_collection_draft_demand(values, *footprint).map_err(fail)?;
+                    let live_locals = self
+                        .comprehension_live_local_footprint(retained_locals, None, schemas, meter)
+                        .map_err(fail)?;
+                    let live_bytes = schema_arena_bytes
+                        .checked_add(draft_bytes)
+                        .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    let live_nodes = meter
+                        .estimate()
+                        .retained_nodes()
+                        .checked_add(draft_nodes)
+                        .and_then(|nodes| nodes.checked_add(live_locals.node_count))
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    self.execute_step_with_live_demand(
+                        *node, before, working, probe, live_bytes, live_nodes,
                     )?;
                 }
                 ActivatedCollectionStep::Filter(source) => {
@@ -5249,6 +5342,7 @@ impl ReactiveInstance {
                                 values,
                                 footprint,
                                 nested_finalization_work,
+                                element_body,
                                 meter,
                                 schemas,
                                 projections,
@@ -5266,6 +5360,19 @@ impl ReactiveInstance {
         let value = self
             .read_location(control.yield_value, working)
             .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+        let closed_body = closed_yield_body(
+            value,
+            control.yield_value.region(),
+            control.yield_schema,
+            schemas,
+        )
+        .map_err(fail)?;
+        if element_body
+            .as_ref()
+            .is_some_and(|expected| expected != &closed_body)
+        {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
         let (item_footprint, item_finalization_work) =
             retained_value_footprint(value, control.yield_schema, schemas, meter).map_err(fail)?;
         let next_footprint = footprint
@@ -5329,6 +5436,7 @@ impl ReactiveInstance {
             .try_reserve_exact(1)
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         values.push(item);
+        element_body.get_or_insert(closed_body);
         *footprint = next_footprint;
         *nested_finalization_work = next_finalization_work;
         Ok(())
@@ -5398,6 +5506,25 @@ mod tests {
                 .filter(|entry| !entry.tuple_children.is_empty())
                 .count() as u64
         );
+    }
+
+    #[test]
+    fn nested_control_live_demand_includes_the_retained_outer_draft() {
+        let mut values = Vec::<ValueDataDraft>::new();
+        values.try_reserve_exact(3).unwrap();
+        values.push(ValueDataDraft::String("retained".to_owned()));
+        let footprint = ValueFootprint {
+            encoded_bytes: 8,
+            retained_bytes: 4_096,
+            node_count: 5,
+        };
+
+        let (bytes, nodes) = retained_collection_draft_demand(&values, footprint).unwrap();
+        assert_eq!(
+            bytes,
+            (values.capacity() * core::mem::size_of::<ValueDataDraft>()) as u64 + 4_096
+        );
+        assert_eq!(nodes, 6);
     }
 
     #[test]
@@ -6819,42 +6946,22 @@ mod tests {
     }
 
     #[test]
-    fn component_pattern_descent_borrows_parent_and_clones_only_the_selected_child() {
+    fn borrowed_pattern_descent_clones_only_the_selected_child() {
         let payload = "payload".repeat(1 << 12);
-        let item = PatternItem::component(
-            None,
-            SchemaBody::Tuple(vec![SchemaBody::String, SchemaBody::String].into_boxed_slice()),
-            Box::new([]),
-            ValueDataDraft::Tuple(
-                vec![
-                    ValueDataDraft::String(payload.clone()),
-                    ValueDataDraft::String("unselected".repeat(1 << 12)),
-                ]
-                .into_boxed_slice(),
-            ),
-        );
+        let item = PatternItem::new(ValueDataDraft::Tuple(
+            vec![
+                ValueDataDraft::String(payload.clone()),
+                ValueDataDraft::String("unselected".repeat(1 << 12)),
+            ]
+            .into_boxed_slice(),
+        ));
         let schemas = SchemaTableBuilder::new().finish().unwrap().table;
-        let parent_data = match &item {
-            PatternItem::Component { data, .. } => data,
-            _ => panic!("expected component"),
-        };
-        let resolved = resolve_pattern_item_view(&item, &schemas)
-            .unwrap()
-            .expect("component resolves");
-        assert!(
-            core::ptr::eq(resolved.data, parent_data),
-            "descent must borrow the complete parent instead of cloning it",
-        );
 
         let child = item
             .child(0, &schemas, &StructuralProjectionTable::default())
             .expect("tuple child");
-        let PatternItem::Component {
-            data: ValueDataDraft::String(selected),
-            ..
-        } = child
-        else {
-            panic!("expected String component child")
+        let PatternItem::Plain(ValueDataDraft::String(selected)) = child else {
+            panic!("expected String child")
         };
         assert_eq!(selected, payload);
         assert_eq!(item.structural_len(true), Some(2));
@@ -6866,6 +6973,7 @@ mod tests {
         assert_eq!(pattern_item_tree_copy_count(true, 3).unwrap(), 8);
         assert!(pattern_item_tree_copy_count(true, u64::MAX).is_err());
     }
+
 
     #[test]
     fn structural_scrutinee_clone_is_admitted_before_large_materialization() {
@@ -7987,7 +8095,7 @@ mod tests {
         )
         .unwrap();
         assert!(saw_plan && saw_foreign);
-        let (_, contexts) = source_schema_contexts(&outer, &plan).expect("source contexts");
+        let (_, contexts) = source_schema_contexts(&outer).expect("source contexts");
         assert!(contexts.windows(2).all(|pair| {
             (Arc::as_ptr(&pair[0].owner) as usize) < (Arc::as_ptr(&pair[1].owner) as usize)
         }));
@@ -8555,6 +8663,7 @@ mod tests {
             assert!(value.schemas().is_some());
         }
     }
+
 
     #[test]
     fn structural_descent_switches_to_each_nested_dynamic_schema_owner() {

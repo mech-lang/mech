@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 7;
+const WIRE_GRAPH_REVISION: u32 = 8;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -186,11 +186,7 @@ enum WireNodeBody {
         contract: u32,
         requirement: Option<u32>,
     },
-    Comprehension {
-        kind: u8,
-        steps: Box<[WireComprehensionStep]>,
-        yield_value: WireComprehensionValue,
-    },
+    Comprehension(WireComprehensionDeclaration),
     Match(WireMatchDeclaration),
     Fsm {
         machine: String,
@@ -264,11 +260,19 @@ enum WireComprehensionStep {
     Filter(WireComprehensionValue),
     Operation {
         local: u32,
-        operation: u32,
-        contract: u32,
+        body: WireControlOperationBody,
         inputs: Box<[WireComprehensionValue]>,
         schema: u32,
     },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireComprehensionDeclaration {
+    id: u32,
+    kind: u8,
+    steps: Box<[WireComprehensionStep]>,
+    yield_value: WireComprehensionValue,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -339,6 +343,7 @@ struct WireControlOperation {
 enum WireControlOperationBody {
     Operation { operation: u32, contract: u32 },
     Match(WireMatchDeclaration),
+    Comprehension(WireComprehensionDeclaration),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -1648,18 +1653,7 @@ fn wire_control_block(
             .iter()
             .map(|operation| WireControlOperation {
                 node: operation.node,
-                body: match &operation.body {
-                    super::ControlOperationBody::Operation {
-                        operation,
-                        contract,
-                    } => WireControlOperationBody::Operation {
-                        operation: operations[operation],
-                        contract: contract.get(),
-                    },
-                    super::ControlOperationBody::Match(control) => {
-                        WireControlOperationBody::Match(wire_match(control, operations))
-                    }
-                },
+                body: wire_control_operation_body(&operation.body, operations),
                 schema: operation.schema.get(),
                 inputs: operation
                     .inputs
@@ -1670,6 +1664,69 @@ fn wire_control_block(
             })
             .collect(),
         yield_value: wire_control_value(block.yield_value),
+    }
+}
+
+fn wire_control_operation_body(
+    body: &super::ControlOperationBody,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireControlOperationBody {
+    match body {
+        super::ControlOperationBody::Operation {
+            operation,
+            contract,
+        } => WireControlOperationBody::Operation {
+            operation: operations[operation],
+            contract: contract.get(),
+        },
+        super::ControlOperationBody::Match(control) => {
+            WireControlOperationBody::Match(wire_match(control, operations))
+        }
+        super::ControlOperationBody::Comprehension(control) => {
+            WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
+        }
+    }
+}
+
+fn wire_comprehension(
+    control: &super::ComprehensionDeclaration,
+    operations: &BTreeMap<OperationReference, u32>,
+) -> WireComprehensionDeclaration {
+    WireComprehensionDeclaration {
+        id: control.id.0,
+        kind: match control.kind {
+            super::ComprehensionKind::Matrix => 0,
+            super::ComprehensionKind::Set => 1,
+        },
+        steps: control
+            .steps
+            .iter()
+            .map(|step| match step {
+                super::ComprehensionStep::Generator { source, pattern } => {
+                    WireComprehensionStep::Generator {
+                        source: wire_comprehension_value(*source),
+                        pattern: wire_collection_pattern(pattern),
+                    }
+                }
+                super::ComprehensionStep::Filter(value) => {
+                    WireComprehensionStep::Filter(wire_comprehension_value(*value))
+                }
+                super::ComprehensionStep::Operation(operation) => {
+                    WireComprehensionStep::Operation {
+                        local: operation.local,
+                        body: wire_control_operation_body(&operation.body, operations),
+                        inputs: operation
+                            .inputs
+                            .iter()
+                            .copied()
+                            .map(wire_comprehension_value)
+                            .collect(),
+                        schema: operation.schema.get(),
+                    }
+                }
+            })
+            .collect(),
+        yield_value: wire_comprehension_value(control.yield_value),
     }
 }
 
@@ -1833,40 +1890,9 @@ fn wire_node_body(
             contract: operation.contract.get(),
             requirement: operation.requirement.map(ApplicationRequirementId::get),
         },
-        super::ExecutableNodeBody::Comprehension(control) => WireNodeBody::Comprehension {
-            kind: match control.kind {
-                super::ComprehensionKind::Matrix => 0,
-                super::ComprehensionKind::Set => 1,
-            },
-            steps: control
-                .steps
-                .iter()
-                .map(|step| match step {
-                    super::ComprehensionStep::Generator { source, pattern } => {
-                        WireComprehensionStep::Generator {
-                            source: wire_comprehension_value(*source),
-                            pattern: wire_collection_pattern(pattern),
-                        }
-                    }
-                    super::ComprehensionStep::Filter(value) => {
-                        WireComprehensionStep::Filter(wire_comprehension_value(*value))
-                    }
-                    super::ComprehensionStep::Operation(op) => WireComprehensionStep::Operation {
-                        local: op.local,
-                        operation: operations[&op.operation],
-                        contract: op.contract.get(),
-                        inputs: op
-                            .inputs
-                            .iter()
-                            .copied()
-                            .map(wire_comprehension_value)
-                            .collect(),
-                        schema: op.schema.get(),
-                    },
-                })
-                .collect(),
-            yield_value: wire_comprehension_value(control.yield_value),
-        },
+        super::ExecutableNodeBody::Comprehension(control) => {
+            WireNodeBody::Comprehension(wire_comprehension(control, operations))
+        }
         super::ExecutableNodeBody::Match(control) => {
             WireNodeBody::Match(wire_match(control, operations))
         }
@@ -1996,18 +2022,7 @@ fn control_block_from_wire(
             .map(|node| {
                 Ok(super::ControlOperation {
                     node: node.node,
-                    body: match node.body {
-                        WireControlOperationBody::Operation {
-                            operation: reference,
-                            contract,
-                        } => super::ControlOperationBody::Operation {
-                            operation: operation(reference)?,
-                            contract: OperationContractId::new(contract),
-                        },
-                        WireControlOperationBody::Match(control) => {
-                            super::ControlOperationBody::Match(match_from_wire(control, operation)?)
-                        }
-                    },
+                    body: control_operation_body_from_wire(node.body, operation)?,
                     schema: SchemaId::new(node.schema),
                     inputs: node
                         .inputs
@@ -2018,6 +2033,78 @@ fn control_block_from_wire(
             })
             .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
         yield_value: control_value_from_wire(block.yield_value),
+    })
+}
+
+fn control_operation_body_from_wire(
+    body: WireControlOperationBody,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ControlOperationBody, ArtifactBytecodeError> {
+    Ok(match body {
+        WireControlOperationBody::Operation {
+            operation: reference,
+            contract,
+        } => super::ControlOperationBody::Operation {
+            operation: operation(reference)?,
+            contract: OperationContractId::new(contract),
+        },
+        WireControlOperationBody::Match(control) => {
+            super::ControlOperationBody::Match(match_from_wire(control, operation)?)
+        }
+        WireControlOperationBody::Comprehension(control) => {
+            super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
+        }
+    })
+}
+
+fn comprehension_from_wire(
+    control: WireComprehensionDeclaration,
+    operation: &impl Fn(u32) -> Result<OperationReference, ArtifactBytecodeError>,
+) -> Result<super::ComprehensionDeclaration, ArtifactBytecodeError> {
+    Ok(super::ComprehensionDeclaration {
+        id: super::ControlBlockId(control.id),
+        kind: match control.kind {
+            0 => super::ComprehensionKind::Matrix,
+            1 => super::ComprehensionKind::Set,
+            tag => {
+                return Err(ArtifactBytecodeError::InvalidWireTag {
+                    section: "comprehension kind",
+                    tag,
+                });
+            }
+        },
+        steps: control
+            .steps
+            .into_iter()
+            .map(|step| {
+                Ok(match step {
+                    WireComprehensionStep::Generator { source, pattern } => {
+                        super::ComprehensionStep::Generator {
+                            source: comprehension_value_from_wire(source),
+                            pattern: collection_pattern_from_wire(pattern),
+                        }
+                    }
+                    WireComprehensionStep::Filter(value) => {
+                        super::ComprehensionStep::Filter(comprehension_value_from_wire(value))
+                    }
+                    WireComprehensionStep::Operation {
+                        local,
+                        body,
+                        inputs,
+                        schema,
+                    } => super::ComprehensionStep::Operation(super::ComprehensionOperation {
+                        local,
+                        body: control_operation_body_from_wire(body, operation)?,
+                        inputs: inputs
+                            .into_iter()
+                            .map(comprehension_value_from_wire)
+                            .collect(),
+                        schema: SchemaId::new(schema),
+                    }),
+                })
+            })
+            .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
+        yield_value: comprehension_value_from_wire(control.yield_value),
     })
 }
 
@@ -2035,55 +2122,9 @@ fn node_body_from_wire(
             contract: OperationContractId::new(contract),
             requirement: requirement.map(ApplicationRequirementId::new),
         }),
-        WireNodeBody::Comprehension {
-            kind,
-            steps,
-            yield_value,
-        } => super::ExecutableNodeBody::Comprehension(super::ComprehensionDeclaration {
-            kind: match kind {
-                0 => super::ComprehensionKind::Matrix,
-                1 => super::ComprehensionKind::Set,
-                _ => {
-                    return Err(ArtifactBytecodeError::InvalidWireTag {
-                        section: "comprehension kind",
-                        tag: kind,
-                    });
-                }
-            },
-            steps: steps
-                .into_iter()
-                .map(|step| {
-                    Ok(match step {
-                        WireComprehensionStep::Generator { source, pattern } => {
-                            super::ComprehensionStep::Generator {
-                                source: comprehension_value_from_wire(source),
-                                pattern: collection_pattern_from_wire(pattern),
-                            }
-                        }
-                        WireComprehensionStep::Filter(value) => {
-                            super::ComprehensionStep::Filter(comprehension_value_from_wire(value))
-                        }
-                        WireComprehensionStep::Operation {
-                            local,
-                            operation: id,
-                            contract,
-                            inputs,
-                            schema,
-                        } => super::ComprehensionStep::Operation(super::ComprehensionOperation {
-                            local,
-                            operation: operation(id)?,
-                            contract: OperationContractId::new(contract),
-                            inputs: inputs
-                                .into_iter()
-                                .map(comprehension_value_from_wire)
-                                .collect(),
-                            schema: SchemaId::new(schema),
-                        }),
-                    })
-                })
-                .collect::<Result<Box<[_]>, ArtifactBytecodeError>>()?,
-            yield_value: comprehension_value_from_wire(yield_value),
-        }),
+        WireNodeBody::Comprehension(control) => {
+            super::ExecutableNodeBody::Comprehension(comprehension_from_wire(control, operation)?)
+        }
         WireNodeBody::Match(control) => {
             super::ExecutableNodeBody::Match(match_from_wire(control, operation)?)
         }
@@ -2166,42 +2207,77 @@ fn match_from_wire(
 fn node_operation_references(body: &super::ExecutableNodeBody) -> Vec<OperationReference> {
     match body {
         super::ExecutableNodeBody::Operation(operation) => vec![operation.operation.clone()],
-        super::ExecutableNodeBody::Comprehension(control) => control
-            .operations()
-            .map(|op| op.operation.clone())
-            .collect(),
-        super::ExecutableNodeBody::Match(control) => control
-            .blocks()
-            .into_iter()
-            .flat_map(|block| {
-                block
-                    .operations
-                    .iter()
-                    .filter_map(|operation| match &operation.body {
-                        super::ControlOperationBody::Operation { operation, .. } => {
-                            Some(operation.clone())
-                        }
-                        super::ControlOperationBody::Match(_) => None,
-                    })
-            })
-            .collect(),
+        super::ExecutableNodeBody::Comprehension(control) => {
+            comprehension_operation_references(control)
+        }
+        super::ExecutableNodeBody::Match(control) => match_operation_references(control),
         super::ExecutableNodeBody::Fsm(_) => Vec::new(),
     }
+}
+
+fn control_body_operation_references(
+    body: &super::ControlOperationBody,
+) -> Vec<OperationReference> {
+    match body {
+        super::ControlOperationBody::Operation { operation, .. } => vec![operation.clone()],
+        super::ControlOperationBody::Match(control) => match_operation_references(control),
+        super::ControlOperationBody::Comprehension(control) => {
+            comprehension_operation_references(control)
+        }
+    }
+}
+
+fn match_operation_references(control: &super::MatchDeclaration) -> Vec<OperationReference> {
+    control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+        .flat_map(|block| {
+            block
+                .operations
+                .iter()
+                .flat_map(|operation| control_body_operation_references(&operation.body))
+        })
+        .collect()
+}
+
+fn comprehension_operation_references(
+    control: &super::ComprehensionDeclaration,
+) -> Vec<OperationReference> {
+    control
+        .operations()
+        .flat_map(|operation| control_body_operation_references(&operation.body))
+        .collect()
 }
 
 fn wire_operation_ids(body: &WireNodeBody) -> Vec<u32> {
     match body {
         WireNodeBody::Operation { operation, .. } => vec![*operation],
-        WireNodeBody::Comprehension { steps, .. } => steps
-            .iter()
-            .filter_map(|step| match step {
-                WireComprehensionStep::Operation { operation, .. } => Some(*operation),
-                _ => None,
-            })
-            .collect(),
+        WireNodeBody::Comprehension(control) => wire_comprehension_operation_ids(control),
         WireNodeBody::Match(control) => wire_match_operation_ids(control),
         WireNodeBody::Fsm { .. } => Vec::new(),
     }
+}
+
+fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> {
+    match body {
+        WireControlOperationBody::Operation { operation, .. } => vec![*operation],
+        WireControlOperationBody::Match(control) => wire_match_operation_ids(control),
+        WireControlOperationBody::Comprehension(control) => {
+            wire_comprehension_operation_ids(control)
+        }
+    }
+}
+
+fn wire_comprehension_operation_ids(control: &WireComprehensionDeclaration) -> Vec<u32> {
+    control
+        .steps
+        .iter()
+        .flat_map(|step| match step {
+            WireComprehensionStep::Operation { body, .. } => wire_control_body_operation_ids(body),
+            _ => Vec::new(),
+        })
+        .collect()
 }
 
 fn wire_match_operation_ids(control: &WireMatchDeclaration) -> Vec<u32> {
@@ -2213,10 +2289,7 @@ fn wire_match_operation_ids(control: &WireMatchDeclaration) -> Vec<u32> {
             block
                 .operations
                 .iter()
-                .flat_map(|operation| match &operation.body {
-                    WireControlOperationBody::Operation { operation, .. } => vec![*operation],
-                    WireControlOperationBody::Match(nested) => wire_match_operation_ids(nested),
-                })
+                .flat_map(|operation| wire_control_body_operation_ids(&operation.body))
         })
         .collect()
 }
@@ -2387,7 +2460,8 @@ fn preflight_control_graph(
                     limits: self.limits,
                     field,
                     depth: self.depth + 1,
-                    control_depth: self.control_depth + usize::from(key == "Match"),
+                    control_depth: self.control_depth
+                        + usize::from(matches!(key.as_str(), "Match" | "Comprehension")),
                 })?;
             }
             Ok(())
@@ -2429,5 +2503,30 @@ mod control_preflight_tests {
         assert!(preflight_control_graph(bytes, &limits).is_err());
         assert!(preflight_control_graph(bytes, &ArtifactDecodeLimits::default()).is_ok());
         assert!(serde_json::from_slice::<WireComprehensionStep>(bytes).is_err());
+    }
+
+    #[test]
+    fn nested_comprehension_tags_are_bounded_before_typed_allocation() {
+        let nested = |depth| {
+            let mut value = "0".to_owned();
+            for _ in 0..depth {
+                value = format!(r#"{{"Comprehension":{value}}}"#);
+            }
+            value
+        };
+        assert!(
+            preflight_control_graph(
+                nested(super::super::MAX_CONTROL_DEPTH).as_bytes(),
+                &ArtifactDecodeLimits::default(),
+            )
+            .is_ok()
+        );
+        assert!(
+            preflight_control_graph(
+                nested(super::super::MAX_CONTROL_DEPTH + 1).as_bytes(),
+                &ArtifactDecodeLimits::default(),
+            )
+            .is_err()
+        );
     }
 }
