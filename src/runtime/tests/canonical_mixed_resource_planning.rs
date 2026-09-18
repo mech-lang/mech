@@ -179,6 +179,69 @@ fn canonical_mixed_keeps_ordinary_read_planning_in_its_provider() {
     );
 }
 
+fn read_resource_bases(artifact: &mech_engine::ProgramArtifact) -> Vec<String> {
+    artifact
+        .requirements()
+        .iter()
+        .filter_map(|(_, requirement)| match requirement {
+            mech_core::ApplicationRequirement::Resource(request)
+                if request.intent == mech_core::ResourceIntent::Read =>
+            {
+                Some(request.base_uri.clone())
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn canonical_mixed_binds_only_called_function_resource_reads() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    let source = |tail: &str| {
+        format!(
+            "@compute := compute://worker/kernel{{:write(turn), :read(sample/result)}}\n@clock := test://clock/value{{:read(sample)}}\npeek() = out<f64> :=\n  out := (@compute/sample/result).\n\ntick() = out<f64> :=\n  out := (@clock/sample).\n\n@compute/turn <- 1\n{tail}\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\ncounter\n"
+        )
+    };
+
+    let uncalled_plans = Arc::new(AtomicUsize::new(0));
+    let mut uncalled_compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(OrdinaryProvider(uncalled_plans.clone())))
+        .build_compiler()
+        .unwrap();
+    let uncalled = uncalled_compiler
+        .compile_mixed_source(&source("42"))
+        .unwrap();
+    assert_eq!(uncalled_plans.load(Ordering::SeqCst), 1);
+    assert!(read_resource_bases(uncalled.coordinator.artifact()).is_empty());
+
+    let called_plans = Arc::new(AtomicUsize::new(0));
+    let mut called_compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(OrdinaryProvider(called_plans.clone())))
+        .build_compiler()
+        .unwrap();
+    let called = called_compiler
+        .compile_mixed_source(&source("answer := peek() + tick()\nanswer"))
+        .unwrap();
+    assert_eq!(called_plans.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        read_resource_bases(called.coordinator.artifact()),
+        vec![
+            "compute://worker/kernel".to_owned(),
+            "test://clock/value".to_owned(),
+        ]
+    );
+    assert_answer_schema(
+        called.coordinator.artifact(),
+        &mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+    );
+}
+
 #[test]
 fn canonical_mixed_tuple_sample_paths_publish_their_producer() {
     let mut compiler = RuntimeBuilder::new()
@@ -190,14 +253,14 @@ fn canonical_mixed_tuple_sample_paths_publish_their_producer() {
             "@compute := compute://worker/kernel{{:write(turn), :read(sample/{path})}}\n@compute/turn <- 1\nanswer := @compute/sample/{path}\nanswer\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\npacked := (counter, (counter + 1f32, counter + 2f32))\npacked\n"
         );
         let mixed = compiler.compile_mixed_source(&source).unwrap();
-        assert!(
-            mixed
-                .compute
-                .interface
+        let names = |interface: &mech_compute::ComputeRegionInterface| {
+            interface
                 .outputs
                 .iter()
-                .any(|port| port.name.as_ref() == path)
-        );
+                .map(|port| port.name.to_string())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(names(&mixed.compute.interface), vec![path]);
         let bytes =
             mech_engine::encode_program_artifact_bytecode_v1(&mixed.compute.artifact).unwrap();
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
@@ -206,14 +269,7 @@ fn canonical_mixed_tuple_sample_paths_publish_their_producer() {
             decoded.compute_regions().first(),
         )
         .unwrap();
-        let names = |interface: &mech_compute::ComputeRegionInterface| {
-            interface
-                .outputs
-                .iter()
-                .map(|port| port.name.to_string())
-                .collect::<Vec<_>>()
-        };
-        assert_eq!(names(&decoded_interface), names(&mixed.compute.interface));
+        assert_eq!(names(&decoded_interface), vec![path]);
         let bytes =
             mech_engine::encode_program_artifact_bytecode_v1(mixed.coordinator.artifact()).unwrap();
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();

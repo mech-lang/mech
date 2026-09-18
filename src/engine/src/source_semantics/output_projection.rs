@@ -3,6 +3,166 @@
 use super::*;
 
 impl CanonicalSourceProgram {
+    /// Project the published compute interface to the exact flattened output
+    /// paths admitted by the host capability contract.
+    ///
+    /// Mixed-program lowering first retains each requested path's lexical root
+    /// so the complete producer graph can be compiled. This second step walks
+    /// canonical composite-pack nodes to publish only the requested physical
+    /// leaves. The executable graph is intentionally left intact; only its
+    /// public output declarations are projected.
+    pub fn project_compute_output_paths(
+        mut self,
+        paths: &BTreeSet<String>,
+    ) -> Result<Self, SourceSemanticError> {
+        let mut outputs = Vec::with_capacity(paths.len());
+        let mut anchors = Vec::with_capacity(paths.len());
+        for path in paths {
+            let (root, suffix) = path
+                .split_once('.')
+                .map_or((path.as_str(), None), |(root, suffix)| (root, Some(suffix)));
+            let encoded = crate::encode_interactive_symbol_output_name(root);
+            let output_index = self
+                .program
+                .outputs
+                .iter()
+                .position(|output| output.name == encoded)
+                .or_else(|| {
+                    self.program
+                        .outputs
+                        .iter()
+                        .position(|output| output.name == root)
+                })
+                .ok_or_else(|| self.unknown_projected_output(path))?;
+            let output = &self.program.outputs[output_index];
+            let (source, schema) = if let Some(suffix) = suffix {
+                self.project_composite_path(output.source, output.schema, suffix, path)?
+            } else {
+                (output.source, output.schema)
+            };
+            outputs.push(SourceOutput {
+                name: path.clone(),
+                interactive_symbol: None,
+                source,
+                schema,
+            });
+            anchors.push(self.source_map.outputs[output_index]);
+        }
+        self.program.outputs = outputs.into_boxed_slice();
+        self.source_map.outputs = anchors.into_boxed_slice();
+        // Presentation and export routes belong to the unprojected document
+        // surface. A compute-region interface publishes only capability-named
+        // leaves, so none of those routes may survive with stale output IDs.
+        self.document_outputs = Box::new([]);
+        self.document_exports = Box::new([]);
+        Ok(self)
+    }
+
+    fn project_composite_path(
+        &self,
+        mut source: SourceValue,
+        mut schema: SchemaId,
+        suffix: &str,
+        path: &str,
+    ) -> Result<(SourceValue, SchemaId), SourceSemanticError> {
+        for segment in suffix.split('.') {
+            let index = segment
+                .parse::<usize>()
+                .ok()
+                .filter(|index| index.to_string() == segment)
+                .ok_or_else(|| self.unknown_projected_output(path))?;
+            let node_index = match source {
+                SourceValue::NodeOutput { node, .. } => node,
+                SourceValue::State(state) => self
+                    .program
+                    .states
+                    .get(state as usize)
+                    .map(|state| state.producer_node)
+                    .ok_or_else(|| self.unknown_projected_output(path))?,
+                SourceValue::Constant(_) | SourceValue::Input(_) => {
+                    return Err(self.unknown_projected_output(path));
+                }
+            };
+            let node = self
+                .program
+                .nodes
+                .get(node_index as usize)
+                .ok_or_else(|| self.unknown_projected_output(path))?;
+            let crate::SourceNodeBody::Operation { operation, .. } = &node.body else {
+                return Err(self.unknown_projected_output(path));
+            };
+            if operation.module_path.as_ref() != ["core"]
+                || operation.operation_name != "composite-pack"
+            {
+                return Err(self.unknown_projected_output(path));
+            }
+            let mut inputs = node.inputs.as_ref();
+            if inputs.first().is_some_and(|input| {
+                self.source_value_schema(*input)
+                    .is_some_and(|input_schema| input_schema == schema)
+            }) {
+                inputs = &inputs[1..];
+            }
+            source = *inputs
+                .get(index)
+                .ok_or_else(|| self.unknown_projected_output(path))?;
+            schema = self
+                .source_value_schema(source)
+                .ok_or_else(|| self.unknown_projected_output(path))?;
+        }
+        Ok((source, schema))
+    }
+
+    fn source_value_schema(&self, source: SourceValue) -> Option<SchemaId> {
+        match source {
+            SourceValue::Constant(constant) => self.constants.get(constant).map(Value::schema),
+            SourceValue::Input(input) => self
+                .program
+                .inputs
+                .get(input as usize)
+                .map(|input| input.schema),
+            SourceValue::State(state) => self
+                .program
+                .states
+                .get(state as usize)
+                .map(|state| state.schema),
+            SourceValue::NodeOutput {
+                node,
+                output_ordinal,
+            } => match self
+                .program
+                .nodes
+                .get(node as usize)?
+                .outputs
+                .get(output_ordinal as usize)?
+            {
+                SourceNodeOutput::Derived { schema } => Some(*schema),
+                SourceNodeOutput::State(state) => self
+                    .program
+                    .states
+                    .get(*state as usize)
+                    .map(|state| state.schema),
+            },
+        }
+    }
+
+    fn unknown_projected_output(&self, path: &str) -> SourceSemanticError {
+        SourceSemanticError {
+            code: "source-semantics/unknown-published-binding",
+            message: format!("unknown sampled compute output `{path}`"),
+            anchor: self
+                .source_map
+                .outputs
+                .first()
+                .copied()
+                .unwrap_or(SourceSemanticAnchor {
+                    document: DocumentId(0),
+                    revision: Revision(0),
+                    range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+                }),
+        }
+    }
+
     /// Select static binding outputs without evaluating unrelated document work.
     /// Dependencies, state writers and integrity constraints retain their existing
     /// semantics; this only removes nodes outside the selected dependency graph.
