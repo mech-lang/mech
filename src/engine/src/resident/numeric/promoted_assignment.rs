@@ -12,14 +12,11 @@ struct Plan {
     rational_power: bool,
     rows: usize,
     columns: usize,
-    source_len: usize,
-    source_rows: usize,
-    source_columns: usize,
+    source_dimensions: Option<(usize, usize)>,
     logical_selector: bool,
     source: SnapshotAccessSelectorLayout,
     target: SnapshotAccessSelectorLayout,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
-    selector_capacity: usize,
     max_writes: usize,
     promote: ConversionPlan,
     assign: ConversionPlan,
@@ -58,16 +55,17 @@ pub(super) fn bind(
     if schema(&request.output)?.body() != base_schema.body() {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let (incoming, source_rows, source_columns) = match source_schema.body() {
+    let (incoming, source_dimensions) = match source_schema.body() {
         SchemaBody::Matrix { element, .. } => {
-            let (r, c) = declared_matrix_dimensions(request, source)?;
-            (element.as_ref(), r, c)
+            let dimensions = if source.kind == ResidentValueKind::Snapshot {
+                None
+            } else {
+                Some(declared_matrix_dimensions(request, source)?)
+            };
+            (element.as_ref(), dimensions)
         }
-        scalar => (scalar, 1, 1),
+        scalar => (scalar, Some((1, 1))),
     };
-    let source_len = source_rows
-        .checked_mul(source_columns)
-        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let rational_power = cfg!(feature = "r64")
         && arithmetic == SemanticArithmetic::Power
         && destination.as_ref() == &SchemaBody::Rational64
@@ -99,7 +97,6 @@ pub(super) fn bind(
         shape: port.shape_instance.clone(),
         resident_shape: port.shape,
     };
-    let mut capacity = 0usize;
     let mut axis_capacities = Vec::new();
     let mut logical_selector = false;
     for selector in &request.inputs[2..] {
@@ -112,9 +109,6 @@ pub(super) fn bind(
             .get(selector.schema_id)
             .is_some_and(|schema| is_logical_selector_schema(schema.body()));
         axis_capacities.push(axis_capacity);
-        capacity = capacity
-            .checked_add(axis_capacity)
-            .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     }
     let max_writes = match mode {
         0 => Some(axis_capacities[0]),
@@ -130,14 +124,11 @@ pub(super) fn bind(
             rational_power,
             rows,
             columns,
-            source_len,
-            source_rows,
-            source_columns,
+            source_dimensions,
             logical_selector,
             source: layout(source),
             target: layout(&request.output),
             selectors: request.inputs[2..].iter().map(layout).collect(),
-            selector_capacity: capacity,
             max_writes,
             promote,
             assign,
@@ -164,34 +155,123 @@ fn execute(
         .rows
         .checked_mul(plan.columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    // Numeric snapshots have fixed scalar payloads. Admit the complete draft,
-    // selector, conversion and publication storage before materializing it.
-    let elements = count
-        .checked_add(plan.source_len)
-        .and_then(|n| n.checked_add(plan.selector_capacity))
-        .and_then(|n| n.checked_add(plan.max_writes))
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let bytes = elements
-        .checked_mul(core::mem::size_of::<ValueDataDraft>())
-        .and_then(|n| n.checked_mul(4))
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    super::super::budget::PreparedKernel::new((), super::super::budget::resident_cost! {
-        compute_work: super::super::budget::checked_u64(elements.checked_mul(if plan.rational_power { 128 } else { 8 }).ok_or(ResidentKernelError::InvalidShape)?)?,
-        comparison_work: super::super::budget::checked_u64(count)?,
-        temporary_bytes: super::super::budget::checked_u64(bytes)?,
-        cloned_bytes: super::super::budget::checked_u64(bytes)?,
-        retained_nodes: super::super::budget::checked_u64(elements.checked_mul(4).and_then(|n| n.checked_add(8)).ok_or(ResidentKernelError::InvalidShape)?)?,
-        output_elements: count,
-        output_bytes: super::super::budget::checked_u64(count.checked_mul(core::mem::size_of::<ValueDataDraft>()).ok_or(ResidentKernelError::InvalidShape)?)?,
-        ..super::super::budget::KernelCostEstimate::default()
-    }).admit()?.into_plan();
     let current_ref = match &output {
         ResidentValueMut::F64(values) => ResidentValueRef::F64(values),
         ResidentValueMut::Snapshot(values) => ResidentValueRef::Snapshot(values),
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
+    let source_ref = input(inputs, 0)?;
+    let source_schema = schemas
+        .get(plan.source.schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let (source_rows, source_columns) = match source_schema.body() {
+        body @ SchemaBody::Matrix { .. } => match source_ref {
+            ResidentValueRef::Snapshot([Some(value)]) => {
+                value
+                    .validate_against(schemas)
+                    .map_err(|_| ResidentKernelError::InvalidInput)?;
+                snapshot_matrix_dimensions(value, body)?
+            }
+            ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+            _ => plan
+                .source_dimensions
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        },
+        _ => (1, 1),
+    };
+    if let Some(expected) = plan.source_dimensions
+        && expected != (source_rows, source_columns)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let source_len = source_rows
+        .checked_mul(source_columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let mut meter = super::super::budget::ResidentBudgetMeter::default();
+    let current_cost =
+        snapshot_selector_materialization_cost(schemas, &plan.target, current_ref, &mut meter)?;
+    let source_cost =
+        snapshot_selector_materialization_cost(schemas, &plan.source, source_ref, &mut meter)?;
+    if current_cost.elements != count || source_cost.elements != source_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut selector_cost = SelectorMaterializationCost::default();
+    for (index, selector) in plan.selectors.iter().enumerate() {
+        selector_cost = add_selector_cost(
+            selector_cost,
+            snapshot_selector_materialization_cost(
+                schemas,
+                selector,
+                input(inputs, index + 1)?,
+                &mut meter,
+            )?,
+        )?;
+    }
+    // Numeric snapshots have fixed scalar payloads. Admit the complete draft,
+    // selector, conversion and publication storage before materializing it.
+    let elements = count
+        .checked_add(source_len)
+        .and_then(|n| n.checked_add(selector_cost.elements))
+        .and_then(|n| n.checked_add(plan.max_writes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let draft_bytes = elements
+        .checked_mul(core::mem::size_of::<ValueDataDraft>())
+        .and_then(|n| n.checked_mul(4))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let measured = meter.estimate();
+    let cloned_bytes = current_cost
+        .cloned_bytes
+        .checked_add(source_cost.cloned_bytes)
+        .and_then(|bytes| bytes.checked_add(selector_cost.cloned_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let materialized_bytes = current_cost
+        .retained_bytes
+        .checked_add(source_cost.retained_bytes)
+        .and_then(|bytes| bytes.checked_add(selector_cost.retained_bytes))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let retained_nodes = current_cost
+        .retained_nodes
+        .checked_add(source_cost.retained_nodes)
+        .and_then(|nodes| nodes.checked_add(selector_cost.retained_nodes))
+        .and_then(|nodes| {
+            nodes.checked_add(
+                super::super::budget::checked_u64(
+                    elements.checked_mul(4).and_then(|n| n.checked_add(8))?,
+                )
+                .ok()?,
+            )
+        })
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::super::budget::PreparedKernel::new(
+        (),
+        super::super::budget::resident_cost! {
+            compute_work: measured.compute_work()
+                .checked_add(super::super::budget::checked_u64(
+                    elements.checked_mul(if plan.rational_power { 128 } else { 8 })
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            comparison_work: measured.comparison_work()
+                .checked_add(super::super::budget::checked_u64(count)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            temporary_bytes: materialized_bytes
+                .checked_add(super::super::budget::checked_u64(draft_bytes)?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes,
+            retained_nodes,
+            output_elements: count,
+            output_bytes: super::super::budget::checked_u64(
+                count.checked_mul(core::mem::size_of::<ValueDataDraft>())
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?,
+            selector_bytes: selector_cost.retained_bytes,
+            ..super::super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
     let current = selector_value(schemas, &plan.target, current_ref)?;
-    let source = selector_value(schemas, &plan.source, input(inputs, 0)?)?;
+    let source = selector_value(schemas, &plan.source, source_ref)?;
     let ValueDataDraft::Matrix(mut next) = current
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidOutput)?
@@ -199,7 +279,7 @@ fn execute(
         return Err(ResidentKernelError::InvalidOutput);
     };
     let source = snapshot_numeric_elements(&source)?;
-    if next.len() != count || source.len() != plan.source_len {
+    if next.len() != count || source.len() != source_len {
         return Err(ResidentKernelError::InvalidShape);
     }
     let selectors = plan
@@ -256,10 +336,7 @@ fn execute(
         if source.len() == 1 {
             return Ok(0);
         }
-        if plan.logical_selector
-            && plan.source_rows == plan.rows
-            && plan.source_columns == plan.columns
-        {
+        if plan.logical_selector && source_rows == plan.rows && source_columns == plan.columns {
             return Ok(destination);
         }
         if plan.mode == 0 {
@@ -267,22 +344,22 @@ fn execute(
                 .then_some(ordinal)
                 .ok_or(ResidentKernelError::InvalidShape);
         }
-        if (plan.source_rows != 1 && plan.source_rows != selected_rows)
-            || (plan.source_columns != 1 && plan.source_columns != selected_columns)
+        if (source_rows != 1 && source_rows != selected_rows)
+            || (source_columns != 1 && source_columns != selected_columns)
         {
             return Err(ResidentKernelError::InvalidShape);
         }
-        let row = if plan.source_rows == 1 {
+        let row = if source_rows == 1 {
             0
         } else {
             ordinal / selected_columns
         };
-        let column = if plan.source_columns == 1 {
+        let column = if source_columns == 1 {
             0
         } else {
             ordinal % selected_columns
         };
-        Ok(row * plan.source_columns + column)
+        Ok(row * source_columns + column)
     };
     for (ordinal, &destination) in positions.iter().enumerate() {
         let left = execute_conversion_draft(next[destination].clone(), &plan.promote.step)

@@ -2746,30 +2746,20 @@ fn bind_transpose(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
-    let (rows, columns) = declared_matrix_dimensions(request, input)?;
-    let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
-    if input.kind != ResidentValueKind::Snapshot
-        || request.output.kind != ResidentValueKind::Snapshot
-        || input.shape != ResidentShape::SCALAR
-        || request.output.shape != ResidentShape::SCALAR
-        || input_element != output_element
-        || !is_transpose_snapshot_schema(input_element)
-        || output_dimensions != (columns, rows)
+    if input.kind == ResidentValueKind::Snapshot
+        && request.output.kind == ResidentValueKind::Snapshot
+        && input.shape == ResidentShape::SCALAR
+        && request.output.shape == ResidentShape::SCALAR
+        && input_element == output_element
+        && is_transpose_snapshot_schema(input_element)
     {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
+        return Ok(
+            bound(transpose_snapshot, Vec::<u64>::new().into_boxed_slice())?
+                .with_snapshot_output(snapshot_output_metadata(request))
+                .with_snapshot_schemas(request.schemas.clone()),
+        );
     }
-    Ok(bound(
-        transpose_snapshot,
-        vec![rows as u64, columns as u64].into_boxed_slice(),
-    )?
-    .with_snapshot_output(ResidentSnapshotOutput {
-        schema: request.output.schema_id,
-        schema_key: request.output.schema_key,
-        shape: request.output.shape_instance.clone(),
-        exact_cardinality: None,
-        maximum_cardinality: None,
-    })
-    .with_snapshot_schemas(request.schemas.clone()))
+    Err(ResidentKernelBindError::UnsupportedLayout)
 }
 
 fn admit_dense_transpose_layout(
@@ -2803,9 +2793,12 @@ fn admit_dense_transpose_layout(
 fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
     matches!(
         body,
-        SchemaBody::UnsignedInteger(_)
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::String
+            | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
-            | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32)
+            | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64
     )
@@ -2978,6 +2971,31 @@ fn constructor_input_dimensions(
     }
 }
 
+#[derive(Clone, Debug)]
+struct SnapshotConstructorInputPlan {
+    schema: SchemaId,
+    kind: ResidentValueKind,
+    dimensions: Option<(usize, usize)>,
+    matrix: bool,
+    shape_parameters: usize,
+}
+
+#[derive(Clone, Debug)]
+struct SnapshotConstructorPlan {
+    inputs: Box<[SnapshotConstructorInputPlan]>,
+    empty_dimensions: Option<(usize, usize)>,
+}
+
+fn dense_constructor_kind(element: &SchemaBody) -> Option<ResidentValueKind> {
+    match element {
+        SchemaBody::Bool => Some(ResidentValueKind::Bool),
+        SchemaBody::Index => Some(ResidentValueKind::Index),
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Some(ResidentValueKind::F64),
+        SchemaBody::String => Some(ResidentValueKind::String),
+        _ => None,
+    }
+}
+
 fn bind_matrix_constructor(
     request: &ResidentKernelBindRequest<'_>,
     horizontal: bool,
@@ -2993,6 +3011,67 @@ fn bind_matrix_constructor(
     else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let snapshot_layout = request.output.kind == ResidentValueKind::Snapshot
+        && request.output.shape == ResidentShape::SCALAR;
+    if snapshot_layout {
+        let dense_kind = dense_constructor_kind(output_element);
+        let mut inputs = Vec::with_capacity(request.inputs.len());
+        for input in request.inputs {
+            let schema = request
+                .schemas
+                .get(input.schema_id)
+                .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+            let matrix = match schema.body() {
+                body if body == output_element.as_ref() => false,
+                SchemaBody::Matrix { element, .. } if element == output_element => true,
+                _ => return Err(ResidentKernelBindError::UnsupportedLayout),
+            };
+            let dimensions = if input.kind == ResidentValueKind::Snapshot {
+                if input.shape != ResidentShape::SCALAR {
+                    return Err(ResidentKernelBindError::UnsupportedLayout);
+                }
+                None
+            } else {
+                if Some(input.kind) != dense_kind {
+                    return Err(ResidentKernelBindError::UnsupportedLayout);
+                }
+                let dimensions = constructor_input_dimensions(request, input, output_element)?;
+                if usize::try_from(input.shape.rows).ok() != Some(dimensions.0)
+                    || usize::try_from(input.shape.columns).ok() != Some(dimensions.1)
+                {
+                    return Err(ResidentKernelBindError::UnsupportedLayout);
+                }
+                Some(dimensions)
+            };
+            inputs.push(SnapshotConstructorInputPlan {
+                schema: input.schema_id,
+                kind: input.kind,
+                dimensions,
+                matrix,
+                shape_parameters: input.shape_instance.parameter_values().len(),
+            });
+        }
+        let empty_dimensions = if inputs.is_empty() {
+            Some(declared_matrix_dimensions(request, &request.output)?)
+        } else {
+            None
+        };
+        let plan = SnapshotConstructorPlan {
+            inputs: inputs.into_boxed_slice(),
+            empty_dimensions,
+        };
+        return Ok(bound(
+            if horizontal {
+                concatenate_horizontal_snapshot
+            } else {
+                concatenate_vertical_snapshot
+            },
+            vec![request.inputs.len() as u64].into_boxed_slice(),
+        )?
+        .with_retained_state(Arc::new(plan))
+        .with_snapshot_output(snapshot_output_metadata(request))
+        .with_snapshot_schemas(request.schemas.clone()));
+    }
     let output_dimensions = declared_matrix_dimensions(request, &request.output)?;
     let dimensions = request
         .inputs
@@ -3064,30 +3143,7 @@ fn bind_matrix_constructor(
             parameters.into_boxed_slice(),
         );
     }
-    if request.output.kind != ResidentValueKind::Snapshot
-        || request.output.shape != ResidentShape::SCALAR
-        || request.inputs.iter().any(|input| {
-            input.kind != ResidentValueKind::Snapshot || input.shape != ResidentShape::SCALAR
-        })
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
-    Ok(bound(
-        if horizontal {
-            concatenate_horizontal_snapshot
-        } else {
-            concatenate_vertical_snapshot
-        },
-        parameters.into_boxed_slice(),
-    )?
-    .with_snapshot_output(ResidentSnapshotOutput {
-        schema: request.output.schema_id,
-        schema_key: request.output.schema_key,
-        shape: request.output.shape_instance.clone(),
-        exact_cardinality: None,
-        maximum_cardinality: None,
-    })
-    .with_snapshot_schemas(request.schemas.clone()))
+    Err(ResidentKernelBindError::UnsupportedLayout)
 }
 
 fn bind_compound_selection<const MODE: u8, const OPERATION: u64>(
@@ -9395,19 +9451,8 @@ fn transpose_snapshot(
     let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(0) else {
         return Err(ResidentKernelError::InvalidInput);
     };
-    let [rows, columns] = kernel.parameters() else {
+    if !kernel.parameters().is_empty() {
         return Err(ResidentKernelError::InvalidInput);
-    };
-    let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let columns = usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
-    let count = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let ValueData::Matrix(matrix) = input.data() else {
-        return Err(ResidentKernelError::InvalidInput);
-    };
-    if matrix.elements().len() != count {
-        return Err(ResidentKernelError::InvalidShape);
     }
     let schemas = kernel
         .snapshot_schemas()
@@ -9423,6 +9468,11 @@ fn transpose_snapshot(
     let input_schema = input
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = snapshot_matrix_dimensions(input, input_schema.body())?;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_shape = resolved_snapshot_output_shape(kernel, columns, rows)?;
     let finalization_work =
         snapshot_data_finalization_work(&mut footprint_meter, input_schema.body(), input.data())?;
     let prior_footprint = match target.as_ref() {
@@ -9447,7 +9497,7 @@ fn transpose_snapshot(
             current,
             prior,
             metadata.schema,
-            metadata.shape.parameter_values().len(),
+            output_shape.parameter_values().len(),
             output_footprint,
         )?,
         _ => 0,
@@ -9497,9 +9547,10 @@ fn transpose_snapshot(
             transposed.push(elements[output_column * columns + output_row].clone());
         }
     }
-    write_snapshot_data_with_work_budget(
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+        &output_shape,
         ValueDataDraft::Matrix(transposed.into_boxed_slice()),
         Some(finalization_work),
     )
@@ -9892,29 +9943,291 @@ fn concatenate_vertical(
     }
 }
 
+fn snapshot_matrix_dimensions(
+    value: &mech_core::Value,
+    schema: &SchemaBody,
+) -> Result<(usize, usize), ResidentKernelError> {
+    let SchemaBody::Matrix { dimensions, .. } = schema else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let [rows, columns] = dimensions.as_ref() else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let rows = value
+        .shape()
+        .resolve_dimension(rows)
+        .ok()
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let columns = value
+        .shape()
+        .resolve_dimension(columns)
+        .ok()
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let expected = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let ValueData::Matrix(matrix) = value.data() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if matrix.elements().len() != expected {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok((rows, columns))
+}
+
+fn resolved_snapshot_output_shape(
+    kernel: &BoundResidentKernel,
+    rows: usize,
+    columns: usize,
+) -> Result<ShapeInstance, ResidentKernelError> {
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let rows = u64::try_from(rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns = u64::try_from(columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+    mech_core::shape_for_resolved_extents(schema, &[rows, columns])
+        .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+struct ConstructorSnapshotInputs {
+    staged: Vec<Vec<ValueDataDraft>>,
+    dimensions: Vec<(usize, usize)>,
+    output_dimensions: (usize, usize),
+    output_shape: ShapeInstance,
+    output_count: usize,
+    canonicalization_work_limit: u64,
+}
+
+fn dense_constructor_input_footprint(
+    input: ResidentValueRef<'_>,
+    plan: &SnapshotConstructorInputPlan,
+    meter: &mut super::budget::ResidentBudgetMeter,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    let dimensions = plan.dimensions.ok_or(ResidentKernelError::InvalidInput)?;
+    let count = dimensions
+        .0
+        .checked_mul(dimensions.1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if input.kind() != plan.kind || input.len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let (encoded_bytes, payload_bytes, sequence_bytes, nodes) = match input {
+        ResidentValueRef::Bool(values) => {
+            if values.iter().any(|value| *value > 1) {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            let bytes = super::budget::checked_u64(values.len())?;
+            (bytes, bytes, bytes, 3_u64)
+        }
+        ResidentValueRef::Index(values) => {
+            let bytes = values
+                .len()
+                .checked_mul(core::mem::size_of::<u64>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let bytes = super::budget::checked_u64(bytes)?;
+            (bytes, bytes, bytes, 3)
+        }
+        ResidentValueRef::F64(values) => {
+            let bytes = values
+                .len()
+                .checked_mul(core::mem::size_of::<f64>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let bytes = super::budget::checked_u64(bytes)?;
+            (bytes, bytes, bytes, 3)
+        }
+        ResidentValueRef::String(values) => {
+            let payload = values.iter().try_fold(0usize, |bytes, value| {
+                bytes
+                    .checked_add(value.len())
+                    .ok_or(ResidentKernelError::InvalidShape)
+            })?;
+            let prefixes = values
+                .len()
+                .checked_mul(core::mem::size_of::<u64>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let containers = values
+                .len()
+                .checked_mul(core::mem::size_of::<Box<str>>())
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            (
+                super::budget::checked_u64(
+                    prefixes
+                        .checked_add(payload)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )?,
+                super::budget::checked_u64(payload)?,
+                super::budget::checked_u64(
+                    containers
+                        .checked_add(payload)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                )?,
+                super::budget::checked_u64(values.len())?
+                    .checked_add(3)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )
+        }
+        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+    };
+    let shape_bytes = plan
+        .shape_parameters
+        .checked_mul(core::mem::size_of::<u64>())
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let base = core::mem::size_of::<mech_core::Value>()
+        .checked_add(shape_bytes)
+        .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>()))
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let retained_bytes = if plan.matrix {
+        super::budget::checked_u64(base)?
+            .checked_add(sequence_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else {
+        super::budget::checked_u64(base)?
+            .checked_add(payload_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?
+    };
+    let nodes = if plan.matrix { nodes } else { 2 };
+    meter.charge_comparison_work(
+        encoded_bytes
+            .checked_add(nodes)
+            .ok_or(ResidentKernelError::InvalidShape)?
+            .max(1),
+    )?;
+    meter.charge_retained_nodes(nodes)?;
+    Ok(ValueFootprint {
+        encoded_bytes,
+        retained_bytes,
+        node_count: nodes,
+    })
+}
+
+fn dense_constructor_input_drafts(
+    input: ResidentValueRef<'_>,
+    plan: &SnapshotConstructorInputPlan,
+) -> Result<Vec<ValueDataDraft>, ResidentKernelError> {
+    let (rows, columns) = plan.dimensions.ok_or(ResidentKernelError::InvalidInput)?;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    if input.kind() != plan.kind || input.len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let dense_indices =
+        (0..rows).flat_map(|row| (0..columns).map(move |column| row + column * rows));
+    match input {
+        ResidentValueRef::Bool(values) => dense_indices
+            .map(|index| match values[index] {
+                0 => Ok(ValueDataDraft::Bool(false)),
+                1 => Ok(ValueDataDraft::Bool(true)),
+                _ => Err(ResidentKernelError::InvalidInput),
+            })
+            .collect(),
+        ResidentValueRef::Index(values) => Ok(dense_indices
+            .map(|index| ValueDataDraft::Index(values[index]))
+            .collect()),
+        ResidentValueRef::F64(values) => Ok(dense_indices
+            .map(|index| ValueDataDraft::F64(F64Bits::from_f64(values[index])))
+            .collect()),
+        ResidentValueRef::String(values) => Ok(dense_indices
+            .map(|index| ValueDataDraft::String(values[index].clone()))
+            .collect()),
+        ResidentValueRef::Snapshot(_) => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
 fn constructor_snapshot_inputs(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     previous: Option<&mech_core::Value>,
-) -> Result<(Vec<Vec<ValueDataDraft>>, usize, u64), ResidentKernelError> {
-    if kernel.parameters().first().copied() != Some(inputs.len() as u64) {
+    horizontal: bool,
+) -> Result<ConstructorSnapshotInputs, ResidentKernelError> {
+    if kernel.parameters() != [inputs.len() as u64] {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let plan = kernel
+        .retained_state::<SnapshotConstructorPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if plan.inputs.len() != inputs.len() {
         return Err(ResidentKernelError::InvalidInput);
     }
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
+    let output_metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let output_schema = schemas
+        .get(output_metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let SchemaBody::Matrix {
+        element: output_element,
+        ..
+    } = output_schema.body()
+    else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
     let mut retained_bytes = 0u64;
     let mut input_nodes = 0u64;
     let mut input_encoded_bytes = 0u64;
     let mut output_count = 0usize;
     let mut finalization_work = 0u64;
+    let mut dimensions = Vec::with_capacity(inputs.len());
     let mut footprint_meter = super::budget::ResidentBudgetMeter::default();
-    for ordinal in 0..inputs.len() {
-        let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(ordinal) else {
+    for (ordinal, input_plan) in plan.inputs.iter().enumerate() {
+        let input_ref = inputs
+            .get(ordinal)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        if input_ref.kind() != input_plan.kind {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        if input_plan.kind != ResidentValueKind::Snapshot {
+            let input_dimensions = input_plan
+                .dimensions
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            let count = input_dimensions
+                .0
+                .checked_mul(input_dimensions.1)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            dimensions.push(input_dimensions);
+            output_count = output_count
+                .checked_add(count)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let footprint =
+                dense_constructor_input_footprint(input_ref, input_plan, &mut footprint_meter)?;
+            retained_bytes = retained_bytes
+                .checked_add(footprint.retained_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            input_nodes = input_nodes
+                .checked_add(footprint.node_count)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            input_encoded_bytes = input_encoded_bytes
+                .checked_add(footprint.encoded_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            continue;
+        }
+        let ResidentValueRef::Snapshot([Some(input)]) = input_ref else {
             return Err(ResidentKernelError::InvalidInput);
         };
-        let rows = kernel.parameters()[1 + ordinal * 2] as usize;
-        let columns = kernel.parameters()[2 + ordinal * 2] as usize;
+        if input.schema() != input_plan.schema {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        let input_schema = input
+            .validate_against(schemas)
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        let (rows, columns) = match input_schema.body() {
+            body if body == output_element.as_ref() => (1, 1),
+            body @ SchemaBody::Matrix { element, .. } if element == output_element => {
+                snapshot_matrix_dimensions(input, body)?
+            }
+            _ => return Err(ResidentKernelError::InvalidInput),
+        };
         let count = rows
             .checked_mul(columns)
             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -9925,6 +10238,7 @@ fn constructor_snapshot_inputs(
         if actual != count {
             return Err(ResidentKernelError::InvalidShape);
         }
+        dimensions.push((rows, columns));
         output_count = output_count
             .checked_add(count)
             .ok_or(ResidentKernelError::InvalidShape)?;
@@ -9939,9 +10253,6 @@ fn constructor_snapshot_inputs(
         input_encoded_bytes = input_encoded_bytes
             .checked_add(footprint.encoded_bytes)
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let input_schema = input
-            .validate_against(schemas)
-            .map_err(|_| ResidentKernelError::InvalidInput)?;
         finalization_work = finalization_work
             .checked_add(snapshot_data_finalization_work(
                 &mut footprint_meter,
@@ -9950,6 +10261,46 @@ fn constructor_snapshot_inputs(
             )?)
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
+    let output_dimensions = if dimensions.is_empty() {
+        plan.empty_dimensions
+            .ok_or(ResidentKernelError::InvalidShape)?
+    } else if horizontal {
+        let rows = dimensions
+            .first()
+            .map(|shape| shape.0)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if dimensions.iter().any(|shape| shape.0 != rows) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let columns = dimensions.iter().try_fold(0usize, |sum, shape| {
+            sum.checked_add(shape.1)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })?;
+        (rows, columns)
+    } else {
+        let columns = dimensions
+            .first()
+            .map(|shape| shape.1)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        if dimensions.iter().any(|shape| shape.1 != columns) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let rows = dimensions.iter().try_fold(0usize, |sum, shape| {
+            sum.checked_add(shape.0)
+                .ok_or(ResidentKernelError::InvalidShape)
+        })?;
+        (rows, columns)
+    };
+    if output_dimensions
+        .0
+        .checked_mul(output_dimensions.1)
+        .ok_or(ResidentKernelError::InvalidShape)?
+        != output_count
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let output_shape =
+        resolved_snapshot_output_shape(kernel, output_dimensions.0, output_dimensions.1)?;
     let previous_footprint = match previous {
         Some(previous) => super::budget::measure_canonical_value_footprint(
             &mut footprint_meter,
@@ -9965,16 +10316,26 @@ fn constructor_snapshot_inputs(
     let input_wrappers = super::budget::checked_u64(inputs.len())?;
     let staged_nodes = input_nodes
         .checked_sub(input_wrappers)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+        .ok_or(ResidentKernelError::InvalidShape)?
+        .max(1);
     let result_nodes = staged_nodes
         .checked_add(1)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let final_nodes = result_nodes
         .checked_add(1)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_metadata = kernel
-        .snapshot_output()
-        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let minimum_retained_bytes = core::mem::size_of::<mech_core::Value>()
+        .checked_add(core::mem::size_of::<ValueData>())
+        .and_then(|bytes| {
+            bytes.checked_add(
+                output_shape
+                    .parameter_values()
+                    .len()
+                    .checked_mul(core::mem::size_of::<u64>())?,
+            )
+        })
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    retained_bytes = retained_bytes.max(super::budget::checked_u64(minimum_retained_bytes)?);
     let final_output_footprint = ValueFootprint {
         encoded_bytes: input_encoded_bytes,
         retained_bytes,
@@ -9986,7 +10347,7 @@ fn constructor_snapshot_inputs(
             previous,
             previous_footprint,
             output_metadata.schema,
-            output_metadata.shape.parameter_values().len(),
+            output_shape.parameter_values().len(),
             final_output_footprint,
         )?,
         None => 0,
@@ -10022,21 +10383,35 @@ fn constructor_snapshot_inputs(
             .admit()?
             .into_plan();
     let mut staged = Vec::with_capacity(staged_capacity);
-    for ordinal in 0..inputs.len() {
-        let Some(ResidentValueRef::Snapshot([Some(input)])) = inputs.get(ordinal) else {
-            return Err(ResidentKernelError::InvalidInput);
-        };
-        staged.push(
-            match input
-                .canonical_data_draft()
-                .map_err(|_| ResidentKernelError::InvalidInput)?
-            {
-                ValueDataDraft::Matrix(elements) => elements.into_vec(),
-                scalar => vec![scalar],
-            },
-        );
+    for (ordinal, input_plan) in plan.inputs.iter().enumerate() {
+        let input_ref = inputs
+            .get(ordinal)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        if input_plan.kind == ResidentValueKind::Snapshot {
+            let ResidentValueRef::Snapshot([Some(input)]) = input_ref else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            staged.push(
+                match input
+                    .canonical_data_draft()
+                    .map_err(|_| ResidentKernelError::InvalidInput)?
+                {
+                    ValueDataDraft::Matrix(elements) => elements.into_vec(),
+                    scalar => vec![scalar],
+                },
+            );
+        } else {
+            staged.push(dense_constructor_input_drafts(input_ref, input_plan)?);
+        }
     }
-    Ok((staged, output_count, canonicalization_work_limit))
+    Ok(ConstructorSnapshotInputs {
+        staged,
+        dimensions,
+        output_dimensions,
+        output_shape,
+        output_count,
+        canonicalization_work_limit,
+    })
 }
 
 fn concatenate_horizontal_snapshot(
@@ -10047,27 +10422,32 @@ fn concatenate_horizontal_snapshot(
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let (staged, output_count, canonicalization_work_limit) =
-        constructor_snapshot_inputs(kernel, inputs, target.as_ref())?;
-    let rows = kernel.parameters().get(1).copied().unwrap_or(0) as usize;
-    let mut result = Vec::with_capacity(output_count);
+    let prepared = constructor_snapshot_inputs(kernel, inputs, target.as_ref(), true)?;
+    let mut result = Vec::with_capacity(prepared.output_count);
+    let rows = prepared.output_dimensions.0;
     for row in 0..rows {
-        for (ordinal, values) in staged.iter().enumerate() {
-            let columns = kernel.parameters()[2 + ordinal * 2] as usize;
+        for (values, (_, columns)) in prepared.staged.iter().zip(&prepared.dimensions) {
             let start = row
-                .checked_mul(columns)
+                .checked_mul(*columns)
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            result.extend_from_slice(&values[start..start + columns]);
+            let end = start
+                .checked_add(*columns)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let row_values = values
+                .get(start..end)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            result.extend_from_slice(row_values);
         }
     }
-    if result.len() != output_count {
+    if result.len() != prepared.output_count {
         return Err(ResidentKernelError::IncompleteOutput);
     }
-    write_snapshot_data_with_work_budget(
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+        &prepared.output_shape,
         ValueDataDraft::Matrix(result.into_boxed_slice()),
-        Some(canonicalization_work_limit),
+        Some(prepared.canonicalization_work_limit),
     )
 }
 
@@ -10079,20 +10459,20 @@ fn concatenate_vertical_snapshot(
     let ResidentValueMut::Snapshot([target]) = output else {
         return Err(ResidentKernelError::InvalidOutput);
     };
-    let (staged, output_count, canonicalization_work_limit) =
-        constructor_snapshot_inputs(kernel, inputs, target.as_ref())?;
-    let mut result = Vec::with_capacity(output_count);
-    for values in staged {
+    let prepared = constructor_snapshot_inputs(kernel, inputs, target.as_ref(), false)?;
+    let mut result = Vec::with_capacity(prepared.output_count);
+    for values in prepared.staged {
         result.extend(values);
     }
-    if result.len() != output_count {
+    if result.len() != prepared.output_count {
         return Err(ResidentKernelError::IncompleteOutput);
     }
-    write_snapshot_data_with_work_budget(
+    write_snapshot_data_for_shape_with_work_budget(
         kernel,
         ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+        &prepared.output_shape,
         ValueDataDraft::Matrix(result.into_boxed_slice()),
-        Some(canonicalization_work_limit),
+        Some(prepared.canonicalization_work_limit),
     )
 }
 
@@ -11139,7 +11519,7 @@ fn snapshot_selector_materialization_cost(
     meter: &mut super::budget::ResidentBudgetMeter,
 ) -> Result<SelectorMaterializationCost, ResidentKernelError> {
     if let ResidentValueRef::Snapshot([Some(value)]) = value {
-        if value.schema() != layout.schema || value.shape() != &layout.shape {
+        if value.schema() != layout.schema {
             return Err(ResidentKernelError::InvalidInput);
         }
         value
@@ -13533,7 +13913,33 @@ fn write_snapshot_data_with_work_budget(
     data: ValueDataDraft,
     canonicalization_work_limit: Option<u64>,
 ) -> Result<bool, ResidentKernelError> {
-    let next = finalize_snapshot_data_with_work_budget(kernel, data, canonicalization_work_limit)?;
+    let shape = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?
+        .shape
+        .clone();
+    write_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        output,
+        &shape,
+        data,
+        canonicalization_work_limit,
+    )
+}
+
+fn write_snapshot_data_for_shape_with_work_budget(
+    kernel: &BoundResidentKernel,
+    output: ResidentValueMut<'_>,
+    shape: &ShapeInstance,
+    data: ValueDataDraft,
+    canonicalization_work_limit: Option<u64>,
+) -> Result<bool, ResidentKernelError> {
+    let next = finalize_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        shape,
+        data,
+        canonicalization_work_limit,
+    )?;
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -13555,6 +13961,25 @@ fn finalize_snapshot_data_with_work_budget(
     data: ValueDataDraft,
     canonicalization_work_limit: Option<u64>,
 ) -> Result<mech_core::Value, ResidentKernelError> {
+    let shape = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?
+        .shape
+        .clone();
+    finalize_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        &shape,
+        data,
+        canonicalization_work_limit,
+    )
+}
+
+fn finalize_snapshot_data_for_shape_with_work_budget(
+    kernel: &BoundResidentKernel,
+    shape: &ShapeInstance,
+    data: ValueDataDraft,
+    canonicalization_work_limit: Option<u64>,
+) -> Result<mech_core::Value, ResidentKernelError> {
     let metadata = kernel
         .snapshot_output()
         .ok_or(ResidentKernelError::InvalidOutput)?;
@@ -13568,11 +13993,7 @@ fn finalize_snapshot_data_with_work_budget(
     }
     let next = ValueDraft {
         schema: metadata.schema,
-        shape_values: metadata
-            .shape
-            .parameter_values()
-            .to_vec()
-            .into_boxed_slice(),
+        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
         data,
     }
     .finalize(&context)
@@ -14189,6 +14610,232 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_transpose_executes_index_and_string_matrices() {
+        for (element, elements) in [
+            (
+                SchemaBody::Index,
+                vec![ValueDataDraft::Index(1), ValueDataDraft::Index(2)],
+            ),
+            (
+                SchemaBody::String,
+                vec![
+                    ValueDataDraft::String("a".to_owned()),
+                    ValueDataDraft::String("b".to_owned()),
+                ],
+            ),
+        ] {
+            let matrix = |rows, columns| SchemaBody::Matrix {
+                element: Box::new(element.clone()),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(rows),
+                    mech_core::DimensionExpr::Constant(columns),
+                ]
+                .into_boxed_slice(),
+            };
+            let (schemas, ids) = test_schema_table([matrix(1, 2), matrix(2, 1)]);
+            let [input_schema, output_schema] = ids.as_slice() else {
+                unreachable!()
+            };
+            let contract = test_contract(
+                &[*input_schema],
+                *output_schema,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::TransposeOf { input: 0 },
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::KernelReported,
+            );
+            let kernel = bind_semantic_transpose(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[test_layout(
+                    &schemas,
+                    *input_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                )],
+                output: test_layout(
+                    &schemas,
+                    *output_schema,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                ),
+            })
+            .unwrap();
+            let input = [Some(test_value(
+                &schemas,
+                *input_schema,
+                ValueDataDraft::Matrix(elements.clone().into_boxed_slice()),
+            ))];
+            let mut output = [None];
+            assert_eq!(
+                kernel.execute(
+                    &Inputs(&[ResidentValueRef::Snapshot(&input)]),
+                    ResidentValueMut::Snapshot(&mut output),
+                ),
+                Ok(true)
+            );
+            let expected = test_value(
+                &schemas,
+                *output_schema,
+                ValueDataDraft::Matrix(elements.into_boxed_slice()),
+            );
+            assert!(
+                output[0]
+                    .as_ref()
+                    .unwrap()
+                    .language_eq(&schemas, &expected, &schemas)
+                    .unwrap()
+            );
+        }
+    }
+
+    #[test]
+    fn promoted_rows_consume_runtime_sized_snapshot_sources() {
+        use mech_core::{
+            DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
+            DimensionParameterOrigin, SchemaDraft,
+        };
+
+        let matrix = |element, rows, columns| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![rows, columns].into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let base = builder
+            .insert(test_schema(matrix(
+                SchemaBody::SignedInteger(mech_core::IntegerWidth::W32),
+                DimensionExpr::Constant(2),
+                DimensionExpr::Constant(2),
+            )))
+            .unwrap();
+        let source = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(2)),
+                    }]
+                    .into_boxed_slice(),
+                    body: matrix(
+                        SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        DimensionExpr::Constant(2),
+                    ),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let selector = builder.insert(test_schema(SchemaBody::Index)).unwrap();
+        let built = builder.finish().unwrap();
+        let base = built.resolve(base).unwrap();
+        let source = built.resolve(source).unwrap();
+        let selector = built.resolve(selector).unwrap();
+        let (schemas, _) = built.into_parts();
+        let layout = |schema, kind, shape, parameters: &[u64]| mech_core::ResidentPortLayout {
+            schema_id: schema,
+            schema_key: schemas.entry(schema).unwrap().key(),
+            kind,
+            shape,
+            shape_instance: schemas
+                .get(schema)
+                .unwrap()
+                .instantiate_shape(parameters.to_vec().into_boxed_slice())
+                .unwrap(),
+            resolved_selector: None,
+        };
+        let contract = test_contract(
+            &[base, source, selector],
+            base,
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_compound_selection::<1, 0>(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                layout(
+                    base,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                    &[],
+                ),
+                layout(
+                    source,
+                    ResidentValueKind::Snapshot,
+                    ResidentShape::SCALAR,
+                    &[0],
+                ),
+                layout(
+                    selector,
+                    ResidentValueKind::Index,
+                    ResidentShape::SCALAR,
+                    &[],
+                ),
+            ],
+            output: layout(
+                base,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+                &[],
+            ),
+        })
+        .unwrap();
+        let source_value = [Some(
+            ValueDraft {
+                schema: source,
+                shape_values: vec![1].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(
+                    [1.5, 2.5]
+                        .into_iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap(),
+        )];
+        let selector_value = [2_u64];
+        let inputs = [
+            ResidentValueRef::Snapshot(&source_value),
+            ResidentValueRef::Index(&selector_value),
+        ];
+        let mut output = [Some(test_value(
+            &schemas,
+            base,
+            ValueDataDraft::Matrix(
+                [10, 11, 20, 21]
+                    .into_iter()
+                    .map(ValueDataDraft::I32)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        ))];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output),),
+            Ok(true),
+        );
+        let ValueData::Matrix(values) = output[0].as_ref().unwrap().data() else {
+            panic!("promoted rows must preserve the complete matrix")
+        };
+        let SequenceView::I32(values) = values.elements() else {
+            panic!("promoted rows must retain the destination element type")
+        };
+        assert_eq!(values, &[10, 11, 21, 23]);
+    }
+
+    #[test]
     fn dense_comparison_execution_admits_the_complete_output() {
         let maximum = super::super::budget::MAX_RESIDENT_OUTPUT_ELEMENTS as u32;
         assert!(
@@ -14205,6 +14852,61 @@ mod tests {
             })
             .is_err()
         );
+    }
+
+    #[test]
+    fn nullary_snapshot_matrix_constructor_publishes_the_declared_empty_shape() {
+        let matrix = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(0),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([matrix]);
+        let [matrix_schema] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[],
+            *matrix_schema,
+            OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: "horizontal-output".to_owned(),
+                },
+            },
+            AccessMode::Write,
+            AliasPolicy::NoAlias,
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let kernel = bind_matrix_comprehension(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[],
+            output: test_layout(
+                &schemas,
+                *matrix_schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            ),
+        })
+        .unwrap();
+        let mut output = [None];
+        kernel
+            .execute(&Inputs(&[]), ResidentValueMut::Snapshot(&mut output))
+            .unwrap();
+        let output = output[0].as_ref().unwrap();
+        assert_eq!(
+            snapshot_matrix_dimensions(output, schemas.get(*matrix_schema).unwrap().body()),
+            Ok((1, 0))
+        );
+        assert!(matches!(
+            output.data(),
+            ValueData::Matrix(matrix) if matrix.elements().is_empty()
+        ));
     }
 
     #[test]
@@ -20241,7 +20943,7 @@ mod tests {
                 snapshot_numeric_negate as mech_core::ResidentKernelExecutor,
                 vec![200, 200],
             ),
-            (transpose_snapshot, vec![200, 200]),
+            (transpose_snapshot, vec![]),
         ] {
             let original = matrix_value();
             let mut output = [Some(original.clone())];
