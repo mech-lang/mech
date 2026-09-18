@@ -103,6 +103,21 @@ impl CanonicalSourceProgram {
         self.program.inputs = retain(self.program.inputs, &inputs);
         self.source_map.inputs = retain(self.source_map.inputs, &inputs);
         self.program.nodes = retain(self.program.nodes, &nodes);
+        self.program.requirements =
+            retain_node_requirements(&mut self.program.nodes, &self.program.requirements)
+                .map_err(|error| SourceSemanticError {
+                    code: "source-semantics/invalid-static-requirements",
+                    message: format!(
+                        "retained static requirement table is invalid: {error:?}"
+                    ),
+                    anchor: self.source_map.outputs.first().copied().unwrap_or(
+                        SourceSemanticAnchor {
+                            document: DocumentId(0),
+                            revision: Revision(0),
+                            range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+                        },
+                    ),
+                })?;
         self.contracts = retain(self.contracts, &nodes);
         self.source_map.nodes = retain(self.source_map.nodes, &nodes);
         self.program.states = retain(self.program.states, &states);
@@ -154,6 +169,59 @@ impl CanonicalSourceProgram {
     }
 }
 
+fn retain_node_requirements(
+    nodes: &mut [SourceNode],
+    requirements: &crate::ApplicationRequirementTable,
+) -> Result<crate::ApplicationRequirementTable, crate::ArtifactBuildError> {
+    let retained = nodes
+        .iter()
+        .filter_map(|node| match &node.body {
+            crate::SourceNodeBody::Operation {
+                requirement: Some(requirement),
+                ..
+            } => Some(requirement.get()),
+            crate::SourceNodeBody::Operation {
+                requirement: None, ..
+            }
+            | crate::SourceNodeBody::Match(_)
+            | crate::SourceNodeBody::Comprehension(_)
+            | crate::SourceNodeBody::Fsm(_) => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let remap = retained
+        .iter()
+        .enumerate()
+        .map(|(new, old)| {
+            (
+                *old,
+                mech_core::ApplicationRequirementId::new(new as u32),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let entries = retained
+        .iter()
+        .map(|old| {
+            requirements
+                .get(mech_core::ApplicationRequirementId::new(*old))
+                .expect("canonical source node references a known requirement")
+                .clone()
+        })
+        .collect::<Vec<_>>();
+
+    for node in nodes {
+        let crate::SourceNodeBody::Operation {
+            requirement: Some(requirement),
+            ..
+        } = &mut node.body
+        else {
+            continue;
+        };
+        *requirement = remap[&requirement.get()];
+    }
+
+    crate::ApplicationRequirementTable::from_canonical_entries(entries)
+}
+
 fn retain<T>(items: Box<[T]>, selected: &BTreeSet<usize>) -> Box<[T]> {
     items
         .into_vec()
@@ -161,4 +229,67 @@ fn retain<T>(items: Box<[T]>, selected: &BTreeSet<usize>) -> Box<[T]> {
         .enumerate()
         .filter_map(|(index, item)| selected.contains(&index).then_some(item))
         .collect()
+}
+
+#[cfg(test)]
+mod requirement_projection_tests {
+    use super::*;
+
+    fn requirement(path: &str) -> mech_core::ApplicationRequirement {
+        mech_core::ApplicationRequirement::Resource(mech_core::ExecutionResourceRequest {
+            base_uri: "test://context".to_owned(),
+            path: path.to_owned(),
+            context_name: "context".to_owned(),
+            operation: "read".to_owned(),
+            intent: mech_core::ResourceIntent::Read,
+            delivery: mech_core::ResourceDelivery::Snapshot,
+        })
+    }
+
+    #[test]
+    fn retained_nodes_prune_and_remap_application_requirements() {
+        let mut entries = vec![requirement("discarded"), requirement("retained")];
+        entries.sort_by(mech_core::compare_application_requirements);
+        let requirements =
+            crate::ApplicationRequirementTable::from_canonical_entries(entries).unwrap();
+        let retained_old = requirements
+            .iter()
+            .find_map(|(id, requirement)| {
+                matches!(
+                    requirement,
+                    mech_core::ApplicationRequirement::Resource(request)
+                        if request.path == "retained"
+                )
+                .then_some(id)
+            })
+            .unwrap();
+        let mut nodes = vec![SourceNode {
+            body: crate::SourceNodeBody::Operation {
+                operation: OperationReference {
+                    module_path: vec!["resource".to_owned(), "read".to_owned()]
+                        .into_boxed_slice(),
+                    operation_name: "read".to_owned(),
+                },
+                requirement: Some(retained_old),
+            },
+            inputs: Box::new([]),
+            outputs: Box::new([]),
+        }];
+
+        let retained = retain_node_requirements(&mut nodes, &requirements).unwrap();
+        assert_eq!(retained.len(), 1);
+        assert!(matches!(
+            retained.get(mech_core::ApplicationRequirementId::new(0)),
+            Some(mech_core::ApplicationRequirement::Resource(request))
+                if request.path == "retained"
+        ));
+        let crate::SourceNodeBody::Operation {
+            requirement: Some(requirement),
+            ..
+        } = &nodes[0].body
+        else {
+            panic!("expected retained resource operation")
+        };
+        assert_eq!(requirement.get(), 0);
+    }
 }

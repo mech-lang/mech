@@ -293,6 +293,12 @@ impl TextSnapshot {
         if text.is_empty() {
             return Ok((self.clone(), SourceAppendWork::default()));
         }
+        let revision = Revision(
+            self.revision
+                .0
+                .checked_add(1)
+                .ok_or(SourceError::RevisionExhausted)?,
+        );
         let added = TextSize::checked_from_usize(text.len())?;
         let byte_len = TextSize(
             self.byte_len
@@ -325,7 +331,7 @@ impl TextSnapshot {
         Ok((
             Self {
                 document: self.document,
-                revision: Revision(self.revision.0.saturating_add(1)),
+                revision,
                 pieces,
                 byte_len,
                 line_index,
@@ -347,6 +353,12 @@ impl TextSnapshot {
         if edits.is_empty() {
             return Ok(self.clone());
         }
+        let revision = Revision(
+            self.revision
+                .0
+                .checked_add(1)
+                .ok_or(SourceError::RevisionExhausted)?,
+        );
 
         let mut pieces = Vec::with_capacity(self.pieces.len() + edits.len() * 2);
         let mut copied_until = TextSize::ZERO;
@@ -365,7 +377,7 @@ impl TextSnapshot {
         let line_index = self.line_index.updated(self, &pieces, byte_len, edits);
         Ok(Self {
             document: self.document,
-            revision: Revision(self.revision.0.saturating_add(1)),
+            revision,
             pieces: pieces.into_iter().collect(),
             byte_len,
             line_index,
@@ -476,6 +488,31 @@ mod tests {
             assert_eq!(next.byte_len().0, source.byte_len().0 + 3);
             assert_eq!(source.line_index().line_count(), size + 1);
         }
+    }
+
+    #[test]
+    fn exhausted_revision_rejects_mutating_append_and_edits() {
+        let source = TextSnapshot::new(DocumentId(92), Revision(u64::MAX), "abc").unwrap();
+
+        assert!(matches!(
+            source.append("d"),
+            Err(SourceError::RevisionExhausted)
+        ));
+        assert!(matches!(
+            source.apply_edits(&[TextEdit::replace(
+                TextRange::new(TextSize(1), TextSize(2)),
+                "z",
+            )]),
+            Err(SourceError::RevisionExhausted)
+        ));
+
+        let unchanged = source.append("").unwrap();
+        assert_eq!(unchanged.revision(), Revision(u64::MAX));
+        assert_eq!(unchanged.to_contiguous_string(), "abc");
+        assert_eq!(
+            source.apply_edits(&[]).unwrap().revision(),
+            Revision(u64::MAX)
+        );
     }
 
     #[test]

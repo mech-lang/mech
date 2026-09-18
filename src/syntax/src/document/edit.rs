@@ -147,6 +147,7 @@ pub enum SourceError {
     UnsortedEdits,
     OverlappingEdits,
     SourceTooLarge,
+    RevisionExhausted,
     WrongDocumentRevision,
 }
 
@@ -162,6 +163,7 @@ impl fmt::Display for SourceError {
             Self::UnsortedEdits => f.write_str("edits must be sorted by source range"),
             Self::OverlappingEdits => f.write_str("edit ranges must not overlap"),
             Self::SourceTooLarge => f.write_str("source exceeds the 32-bit text range"),
+            Self::RevisionExhausted => f.write_str("source revision is exhausted"),
             Self::WrongDocumentRevision => {
                 f.write_str("source snapshot belongs to another document revision")
             }

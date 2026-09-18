@@ -3434,19 +3434,33 @@ fn canonical_resource_send_operations(
         .collect()
 }
 
+fn resource_send_path_specificity(
+    declared: Option<&str>,
+    requested: &str,
+) -> Option<u8> {
+    match declared {
+        None => Some(0),
+        Some(path) if path == requested => Some(2),
+        Some(path) => {
+            let prefix = path.strip_suffix("/*")?;
+            requested
+                .strip_prefix(prefix)
+                .is_some_and(|suffix| suffix.starts_with('/'))
+                .then_some(1)
+        }
+    }
+}
+
 fn declared_resource_send_operation<'a>(
     request: &ExecutionResourceRequest,
     operations: &'a [CompiledResourceSendOperation],
 ) -> MResult<Option<&'a str>> {
     let mut selected = None;
-    for exact in [true, false] {
+    for specificity in [2, 1, 0] {
         for declaration in operations.iter().filter(|declaration| {
             declaration.base_uri == request.base_uri
-                && declaration.path.is_some() == exact
-                && declaration
-                    .path
-                    .as_deref()
-                    .map_or(!exact, |path| path == request.path)
+                && resource_send_path_specificity(declaration.path.as_deref(), &request.path)
+                    == Some(specificity)
         }) {
             match selected {
                 None => selected = Some(declaration.operation.as_str()),
@@ -3467,6 +3481,36 @@ fn declared_resource_send_operation<'a>(
         }
     }
     Ok(selected)
+}
+
+#[cfg(test)]
+mod resource_send_scope_tests {
+    use super::resource_send_path_specificity;
+
+    #[test]
+    fn prefix_wildcard_resource_paths_match_descendants_with_lower_specificity() {
+        assert_eq!(
+            resource_send_path_specificity(Some("messages/42"), "messages/42"),
+            Some(2)
+        );
+        assert_eq!(
+            resource_send_path_specificity(Some("messages/*"), "messages/42"),
+            Some(1)
+        );
+        assert_eq!(
+            resource_send_path_specificity(Some("messages/*"), "messages/42/body"),
+            Some(1)
+        );
+        assert_eq!(
+            resource_send_path_specificity(Some("messages/*"), "messages"),
+            None
+        );
+        assert_eq!(
+            resource_send_path_specificity(Some("other/*"), "messages/42"),
+            None
+        );
+        assert_eq!(resource_send_path_specificity(None, "messages/42"), Some(0));
+    }
 }
 
 fn install_context_imports(
