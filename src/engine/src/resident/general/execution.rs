@@ -320,8 +320,30 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
     ) -> Result<T, ResidentExecutionError> {
+        self.with_kernel_turn_plan_and_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            0,
+            0,
+            execute,
+        )
+    }
+
+    fn with_kernel_turn_plan_and_live_demand<T>(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        live_bytes: u64,
+        live_nodes: u64,
+        execute: impl FnOnce(&mut Self) -> Result<T, ResidentExecutionError>,
+    ) -> Result<T, ResidentExecutionError> {
         let index = node_index.get() as usize;
-        if let Some(cached) = self.workspace.fixed_turn_plans[index].clone() {
+        if live_bytes == 0
+            && live_nodes == 0
+            && let Some(cached) = self.workspace.fixed_turn_plans[index].clone()
+        {
             // Reuse the certified base plan, not a materialization permit.
             // The kernel still admits its concrete work and scratch demand.
             return super::super::budget::with_resident_turn_plan(cached, || execute(self));
@@ -415,9 +437,19 @@ impl ReactiveInstance {
                 self.read_location(location, working_epoch).ok_or_else(fail)
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let facts =
+        let mut facts =
             super::live::facts(call, node.memory_node, &inputs, current, &self.plan.schemas)
                 .map_err(|_| fail())?;
+        facts.additional_demand.turn_peak_bytes = facts
+            .additional_demand
+            .turn_peak_bytes
+            .checked_add(live_bytes)
+            .ok_or_else(fail)?;
+        facts.additional_demand.retained_nodes = facts
+            .additional_demand
+            .retained_nodes
+            .checked_add(live_nodes)
+            .ok_or_else(fail)?;
         let turn_plan = crate::memory_planner::plan_current_resident_turn(
             &self.plan.memory_plan,
             node.memory_node,
@@ -433,7 +465,8 @@ impl ReactiveInstance {
                 error: ResidentKernelError::InvalidShape,
             });
         }
-        let cacheable = super::live::has_invariant_memory_facts(call);
+        let cacheable =
+            live_bytes == 0 && live_nodes == 0 && super::live::has_invariant_memory_facts(call);
         let has_canonical_input = inputs
             .iter()
             .any(|input| input.kind() == ResidentValueKind::Snapshot);
@@ -1970,6 +2003,23 @@ impl ReactiveInstance {
     }
 
     #[inline(always)]
+    fn kernel_scratch_output_region(
+        &self,
+        node_index: ActivatedNodeIndex,
+    ) -> Option<ResidentRegion> {
+        let index = node_index.get() as usize;
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            nodes.get(index)?
+        } else {
+            let ActivatedTurnStep::Kernel(node) = self.plan.steps.get(index)? else {
+                return None;
+            };
+            node
+        };
+        (node.write.storage == ResidentStorageClass::Scratch).then_some(node.write.region)
+    }
+
+    #[inline(always)]
     fn execute_kernel(
         &mut self,
         node_index: ActivatedNodeIndex,
@@ -1980,6 +2030,26 @@ impl ReactiveInstance {
         self.with_kernel_turn_plan(node_index, before_epoch, working_epoch, |this| {
             this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe)
         })
+    }
+
+    #[inline(always)]
+    fn execute_kernel_with_live_demand(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        self.with_kernel_turn_plan_and_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            live_bytes,
+            live_nodes,
+            |this| this.execute_kernel_planned(node_index, before_epoch, working_epoch, probe),
+        )
     }
 
     #[inline(always)]
@@ -3376,7 +3446,7 @@ fn hash_string(value: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resident::general::{ResidentArenaSizes, StateVersion};
+    use crate::resident::general::{ActivatedCollectionStep, ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
     #[cfg(feature = "source")]
@@ -3447,6 +3517,70 @@ mod tests {
             assert_eq!(call.outputs.len(), 1);
         }
         assert_eq!(locals, 2);
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_operation_plan_counts_live_enclosing_arena() {
+        let mut instance = source_instance("[(x + 1) | x <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Kernel(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the comprehension contains one nested arithmetic operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        assert!(matches!(
+            instance.with_kernel_turn_plan_and_live_demand(
+                operation,
+                before,
+                working,
+                mech_core::RESIDENT_MAX_BYTES,
+                1,
+                |_| Ok(()),
+            ),
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_operation_identifies_its_replaceable_local_output() {
+        let instance = source_instance("[(item, true) | item <- signal<[f64]:1,2>]");
+        let control = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Comprehension(control) => Some(control),
+                _ => None,
+            })
+            .expect("source must contain a comprehension");
+        let operation = control
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedCollectionStep::Operation { node, .. } => Some(*node),
+                _ => None,
+            })
+            .expect("tuple yield must contain a nested operation");
+        let output = instance
+            .kernel_scratch_output_region(operation)
+            .expect("nested operation must write a scratch local");
+
+        assert!(control.locals.contains(&output));
     }
 
     #[cfg(feature = "source")]
