@@ -1,12 +1,10 @@
-use mech_syntax::document::ast::ModuleImportSyntax;
 use mech_syntax::document::parser::canonical::{
     CanonicalRuleOutcome, parse_canonical_phase_2e_rule_for_test,
 };
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, ExpectedSyntax, FixApplicability, ParseConfig, RecoveryAction, Revision,
-    RuleId, SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags,
-    lower_legacy_module_import,
+    DocumentId, ExpectedSyntax, FixApplicability, ParseConfig, RecoveryAction, Revision, RuleId,
+    SyntaxKind, SyntaxNode, TextRange, TextSize, TextSnapshot, TokenFlags,
 };
 
 fn source(text: &str) -> TextSnapshot {
@@ -170,11 +168,9 @@ fn context_alias_prefixes_commit_with_required_structure() {
         .resolve(slash_context.source.revision(), &slash_context.nodes)
         .unwrap();
     assert_eq!(primary.start, TextSize(7));
-    let node = find_node(&slash_context.syntax(), SyntaxKind::ModuleImport).unwrap();
-    let syntax = ModuleImportSyntax::cast(node).unwrap();
     assert!(
-        lower_legacy_module_import(&syntax).is_err(),
-        "a slash-continuing context alias must not lower as a valid module import"
+        find_node(&slash_context.syntax(), SyntaxKind::Error).is_some(),
+        "a slash-continuing context alias must retain its structural error"
     );
 }
 

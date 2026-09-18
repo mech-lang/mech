@@ -24,105 +24,37 @@ fn parse(
         })
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct LegacyPrefix {
-    consumed: TextSize,
-    remaining: TextSize,
-}
-
-fn legacy_prefix<Output>(
-    input: &str,
-    parser: for<'source> fn(
-        mech_syntax::ParseString<'source>,
-    ) -> mech_syntax::ParseResult<'source, Output>,
-) -> Option<LegacyPrefix> {
-    let graphemes = mech_syntax::graphemes::init_tag(input);
-    parser(mech_syntax::ParseString::new(&graphemes))
-        .ok()
-        .map(|(remaining, _)| {
-            let consumed = graphemes[..remaining.cursor]
-                .iter()
-                .map(|grapheme| grapheme.len())
-                .sum::<usize>();
-            let remaining = graphemes[remaining.cursor..]
-                .iter()
-                .map(|grapheme| grapheme.len())
-                .sum::<usize>();
-            LegacyPrefix {
-                consumed: TextSize(consumed as u32),
-                remaining: TextSize(remaining as u32),
-            }
-        })
-}
-
-fn assert_parity<Output>(
-    rule: RuleId,
-    parser: for<'source> fn(
-        mech_syntax::ParseString<'source>,
-    ) -> mech_syntax::ParseResult<'source, Output>,
-    inputs: &[&str],
-) {
-    for input in inputs {
-        let canonical = parse(input, rule);
-        let legacy = legacy_prefix(input, parser);
-        assert_eq!(canonical.rule, rule, "{input:?}");
+fn assert_contract(rule: RuleId, accepted: &[&str], rejected: &[&str]) {
+    for input in accepted {
+        let parsed = parse(input, rule);
+        assert!(parsed.matched, "{rule:?} did not accept {input:?}");
+        assert!(parsed.diagnostics.is_empty(), "{rule:?} on {input:?}");
+        assert_eq!(parsed.consumed.start, TextSize::ZERO, "{input:?}");
+        assert!(!parsed.consumed.is_empty(), "{rule:?} on {input:?}");
+        validate_lossless_range(&parsed.root, &parsed.source, parsed.consumed).unwrap();
         assert_eq!(
-            canonical.syntax().kind(),
-            SyntaxKind::CanonicalFragment,
-            "{input:?}"
+            reconstruct_source_range(&parsed.root, &parsed.source, parsed.consumed).unwrap(),
+            &input[..parsed.consumed.end.0 as usize],
+            "{rule:?} did not preserve its consumed prefix for {input:?}",
         );
-        assert_eq!(
-            canonical.matched,
-            legacy.is_some(),
-            "{} acceptance mismatch for {input:?}",
-            canonical_rule_name(rule).unwrap(),
-        );
-
-        if let Some(legacy) = legacy {
-            assert!(canonical.diagnostics.is_empty(), "{input:?}");
-            assert_eq!(canonical.consumed.start, TextSize::ZERO, "{input:?}");
-            assert_eq!(
-                canonical.consumed.end,
-                legacy.consumed,
-                "{} consumed extent mismatch for {input:?}",
-                canonical_rule_name(rule).unwrap(),
-            );
-            assert_eq!(
-                canonical.source.byte_len().0 - canonical.consumed.end.0,
-                legacy.remaining.0,
-                "{} remaining extent mismatch for {input:?}",
-                canonical_rule_name(rule).unwrap(),
-            );
-            assert_eq!(
-                reconstruct_source_range(&canonical.root, &canonical.source, canonical.consumed)
-                    .unwrap(),
-                &input[..legacy.consumed.0 as usize],
-                "{} did not preserve its consumed source for {input:?}",
-                canonical_rule_name(rule).unwrap(),
-            );
-            validate_lossless_range(&canonical.root, &canonical.source, canonical.consumed)
-                .unwrap();
-        } else {
-            assert_eq!(
-                canonical.consumed,
-                TextRange::empty(TextSize::ZERO),
-                "{input:?}"
-            );
-            assert!(canonical.diagnostics.is_empty(), "{input:?}");
-        }
+    }
+    for input in rejected {
+        let parsed = parse(input, rule);
+        assert!(!parsed.matched, "{rule:?} unexpectedly accepted {input:?}");
+        assert_eq!(parsed.consumed, TextRange::empty(TextSize::ZERO));
+        assert!(parsed.diagnostics.is_empty(), "{rule:?} on {input:?}");
     }
 }
 
 #[test]
-fn all_13_closed_rules_match_legacy_acceptance_and_prefix_boundaries() {
-    assert_parity(
+fn all_13_closed_rules_enforce_their_canonical_acceptance_contracts() {
+    assert_contract(
         rules::COMMENT_SIGIL,
-        mech_syntax::comment_sigil,
-        &["--tail", "//tail", "-tail", "/tail"],
+        &["--tail", "//tail"],
+        &["-tail", "/tail"],
     );
-    assert_parity(
+    assert_contract(
         rules::COMMENT,
-        mech_syntax::comment,
         &[
             "--",
             "// text",
@@ -131,68 +63,68 @@ fn all_13_closed_rules_match_legacy_acceptance_and_prefix_boundaries() {
             " \t// text\r\nnext",
             "\u{00a0}// text",
             "\u{2009}// text",
-            "not a comment",
         ],
+        &["not a comment"],
     );
-    assert_parity(
+    assert_contract(
         rules::CODEBLOCK_SIGIL,
-        mech_syntax::codeblock_sigil,
-        &["```text", "~~~text", "``text", "~~text"],
+        &["```text", "~~~text"],
+        &["``text", "~~text"],
     );
-    assert_parity(
+    assert_contract(
         rules::INLINE_CODE,
-        mech_syntax::inline_code,
-        &["`text`tail", "``tail", "`x := 1`tail", "```text```"],
+        &["`text`tail", "``tail", "`x := 1`tail"],
+        &["```text```"],
     );
-    assert_parity(
+    assert_contract(
         rules::INLINE_EQUATION,
-        mech_syntax::inline_equation,
-        &["$$x$$tail", "$$\\alpha$$tail", "not an equation"],
+        &["$$x$$tail", "$$\\alpha$$tail"],
+        &["not an equation"],
     );
-    assert_parity(
+    assert_contract(
         rules::RAW_HYPERLINK,
-        mech_syntax::raw_hyperlink,
         &[
             "http://example.com",
             "http://example.com/path tail",
             "http://example.com\tpath\nnext",
             "https",
         ],
+        &[],
     );
-    assert_parity(
+    assert_contract(
         rules::FOOTNOTE_REFERENCE,
-        mech_syntax::footnote_reference,
-        &["[^note]tail", "[^a b]tail", "note"],
+        &["[^note]tail", "[^a b]tail"],
+        &["note"],
     );
-    assert_parity(
+    assert_contract(
         rules::REFERENCE,
-        mech_syntax::reference,
-        &["[abc]tail", "[abc](target)", "[123]tail", "[a-b]", "[]"],
+        &["[abc]tail", "[abc](target)", "[123]tail"],
+        &["[a-b]", "[]"],
     );
-    assert_parity(
+    assert_contract(
         rules::SECTION_REFERENCE,
-        mech_syntax::section_reference,
-        &["§1.2 tail", "§abc-tail", "plain"],
+        &["§1.2 tail", "§abc-tail"],
+        &["plain"],
     );
-    assert_parity(
+    assert_contract(
         rules::PARAGRAPH_TEXT,
-        mech_syntax::paragraph_text,
         &["plain prose", "punctuation, emoji 🧪", "plain§next"],
+        &[],
     );
-    assert_parity(
+    assert_contract(
         rules::THEMATIC_BREAK,
-        mech_syntax::thematic_break,
-        &["*\nnext", "*** \t\rnext", "**\r\nnext", "plain\n"],
+        &["*\nnext", "*** \t\rnext", "**\r\nnext"],
+        &["plain\n"],
     );
-    assert_parity(
+    assert_contract(
         rules::BLANK_LINE,
-        mech_syntax::blank_line,
-        &["\nnext", " \t\rnext", "\u{00a0}\r\nnext", "plain"],
+        &["\nnext", " \t\rnext", "\u{00a0}\r\nnext"],
+        &["plain"],
     );
-    assert_parity(
+    assert_contract(
         rules::EQUATION,
-        mech_syntax::equation,
-        &["$$x+y\nnext", "$$\\alpha\nnext", "$$x$$\nnext", "plain"],
+        &["$$x+y\nnext", "$$\\alpha\nnext", "$$x$$\nnext"],
+        &["plain"],
     );
 }
 

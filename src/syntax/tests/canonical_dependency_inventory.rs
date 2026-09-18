@@ -77,22 +77,16 @@ fn read_dependency_rows() -> BTreeMap<String, DependencyRow> {
 }
 
 fn canonical_inventory_names() -> BTreeSet<String> {
-    let source =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .expect("read productions.tsv");
+    let source = fs::read_to_string(repository_root().join("docs/design/grammar-audit/ports.tsv"))
+        .expect("read ports.tsv");
     let mut lines = source.lines();
-    let header = fields(lines.next().expect("productions.tsv header"));
+    let header = fields(lines.next().expect("ports.tsv header"));
     let name = header
         .iter()
         .position(|field| *field == "grammar-name")
         .unwrap();
-    let specification = header
-        .iter()
-        .position(|field| *field == "spec-location")
-        .unwrap();
     let names = lines
         .map(fields)
-        .filter(|row| row[specification].starts_with("docs/design/specification.mec::"))
         .map(|row| row[name].to_owned())
         .collect::<BTreeSet<_>>();
     assert_eq!(names.len(), EXPECTED_RULES);

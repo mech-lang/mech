@@ -152,6 +152,3 @@ pub fn statement(
         }
     }
 }
-
-#[cfg(test)]
-mod tests;

@@ -389,26 +389,68 @@ fn stable_value_string(value: &ValueData, schema: &SchemaBody) -> String {
 mod tests {
     use super::*;
     use crate::CompilerPlanningConfig;
-    use mech_syntax::parser;
 
-    fn program_with_constraint(source: &str) -> CompilerPlanningProgram {
-        let mut program = CompilerPlanningProgram::with_function_catalog(
+    fn program() -> CompilerPlanningProgram {
+        CompilerPlanningProgram::with_function_catalog(
             CompilerPlanningConfig::default(),
             crate::test_support::catalog::function_catalog(),
-        );
-        program.plan_source_for_test(source).unwrap();
+        )
+    }
+
+    fn constraint(
+        name: &str,
+        expression: &str,
+        result: ValueCell,
+        lhs: Option<ValueCell>,
+        operator: Option<FormulaOperator>,
+        rhs: Option<ValueCell>,
+    ) -> IntegrityConstraint {
+        IntegrityConstraint {
+            id: hash_str(name),
+            name: name.to_owned(),
+            expression: expression.to_owned(),
+            result,
+            lhs,
+            operator,
+            rhs,
+            tokens: Vec::new(),
+        }
+    }
+
+    fn insert(interpreter: &Interpreter, constraint: IntegrityConstraint) {
+        interpreter
+            .state
+            .borrow_mut()
+            .integrity_constraints
+            .insert(constraint.id, constraint);
+    }
+
+    fn program_with_constraint(constraint: IntegrityConstraint) -> CompilerPlanningProgram {
+        let program = program();
+        insert(&program.interpreter, constraint);
         program
+    }
+
+    fn bool_constraint(name: &str, value: bool) -> IntegrityConstraint {
+        constraint(
+            name,
+            if value { "true" } else { "false" },
+            ValueCell::from_exact(value).unwrap(),
+            None,
+            None,
+            None,
+        )
     }
 
     #[test]
     fn scalar_constraint_results_are_classified_without_mutation() {
-        let passing = program_with_constraint("safe! := true");
+        let passing = program_with_constraint(bool_constraint("safe!", true));
         let report = passing.integrity_constraint_report().unwrap();
         assert_eq!(report.checked, 1);
         assert!(report.violations.is_empty());
         assert!(report.evaluations[0].passed);
 
-        let false_result = program_with_constraint("safe! := false");
+        let false_result = program_with_constraint(bool_constraint("safe!", false));
         let error = false_result.validate_integrity_constraints().unwrap_err();
         let failures = error.kind_as::<IntegrityConstraintViolationSet>().unwrap();
         assert_eq!(failures.checked, 1);
@@ -418,7 +460,14 @@ mod tests {
             IntegrityConstraintFailureReason::EvaluatedFalse,
         );
 
-        let non_bool = program_with_constraint("safe! := 42.0");
+        let non_bool = program_with_constraint(constraint(
+            "safe!",
+            "42.0",
+            ValueCell::from_exact(42.0_f64).unwrap(),
+            None,
+            None,
+            None,
+        ));
         let failure = non_bool
             .integrity_constraint_report()
             .unwrap()
@@ -437,12 +486,12 @@ mod tests {
 
     #[test]
     fn reports_derive_complete_violation_sets_without_reordering_evaluations() {
-        let passing = program_with_constraint("first! := true")
+        let passing = program_with_constraint(bool_constraint("first!", true))
             .integrity_constraint_report()
             .unwrap()
             .evaluations
             .remove(0);
-        let failing = program_with_constraint("second! := false")
+        let failing = program_with_constraint(bool_constraint("second!", false))
             .integrity_constraint_report()
             .unwrap()
             .evaluations
@@ -464,7 +513,20 @@ mod tests {
 
     #[test]
     fn violations_are_aggregated_in_stable_constraint_order() {
-        let program = program_with_constraint("later! := false\nearlier! := 7.0\npassing! := true");
+        let program = program();
+        insert(&program.interpreter, bool_constraint("later!", false));
+        insert(
+            &program.interpreter,
+            constraint(
+                "earlier!",
+                "7.0",
+                ValueCell::from_exact(7.0_f64).unwrap(),
+                None,
+                None,
+                None,
+            ),
+        );
+        insert(&program.interpreter, bool_constraint("passing!", true));
         let report = program.integrity_constraint_report().unwrap();
         assert_eq!(report.checked, 3);
         assert_eq!(report.violations.len(), 2);
@@ -484,26 +546,22 @@ mod tests {
 
     #[test]
     fn hierarchy_validation_is_complete_and_keyed_by_interpreter() {
-        let program = program_with_constraint("shared! := false");
+        let program = program_with_constraint(bool_constraint("shared!", false));
         let root_id = program.interpreter.id;
         let child_id = root_id.wrapping_add(101);
         let grandchild_id = root_id.wrapping_add(202);
-        let mut child = Interpreter::with_function_catalog(
+        let child = Interpreter::with_function_catalog(
             child_id,
             10_000,
             crate::test_support::catalog::function_catalog(),
         );
-        child
-            .interpret(&parser::parse("shared! := false").unwrap())
-            .unwrap();
-        let mut grandchild = Interpreter::with_function_catalog(
+        insert(&child, bool_constraint("shared!", false));
+        let grandchild = Interpreter::with_function_catalog(
             grandchild_id,
             10_000,
             crate::test_support::catalog::function_catalog(),
         );
-        grandchild
-            .interpret(&parser::parse("nested! := false").unwrap())
-            .unwrap();
+        insert(&grandchild, bool_constraint("nested!", false));
         child
             .sub_interpreters
             .borrow_mut()
@@ -561,7 +619,7 @@ mod tests {
 
     #[test]
     fn result_borrow_conflict_is_an_aggregated_constraint_failure() {
-        let program = program_with_constraint("safe! := true");
+        let program = program_with_constraint(bool_constraint("safe!", true));
         let result = Ref::new(true);
         program
             .interpreter
@@ -586,8 +644,14 @@ mod tests {
 
     #[test]
     fn operand_borrow_conflict_preserves_evaluated_false_reason() {
-        let program =
-            program_with_constraint("target := 2.0\nmaximum := 1.0\nsafe! := target <= maximum");
+        let program = program_with_constraint(constraint(
+            "safe!",
+            "target <= maximum",
+            ValueCell::from_exact(false).unwrap(),
+            Some(ValueCell::from_exact(2.0_f64).unwrap()),
+            Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)),
+            Some(ValueCell::from_exact(1.0_f64).unwrap()),
+        ));
         let lhs = Ref::new(2.0_f64);
         program
             .interpreter
@@ -611,8 +675,14 @@ mod tests {
 
     #[test]
     fn reporting_is_repeatable_and_does_not_change_program_state() {
-        let program =
-            program_with_constraint("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum");
+        let program = program_with_constraint(constraint(
+            "safe!",
+            "target <= maximum",
+            ValueCell::from_exact(true).unwrap(),
+            Some(ValueCell::from_exact(1.0_f64).unwrap()),
+            Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual)),
+            Some(ValueCell::from_exact(2.0_f64).unwrap()),
+        ));
         let plan_handle = program.interpreter.plan().0.id();
         let pending_before = program.interpreter.has_pending_reactive_registers();
         let state_len = program

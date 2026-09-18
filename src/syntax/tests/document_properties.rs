@@ -69,7 +69,7 @@ fn assert_snapshot_invariants(
         if let Some(rule) = diagnostic.rule {
             assert!(
                 mech_syntax::document::parser::canonical_rule_name(rule).is_some(),
-                "parser diagnostic used a RuleId outside the Phase 0 inventory"
+                "parser diagnostic used a RuleId outside the canonical rule registry"
             );
         }
         if let Some(mech_syntax::document::RecoveryAction::Abandon { rule, .. }) =
@@ -77,7 +77,7 @@ fn assert_snapshot_invariants(
         {
             assert!(
                 mech_syntax::document::parser::canonical_rule_name(*rule).is_some(),
-                "abandon recovery used a RuleId outside the Phase 0 inventory"
+                "abandon recovery used a RuleId outside the canonical rule registry"
             );
         }
         let range = diagnostic

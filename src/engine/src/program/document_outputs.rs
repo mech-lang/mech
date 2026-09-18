@@ -309,29 +309,3 @@ fn push_unique(output_ids: &mut Vec<u64>, output_id: u64) {
         output_ids.push(output_id);
     }
 }
-
-#[cfg(all(test, feature = "source"))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn effect_only_context_sends_are_not_program_values() {
-        let tree = mech_syntax::parse("@view/replace <- scene").unwrap();
-        let code = tree
-            .body
-            .sections
-            .iter()
-            .flat_map(|section| section.elements.iter())
-            .find_map(|element| match element {
-                SectionElement::MechCode(code) => code.first().map(|(code, _)| code),
-                _ => None,
-            })
-            .expect("the context send must parse as Mech code");
-
-        assert!(matches!(
-            code,
-            MechCode::Statement(Statement::ContextSend(_))
-        ));
-        assert!(!code_is_program_value(code));
-    }
-}
