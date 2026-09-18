@@ -11,8 +11,53 @@ pub(super) enum PendingCollectionValue {
     Local(u32),
 }
 
-pub(super) type PendingComprehension =
-    ComprehensionDeclaration<OperationContractDeclaration, SchemaDraft, PendingCollectionValue>;
+pub(super) struct PendingComprehension {
+    pub(super) id: crate::ControlBlockId,
+    pub(super) kind: crate::ComprehensionKind,
+    pub(super) steps: Box<[PendingComprehensionStep]>,
+    pub(super) yield_value: PendingCollectionValue,
+}
+
+pub(super) enum PendingComprehensionStep {
+    Generator {
+        source: PendingCollectionValue,
+        pattern: CollectionPattern<SchemaDraft, PendingCollectionValue>,
+    },
+    Operation(PendingComprehensionOperation),
+    Filter(PendingCollectionValue),
+}
+
+pub(super) struct PendingComprehensionOperation {
+    pub(super) local: u32,
+    pub(super) body: PendingControlOperationBody,
+    pub(super) inputs: Box<[PendingCollectionValue]>,
+    pub(super) schema: SchemaDraft,
+}
+
+impl PendingComprehension {
+    pub(super) fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for step in &self.steps {
+            match step {
+                PendingComprehensionStep::Generator { pattern, .. } => {
+                    pattern.bindings(&mut |_, schema| visit(schema));
+                }
+                PendingComprehensionStep::Filter(_) => {}
+                PendingComprehensionStep::Operation(operation) => {
+                    visit(&operation.schema);
+                    match &operation.body {
+                        PendingControlOperationBody::Operation { .. } => {}
+                        PendingControlOperationBody::Match(nested) => {
+                            nested.visit_schemas(visit);
+                        }
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            nested.visit_schemas(visit);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 pub(super) type SourcePattern = CollectionPattern<PendingValue, PendingValue>;
 
 enum Qualifier {
@@ -98,11 +143,33 @@ impl SemanticBuilder {
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
     ) -> Result<PendingValue, SourceSemanticError> {
+        if self.control_depth >= crate::MAX_CONTROL_DEPTH {
+            return Err(SourceSemanticError {
+                code: "source-semantics/control-depth-limit",
+                message: "executable control exceeds the nesting limit".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        if self.control_depth == 0 {
+            self.next_control_block = 0;
+        }
+        let id = self.next_control_block;
+        self.next_control_block = id
+            .checked_add(1)
+            .filter(|id| *id as usize <= crate::MAX_CONTROL_BLOCKS)
+            .ok_or_else(|| unsupported(syntax, "control block identity space was exhausted"))?;
         let saved = self.bindings.clone();
         let saved_definitions = core::mem::take(&mut self.scope_definitions);
         let start = self.nodes.len();
         self.control_depth += 1;
-        let compiled = self.collection_body(syntax, result, qualifiers, operation, start);
+        let compiled = self.collection_body(
+            syntax,
+            result,
+            qualifiers,
+            operation,
+            crate::ControlBlockId(id),
+            start,
+        );
         self.control_depth -= 1;
         self.bindings = saved;
         self.scope_definitions = saved_definitions;
@@ -115,6 +182,7 @@ impl SemanticBuilder {
         result: Option<ExpressionSyntax>,
         qualifiers: Vec<mech_syntax::document::ComprehensionQualifierSyntax>,
         operation: &'static str,
+        id: crate::ControlBlockId,
         start: usize,
     ) -> Result<PendingValue, SourceSemanticError> {
         let mut events = Vec::new();
@@ -187,19 +255,20 @@ impl SemanticBuilder {
         let result = self.required(result, syntax, "a collection yield")?;
         let result = self.expression(&result)?.0;
         let element = self.schema_draft_of(result)?;
-        // A dynamically shaped element needs its own nested shape witness;
-        // it cannot borrow the result collection's cardinality parameter.
-        if !element.dimension_parameters.is_empty() {
-            return Err(unsupported(
-                syntax,
-                "collection elements require a closed shape",
-            ));
-        }
         let kind = if operation == "set/comprehension" {
             crate::ComprehensionKind::Set
         } else {
             crate::ComprehensionKind::Matrix
         };
+        // Set identity remains restricted to keyable closed elements. Matrix
+        // comprehensions own a distinct prefix of parameters for their yielded
+        // element and append their cardinality after that prefix.
+        if kind == crate::ComprehensionKind::Set && !element.dimension_parameters.is_empty() {
+            return Err(unsupported(
+                syntax,
+                "collection elements require a closed shape",
+            ));
+        }
         let output = if is_dynamic_schema_draft(&element) {
             element
         } else if kind == crate::ComprehensionKind::Set {
@@ -214,18 +283,27 @@ impl SemanticBuilder {
                 },
             }
         } else {
-            let extent = DimensionParameterId::new(0);
+            let mut parameters = Vec::new();
+            let element = embed_schema_draft(
+                &element,
+                &mut parameters,
+                SourceSemanticAnchor::for_node(syntax),
+            )?;
+            let extent =
+                DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
+                    unsupported(syntax, "collection dimension identity space was exhausted")
+                })?);
+            parameters.push(DimensionParameterDeclaration {
+                id: extent,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            });
             SchemaDraft {
-                dimension_parameters: vec![DimensionParameterDeclaration {
-                    id: extent,
-                    origin: DimensionParameterOrigin::Inferred,
-                    lifetime: DimensionLifetime::Turn,
-                    lower_bound: DimensionExpr::Constant(0),
-                    upper_bound: None,
-                }]
-                .into_boxed_slice(),
+                dimension_parameters: parameters.into_boxed_slice(),
                 body: SchemaBody::Matrix {
-                    element: Box::new(element.body),
+                    element: Box::new(element),
                     dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
                         .into_boxed_slice(),
                 },
@@ -258,7 +336,7 @@ impl SemanticBuilder {
         let mut converted_events = Vec::new();
         for (position, event) in events {
             let event = match event {
-                Qualifier::Filter(value) => ComprehensionStep::Filter(capture(value)?),
+                Qualifier::Filter(value) => PendingComprehensionStep::Filter(capture(value)?),
                 Qualifier::Generator { source, pattern } => {
                     // Resolve inferred binder schemas only after the entire
                     // lexical body has contributed its ordinary type constraints.
@@ -281,7 +359,7 @@ impl SemanticBuilder {
                                 .unwrap()]
                         },
                     );
-                    ComprehensionStep::Generator {
+                    PendingComprehensionStep::Generator {
                         source: capture(source)?,
                         pattern,
                     }
@@ -309,17 +387,49 @@ impl SemanticBuilder {
                 } if node.state.is_none()
                     && contract.interaction == mech_core::ExternalInteraction::Pure =>
                 {
-                    steps.push(ComprehensionStep::Operation(ComprehensionOperation {
-                        local: offset as u32,
-                        operation,
-                        contract,
-                        schema: node.schema,
-                        inputs: node
-                            .inputs
-                            .into_iter()
-                            .map(&mut capture)
-                            .collect::<Result<Box<[_]>, _>>()?,
-                    }));
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: offset as u32,
+                            body: PendingControlOperationBody::Operation {
+                                operation,
+                                contract,
+                            },
+                            schema: node.schema,
+                            inputs: node
+                                .inputs
+                                .into_iter()
+                                .map(&mut capture)
+                                .collect::<Result<Box<[_]>, _>>()?,
+                        },
+                    ));
+                }
+                PendingNodeBody::Match(control) if node.state.is_none() => {
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: offset as u32,
+                            body: PendingControlOperationBody::Match(control),
+                            schema: node.schema,
+                            inputs: node
+                                .inputs
+                                .into_iter()
+                                .map(&mut capture)
+                                .collect::<Result<Box<[_]>, _>>()?,
+                        },
+                    ));
+                }
+                PendingNodeBody::Comprehension(control) if node.state.is_none() => {
+                    steps.push(PendingComprehensionStep::Operation(
+                        PendingComprehensionOperation {
+                            local: offset as u32,
+                            body: PendingControlOperationBody::Comprehension(control),
+                            schema: node.schema,
+                            inputs: node
+                                .inputs
+                                .into_iter()
+                                .map(&mut capture)
+                                .collect::<Result<Box<[_]>, _>>()?,
+                        },
+                    ));
                 }
                 _ => {
                     return Err(unsupported(
@@ -332,7 +442,8 @@ impl SemanticBuilder {
         steps.extend(events.map(|(_, event)| event));
         let node = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
-            body: PendingNodeBody::Comprehension(ComprehensionDeclaration {
+            body: PendingNodeBody::Comprehension(PendingComprehension {
+                id,
                 kind,
                 steps: steps.into_boxed_slice(),
                 yield_value,
@@ -671,21 +782,43 @@ pub(super) fn resolve_comprehension(
         PendingCollectionValue::Local(local) => ComprehensionValue::Local(local),
     };
     ComprehensionDeclaration {
+        id: control.id,
         kind: control.kind,
         steps: control
             .steps
             .iter()
             .map(|step| match step {
-                ComprehensionStep::Generator { source, pattern } => ComprehensionStep::Generator {
-                    source: value(source),
-                    pattern: pattern.map(&schema, &value),
-                },
-                ComprehensionStep::Filter(filter) => ComprehensionStep::Filter(value(filter)),
-                ComprehensionStep::Operation(operation) => {
+                PendingComprehensionStep::Generator { source, pattern } => {
+                    ComprehensionStep::Generator {
+                        source: value(source),
+                        pattern: pattern.map(&schema, &value),
+                    }
+                }
+                PendingComprehensionStep::Filter(filter) => {
+                    ComprehensionStep::Filter(value(filter))
+                }
+                PendingComprehensionStep::Operation(operation) => {
                     ComprehensionStep::Operation(ComprehensionOperation {
                         local: operation.local,
-                        operation: operation.operation.clone(),
-                        contract: operation.contract.clone(),
+                        body: match &operation.body {
+                            PendingControlOperationBody::Operation {
+                                operation,
+                                contract,
+                            } => crate::ControlOperationBody::Operation {
+                                operation: operation.clone(),
+                                contract: contract.clone(),
+                            },
+                            PendingControlOperationBody::Match(nested) => {
+                                crate::ControlOperationBody::Match(resolve_pending_match(
+                                    nested, schemas, constants,
+                                ))
+                            }
+                            PendingControlOperationBody::Comprehension(nested) => {
+                                crate::ControlOperationBody::Comprehension(resolve_comprehension(
+                                    nested, schemas, constants,
+                                ))
+                            }
+                        },
                         inputs: operation.inputs.iter().map(value).collect(),
                         schema: schema(&operation.schema),
                     })
@@ -923,7 +1056,12 @@ mod tests {
                             _ => None,
                         })
                         .unwrap();
-                    operation.contract = mech_core::OperationContractId::new(u32::MAX);
+                    let crate::ControlOperationBody::Operation { contract, .. } =
+                        &mut operation.body
+                    else {
+                        panic!("fixture ordinary operation")
+                    };
+                    *contract = mech_core::OperationContractId::new(u32::MAX);
                 }
                 9 => {
                     // A comprehension constructs one row even when its generator

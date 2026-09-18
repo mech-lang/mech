@@ -323,7 +323,7 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
         let mut sections = sections.clone();
         let text = String::from_utf8(sections.nodes.clone()).unwrap();
         let text = if key == "revision" {
-            text.replace("\"revision\":7", "\"revision\":6")
+            text.replace("\"revision\":8", "\"revision\":7")
         } else {
             text.replace("\"Literal\":", "\"Unknown\":")
         };
@@ -1815,6 +1815,65 @@ fn nested_control_depth_is_bounded_before_artifact_mapping_and_wire_allocation()
     assert!(
         matches!(error, ArtifactBytecodeError::Json(_)),
         "preflight must reject before typed construction: {error:?}"
+    );
+}
+
+#[test]
+fn nested_comprehension_depth_is_bounded_before_contract_mapping() {
+    let program = compile("[item | item <- [1]]");
+    let mut graph = program.program().clone();
+    let schema = graph.outputs[0].schema;
+    let SourceNodeBody::Comprehension(root) = &mut graph.nodes[0].body else {
+        panic!()
+    };
+    let mut nested = root.clone();
+    for depth in 1..=MAX_CONTROL_DEPTH {
+        nested = ComprehensionDeclaration {
+            id: ControlBlockId(depth as u32),
+            kind: ComprehensionKind::Matrix,
+            steps: vec![ComprehensionStep::Operation(ComprehensionOperation {
+                local: 0,
+                body: ControlOperationBody::Comprehension(nested),
+                inputs: Box::new([]),
+                schema,
+            })]
+            .into_boxed_slice(),
+            yield_value: ComprehensionValue::Local(0),
+        };
+    }
+    *root = nested;
+    assert!(matches!(
+        compile_source_program_with_control_contracts(
+            &graph,
+            &mut ArtifactBuildContext::new(program.schemas(), program.constants()),
+            &[None]
+        ),
+        Err(ArtifactBuildError::InvalidControl {
+            reason: "control graph nesting limit",
+            ..
+        })
+    ));
+
+    let mut source = "1".to_owned();
+    for _ in 0..MAX_CONTROL_DEPTH {
+        source = format!("[{source} | item <- [1]]");
+    }
+    compile(&source);
+    source = format!("[{source} | item <- [1]]");
+    let parsed = parse_canonical_phase_2i_rule_for_test(
+        TextSnapshot::new(DocumentId(823), Revision(1), source.as_str()).unwrap(),
+        rules::EXPRESSION,
+        ParseConfig::default(),
+    )
+    .unwrap();
+    assert!(parsed.is_strictly_clean());
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_expression(&find(parsed.syntax()).unwrap())
+            .err()
+            .unwrap()
+            .code,
+        "source-semantics/control-depth-limit"
     );
 }
 

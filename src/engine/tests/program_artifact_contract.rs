@@ -3139,7 +3139,7 @@ fn committed_source_bytecode_fixtures_pass_current_artifact_validation() {
 }
 
 #[test]
-fn committed_structural_match_fixture_freezes_revision_7_control_tags() {
+fn committed_structural_match_fixture_freezes_revision_8_control_tags() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/architecture/bytecode-v1/structural-match.mecb");
     let artifact = decode_program_artifact_bytecode_v1(&std::fs::read(path).unwrap()).unwrap();

@@ -90,20 +90,7 @@ impl CanonicalArtifactWriter {
         self.u64(block.operations.len() as u64);
         for operation in &block.operations {
             self.u32(operation.node);
-            match &operation.body {
-                super::ControlOperationBody::Operation {
-                    operation,
-                    contract,
-                } => {
-                    self.u8(0);
-                    self.operation(operation);
-                    self.u32(contract.get());
-                }
-                super::ControlOperationBody::Match(control) => {
-                    self.u8(1);
-                    self.match_declaration(control);
-                }
-            }
+            self.control_operation_body(&operation.body);
             self.u32(operation.schema.get());
             self.u64(operation.inputs.len() as u64);
             for input in &operation.inputs {
@@ -111,6 +98,27 @@ impl CanonicalArtifactWriter {
             }
         }
         self.control_value(block.yield_value);
+    }
+
+    fn control_operation_body(&mut self, body: &super::ControlOperationBody) {
+        match body {
+            super::ControlOperationBody::Operation {
+                operation,
+                contract,
+            } => {
+                self.u8(0);
+                self.operation(operation);
+                self.u32(contract.get());
+            }
+            super::ControlOperationBody::Match(control) => {
+                self.u8(1);
+                self.match_declaration(control);
+            }
+            super::ControlOperationBody::Comprehension(control) => {
+                self.u8(2);
+                self.comprehension(control);
+            }
+        }
     }
 
     fn match_declaration(&mut self, control: &super::MatchDeclaration) {
@@ -260,6 +268,7 @@ impl CanonicalArtifactWriter {
     }
 
     fn comprehension(&mut self, control: &super::ComprehensionDeclaration) {
+        self.u32(control.id.0);
         self.u8(match control.kind {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
@@ -279,8 +288,7 @@ impl CanonicalArtifactWriter {
                 super::ComprehensionStep::Operation(operation) => {
                     self.u8(2);
                     self.u32(operation.local);
-                    self.operation(&operation.operation);
-                    self.u32(operation.contract.get());
+                    self.control_operation_body(&operation.body);
                     self.u32(operation.schema.get());
                     self.u64(operation.inputs.len() as u64);
                     for value in &operation.inputs {

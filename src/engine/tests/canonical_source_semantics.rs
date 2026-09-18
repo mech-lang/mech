@@ -508,11 +508,11 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             });
         }
     }
-    let mut revision_six = sections.clone();
-    revision_six.nodes = graph
-        .replacen("\"revision\":7", "\"revision\":6", 1)
+    let mut revision_seven = sections.clone();
+    revision_seven.nodes = graph
+        .replacen("\"revision\":8", "\"revision\":7", 1)
         .into_bytes();
-    assert!(mech_engine::decode_program_artifact_sections(&revision_six).is_err());
+    assert!(mech_engine::decode_program_artifact_sections(&revision_seven).is_err());
     // Artifact admission must enforce the complete canonical forbidden-emoji
     // terminal set in all three identifier roles, including a forbidden
     // grapheme after a valid prefix.
@@ -794,7 +794,15 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         mech_engine::ComprehensionValue::Local(0),
         "immutable alias preserves the generator binding"
     );
-    assert!(control.steps.iter().any(|step| matches!(step, mech_engine::ComprehensionStep::Operation(operation) if operation.operation.canonical_name() == "compare/gt")));
+    assert!(control.steps.iter().any(|step| matches!(
+        step,
+        mech_engine::ComprehensionStep::Operation(operation)
+            if matches!(
+                &operation.body,
+                mech_engine::ControlOperationBody::Operation { operation, .. }
+                    if operation.canonical_name() == "compare/gt"
+            )
+    )));
     qualified.compile_artifact().unwrap();
 
     let destructured = CanonicalSourceFrontend
@@ -823,7 +831,11 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
         .iter()
         .find_map(|step| match step {
             mech_engine::ComprehensionStep::Operation(operation)
-                if operation.operation.canonical_name() == "math/add" =>
+                if matches!(
+                    &operation.body,
+                    mech_engine::ControlOperationBody::Operation { operation, .. }
+                        if operation.canonical_name() == "math/add"
+                ) =>
             {
                 Some(operation)
             }

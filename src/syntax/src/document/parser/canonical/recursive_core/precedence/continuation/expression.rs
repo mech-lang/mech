@@ -7,6 +7,9 @@ pub(super) enum Phase {
     Body,
     Fsm,
     Delimited(Marker, FormulaSeed),
+    DelimitedOperator(Marker, FormulaSeed, ParserCheckpoint, usize),
+    DelimitedMatchSpace(Marker, FormulaSeed, ParserCheckpoint),
+    DelimitedMatchQuestion(Marker, FormulaSeed, ParserCheckpoint),
     Formula(Marker),
     Seeded(Marker),
     RangeOperator(Marker, bool),
@@ -94,8 +97,11 @@ impl Continuation {
                     FactAttempt::Matched(
                         ExpressionForm::SetComprehension | ExpressionForm::MatrixComprehension,
                     ) => {
-                        seed.abandon(parser);
-                        range.abandon(parser);
+                        let checkpoint = parser.checkpoint();
+                        self.expression(Phase::DelimitedOperator(range, seed, checkpoint, 0));
+                        self.push(Frame::LeafOperator(Box::new(operators::Continuation::new(
+                            rules::TRANSPOSE,
+                        ))));
                         return None;
                     }
                     FactAttempt::Recovered(
@@ -127,6 +133,41 @@ impl Continuation {
                 self.push(Frame::LeafOperator(Box::new(operators::Continuation::new(
                     rules::TRANSPOSE,
                 ))));
+            }
+            Phase::DelimitedOperator(range, seed, checkpoint, probe) => {
+                if self.result.accepted() {
+                    parser.rewind(checkpoint);
+                    self.expression(Phase::Seeded(range));
+                    self.push(Frame::SeedTranspose(seed, false));
+                } else if probe < LEVELS.len() {
+                    parser.rewind(checkpoint);
+                    self.expression(Phase::DelimitedOperator(range, seed, checkpoint, probe + 1));
+                    self.push(Frame::Operator(probe, 0));
+                } else {
+                    parser.rewind(checkpoint);
+                    self.expression(Phase::DelimitedMatchSpace(range, seed, checkpoint));
+                    self.base(rules::WHITESPACE0);
+                }
+            }
+            Phase::DelimitedMatchSpace(range, seed, checkpoint) => {
+                if self.result.accepted() {
+                    self.expression(Phase::DelimitedMatchQuestion(range, seed, checkpoint));
+                    self.base(rules::QUESTION);
+                } else {
+                    parser.rewind(checkpoint);
+                    seed.abandon(parser);
+                    range.abandon(parser);
+                }
+            }
+            Phase::DelimitedMatchQuestion(range, seed, checkpoint) => {
+                parser.rewind(checkpoint);
+                if self.result.accepted() {
+                    self.expression(Phase::Seeded(range));
+                    self.push(Frame::SeedTranspose(seed, false));
+                } else {
+                    seed.abandon(parser);
+                    range.abandon(parser);
+                }
             }
             Phase::Formula(range) | Phase::Seeded(range) => match self.result {
                 Attempt::NoMatch => {

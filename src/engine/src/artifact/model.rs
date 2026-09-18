@@ -8,7 +8,7 @@ use mech_core::{
     AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
     ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
     InputId, IntegrityConstraintId, MechError, NodeId, OperationContractDeclaration,
-    OperationContractError, OperationContractId, OperationContractTable,
+    OperationContractError, OperationContractHandle, OperationContractId, OperationContractTable,
     OperationContractTableBuilder, OutputId, PortDirection, ProgramRevision, ResolvedInputPort,
     ResolvedOperationContract, ResolvedOutputPort, ResolvedRangeMode, ResolvedReductionMode,
     ResolvedSelectionMode, SchemaId, SchemaTable, SemanticModelError, ShapeInstance,
@@ -16,6 +16,127 @@ use mech_core::{
 };
 
 use super::CompilerIrError;
+
+fn append_match_contract_handles(
+    control: &super::MatchDeclaration<OperationContractDeclaration>,
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    let invalid = || ArtifactBuildError::InvalidControl {
+        node,
+        reason: "invalid compiler block reference",
+    };
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        for operation in &block.operations {
+            let inputs = operation
+                .inputs
+                .iter()
+                .map(|value| {
+                    match *value {
+                        super::ControlValue::Constant(id) => {
+                            constants.get(id).map(|value| value.schema())
+                        }
+                        super::ControlValue::Parameter {
+                            block: owner,
+                            ordinal,
+                        } if owner == block.id => block
+                            .parameters
+                            .get(ordinal as usize)
+                            .map(|parameter| parameter.schema),
+                        super::ControlValue::Local {
+                            block: owner,
+                            node: local,
+                        } if owner == block.id && local < operation.node => block
+                            .operations
+                            .get(local as usize)
+                            .map(|operation| operation.schema),
+                        _ => None,
+                    }
+                    .ok_or_else(invalid)
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            match &operation.body {
+                super::ControlOperationBody::Operation { contract, .. } => {
+                    handles.push(builder.insert(resolve_declared_contract(
+                        contract,
+                        inputs,
+                        vec![operation.schema],
+                    )?)?);
+                }
+                super::ControlOperationBody::Match(nested) => {
+                    append_match_contract_handles(nested, constants, builder, node, handles)?;
+                }
+                super::ControlOperationBody::Comprehension(nested) => {
+                    append_comprehension_contract_handles(
+                        nested, &inputs, constants, builder, node, handles,
+                    )?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn append_comprehension_contract_handles(
+    control: &super::ComprehensionDeclaration<OperationContractDeclaration>,
+    inputs: &[SchemaId],
+    constants: &ConstantStore,
+    builder: &mut OperationContractTableBuilder,
+    node: NodeId,
+    handles: &mut Vec<OperationContractHandle>,
+) -> Result<(), ArtifactBuildError> {
+    let invalid = |reason| ArtifactBuildError::InvalidControl { node, reason };
+    let mut locals = Vec::new();
+    for step in &control.steps {
+        match step {
+            super::ComprehensionStep::Generator { pattern, .. } => {
+                super::comprehension::pattern_counts(pattern)
+                    .ok_or_else(|| invalid("collection pattern admission limit"))?;
+                super::comprehension::pattern_locals(pattern, &mut locals)
+                    .ok_or_else(|| invalid("invalid collection local identity"))?;
+            }
+            super::ComprehensionStep::Filter(_) => {}
+            super::ComprehensionStep::Operation(operation) => {
+                if operation.local as usize != locals.len() {
+                    return Err(invalid("invalid collection local identity"));
+                }
+                let schemas = operation
+                    .inputs
+                    .iter()
+                    .map(|value| {
+                        super::comprehension::value_schema(*value, constants, inputs, &locals)
+                            .ok_or_else(|| invalid("invalid collection operand"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                match &operation.body {
+                    super::ControlOperationBody::Operation { contract, .. } => {
+                        handles.push(builder.insert(resolve_declared_contract(
+                            contract,
+                            schemas,
+                            vec![operation.schema],
+                        )?)?);
+                    }
+                    super::ControlOperationBody::Match(nested) => {
+                        append_match_contract_handles(nested, constants, builder, node, handles)?;
+                    }
+                    super::ControlOperationBody::Comprehension(nested) => {
+                        append_comprehension_contract_handles(
+                            nested, &schemas, constants, builder, node, handles,
+                        )?;
+                    }
+                }
+                locals.push(operation.schema);
+            }
+        }
+    }
+    Ok(())
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputeRegionDeclaration {
@@ -532,44 +653,17 @@ impl ProgramArtifactDraft {
                         reason: "control has no ordinary root contract",
                     });
                 }
-                let handles = control.map_contracts(|block, operation, declaration| {
-                    let inputs = operation
-                        .inputs
-                        .iter()
-                        .map(|value| {
-                            match *value {
-                                super::ControlValue::Constant(id) => {
-                                    self.constants.get(id).map(|value| value.schema())
-                                }
-                                super::ControlValue::Parameter {
-                                    block: owner,
-                                    ordinal,
-                                } if owner == block.id => block
-                                    .parameters
-                                    .get(ordinal as usize)
-                                    .map(|parameter| parameter.schema),
-                                super::ControlValue::Local {
-                                    block: owner,
-                                    node: local,
-                                } if owner == block.id && local < operation.node => block
-                                    .operations
-                                    .get(local as usize)
-                                    .map(|operation| operation.schema),
-                                _ => None,
-                            }
-                            .ok_or(
-                                ArtifactBuildError::InvalidControl {
-                                    node: node.node,
-                                    reason: "invalid compiler block reference",
-                                },
-                            )
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-                    Ok::<_, ArtifactBuildError>(builder.insert(resolve_declared_contract(
-                        declaration,
-                        inputs,
-                        vec![operation.schema],
-                    )?)?)
+                let mut handles = Vec::new();
+                append_match_contract_handles(
+                    control,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
+                let mut handles = handles.into_iter();
+                let handles = control.map_contracts(|_, _, _| {
+                    Ok::<_, ArtifactBuildError>(handles.next().expect("control contract count"))
                 })?;
                 control_handles.insert(node.node, handles);
                 node_handles.push(None);
@@ -592,47 +686,19 @@ impl ProgramArtifactDraft {
                         _ => Err(invalid("invalid collection input binding")),
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-                let mut locals = Vec::new();
                 let mut handles = Vec::new();
-                for step in &control.steps {
-                    match step {
-                        super::ComprehensionStep::Generator { pattern, .. } => {
-                            super::comprehension::pattern_counts(pattern)
-                                .ok_or_else(|| invalid("collection pattern admission limit"))?;
-                            super::comprehension::pattern_locals(pattern, &mut locals)
-                                .ok_or_else(|| invalid("invalid collection local identity"))?;
-                        }
-                        super::ComprehensionStep::Operation(operation) => {
-                            if operation.local as usize != locals.len() {
-                                return Err(invalid("invalid collection local identity"));
-                            }
-                            let schemas = operation
-                                .inputs
-                                .iter()
-                                .map(|value| {
-                                    super::comprehension::value_schema(
-                                        *value,
-                                        &self.constants,
-                                        &inputs,
-                                        &locals,
-                                    )
-                                    .ok_or_else(|| invalid("invalid collection operand"))
-                                })
-                                .collect::<Result<Vec<_>, _>>()?;
-                            handles.push(builder.insert(resolve_declared_contract(
-                                &operation.contract,
-                                schemas,
-                                vec![operation.schema],
-                            )?)?);
-                            locals.push(operation.schema);
-                        }
-                        super::ComprehensionStep::Filter(_) => {}
-                    }
-                }
+                append_comprehension_contract_handles(
+                    control,
+                    &inputs,
+                    &self.constants,
+                    &mut builder,
+                    node.node,
+                    &mut handles,
+                )?;
                 let mut handles = handles.into_iter();
                 comprehension_handles.insert(
                     node.node,
-                    control.map_contracts(|_| {
+                    control.map_contracts(|_, _| {
                         Ok::<_, ArtifactBuildError>(
                             handles.next().expect("collection contract count"),
                         )
@@ -737,8 +803,8 @@ impl ProgramArtifactDraft {
                     *control = comprehension_handles
                         .remove(&node.node)
                         .expect("compiler collection handles")
-                        .map_contracts(|operation| {
-                            Ok::<_, ArtifactBuildError>(build.resolve(operation.contract)?)
+                        .map_contracts(|_, contract| {
+                            Ok::<_, ArtifactBuildError>(build.resolve(*contract)?)
                         })?;
                 }
                 (ExecutableNodeBody::Fsm(_), None) => {}

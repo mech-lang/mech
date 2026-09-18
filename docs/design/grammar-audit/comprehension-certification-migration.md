@@ -24,8 +24,9 @@ primitive Bool/Index/F64 bindings and yields. Live matrix/set inputs, repeated
 bindings, generator/filter/join behavior, normalization, work admission, and failed
 publication recovery have execution regressions. Compound match results and nested
 match bodies/guards now use the same ordinary construction and memory providers.
-Comprehension composite bindings/yields, computed pattern blocks, composition with
-nested comprehensions, and the FSM resident continuation owner remain unfinished.
+Comprehension composite bindings/yields, computed pattern blocks, and the FSM
+resident continuation owner remain unfinished. Nested matches and comprehensions
+now compose through one recursive control body with owned element-shape witnesses.
 FSM pipes now retain machine identity, named and positional argument bindings,
 ordered stage kinds, and recursively typed stage values in the artifact itself.
 Source-map strings are not an FSM execution input. The `~>` commit, resume,
@@ -59,6 +60,16 @@ The committed 20-fixture bytecode-v1 corpus was also regenerated and checked acr
 five fresh producer processes. Seventeen compiler-produced, graph-bearing fixtures
 changed at identical byte lengths; the three constructed scalar, matrix, and
 composite fixtures remain unchanged.
+
+## Composed-control graph revision
+
+Graph payload revision 8 gives comprehension declarations canonical block IDs and
+uses the same recursive operation body in match blocks and comprehension steps.
+Nested control contract references retain canonical preorder, and mixed match and
+comprehension depth and population share the artifact admission limits. Matrix
+comprehensions embed the yielded element's dimension parameters before their own
+cardinality parameter and reject inconsistent element shapes before publication.
+Revision 7 remains rejected without a compatibility reader.
 
 ## Complete syntax evidence
 

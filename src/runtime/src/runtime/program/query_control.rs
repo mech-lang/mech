@@ -24,52 +24,7 @@ pub(super) fn node_bodies_semantically_equal(
             comparison.match_declaration(left, right)
         }
         (ExecutableNodeBody::Comprehension(left), ExecutableNodeBody::Comprehension(right)) => {
-            left.kind == right.kind
-                && comparison.collection_value(left.yield_value, right.yield_value)
-                && left.steps.len() == right.steps.len()
-                && left.steps.iter().zip(&right.steps).all(|(left, right)| {
-                    use mech_engine::ComprehensionStep;
-                    match (left, right) {
-                        (
-                            ComprehensionStep::Generator {
-                                source: left,
-                                pattern: left_pattern,
-                            },
-                            ComprehensionStep::Generator {
-                                source: right,
-                                pattern: right_pattern,
-                            },
-                        ) => {
-                            comparison.collection_value(*left, *right)
-                                && comparison.collection_pattern(
-                                    left_pattern,
-                                    right_pattern,
-                                    |comparison, left, right| {
-                                        comparison.collection_value(*left, *right)
-                                    },
-                                )
-                        }
-                        (ComprehensionStep::Filter(left), ComprehensionStep::Filter(right)) => {
-                            comparison.collection_value(*left, *right)
-                        }
-                        (
-                            ComprehensionStep::Operation(left),
-                            ComprehensionStep::Operation(right),
-                        ) => {
-                            left.local == right.local
-                                && left.operation == right.operation
-                                && comparison.schema(left.schema, right.schema)
-                                && comparison.contract(left.contract, right.contract)
-                                && left.inputs.len() == right.inputs.len()
-                                && left
-                                    .inputs
-                                    .iter()
-                                    .zip(&right.inputs)
-                                    .all(|(left, right)| comparison.collection_value(*left, *right))
-                        }
-                        _ => false,
-                    }
-                })
+            comparison.comprehension_declaration(left, right)
         }
         (ExecutableNodeBody::Fsm(left), ExecutableNodeBody::Fsm(right)) => left == right,
         _ => false,
@@ -280,6 +235,56 @@ impl Comparison<'_> {
             })
     }
 
+    fn comprehension_declaration(
+        &self,
+        left: &mech_engine::ComprehensionDeclaration,
+        right: &mech_engine::ComprehensionDeclaration,
+    ) -> bool {
+        left.id == right.id
+            && left.kind == right.kind
+            && self.collection_value(left.yield_value, right.yield_value)
+            && left.steps.len() == right.steps.len()
+            && left.steps.iter().zip(&right.steps).all(|(left, right)| {
+                use mech_engine::ComprehensionStep;
+                match (left, right) {
+                    (
+                        ComprehensionStep::Generator {
+                            source: left,
+                            pattern: left_pattern,
+                        },
+                        ComprehensionStep::Generator {
+                            source: right,
+                            pattern: right_pattern,
+                        },
+                    ) => {
+                        self.collection_value(*left, *right)
+                            && self.collection_pattern(
+                                left_pattern,
+                                right_pattern,
+                                |comparison, left, right| {
+                                    comparison.collection_value(*left, *right)
+                                },
+                            )
+                    }
+                    (ComprehensionStep::Filter(left), ComprehensionStep::Filter(right)) => {
+                        self.collection_value(*left, *right)
+                    }
+                    (ComprehensionStep::Operation(left), ComprehensionStep::Operation(right)) => {
+                        left.local == right.local
+                            && self.local_body(&left.body, &right.body)
+                            && self.schema(left.schema, right.schema)
+                            && left.inputs.len() == right.inputs.len()
+                            && left
+                                .inputs
+                                .iter()
+                                .zip(&right.inputs)
+                                .all(|(left, right)| self.collection_value(*left, *right))
+                    }
+                    _ => false,
+                }
+            })
+    }
+
     fn local_body(
         &self,
         left: &mech_engine::ControlOperationBody,
@@ -300,6 +305,10 @@ impl Comparison<'_> {
             (ControlOperationBody::Match(left), ControlOperationBody::Match(right)) => {
                 self.match_declaration(left, right)
             }
+            (
+                ControlOperationBody::Comprehension(left),
+                ControlOperationBody::Comprehension(right),
+            ) => self.comprehension_declaration(left, right),
             _ => false,
         }
     }

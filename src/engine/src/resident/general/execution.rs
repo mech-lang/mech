@@ -1576,28 +1576,57 @@ impl ReactiveInstance {
         Ok(())
     }
 
-    fn execute_step(
+    pub(super) fn execute_step(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        self.execute_step_with_live_demand(node_index, before_epoch, working_epoch, probe, 0, 0)
+    }
+
+    pub(super) fn execute_step_with_live_demand(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Comprehension(_)
         ) {
-            return self.execute_comprehension(node_index, before_epoch, working_epoch, probe);
+            if live_bytes == 0 && live_nodes == 0 {
+                return self.execute_comprehension(node_index, before_epoch, working_epoch, probe);
+            }
+            return self.execute_comprehension_with_live_demand(
+                node_index,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Match(_)
         ) {
-            let node = self.plan.steps[node_index.get() as usize].artifact_node();
+            let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            let node = matched.artifact_node;
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = live_bytes;
+            facts.additional_demand.retained_nodes = live_nodes;
             let turn_plan = crate::memory_planner::plan_current_resident_turn(
                 &self.plan.memory_plan,
-                node,
-                &crate::memory_planner::TurnMemoryFacts::default(),
+                matched.budget_node,
+                &facts,
             )
             .map_err(|_| ResidentExecutionError::Kernel {
                 node,
@@ -1611,7 +1640,14 @@ impl ReactiveInstance {
             }
             return budget::with_resident_turn_plan(turn_plan, || {
                 let result = budget::with_control_work_budget(|| {
-                    self.execute_match_expression(node_index, before_epoch, working_epoch, probe)
+                    self.execute_match_expression(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        live_bytes,
+                        live_nodes,
+                    )
                 });
                 let ActivatedTurnStep::Match(control) = &self.plan.steps[node_index.get() as usize]
                 else {
@@ -1632,7 +1668,14 @@ impl ReactiveInstance {
             self.stage_external(node_index, working_epoch)?;
             return Ok(false);
         }
-        self.execute_kernel(node_index, before_epoch, working_epoch, probe)
+        self.execute_kernel_with_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
     }
 
     fn execute_match_expression(
@@ -1641,6 +1684,8 @@ impl ReactiveInstance {
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
@@ -1823,7 +1868,14 @@ impl ReactiveInstance {
             }
             if let Some(guard) = guard {
                 for step in guard.steps.iter().copied() {
-                    self.execute_step(step, before_epoch, working_epoch, probe)?;
+                    self.execute_step_with_live_demand(
+                        step,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        live_bytes,
+                        live_nodes,
+                    )?;
                 }
                 let guard_matches = match self.read_location(guard.yield_value, working_epoch) {
                     Some(ResidentValueRef::Bool([1])) => true,
@@ -1843,7 +1895,14 @@ impl ReactiveInstance {
             for step in body.steps.iter().copied() {
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
-                self.execute_step(step, before_epoch, working_epoch, probe)?;
+                self.execute_step_with_live_demand(
+                    step,
+                    before_epoch,
+                    working_epoch,
+                    probe,
+                    live_bytes,
+                    live_nodes,
+                )?;
             }
             let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
                 && body.yield_value.region().kind != ResidentValueKind::Snapshot;
@@ -3915,6 +3974,7 @@ fn hash_string(value: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::resident::general::comprehension::ActivatedCollectionStep;
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
@@ -4016,6 +4076,164 @@ mod tests {
                 mech_core::RESIDENT_MAX_BYTES,
                 1,
                 |_| Ok(()),
+            ),
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_parameterized_operation_locals_use_turn_shaped_snapshot_storage() {
+        let instance =
+            source_instance("[[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        assert!(instance.plan.steps.iter().any(|step| {
+            matches!(
+                step,
+                ActivatedTurnStep::Kernel(kernel)
+                    if kernel.write.region.kind == ResidentValueKind::Snapshot
+            )
+        }));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_steps_retain_unconsumed_managed_local_demand() {
+        let instance = source_instance(
+            "[number + 1 | [head | rest] <- signal<[[f64]:1,3]:1,2>, number <- [1]]",
+        );
+        let retained = instance.plan.steps.iter().find_map(|step| {
+            let ActivatedTurnStep::Comprehension(control) = step else {
+                return None;
+            };
+            control.steps.iter().find_map(|step| {
+                let ActivatedCollectionStep::Operation {
+                    retained_locals, ..
+                } = step
+                else {
+                    return None;
+                };
+                Some(retained_locals)
+            })
+        });
+        let retained = retained.expect("ordinary operation inside the comprehension");
+        assert!(
+            retained
+                .iter()
+                .any(|local| local.kind == ResidentValueKind::Snapshot),
+            "the unconsumed rest binding remains live across the arithmetic step"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_match_plan_counts_live_enclosing_arena() {
+        let mut instance =
+            source_instance("[(item ? | 1 => 10 | * => 20) | item <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the comprehension contains one nested match operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_step_with_live_demand(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            mech_core::RESIDENT_MAX_BYTES + 1,
+            0,
+        );
+        assert!(
+            matches!(
+                result,
+                Err(ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ),
+            "{result:?}"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_selected_match_steps_count_live_enclosing_arena() {
+        let mut instance = source_instance("true ? | true => signal<f64> + 1 | false => signal");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("match operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_match_expression(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            mech_core::RESIDENT_MAX_BYTES,
+            0,
+        );
+        assert!(matches!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_plan_counts_live_enclosing_arena() {
+        let mut instance =
+            source_instance("[[z | z <- [1 2], z <= item] | item <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Comprehension(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the outer comprehension contains one nested comprehension");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        assert!(matches!(
+            instance.execute_step_with_live_demand(
+                operation,
+                before,
+                working,
+                &mut ResidentStructuralProbe::default(),
+                mech_core::RESIDENT_MAX_BYTES,
+                1,
             ),
             Err(ResidentExecutionError::Kernel {
                 error: ResidentKernelError::InvalidShape,
@@ -4150,6 +4368,8 @@ mod tests {
                 before,
                 working,
                 &mut ResidentStructuralProbe::default(),
+                0,
+                0,
             )
             .unwrap();
 
