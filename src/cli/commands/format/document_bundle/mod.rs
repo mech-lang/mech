@@ -34,6 +34,7 @@ struct PendingSourceRequest {
 #[derive(Debug)]
 pub(super) struct ResolvedDocumentBundle {
     pub encoded_bundle: String,
+    pub root_specifier: String,
     pub root_source: String,
 }
 
@@ -156,13 +157,14 @@ pub(super) fn resolve_document_source_bundle(root: &Path) -> MResult<ResolvedDoc
         .ok_or_else(|| format_error("document source bundle root was not resolved"))?;
     let encoded = serde_json::to_vec(&DocumentSourceBundle {
         version: 2,
-        root_specifier,
+        root_specifier: root_specifier.clone(),
         sources: sources.into_values().collect(),
         resolutions,
     })
     .map_err(|error| format_error(format!("failed to encode document source bundle: {error}")))?;
     Ok(ResolvedDocumentBundle {
         encoded_bundle: base64::engine::general_purpose::STANDARD.encode(encoded),
+        root_specifier,
         root_source,
     })
 }

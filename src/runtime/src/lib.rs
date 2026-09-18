@@ -3,6 +3,8 @@
 #[cfg(feature = "no_std")]
 extern crate alloc;
 
+#[cfg(feature = "serde")]
+mod browser_document;
 pub mod config;
 pub mod effect;
 mod extension;
@@ -77,6 +79,8 @@ mod turn_record;
 #[cfg(all(feature = "watcher", feature = "source"))]
 mod workspace;
 
+#[cfg(feature = "serde")]
+pub use self::browser_document::*;
 pub use self::config::*;
 pub use self::effect::*;
 pub use self::extension::{RuntimeExtensionPanicked, RuntimeStoreCommitIndeterminate};

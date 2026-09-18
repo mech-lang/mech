@@ -134,9 +134,11 @@ fn document_controller_slots(
     source_url_key: &str,
     wasm_module_url: &str,
     document_sources: &str,
+    encoded_document: &str,
 ) -> MResult<HtmlShimExtraSlots> {
     let mut slots = HtmlShimExtraSlots::default();
     slots.insert("SOURCE_URL_KEY", source_url_key);
+    slots.insert("CODE", encoded_document);
     if !shim.contains("{{DOCUMENT_SCRIPT}}") {
         return Ok(slots);
     }
@@ -904,6 +906,17 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         .as_ref()
                         .map(|bundle| bundle.root_source.as_str())
                         .unwrap_or(source);
+                    let root_specifier = resolved_document
+                        .as_ref()
+                        .map(|bundle| bundle.root_specifier.as_str())
+                        .unwrap_or("document.mec");
+                    let tree = parser::parse(authoritative_source.trim())?;
+                    let encoded_document = mech_runtime::BrowserDocumentPayload::new(
+                        root_specifier,
+                        authoritative_source,
+                    )?
+                    .with_presentation_output_ids(mech_engine::root_document_output_ids(&tree))
+                    .encode()?;
                     let wasm_module_url = runtime_assets
                         .as_ref()
                         .map(|(js, _)| relative_asset_url(&output_file, js))
@@ -915,8 +928,8 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         "",
                         &wasm_module_url,
                         &document_sources,
+                        &encoded_document,
                     )?;
-                    let tree = parser::parse(authoritative_source.trim())?;
                     let mut formatter = Formatter::new();
                     let render = formatter.format_html_with_style_sheets_and_slots(
                         &tree,
