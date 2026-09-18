@@ -290,6 +290,9 @@ impl CanonicalSourceProgram {
                 crate::SourceNodeBody::Match(declaration) => {
                     relocation.match_declaration(declaration)
                 }
+                crate::SourceNodeBody::Activation(declaration) => {
+                    relocation.match_declaration(declaration)
+                }
                 crate::SourceNodeBody::Comprehension(declaration) => {
                     relocation.comprehension(declaration)
                 }
@@ -410,6 +413,7 @@ impl BindingRelocation<'_> {
                 self.constant(id)
             }
             crate::CollectionPattern::Equal(crate::MatchPatternValue::Binding(_)) => {}
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Input(_)) => {}
             crate::CollectionPattern::Enum { payload, .. } => {
                 if let Some(payload) = payload {
                     self.match_structural_pattern(payload);

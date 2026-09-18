@@ -86,6 +86,7 @@ pub enum SourceNodeBody {
         requirement: Option<ApplicationRequirementId>,
     },
     Match(super::MatchDeclaration<OperationContractDeclaration>),
+    Activation(super::MatchDeclaration<OperationContractDeclaration>),
     Comprehension(super::ComprehensionDeclaration<OperationContractDeclaration>),
     Fsm(super::FsmDeclaration),
 }
@@ -102,6 +103,7 @@ impl SourceNode {
         match &self.body {
             SourceNodeBody::Operation { operation, .. } => Some(operation),
             SourceNodeBody::Match(_)
+            | SourceNodeBody::Activation(_)
             | SourceNodeBody::Comprehension(_)
             | SourceNodeBody::Fsm(_) => None,
         }
@@ -465,7 +467,6 @@ fn compile_source_program_with_metadata(
                     requirement: *requirement,
                 }),
                 SourceNodeBody::Comprehension(control) => {
-                    control.validate_depth(node)?;
                     crate::ExecutableNodeBody::Comprehension(control.map_contracts(|_, _| {
                         Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
                     })?)
@@ -473,6 +474,12 @@ fn compile_source_program_with_metadata(
                 SourceNodeBody::Match(control) => {
                     control.validate_depth(node)?;
                     crate::ExecutableNodeBody::Match(control.map_contracts(|_, _, _| {
+                        Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
+                    })?)
+                }
+                SourceNodeBody::Activation(control) => {
+                    control.validate_depth(node)?;
+                    crate::ExecutableNodeBody::Activation(control.map_contracts(|_, _, _| {
                         Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
                     })?)
                 }
