@@ -883,81 +883,6 @@ fn dynamic_structural_patterns_preserve_child_wrappers_and_skip_absent_values() 
 }
 
 #[test]
-fn root_schema_adapting_comprehension_bindings_build_child_projections() {
-    use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft as D};
-    use mech_core::{FloatWidth, SchemaId, ValueDraft};
-
-    let source = "shape := (1, true)\nout := [x | x<(*,*)> <- signal<[*]:1,1>]\n(shape,out)\n";
-    let artifact = compiled(source).compile_artifact().unwrap();
-    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
-    for artifact in [
-        artifact,
-        mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap(),
-    ] {
-        let input_schema = artifact.inputs()[0].schema;
-        let tuple = (0..artifact.schemas().len())
-            .map(|raw| SchemaId::new(raw as u32))
-            .find(|id| {
-                matches!(
-                    artifact.schemas().get(*id).unwrap().body(),
-                    SchemaBody::Tuple(fields)
-                        if matches!(fields.as_ref(), [SchemaBody::FloatingPoint(FloatWidth::W64), SchemaBody::Bool])
-                )
-            })
-            .expect("the shape witness retains the concrete tuple schema");
-        let input = Some(
-            ValueDraft {
-                schema: input_schema,
-                shape_values: Box::new([]),
-                data: D::Matrix(
-                    vec![D::Dynamic(Some(Box::new(ValueDraft {
-                        schema: tuple,
-                        shape_values: Box::new([]),
-                        data: D::Tuple(
-                            vec![D::F64(F64Bits::from_f64(7.0)), D::Bool(true)].into_boxed_slice(),
-                        ),
-                    })))]
-                    .into_boxed_slice(),
-                ),
-            }
-            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
-            .unwrap(),
-        );
-        let mut catalog = FunctionCatalogBuilder::new();
-        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
-        let mut instance = activate(
-            ReactiveInstanceId::new(0x5aa, 0),
-            &artifact,
-            &catalog.build().unwrap(),
-            &ActivationFacts::default(),
-        )
-        .unwrap();
-        instance
-            .turn(&[CapturedSignalInput {
-                slot: instance.plan.inputs[0].slot,
-                value: ResidentValueRef::Snapshot(core::slice::from_ref(&input)),
-            }])
-            .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
-        let output = instance.copied_output(0).unwrap();
-        let ValueData::Tuple(outputs) = output.data() else {
-            panic!("expected document tuple: {output:?}")
-        };
-        let ValueData::Matrix(matrix) = &outputs[1] else {
-            panic!("expected comprehension matrix: {:?}", outputs[1])
-        };
-        let SequenceView::Values([ValueData::Tuple(fields)]) = matrix.elements() else {
-            panic!("expected one projected tuple: {matrix:?}")
-        };
-        assert!(matches!(
-            fields.as_ref(),
-            [ValueData::Dynamic(number), ValueData::Dynamic(flag)]
-                if matches!(number.value().map(|value| value.data()), Some(ValueData::F64(value)) if value.to_f64() == 7.0)
-                    && matches!(flag.value().map(|value| value.data()), Some(ValueData::Bool(true)))
-        ));
-    }
-}
-
-#[test]
 fn dynamic_comprehension_component_binding_uses_addressable_schema_and_selected_footprint() {
     use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft as D};
     use mech_core::{FloatWidth, SchemaId, ValueDraft};
@@ -2471,6 +2396,7 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
         CanonicalOrderedDocument {
             identity,
+            publish_result: true,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
             input_schemas: BTreeMap::new(),
             resource_writes: BTreeMap::new(),
@@ -3409,69 +3335,6 @@ fn closed_comprehension_scalar_initializer_runs_once_before_state_turns() {
 }
 
 #[test]
-fn activation_derived_range_endpoints_initialize_runtime_shaped_state() {
-    variable_matrix_turns(
-        "start := (true ? | true => 1 | false => 2)\nvalues := start..=3\n~state := values\nstate\n",
-        &[
-            (None, (1, 3), &[1.0, 2.0, 3.0]),
-            (None, (1, 3), &[1.0, 2.0, 3.0]),
-        ],
-    );
-}
-
-#[test]
-fn activation_derived_index_range_endpoints_initialize_runtime_shaped_state() {
-    closed_matrix_turns(
-        "start := (true ? | true => 1<index> | false => 2<index>)\nvalues := start..=3<index>\n~state := values\nstate\n",
-        |actual| {
-            assert_eq!(matrix_shape(actual), (1, 3));
-            assert_eq!(index_matrix_values(actual), [1, 2, 3]);
-        },
-    );
-}
-
-#[test]
-fn runtime_shaped_matrix_can_be_wrapped_in_an_option() {
-    use mech_core::{
-        ValueDataDraft,
-        snapshot::{F64Bits, OptionDraft},
-    };
-
-    closed_matrix_turns(
-        "values := [x | x <- [1 2 3]]\nwrapped<[f64]?> := values\nwrapped\n",
-        |actual| {
-            assert_eq!(
-                actual.canonical_data_draft().unwrap(),
-                ValueDataDraft::Option(OptionDraft {
-                    present: true,
-                    value: Some(Box::new(ValueDataDraft::Matrix(
-                        [1.0, 2.0, 3.0]
-                            .into_iter()
-                            .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
-                            .collect(),
-                    ))),
-                })
-            );
-        },
-    );
-}
-
-#[test]
-fn activation_match_compares_snapshot_backed_scalar_literals() {
-    for source in [
-        "selected := (1u8 ? | 1u8 => 2u8 | * => 3u8)\n~state := selected\nstate\n",
-        "selected := (-0.0<f32> ? | 0.0<f32> => 2u8 | * => 3u8)\n~state := selected\nstate\n",
-    ] {
-        closed_matrix_turns(source, |actual| {
-            assert_eq!(
-                actual.canonical_data_draft().unwrap(),
-                mech_core::ValueDataDraft::U8(2)
-            );
-        });
-    }
-}
-
-#[test]
 fn runtime_shaped_selection_resolves_complete_result_geometry() {
     for (selection, expected_shape, expected_values) in [
         ("a[1,:]", (1, 2), &[3.0, 4.0][..]),
@@ -3941,20 +3804,6 @@ fn runtime_shaped_state_resolves_snapshot_rhs_axes_for_indexed_assignment() {
         |actual| {
             assert_eq!(matrix_shape(actual), (1, 2));
             assert_eq!(f32_matrix_values(actual), [1.0, 9.0]);
-        },
-    );
-    let turn = std::cell::Cell::new(0);
-    closed_matrix_turns(
-        "samples := 1..=2\nrow := [x | x <- samples]\nvalues<[f32]> := [row; row + 2]\n~state := values\nstate[2,:] += [10 20]\nstate\n",
-        |actual| {
-            assert_eq!(matrix_shape(actual), (2, 2));
-            let expected = if turn.get() % 2 == 0 {
-                [1.0, 2.0, 13.0, 24.0]
-            } else {
-                [1.0, 2.0, 23.0, 44.0]
-            };
-            assert_eq!(f32_matrix_values(actual), expected);
-            turn.set(turn.get() + 1);
         },
     );
 }

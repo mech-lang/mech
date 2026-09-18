@@ -190,6 +190,7 @@ fn ordered_roots_do_not_share_callable_imports() {
     use std::collections::BTreeMap;
     let root = |identity, source: &str| CanonicalOrderedDocument {
         identity,
+        publish_result: true,
         document: document(source).document(),
         input_schemas: BTreeMap::new(),
         resource_writes: BTreeMap::new(),
