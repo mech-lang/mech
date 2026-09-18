@@ -668,7 +668,7 @@ fn execute(
         .as_ref()
         .map(|previous| {
             previous
-                .language_eq(&plan.schemas, &next, &plan.schemas)
+                .snapshot_eq(&plan.schemas, &next, &plan.schemas)
                 .map(|equal| !equal)
         })
         .transpose()

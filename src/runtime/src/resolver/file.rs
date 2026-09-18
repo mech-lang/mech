@@ -126,7 +126,7 @@ impl FileSourceResolver {
     #[cfg(feature = "source")]
     pub fn resolve_canonical(&self, request: &SourceRequest) -> MResult<Option<ResolvedSource>> {
         request.validate()?;
-        let Some(path) = self.resolve_path(request)? else {
+        let Some(path) = self.resolve_filesystem_path(request)? else {
             return Ok(None);
         };
         let kind = SourceKind::from_path(&path);
@@ -192,7 +192,13 @@ impl FileSourceResolver {
         Ok(resolved)
     }
 
-    fn resolve_path(&self, request: &SourceRequest) -> MResult<Option<PathBuf>> {
+    /// Resolve a request to its canonical filesystem path without reading it.
+    ///
+    /// This is the shared filesystem-specifier boundary for consumers that
+    /// need the resolver's `fs://`, `file://`, referrer-relative, extension,
+    /// and directory-index rules before deciding how to load the target.
+    pub fn resolve_filesystem_path(&self, request: &SourceRequest) -> MResult<Option<PathBuf>> {
+        request.validate()?;
         match parse_filesystem_source_specifier(&request.specifier)? {
             FilesystemSourceSpecifier::OtherScheme => Ok(None),
             FilesystemSourceSpecifier::Absolute(specifier) => {
@@ -302,7 +308,7 @@ impl SourceResolver for FileSourceResolver {
     fn resolve(&self, request: &SourceRequest) -> MResult<Option<ResolvedSource>> {
         request.validate()?;
 
-        let Some(path) = self.resolve_path(request)? else {
+        let Some(path) = self.resolve_filesystem_path(request)? else {
             return Ok(None);
         };
 
@@ -635,7 +641,9 @@ fn hex_value(byte: u8) -> Option<u8> {
     }
 }
 
-fn path_to_file_uri(path: &Path) -> MResult<String> {
+/// Encode a native filesystem path as the canonical `file://` spelling used
+/// by [`SourceRequest`] and [`FileSourceResolver`].
+pub fn path_to_file_uri(path: &Path) -> MResult<String> {
     #[cfg(windows)]
     {
         return windows_path_to_file_uri(path);

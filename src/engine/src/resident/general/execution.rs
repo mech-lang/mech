@@ -2996,7 +2996,7 @@ fn rmw_outputs_equal(
                         left.schema() == right.schema()
                             && left.shape() == right.shape()
                             && schemas.get(left.schema()).is_some_and(|schema| {
-                                mech_core::snapshot::schema_data_language_eq(
+                                mech_core::snapshot::schema_data_snapshot_eq(
                                     schema.body(),
                                     left.data(),
                                     right.data(),
