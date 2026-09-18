@@ -1,3 +1,4 @@
+mod nested_assignment;
 mod promoted_assignment;
 mod selection_address;
 
@@ -630,6 +631,21 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     compound_selection!("mul", 2);
     compound_selection!("div", 3);
     compound_selection!("pow", 5);
+    macro_rules! nested_selection {
+        ($name:literal, $operation:literal) => {
+            register_canonical_finalize(
+                builder,
+                &["core", "assign", "nested"],
+                $name,
+                nested_assignment::bind::<$operation>,
+            )?;
+        };
+    }
+    nested_selection!("add", 0);
+    nested_selection!("sub", 1);
+    nested_selection!("mul", 2);
+    nested_selection!("div", 3);
+    nested_selection!("pow", 5);
     register_no_additional_scratch(builder, &["range"], "exclusive", bind_range_exclusive)?;
     register_no_additional_scratch(
         builder,
@@ -6206,7 +6222,7 @@ fn hold_state(
                 let equal = match (source, target) {
                     (None, None) => true,
                     (Some(source), Some(target)) => source
-                        .language_eq(schemas, target, schemas)
+                        .snapshot_eq(schemas, target, schemas)
                         .map_err(|_| ResidentKernelError::InvalidInput)?,
                     _ => false,
                 };
@@ -6503,7 +6519,7 @@ fn indexed_assign(
                     let equal = match (current, next.as_ref()) {
                         (None, None) => true,
                         (Some(current), Some(next)) => current
-                            .language_eq(schemas, next, schemas)
+                            .snapshot_eq(schemas, next, schemas)
                             .map_err(|_| ResidentKernelError::InvalidOutput)?,
                         _ => false,
                     };
@@ -6737,7 +6753,7 @@ fn indexed_assign_snapshot(
         Some(canonicalization_work_limit),
     )?;
     let changed = !current
-        .language_eq(schemas, &next, schemas)
+        .snapshot_eq(schemas, &next, schemas)
         .map_err(|_| ResidentKernelError::InvalidOutput)?;
     *target = Some(next);
     Ok(changed)
@@ -7590,7 +7606,7 @@ fn indexed_assign_matrix_selection(
                 Some(snapshot_finalization_work.ok_or(ResidentKernelError::InvalidOutput)?),
             )?;
             let changed = !current
-                .language_eq(schemas, &next, schemas)
+                .snapshot_eq(schemas, &next, schemas)
                 .map_err(|_| ResidentKernelError::InvalidOutput)?;
             *target = Some(next);
             Ok(changed)
@@ -7894,7 +7910,7 @@ fn indexed_assign_snapshot_aggregate(
     let next =
         finalize_snapshot_data_with_work_budget(kernel, data, Some(canonicalization_work_limit))?;
     let changed = !current
-        .language_eq(schemas, &next, schemas)
+        .snapshot_eq(schemas, &next, schemas)
         .map_err(|_| ResidentKernelError::InvalidOutput)?;
     *target = Some(next);
     Ok(changed)
@@ -12165,7 +12181,7 @@ fn write_access_output(
     if let ResidentValueMut::Snapshot([target]) = output {
         let changed = match target.as_ref() {
             Some(current) => !current
-                .language_eq(schemas, &next, schemas)
+                .snapshot_eq(schemas, &next, schemas)
                 .map_err(|_| ResidentKernelError::InvalidOutput)?,
             None => true,
         };
@@ -12501,7 +12517,7 @@ fn snapshot_access(
             .as_ref()
             .map(|previous| {
                 previous
-                    .language_eq(schemas, &next, schemas)
+                    .snapshot_eq(schemas, &next, schemas)
                     .map(|same| !same)
             })
             .transpose()
@@ -13526,7 +13542,7 @@ fn write_snapshot_data_with_work_budget(
     };
     let changed = match target.as_ref() {
         Some(current) => !current
-            .language_eq(schemas, &next, schemas)
+            .snapshot_eq(schemas, &next, schemas)
             .map_err(|_| ResidentKernelError::InvalidOutput)?,
         None => true,
     };

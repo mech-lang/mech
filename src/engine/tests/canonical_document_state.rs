@@ -627,7 +627,7 @@ fn sequential_derived_updates_share_only_the_largest_rmw_backup_region() {
     use mech_core::{AllocationRole, MemoryLifetime, MemoryObjectOwner};
 
     let source = "~tick := 0\ntick += 1\n~small := [0, 0]\nsmall[1] = tick\nsmall[1] = 0\n~large := [0, 0, 0, 0]\nlarge[1] = tick\nlarge[1] = 0\nsmall[1] + large[1]\n";
-    let artifact = compiled(source).compile_artifact().unwrap();
+    let artifact = compiled(&source).compile_artifact().unwrap();
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
     let mut instance = activate(
@@ -1476,7 +1476,7 @@ fn matrix_turns(source: &str, expected: &[Vec<f64>]) {
             &catalog.build().unwrap(),
             &ActivationFacts::default(),
         )
-        .unwrap();
+        .unwrap_or_else(|error| panic!("{source:?}: {error:?}"));
         for expected in expected {
             instance.turn(&[]).unwrap();
             let output = instance.copied_output(0).unwrap();
@@ -1522,6 +1522,12 @@ fn turn_mask_broadcast_uses_live_population_and_preserves_complete_matrices() {
                 "[1;2]",
                 [1.5, 2.5, 3.5, 1.5, 2.5, 3.5],
             ),
+            (
+                "a[mask,:][:,[1 2 3]]",
+                "[1.5 2.5 3.5]",
+                "[1;2]",
+                [1.5, 2.5, 3.5, 1.5, 2.5, 3.5],
+            ),
         ] {
             let source = format!(
                 "~a := [10<{kind}> 20<{kind}> 30<{kind}>;40<{kind}> 50<{kind}> 60<{kind}>]\n~n := -1\nn += 1\nmask := {thresholds} <= n\n{selection} += {rhs}\na\n"
@@ -1547,6 +1553,173 @@ fn turn_mask_broadcast_uses_live_population_and_preserves_complete_matrices() {
                 expected.push(next.clone());
             }
             matrix_turns(&source, &expected);
+        }
+    }
+}
+
+#[test]
+fn logical_selected_updates_route_full_base_rhs_by_destination_position() {
+    for (masks, selection, expected) in [
+        (
+            "rmask := [true;false]",
+            "a[rmask,:]",
+            vec![11.0, 22.0, 33.0, 40.0, 50.0, 60.0],
+        ),
+        (
+            "cmask := [true false true]",
+            "a[:,cmask]",
+            vec![11.0, 20.0, 33.0, 50.0, 50.0, 90.0],
+        ),
+        (
+            "rmask := [true;false]\ncmask := [false true true]",
+            "a[rmask,cmask]",
+            vec![10.0, 22.0, 33.0, 40.0, 50.0, 60.0],
+        ),
+    ] {
+        let source = format!(
+            "~a := [10<i32> 20<i32> 30<i32>;40<i32> 50<i32> 60<i32>]\n{masks}\nrhs := [1.5 2.5 3.5;10.5 20.5 30.5]\n{selection} += rhs\na\n"
+        );
+        matrix_turns(&source, &[expected]);
+    }
+}
+
+#[test]
+fn nested_logical_routing_uses_immediate_view_coordinates() {
+    for (selection, rhs, expected) in [
+        (
+            "a[[2 1],:][[true;false],:]",
+            "[1.5 2.5;10.5 20.5]",
+            vec![10.0, 20.0, 31.0, 42.0],
+        ),
+        (
+            "a[:,[2 1]][:,[true false]]",
+            "[1.5 2.5;10.5 20.5]",
+            vec![10.0, 21.0, 30.0, 50.0],
+        ),
+        (
+            "a[[4 1]][[true;false]]",
+            "[1.5;10.5]",
+            vec![10.0, 20.0, 30.0, 41.0],
+        ),
+    ] {
+        let source = format!(
+            "~a := [10<i32> 20<i32>;30<i32> 40<i32>]\nrhs := {rhs}\n{selection} += rhs\na\n"
+        );
+        matrix_turns(&source, &[expected]);
+    }
+    matrix_turns(
+        "~a := [10<i32> 20<i32>;30<i32> 40<i32>;50<i32> 60<i32>]\n\
+         rhs := [1.5 2.5;10.5 20.5]\n\
+         a[[3 1],:][[true;false],:] += rhs\n\
+         a\n",
+        &[vec![10.0, 20.0, 30.0, 40.0, 51.0, 62.0]],
+    );
+}
+
+#[test]
+fn sparse_nested_update_does_not_materialize_base_sized_addresses() {
+    // Keep the executable witness at the resident target's 65,536-element
+    // output ceiling. The artifact assertions are the scale-independent proof
+    // that no base-sized identity/address helper survives at larger sizes.
+    const SIZE: usize = 256;
+    let row = std::iter::repeat_n("1<f64>", SIZE)
+        .collect::<Vec<_>>()
+        .join(" ");
+    let rows = std::iter::repeat_n("row", SIZE)
+        .collect::<Vec<_>>()
+        .join(";");
+    let source = format!("row := [{row}]\n~a := [{rows}]\na[1,:][1] += 1\na[1,1]\n");
+    let artifact = compiled(&source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let operations = artifact
+            .nodes()
+            .iter()
+            .filter_map(|node| node.as_operation())
+            .map(|operation| {
+                (
+                    operation.operation.module_path.as_ref(),
+                    operation.operation.operation_name.as_str(),
+                )
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            operations
+                .iter()
+                .any(|(path, name)| { *path == ["core", "assign", "nested"] && *name == "add" })
+        );
+        assert!(!operations.iter().any(|(path, name)| {
+            *path == ["core", "assign"]
+                && matches!(*name, "identity-indices" | "broadcast" | "selection-order")
+        }));
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59d, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert!(
+            matches!(instance.copied_output(0).unwrap().data(), ValueData::F64(value) if value.to_f64() == 2.0)
+        );
+    }
+}
+
+#[test]
+fn nested_snapshot_helpers_report_signed_zero_representation_changes() {
+    use mech_core::snapshot::{F32Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_engine::resident::CapturedValueInput;
+
+    let source = "delta := signal<[f32]:1,1>\n~a := [-1<f32> 2<f32>;-1<f32> 2<f32>]\na[[1 2],:][:,1] *= delta\nselected := a[1,1]\nanswer := selected<f64>\n1 / answer\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59e, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for (delta, expected) in [(0.0_f32, f64::NEG_INFINITY), (-0.0, f64::INFINITY)] {
+            let value = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Matrix(
+                    vec![ValueDataDraft::F32(F32Bits::from_f32(delta))].into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let input = CapturedValueInput {
+                slot: instance.plan.inputs[0].slot,
+                value: &value,
+            };
+            instance
+                .prepare_turn_values(&[input])
+                .unwrap()
+                .publish()
+                .unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::F64(actual) = output.data() else {
+                panic!("expected f64 output: {output:?}")
+            };
+            assert_eq!(
+                actual.to_f64().to_bits(),
+                expected.to_bits(),
+                "delta {delta:?}"
+            );
         }
     }
 }
