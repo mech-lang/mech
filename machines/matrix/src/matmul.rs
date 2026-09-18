@@ -6,7 +6,7 @@ macro_rules! checked_mul_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {{
         if $lhs.len() != 1 || $rhs.len() != 1 || $out.len() != 1 {
             return Err(function_shape_contract_violation(
-                "matrix/multiply",
+                "matrix/matmul",
                 "scalar product requires three scalar ports",
             ));
         }

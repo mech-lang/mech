@@ -893,7 +893,7 @@ fn generated_catalog_numeric_families_have_exact_resident_capabilities() -> MRes
         );
         assert!(
             compile_source(&format!("[{one} {two}] ** [{three}; {four}]")).is_err(),
-            "matrix/multiply unexpectedly advertised {kind}",
+            "matrix/matmul unexpectedly advertised {kind}",
         );
     }
     Ok(())
