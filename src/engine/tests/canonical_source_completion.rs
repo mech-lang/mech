@@ -11,7 +11,8 @@ use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
-    AstNode, DocumentId, ParseConfig, Revision, SyntaxNode, TextSnapshot, VariableDefineSyntax,
+    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+    VariableDefineSyntax, parse_canonical_document,
 };
 
 fn definition(source: &str) -> VariableDefineSyntax {
@@ -89,12 +90,115 @@ fn execute<'a>(source: &str, turns: impl IntoIterator<Item = (Vec<ResidentValueR
     }
 }
 
+fn compile_document(source: &str) -> CanonicalSourceProgram {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x556), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap_or_else(|error| panic!("unfinished document lowering on {source:?}: {error}"))
+}
+
+fn execute_document(source: &str, expected: Data) {
+    let compiled = compile_document(source);
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    assert_eq!(
+        mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+        encoded
+    );
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x556, 0),
+        &decoded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for _ in 0..2 {
+        instance.turn(&[]).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected
+        );
+    }
+}
+
 fn f(value: f64) -> Data {
     Data::F64(mech_core::snapshot::F64Bits::from_f64(value))
 }
 
 fn matrix(values: &[f64]) -> Data {
     Data::Matrix(values.iter().copied().map(f).collect())
+}
+
+#[test]
+fn recursive_pattern_functions_use_bounded_call_local_frames() {
+    execute_document(
+        "factorial(n<f64>) => <f64>\n  | 0 => 1\n  | n => n * factorial(n - 1).\nfactorial(5)\n",
+        f(120.0),
+    );
+    execute_document(
+        "fib(n<f64>) => <f64>\n  | 0 => 0\n  | 1 => 1\n  | n => fib(n - 1) + fib(n - 2).\nfib(10)\n",
+        f(55.0),
+    );
+    execute_document(
+        "countdown(n<f64>, answer<f64>) => <f64>\n  | (0, answer) => answer\n  | (n, answer) => countdown(n - 1, answer + 1).\ncountdown(20, 22)\n",
+        f(42.0),
+    );
+    execute_document(
+        "tuple-countdown(state<(f64,f64)>) => <(f64,f64)>\n  | (0, answer) => (0, answer)\n  | (n, answer) => tuple-countdown((n - 1, answer + 1)).\ntuple-countdown((5, 37))\n",
+        Data::Tuple(vec![f(0.0), f(42.0)].into_boxed_slice()),
+    );
+}
+
+#[test]
+fn recursive_frame_limit_rolls_back_and_allows_retry() {
+    let source = "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\ncountdown(signal<f64>)\n";
+    let compiled = compile_document(source);
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x556, 1),
+        &decoded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let slot = instance.plan.inputs[0].slot;
+    assert!(
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[300.0]),
+            }])
+            .is_err()
+    );
+    instance
+        .turn(&[CapturedSignalInput {
+            slot,
+            value: ResidentValueRef::F64(&[5.0]),
+        }])
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        f(0.0)
+    );
 }
 
 #[test]
