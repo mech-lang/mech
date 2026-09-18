@@ -8,25 +8,27 @@ permissions:
   contents: read
 
 jobs:
-  tooling:
+  dependencies:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Prepare pinned compiler and locked dependency cache
+      - name: Fetch all locked fixture dependencies
         shell: bash
         run: |
           set -euo pipefail
-          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+          rustup toolchain install nightly-2026-03-03 --profile minimal
           cargo +nightly-2026-03-03 fetch --locked
-          mkdir -p workbench-export/toolchain workbench-export/cargo
-          cp -a "$HOME/.rustup/toolchains/nightly-2026-03-03-x86_64-unknown-linux-gnu/." workbench-export/toolchain/
+          for name in bytecode-v1-generator bytecode-v1-source-generator bytecode-v1-fixed-generator; do
+            cargo +nightly-2026-03-03 fetch --locked --manifest-path "tests/fixtures/$name/Cargo.toml"
+          done
+          mkdir -p workbench-export/cargo
           cp -a "$HOME/.cargo/registry" workbench-export/cargo/
           if test -d "$HOME/.cargo/git"; then cp -a "$HOME/.cargo/git" workbench-export/cargo/; fi
-          tar --zstd -cf r10-offline-tools.tar.zst -C workbench-export toolchain cargo
+          tar --zstd -cf r10-producer-dependencies.tar.zst -C workbench-export cargo
       - uses: actions/upload-artifact@v4
         with:
-          name: r10-offline-tools
-          path: r10-offline-tools.tar.zst
+          name: r10-producer-dependencies
+          path: r10-producer-dependencies.tar.zst
           retention-days: 1
           compression-level: 0
