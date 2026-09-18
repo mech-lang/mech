@@ -174,6 +174,17 @@ impl CanonicalArtifactWriter {
                 self.u8(1);
                 self.u32(*local);
             }
+            super::CollectionPattern::Enum { ordinal, payload } => {
+                self.u8(5);
+                self.u32(*ordinal);
+                match payload {
+                    None => self.u8(0),
+                    Some(payload) => {
+                        self.u8(1);
+                        self.match_structural_pattern(payload);
+                    }
+                }
+            }
             super::CollectionPattern::Tuple(items) => {
                 self.u8(3);
                 self.u64(items.len() as u64);
@@ -234,6 +245,17 @@ impl CanonicalArtifactWriter {
             super::CollectionPattern::Equal(value) => {
                 self.u8(2);
                 self.comprehension_value(*value);
+            }
+            super::CollectionPattern::Enum { ordinal, payload } => {
+                self.u8(5);
+                self.u32(*ordinal);
+                match payload {
+                    None => self.u8(0),
+                    Some(payload) => {
+                        self.u8(1);
+                        self.collection_pattern(payload);
+                    }
+                }
             }
             super::CollectionPattern::Tuple(items) => {
                 self.u8(3);
