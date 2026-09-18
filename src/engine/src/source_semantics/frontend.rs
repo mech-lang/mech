@@ -2143,6 +2143,7 @@ enum PendingNodeBody {
 }
 
 struct PendingMatch {
+    partial: bool,
     captures: Vec<(u16, SchemaDraft)>,
     arms: Vec<PendingMatchArm>,
 }
@@ -2221,6 +2222,14 @@ struct PendingMatchArm {
     pattern: crate::MatchPattern<usize, SchemaDraft>,
     guard: Option<PendingControlBlock>,
     body: PendingControlBlock,
+}
+
+#[derive(Clone)]
+struct SourceMatchArm {
+    pattern: Option<PatternSyntax>,
+    guard: Option<ExpressionSyntax>,
+    value: ExpressionSyntax,
+    syntax: SyntaxNode,
 }
 
 #[derive(Clone, Copy)]
@@ -8099,6 +8108,27 @@ impl SemanticBuilder {
         arms: &[mech_syntax::document::MatchArmSyntax],
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
+        let arms = arms
+            .iter()
+            .map(|arm| {
+                Ok(SourceMatchArm {
+                    pattern: Some(self.required(arm.pattern(), arm.syntax(), "match pattern")?),
+                    guard: arm.guard(),
+                    value: self.required(arm.value(), arm.syntax(), "match result")?,
+                    syntax: arm.syntax().clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+        self.lower_match_expression(scrutinee, &arms, syntax, false)
+    }
+
+    fn lower_match_expression(
+        &mut self,
+        scrutinee: PendingValue,
+        arms: &[SourceMatchArm],
+        syntax: &SyntaxNode,
+        partial: bool,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
             code: "source-semantics/unsupported-match",
             message: message.to_owned(),
@@ -8109,6 +8139,10 @@ impl SemanticBuilder {
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
         let mut coverage = [false; 2];
+        let mut enum_coverage = match &scrutinee_schema.body {
+            SchemaBody::Enum { variants, .. } => Some(vec![false; variants.len()]),
+            _ => None,
+        };
         let mut result_schema = None;
         if self.control_depth == 0 {
             self.next_control_block = 0;
@@ -8117,96 +8151,108 @@ impl SemanticBuilder {
             let saved = self.bindings.clone();
             let binding_start = self.nodes.len();
             let lowered_arm = (|| -> Result<PendingMatchArm, SourceSemanticError> {
-                let pattern_syntax = self.required(arm.pattern(), arm.syntax(), "match pattern")?;
-                let value = self.required(
-                    pattern_syntax.value(),
-                    pattern_syntax.syntax(),
-                    "pattern value",
-                )?;
                 let mut pattern_bindings = BTreeMap::new();
-                let pattern = match value {
-                    PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
-                    PatternValueSyntax::Expression(expression) => {
-                        if let Some(variable) = standalone_pattern_variable(&expression) {
-                            let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
-                            else {
-                                return Err(error(
-                                    "match binding requires a lexical identifier",
-                                    variable.syntax(),
-                                ));
-                            };
-                            if let Some(annotation) = variable.annotation() {
-                                let mut schema = self.annotation_schema_draft(&annotation)?;
-                                if !schema.dimension_parameters.is_empty() {
-                                    schema = specialize_annotation_dimensions(
-                                        &scrutinee_schema,
-                                        &schema,
-                                        variable.syntax(),
-                                    )?;
-                                }
-                                if schema != scrutinee_schema {
+                let pattern = match arm.pattern.as_ref() {
+                    None => crate::MatchPattern::Wildcard,
+                    Some(pattern_syntax) => match self.required(
+                        pattern_syntax.value(),
+                        pattern_syntax.syntax(),
+                        "pattern value",
+                    )? {
+                        PatternValueSyntax::Wildcard(_) => crate::MatchPattern::Wildcard,
+                        PatternValueSyntax::Expression(expression) => {
+                            if let Some(variable) = standalone_pattern_variable(&expression) {
+                                let Some(VariableStemSyntax::Identifier(identifier)) =
+                                    variable.stem()
+                                else {
                                     return Err(error(
-                                        "match binding requires the scrutinee schema",
+                                        "match binding requires a lexical identifier",
                                         variable.syntax(),
                                     ));
+                                };
+                                if let Some(annotation) = variable.annotation() {
+                                    let mut schema = self.annotation_schema_draft(&annotation)?;
+                                    if !schema.dimension_parameters.is_empty() {
+                                        schema = specialize_annotation_dimensions(
+                                            &scrutinee_schema,
+                                            &schema,
+                                            variable.syntax(),
+                                        )?;
+                                    }
+                                    if schema != scrutinee_schema {
+                                        return Err(error(
+                                            "match binding requires the scrutinee schema",
+                                            variable.syntax(),
+                                        ));
+                                    }
+                                }
+                                self.bindings.insert(
+                                    node_text(identifier.syntax())?,
+                                    PendingBinding::Value(scrutinee),
+                                );
+                                crate::MatchPattern::Bind
+                            } else {
+                                let start = self.nodes.len();
+                                let literal = self.expression(&expression)?.0;
+                                let PendingValue::Constant(index) = literal else {
+                                    return Err(error(
+                                        "match literal patterns must be constant",
+                                        expression.syntax(),
+                                    ));
+                                };
+                                if self.constants[index].schema != scrutinee_schema {
+                                    return Err(error(
+                                        "match literal pattern must have the scrutinee schema",
+                                        expression.syntax(),
+                                    ));
+                                }
+                                if self.nodes.len() != start {
+                                    return Err(error(
+                                        "match literal pattern cannot execute operations",
+                                        expression.syntax(),
+                                    ));
+                                }
+                                match &self.constants[index].data {
+                                    ValueDataDraft::Enum(EnumDraft {
+                                        ordinal,
+                                        payload: None,
+                                    }) => crate::MatchPattern::Structural(
+                                        crate::CollectionPattern::Enum {
+                                            ordinal: *ordinal,
+                                            payload: None,
+                                        },
+                                    ),
+                                    _ => crate::MatchPattern::Literal(index),
                                 }
                             }
-                            self.bindings.insert(
-                                node_text(identifier.syntax())?,
-                                PendingBinding::Value(scrutinee),
-                            );
-                            crate::MatchPattern::Bind
-                        } else {
-                            let start = self.nodes.len();
-                            let literal = self.expression(&expression)?.0;
-                            let PendingValue::Constant(index) = literal else {
+                        }
+                        _ => {
+                            let mut names = BTreeMap::new();
+                            let source = self.collection_pattern(
+                                &pattern_syntax,
+                                &scrutinee_schema,
+                                binding_start,
+                                &mut names,
+                            )?;
+                            if self.nodes[binding_start..].iter().any(|node| {
+                                !matches!(node.body, PendingNodeBody::CollectionBinding)
+                            }) {
                                 return Err(error(
-                                    "match literal patterns must be constant",
-                                    expression.syntax(),
-                                ));
-                            };
-                            if self.constants[index].schema != scrutinee_schema {
-                                return Err(error(
-                                    "match literal pattern must have the scrutinee schema",
-                                    expression.syntax(),
+                                    "computed structural patterns belong to the computed-pattern owner",
+                                    pattern_syntax.syntax(),
                                 ));
                             }
-                            if self.nodes.len() != start {
-                                return Err(error(
-                                    "match literal pattern cannot execute operations",
-                                    expression.syntax(),
-                                ));
-                            }
-                            crate::MatchPattern::Literal(index)
+                            source.bindings(&mut |local, schema| {
+                                let PendingValue::Node(index) = schema else {
+                                    unreachable!("source pattern binding is a lexical node")
+                                };
+                                pattern_bindings.insert(*index, local);
+                            });
+                            crate::MatchPattern::Structural(
+                                self.resolve_structural_match_pattern(&source, binding_start)?,
+                            )
                         }
-                    }
-                    _ => {
-                        let mut names = BTreeMap::new();
-                        let source = self.collection_pattern(
-                            &pattern_syntax,
-                            &scrutinee_schema,
-                            binding_start,
-                            &mut names,
-                        )?;
-                        if self.nodes[binding_start..]
-                            .iter()
-                            .any(|node| !matches!(node.body, PendingNodeBody::CollectionBinding))
-                        {
-                            return Err(error(
-                                "computed structural patterns belong to the computed-pattern owner",
-                                pattern_syntax.syntax(),
-                            ));
-                        }
-                        source.bindings(&mut |local, schema| {
-                            let PendingValue::Node(index) = schema else {
-                                unreachable!("source pattern binding is a lexical node")
-                            };
-                            pattern_bindings.insert(*index, local);
-                        });
-                        crate::MatchPattern::Structural(
-                            self.resolve_structural_match_pattern(&source, binding_start)?,
-                        )
-                    }
+                    },
                 };
                 if matches!(pattern, crate::MatchPattern::Literal(_))
                     && !scrutinee_schema
@@ -8231,7 +8277,7 @@ impl SemanticBuilder {
                         syntax,
                     ));
                 }
-                let guard = if let Some(guard) = arm.guard() {
+                let guard = if let Some(guard) = arm.guard.clone() {
                     let (block, schema) = self.control_block(
                         &guard,
                         &pattern,
@@ -8251,7 +8297,7 @@ impl SemanticBuilder {
                 } else {
                     None
                 };
-                let result = self.required(arm.value(), arm.syntax(), "match result")?;
+                let result = arm.value.clone();
                 let (body, schema) = self.control_block(
                     &result,
                     &pattern,
@@ -8267,7 +8313,7 @@ impl SemanticBuilder {
                     return Err(SourceSemanticError {
                         code: "source-semantics/incompatible-match-result-kind",
                         message: "match arms require one exact result schema".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(arm.syntax()),
+                        anchor: SourceSemanticAnchor::for_node(&arm.syntax),
                     });
                 }
                 result_schema.get_or_insert(schema);
@@ -8288,14 +8334,32 @@ impl SemanticBuilder {
                         }
                     }
                     crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {
-                        coverage = [true; 2]
+                        coverage = [true; 2];
+                        if let Some(variants) = &mut enum_coverage {
+                            variants.fill(true);
+                        }
+                    }
+                    crate::MatchPattern::Structural(crate::CollectionPattern::Enum {
+                        ordinal,
+                        ..
+                    }) => {
+                        if let Some(variants) = &mut enum_coverage
+                            && let Some(covered) = variants.get_mut(*ordinal as usize)
+                        {
+                            *covered = true;
+                        }
                     }
                     crate::MatchPattern::Structural(_) => {}
                 }
             }
             lowered.push(lowered_arm);
         }
-        if coverage != [true; 2] {
+        let exhaustive = enum_coverage
+            .as_ref()
+            .map_or(coverage == [true; 2], |variants| {
+                variants.iter().all(|covered| *covered)
+            });
+        if !partial && !exhaustive {
             return Err(SourceSemanticError {
                 code: "source-semantics/non-exhaustive-match",
                 message: "match needs an unguarded wildcard/binding or both Boolean literal cases"
@@ -8306,6 +8370,7 @@ impl SemanticBuilder {
         let index = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
             body: PendingNodeBody::Match(PendingMatch {
+                partial,
                 captures,
                 arms: lowered,
             }),
@@ -8544,6 +8609,7 @@ fn resolve_pending_match(
     };
     crate::MatchDeclaration {
         scrutinee: 0,
+        partial: control.partial,
         captures: control
             .captures
             .iter()
