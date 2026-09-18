@@ -2377,11 +2377,11 @@ fn bind_snapshot_bool_binary(
         left.kind == ResidentValueKind::Snapshot && left.shape == ResidentShape::SCALAR;
     let right_snapshot =
         right.kind == ResidentValueKind::Snapshot && right.shape == ResidentShape::SCALAR;
-    let dense_bool = |port: &mech_core::ResidentPortLayout| {
-        port.kind == ResidentValueKind::Bool && port.shape.len().is_some()
+    let dense_bool_scalar = |port: &mech_core::ResidentPortLayout| {
+        port.kind == ResidentValueKind::Bool && port.shape.len() == Some(1)
     };
-    if (!left_snapshot && !dense_bool(left))
-        || (!right_snapshot && !dense_bool(right))
+    if (!left_snapshot && !dense_bool_scalar(left))
+        || (!right_snapshot && !dense_bool_scalar(right))
         || (!left_snapshot && !right_snapshot)
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
@@ -2414,10 +2414,6 @@ fn bind_snapshot_bool_binary(
             operation,
             u64::from(left_snapshot),
             u64::from(right_snapshot),
-            u64::from(left.shape.rows),
-            u64::from(left.shape.columns),
-            u64::from(right.shape.rows),
-            u64::from(right.shape.columns),
         ]
         .into_boxed_slice(),
     )?
@@ -4597,6 +4593,9 @@ fn bind_range_inclusive(
     {
         return bound(range_inclusive, Vec::<u64>::new().into_boxed_slice());
     }
+    if let Ok(kernel) = bind_index_range(request, true, false) {
+        return Ok(kernel);
+    }
     bind_snapshot_range(request, true, false)
 }
 
@@ -4613,6 +4612,9 @@ fn bind_range_exclusive(
     .is_ok()
     {
         return bound(range_exclusive, Vec::<u64>::new().into_boxed_slice());
+    }
+    if let Ok(kernel) = bind_index_range(request, false, false) {
+        return Ok(kernel);
     }
     bind_snapshot_range(request, false, false)
 }
@@ -4638,6 +4640,9 @@ fn bind_range_increment_inclusive(
             Vec::<u64>::new().into_boxed_slice(),
         );
     }
+    if let Ok(kernel) = bind_index_range(request, true, true) {
+        return Ok(kernel);
+    }
     bind_snapshot_range(request, true, true)
 }
 
@@ -4662,14 +4667,54 @@ fn bind_range_increment_exclusive(
             Vec::<u64>::new().into_boxed_slice(),
         );
     }
+    if let Ok(kernel) = bind_index_range(request, false, true) {
+        return Ok(kernel);
+    }
     bind_snapshot_range(request, false, true)
+}
+
+fn bind_index_range(
+    request: &ResidentKernelBindRequest<'_>,
+    inclusive: bool,
+    incremented: bool,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let expected_inputs = if incremented { 3 } else { 2 };
+    require_kind(
+        request,
+        &vec![ResidentValueKind::Index; expected_inputs],
+        ResidentValueKind::Index,
+    )?;
+    if request.inputs.iter().any(|input| {
+        input.shape != ResidentShape::SCALAR
+            || request
+                .schemas
+                .get(input.schema_id)
+                .is_none_or(|schema| schema.body() != &SchemaBody::Index)
+    }) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if !matches!(
+        output_schema.body(),
+        SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && element.as_ref() == &SchemaBody::Index
+    ) || request.output.shape.rows != 1
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        range_index,
+        vec![u64::from(inclusive), u64::from(incremented)].into_boxed_slice(),
+    )
 }
 
 fn is_range_snapshot_element(body: &SchemaBody) -> bool {
     matches!(
         body,
-        SchemaBody::Index
-            | SchemaBody::UnsignedInteger(_)
+        SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
     )
@@ -4682,6 +4727,9 @@ fn bind_snapshot_range(
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let expected_inputs = if incremented { 3 } else { 2 };
     if request.inputs.len() != expected_inputs
+        || request.inputs.iter().any(|input| {
+            input.kind != ResidentValueKind::Snapshot || input.shape != ResidentShape::SCALAR
+        })
         || request.output.kind != ResidentValueKind::Snapshot
         || request.output.shape != ResidentShape::SCALAR
     {
@@ -4693,21 +4741,10 @@ fn bind_snapshot_range(
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     if !is_range_snapshot_element(input_schema.body())
         || request.inputs.iter().any(|input| {
-            let same_body = request
+            request
                 .schemas
                 .get(input.schema_id)
-                .is_some_and(|schema| schema.body() == input_schema.body());
-            let supported_layout = input.shape == ResidentShape::SCALAR
-                && match input.kind {
-                    ResidentValueKind::Snapshot => true,
-                    ResidentValueKind::Index => input_schema.body() == &SchemaBody::Index,
-                    ResidentValueKind::F64 => {
-                        input_schema.body()
-                            == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
-                    }
-                    _ => false,
-                };
-            !same_body || !supported_layout
+                .is_none_or(|schema| schema.body() != input_schema.body())
         })
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
@@ -4720,27 +4757,12 @@ fn bind_snapshot_range(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
     let (rows, columns) = declared_matrix_dimensions(request, &request.output)?;
-    if rows != 1 || element.as_ref() != input_schema.body() {
+    if rows != 1 || columns == 0 || element.as_ref() != input_schema.body() {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let declared_count = if request.output.activation_fixed_shape {
-        if columns == 0 {
-            return Err(ResidentKernelBindError::UnsupportedLayout);
-        }
-        columns
-    } else {
-        // Zero is a safe dynamic sentinel because resident ranges reject an
-        // empty result before publication.
-        0
-    };
     Ok(bound(
         range_snapshot,
-        vec![
-            u64::from(inclusive),
-            u64::from(incremented),
-            declared_count as u64,
-        ]
-        .into_boxed_slice(),
+        vec![u64::from(inclusive), u64::from(incremented), columns as u64].into_boxed_slice(),
     )?
     .with_snapshot_output(ResidentSnapshotOutput {
         schema: request.output.schema_id,
@@ -5219,33 +5241,14 @@ fn bind_all_elements_range(
     if source.shape != ResidentShape::SCALAR || request.output.shape != ResidentShape::SCALAR {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    let fixed_geometry = [source, &request.output].into_iter().all(|port| {
-        port.activation_fixed_shape
-            || request
-                .schemas
-                .get(port.schema_id)
-                .is_some_and(|schema| schema.dimension_parameters().is_empty())
-    });
-    let matrix_constructor = fixed_geometry
-        .then(|| {
-            mech_core::snapshot::MatrixSnapshotConstructor::bind(
-                request.output.schema_id,
-                request.output.shape_instance.clone(),
-                (source.schema_id, source.shape_instance.clone()),
-                Arc::new(request.schemas.clone()),
-            )
-            .map(Arc::new)
-        })
-        .transpose()
-        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let plan = SnapshotAccessPlan {
         dense_source: None,
-        matrix_constructor,
+        matrix_constructor: None,
         selectors: Box::new([]),
         matrix_mode: Some(ResolvedSelectionMode::LinearGather),
-        source_dimensions: fixed_geometry.then_some((rows, columns)),
+        source_dimensions: None,
         output_dimensions: Some((count, 1)),
-        output_dimensions_dynamic: !fixed_geometry,
+        output_dimensions_dynamic: true,
         output_geometry: ResolvedAccessGeometry {
             logical_output_rows: count,
             logical_output_columns: 1,
@@ -11305,16 +11308,7 @@ fn snapshot_bool_binary(
 ) -> Result<bool, ResidentKernelError> {
     let left_input = inputs.get(0).ok_or(ResidentKernelError::InvalidInput)?;
     let right_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
-    let [
-        operation,
-        left_snapshot,
-        right_snapshot,
-        bound_left_rows,
-        bound_left_columns,
-        bound_right_rows,
-        bound_right_columns,
-    ] = kernel.parameters()
-    else {
+    let [operation, left_snapshot, right_snapshot] = kernel.parameters() else {
         return Err(ResidentKernelError::InvalidInput);
     };
     let flag = |value| match value {
@@ -11350,19 +11344,11 @@ fn snapshot_bool_binary(
         .transpose()?;
     let left_dimensions = match (left, left_schema) {
         (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
-        (None, None) => (
-            usize::try_from(*bound_left_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
-            usize::try_from(*bound_left_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
-        ),
-        _ => return Err(ResidentKernelError::InvalidInput),
+        _ => (1, 1),
     };
     let right_dimensions = match (right, right_schema) {
         (Some(value), Some(schema)) => snapshot_value_dimensions(value, schema.body())?,
-        (None, None) => (
-            usize::try_from(*bound_right_rows).map_err(|_| ResidentKernelError::InvalidShape)?,
-            usize::try_from(*bound_right_columns).map_err(|_| ResidentKernelError::InvalidShape)?,
-        ),
-        _ => return Err(ResidentKernelError::InvalidInput),
+        _ => (1, 1),
     };
     let (rows, columns) = snapshot_broadcast_dimensions(left_dimensions, right_dimensions)?;
     let logical_output = resident_shape_for_dimensions(rows, columns)?;
@@ -11400,28 +11386,17 @@ fn snapshot_bool_binary(
         output_len,
         0,
     )?;
-    let dense_bool = |value: ResidentValueRef<'_>, (rows, columns): (usize, usize)| match value {
-        ResidentValueRef::Bool(values)
-            if values.iter().all(|value| *value <= 1)
-                && values.len() == rows.checked_mul(columns).unwrap_or(usize::MAX) =>
-        {
-            super::composite::canonical_matrix_elements(
-                values,
-                resident_shape_for_dimensions(rows, columns)?,
-                |value| (*value <= 1).then_some(*value != 0),
-            )
-            .map(|values| values.into_vec())
-            .ok_or(ResidentKernelError::InvalidInput)
-        }
+    let dense_bool = |value| match value {
+        ResidentValueRef::Bool([value]) if *value <= 1 => Ok(vec![*value != 0]),
         _ => Err(ResidentKernelError::InvalidInput),
     };
     let left_values = match left {
         Some(value) => snapshot_bool_elements(value)?,
-        None => dense_bool(left_input, left_dimensions)?,
+        None => dense_bool(left_input)?,
     };
     let right_values = match right {
         Some(value) => snapshot_bool_elements(value)?,
-        None => dense_bool(right_input, right_dimensions)?,
+        None => dense_bool(right_input)?,
     };
     if left_values.len() != left_count || right_values.len() != right_count {
         return Err(ResidentKernelError::InvalidShape);
@@ -13340,6 +13315,63 @@ fn replace_f64_range(output: &mut [f64], start: f64, step: f64) -> bool {
     })
 }
 
+fn range_index(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [inclusive, incremented] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let inclusive = match *inclusive {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let incremented = match *incremented {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let expected_inputs = if incremented { 3 } else { 2 };
+    if inputs.len() != expected_inputs {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let value = |ordinal| match input(inputs, ordinal)? {
+        ResidentValueRef::Index([value]) => Ok(*value),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let start = value(0)?;
+    let step = if incremented { value(1)? } else { 1 };
+    let end = value(expected_inputs - 1)?;
+    if step == 0 || end < start {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let count = integer_snapshot_range_size(u128::from(end - start), u128::from(step), inclusive)
+        .filter(|count| *count != 0)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let ResidentValueMut::Index(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if output.len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    admit_dense_range(output.len())?;
+    let mut current = start;
+    let mut changed = false;
+    let last = output.len().saturating_sub(1);
+    for (ordinal, target) in output.iter_mut().enumerate() {
+        changed |= *target != current;
+        *target = current;
+        if ordinal < last {
+            current = current
+                .checked_add(step)
+                .ok_or(ResidentKernelError::Arithmetic)?;
+        }
+    }
+    Ok(changed)
+}
+
 fn exclusive_range_len(start: f64, step: f64, end: f64) -> Result<usize, ResidentKernelError> {
     if !start.is_finite() || !step.is_finite() || !end.is_finite() || step == 0.0 {
         return Err(ResidentKernelError::InvalidInput);
@@ -13364,6 +13396,7 @@ enum SnapshotRangeNumber {
 
 fn snapshot_range_number(data: &ValueData) -> Option<SnapshotRangeNumber> {
     Some(match data {
+        ValueData::Index(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
         ValueData::U8(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
         ValueData::U16(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
         ValueData::U32(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
@@ -13376,25 +13409,6 @@ fn snapshot_range_number(data: &ValueData) -> Option<SnapshotRangeNumber> {
         ValueData::I128(value) => SnapshotRangeNumber::Signed(*value),
         ValueData::F32(value) => SnapshotRangeNumber::Float(f64::from(value.to_f32())),
         ValueData::F64(value) => SnapshotRangeNumber::Float(value.to_f64()),
-        _ => return None,
-    })
-}
-
-fn draft_range_number(data: &ValueDataDraft) -> Option<SnapshotRangeNumber> {
-    Some(match data {
-        ValueDataDraft::Index(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
-        ValueDataDraft::U8(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
-        ValueDataDraft::U16(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
-        ValueDataDraft::U32(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
-        ValueDataDraft::U64(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
-        ValueDataDraft::U128(value) => SnapshotRangeNumber::Unsigned(*value),
-        ValueDataDraft::I8(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
-        ValueDataDraft::I16(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
-        ValueDataDraft::I32(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
-        ValueDataDraft::I64(value) => SnapshotRangeNumber::Signed(i128::from(*value)),
-        ValueDataDraft::I128(value) => SnapshotRangeNumber::Signed(*value),
-        ValueDataDraft::F32(value) => SnapshotRangeNumber::Float(f64::from(value.to_f32())),
-        ValueDataDraft::F64(value) => SnapshotRangeNumber::Float(value.to_f64()),
         _ => return None,
     })
 }
@@ -13524,65 +13538,6 @@ pub(super) fn canonical_range_cardinality(
     snapshot_range_size(&numbers, inclusive, incremented)
 }
 
-fn range_input_draft(
-    kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    index: usize,
-) -> Result<ValueDataDraft, ResidentKernelError> {
-    let descriptor = kernel
-        .bound_call()
-        .and_then(|call| call.inputs().get(index))
-        .ok_or(ResidentKernelError::InvalidInput)?;
-    match (descriptor.schema().body(), inputs.get(index)) {
-        (SchemaBody::Index, Some(ResidentValueRef::Index([value]))) => {
-            Ok(ValueDataDraft::Index(*value))
-        }
-        (
-            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
-            Some(ResidentValueRef::F64([value])),
-        ) => Ok(ValueDataDraft::F64(F64Bits::from_f64(*value))),
-        (_, Some(ResidentValueRef::Snapshot([Some(value)]))) => {
-            let schemas = kernel
-                .snapshot_schemas()
-                .ok_or(ResidentKernelError::InvalidOutput)?;
-            let schema = value
-                .validate_against(schemas)
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
-            if schema != descriptor.schema() {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            let data = value
-                .canonical_data_draft()
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
-            if matches!(data, ValueDataDraft::Matrix(_)) {
-                return Err(ResidentKernelError::InvalidInput);
-            }
-            Ok(data)
-        }
-        _ => Err(ResidentKernelError::InvalidInput),
-    }
-}
-
-fn range_one(body: &SchemaBody) -> Result<ValueDataDraft, ResidentKernelError> {
-    match body {
-        SchemaBody::Index => Ok(ValueDataDraft::Index(1)),
-        _ => numeric_one(body),
-    }
-}
-
-fn range_add(
-    left: ValueDataDraft,
-    right: ValueDataDraft,
-) -> Result<ValueDataDraft, ResidentKernelError> {
-    match (left, right) {
-        (ValueDataDraft::Index(left), ValueDataDraft::Index(right)) => left
-            .checked_add(right)
-            .map(ValueDataDraft::Index)
-            .ok_or(ResidentKernelError::Arithmetic),
-        (left, right) => numeric_add(left, right),
-    }
-}
-
 fn range_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13608,62 +13563,55 @@ fn range_snapshot(
     let schemas = kernel
         .snapshot_schemas()
         .ok_or(ResidentKernelError::InvalidOutput)?;
-    let first = range_input_draft(kernel, inputs, 0)?;
-    let second = range_input_draft(kernel, inputs, 1)?;
-    let third = if incremented {
-        range_input_draft(kernel, inputs, 2)?
-    } else {
-        second.clone()
+    let value = |index| match inputs.get(index) {
+        Some(ResidentValueRef::Snapshot([Some(value)])) => {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            Ok(value)
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
     };
+    let first = value(0)?;
+    let second = value(1)?;
+    let third = if incremented { value(2)? } else { second };
+    let values = [first, second, third];
+    let values = &values[..expected_inputs];
     let numbers = [
-        draft_range_number(&first).ok_or(ResidentKernelError::InvalidInput)?,
-        draft_range_number(&second).ok_or(ResidentKernelError::InvalidInput)?,
-        draft_range_number(&third).ok_or(ResidentKernelError::InvalidInput)?,
+        snapshot_range_number(first.data()).ok_or(ResidentKernelError::InvalidInput)?,
+        snapshot_range_number(second.data()).ok_or(ResidentKernelError::InvalidInput)?,
+        snapshot_range_number(third.data()).ok_or(ResidentKernelError::InvalidInput)?,
     ];
     let count = snapshot_range_size(&numbers[..expected_inputs], inclusive, incremented)
         .filter(|count| *count != 0)
         .ok_or(ResidentKernelError::InvalidInput)?;
-    if *declared_count != 0 && u64::try_from(count).ok() != Some(*declared_count) {
+    if u64::try_from(count).ok() != Some(*declared_count) {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let snapshot_inputs = (0..expected_inputs)
-        .filter_map(|index| match inputs.get(index) {
-            Some(ResidentValueRef::Snapshot([Some(value)])) => Some(value),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    preflight_snapshot_arithmetic(
-        kernel,
-        schemas,
-        &snapshot_inputs,
-        &output,
-        expected_inputs,
-        count,
-        0,
-    )?;
-    let input_schema = kernel
-        .bound_call()
-        .and_then(|call| call.inputs().first())
-        .ok_or(ResidentKernelError::InvalidInput)?
-        .schema();
-    let mut current = first;
+    preflight_snapshot_arithmetic(kernel, schemas, &values, &output, values.len(), count, 0)?;
+    let schema = first
+        .validate_against(schemas)
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
+    let mut current = first
+        .canonical_data_draft()
+        .map_err(|_| ResidentKernelError::InvalidInput)?;
     let step = if incremented {
         second
+            .canonical_data_draft()
+            .map_err(|_| ResidentKernelError::InvalidInput)?
     } else {
-        range_one(input_schema.body())?
+        numeric_one(schema.body())?
     };
     let mut elements = Vec::with_capacity(count);
     for index in 0..count {
         elements.push(current.clone());
         if index + 1 < count {
-            current = range_add(current, step.clone())?;
+            current = numeric_add(current, step.clone())?;
         }
     }
-    let output_shape = resolved_snapshot_output_shape(kernel, 1, count)?;
-    write_snapshot_data_for_shape_with_work_budget(
+    write_snapshot_data_with_work_budget(
         kernel,
         output,
-        &output_shape,
         ValueDataDraft::Matrix(elements.into_boxed_slice()),
         Some(0),
     )
@@ -18901,7 +18849,6 @@ mod tests {
                 .unwrap()
                 .instantiate_shape(parameters.to_vec().into_boxed_slice())
                 .unwrap(),
-            activation_fixed_shape: true,
             resolved_selector: None,
         };
         let contract = test_contract(
@@ -20450,104 +20397,6 @@ mod tests {
                 Ok(expected.iter().any(|value| *value != 0)),
             );
             assert_eq!(output, expected);
-        }
-    }
-
-    #[test]
-    fn snapshot_boolean_logic_accepts_dense_matrix_operands_in_both_orders() {
-        let matrix = SchemaBody::Matrix {
-            element: Box::new(SchemaBody::Bool),
-            dimensions: vec![
-                mech_core::DimensionExpr::Constant(2),
-                mech_core::DimensionExpr::Constant(2),
-            ]
-            .into_boxed_slice(),
-        };
-        let (schemas, ids) = test_schema_table([matrix]);
-        let schema = ids[0];
-        let contract = test_contract(
-            &[schema, schema],
-            schema,
-            OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            AccessMode::Write,
-            AliasPolicy::NoAlias,
-            ChangeDetectionPolicy::KernelReported,
-        );
-        let snapshot = test_layout(
-            &schemas,
-            schema,
-            ResidentValueKind::Snapshot,
-            ResidentShape::SCALAR,
-        );
-        let dense = test_layout(
-            &schemas,
-            schema,
-            ResidentValueKind::Bool,
-            ResidentShape {
-                rows: 2,
-                columns: 2,
-            },
-        );
-        let output = snapshot.clone();
-        let snapshot_value = Some(test_value(
-            &schemas,
-            schema,
-            ValueDataDraft::Matrix(
-                [true, false, true, false]
-                    .into_iter()
-                    .map(ValueDataDraft::Bool)
-                    .collect(),
-            ),
-        ));
-        // Dense resident matrices are column-major; this is the canonical
-        // row-major matrix [true true; false false].
-        let dense_values = [1_u8, 0, 1, 0];
-        for (operation, expected) in [
-            (0, [true, false, false, false]),
-            (1, [true, true, true, false]),
-            (2, [false, true, true, false]),
-        ] {
-            for snapshot_first in [true, false] {
-                let layouts = if snapshot_first {
-                    [snapshot.clone(), dense.clone()]
-                } else {
-                    [dense.clone(), snapshot.clone()]
-                };
-                let kernel = bind_snapshot_bool_binary(
-                    &ResidentKernelBindRequest {
-                        contract: &contract,
-                        schemas: &schemas,
-                        inputs: &layouts,
-                        output: output.clone(),
-                    },
-                    operation,
-                )
-                .unwrap();
-                let snapshot_values = [snapshot_value.clone()];
-                let inputs = if snapshot_first {
-                    [
-                        ResidentValueRef::Snapshot(&snapshot_values),
-                        ResidentValueRef::Bool(&dense_values),
-                    ]
-                } else {
-                    [
-                        ResidentValueRef::Bool(&dense_values),
-                        ResidentValueRef::Snapshot(&snapshot_values),
-                    ]
-                };
-                let mut actual = [None];
-                kernel
-                    .execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut actual))
-                    .unwrap();
-                assert_eq!(
-                    actual[0].as_ref().unwrap().canonical_data_draft().unwrap(),
-                    ValueDataDraft::Matrix(
-                        expected.into_iter().map(ValueDataDraft::Bool).collect()
-                    )
-                );
-            }
         }
     }
 
