@@ -30,7 +30,8 @@ impl Value {
         other_schemas: &SchemaTable,
     ) -> Result<bool, SnapshotValueError> {
         let (self_schema, self_schema_bytes) = validated_schema_definition(self, self_schemas)?;
-        let (other_schema, other_schema_bytes) = validated_schema_definition(other, other_schemas)?;
+        let (_other_schema, other_schema_bytes) =
+            validated_schema_definition(other, other_schemas)?;
         if self.schema_key() != other.schema_key() {
             return Ok(false);
         }
@@ -38,10 +39,7 @@ impl Value {
         if self.shape() != other.shape() {
             return Ok(false);
         }
-        Ok(
-            super::encoding::canonical_material(self_schema.body(), self.data())
-                == super::encoding::canonical_material(other_schema.body(), other.data()),
-        )
+        Ok(exact_data_eq(self_schema.body(), self.data(), other.data()))
     }
 
     pub fn language_eq(
@@ -1020,6 +1018,12 @@ pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &Va
     language_data_eq(schema, left, right)
 }
 
+/// Compares the complete canonical representation of two already-validated
+/// payloads under one shared schema without materializing encoded copies.
+pub fn schema_data_snapshot_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+    exact_data_eq(schema, left, right)
+}
+
 /// Applies the source language's scalar numeric ordering to two already
 /// validated payloads under one shared schema. `None` represents an unordered
 /// floating-point comparison (for example, one involving NaN).
@@ -1179,6 +1183,92 @@ fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) ->
                     })
         }
         _ => exact_leaf_eq(left, right),
+    }
+}
+
+fn exact_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
+    match (schema, left, right) {
+        (SchemaBody::Dynamic, ValueData::Dynamic(left), ValueData::Dynamic(right)) => {
+            left.canonical == right.canonical
+        }
+        (SchemaBody::Option(element), ValueData::Option(left), ValueData::Option(right)) => {
+            match (left, right) {
+                (None, None) => true,
+                (Some(left), Some(right)) => exact_data_eq(element, left, right),
+                _ => false,
+            }
+        }
+        (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
+            left.ordinal == right.ordinal
+                && match (
+                    variants[left.ordinal as usize].payload.as_ref(),
+                    left.payload.as_deref(),
+                    right.payload.as_deref(),
+                ) {
+                    (None, None, None) => true,
+                    (Some(schema), Some(left), Some(right)) => exact_data_eq(schema, left, right),
+                    _ => false,
+                }
+        }
+        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
+            left.len() == right.len()
+                && elements
+                    .iter()
+                    .zip(left)
+                    .zip(right)
+                    .all(|((schema, left), right)| exact_data_eq(schema, left, right))
+        }
+        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
+            left.fields().len() == right.fields().len()
+                && fields
+                    .iter()
+                    .zip(left.fields())
+                    .zip(right.fields())
+                    .all(|((field, left), right)| exact_data_eq(&field.schema, left, right))
+        }
+        (SchemaBody::Matrix { element, .. }, ValueData::Matrix(left), ValueData::Matrix(right)) => {
+            exact_sequence_eq(element, &left.elements, &right.elements)
+        }
+        (SchemaBody::Table { columns, .. }, ValueData::Table(left), ValueData::Table(right)) => {
+            left.columns.len() == right.columns.len()
+                && columns
+                    .iter()
+                    .zip(left.columns.iter().zip(right.columns.iter()))
+                    .all(|(column, (left, right))| exact_sequence_eq(&column.schema, left, right))
+        }
+        (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
+            left.elements.len() == right.elements.len()
+                && left
+                    .elements
+                    .iter()
+                    .zip(right.elements.iter())
+                    .all(|(left, right)| exact_data_eq(element, left.data(), right.data()))
+        }
+        (SchemaBody::Map { key, value, .. }, ValueData::Map(left), ValueData::Map(right)) => {
+            left.entries.len() == right.entries.len()
+                && left
+                    .entries
+                    .iter()
+                    .zip(right.entries.iter())
+                    .all(|(left, right)| {
+                        exact_data_eq(key, left.key().data(), right.key().data())
+                            && exact_data_eq(value, left.value(), right.value())
+                    })
+        }
+        _ => exact_leaf_eq(left, right),
+    }
+}
+
+fn exact_sequence_eq(schema: &SchemaBody, left: &SequenceStorage, right: &SequenceStorage) -> bool {
+    match (left, right) {
+        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right.iter())
+                    .all(|(left, right)| exact_data_eq(schema, left, right))
+        }
+        _ => sequence_exact_eq(left, right),
     }
 }
 
@@ -1368,6 +1458,7 @@ const fn normalize_f64(bits: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::snapshot::{Complex64Bits, F32Bits, F64Bits};
 
     #[test]
     fn equal_schema_keys_still_require_equal_canonical_definitions() {
@@ -1377,6 +1468,30 @@ mod tests {
             Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: actual })
                 if actual == key
         ));
+    }
+
+    #[test]
+    fn exact_equality_tracks_float_and_complex_representation() {
+        let positive = ValueData::F32(F32Bits::from_f32(0.0));
+        let negative = ValueData::F32(F32Bits::from_f32(-0.0));
+        let float = SchemaBody::FloatingPoint(FloatWidth::W32);
+        assert!(language_data_eq(&float, &positive, &negative));
+        assert!(!exact_data_eq(&float, &positive, &negative));
+        let nan = ValueData::F32(F32Bits::from_bits(0x7fc0_0001));
+        assert!(!language_data_eq(&float, &nan, &nan));
+        assert!(exact_data_eq(&float, &nan, &nan));
+
+        let positive = ValueData::Complex64(Complex64Bits::new(
+            F64Bits::from_f64(1.0),
+            F64Bits::from_f64(0.0),
+        ));
+        let negative = ValueData::Complex64(Complex64Bits::new(
+            F64Bits::from_f64(1.0),
+            F64Bits::from_f64(-0.0),
+        ));
+        let complex = SchemaBody::Complex(FloatWidth::W64);
+        assert!(language_data_eq(&complex, &positive, &negative));
+        assert!(!exact_data_eq(&complex, &positive, &negative));
     }
 }
 
