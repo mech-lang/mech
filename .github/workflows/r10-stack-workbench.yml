@@ -8,40 +8,25 @@ permissions:
   contents: read
 
 jobs:
-  snapshot:
+  tooling:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-      - name: Capture immutable stack refs and repository objects
+      - name: Prepare pinned compiler and locked dependency cache
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p workbench-export
-          git fetch --no-tags origin '+refs/heads/integration/v0.4:refs/remotes/origin/integration/v0.4' '+refs/heads/codex/syntax-s0-s8e-sealed:refs/remotes/origin/codex/syntax-s0-s8e-sealed' '+refs/heads/codex/syntax-s8r*:refs/remotes/origin/codex/syntax-s8r*' '+refs/heads/codex/syntax-s8c-cutover:refs/remotes/origin/codex/syntax-s8c-cutover'
-          python3 - <<'PY'
-          import json, subprocess
-          from pathlib import Path
-          refs = subprocess.check_output(['git', 'for-each-ref', '--format=%(refname) %(objectname)', 'refs/remotes/origin/integration/v0.4', 'refs/remotes/origin/codex/syntax-s0-s8e-sealed', 'refs/remotes/origin/codex/syntax-s8r', 'refs/remotes/origin/codex/syntax-s8c-cutover'], text=True).splitlines()
-          # for-each-ref prefix matching is supplemented by explicit namespace filtering.
-          refs = subprocess.check_output(['git', 'for-each-ref', '--format=%(refname) %(objectname)', 'refs/remotes/origin/'], text=True).splitlines()
-          selected = {}
-          for row in refs:
-              ref, sha = row.split()
-              branch = ref.removeprefix('refs/remotes/origin/')
-              if branch in ('integration/v0.4', 'codex/syntax-s0-s8e-sealed', 'codex/syntax-s8c-cutover') or branch.startswith('codex/syntax-s8r'):
-                  selected[ref] = sha
-          assert 'refs/remotes/origin/codex/syntax-s8r10-structural-match' in selected
-          Path('workbench-export/refs.json').write_text(json.dumps(selected, indent=2) + '\n')
-          subprocess.run(['git', 'bundle', 'create', 'workbench-export/stack.bundle', *sorted(selected)], check=True)
-          subprocess.run(['git', 'bundle', 'verify', 'workbench-export/stack.bundle'], check=True)
-          print(json.dumps(selected, indent=2))
-          PY
+          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
+          cargo +nightly-2026-03-03 fetch --locked
+          mkdir -p workbench-export/toolchain workbench-export/cargo
+          cp -a "$HOME/.rustup/toolchains/nightly-2026-03-03-x86_64-unknown-linux-gnu/." workbench-export/toolchain/
+          cp -a "$HOME/.cargo/registry" workbench-export/cargo/
+          if test -d "$HOME/.cargo/git"; then cp -a "$HOME/.cargo/git" workbench-export/cargo/; fi
+          tar --zstd -cf r10-offline-tools.tar.zst -C workbench-export toolchain cargo
       - uses: actions/upload-artifact@v4
         with:
-          name: r10-stack-snapshot
-          path: workbench-export/
+          name: r10-offline-tools
+          path: r10-offline-tools.tar.zst
           retention-days: 1
           compression-level: 0
