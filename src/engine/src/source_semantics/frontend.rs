@@ -24,7 +24,7 @@ use mech_core::{
     DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
     DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerWidth, KindExpr, KindField,
     KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
-    ResolvedOutputSchemaRule, ResolvedType, SchemaBody, SchemaDraft, SchemaField, SchemaId,
+    ResolvedOutputSchemaRule, ResolvedType, Schema, SchemaBody, SchemaDraft, SchemaField, SchemaId,
     SchemaTable, SchemaTableBuilder, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate,
     Value, ValueDataDraft, ValueDraft, execute_conversion_draft, plan_explicit_cast,
     plan_numeric_promotion,
@@ -1084,6 +1084,69 @@ struct SourceSchemas {
     dynamic_payload_ids: BTreeMap<usize, SchemaId>,
 }
 
+fn retain_schema_tree(
+    anchor: SourceSemanticAnchor,
+    builder: &mut SchemaTableBuilder,
+    draft: &SchemaDraft,
+) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
+    let schema = draft
+        .clone()
+        .finalize()
+        .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
+    retain_finalized_schema_tree(anchor, builder, schema)
+}
+
+fn retain_finalized_schema_tree(
+    anchor: SourceSemanticAnchor,
+    builder: &mut SchemaTableBuilder,
+    schema: Schema,
+) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
+    let handle = builder
+        .insert(schema.clone())
+        .map_err(|error| internal(anchor, format!("unable to retain source schema: {error:?}")))?;
+    let mut retain = |body: &SchemaBody| {
+        let component = schema.canonical_component_schema(body).map_err(|error| {
+            internal(
+                anchor,
+                format!("unable to derive retained component schema: {error:?}"),
+            )
+        })?;
+        retain_finalized_schema_tree(anchor, builder, component).map(drop)
+    };
+    match schema.body() {
+        SchemaBody::Enum { variants, .. } => {
+            for payload in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                retain(payload)?;
+            }
+        }
+        SchemaBody::Option(element)
+        | SchemaBody::Matrix { element, .. }
+        | SchemaBody::Set { element, .. } => retain(element)?,
+        SchemaBody::Tuple(elements) => {
+            for element in elements {
+                retain(element)?;
+            }
+        }
+        SchemaBody::Record(fields)
+        | SchemaBody::Table {
+            columns: fields, ..
+        } => {
+            for field in fields {
+                retain(&field.schema)?;
+            }
+        }
+        SchemaBody::Map { key, value, .. } => {
+            retain(key)?;
+            retain(value)?;
+        }
+        _ => {}
+    }
+    Ok(handle)
+}
+
 impl SourceSchemas {
     fn build(
         anchor: SourceSemanticAnchor,
@@ -1092,15 +1155,7 @@ impl SourceSchemas {
         constants: &[PendingConstant],
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
-        let mut insert = |draft: &SchemaDraft| {
-            let schema = draft
-                .clone()
-                .finalize()
-                .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
-            builder.insert(schema).map_err(|error| {
-                internal(anchor, format!("unable to retain source schema: {error:?}"))
-            })
-        };
+        let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
         let input_handles = inputs
             .iter()
             .map(|value| insert(&value.schema))
@@ -7663,6 +7718,54 @@ fn syntax_kind_name(kind: SyntaxKind) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn retained_components_follow_the_finalized_parent_parameter_order() {
+        let anchor = SourceSemanticAnchor {
+            document: DocumentId(0x549),
+            revision: Revision(1),
+            range: TextRange::empty(mech_syntax::document::TextSize::ZERO),
+        };
+        let first = DimensionParameterId::new(0);
+        let second = DimensionParameterId::new(1);
+        let parameter = |id| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![
+                DimensionExpr::Parameter(rows),
+                DimensionExpr::Parameter(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let draft = SchemaDraft {
+            dimension_parameters: vec![parameter(first), parameter(second)].into_boxed_slice(),
+            body: SchemaBody::Tuple(
+                vec![matrix(second, first), matrix(first, second)].into_boxed_slice(),
+            ),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let handle = retain_schema_tree(anchor, &mut builder, &draft).unwrap();
+        let build = builder.finish().unwrap();
+        let root = build.table.get(build.resolve(handle).unwrap()).unwrap();
+        let SchemaBody::Tuple(children) = root.body() else {
+            panic!("root schema remains a tuple")
+        };
+        assert_eq!(children.len(), 2);
+        assert_ne!(children[0], children[1]);
+        for child in children {
+            let expected = root.canonical_component_schema(child).unwrap();
+            assert!(
+                build.table.find_by_key(expected.key()).is_some(),
+                "every child retained by the source frontend uses its finalized parent numbering",
+            );
+        }
+    }
 
     #[test]
     fn unresolved_source_never_allocates_placeholder_nodes_or_constants() {

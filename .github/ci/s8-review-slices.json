@@ -1136,7 +1136,24 @@
           "full_compiler,full_source,resident-artifact",
           "--test",
           "canonical_document_state",
-          "dynamic_collection_elements_match_their_concrete_structure",
+          "dynamic_structural_patterns_preserve_child_wrappers_and_skip_absent_values",
+          "--",
+          "--exact"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
+          "mech-engine",
+          "--no-default-features",
+          "--features",
+          "full_compiler,full_source,resident-artifact",
+          "--test",
+          "canonical_document_state",
+          "concrete_collection_binding_annotations_unwrap_dynamic_payloads",
           "--",
           "--exact"
         ],
@@ -1152,7 +1169,7 @@
           "--features",
           "full_compiler,full_source,resident-artifact",
           "--lib",
-          "comprehension_execution::tests"
+          "comprehension"
         ],
         [
           "cargo",
