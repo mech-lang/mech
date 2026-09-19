@@ -2446,6 +2446,7 @@ impl NamedKindPathResolver for BuiltinKindPaths {
 
 struct SemanticBuilder {
     function_catalog: Option<Arc<mech_core::FunctionCatalog>>,
+    function_environment: Option<crate::FunctionEnvironment>,
     input_schema_overrides: BTreeMap<String, SchemaDraft>,
     control_depth: usize,
     next_control_block: u32,
@@ -2462,7 +2463,7 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
-    function_imports: BTreeMap<String, String>,
+    function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
     patterns: Vec<SourceSemanticPattern>,
@@ -2473,6 +2474,7 @@ impl SemanticBuilder {
     fn new(anchor: SourceSemanticAnchor) -> Self {
         Self {
             function_catalog: None,
+            function_environment: None,
             input_schema_overrides: BTreeMap::new(),
             control_depth: 0,
             next_control_block: 0,
@@ -2489,7 +2491,7 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
-            function_imports: BTreeMap::new(),
+            function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
             patterns: Vec::new(),
@@ -2500,18 +2502,22 @@ impl SemanticBuilder {
     fn with_function_catalog(
         anchor: SourceSemanticAnchor,
         function_catalog: Arc<mech_core::FunctionCatalog>,
-    ) -> Self {
+    ) -> Result<Self, SourceSemanticError> {
         let mut builder = Self::new(anchor);
+        builder.function_environment = Some(
+            crate::FunctionEnvironment::from_catalog_defaults(&function_catalog)
+                .map_err(|error| internal(anchor, error.display_message()))?,
+        );
         builder.function_catalog = Some(function_catalog);
-        builder
+        Ok(builder)
     }
 
     fn with_function_catalog_and_input_schemas(
         anchor: SourceSemanticAnchor,
         function_catalog: Arc<mech_core::FunctionCatalog>,
         input_schemas: BTreeMap<String, SchemaBody>,
-    ) -> Self {
-        let mut builder = Self::with_function_catalog(anchor, function_catalog);
+    ) -> Result<Self, SourceSemanticError> {
+        let mut builder = Self::with_function_catalog(anchor, function_catalog)?;
         builder.input_schema_overrides = input_schemas
             .into_iter()
             .map(|(name, body)| {
@@ -2524,7 +2530,39 @@ impl SemanticBuilder {
                 )
             })
             .collect();
-        builder
+        Ok(builder)
+    }
+
+    fn named_call_declaration(
+        &self,
+        name: &str,
+        syntax: &SyntaxNode,
+    ) -> Result<(String, mech_core::FunctionTypeDeclaration), SourceSemanticError> {
+        let missing = || SourceSemanticError {
+            code: "source-semantics/unknown-function",
+            message: format!("function {name} is not visible with declared source semantics"),
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        };
+        if let Some(catalog) = self.function_catalog.as_ref() {
+            let Some(crate::FunctionBinding::CatalogOperation(operation)) = self
+                .function_environment
+                .as_ref()
+                .and_then(|environment| environment.resolve_name(name))
+            else {
+                return Err(missing());
+            };
+            let entry = catalog.specializer(operation).ok_or_else(missing)?;
+            let canonical_name = entry.operation.canonical_name.to_string();
+            let declaration = catalog
+                .source_type_declaration(&canonical_name)
+                .ok_or_else(missing)?
+                .clone();
+            return Ok((canonical_name, declaration));
+        }
+        // Catalog-free semantic probes resolve canonical type declarations only.
+        // Configured production calls above never fall back to that inventory.
+        let declaration = self.source_type_declaration(name).map_err(|_| missing())?;
+        Ok((name.to_owned(), declaration))
     }
 
     fn source_type_declaration(
@@ -3322,22 +3360,7 @@ impl SemanticBuilder {
                 let declaration = if self.local_functions.contains_key(&function_name) {
                     None
                 } else {
-                    let function_name = self
-                        .function_imports
-                        .get(&function_name)
-                        .cloned()
-                        .unwrap_or_else(|| function_name.clone());
-                    let declaration =
-                        self.source_type_declaration(&function_name).map_err(|_| {
-                            SourceSemanticError {
-                                code: "source-semantics/unknown-function",
-                                message: format!(
-                                    "function {function_name} has no declared source semantics"
-                                ),
-                                anchor: SourceSemanticAnchor::for_node(function.syntax()),
-                            }
-                        })?;
-                    Some((function_name, declaration))
+                    Some(self.named_call_declaration(&function_name, function.syntax())?)
                 };
                 let arguments = self.required(
                     value.arguments(),
