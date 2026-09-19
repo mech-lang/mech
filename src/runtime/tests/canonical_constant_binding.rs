@@ -1296,3 +1296,117 @@ fn successive_bindings_relocate_state_nodes_outputs_constraints_and_source_map()
         );
     }
 }
+
+fn dynamic_snapshot(body: SchemaBody, data: D) -> Value {
+    let mut builder = SchemaTableBuilder::new();
+    let root = builder
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Dynamic,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let child = builder
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let built = builder.finish().unwrap();
+    let root = built.resolve(root).unwrap();
+    let child = built.resolve(child).unwrap();
+    let (schemas, _) = built.into_parts();
+    ValueDraft {
+        schema: root,
+        shape_values: Box::new([]),
+        data: D::Dynamic(Some(Box::new(ValueDraft {
+            schema: child,
+            shape_values: Box::new([]),
+            data,
+        }))),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap()
+}
+
+#[test]
+fn exact_generic_dynamic() {
+    let values = [
+        dynamic_snapshot(
+            SchemaBody::Tuple(
+                vec![SchemaBody::Bool, SchemaBody::FloatingPoint(FloatWidth::W64)]
+                    .into_boxed_slice(),
+            ),
+            D::Tuple(vec![D::Bool(true), D::F64(F64Bits::from_f64(1.0))].into_boxed_slice()),
+        ),
+        dynamic_snapshot(SchemaBody::String, D::String("Δ".into())),
+    ];
+    // Dynamic(None) is deliberately allowed as a composite reconstruction
+    // placeholder (core snapshot/data.rs). This publication witness supplies
+    // materialized payloads; it does not invent a draft-level rejection rule.
+    check(Case {
+        id: "QG-Dynamic",
+        annotation: None,
+        schema: SchemaBody::Dynamic,
+        values,
+        incompatible: None,
+    });
+}
+
+#[test]
+fn concrete_binding_to_dynamic_wraps_exactly_once() {
+    for (body, data) in [
+        (SchemaBody::String, D::String("Δ".into())),
+        (
+            SchemaBody::FloatingPoint(FloatWidth::W64),
+            D::F64(F64Bits::from_f64(0.5)),
+        ),
+        (
+            SchemaBody::Tuple(
+                vec![
+                    SchemaBody::Bool,
+                    SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                ]
+                .into_boxed_slice(),
+            ),
+            D::Tuple(vec![D::Bool(true), D::U8(7)].into_boxed_slice()),
+        ),
+    ] {
+        let program = compile_source("answer := signal<*>\nanswer\n");
+        let expected = dynamic_snapshot(body.clone(), data.clone());
+        assert_bound(
+            &bind_named(program.clone(), &[("signal", snapshot(body, data))]),
+            &expected,
+        );
+        assert_bound(
+            &bind_named(program, &[("signal", expected.clone())]),
+            &expected,
+        );
+    }
+}
+
+#[test]
+fn already_nested_dynamic_binding_preserves_its_existing_depth() {
+    let inner = dynamic_snapshot(SchemaBody::String, D::String("nested".into()));
+    let table = inner.schemas().unwrap();
+    let nested = ValueDraft {
+        schema: inner.schema(),
+        shape_values: Box::new([]),
+        data: D::Dynamic(Some(Box::new(ValueDraft {
+            schema: inner.schema(),
+            shape_values: Box::new([]),
+            data: inner.canonical_data_draft().unwrap(),
+        }))),
+    }
+    .finalize(&SnapshotValidationContext::new(&table))
+    .unwrap();
+    let program = compile_source("answer := signal<*>\nanswer\n");
+    assert_bound(&bind_named(program, &[("signal", nested.clone())]), &nested);
+}
