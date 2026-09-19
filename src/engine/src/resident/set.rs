@@ -1036,7 +1036,7 @@ fn write_changed_snapshot(
         .ok_or(ResidentKernelError::InvalidOutput)?;
     let changed = match target.as_ref() {
         Some(current) => !current
-            .language_eq(schemas, &next, schemas)
+            .snapshot_eq(schemas, &next, schemas)
             .map_err(|_| ResidentKernelError::InvalidOutput)?,
         None => true,
     };

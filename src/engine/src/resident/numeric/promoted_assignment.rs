@@ -15,6 +15,7 @@ struct Plan {
     source_len: usize,
     source_rows: usize,
     source_columns: usize,
+    logical_selector: bool,
     source: SnapshotAccessSelectorLayout,
     target: SnapshotAccessSelectorLayout,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
@@ -100,11 +101,16 @@ pub(super) fn bind(
     };
     let mut capacity = 0usize;
     let mut axis_capacities = Vec::new();
+    let mut logical_selector = false;
     for selector in &request.inputs[2..] {
         if !positional_selector_layout(request, selector) {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
         let axis_capacity = declared_selector_cardinality(request, selector)?;
+        logical_selector |= request
+            .schemas
+            .get(selector.schema_id)
+            .is_some_and(|schema| is_logical_selector_schema(schema.body()));
         axis_capacities.push(axis_capacity);
         capacity = capacity
             .checked_add(axis_capacity)
@@ -127,6 +133,7 @@ pub(super) fn bind(
             source_len,
             source_rows,
             source_columns,
+            logical_selector,
             source: layout(source),
             target: layout(&request.output),
             selectors: request.inputs[2..].iter().map(layout).collect(),
@@ -245,9 +252,15 @@ fn execute(
             columns.len(),
         )
     };
-    let source_index = |ordinal: usize| -> Result<usize, ResidentKernelError> {
+    let source_index = |ordinal: usize, destination: usize| -> Result<usize, ResidentKernelError> {
         if source.len() == 1 {
             return Ok(0);
+        }
+        if plan.logical_selector
+            && plan.source_rows == plan.rows
+            && plan.source_columns == plan.columns
+        {
+            return Ok(destination);
         }
         if plan.mode == 0 {
             return (source.len() == positions.len())
@@ -274,7 +287,7 @@ fn execute(
     for (ordinal, &destination) in positions.iter().enumerate() {
         let left = execute_conversion_draft(next[destination].clone(), &plan.promote.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
-        let right = source[source_index(ordinal)?].clone();
+        let right = source[source_index(ordinal, destination)?].clone();
         let value = if plan.rational_power {
             numeric_rational_power(left, right)?
         } else {
@@ -287,7 +300,7 @@ fn execute(
     let changed = match output {
         ResidentValueMut::Snapshot([target]) => {
             let changed = !current
-                .language_eq(schemas, &next, schemas)
+                .snapshot_eq(schemas, &next, schemas)
                 .map_err(|_| ResidentKernelError::InvalidOutput)?;
             *target = Some(next);
             changed

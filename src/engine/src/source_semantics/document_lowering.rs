@@ -154,7 +154,44 @@ pub(super) fn compile_document_with_catalog_and_resources(
     )
 }
 
-pub(super) fn compile_mixed_document_with_catalog_and_resources(
+/// Retained coordinator units awaiting schemas from the compiled compute interface.
+/// The units and source anchors belong to the same snapshot as the compute program.
+/// Completing this plan does not parse, repartition, or execute the source again.
+pub struct CanonicalCoordinatorPlan {
+    owner: DocumentScopeId,
+    anchor: SourceSemanticAnchor,
+    units: Vec<DocumentUnit>,
+    exports: Vec<ExportDeclarationSyntax>,
+    catalog: Arc<mech_core::FunctionCatalog>,
+    input_schemas: BTreeMap<String, SchemaBody>,
+    resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+    resolved_source_modules: BTreeSet<String>,
+}
+
+impl CanonicalCoordinatorPlan {
+    /// Complete coordinator lowering after the caller plans interface-dependent reads.
+    pub fn compile(
+        mut self,
+        additional_input_schemas: BTreeMap<String, SchemaBody>,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        self.input_schemas.extend(additional_input_schemas);
+        compile_collected_document(
+            self.owner,
+            self.anchor,
+            self.units,
+            self.exports,
+            Some(self.catalog),
+            self.input_schemas,
+            true,
+            self.resource_writes,
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+            &self.resolved_source_modules,
+        )
+    }
+}
+
+pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     document: &DocumentSyntax,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
@@ -162,7 +199,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     external_inputs: &BTreeSet<String>,
     retained_outputs: &BTreeSet<String>,
     resolved_source_modules: &BTreeSet<String>,
-) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(document.syntax());
     let sections = document
         .body()
@@ -211,19 +248,16 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
             _ => None,
         })
         .collect::<Vec<_>>();
-    let coordinator = compile_collected_document(
-        document.scope_id(),
+    let coordinator = CanonicalCoordinatorPlan {
+        owner: document.scope_id(),
         anchor,
-        coordinator_units,
-        coordinator_exports,
-        Some(Arc::clone(&catalog)),
-        input_schemas.clone(),
-        true,
-        resource_writes.clone(),
-        &BTreeSet::new(),
-        &BTreeSet::new(),
-        resolved_source_modules,
-    )?;
+        units: coordinator_units,
+        exports: coordinator_exports,
+        catalog: Arc::clone(&catalog),
+        input_schemas: input_schemas.clone(),
+        resource_writes,
+        resolved_source_modules: resolved_source_modules.clone(),
+    };
 
     let region = &sections[region_index];
     let mut compute_units = root_imports
@@ -270,7 +304,7 @@ pub(super) fn compile_mixed_document_with_catalog_and_resources(
     )?
     .retain_static_outputs(external_inputs)?;
 
-    Ok(CanonicalMixedSourcePrograms {
+    Ok(CanonicalMixedSourcePreparation {
         region_name,
         placement,
         coordinator,

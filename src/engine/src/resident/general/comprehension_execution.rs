@@ -292,7 +292,7 @@ impl ReactiveInstance {
         let changed = target
             .as_ref()
             .map_or(Ok(true), |old| {
-                old.language_eq(&self.plan.schemas, &next, &self.plan.schemas)
+                old.snapshot_eq(&self.plan.schemas, &next, &self.plan.schemas)
                     .map(|equal| !equal)
             })
             .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;

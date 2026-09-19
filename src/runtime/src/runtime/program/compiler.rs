@@ -1523,6 +1523,22 @@ impl<'a> ProgramCompilerView<'a> {
         BTreeMap<String, ExecutionResourceRequest>,
         BTreeMap<String, Value>,
     )> {
+        self.canonical_document_resources_with_read_planner(index, document, |request| {
+            self.resources.plan_read(request).map(Some)
+        })
+    }
+
+    fn canonical_document_resources_with_read_planner(
+        &self,
+        index: &SourceIndex,
+        document: &mech_syntax::document::DocumentSyntax,
+        mut plan_read: impl FnMut(RuntimeResourceReadRequest) -> MResult<Option<Value>>,
+    ) -> MResult<(
+        BTreeMap<String, mech_core::SchemaBody>,
+        BTreeMap<String, ExecutionResourceRequest>,
+        BTreeMap<String, ExecutionResourceRequest>,
+        BTreeMap<String, Value>,
+    )> {
         use mech_syntax::document::{AstNode, ContextSendSyntax, VariableStemSyntax};
 
         let imports = index.program_imports();
@@ -1550,26 +1566,18 @@ impl<'a> ProgramCompilerView<'a> {
                 intent: ResourceIntent::Read,
                 delivery: mech_core::ResourceDelivery::Live,
             };
-            let value = self
-                .resources
-                .plan_read(RuntimeResourceReadRequest {
-                    base_uri: key.base_uri,
-                    path: key.path,
-                    context_name: context_name.clone(),
-                })
-                .map_err(classify_source_planning)?;
-            let schemas = value.schemas().ok_or_else(|| {
-                canonical_compilation_error("planned resource read has no schema owner")
-            })?;
-            let schema = schemas.get(value.schema()).ok_or_else(|| {
-                canonical_compilation_error("planned resource read schema is unavailable")
-            })?;
             let name = format!("@{}/{}", reference.target, reference.name);
-            // Planning schemas cross the provider's schema arena. Resolve its
-            // dimension parameters before handing the body to the compiler.
-            input_schemas.insert(name.clone(), schema.closed_body(value.shape())?);
-            planned_reads.insert(name.clone(), value);
-            reads.insert(name, request);
+            reads.insert(name.clone(), request);
+            if let Some(value) = plan_read(RuntimeResourceReadRequest {
+                base_uri: key.base_uri,
+                path: key.path,
+                context_name: context_name.clone(),
+            })
+            .map_err(classify_source_planning)?
+            {
+                input_schemas.insert(name.clone(), canonical_planned_read_schema(&value)?);
+                planned_reads.insert(name, value);
+            }
         }
 
         let mut writes = BTreeMap::new();
@@ -1874,8 +1882,25 @@ impl<'a> ProgramCompilerView<'a> {
             .map_err(|error| MechError::new(error, None))?;
         let external_input_names = canonical_declared_compute_inputs(&index.root)?;
         let retained_outputs = canonical_declared_compute_outputs(&index.root)?;
-        let (mut input_schemas, resource_reads, resource_writes, planned_reads) =
-            self.canonical_document_resources(&index.root, &document.document())?;
+        // Retained host paths name flattened interface leaves (e.g. result.1.0).
+        // Source publication owns their lexical producers; the interface below
+        // remains the authority for validating exact leaf names.
+        let published_compute_bindings = retained_outputs
+            .iter()
+            .map(|name| name.split('.').next().unwrap_or(name).to_owned())
+            .collect();
+        let (mut input_schemas, resource_reads, resource_writes, mut planned_reads) = self
+            .canonical_document_resources_with_read_planner(
+                &index.root,
+                &document.document(),
+                |request| {
+                    if is_compute_kernel_base(&request.base_uri) {
+                        Ok(None)
+                    } else {
+                        self.resources.plan_read(request).map(Some)
+                    }
+                },
+            )?;
         let imported = crate::resolver::canonical_import_values(
             &index.root,
             &crate::resolver::SourceScope::Program,
@@ -1899,13 +1924,13 @@ impl<'a> ProgramCompilerView<'a> {
             })
             .collect();
         let mut programs = CanonicalSourceFrontend
-            .compile_mixed_document_with_planning_contract(
+            .prepare_mixed_document_with_planning_contract(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
                 input_schemas,
                 resource_writes,
                 &external_input_names,
-                &retained_outputs,
+                &published_compute_bindings,
                 &modules,
             )
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
@@ -1926,7 +1951,6 @@ impl<'a> ProgramCompilerView<'a> {
                 .bind_input_constants(&values)
                 .map_err(|error| canonical_compilation_error(error.to_string()))
         };
-        programs.coordinator = bind_imports(programs.coordinator)?;
         programs.compute = bind_imports(programs.compute)?;
         programs.compute_initializers = bind_imports(programs.compute_initializers)?;
 
@@ -1953,8 +1977,37 @@ impl<'a> ProgramCompilerView<'a> {
             &programs.region_name,
         )?;
 
-        let read_bindings = programs
-            .coordinator
+        for name in &retained_outputs {
+            if !compute
+                .interface
+                .outputs
+                .iter()
+                .any(|port| port.name.as_ref() == name)
+            {
+                return Err(compute_planning_error(format!(
+                    "unknown sampled compute output `{name}`"
+                )));
+            }
+        }
+
+        let mut compute_read_schemas = BTreeMap::new();
+        for (name, request) in &resource_reads {
+            if is_compute_kernel_base(&request.base_uri) {
+                let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+                let value = plan_compute_read(&compute.interface, &key)
+                    .map_err(classify_source_planning)?;
+                compute_read_schemas.insert(name.clone(), canonical_planned_read_schema(&value)?);
+                planned_reads.insert(name.clone(), value);
+            }
+        }
+        let coordinator = bind_imports(
+            programs
+                .coordinator
+                .compile(compute_read_schemas)
+                .map_err(|error| canonical_compilation_error(error.to_string()))?,
+        )?;
+
+        let read_bindings = coordinator
             .program()
             .inputs
             .iter()
@@ -1966,8 +2019,7 @@ impl<'a> ProgramCompilerView<'a> {
                     .map(|value| (ordinal as u32, value))
             })
             .collect::<Vec<_>>();
-        let planning_coordinator = programs
-            .coordinator
+        let planning_coordinator = coordinator
             .clone()
             .bind_input_constants(&read_bindings)
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
@@ -1984,7 +2036,7 @@ impl<'a> ProgramCompilerView<'a> {
             self.resources,
         )?;
 
-        let mut coordinator = programs.coordinator;
+        let mut coordinator = coordinator;
         for (name, request) in resource_reads {
             coordinator = coordinator
                 .bind_resource_input(&name, request)
@@ -3934,6 +3986,17 @@ impl CompilerPlanningServices<'_> {
             context_name: request.context_name.clone(),
         })
     }
+}
+
+fn canonical_planned_read_schema(value: &Value) -> MResult<mech_core::SchemaBody> {
+    let schemas = value
+        .schemas()
+        .ok_or_else(|| canonical_compilation_error("planned resource read has no schema owner"))?;
+    let schema = schemas.get(value.schema()).ok_or_else(|| {
+        canonical_compilation_error("planned resource read schema is unavailable")
+    })?;
+    // Resolve provider/interface shape parameters before crossing schema arenas.
+    schema.closed_body(value.shape())
 }
 
 fn is_compute_kernel_base(base_uri: &str) -> bool {

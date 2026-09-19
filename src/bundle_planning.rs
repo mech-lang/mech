@@ -13,6 +13,7 @@ pub(super) fn retained_sources(
         ResolvedSource, import_may_resolve_source_dependency, import_requires_source_dependency,
     };
     let mut resolver = mech_runtime::InMemorySourceResolver::new();
+    let filesystem = mech_runtime::FileSourceResolver::new(base).with_root(project);
     let mut documents = std::collections::HashMap::new();
     let mut owners = std::collections::HashMap::new();
     for path in paths {
@@ -42,13 +43,11 @@ pub(super) fn retained_sources(
                 continue;
             }
             let request = mech_runtime::resolver::source_request_for_import(&import, Some(uri));
-            let resolved = mech_runtime::source_path_candidates(
-                path.parent().expect("canonical source has a parent"),
-                std::path::Path::new(&request.specifier),
-            )
-            .into_iter()
-            .filter_map(|candidate| candidate.canonicalize().ok())
-            .find_map(|candidate| owners.get(&candidate));
+            let filesystem_request = mech_runtime::SourceRequest::new(&request.specifier)
+                .with_referrer(mech_runtime::path_to_file_uri(path)?);
+            let resolved = filesystem
+                .resolve_filesystem_path(&filesystem_request)?
+                .and_then(|candidate| owners.get(&candidate));
             if let Some(target) = resolved {
                 resolver.insert_resolution(uri, &request.specifier, target)?;
             } else if import_requires_source_dependency(&import) {

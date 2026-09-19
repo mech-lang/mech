@@ -998,6 +998,8 @@ export default async function init() {}
         for (specifier, dependency) in [
             ("./filters", "filters/index.mec"),
             ("./filters.v1", "filters.v1.mec"),
+            ("fs://lib/geometry.mec", "lib/geometry.mec"),
+            ("fs://lib/space%20dep.mec", "lib/space dep.mec"),
         ] {
             let root = temp_root("canonical-file-candidates");
             let loaded = write_demo_project(&root);

@@ -84,7 +84,8 @@ pub fn maintained_operation_contract(
             base @ ("core/assign/indexed-axis"
             | "core/assign/indexed-rows"
             | "core/assign/indexed-columns"
-            | "core/assign/indexed-rectangle"),
+            | "core/assign/indexed-rectangle"
+            | "core/assign/nested"),
             "add" | "sub" | "mul" | "div" | "pow",
         )) => base,
         _ => name,
@@ -96,6 +97,7 @@ pub fn maintained_operation_contract(
         }
         "core/assign/indexed-columns" => Some((3, RegionPolicy::IndexedAxis { axis: 1 })),
         "core/assign/indexed-rectangle" => Some((4, RegionPolicy::RectangularRegion)),
+        "core/assign/nested" if input_count >= 3 => Some((input_count, RegionPolicy::WholeValue)),
         "core/assign/collection-entry" => Some((3, RegionPolicy::CollectionEntry)),
         "core/assign/single-element" => Some((3, RegionPolicy::SingleElement)),
         _ => None,
