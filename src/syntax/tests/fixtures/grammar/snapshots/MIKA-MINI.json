@@ -1,0 +1,16 @@
+{
+  "ast": {
+    "Mini": {
+      "expression": "Normal",
+      "left_arm": "Left",
+      "right_arm": "Right"
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "",
+    "source_graphemes": 7
+  },
+  "entry_point": "mini-mika",
+  "rule": "mini-mika"
+}

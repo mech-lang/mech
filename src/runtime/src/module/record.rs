@@ -1,6 +1,8 @@
 use mech_core::{MechSourceCode, Program};
 use std::sync::Arc;
 
+#[cfg(feature = "source")]
+use crate::SourceDocument;
 use crate::{
     CapabilityRequest, ModuleId, ModuleScopeMetadata, ModuleVersionId, SourceAddressReference,
     SourceContextDeclaration, SourceExportDeclaration, SourceImportDeclaration, SourceKind,
@@ -14,6 +16,8 @@ pub struct RuntimeModuleRecord {
     pub canonical_uri: String,
     pub kind: SourceKind,
     pub source: MechSourceCode,
+    #[cfg(feature = "source")]
+    pub source_document: Option<SourceDocument>,
     pub syntax_tree: Option<Arc<Program>>,
     pub compiler_version: String,
     pub language_edition: String,
@@ -37,6 +41,7 @@ impl RuntimeModuleRecord {
         canonical_uri: impl Into<String>,
         kind: SourceKind,
         source: MechSourceCode,
+        #[cfg(feature = "source")] source_document: Option<SourceDocument>,
         syntax_tree: Option<Arc<Program>>,
         compiler_version: impl Into<String>,
         language_edition: impl Into<String>,
@@ -58,6 +63,8 @@ impl RuntimeModuleRecord {
             canonical_uri: canonical_uri.into(),
             kind,
             source,
+            #[cfg(feature = "source")]
+            source_document,
             syntax_tree,
             compiler_version: compiler_version.into(),
             language_edition: language_edition.into(),
@@ -72,5 +79,24 @@ impl RuntimeModuleRecord {
             capability_requirements,
             capability_requirement_keys,
         }
+    }
+
+    /// Read the retained canonical resolver authority without falling back to
+    /// the temporary Program cache carried for the pre-cutover shipping path.
+    #[cfg(feature = "source")]
+    pub fn canonical_document_index(&self) -> mech_core::MResult<crate::CanonicalDocumentIndex> {
+        self.source_document
+            .as_ref()
+            .ok_or_else(|| {
+                mech_core::MechError::new(
+                    crate::InvalidResolvedSourceError {
+                        field: "source_document",
+                        reason: "is required for canonical admission",
+                    },
+                    None,
+                )
+            })?
+            .index()
+            .map_err(|error| mech_core::MechError::new(error, None))
     }
 }

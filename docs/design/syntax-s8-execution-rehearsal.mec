@@ -1,0 +1,278 @@
+S8B — Execution interfaces and the deleted-code rehearsal
+===============================================================================
+
+Status: execution preparation and review correction; product qualification remains open.
+Parent: S8A b573284cb4587d4fb0085cc69a80a036830f1b76.
+The linked s8-consumer-readiness.tsv remains the consumer tracker; this record
+records B's public-interface decisions. Canonical configuration, document and
+interactive compilation, mixed compute partitioning, retained import binding,
+and bundle provider planning now have implementation witnesses. Document input/initializer/static-symbol methods are now implemented. The complete
+configured product matrix and deleted-code qualification below still gate acceptance.
+A removal row marked routed has switched its caller to canonical input and must
+have zero old parser calls. It remains open for deletion qualification and cannot
+satisfy a demonstrated consumer's dependency gate.
+
+1. Compiler migration contract
+-------------------------------------------------------------------------------
+
+Replace the Program input in ProgramCompiler and ProgramCompilerView with the
+retained SourceDocument / its selected typed document owner. Preserve each
+existing method's output and host boundary. Prepared interfaces (shipping tree-route removal remains C-owned):
+
+compile_tree -> compile_document -> ProgramCompilationProduct.
+compile_interactive_tree -> compile_interactive_document -> observable product.
+compile_tree_artifact -> compile_document_artifact -> ProgramArtifact product.
+compile_tree_artifact_with_inputs -> compile_document_artifact_with_inputs:
+  retain detached planning values and the explicit set of live input names.
+compile_tree_artifact_with_input_initializers -> corresponding document method:
+  capture declaration-time values in the same short-lived planning pass; do not
+  run a second evaluator or leak compiler cells into resident state. Canonical
+  initialization and live projections share one retained document and one resource
+  planning context; only the initialization projection is temporarily activated.
+  That projection retains requested defaults and their canonical dependencies,
+  including state writers and integrity constraints. Unrelated document outputs
+  remain in the executable artifact and are not evaluated to capture defaults.
+evaluate_static_tree_symbols[_with_inputs] -> document variants:
+  preserve requested-symbol filtering and detached RuntimeHostInputValue outputs.
+  Requested symbols have distinct output identities, including a variable named
+  result, and canonical matrix snapshots retain logical row-major order.
+compile_mixed_tree -> compile_mixed_document:
+  canonical typed declaration/executable partitions retain module resolution,
+  compute regions, coordinator artifacts and advertised target requirements.
+
+Source text methods construct the retained source once and delegate to these
+interfaces. Root/resolved-source methods reuse the cache owner. Do not construct
+Program to call an unchanged method. Do not insert a parser flag into a compiler.
+Missing lowering/resolution semantics block the owning S4/S7A prerequisite.
+
+Initializers and planning values are not automatically live input ports. The
+external_input_names distinction is an acceptance assertion, not optional cleanup.
+Resource-derived defaults are detached from the live graph; configured resource
+reads remain live only where executable bindings still use them. Local functions
+can introduce a configured resource read on first use while ordinary caller
+bindings remain outside their local scope. Canonical tuple destructuring binds
+local function outputs through the maintained tuple-selection operations.
+Constant ranges use the shared cardinality authority for fixed shape inference;
+runtime-bound ranges retain independent dimension parameters. Matrix annotations
+without extents infer independent row and column dimensions through the shared
+type solver. Nested matrices retain separate dimensions. Supplied planning
+values specialize annotations and rebind snapshots against the destination's
+shape context; incompatible element kinds still reject. Repeated input
+annotations share constraints regardless of occurrence order. Typed module
+imports bind catalog exports for wildcard, item, group and alias forms, and mixed
+compute regions inherit root imports without sharing local variable bindings.
+Resolved host capabilities and module catalog ownership stay in the current
+ProgramCompiler boundary. Production witnesses must enter those methods.
+
+Compute state initialization walks only the canonical artifact's activation
+dependency graph and memoizes shared values once per compilation. Both compute
+lowerers consume the same row-major initializer snapshots; the fixed-shape target
+converts them to its column-major storage layout. Arithmetic uses the shared
+compute operation mapping and range construction uses core's canonical visitor.
+Activation admits declared pure signal operations with independent whole-value
+writes. Live inputs, recurrence state, cycles and unresolved extents reject before
+session creation. No recurrence turn runs to obtain declaration-time values.
+Qualification covers shared matrix initializers, subsequent turns, and the shipped
+particle initialization at 5, 257, 16384 and 1000000 particles. The early browser
+canary uses computed range/remainder/concatenation initializers.
+
+Interactive document compilation shares the ordinary compiler's configured
+resource schemas, bindings and external-contract resolver. Only output visibility
+differs. Planning reads snapshots and prepares no live reads or effects;
+authorization remains part of runtime admission. A denied interactive candidate
+leaves the accepted source and state intact.
+Typed and finalized-stream submissions share selection preparation, suppression,
+source echo and candidate commit. Finality is checked before preparation. The
+canonical interactive compiler binds synthetic ans to the preceding source value;
+it is neither a live port nor recurrence state. Failed submissions preserve the
+pending selection, and successful submissions consume it exactly once.
+
+Fixed-shape compute retains derived output publications separately from recurrence
+state in its backend-neutral storage plan. Each derived slot has one publication
+buffer even when several output names alias it. Publications begin zeroed, commit
+with the accepted candidate, and preserve their prior contents after an integrity
+rejection. CPU scalar, SIMD, JIT, native GPU and browser GPU use the same physical
+double-buffer plan; only recurrence state is loaded into the next turn's registers.
+Publication-only computations remain live during instruction pruning. Fixed-shape
+elementwise broadcasting projects each matrix axis before indexing its physical
+column-major registers; both row and column inputs retain their logical order.
+The canonical compute browser canary checks this source-to-WASM interface against
+both CPU and real WebGPU after each WASM build, before the native server build.
+The browser creates an explicit pipeline layout from the physical plan so shader
+reflection cannot drop an unused publication read binding. Full application and
+deleted-code canaries remain required for acceptance.
+
+2. Bundle/browser decisions requiring implementation before C approval
+-------------------------------------------------------------------------------
+
+The old producer serializes nodes::Program into CODE; WasmDocument/bootstrap
+loaders decode it. That payload must be removed at both boundaries together.
+Prepare retained source plus current accepted artifact publication and loader
+admission. Keep the existing bytecode/artifact format. Preserve source-resolution
+edges, source identity, HTML/output binding identities and browser target checks.
+
+CanonicalProgramBundle is the prepared source/artifact envelope. Version 2 binds
+all resolved transitive dependency source hashes collected by the root compiler.
+The browser checks those identities against its supplied source map before loading
+bytecode; missing or changed dependencies and older envelopes require regeneration.
+The bytecode/artifact format is unchanged. The native
+producer/load witness executes a generated three-document import chain, including
+configured resource planning in dependencies. The documented browser DOM source
+bundles with four assignment effects. Bundle linking shares the file resolver's
+exact/appended-extension/directory-index candidates. HTML formats the admitted
+canonical syntax directly. Only configured run roots receive executable artifacts;
+served prose and dependency documents retain source and HTML without requiring
+independent activation. The real static bootstrap validates each root artifact
+and accepts non-root sources without artifact URLs. Browser distribution acceptance remains
+open until the complete matrix executes after C removes the retiring code.
+Old AST payloads must reject with a regeneration instruction. No format-tree
+reconstruction or old decoder fallback. Native/WASM version/target admission
+continues through existing artifact validation.
+
+3. First C rehearsal and ownership of expected failures
+-------------------------------------------------------------------------------
+
+Create the actual codex/syntax-s8c-cutover branch now. Begin by physically removing
+the Nom recognizer/direct-rule modules and document/lower/legacy, and draft CLI
+classification's canonical route. Keep all maintained tests until their reviewed
+disposition is implemented; unretargeted tests are blockers, not passes/skips.
+
+A owns preparation of source-cache, resolver, presentation and retained-source
+interfaces for its ten contracts. B owns compiler/config/interactive/bundle/browser
+interface preparation for its seventeen execution contracts.
+S7A owns missing renderer/declaration behavior; S4 owns semantic implementation.
+Only C changes shipping routes, module/export wiring and dependency removal after
+the owning A/B interface is prepared. A route failure caused by an interface gap
+returns to that interface owner; the final route change stays with C. No new
+semantic layer belongs on C.
+
+The first draft is deliberately incomplete and cannot satisfy deletion closure:
+remaining product routes and AST owners must still be migrated. Record its exact
+compiler errors, not a blanket expected-red exemption. A/B cannot be accepted
+until the complete C product matrix passes with those dependencies removed.
+
+The canonical library compiling after deletion is only an early boundary probe.
+It is not CLI/runtime/browser acceptance. Final evidence must include actual
+product entry points and all named distributions from syntax-s8-cutover-plan.mec.
+
+Rooted interactive and resolved revisions
+----------------------------------------
+
+The canonical root compiler now shares one graph implementation for ordinary
+and interactive projections. `compile_canonical_interactive_root` publishes live
+root symbols with the same configured resources and detached dependency exports.
+`compile_canonical_resolved_root` and its interactive counterpart consume the
+supplied retained root revision without resolving that root a second time.
+
+`canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_symbols`
+executes ordinary and interactive rooted/resolved interfaces, both with and without
+module-build options: a previously resolved revision produces 42,
+while a later resolver revision produces 100. Both retain dependency identity;
+only interactive products publish the answer symbol. Resource requirements,
+missing dependencies, and compiler reuse after rejection are covered by
+`canonical_interactive_root_keeps_resource_authority_and_dependency_errors`.
+The canonical runtime regression set passes 57 tests. The option-taking variants
+use the existing ModuleBuilder for target, edition, feature, capability and
+transitive module identities in the same resolution pass. No module records are
+persisted into a runtime store. The reduced full_source/resident-routing-source
+profile also compiles. Ordered multi-root compilation remains open; these prepared entry points do not
+replace that responsibility.
+
+
+Rooted mixed compilation
+------------------------
+
+`compile_canonical_mixed_root` and `compile_canonical_mixed_resolved_root` now use
+the same dependency-resolution session and ModuleBuilder identity authority as
+ordinary roots. Resolved namespaces and detached exports enter the existing
+coordinator, compute and initialization projections. Both products retain the
+same transitive source hashes. No declaration tree or reconstructed source is
+used by these interfaces.
+
+`canonical_rooted_mixed_compilation_shares_transitive_imports_and_initializers`
+covers a two-edge import chain consumed by both coordinator and compute. It
+checks the scalar default (3), captured activation input (6), and two completed
+compute turns (9 and 13), plus cycle rejection and compiler reuse afterward.
+The canonical runtime regression set passes 58 tests. Full served mixed browser
+adoption and the final C product matrix remain separate open acceptance work.
+
+Interactive state identity and replacement
+------------------------------------------
+
+Canonical interactive bindings now name retained mutable cells and publish the
+implicit `ans` alias explicitly. Projection refresh derives a state writer's
+final candidate value from its published cell instead of executing that transition
+again. Activation and queries share implicit-result selection while preserving
+the ordinary output's name. This uses existing artifact identities and execution
+storage; it introduces no source replay or alternate evaluator.
+
+`canonical_interactive_turns_and_replacement_preserve_live_state` checks three
+accepted turns followed by a replacement that retains state 3 and displays 13.
+`canonical_interactive_matrix_projection_and_failed_candidate_preserve_state`
+covers a two-row matrix, rejection rollback and the following turn.
+`canonical_interactive_rewired_projection_uses_the_migrated_epoch` distinguishes
+two live state identities and checks a changed output dependency.
+`canonical_interactive_result_identity_is_independent_of_fence_publication`
+checks a final result different from the preceding formatted fence.
+The full B runtime library profile with compute executes 709 tests, all passing.
+
+
+5. Fixed closeout sequence and evidence rules (2026-09-15)
+-------------------------------------------------------------------------------
+
+This is the completion sequence for the existing review, not a new milestone or
+an expansion of the language. The consumer census remains the seventeen B rows
+in grammar-audit/s8-consumer-readiness.tsv. Required semantic behavior is bounded
+by the maintained source/type/operation contracts and checked-in applications.
+A passing retiring compiler, isolated parser rule, or extracted compute region
+cannot qualify a complete canonical product. Existing component evidence remains
+useful, but its narrower scope must be stated.
+
+Proceed in this order, repairing concrete failures in their shared owner:
+
+1. Audit types and operations before further architectural implementation. Use
+   BuiltinScalarKind::ALL (17 kinds) and SchemaBody as the census, and the existing
+   phase-2i-semantic-completion.tsv for explicit target capability dispositions.
+   Exercise retained complete documents, artifact encode/decode, live changes,
+   downstream propagation, and rejection/rollback where the contract applies.
+   Scalar coverage does not imply matrix, composite, or backend coverage.
+2. Close the known full runtime failures in the one deleted-parser C candidate:
+   terminal logical assignments; ordinary result identity when presentation repeats
+   it; comprehension-backed computed initialization; maintained pattern-function
+   execution. Preserve application values, constraints, recurrence and rollback.
+   Ordered roots and resource planning are implemented and have paired witnesses.
+3. Complete the actual canonical WasmDocument transport and configured served
+   activation. Qualify the full particle and EKF applications and stale dependency
+   rejection at the real browser loader. Kernel-only and envelope-helper results
+   do not satisfy this gate.
+4. Reconcile each of the original seventeen B consumer rows with its switched C
+   caller, positive/negative tests, feature profile, exact candidate and result.
+   Unretargeted tests, zero-test runs and required skipped adapters are blockers.
+5. Freeze the implementation, run the complete deleted-code product/distribution
+   matrix and affected CPU/SIMD/JIT/GPU/memory profiles, address every relevant
+   review note, then obtain a clean review and green exact-head CI. Re-run affected
+   checks after a correction; do not add optional cleanup or new language features.
+
+Type coverage audit
+-------------------------------------------------------------------------------
+
+These entries identify required coverage, not a claim that every entry has passed.
+Existing expression/definition witnesses must be paired with complete-document
+execution where state or product behavior is part of the contract.
+
+| Family | Required dimensions | Existing evidence and remaining check |
+| --- | --- | --- |
+| u8/u16/u32/u64/u128, i8/i16/i32/i64/i128 | Literal, arithmetic, state update, downstream change, overflow rollback; numeric matrices and selected writes | canonical_document_state repeated-selection tests currently cover i32/u32/f32; expand from the registry rather than assume widths share correctness. |
+| f32/f64, c32/c64, r64 | Exact kind, conversions, arithmetic where maintained, successive state updates; matrix operations where admitted | canonical_source_review and canonical_source_semantics include complex/rational witnesses; complete-document recurrence audit remains required. |
+| bool/string | Live replacement, propagation, matrix selection and publication | Full FizzBuzz and changing logical-mask assignments supplement the existing boolean/structure tests. |
+| Id/Index | Exact identity, one-based selectors, wide-value admission | canonical source Id and portable selector regressions; verify document transport and boundary rejection. |
+| Atom/Enum/ReifiedType | Nominal/type identity, supported construction/matching and explicit capability rejection | Audit existing semantic certification against the declared target disposition; do not treat syntax admission as execution support. |
+| Option/Dynamic | Present/absent, concrete payload identity, nested dimensions, changed payload | canonical_source_structures dynamic options, contextual empties and foreign dynamic payload tests. |
+| Tuple/Record | Heterogeneous construction, selection, nested mutation, alias ownership and rollback | canonical_source_structures/completion and canonical_document_state; audit complete-document plus bytecode coverage. |
+| Matrix | Scalar kinds, nonsquare/empty shapes, whole/indexed/nested writes, repeats, live masks and computed initialization | Changing-mask and repeated-selector tests; comprehension initialization and repeated mixed-kind/nested arithmetic remain open checks. |
+| Table/Set/Map | Canonical ordering, duplicate/key rules, changed inputs, joins, nested payloads and memory rejection | canonical_source_collections/structures provide paired execution witnesses; audit complete-document consumers. |
+
+Do not silently mark an uncovered row unsupported. An unsupported disposition
+must already belong to the maintained contract, or be an explicit scope decision.
+Any new failure found by this sweep is recorded under its existing gate; the seal
+requires zero unresolved required rows, not an arbitrary number of review rounds.

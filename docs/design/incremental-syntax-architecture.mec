@@ -1,0 +1,375 @@
+Incremental Syntax Architecture
+===============================================================================
+
+Status: S0-S7A remains under correction and qualification; S7B B1-B6 implemented; exact-head qualification and closeout are recorded on PR #826. S6 activation remains gated on S4 completion.
+
+Integration branch: `feature/syntax`.
+
+The post-R1-R6 implementation sequence is defined by
+`docs/design/syntax-v0.4-continuation-plan.mec`. It supersedes the old combined
+Phase 2I-D/2I-E delivery assumption while retaining this architecture's
+lossless tree, recovery, incremental, and diagnostic contracts.
+
+The branch combines PR 650 at
+`45a8acf1d1ee457a40340f17b9dc009ae781dfce` with the completed Phase 0
+canonical-grammar merge at
+`9511d4d0c9af7893d7230aa98c792f705d504565`.
+
+The authoritative canonical inventory is
+`docs/design/grammar-audit/productions.tsv`; it contains exactly 539 canonical
+rules. A deterministic developer script generates the checked-in
+`src/syntax/src/document/parser/canonical_rules.rs` registry. Production
+package builds read only that package-local registry; a repository test
+recomputes and verifies every ordered `(name, RuleId)` entry against the
+inventory.
+
+The registry implements 520 / 539 rows: 328 qualified earlier rules, 80 Phase 2I
+activation candidates, and 112 S7 document-closure rules. Seventeen runtime
+commands and two rules outside Document reachability remain unported. The
+Phase 2I candidate cannot activate before S4 completes; implemented inventory
+counts do not replace qualification gates.
+
+The exact next executable implementation boundary is generated from the
+normative `ebnf:canonical` grammar graph in `docs/design/specification.mec` and
+recorded in `docs/design/grammar-audit/phase-2i-recursive-core.tsv`.
+`canonical-dependencies.tsv` records the generated canonical edges,
+`productions.tsv` retains inventory and implementation-derived call provenance,
+and `ports.tsv` defines migration status. The implementation call columns do
+not define the canonical grammar closure.
+
+Phase 2I-A adds only the generated dependency contract. Phase 2I-B freezes the
+representation of all 80 members in
+`docs/design/grammar-audit/phase-2i-syntax-schema.tsv`: 71 unconditional nodes,
+seven conditional precedence nodes, and two transparent aliases. It reserves
+73 append-only syntax kinds and reuses five existing kinds. Phase 2I-C now
+implements clean, lossless recognition for all 80 rules. S6 stages the entire
+certified component as one atomic candidate, which will bring qualified
+canonical progress to 408 / 539 only after the S4 gate passes.
+
+`phase-2i-recursive-core.tsv` defines membership and dependencies.
+`phase-2i-syntax-schema.tsv` defines module ownership and concrete tree
+emission. Phase 2I-C added the complete clean recognizer without a public parser
+root or port activation. S2 added bounded local malformed-input recovery for
+all 80 rules; S3 completed typed syntax, S4 owns engine source-semantic
+completion, S5 completed the certification implementation, and S6 stages the
+candidate registry transition. Shared parenthesis, bracket, brace, colon,
+identifier, and kind prefixes are handled without exponential reparsing.
+
+`MATCH-001` records the canonical rule permitting whitespace before an
+expression match question mark. Expression-level set and
+matrix comprehensions retain their formal priority over formula parsing, while
+set comprehensions remain unavailable as factors. Complete record candidates
+may fall through to maps after clean failure with measured-linear nested-prefix
+growth. Matrix structure selection preserves leading whitespace, newlines, and
+box borders, and every recursive repetition propagates committed child
+recovery. Every direct rule now has a lossless malformed-input contract, and all
+80 rules have candidate Phase 2I entries. They are not active until S4 and S6
+qualification pass.
+
+The current Nom source path remains inventoried throughout pre-cutover
+qualification. The final cutover removes that path atomically; this
+architecture does not introduce a compatibility lowering layer or selectable
+fallback.
+
+Retained streaming delivery boundary
+-------------------------------------------------------------------------------
+
+The current stack is S0 -> S1 -> S2 -> S3 -> S4 -> S5 -> S6 -> S7A -> S7B -> S8.
+S7A (#825) owns the complete canonical document root, recovery, typed consumers,
+and correct arbitrary edits. Its current append path performs a full canonical
+reparse and identity reconciliation; ID reuse does not certify streaming cost.
+S7B owns resumable append processing and efficient retained publication. Its
+contract and qualification are in `canonical-document-streaming.mec`. S8 changes
+production callers and removes the retiring parser/lowering paths.
+
+Streaming suspension is orthogonal to Match/NoMatch/Committed recognition.
+Temporary input exhaustion cannot mutate the live continuation through EOF
+recovery. Preview recovery belongs to a separate view; finality participates in
+cache validity even when the source revision is unchanged. The one-shot
+path uses the same canonical recognition/recovery machinery with final input.
+DocumentStream now owns retained append/advance, provisional journal/typed-node
+views, explicit finite previews, finalization, cancellation, and edit transitions.
+The B5 growth matrix covers eight adversarial families and settled-prefix append,
+including publication, metered typed-node access, and final grammar draining.
+Its 68 measured samples and supported scope are recorded in
+`s7b-streaming-qualification.json`. B6 documents the API and S8 handoff in
+`canonical-document-streaming.mec`; exact-head CI and review outcomes live on
+PR #826. Implemented checkpoints do not certify pending qualification.
+No new grammar rows, compatibility trees, or production switches are introduced.
+
+1. Goals
+-------------------------------------------------------------------------------
+
+The canonical parsed representation of one source revision is a lossless
+`SyntaxSnapshot`. It is designed for whole `.mec` documents, live incomplete
+input, multiple independent errors, streamed appends, incremental edits, exact
+Unicode preservation, structured diagnostics, and later partial semantic
+analysis.
+
+The persisted canonical artifact remains UTF-8 `.mec` text. The parsed form is
+revisioned derived state.
+
+Canonical document parsing and `DocumentSession` use the activated canonical
+grammar and its rule-owned recovery. The initial infrastructure's prototype
+entry points do not participate in session editing or qualify that path.
+
+2. Documents, not a host/guest format
+-------------------------------------------------------------------------------
+
+Document mode always parses sibling Mech and Mechdown constructs. Mechdown is
+not an optional wrapper, and parsing does not try a complete Mech program before
+falling back to prose.
+
+The document root contains sections and document items. Items may be paragraphs,
+Mech items, canonical `subtitle` and `ul-subtitle` headings, lists, tables,
+fences, equations, figures, Mika, and other Mechdown forms as their grammar
+families are ported.
+
+Tools may use fragment entry points for isolated productions, but `.mec` always
+selects document mode.
+
+3. Total parsing
+-------------------------------------------------------------------------------
+
+```rust
+pub fn parse_canonical_document(
+  source: TextSnapshot,
+  config: ParseConfig,
+) -> SyntaxSnapshot;
+```
+
+Every valid UTF-8 input produces a snapshot. User syntax errors do not produce a
+top-level `Err`. On resource exhaustion, the parser retains every token and
+completed node emitted through `covered_end`, appends one `ERROR` node for only
+`covered_end .. parse_range.end`, and closes open nodes with dynamically
+reserved emergency events. Scanner cursor progress is deliberately not
+coverage: bytes from an unfinished token scanner remain in the error remainder
+until a real source token event has been accepted.
+
+Preserving a document prefix requires at least seven events: the two enclosing
+document starts, a three-event error envelope, and the corresponding enclosing
+finishes. `max_events` below this documented minimum permits an explicit,
+lossless whole-range fallback. At and above the minimum, whole-range fallback
+is not used merely because the parser exhausts its event budget.
+
+Strict validation and typed access are later consumers:
+
+```rust
+parse_canonical_document(source, config)
+validate_strict(&snapshot)
+typed_document(&snapshot)
+```
+
+The parser kernel is an event-based ordinary-function parser. It uses explicit
+checkpoints, commitment, recovery, rule context, and fuel. It does not use Nom,
+boxed parser closures, a parser generator, or an external tree framework.
+
+4. Revisioned source
+-------------------------------------------------------------------------------
+
+UTF-8 byte offsets are the primary coordinate system. Rows, byte columns,
+UTF-16 positions, grapheme positions, and display widths are derived views.
+Parser cursors store byte offsets only.
+
+A parser cursor has separate consumption and context boundaries. Document
+cursors set both boundaries to the physical source end. Fragment cursors start
+at the requested global range, set `consume_end` to that range's end, and set
+`context_end` to the physical source end. All ordinary peek and bump operations
+remain bounded by `consume_end`. Explicit immutable context-lookahead operations
+may inspect through `context_end` for diagnostic `FoundSyntax` and strong
+heading or fence boundary recognition, but expose no operation that can advance
+the parser or emit a token outside the fragment range.
+
+A `TextSnapshot` identifies a `DocumentId` and `Revision`. Its immutable piece
+list references `Arc<str>` chunks and byte ranges within those chunks. Edits
+reuse unchanged chunks. Append is insertion at EOF. Multiple edits in one
+revision are sorted, non-overlapping, and expressed in the old revision.
+
+Edits are rejected when a range is reversed, outside the snapshot, or not on a
+UTF-8 boundary. Input is never normalized. LF, CRLF, and CR remain byte-exact
+and are all recognized by the derived line index.
+
+The current list representation intentionally leaves cursor and tree interfaces
+independent of storage shape so a balanced representation can replace it later.
+
+5. Lossless green and red trees
+-------------------------------------------------------------------------------
+
+Green nodes and tokens are immutable. They store relative lengths, stable
+session-minted identities, flags, structural hashes, and child arrays. They do
+not store absolute offsets or redundant token strings. A red view combines a
+green element with a source revision and derives its range from ancestor and
+sibling lengths.
+
+The lossless invariants are:
+
+- Every source byte belongs to exactly one non-synthetic token.
+- Concatenating non-synthetic token text reproduces the source byte-for-byte.
+- Whitespace, comments, and delimiters are tokens.
+- Missing tokens have zero width and are synthetic.
+- Skipped malformed tokens remain below an `ERROR` node.
+- The tree does not globally intern identical subtrees.
+
+`NodeId` and `TokenId` are minted by a document session. A reused green subtree
+keeps its identities. A reparsed subtree receives new identities. Hashes support
+comparison and caching but never define editor identity.
+
+The `NodeIndex` resolves each identity to its current kind, range, parent, and
+flags. This supports red navigation and diagnostic anchoring without putting
+absolute offsets in green storage.
+
+Typed AST views are zero-copy wrappers over red nodes. Accessors return `Option`
+because live syntax may omit required children.
+
+6. Structural errors and diagnostics
+-------------------------------------------------------------------------------
+
+Absent required syntax is represented by zero-width `MISSING` nodes or tokens.
+Unexpected source is retained as ordinary tokens under an `ERROR` node.
+
+Diagnostic messages are not stored in green nodes. A revisioned
+`DiagnosticStore` contains stable namespaced codes, phases, severity, canonical
+rule IDs, internal parser-context IDs, structural or absolute anchors, labels,
+expected and found syntax, fixes, related diagnostics, recovery actions, tags,
+and display messages. Canonical rule IDs are generated only from the Phase 0
+inventory; recovery machinery and partial prototype productions cannot mint
+canonical-looking IDs.
+
+Structural anchors use an element identity plus a relative range. When an
+unchanged node shifts after an earlier edit, its diagnostics shift with it.
+Absolute anchors are revision-specific and are used when no suitable syntax
+identity exists.
+
+The stable fields, rather than English wording, are the test oracle. Optional
+Serde support supplies JSON for tools. A small plain-text renderer supplies
+human-readable output without coupling the schema to a terminal library.
+
+7. Recovery
+-------------------------------------------------------------------------------
+
+Productions distinguish `NoMatch`, `Match`, and `CommittedFailure`. Once a
+distinctive prefix such as a define operator is recognized, the construct may
+recover but cannot fall back to unrelated prose.
+
+Recovery operations are:
+
+- Insert a missing element at a legitimate boundary.
+- Skip unexpected source into an `ERROR` node.
+- Abandon an incomplete production to an ancestor restart root.
+
+Every parser and recovery loop consumes a source byte, inserts once and changes
+grammar state, returns, or terminates. Fuel, nesting, event, diagnostic, and
+recovery-byte limits enforce this invariant.
+
+Recovery uses contextual restart entries. Document, paragraph, Mech, and fence
+modes record delimiter depth, line-start state, and indentation. Canonical
+headings, matching fence boundaries, and delimiter-aware Mech terminals form
+strong restart points. Recovery never treats a Markdown `#` convention as a
+Mechdown heading.
+
+`ParseContext.delimiter_depth` is the number of delimiter-owning ancestors
+already open before a fragment root begins. A top-level parenthetical fragment
+therefore starts at depth zero; the inner parenthetical in `((1))` starts at
+depth one, and the next nested parenthetical starts at depth two. Restart-index
+construction counts actual delimiter-owning ancestors rather than assigning a
+constant depth. The fragment parser initializes its nesting counter from this
+context before parsing the fragment's own opening delimiter.
+
+8. Incremental reparsing
+-------------------------------------------------------------------------------
+
+`DocumentSession` initializes with the canonical document parser. Every edit
+creates a `ChangeMap` and invokes that same canonical document root once over
+the complete updated `TextSnapshot`, with the session's resource limits. The
+session does not invoke prototype document or fragment parsers. Canonical
+fragment restart optimization remains future work; the current restart extent
+is always the full document, including after diagnostic-budget exhaustion.
+
+The fresh canonical result alone decides syntax, recovery and diagnostics.
+Identity reconciliation then maps old, untouched byte ranges into the new
+revision. An old green subtree is reused only when its mapped range and every
+structural field match the fresh subtree; hashes select candidates but do not
+prove equality. Reusing the original `Arc` retains all descendant node and token
+IDs. Changed parents keep newly minted IDs while unchanged children may retain
+theirs. Missing zero-width syntax at an edited boundary receives fresh IDs.
+
+Reconciliation indexes candidates by mapped range and structure, using sorted
+edit prefix sums for logarithmic offset lookup. Tree comparisons and diagnostic
+candidate matching have an explicit linear-size work allowance; exhaustion
+keeps the fresh canonical identities. Mandatory indexing, remapping and delta
+construction are bounded by the old and new element and diagnostic counts;
+ordered-map operations add logarithmic lookup cost. Candidate queues contain
+at most one entry per old element; identity mappings and rebuilt child slots
+contain at most one entry per fresh element. Diagnostic storage is linear in
+the old and new metadata, and related-edge propagation visits each edge once.
+There is no allocation proportional to the product of candidate counts.
+Diagnostic IDs are retained
+only when the complete mapped finding, including related diagnostic identities,
+is unchanged. Diagnostic anchors always resolve against the resulting tree.
+
+Every edited revision is compared with a fresh canonical parse in qualification:
+full tree structure, token text and flags, diagnostics, anchors, losslessness,
+and resource counters. Unchanged-subtree pointer and ID reuse are checked
+separately from parse equality.
+
+Incremental statistics report the actual single full-document invocation in
+`fallback_parser_steps` and `fallback_events_emitted`; fragment, validation and
+rejected-attempt counters are zero. `total_parser_steps` and
+`total_events_emitted` include all parser work, and `parser_steps` and
+`events_emitted` alias those totals. Reconciliation work and its allowance are
+reported separately. Reuse does not imply a reduction in parsing extent.
+
+9. Annotation substrate and future analysis
+-------------------------------------------------------------------------------
+
+Syntax annotations use typed `NodeMap<T>` values at one revision. Reusing a
+syntax node permits its annotation to be retained; replacing or deleting the
+node invalidates the entry. This is a generic typed map, not a dynamic property
+bag.
+
+Most future semantic facts attach to HIR because one syntax node may lower to
+multiple semantic entities. Origin mappings project them back to syntax:
+
+```rust
+pub struct AnalysisSnapshot {
+  pub document: DocumentId,
+  pub revision: Revision,
+
+  pub origins: HirMap<SyntaxPtr>,
+  pub kinds: HirMap<FactState<KindInfo>>,
+  pub dimensions: HirMap<FactState<DimensionInfo>>,
+  pub effects: HirMap<FactState<EffectInfo>>,
+  pub coeffects: HirMap<FactState<CoeffectInfo>>,
+  pub refinements: HirMap<FactState<RefinementInfo>>,
+  pub liveness: HirMap<FactState<LivenessInfo>>,
+}
+```
+
+`mech-syntax` supplies reusable identities, `SyntaxPtr`, `NodeMap<T>`, and
+`FactState<T>`. It does not define placeholder semantic fact types.
+
+10. Portability
+-------------------------------------------------------------------------------
+
+Production document modules use `core` and `alloc`, forbid unsafe code, and do
+not access filesystems, threads, clocks, terminal coloring, or platform APIs.
+Observable maps are deterministic. Source and diagnostic serialization is
+behind the existing `serde` feature.
+
+The design remains implementable in Mech: piece arrays, immutable nodes, event
+arrays, typed maps, checkpoints, and explicit recovery are concrete data
+structures rather than a Rust-specific framework.
+
+11. Structural presentation retention
+-------------------------------------------------------------------------------
+
+Concrete syntax retains presentation exactly: delimiters, border spellings,
+horizontal trivia, and physical newlines remain ordinary syntax tokens. Semantic
+structures intentionally discard that presentation when the engine source
+frontend constructs values such as matrices, maps, sets, and table rows.
+
+Format preservation is therefore syntax-driven. A formatter may preserve the
+retained structure or apply an explicitly selected normalization policy, but it
+must not infer an original presentation from semantic dimensions, row counts,
+estimated width, or similar heuristics. Detached presentation metadata is not
+used because it could become stale after an incremental edit.

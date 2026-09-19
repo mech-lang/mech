@@ -161,6 +161,13 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
     ParsedProgram::from_bytes(product.bytecode()).unwrap()
 }
 
+fn compile_canonical_provider(case: &ProviderCase) -> ParsedProgram {
+    let product = provider_compiler(case)
+        .compile_canonical_source(case.source)
+        .unwrap();
+    ParsedProgram::from_bytes(product.bytecode()).unwrap()
+}
+
 #[test]
 fn every_standard_provider_plans_source_to_bytecode() {
     for case in PROVIDER_CASES {
@@ -182,6 +189,53 @@ fn every_standard_provider_plans_source_to_bytecode() {
             case.provider
         );
     }
+}
+
+#[test]
+fn every_standard_provider_plans_canonical_source_to_bytecode() {
+    for case in PROVIDER_CASES {
+        let parsed = compile_canonical_provider(case);
+        assert!(
+            parsed.requirements.iter().any(|requirement| {
+                matches!(
+                    requirement,
+                    ApplicationRequirement::Resource(request)
+                        if request.base_uri == case.base_uri
+                            && request.path == case.path
+                            && request.context_name
+                                == case.target.rsplit('/').next().unwrap()
+                            && request.operation == case.operations[0]
+                            && request.intent == case.intent
+                )
+            }),
+            "missing canonical planned requirement for {}",
+            case.provider
+        );
+    }
+}
+
+#[test]
+fn canonical_context_alias_preserves_the_resolved_resource_owner() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "console")
+        .unwrap();
+    let source = "@out := console://console/output{:write(line)}\n@alias := @out\n@alias/line <- \"planned\"";
+    let product = provider_compiler(case)
+        .compile_canonical_source(source)
+        .unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(parsed.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == "console://console/output"
+                    && request.path == "line"
+                    && request.context_name == "output"
+                    && request.operation == "write"
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
 }
 
 #[test]
@@ -208,8 +262,10 @@ fn robot_custom_send_operation_survives_source_artifact_and_bytecode() {
             })
     );
     assert!(product.artifact().nodes().iter().any(|node| {
-        node.operation.module_path.as_ref() == ["resource", "send"]
-            && node.operation.operation_name == "move"
+        node.as_operation().is_some_and(|node| {
+            node.operation.module_path.as_ref() == ["resource", "send"]
+                && node.operation.operation_name == "move"
+        })
     }));
 
     let decoded = ParsedProgram::from_bytes(product.bytecode()).unwrap();

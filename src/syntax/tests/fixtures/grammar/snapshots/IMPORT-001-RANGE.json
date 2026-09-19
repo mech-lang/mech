@@ -1,0 +1,26 @@
+{
+  "ast": {
+    "alias": null,
+    "group_items": null,
+    "item": null,
+    "kind": "Module",
+    "module": {
+      "name": {
+        "chars": [
+          "m",
+          "a",
+          "t",
+          "h"
+        ],
+        "kind": "Identifier"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 7,
+    "remaining_source": "   \n",
+    "source_graphemes": 11
+  },
+  "entry_point": "module-import",
+  "rule": "module-import"
+}

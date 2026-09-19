@@ -449,6 +449,37 @@ impl SchemaTable {
         self.entries.iter()
     }
 
+    /// Extend this arena with schemas owned by a detached value while keeping
+    /// every existing schema ID stable.
+    ///
+    /// Canonical source linking uses this before rebinding a dependency export
+    /// into a dynamic input. Existing program and constant IDs remain valid;
+    /// equivalent definitions are deduplicated by their canonical key.
+    pub fn extend_preserving_ids(
+        &self,
+        additional: &SchemaTable,
+    ) -> Result<Self, SemanticModelError> {
+        let mut entries = self.entries.to_vec();
+        let mut by_key = entries
+            .iter()
+            .map(|entry| (entry.key, entry.canonical_bytes.clone()))
+            .collect::<BTreeMap<_, _>>();
+        for entry in additional.entries.iter() {
+            if let Some(existing) = by_key.get(&entry.key) {
+                if existing.as_ref() != entry.canonical_bytes.as_ref() {
+                    return Err(SemanticModelError::SchemaKeyCollision { key: entry.key });
+                }
+                continue;
+            }
+            u32::try_from(entries.len()).map_err(|_| SemanticModelError::SchemaIdExhausted)?;
+            by_key.insert(entry.key, entry.canonical_bytes.clone());
+            entries.push(entry.clone());
+        }
+        Ok(Self {
+            entries: entries.into_boxed_slice(),
+        })
+    }
+
     /// Checked allocation witness for an independently owned clone of this
     /// canonical schema context. It includes the table header, entry slice,
     /// each concrete cloned schema allocation and the retained canonical byte
@@ -462,6 +493,14 @@ impl SchemaTable {
                 .checked_add(u64::try_from(entry.canonical_bytes.len()).ok()?)?
                 .checked_add(schema_clone_heap_bytes(&entry.schema)?)
         })
+    }
+}
+
+impl SchemaBody {
+    /// Heap layout bound reused by canonical body closure. Closing dimensions
+    /// only replaces expressions with constants, so it cannot exceed a clone.
+    pub(crate) fn clone_allocation_bound_bytes(&self) -> Option<u64> {
+        body_clone_heap_bytes(self)
     }
 }
 

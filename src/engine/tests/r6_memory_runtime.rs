@@ -570,11 +570,13 @@ mod resident_existing_value_budget_scope {
         let graph = SourceProgram {
             inputs: inputs.into_boxed_slice(),
             nodes: vec![SourceNode {
-                operation: OperationReference {
-                    module_path: vec!["access".to_owned()].into_boxed_slice(),
-                    operation_name: name.to_owned(),
+                body: mech_engine::SourceNodeBody::Operation {
+                    operation: OperationReference {
+                        module_path: vec!["access".to_owned()].into_boxed_slice(),
+                        operation_name: name.to_owned(),
+                    },
+                    requirement: None,
                 },
-                requirement: None,
                 inputs: vec![source, selector].into_boxed_slice(),
                 outputs: vec![SourceNodeOutput::Derived {
                     schema: output_schema,

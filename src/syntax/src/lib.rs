@@ -4,7 +4,6 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 
 extern crate mech_core;
-#[cfg(feature = "no_std")]
 #[macro_use]
 extern crate alloc;
 #[cfg(not(feature = "no_std"))]
@@ -12,6 +11,15 @@ extern crate core;
 extern crate nom;
 extern crate nom_unicode;
 extern crate tabled;
+
+// The existing audited allocator is confined to std-enabled library tests.
+#[cfg(all(test, any(feature = "std", not(feature = "no_std"))))]
+#[path = "../../core/tests/support/r6_allocation_probe.rs"]
+mod allocation_probe;
+
+#[cfg(all(test, any(feature = "std", not(feature = "no_std"))))]
+#[global_allocator]
+static TEST_ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllocator;
 
 use mech_core::nodes::*;
 use mech_core::*;
@@ -43,6 +51,9 @@ use std::collections::HashMap as RangeMap;
 //#[cfg(feature = "mechdown")]
 pub mod activation;
 pub mod base;
+/// Lossless canonical syntax. Product callers move to this surface together
+/// in the S8 source-path cutover.
+pub mod document;
 pub mod expressions;
 #[cfg(feature = "formatter")]
 pub mod formatter;

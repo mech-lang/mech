@@ -401,7 +401,8 @@ jobs:
           # Direct package feature-boundary checks.
           cargo check -p mech-core --no-default-features --features mika
           cargo check -p mech-core --no-default-features --features "mika serde"
-          cargo check -p mech-syntax --no-default-features --features mika
+          cargo +nightly-2026-03-03 check --locked -p mech-syntax --no-default-features --features mika
+          cargo +nightly-2026-03-03 check --locked -p mech-syntax --no-default-features --features no_std
           cargo check -p mech-engine --no-default-features --features program
 
       - name: Run serve executable HTTP suite
@@ -675,7 +676,7 @@ jobs:
               --test profile_contracts
             cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
               --no-default-features --features full_source \
-              --test profile_contracts
+              --test profile_contracts --test maintained_contract_authority
             cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
               --no-default-features --features full_compiler \
               --test profile_contracts
@@ -1059,8 +1060,67 @@ jobs:
       - name: Install Rust nightly-2026-03-03
         run: |
           rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
+          rustup toolchain install nightly-2026-03-03 --profile minimal --component rustfmt
           rustup default nightly-2026-03-03
+
+      - name: Verify static project bootstrap
+        run: node --test scripts/tests/static-project.test.mjs
+
+      - name: Check generated syntax inventories
+        run: |
+          python3 scripts/generate-canonical-rule-registry.py --check
+          python3 scripts/generate-canonical-port-registry.py --check
+          python3 scripts/generate-canonical-dependencies.py --check
+          python3 scripts/generate-canonical-scc-report.py --check
+          python3 scripts/generate-canonical-document-grammar.py --check
+
+      # The consumer census resolves all features with locked, offline metadata.
+      # Building mech-syntax alone does not populate every workspace dependency.
+      - name: Fetch locked workspace dependencies for offline consumer census
+        run: cargo fetch --locked
+
+      - name: Run syntax grammar suites
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features full
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --tests --no-default-features --features base
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax --test grammar_conformance --no-default-features --features "baselib pretty_print serde compiler program statements_default subscript_default mechdown"
+
+      - name: Verify canonical document syntax with optional features disabled
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-syntax
+          --no-default-features --test canonical_document_feature_gates
+          --test canonical_document_incremental --test document_incremental
+          --test document_incremental_properties --test document_change_map
+          --test document_streaming_complexity --test document_streaming_storage
+          --test document_streaming_lifecycle --test document_streaming_equivalence
+          --test document_streaming_boundaries --test document_streaming_recovery
+          --test document_streaming_resources --test document_streaming_publication
+
+      - name: Verify canonical document execution and rendered outputs
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_source,resident-routing-source
+          --test canonical_declaration_handoff --test canonical_document_outputs
+          --test canonical_document_render --test canonical_source_index
+          --test source_document --test canonical_config_profile --test config_profile
+
+      - name: Verify canonical compiler execution contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_compiler,watcher,compute
+          --lib canonical_
+
+      - name: Verify canonical complete-document indexing work
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_source,resident-routing-source
+          --lib resolver::index::canonical::tests
+
+      - name: Verify retained source admission without Mika
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features source --test source_document
+          --test canonical_config_profile --test config_profile
 
       - name: Check reduced core feature boundaries
         run: |
@@ -1100,6 +1160,13 @@ jobs:
             --lib \
             --tests \
             --features compiler_default
+
+      - name: Qualify isolated canonical source producer profiles
+        run: |
+          cargo +nightly-2026-03-03 check --locked -p mech-engine --no-default-features --features source
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features source --test canonical_source_profile --test canonical_source_review --test canonical_source_collections --test canonical_boolean_match
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --test canonical_document_state --test canonical_document_streaming --test canonical_source_semantics --test canonical_source_review --test canonical_source_structures --test canonical_source_collections --test canonical_boolean_match --test canonical_source_completion --test canonical_phase_2i_semantic_certification
+          cargo +nightly-2026-03-03 test --locked -p mech-engine --no-default-features --features full_source,resident-artifact --lib source_semantics::frontend::
 
       - name: Run retained non-UTF-8 source-root regression
         run: >-

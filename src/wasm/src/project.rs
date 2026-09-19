@@ -1,4 +1,6 @@
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
+#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
+use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
@@ -22,9 +24,13 @@ use mech_engine::{
     insert_root_document_program_output_capture, root_document_inline_eval_count,
     root_document_output_ids, root_document_program_output_id,
 };
+#[cfg(feature = "served_project_authority")]
+use mech_runtime::CanonicalProgramBundle;
+#[cfg(feature = "browser_host_scene")]
+use mech_runtime::MechEvent;
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
-    MechConfigDocument, MechEvent, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
+    MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
     ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
     SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
@@ -151,12 +157,76 @@ impl WasmProject {
     pub fn from_served_bundle(
         config_source: &str,
         sources: JsValue,
+        artifacts: JsValue,
         roots: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        replace_bundle_run_paths(&mut document, bundle_roots_from_js(roots)?)?;
-        Self::from_served_project(document, source_map, Vec::new())
+        let artifact_map = source_map_from_js(artifacts)?;
+        let roots = bundle_roots_from_js(roots)?;
+        replace_bundle_run_paths(&mut document, roots.clone())?;
+        Self::from_served_project_bundle(document, source_map, artifact_map, roots)
+    }
+
+    #[cfg(feature = "served_project_authority")]
+    fn from_served_project_bundle(
+        document: MechConfigDocument,
+        source_map: HashMap<String, String>,
+        artifact_map: HashMap<String, String>,
+        roots: Vec<String>,
+    ) -> Result<WasmProject, JsValue> {
+        let authority = served_browser_authority()?;
+        validate_served_authority(&document, &authority).map_err(to_js_error)?;
+        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+        #[cfg(feature = "browser_host_scene")]
+        let scenes = BrowserSceneRegistry::new();
+        let source_resolver =
+            project_source_resolver_with_resolutions(&source_map, &[]).map_err(to_js_error)?;
+        let mut runtime = build_runtime_from_authority(
+            &document,
+            &authority,
+            source_resolver,
+            #[cfg(feature = "browser_host_scene")]
+            scenes.clone(),
+        )?;
+        let [root] = roots.as_slice() else {
+            return Err(to_js_error(MechError::new(
+                GenericError {
+                    msg: "canonical browser bundles require exactly one root artifact".to_owned(),
+                },
+                None,
+            )));
+        };
+        let source = source_map.get(root).ok_or_else(|| {
+            JsValue::from_str(&format!("canonical bundle root source is missing: {root}"))
+        })?;
+        let encoded = artifact_map.get(root).ok_or_else(|| {
+            JsValue::from_str(&format!(
+                "canonical bundle root artifact is missing: {root}"
+            ))
+        })?;
+        let bundle = CanonicalProgramBundle::decode(encoded, Some(source)).map_err(to_js_error)?;
+        bundle
+            .validate_dependency_sources(|uri| {
+                uri.strip_prefix("bundle:///")
+                    .and_then(|specifier| source_map.get(specifier))
+                    .map(String::as_str)
+            })
+            .map_err(to_js_error)?;
+        if bundle.canonical_uri != format!("bundle:///{root}") {
+            return Err(JsValue::from_str(
+                "canonical bundle root identity is stale; regenerate the bundle",
+            ));
+        }
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_bytecode_program(&bundle.bytecode, durability)
+            .map_err(to_js_error)?;
+        Ok(Self::from_runtime(
+            runtime,
+            #[cfg(feature = "browser_host_scene")]
+            scenes,
+        ))
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -368,12 +438,14 @@ pub(crate) struct WasmDocumentBootstrap {
     served: Option<ServedDocumentBootstrap>,
 }
 
+#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 #[derive(Clone, Default)]
 struct Staged<T> {
     active: T,
     pending: Option<T>,
 }
 
+#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 impl<T> Staged<T> {
     fn stage(&mut self, value: T) {
         self.pending = Some(value);
@@ -743,6 +815,7 @@ fn build_document_repl_runtime_for_tree(
 
     let resolver = document_source_resolver(candidate_tree, source)?;
 
+    #[cfg(feature = "served_project_authority")]
     match bootstrap.served.as_ref() {
         None => {
             builder = builder
@@ -772,6 +845,12 @@ fn build_document_repl_runtime_for_tree(
                 builder = builder.run_resource_grant(grant);
             }
         }
+    }
+    #[cfg(not(feature = "served_project_authority"))]
+    {
+        builder = builder
+            .config(mech_runtime::RuntimeConfig::new("wasm-document-repl"))
+            .source_resolver(resolver);
     }
 
     let runtime = builder
@@ -857,6 +936,7 @@ fn js_value_to_mech_error(error: JsValue) -> MechError {
     )
 }
 
+#[cfg(any(test, feature = "served_project_authority"))]
 fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
     for candidate in std::iter::once("repl".to_string()).chain(
         std::iter::once("repl-console".to_string())
@@ -2026,18 +2106,6 @@ fn build_runtime_from_authority(
     builder.build().map_err(to_js_error)
 }
 
-#[cfg(not(feature = "served_project_authority"))]
-fn build_runtime_from_authority(
-    _document: &MechConfigDocument,
-    _authority: &(),
-    _source_resolver: InMemorySourceResolver,
-    #[cfg(feature = "browser_host_scene")] _scenes: BrowserSceneRegistry,
-) -> Result<MechRuntime, JsValue> {
-    Err(js_error(
-        "served project authority support was not compiled into this WASM artifact",
-    ))
-}
-
 fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
     let mut providers = BTreeMap::new();
     #[cfg(feature = "browser_host_dom")]
@@ -2201,44 +2269,30 @@ fn served_browser_authority() -> Result<BrowserRuntimeInjectionConfig, JsValue> 
         .map_err(|error| js_error(format!("invalid served host config: {error}")))
 }
 
+#[cfg(feature = "served_project_authority")]
 fn validate_served_authority(
     document: &MechConfigDocument,
-    #[cfg(feature = "served_project_authority")] authority: &BrowserRuntimeInjectionConfig,
-    #[cfg(not(feature = "served_project_authority"))] _authority: &(),
+    authority: &BrowserRuntimeInjectionConfig,
 ) -> mech_core::MResult<()> {
-    #[cfg(not(feature = "served_project_authority"))]
-    {
-        return Err(MechError::new(
-            ProjectError {
-                message:
-                    "served project authority support was not compiled into this WASM artifact"
-                        .into(),
-            },
-            None,
-        ));
-    }
-    #[cfg(feature = "served_project_authority")]
-    {
-        for required in &document.hosts {
-            if !authority
-                .hosts
-                .iter()
-                .any(|host| host.name == required.name && host.provider == required.provider)
-            {
-                return Err(MechError::new(
-                    ProjectError {
-                        message: format!(
-                            "served project requires host `{}` provider `{}`, but server authority did not grant it",
-                            required.name, required.provider
-                        ),
-                    },
-                    None,
-                ));
-            }
+    for required in &document.hosts {
+        if !authority
+            .hosts
+            .iter()
+            .any(|host| host.name == required.name && host.provider == required.provider)
+        {
+            return Err(MechError::new(
+                ProjectError {
+                    message: format!(
+                        "served project requires host `{}` provider `{}`, but server authority did not grant it",
+                        required.name, required.provider
+                    ),
+                },
+                None,
+            ));
         }
-        validate_required_grants(document, authority)?;
-        Ok(())
     }
+    validate_required_grants(document, authority)?;
+    Ok(())
 }
 
 #[cfg(feature = "served_project_authority")]
@@ -4422,10 +4476,13 @@ rows := |id<string> x<f64>|
                 crate::mixed_compute::prepare_compute_region(&mut compiler, &tree, 0.0, 0.0)
                     .unwrap();
             assert!(!prepared.coordinator.nodes().is_empty());
-            assert!(prepared.coordinator.nodes().iter().all(|node| matches!(
-                prepared.coordinator.contracts().get(node.contract),
-                Some(mech_core::ResolvedOperationContract::Declared(_))
-            )));
+            assert!(prepared.coordinator.nodes().iter().all(|node| {
+                let node = node.as_operation().expect("EKF coordinator operation");
+                matches!(
+                    prepared.coordinator.contracts().get(node.contract),
+                    Some(mech_core::ResolvedOperationContract::Declared(_))
+                )
+            }));
             let command =
                 crate::mixed_compute::ComputeCommandHandle::new(prepared.region.clone(), 1);
             let registry = crate::mixed_compute::browser_compute_backend_registry(

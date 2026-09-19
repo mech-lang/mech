@@ -1,0 +1,103 @@
+{
+  "ast": {
+    "fsm": {
+      "args": null,
+      "kind": null,
+      "name": {
+        "name": {
+          "chars": [
+            "c",
+            "o",
+            "u",
+            "n",
+            "t",
+            "e",
+            "r"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    },
+    "pipe": {
+      "start": {
+        "args": [
+          [
+            null,
+            {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "3"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ],
+        "name": {
+          "name": {
+            "chars": [
+              "C",
+              "o",
+              "u",
+              "n",
+              "t",
+              "e",
+              "r"
+            ],
+            "kind": "Identifier"
+          }
+        }
+      },
+      "transitions": [
+        {
+          "Next": {
+            "TupleStruct": {
+              "name": {
+                "name": {
+                  "chars": [
+                    "D",
+                    "o",
+                    "n",
+                    "e"
+                  ],
+                  "kind": "Identifier"
+                }
+              },
+              "patterns": [
+                {
+                  "Expression": {
+                    "Literal": {
+                      "Number": {
+                        "Real": {
+                          "Integer": {
+                            "chars": [
+                              "3"
+                            ],
+                            "kind": "Number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 35,
+    "remaining_source": "",
+    "source_graphemes": 35
+  },
+  "entry_point": "fsm-declare",
+  "rule": "fsm-declare"
+}

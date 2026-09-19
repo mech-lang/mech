@@ -1,0 +1,268 @@
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::fmt::Write;
+
+use super::edit::{SourceError, TextRange, TextSize};
+use super::flags::{NodeFlags, TokenFlags};
+use super::green::{GreenElement, GreenNode, GreenToken};
+use super::ids::{NodeId, TokenId};
+use super::source::TextSnapshot;
+use super::syntax_kind::SyntaxKind;
+
+#[derive(Clone, Debug)]
+pub struct SyntaxNode {
+    green: Arc<GreenNode>,
+    source: TextSnapshot,
+    offset: TextSize,
+}
+
+impl SyntaxNode {
+    pub fn new_root(green: Arc<GreenNode>, source: TextSnapshot) -> Self {
+        Self::new_root_at(green, source, TextSize::ZERO)
+    }
+
+    pub fn new_root_at(green: Arc<GreenNode>, source: TextSnapshot, offset: TextSize) -> Self {
+        Self {
+            green,
+            source,
+            offset,
+        }
+    }
+
+    pub fn id(&self) -> NodeId {
+        self.green.id
+    }
+
+    pub fn kind(&self) -> SyntaxKind {
+        self.green.kind
+    }
+
+    pub fn flags(&self) -> NodeFlags {
+        self.green.flags
+    }
+
+    pub fn range(&self) -> TextRange {
+        TextRange::at(self.offset, self.green.text_len)
+    }
+
+    pub fn text(&self) -> Result<String, SourceError> {
+        self.source.text(self.range())
+    }
+
+    pub fn green(&self) -> &Arc<GreenNode> {
+        &self.green
+    }
+
+    pub fn source(&self) -> &TextSnapshot {
+        &self.source
+    }
+
+    pub fn children_with_tokens(&self) -> Vec<SyntaxElement> {
+        let mut children = Vec::with_capacity(self.green.children.len());
+        let mut offset = self.offset;
+        for child in self.green.children.iter() {
+            match child {
+                GreenElement::Node(node) => {
+                    children.push(SyntaxElement::Node(Self {
+                        green: node.clone(),
+                        source: self.source.clone(),
+                        offset,
+                    }));
+                    offset += node.text_len;
+                }
+                GreenElement::Token(token) => {
+                    children.push(SyntaxElement::Token(SyntaxToken {
+                        green: *token,
+                        source: self.source.clone(),
+                        offset,
+                    }));
+                    offset += token.text_len;
+                }
+            }
+        }
+        children
+    }
+
+    pub fn children(&self) -> impl Iterator<Item = SyntaxNode> + use<> {
+        let source = self.source.clone();
+        let mut offset = self.offset;
+        self.green
+            .children
+            .clone()
+            .into_values()
+            .filter_map(move |child| {
+                let start = offset;
+                offset += child.text_len();
+                match child {
+                    GreenElement::Node(node) => Some(Self {
+                        green: node,
+                        source: source.clone(),
+                        offset: start,
+                    }),
+                    GreenElement::Token(_) => None,
+                }
+            })
+    }
+
+    pub fn tokens(&self) -> Vec<SyntaxToken> {
+        let mut tokens = Vec::new();
+        self.collect_tokens(&mut tokens);
+        tokens
+    }
+
+    pub fn first_child(&self, kind: SyntaxKind) -> Option<SyntaxNode> {
+        self.children().find(|child| child.kind() == kind)
+    }
+
+    fn collect_tokens(&self, output: &mut Vec<SyntaxToken>) {
+        for child in self.children_with_tokens() {
+            match child {
+                SyntaxElement::Node(node) => node.collect_tokens(output),
+                SyntaxElement::Token(token) => output.push(token),
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct SyntaxToken {
+    green: GreenToken,
+    source: TextSnapshot,
+    offset: TextSize,
+}
+
+impl SyntaxToken {
+    pub fn id(&self) -> TokenId {
+        self.green.id
+    }
+
+    pub fn kind(&self) -> SyntaxKind {
+        self.green.kind
+    }
+
+    pub fn flags(&self) -> TokenFlags {
+        self.green.flags
+    }
+
+    pub fn range(&self) -> TextRange {
+        TextRange::at(self.offset, self.green.text_len)
+    }
+
+    pub fn text(&self) -> Result<String, SourceError> {
+        self.source.text(self.range())
+    }
+
+    /// Compare this token's exact source text without allocating or copying it.
+    pub(crate) fn text_eq(&self, expected: &str) -> Result<bool, SourceError> {
+        self.source.text_eq(self.range(), expected)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum SyntaxElement {
+    Node(SyntaxNode),
+    Token(SyntaxToken),
+}
+
+pub fn compact_debug_tree(root: &SyntaxNode) -> String {
+    let mut output = String::new();
+    write_debug_node(root, 0, &mut output);
+    output
+}
+
+fn write_debug_node(node: &SyntaxNode, depth: usize, output: &mut String) {
+    for _ in 0..depth {
+        output.push_str("  ");
+    }
+    let _ = writeln!(output, "{:?}", node.kind());
+    for child in node.children_with_tokens() {
+        match child {
+            SyntaxElement::Node(child) => write_debug_node(&child, depth + 1, output),
+            SyntaxElement::Token(token) => {
+                for _ in 0..=depth {
+                    output.push_str("  ");
+                }
+                if token.flags().contains(TokenFlags::MISSING) {
+                    let _ = writeln!(output, "{:?} <missing>", token.kind());
+                } else {
+                    let text = token.text().unwrap_or_default();
+                    let _ = writeln!(output, "{:?} {text:?}", token.kind());
+                }
+            }
+        }
+    }
+}
+
+pub trait AstNode: Clone {
+    fn can_cast(kind: SyntaxKind) -> bool;
+    fn cast(syntax: SyntaxNode) -> Option<Self>;
+    fn syntax(&self) -> &SyntaxNode;
+}
+
+macro_rules! ast_node {
+  ($name:ident, $($kind:pat_param)|+) => {
+    #[derive(Clone, Debug)]
+    pub struct $name(pub(crate) SyntaxNode);
+
+    impl AstNode for $name {
+      fn can_cast(kind: SyntaxKind) -> bool {
+        matches!(kind, $($kind)|+)
+      }
+
+      fn cast(syntax: SyntaxNode) -> Option<Self> {
+        Self::can_cast(syntax.kind()).then_some(Self(syntax))
+      }
+
+      fn syntax(&self) -> &SyntaxNode {
+        &self.0
+      }
+    }
+  };
+}
+
+ast_node!(DocumentSyntax, SyntaxKind::Document);
+ast_node!(SectionSyntax, SyntaxKind::Section);
+ast_node!(ParagraphSyntax, SyntaxKind::Paragraph);
+ast_node!(MechItemSyntax, SyntaxKind::MechItem);
+ast_node!(VariableDefineSyntax, SyntaxKind::VariableDefine);
+ast_node!(IdentifierSyntax, SyntaxKind::Identifier);
+ast_node!(MissingSyntax, SyntaxKind::Missing);
+ast_node!(ExpressionSyntax, SyntaxKind::Expression);
+
+impl VariableDefineSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.0.children().find_map(|child| match child.kind() {
+            SyntaxKind::Identifier => IdentifierSyntax::cast(child),
+            SyntaxKind::Variable => child
+                .first_child(SyntaxKind::Identifier)
+                .and_then(IdentifierSyntax::cast),
+            _ => None,
+        })
+    }
+
+    pub fn define_operator(&self) -> Option<SyntaxToken> {
+        self.0
+            .children_with_tokens()
+            .into_iter()
+            .find_map(|element| match element {
+                SyntaxElement::Token(token) if token.kind() == SyntaxKind::DefineOperatorToken => {
+                    Some(token)
+                }
+                SyntaxElement::Node(node) if node.kind() == SyntaxKind::DefineOperator => {
+                    node.tokens().into_iter().next()
+                }
+                _ => None,
+            })
+    }
+
+    pub fn value(&self) -> Option<ExpressionSyntax> {
+        self.0.children().find_map(ExpressionSyntax::cast)
+    }
+
+    pub fn missing_value(&self) -> Option<MissingSyntax> {
+        self.0
+            .first_child(SyntaxKind::Missing)
+            .and_then(MissingSyntax::cast)
+    }
+}

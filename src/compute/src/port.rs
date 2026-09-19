@@ -449,10 +449,12 @@ pub fn build_compute_region_interface(
         .iter()
         .filter(|input| input_slots.contains(&input.slot))
         .filter_map(|input| {
+            let name = mech_engine::decode_source_input_name(&input.name)
+                .unwrap_or_else(|| input.name.clone());
             let port = port_from_schema(
                 artifact,
                 ComputePortId::new(next_id),
-                input.name.clone().into_boxed_str(),
+                name.into_boxed_str(),
                 input.slot,
                 artifact.slots()[input.slot.get() as usize].schema,
                 slot_dimensions.get(&input.slot).map(Box::as_ref),
@@ -558,6 +560,10 @@ fn expand_output_source(
             operation: None,
             detail: format!("output `{name}` references a missing producer"),
         });
+        return;
+    };
+    let Some(producer) = producer.as_operation() else {
+        outputs.push((name, slot));
         return;
     };
     if producer.operation.module_path.as_ref() != ["core"]

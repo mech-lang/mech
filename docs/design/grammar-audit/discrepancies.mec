@@ -1,0 +1,1237 @@
+Mech Grammar Discrepancy Ledger
+===============================================================================
+
+Baseline: `75bb213f42a0f8116ca1299d1d39a5cf14fc0303`, the merge commit for
+PR 680.
+
+Authority for every entry in this Phase 0 ledger: current parser behavior is
+canonical for this phase. The ledger records behavior; it does not fix it.
+
+Known discrepancies and required investigations at this baseline: 32.
+
+IDs are stable and append-only. Do not renumber or reuse an ID. When a later
+design change resolves an entry, retain the entry, add the resolution commit
+and conformance case, and append new discoveries with the next ID.
+
+Each `Conformance case` below names a required stable case for the Phase 0
+conformance suite. A case marked “existing” already has direct test evidence
+at this baseline; the others are required when the conformance corpus is
+landed.
+
+GRAM-0001 — Synthetic final newline
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`graphemes::init_source` segments the supplied text and unconditionally pushes
+one additional `"\n"` grapheme, even if the source already ends in a newline.
+`parse`, `parse_grammar`, rich-comment reparsing, and fenced-Mech reparsing use
+this initializer. `ParseString` and individual productions do not append a
+newline, and `init_tag` does not append one.
+
+Inline EBNF/comment:
+The comment at `src/syntax/src/lib.rs:89-96` says the initializer makes sure
+source ends in a newline, but the implementation always appends rather than
+checking. Production comments such as `program` and `mech-code` do not expose
+this normalization.
+
+Specification text:
+`docs/design/specification.mec:130-150` defines whitespace and newlines but
+does not define an entry-point source transformation.
+
+Documentation/example evidence:
+Many `.mec` examples rely on line-oriented productions, but documentation
+does not distinguish a missing physical final newline from a synthetic one.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. This is a
+`Source rule:`, not a grammar production.
+
+Conformance case:
+`grammar-conformance::gram_0001_synthetic_final_newline` compares the same
+line-oriented source with no final newline, one final newline, and two final
+newlines, including source ranges and AST shape.
+
+Future design question:
+Should normalization append only when missing, remain unconditional, or move
+into explicit root contracts?
+
+GRAM-0002 — Formula operator whitespace
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+Most formula operators call `ws0e` on both sides, and `ws0e` is zero or more
+horizontal `space-tab` tokens. Consequently operators such as `+`, `*`, `/`,
+`%`, `^`, comparisons, logical operators, matrix operators, table operators,
+and most set operators accept no surrounding spaces. They do not consume a
+newline through `ws0e`. `symmetric_difference` is exceptional: it calls
+`ws1e` on both sides and requires horizontal whitespace. Subtraction also has
+a raw zero-space branch, subject to identifier tokenization and the `--`
+comment exclusion.
+
+Inline EBNF/comment:
+Operator comments in `src/syntax/src/expressions.rs:279-697` generally show
+only the operator terminal and hide the actual `ws0e`/`ws1e` calls. The
+comments for `ws0e` and `ws1e` at `src/syntax/src/base.rs:400-411` describe
+different newline-aware forms than the implementation.
+
+Specification text:
+`docs/design/specification.mec:144-146` states that whitespace is required
+around formula operators, while the formal operator rules at
+`docs/design/specification.mec:1171-1250` show bare terminals.
+
+Documentation/example evidence:
+`docs/reference/operators.mec:13-108` consistently demonstrates spaced binary
+operators, but does not say that nearly all of them also accept compact forms.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. Do not normalize
+the inconsistency in Phase 0.
+
+Conformance case:
+`grammar-conformance::gram_0002_formula_operator_whitespace` covers zero,
+one, and newline whitespace for every operator family and separately freezes
+the `Δ` exception.
+
+Future design question:
+Should binary operators require horizontal whitespace, allow compact syntax,
+or use operator-specific rules?
+
+GRAM-0003 — `a-b` versus `a - b`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+The identifier parser includes `dash` in `identifier-symbol` and consumes it
+greedily. Direct `expression("a-b")` therefore constructs a single `Var`
+whose identifier is `a-b`. `expression("a - b")` constructs a subtraction
+`Formula`. Direct paragraph parsing treats both strings as text; the section
+root first attempts Mech and uses line completion to decide whether code wins.
+
+Inline EBNF/comment:
+`src/syntax/src/base.rs:463-469` includes dash in `identifier_symbol`.
+`src/syntax/src/expressions.rs:285-302` exposes both spaced and raw subtraction
+branches, but does not explain the preceding greedy identifier boundary.
+
+Specification text:
+`docs/design/specification.mec:358-369` says identifiers may contain `-`;
+`docs/design/specification.mec:1180-1186` also defines `-` as subtraction.
+
+Documentation/example evidence:
+Kebab-case identifiers are pervasive. Arithmetic examples, including
+`docs/reference/operators.mec:33`, write subtraction with spaces.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0003_dash_identifier_or_subtract` asserts both AST
+shapes and the direct-paragraph text results (probe evidence exists at this
+baseline).
+
+Future design question:
+Is whitespace intended to be the permanent disambiguator between kebab-case
+identifiers and subtraction?
+
+GRAM-0004 — `a/b` versus `a / b`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`slash` is an identifier symbol. Direct `expression("a/b")` constructs one
+`Var` named `a/b`, while `expression("a / b")` constructs a division
+`Formula`. The boundary is asymmetric: because the left identifier is greedy,
+spacing only after an adjacent slash does not retroactively make it an
+operator. Direct paragraph parsing accepts both as text.
+
+Inline EBNF/comment:
+`src/syntax/src/base.rs:463-469` includes slash in identifiers, while
+`src/syntax/src/expressions.rs:322-328` presents slash as division without the
+identifier-boundary interaction.
+
+Specification text:
+`docs/design/specification.mec:358-369` explicitly permits `/` in identifiers,
+and `docs/design/specification.mec:1180-1186` defines `/` as division.
+
+Documentation/example evidence:
+Qualified names such as `math/sin` appear throughout
+`docs/reference/modules.mec`; `docs/reference/operators.mec:16,35` writes
+division with spaces.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0004_slash_identifier_or_divide` freezes `a/b`,
+`a / b`, `a/ b`, and `a /b` at expression, paragraph, and public roots (probe
+evidence exists for the first two).
+
+Future design question:
+Should qualified-name syntax and division continue sharing `/`, and if so
+what lexical boundary is normative?
+
+GRAM-0005 — `1/2` versus `1 / 2`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`real_number` tries `rational_literal` before ordinary integer fallback.
+`expression("1/2")` therefore constructs a rational literal.
+`expression("1 / 2")` constructs a division formula. Rational syntax permits
+no whitespace inside its integer-slash-integer production, whereas the divide
+operator accepts optional horizontal whitespace.
+
+Inline EBNF/comment:
+`src/syntax/src/literals.rs:178-193` accurately shows an adjacent slash for a
+rational. The formula division comment at
+`src/syntax/src/expressions.rs:321-328` does not mention the numeric-literal
+precedence.
+
+Specification text:
+`docs/design/specification.mec:572-598` documents `3/4` as a rational and
+formula division separately.
+
+Documentation/example evidence:
+`docs/reference/number.mec:149-162` and
+`docs/guides/mech-in-fifteen-minutes.mec:188-201` use compact `1/2`;
+`docs/reference/operators.mec:16` uses spaced `22 / 7`.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0005_rational_or_division` asserts the Rational and
+Formula AST variants for `1/2`, `1 / 2`, `1/ 2`, and `1 /2` (probe evidence
+exists for the first two).
+
+Future design question:
+Should whitespace alone continue distinguishing exact rational literals from
+division?
+
+GRAM-0006 — Paragraph exclusions, including `:=`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`paragraph_text` performs negative lookahead before every text token. Its
+exclusion set is: section sigil, footnote prefix, highlight sigil, equation
+sigil, image prefix, HTTP prefix, left brace, left bracket, left angle, right
+bracket, tilde, asterisk, underscore, grave, define operator `:=`, bar, and
+both Mika section delimiters. A lone colon is ordinary punctuation, but the
+two-character `:=` cannot be consumed as paragraph text. The excluded prefix
+must be consumed by another paragraph element, by Mech code selected at the
+section level, or by recovery/error handling.
+
+Inline EBNF/comment:
+The comment at `src/syntax/src/mechdown.rs:383` lists only a subset and omits
+several actual exclusions.
+
+Specification text:
+`docs/design/specification.mec:1592-1619` lists a `paragraph-exclude` set that
+includes `define-operator` but does not match the full implementation set.
+
+Documentation/example evidence:
+Documentation uses `:=` in fenced/displayed code and inline `{{...}}`.
+Ordinary prose occasionally mentions operators in backticks, which avoids the
+raw paragraph exclusion.
+
+Phase 0 ruling:
+Current parser behavior and the complete implementation exclusion set are
+recorded as canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0006_paragraph_exclusion_table` exercises every
+excluded prefix alone, in mid-paragraph, and inside the paragraph element that
+is intended to own it.
+
+Future design question:
+Which exclusions are required disambiguators, and which are accidental gaps
+in raw paragraph text?
+
+GRAM-0007 — Paragraph prefix success versus complete paragraph success
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`paragraph` and `inline_paragraph` use `many1(paragraph_element)` and can
+return a successful prefix when the next element fails. `paragraph` does not
+itself require a newline. Its callers may require a newline or closing
+delimiter, but `section_element` accepts the prefix directly and `section`
+then attempts another element at the remainder. Recovery may instead insert a
+`ParagraphElement::Error` and log an error. Public `parse` rejects any result
+whose accumulated error log is nonempty even when internal productions
+returned AST nodes.
+
+Inline EBNF/comment:
+`src/syntax/src/mechdown.rs:451-478` summarizes both functions as
+`+paragraph-element` and does not state their prefix-completion contract or
+the recovery log.
+
+Specification text:
+`docs/design/specification.mec:1589-1619` says paragraphs end at a newline in
+prose, but the formal `paragraph` rule has no newline.
+
+Documentation/example evidence:
+Repository documents assume a whole physical prose line is a paragraph; they
+do not describe prefix splitting or error-placeholder paragraphs.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. Paragraph
+fallback and recovery are not fixed in Phase 0.
+
+Conformance case:
+`grammar-conformance::gram_0007_paragraph_prefix_completion` freezes clean
+prefixes, excluded mid-line prefixes, recovery placeholders, remaining input,
+and public-root error-log rejection. Probe evidence covers `x := 1` and
+`x := 1 +`.
+
+Future design question:
+Should block paragraphs require complete physical-line consumption before
+they can compete with another section element?
+
+GRAM-0008 — `whitespace0` includes newlines
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`whitespace` is space, tab, or newline; `whitespace0` and `whitespace1`
+therefore cross physical lines. Tokens generated with `ws0_leaf`, including
+assignment, definition, output, state-transition, async-transition, generator,
+and spread operators, call `whitespace0` before and after the terminal.
+Accordingly those operators can absorb newlines and join forms across lines.
+By contrast `space-tab0`, `space-tab1`, `ws0e`, and `ws1e` are horizontal.
+
+Inline EBNF/comment:
+`src/syntax/src/base.rs:376-411` correctly makes `whitespace0` newline-aware,
+but the `ws0e`/`ws1e` comments inaccurately suggest newline-indent behavior.
+
+Specification text:
+`docs/design/specification.mec:154-165` defines whitespace and `ws0` with
+newlines, while prose at `docs/design/specification.mec:140-151` describes
+context-dependent significance without enumerating every operator that uses
+`ws0`.
+
+Documentation/example evidence:
+Examples normally put operators and operands on one line, so the newline
+acceptance is not made visible.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. Exact whitespace
+parser names are preserved rather than collapsed to generic whitespace.
+
+Conformance case:
+`grammar-conformance::gram_0008_newline_in_whitespace0` covers newlines around
+each `ws0_leaf` operator and contrasts the horizontal-only formula operators.
+
+Future design question:
+Which operator families should be allowed to span a statement boundary?
+
+GRAM-0009 — Optional and required final periods
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+Periods are inconsistent by production. State-machine specifications and
+implementations, and the statement-body function form, require a period.
+Branch/match-arm function definitions, match expressions, and patterned
+activation scopes accept an optional period. Ordinary statements and formulas
+do not consume a final period; their `code_terminal` is newline, semicolon,
+right delimiter, or EOF. A match expression's period is consumed inside
+`expression`, not by `code_terminal`.
+
+Inline EBNF/comment:
+`src/syntax/src/functions.rs:18` describes only the required-period
+statement-body form; `function_define_match_arms` uses `opt(period)` at line
+69. State-machine comments show required periods. The match-expression comment
+at `src/syntax/src/expressions.rs:81` shows `period?`.
+
+Specification text:
+`docs/design/specification.mec:1425-1452` requires a period for branch
+functions. `docs/design/specification.mec:1256-1268` describes a match
+terminator as an optional statement separator rather than the implementation's
+optional period.
+
+Documentation/example evidence:
+`docs/reference/function.mec:7-18` says functions have a trailing period and
+all examples use one. `docs/reference/state-machine.mec` also uses periods for
+both state-machine halves. Match examples use a final period.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. No period is
+made more or less optional in Phase 0.
+
+Conformance case:
+`grammar-conformance::gram_0009_final_period_matrix` has accept/reject and AST
+cases for every period-owning production with and without the period.
+
+Future design question:
+Should periods terminate all multi-line branch forms uniformly, and should
+the grammar call that terminal `period` or `statement-separator`?
+
+GRAM-0010 — Alternative order in `expression`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`expression` manually tries, in order, `fsm_pipe`, `set_comprehension`,
+`matrix_comprehension`, `range_expression`, and `formula`. It discards every
+error from an earlier attempt, including `Failure`, and retries from a cloned
+input. After formula succeeds it looks for `?` and, if present, parses match
+arms and an optional period. The standalone `match_expression` function is
+not called by `expression`.
+
+Inline EBNF/comment:
+`src/syntax/src/expressions.rs:44` lists the five primary alternatives but
+omits the post-formula match conversion. The separate comment at lines 81-92
+describes a second match parser.
+
+Specification text:
+`docs/design/specification.mec:1114-1118` gives the abstract order
+`pipe | comprehension | range | match | formula`, without the two distinct
+comprehensions or the implementation's failure-discard behavior.
+
+Documentation/example evidence:
+Range, set/matrix comprehension, match, and state-machine examples overlap at
+the same expression root but do not document selection order.
+
+Phase 0 ruling:
+Current parser behavior and manual order recorded as canonical for this phase.
+The grammar's `|` is accompanied by a `Selection rule:`.
+
+Conformance case:
+`grammar-conformance::gram_0010_expression_selection_order` supplies
+overlapping prefixes, committed failures, and AST assertions for every branch.
+
+Future design question:
+Should match parsing remain a post-formula special case, and which failures
+should prevent fallback?
+
+GRAM-0011 — Alternative order in `structure`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`structure` manually tries `empty_set`, `empty_map`, `table`, `matrix`,
+`tuple`, `tuple_struct`, `record`, `map`, then `set`. Every earlier error,
+including `Failure`, is discarded; only the final set error is returned.
+`empty_set` accepts both `{}` and braces containing an optional empty literal.
+There is no `empty_table` function in this choice.
+
+Inline EBNF/comment:
+`src/syntax/src/structures.rs:31` says
+`empty-set | empty-table | table | matrix | tuple | tuple-struct | record |
+map | set`, which differs from the actual `empty_map` second branch.
+
+Specification text:
+`docs/design/specification.mec:683-693` repeats the stale `empty-table`
+alternative. The structure sections describe overlapping brace syntax for
+sets, maps, records, and tables.
+
+Documentation/example evidence:
+`docs/design/specification.mec:780-810,854-876,1067-1088` contains examples
+for the overlapping brace forms but does not define parser priority.
+
+Phase 0 ruling:
+Current parser behavior and order recorded as canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0011_structure_selection_order` asserts AST variants
+for every empty and ambiguous delimiter form and freezes failure fallback.
+
+Future design question:
+Should brace-structure selection be prefix-committed after a discriminating
+token, or remain full manual fallback?
+
+GRAM-0012 — Alternative order in `pattern`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`pattern` manually tries `pattern_atom_struct`, `pattern_tuple_struct`,
+`wildcard`, `pattern_array`, `pattern_tuple`, then `expression`. Errors from
+the first five attempts are discarded, including failures after a prefix.
+Expression patterns are the final catch-all.
+
+Inline EBNF/comment:
+`src/syntax/src/patterns.rs:4` accurately lists the order but does not record
+the all-error manual fallback.
+
+Specification text:
+The specification uses patterns in match, function, and state-machine rules
+but does not provide one complete pattern choice or its disambiguation order.
+
+Documentation/example evidence:
+`docs/reference/pattern.mec:14-18` demonstrates variables, expressions,
+tuples, tagged variants, and arrays without stating precedence among them.
+
+Phase 0 ruling:
+Current parser behavior and order recorded as canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0012_pattern_selection_order` covers atom structs,
+grave tuple structs, wildcard, array, tuple, expression fallback, and
+partially consumed prefixes with AST assertions.
+
+Future design question:
+Which malformed prefixed patterns should commit instead of falling through to
+an expression?
+
+GRAM-0013 — Function definition form selection
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+After parsing `identifier "(" arguments ")" whitespace0`,
+`function_define` first attempts the `=> kind-annotation` branch/match-arm
+form. On any error it retries the statement-body form from the same
+post-signature input. The branch form requires one or more whitespace or
+semicolon separators and one or more arms, accepts `├`, `└`, or `|` as an arm
+marker, and makes its period optional. The statement-body form is
+`= output := statements .` and requires its period. `function_arg` requires a
+kind annotation in both forms.
+
+Inline EBNF/comment:
+`src/syntax/src/functions.rs:18` documents only the older statement-body form.
+The branch-form helpers at lines 48-101 have no complete inline EBNF.
+
+Specification text:
+`docs/design/specification.mec:1425-1452` documents only the branch form, says
+function argument kind annotations are optional, lists only `├ | └`, and
+requires a final period.
+
+Documentation/example evidence:
+`docs/reference/function.mec:7-18` documents the branch form and required
+period. Formatter output at `src/syntax/src/formatter.rs:1944-1946` still
+supports the statement-body form.
+
+Phase 0 ruling:
+Both parser forms, their manual fallback, required input kinds, accepted arm
+markers, and differing period rules are canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0013_function_form_selection` covers both forms,
+failed branch-form fallback, `|` arms, missing input kinds, and period
+presence with AST shape.
+
+Future design question:
+Are both function definition forms intended to remain, and should incomplete
+`=>` signatures commit rather than fall back?
+
+GRAM-0014 — State-machine specification, implementation, declaration, and instance
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+These are distinct productions. `fsm_specification` parses `#name(vars)` then
+independently optional output operator, output kind, and define operator,
+followed by one or more `|/│/├/└ :state` definitions and a required period.
+`fsm_implementation` requires `#name(vars) -> start-value`, one or more arms,
+and a period. `fsm_declare` is a statement that parses `fsm := fsm_pipe`.
+`fsm_instance` parses `#name` plus optional call arguments and is the start of
+an expression-level `fsm_pipe`. At `mech_code_alt`, specification and
+implementation compete ahead of statements and expressions through
+`alt_best`.
+
+Inline EBNF/comment:
+`src/syntax/src/state_machines.rs:90-274` describes the separate functions but
+does not expose all cross-root competition. Its specification comment shows
+the three optional signature components.
+
+Specification text:
+The main specification has no complete state-machine section. Its general
+expression/statement rules mention FSMs without defining these four forms.
+
+Documentation/example evidence:
+`docs/reference/state-machine.mec:7-35` documents a two-part declaration and
+implementation using `=>` then `->`, and later calls `#Name(...)`; it does not
+document omitted `=>`, output kind, or definition operator in a
+specification.
+
+Phase 0 ruling:
+All four implemented forms and their caller selection are canonical for this
+phase.
+
+Conformance case:
+`grammar-conformance::gram_0014_fsm_forms` independently asserts each AST
+variant, optional specification components, overlap, full completion, and
+required periods.
+
+Future design question:
+Which signature components of an FSM specification are actually optional by
+design, and should `fsm_declare` remain a fifth surface composition?
+
+GRAM-0015 — `->`, `=>`, and `~>` selection
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`transition_operator` recognizes `->` or `→`; `output_operator` recognizes
+`=>` or `⇒`; `async_transition_operator` recognizes `~>`. All consume
+`whitespace0` around the terminal. In FSM transitions, `->` may introduce a
+statement, next-state value, or code block depending on alternative order;
+`=>` introduces an output value; `~>` introduces an asynchronous value.
+Match arms call `output_operator`, despite their inline/specification grammar
+calling the position a transition operator. Activation arms also use `=>`.
+
+Inline EBNF/comment:
+The base token comments are accurate. The match-arm comment at
+`src/syntax/src/expressions.rs:94` says `transition-operator`, but line 103
+calls `output_operator`.
+
+Specification text:
+`docs/design/specification.mec:187` groups all three under “Transition,” and
+`docs/design/specification.mec:1262-1268` names `transition-operator` in match
+arms. It does not define the implementation's context-specific selection.
+
+Documentation/example evidence:
+`docs/reference/state-machine.mec` consistently uses `->` for next states and
+`=>` for outputs. Match and function examples also use `=>`.
+
+Phase 0 ruling:
+Current context-specific operator functions and Unicode alternatives are
+canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0015_arrow_contexts` builds a context/operator
+acceptance matrix and asserts the resulting transition/arm AST variants.
+
+Future design question:
+Should “transition operator” be a category name or specifically `->`, and
+which Unicode spellings are normative?
+
+GRAM-0016 — Braced state-machine transition bodies
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`fsm_block_transition` accepts `->`, `{`, zero or more manually parsed
+`mech_code_alt` items, then `}`; despite its comment, an empty body is
+accepted. In a direct `fsm_transition`, this block alternative is tried before
+statement and value transitions. In `fsm_guard`, it is tried last, after
+statement and next-state value. Therefore `-> {1}` can become a code block in
+a direct transition but a next-state Set value in a guard. Braced content that
+cannot form a value may fall through to the block in the guard.
+
+Inline EBNF/comment:
+`src/syntax/src/state_machines.rs:170` says `left_brace, mech_code+,
+right_brace`, but the loop at lines 171-195 permits zero items. The alternative
+orders differ at lines 128-133 and 140-145.
+
+Specification text:
+No formal state-machine block-transition production appears in
+`docs/design/specification.mec`.
+
+Documentation/example evidence:
+`src/syntax/tests/context_parser.rs:332-339` is existing evidence for a
+statement inside an FSM braced transition. State-machine reference examples
+otherwise use unbraced transitions.
+
+Phase 0 ruling:
+Current empty-body acceptance, alternative order, and context-dependent AST
+selection are canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0016_braced_fsm_transition` covers empty, statement,
+expression/value, multiple-item, direct-arm, and guarded-arm bodies.
+
+Future design question:
+Should braces after `->` always mean code, and should empty blocks be legal?
+
+GRAM-0017 — Every current use of `~>` and `~> { ... }`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`~>` has two syntactic roles at this baseline. Inside an FSM it is
+`fsm_async_transition` and must be followed by an `fsm_value`; it is available
+in FSM guards, direct arms, and expression-level `fsm_pipe`. A following brace
+is not an async code block: `{1}` may be accepted as a Set value, while
+`{ x := 1 }` is not a value body. At top level, PR 680's `activation_scope`
+starts with `~>`, then requires a trigger expression, then either a braced Mech
+body or one or more `| pattern => body` arms. Thus `~> tick { ... }` is
+accepted, but bare `~> { ... }` has no omitted-trigger form. The formatter also
+emits `~>` for async transitions.
+
+Inline EBNF/comment:
+`src/syntax/src/state_machines.rs:156-161` calls the FSM RHS an atom but
+actually calls `fsm_value`. `src/syntax/src/activation.rs:6` documents the new
+activation form. `fsm_block_transition` accepts only `transition_operator`
+(`->`), not the async operator.
+
+Specification text:
+`docs/design/specification.mec:187` lists `~>` but provides no production or
+context. `docs/design/ROADMAP.mec:151` describes async state machines and
+`~>` as planned, while the parser already accepts it. Activation syntax is
+absent from the specification.
+
+Documentation/example evidence:
+`examples/aspirational/intersection.mec:31-35` uses `~>` in aspirational
+transition chains. Existing tests at `src/syntax/src/activation.rs:53-80`
+cover fixed and patterned activation bodies.
+
+Phase 0 ruling:
+Both implemented roles, the required activation trigger, and the fact that
+FSM `~> { ... }` is a value rather than a code-block form are canonical for
+this phase.
+
+Conformance case:
+`grammar-conformance::gram_0017_async_arrow_all_contexts` covers FSM next
+values (including braced Set), rejection of async statement blocks, FSM pipes,
+fixed activation, patterned activation, and bare-trigger omission. Activation
+unit cases are existing evidence.
+
+Future design question:
+Should `~>` continue to mean both async state transition and source
+activation, and should either role gain an explicit braced code form?
+
+GRAM-0018 — Fenced Mech does not require complete inner consumption
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`code_block` consumes the entire fence contents as raw text, reparses Mech
+fences with a fresh synthetic-newline `ParseString`, and calls `mech_code`.
+On success it discards the returned remaining input (`Ok((_, parsed))`).
+Consequently a valid Mech prefix followed by inner content at which
+`mech_code` stops can still produce `SectionElement::FencedMechCode`; the
+outer document has already consumed the ignored text. A source comment
+explicitly notes the missing complete-consumption check.
+
+Inline EBNF/comment:
+`src/syntax/src/mechdown.rs:804-806` contains
+“TODO what if not all the input is parsed?” and discards the remainder.
+
+Specification text:
+`docs/design/specification.mec:2059-2123` says fenced Mech content is parsed
+and executed but does not define whether all inner source must parse.
+
+Documentation/example evidence:
+All documented fenced examples contain valid complete code, so they do not
+expose the prefix acceptance.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. Do not fix
+fenced paragraph/Mech fallback in Phase 0.
+
+Conformance case:
+`grammar-conformance::gram_0018_fenced_mech_completion` freezes a complete
+block and a block containing valid `x := 1` followed by a non-Mech callout,
+asserting the retained source token, parsed prefix AST, and ignored remainder.
+
+Future design question:
+Should fenced Mech reject, recover, or preserve unparsed inner content as an
+explicit error node?
+
+GRAM-0019 — Inline Mech requires caller-visible complete consumption
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+Evaluated inline Mech `{...}` parses one `expression`, then `whitespace0`, then
+the closing brace. Displayed inline Mech `{{...}}` parses one `mech_code_alt`,
+then `whitespace0`, then both closing braces. Because the closing delimiters
+are checked in the same input, neither form silently discards an arbitrary
+interior suffix. Displayed inline Mech accepts any single `mech_code_alt`
+(including a statement), not only an expression. Both forms may absorb
+newlines through `whitespace0`.
+
+Inline EBNF/comment:
+`src/syntax/src/mechdown.rs:397-417` accurately shows delimiter checks, but its
+displayed-inline comment says `expression` while the code calls
+`mech_code_alt`.
+
+Specification text:
+`docs/design/specification.mec:2051-2054` calls both interiors expressions.
+
+Documentation/example evidence:
+`docs/design/specification.mec:2143-2150` demonstrates
+`{{var-name := value}}`, which is a statement and agrees with the
+implementation rather than its formal rule.
+
+Phase 0 ruling:
+Current completion checks and the broader displayed-inline interior are
+canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0019_inline_mech_completion` covers expression,
+statement, trailing junk, multiple items, whitespace/newline, and exact
+closing delimiters for both forms.
+
+Future design question:
+Should displayed inline Mech be a one-item Mech-code root or an expression
+root, and should either inline form allow physical newlines?
+
+GRAM-0020 — Mech versus Mechdown selection in `section`
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+For each section position, `section` first tries feature-gated Mika, then
+`mech_code`, then `section_element`. Thus Mech has explicit priority over
+Mechdown. `mech_code_alt` itself uses longest-success `alt_best`, and
+`mech_code` requires `code_terminal` after each item. A one-word physical line
+can therefore be a Mech variable expression, while a multi-word line normally
+fails code termination and falls back to a paragraph. `section_element`
+does not itself contain the Mech branch shown in its comment/specification.
+
+Inline EBNF/comment:
+`src/syntax/src/mechdown.rs:997` lists `mech-code` in `section-element`, but
+the parser vector at lines 998-1023 omits it; the manual priority appears in
+`section` at lines 1061-1101.
+
+Specification text:
+`docs/design/specification.mec:1491-1517` models Mech as a
+`section-element` alternative without this caller-level priority or
+line-completion rule.
+
+Documentation/example evidence:
+Literate documents freely mix prose and unadorned code, relying on this
+heuristic. The distinction is not documented for ambiguous one-token lines.
+
+Phase 0 ruling:
+Current Mika/Mech/Mechdown order and code-terminal disambiguation are
+canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0020_section_language_selection` freezes
+single-word, multi-word, valid statement, invalid-code-prefix, callout, and
+other overlapping lines with SectionElement AST assertions.
+
+Future design question:
+Should code-versus-prose be explicit, or is line completion intended as the
+permanent disambiguator?
+
+GRAM-0021 — Feature-gated Mika behavior
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`mika.rs` is compiled and re-exported only with feature `mika`. Under that
+feature, `section` tries `mika` before Mech and Mechdown and stops a nested
+section at `mika_section_close`. Without it, neither action is compiled.
+Mika delimiter terminals still exist in `base.rs` and remain excluded from
+paragraph text. The feature is enabled by the syntax crate's default and
+`base` feature sets, but is not inherent to every build.
+
+Inline EBNF/comment:
+`src/syntax/src/mika.rs` documents Mika productions without feature notes;
+the gates are in `src/syntax/src/lib.rs:49-50,72-73` and
+`src/syntax/src/mechdown.rs:1055-1073`.
+
+Specification text:
+`docs/design/specification.mec:2152-2355` calls Mika first-class syntax and
+does not state that acceptance depends on a Cargo feature.
+
+Documentation/example evidence:
+`docs/design/mika.mec` contains many Mika examples without feature
+qualification, including legacy faces the current parser does not recognize.
+
+Phase 0 ruling:
+The default-feature grammar and no-`mika` grammar are separate canonical
+feature sets for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0021_mika_feature_sets` compiles/runs the same
+canonical and legacy Mika sources with the feature enabled and disabled and
+asserts selection/AST behavior.
+
+Future design question:
+Is Mika platform syntax that must always compile, or an optional syntax
+extension whose delimiters should also be feature-dependent?
+
+GRAM-0022 — EBNF sublanguage entry behavior
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`parse_grammar` removes every ASCII space, LF, CR, and tab from the entire
+input, including quoted terminals, then applies the synthetic-newline
+initializer. `grammar` requires one or more rules and consumes one newline;
+`parse_grammar` rejects any remaining input or logged error. It therefore has
+complete public-root consumption but does not preserve whitespace terminals.
+Fenced `ebnf` delegates to this root; on an error `code_block` currently prints
+the error and reaches `todo!()`, which panics.
+
+Inline EBNF/comment:
+`src/syntax/src/parser.rs:486-489` says it removes all whitespace and does so
+globally. `src/syntax/src/grammar.rs:23-27` requires a final newline supplied
+by normalization.
+
+Specification text:
+`docs/design/specification.mec:2357-2376` prints the grammar sublanguage but
+does not document global whitespace deletion, public completion, or fenced
+error panic behavior.
+
+Documentation/example evidence:
+The specification contains many formatted `ebnf` fences and also terminals
+with intentional spaces, such as table-operator spellings around
+`docs/design/specification.mec:1222-1228`.
+
+Phase 0 ruling:
+Current stripping, normalization, completion, and fenced delegation are
+canonical for this phase; the panic is recorded, not repaired.
+
+Conformance case:
+`grammar-conformance::gram_0022_grammar_root_completion` covers multiple
+rules, trailing junk, `x := "a b";` becoming terminal `ab`, empty input,
+malformed fenced EBNF, and direct versus fenced entry behavior.
+
+Future design question:
+Should grammar formatting whitespace be ignored only outside terminals, and
+should malformed EBNF become an ordinary parse diagnostic?
+
+GRAM-0023 — REPL grammar is a separate root
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`parse_repl_command` parses `&str` directly, requires a leading `:`, tries
+commands in fixed order, optionally consumes CR and then LF, and explicitly
+rejects any remaining text. It does not use `ParseString`, synthetic
+newlines, Mech whitespace functions, recovery, or `alt_best`. Command details
+also differ from docs: `:c` selects code, not `clc`; `clear` takes no target;
+`ls` takes no path; and `step` requires at least one space after the word even
+when both numeric fields are absent.
+
+Inline EBNF/comment:
+`src/syntax/src/repl.rs:38-65` contains code but no complete root EBNF.
+Individual command helpers are also undocumented by inline grammar.
+
+Specification text:
+`docs/design/specification.mec` contains no REPL grammar.
+
+Documentation/example evidence:
+`docs/getting-started/repl.mec:24-105` says `:clc` has alias `:c`, `:clear`
+accepts an optional target, `:ls` accepts an optional path, and step count is
+optional. These claims conflict with the parser.
+
+Phase 0 ruling:
+The REPL is recorded as a separate root with its own command order and strict
+complete-consumption behavior.
+
+Conformance case:
+`grammar-conformance::gram_0023_repl_root` covers every command/alias,
+prefix collision, documented-but-rejected argument, CR/LF combination,
+trailing input, and absence of a colon.
+
+Future design question:
+Should REPL docs or parser aliases/arguments change, and should REPL commands
+share any lexical primitives with Mech?
+
+GRAM-0024 — `alt_best` is not ordinary choice
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`alt_best` runs every named parser from the same input. Among successes it
+selects greatest cursor consumption, retaining the earlier parser on a tie.
+A `Failure` whose cursor is at or beyond the best success defeats that
+success; the deepest failure wins when there is no stronger success. Ordinary
+errors are returned only when there is no success or failure. It also has a
+special immediate return for a parser named `mech_code`. Current callers are
+`mech_code_alt`, `statement`, and `section_element`.
+
+Inline EBNF/comment:
+The implementation and summary are at `src/syntax/src/lib.rs:775-841`, outside
+the selected parser module list. Production comments at its callers present
+ordinary `|` lists and do not encode ranking or failure precedence.
+
+Specification text:
+The specification's `|` notation means choice and has no longest-success or
+deepest-failure operator.
+
+Documentation/example evidence:
+Docs present ambiguous forms as grammar alternatives but never describe
+`alt_best`.
+
+Phase 0 ruling:
+Every caller keeps a plain formal choice plus an adjacent `Selection rule:`.
+No new EBNF operator is invented.
+
+Conformance case:
+`grammar-conformance::gram_0024_alt_best_ranking` freezes longest success,
+stable tie order, farther failure versus success, and caller-specific AST
+selection without snapshotting diagnostic text.
+
+Future design question:
+Is longest-success plus failure precedence a permanent language
+disambiguation rule or parser infrastructure to replace in Phase 1?
+
+GRAM-0025 — Meta-notation differs across its specification and parser
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+The grammar meta-parser accepts prefix `*`, `+`, `?`, `>`, `¬`; groups;
+two-factor square-bracket lists; definitions; sequences; choices; quoted
+terminals; and quoted-terminal ranges. Its `List` AST and formatter name the
+first operand “element” and the second “delimiter.” It does not have syntax
+for descriptive primitives such as `?Unicode class?`, escaping a quote in a
+terminal, or comments. `g_range` is implemented, but the printed meta-grammar
+omits it from `factor`.
+
+Inline EBNF/comment:
+`src/syntax/src/grammar.rs:112-169` implements list, range, factor, and
+terminal. `terminal_token` uses zero-or-more content then unwraps a merged
+token, so an empty quoted terminal can panic rather than return a parse error.
+
+Specification text:
+`docs/design/specification.mec:2357-2376` says `[p,q]` is a list of `p`
+delimited by `q`, omits range from its own meta-grammar, yet earlier rules use
+`"a".."z"`. The Phase 0 required notation labels the displayed list operands
+`[separator, element]`, reversing the prose/AST names.
+
+Documentation/example evidence:
+The specification uses descriptive terminals, formatted choices, ranges, and
+both apparent separated-list operand conventions.
+
+Phase 0 ruling:
+The audit uses the Phase 0 required surface notation and records operand
+meaning in prose where needed. Current meta-parser behavior is canonical and
+is not changed.
+
+Conformance case:
+`grammar-conformance::gram_0025_meta_notation` covers every implemented
+operator, list operand AST order, ranges, quoted whitespace, empty terminals,
+descriptive primitive rejection, and full round-trip formatting where safe.
+
+Future design question:
+What is the single normative separated-list operand order, and should the
+meta-parser be extended to cover every notation used by the canonical spec?
+
+GRAM-0026 — PR 680 parser modules omitted by the requested inventory list
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+At this baseline `mech_code_alt` tries `activation_scope` first and
+`module_import` before statements. Their implementations live in
+`activation.rs` and `imports.rs`, both exported by `lib.rs`. They are
+therefore reachable accepted-language modules.
+
+Inline EBNF/comment:
+`src/syntax/src/parser.rs:321-331` includes both branches, although the comment
+omits `module_import`. `src/syntax/src/lib.rs:43-46,61-65` declares and
+re-exports both modules.
+
+Specification text:
+The Phase 0 request's original selected-module list contains neither file.
+`docs/design/specification.mec` contains no activation grammar and does not
+describe the structured `module_import` parser.
+
+Documentation/example evidence:
+`docs/reference/modules.mec` documents `+>` imports. Activation has
+implementation-topology documentation but no user-facing syntax reference.
+
+Phase 0 ruling:
+Both modules are added to the PR 680 audit scope and inventory. Omitting them
+would violate the complete-current-grammar objective.
+
+Conformance case:
+`grammar-conformance::gram_0026_pr680_scope_additions` proves both functions
+are reachable from `parse` and asserts their top-level AST variants.
+
+Future design question:
+Should the canonical module list be generated from the root call graph so it
+cannot become stale?
+
+GRAM-0027 — Two `+>` import grammars compete
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`module_import` parses structured module, item, group, glob, and alias imports
+and returns `MechCode::Import` directly. `import_declaration`, inside
+`statement`, parses relative/absolute `.mec` paths and URI source specifiers
+and returns `Statement::ImportDeclaration`. Both start with `+>`.
+`mech_code_alt` runs direct module import before statement but ultimately uses
+`alt_best` consumption/failure rules, so the surface sigil does not uniquely
+identify the AST family.
+
+Inline EBNF/comment:
+`src/syntax/src/imports.rs:198-218` implements the direct form.
+`src/syntax/src/statements.rs:359-389` implements source imports.
+`src/syntax/src/parser.rs:321` omits both import distinctions from its inline
+choice comment.
+
+Specification text:
+The main specification has no formal import grammar.
+
+Documentation/example evidence:
+`docs/reference/modules.mec:18-121` documents both module imports such as
+`+> math/sin` and source imports such as `+> ./geometry.mec` without
+describing the two AST/parser routes.
+
+Phase 0 ruling:
+Both grammars and their `alt_best` selection are canonical for this phase.
+
+Conformance case:
+`grammar-conformance::gram_0027_import_route_selection` covers module-only,
+item, group, glob, alias, relative `.mec`, absolute `.mec`, URI, ambiguous
+prefix, AST variant, and full completion.
+
+Future design question:
+Should these imports be one grammar/AST concept or remain separate routes
+sharing a sigil?
+
+GRAM-0028 — FSM right-hand-side pattern validation
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`fsm_value` first parses the full `pattern` grammar, then semantically rejects
+a top-level or nested wildcard and any array spread/rest. Expression,
+tuple, tuple-struct, and non-spread array patterns remain valid as values.
+This validator applies to initial states, next-state transitions, async
+transitions, and outputs. Pattern-matching positions retain wildcard and
+spread/rest.
+
+Inline EBNF/comment:
+Several comments in `src/syntax/src/state_machines.rs:90-200` call the RHS an
+`atom` or `pattern`, while lines 12-77 implement the stricter recursive
+semantic validation.
+
+Specification text:
+The specification does not define this FSM value subset or distinguish its
+semantic validation from general pattern grammar.
+
+Documentation/example evidence:
+`docs/reference/state-machine.mec` uses atoms/tuple-struct-like states and
+wildcards only in matching guard positions, consistent with the validator but
+without stating it.
+
+Phase 0 ruling:
+The syntactic pattern parse plus recursive `Validation rule:` is canonical for
+this phase; it is not rewritten as a new EBNF operator.
+
+Conformance case:
+`grammar-conformance::gram_0028_fsm_value_validation` covers every Pattern
+variant at every FSM value site, including nested wildcard/spread rejection
+and corresponding acceptance in match positions.
+
+Future design question:
+Should FSM value syntax have a dedicated grammar production instead of
+parsing then semantically rejecting pattern-only forms?
+
+GRAM-0029 — Radix literal digit alphabets are not validated
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`hexadecimal_literal` accepts any alphabetic token, numeric token, or
+underscore after `0x`. `octal_literal`, `binary_literal`, and explicit
+`decimal_literal` use the general `digit_sequence`; `digit` accepts any
+Unicode numeric grapheme. The parser therefore accepts examples such as
+`0xG`, `0o9`, and `0b2` as their prefixed literal AST variants.
+
+Inline EBNF/comment:
+Comments at `src/syntax/src/literals.rs:283-326` claim hexadecimal, octal, and
+binary digits but display the broad implementation parser for hex and the
+generic digit sequence for the others.
+
+Specification text:
+`docs/design/specification.mec:152-157,518-526` restricts binary to `0|1`,
+octal to `0..7`, and hex to decimal digits plus `a..f|A..F`.
+
+Documentation/example evidence:
+`docs/reference/number.mec` documents conventional radix alphabets and only
+shows valid examples.
+
+Phase 0 ruling:
+The broad current acceptance is canonical for this phase. No digit validation
+is added.
+
+Conformance case:
+`grammar-conformance::gram_0029_radix_digit_alphabets` freezes valid,
+out-of-radix, alphabetic, underscore, and Unicode-numeric cases with AST
+variants.
+
+Future design question:
+Should lexical parsing enforce each radix alphabet, or should later semantic
+validation own these errors?
+
+GRAM-0030 — Identifier-symbol formal rule differs from implementation
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`identifier_symbol` explicitly accepts `&`, `$`, `%`, `/`, `#`, backslash,
+`~`, `+`, `-`, `*`, and `^`. It excludes `@`, `|`, `=`, grave, and `_`.
+Identifiers start with alpha or the implementation's broad emoji class.
+
+Inline EBNF/comment:
+`src/syntax/src/base.rs:349-353` lists the implemented symbol set and
+`src/syntax/src/base.rs:449-452` defines identifier composition.
+
+Specification text:
+`docs/design/specification.mec:233-254` formally defines
+`identifier-symbol := ¬(equal | underscore), symbol`, which would include
+`@` and `|` from its `symbol` rule. The prose at lines 358-369 separately says
+`@` is invalid and lists only some allowed symbols, agreeing more closely with
+the implementation.
+
+Documentation/example evidence:
+Kebab-case and slash-qualified identifiers are common; docs do not show
+identifiers containing several other accepted symbols.
+
+Phase 0 ruling:
+The explicit implementation set and broad emoji classifier are canonical for
+this phase.
+
+Conformance case:
+`grammar-conformance::gram_0030_identifier_symbol_set` tests every symbol in
+accepted initial/interior positions, every excluded symbol, Unicode alpha,
+emoji-like non-ASCII graphemes, and complete consumption.
+
+Future design question:
+Which symbols are intended identifier characters, and should the spec use an
+explicit positive set rather than exclusion from `symbol`?
+
+GRAM-0031 — Unmatched Mika close prevents public-root progress
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+With feature `mika`, `section` checks `mika_section_close` before parsing an
+element and returns a successful empty `Section` without consuming the close
+delimiter. At the top level, `body` treats that success as progress, pushes
+the empty section, and invokes `section` again at the same cursor forever.
+The public `parse` root therefore does not terminate on a top-level unmatched
+`⸥`. Inside a Mika section the same stop behavior is required so the enclosing
+`mika_section` parser can consume its delimiter.
+
+Inline EBNF/comment:
+`src/syntax/src/mechdown.rs:1048-1051` implements the zero-consumption stop,
+while the `body` comment and loop at lines 1104-1121 do not state or guard the
+progress invariant.
+
+Specification text:
+`docs/design/specification.mec` describes the Mika close delimiter only as
+the end of a Mika section and does not define unmatched-close behavior or
+top-level nontermination.
+
+Documentation/example evidence:
+Mika examples use balanced `⸢ ... ⸥` sections. No example contains a
+top-level unmatched close delimiter, so the hang is not visible in the
+documentation corpus.
+
+Phase 0 ruling:
+Current parser behavior recorded as canonical for this phase. Do not add a
+progress guard or change delimiter handling in Phase 0.
+
+Conformance case:
+`grammar-conformance::gram_0031_unmatched_mika_close` calls the lower-level
+`section` parser and records its successful zero-consumption result. It must
+not call `body` or `parse` on this source in-process.
+
+Future design question:
+Should an unmatched Mika close be rejected at the document root, and where
+should parser loops enforce mandatory cursor progress?
+
+GRAM-0032 — Private table-bottom parser has no caller
+-------------------------------------------------------------------------------
+
+Current parser behavior:
+`structures.rs::table_bottom` can parse a run of box-drawing characters and a
+table-end token, but it is private and no parser calls it. In particular,
+`fancy_table` returns after its row list. A bottom border that is accepted by
+that path is consumed by `row_separator`, whose alternatives include
+`table_end`.
+
+Inline EBNF/comment:
+The inline comment above `table_bottom` presents it as `table-bottom`, and the
+comment above `fancy_table` says that a fancy table ends with
+`table-bottom`. The implementation of `fancy_table` does not contain that
+call.
+
+Specification text:
+The prior specification describes fancy-table border syntax but does not
+identify this private implementation function as dead.
+
+Documentation/example evidence:
+Fancy-table examples can contain bottom-border glyphs, but their accepted
+parse path is `row_separator`; they provide no call path to `table_bottom`.
+
+Phase 0 ruling:
+The parser call graph is canonical for this phase. The private uncalled
+function is inventoried as `helper/not-grammar`; no `table-bottom` formal rule
+is published and no production visibility is widened.
+
+Conformance case:
+Not applicable to accepted-language conformance. Inventory and rule-graph
+tests assert that the function remains inventoried without a canonical rule,
+while `TABLE-FANCY` snapshots the actual accepted bottom-border path.
+
+Future design question:
+Should a future parser delete the dead helper, call it explicitly, or continue
+to treat a bottom border as a row separator?

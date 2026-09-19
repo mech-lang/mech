@@ -1,14 +1,12 @@
 #![cfg(all(feature = "resident-artifact", feature = "compiler"))]
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, ChangeDetectionPolicy,
-    ConstantId, DeliveryMode, ExecutionResourceRequest, ExternalInteraction, MResult,
-    ObservationReplayPolicy, OutputConstruction, ParsedProgram, ResolvedOperationContract,
-    ResourceDelivery, ResourceIntent, ShapeRule, ValueData, snapshot::SequenceView,
+    AccessMode, AliasPolicy, ApplicationRequirement, ChangeDetectionPolicy, ConstantId,
+    DeliveryMode, ExecutionResourceRequest, ExternalInteraction, MResult, ObservationReplayPolicy,
+    OutputConstruction, ParsedProgram, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
+    ShapeRule, ValueData, snapshot::SequenceView,
 };
-use mech_engine::__resident::{
-    FrozenEkfCompilationServices, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
-};
+use mech_engine::__resident::{FrozenEkfCompilationServices, compile_frozen_ekf_source};
 
 const SOURCE: &str =
     include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec");
@@ -23,7 +21,7 @@ fn ordinary_source_and_bytecode_close_the_same_frozen_artifact() -> MResult<()> 
         compilation.decoded_artifact.revision()
     );
     assert_eq!(compilation.source_closure, compilation.decoded_closure);
-    assert_eq!(compilation.source_artifact.nodes().len(), 21);
+    assert_eq!(compilation.source_artifact.nodes().len(), 25);
     assert!(compilation.source_artifact.inputs().is_empty());
     assert_eq!(compilation.source_closure.resident_kernels.len(), 15);
     assert_eq!(compilation.source_closure.integrity_predicates.len(), 3);
@@ -155,26 +153,19 @@ fn ordinary_source_and_bytecode_close_the_same_frozen_artifact() -> MResult<()> 
 }
 
 #[test]
-fn declaration_markers_stay_in_bytecode_but_not_the_artifact() -> MResult<()> {
+fn canonical_bytecode_owns_artifact_sections_without_declaration_instructions() -> MResult<()> {
     let mut services = FrozenEkfCompilationServices::default();
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
     let parsed = ParsedProgram::from_bytes(&compilation.bytecode)?;
-    let catalog = frozen_ekf_compiler_catalog()?;
-    let declaration_instructions = parsed
-        .instructions
-        .iter()
-        .filter_map(BytecodeInstruction::runtime_function)
-        .filter_map(|function| catalog.runtime_entry_by_raw(function))
-        .filter(|entry| entry.name.starts_with("VariableDefine"))
-        .count();
-    assert!(declaration_instructions >= 1);
-    assert!(
-        compilation
-            .source_artifact
-            .nodes()
-            .iter()
-            .all(|node| { !node.operation.operation_name.starts_with("VariableDefine") })
-    );
+    assert!(parsed.instructions.is_empty());
+    assert!(compilation.source_artifact.nodes().iter().all(|node| {
+        !node
+            .as_operation()
+            .unwrap()
+            .operation
+            .operation_name
+            .starts_with("VariableDefine")
+    }));
     Ok(())
 }
 
@@ -184,8 +175,10 @@ fn both_state_updates_are_complete_declared_writes() -> MResult<()> {
     let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
     for update in &compilation.source_closure.state_updates {
         let node = &compilation.source_artifact.nodes()[update.node.get() as usize];
-        let Some(ResolvedOperationContract::Declared(contract)) =
-            compilation.source_artifact.contracts().get(node.contract)
+        let Some(ResolvedOperationContract::Declared(contract)) = compilation
+            .source_artifact
+            .contracts()
+            .get(node.as_operation().unwrap().contract)
         else {
             panic!("state update must use a declared contract");
         };

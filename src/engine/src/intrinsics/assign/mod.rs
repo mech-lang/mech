@@ -37,99 +37,66 @@ pub use self::tuple::*;
 // x = 1 ----------------------------------------------------------------------
 
 pub(crate) static PURE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
-    std::sync::LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::SameAsInput { input: 0 },
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
+    std::sync::LazyLock::new(|| {
+        mech_core::maintained_operation_contract("core/assign", 1, false)
+            .expect("maintained operation contract")
     });
-
-#[cfg(feature = "semantic-compiler")]
-fn indexed_state_register_contract(
-    input_count: usize,
-    regions: RegionPolicy,
-) -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            (0..input_count)
-                .map(|_| InputPortPolicy {
-                    access: AccessMode::Read,
-                    delivery: DeliveryMode::Signal,
-                })
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        ),
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::ReadWrite,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::ReadModifyWrite {
-                base_input: 0,
-                regions,
-            },
-            alias: AliasPolicy::MayAlias { input: 0 },
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
-}
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| {
-    indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
+    mech_core::maintained_operation_contract("core/assign/indexed-axis", 3, true)
+        .expect("maintained assignment contract")
 });
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_ROW_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| {
-    indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 0 })
+    mech_core::maintained_operation_contract("core/assign/indexed-rows", 3, true)
+        .expect("maintained assignment contract")
 });
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_COLUMN_INDEXED_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| {
-    indexed_state_register_contract(3, RegionPolicy::IndexedAxis { axis: 1 })
+    mech_core::maintained_operation_contract("core/assign/indexed-columns", 3, true)
+        .expect("maintained assignment contract")
 });
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_RECTANGULAR_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
 > = std::sync::LazyLock::new(|| {
-    indexed_state_register_contract(4, RegionPolicy::RectangularRegion)
+    mech_core::maintained_operation_contract("core/assign/indexed-rectangle", 4, true)
+        .expect("maintained assignment contract")
 });
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_WHOLE_VALUE_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
-> = std::sync::LazyLock::new(|| indexed_state_register_contract(2, RegionPolicy::WholeValue));
+> = std::sync::LazyLock::new(|| {
+    mech_core::maintained_operation_contract("core/assign/whole-value", 2, true)
+        .expect("maintained assignment contract")
+});
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_COLLECTION_ENTRY_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
-> = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::CollectionEntry));
+> = std::sync::LazyLock::new(|| {
+    mech_core::maintained_operation_contract("core/assign/collection-entry", 3, false)
+        .expect("maintained assignment contract")
+});
 
 #[cfg(feature = "semantic-compiler")]
 pub(crate) static PURE_SINGLE_ELEMENT_STATE_REGISTER_CONTRACT: std::sync::LazyLock<
     OperationContractDeclaration,
-> = std::sync::LazyLock::new(|| indexed_state_register_contract(3, RegionPolicy::SingleElement));
+> = std::sync::LazyLock::new(|| {
+    mech_core::maintained_operation_contract("core/assign/single-element", 3, false)
+        .expect("maintained assignment contract")
+});
 
 #[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 pub(crate) fn install_frozen_ekf_state_runtime(

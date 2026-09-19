@@ -1,0 +1,63 @@
+{
+  "ast": {
+    "elements": [
+      {
+        "Text": {
+          "chars": [
+            "T",
+            "h",
+            "i",
+            "s",
+            " ",
+            "p",
+            "a",
+            "r",
+            "a",
+            "g",
+            "r",
+            "a",
+            "p",
+            "h",
+            " ",
+            "c",
+            "o",
+            "n",
+            "t",
+            "a",
+            "i",
+            "n",
+            "s",
+            " ",
+            ":",
+            " ",
+            "a",
+            "n",
+            "d",
+            " ",
+            "=",
+            " ",
+            "s",
+            "e",
+            "p",
+            "a",
+            "r",
+            "a",
+            "t",
+            "e",
+            "l",
+            "y",
+            "."
+          ],
+          "kind": "Text"
+        }
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 44,
+    "remaining_source": "",
+    "source_graphemes": 44
+  },
+  "entry_point": "normalized-paragraph-newline",
+  "rule": "paragraph"
+}

@@ -1,6 +1,6 @@
 use crate::*;
 
-// pattern := pattern_atom_struct | pattern_tuple_struct | wildcard | pattern_array | pattern_tuple | expression ;
+// Grammar: docs/design/specification.mec, `pattern`.
 pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
     match pattern_atom_struct(input.clone()) {
         Ok((input, tpl)) => return Ok((input, Pattern::TupleStruct(tpl))),
@@ -28,13 +28,13 @@ pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
     }
 }
 
-// wildcard := "*" ;
+// Grammar: docs/design/specification.mec, `wildcard`.
 pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
     let (input, _) = asterisk(input)?;
     Ok((input, Pattern::Wildcard))
 }
 
-// pattern_tuple_struct := grave, identifier, "(", list1(",", pattern), ")" ;
+// Grammar: docs/design/specification.mec, `pattern-tuple-struct`.
 pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
     let (input, _) = grave(input)?;
     let (input, id) = identifier(input)?;
@@ -46,8 +46,8 @@ pub fn pattern_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruc
     Ok((input, PatternTupleStruct { name: id, patterns }))
 }
 
-// spread-operator := "..." | "…" ;
-fn spread_operator(input: ParseString) -> ParseResult<()> {
+// Grammar: docs/design/specification.mec, `spread-operator`.
+pub(crate) fn spread_operator(input: ParseString) -> ParseResult<()> {
     let (input, _) = alt((spread_operator_a, spread_operator_u))(input)?;
     Ok((input, ()))
 }
@@ -74,7 +74,7 @@ fn pattern_array_token(input: ParseString) -> ParseResult<PatternArrayToken> {
     Ok((input, PatternArrayToken::Item(item)))
 }
 
-// pattern_array := "[", [pattern_array_item|spread], "]" ;
+// Grammar: docs/design/specification.mec, `pattern-array`.
 pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
     let (mut input, _) = left_bracket(input)?;
     let (next_input, _) = whitespace0(input)?;
@@ -241,7 +241,7 @@ pub fn pattern_array(input: ParseString) -> ParseResult<PatternArray> {
     ))
 }
 
-// pattern_atom_struct := ":", identifier, "(", list1(",", pattern), ")" ;
+// Grammar: docs/design/specification.mec, `pattern-atom-struct`.
 pub fn pattern_atom_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
     let (input, _) = colon(input)?;
     let (input, id) = identifier(input)?;
@@ -253,7 +253,7 @@ pub fn pattern_atom_struct(input: ParseString) -> ParseResult<PatternTupleStruct
     Ok((input, PatternTupleStruct { name: id, patterns }))
 }
 
-// pattern-tuple := "(", [pattern, ","], ")" ;
+// Grammar: docs/design/specification.mec, `pattern-tuple`.
 pub fn pattern_tuple(input: ParseString) -> ParseResult<PatternTuple> {
     let (input, _) = left_parenthesis(input)?;
     let (input, _) = whitespace0(input)?;

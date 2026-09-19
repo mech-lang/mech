@@ -1,0 +1,47 @@
+{
+  "ast": {
+    "alignment": [],
+    "header": [],
+    "rows": [
+      [
+        {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "o",
+                  "n",
+                  "e",
+                  " "
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        },
+        {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "t",
+                  "w",
+                  "o",
+                  " "
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 13,
+    "remaining_source": "",
+    "source_graphemes": 13
+  },
+  "entry_point": "mechdown-table",
+  "rule": "mechdown-table-no-header"
+}

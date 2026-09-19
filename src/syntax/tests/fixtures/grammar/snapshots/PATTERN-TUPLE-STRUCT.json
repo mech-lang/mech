@@ -1,0 +1,58 @@
+{
+  "ast": {
+    "TupleStruct": {
+      "name": {
+        "name": {
+          "chars": [
+            "s",
+            "o",
+            "m",
+            "e"
+          ],
+          "kind": "Identifier"
+        }
+      },
+      "patterns": [
+        {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "x"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        },
+        {
+          "Expression": {
+            "Var": {
+              "context": null,
+              "kind": null,
+              "name": {
+                "name": {
+                  "chars": [
+                    "y"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 11,
+    "remaining_source": "",
+    "source_graphemes": 11
+  },
+  "entry_point": "pattern",
+  "rule": "pattern"
+}

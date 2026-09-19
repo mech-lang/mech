@@ -1,0 +1,242 @@
+#![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
+
+use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId};
+use mech_engine::resident::{ActivationFacts, activate};
+use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceDocumentOutputKind};
+use mech_runtime::RuntimeValueSnapshot;
+use mech_syntax::document::{
+    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+    parse_canonical_document, reconstruct_source,
+};
+
+fn compile(source: &str) -> CanonicalSourceProgram {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x573), Revision(7), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(
+        parsed.diagnostics.is_empty(),
+        "{source:?}: {:?}",
+        parsed.diagnostics
+    );
+    assert_eq!(
+        reconstruct_source(&parsed.root, &parsed.source).unwrap(),
+        source
+    );
+    CanonicalSourceFrontend
+        .compile_document(&DocumentSyntax::cast(parsed.syntax()).unwrap())
+        .unwrap()
+}
+
+fn rendered_turns(source: &str, expected: &[&[(SourceDocumentOutputKind, &str)]]) {
+    let compiled = compile(source);
+    assert!(
+        compiled.program().inputs.is_empty(),
+        "document-local presentation must not manufacture external inputs"
+    );
+    let artifact = compiled
+        .compile_artifact()
+        .expect("complete canonical artifact");
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x573, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .expect("maintained resident activation");
+    let names = compiled
+        .program()
+        .outputs
+        .iter()
+        .map(|output| output.name.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        names
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len(),
+        names.len(),
+        "distinct source positions own distinct output names"
+    );
+    for turn in expected {
+        assert_eq!(compiled.document_outputs().len(), turn.len());
+        instance.turn(&[]).unwrap();
+        for (binding, (kind, expected)) in compiled.document_outputs().iter().zip(*turn) {
+            assert_eq!(binding.kind, *kind);
+            let index = binding.output as usize;
+            let anchor = compiled.source_map().outputs[index];
+            assert_eq!(anchor.document, DocumentId(0x573));
+            assert_eq!(anchor.revision, Revision(7));
+            let source_slice = &source[anchor.range.start.0 as usize..anchor.range.end.0 as usize];
+            match kind {
+                SourceDocumentOutputKind::Program => assert_eq!(names[index], "result"),
+                SourceDocumentOutputKind::Inline => {
+                    assert!(source_slice.starts_with('{') && source_slice.ends_with('}'));
+                    assert_eq!(
+                        names[index],
+                        format!("document:inline:{}", anchor.range.start.0)
+                    );
+                }
+                SourceDocumentOutputKind::Fence => {
+                    assert!(source_slice.starts_with("~~~") || source_slice.starts_with("```"));
+                    assert_eq!(
+                        names[index],
+                        format!("document:fence:{}", anchor.range.start.0)
+                    );
+                }
+            }
+            let value =
+                RuntimeValueSnapshot::from_value(instance.copied_output(index).unwrap()).unwrap();
+            assert_eq!(
+                value.format_canonical_inline(),
+                *expected,
+                "{kind:?}: {source_slice:?}"
+            );
+            assert_eq!(
+                value.format_html(),
+                format!("<span class='mech-value'>{expected}</span>")
+            );
+        }
+    }
+}
+
+#[test]
+fn shared_document_fixture_renders_inline_and_fence_outputs_from_the_root_program() {
+    use SourceDocumentOutputKind::{Fence, Inline, Program};
+    let source = include_str!("../../../tests/fixtures/syntax-source-boundary/document.mec");
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "42"), (Inline, "41"), (Fence, "42")],
+            &[(Program, "43"), (Inline, "42"), (Fence, "43")],
+        ],
+    );
+}
+
+#[test]
+fn inline_and_fence_results_keep_their_source_order_versions() {
+    use SourceDocumentOutputKind::{Fence, Inline, Program};
+    let source = "The final answer is {answer}.\n\n~answer := 0\n~~~mech\nanswer += 1\nanswer\n~~~\nanswer += 1\nanswer\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "2"), (Inline, "0"), (Fence, "1")],
+            &[(Program, "4"), (Inline, "2"), (Fence, "3")],
+        ],
+    );
+}
+
+#[test]
+fn fenced_definitions_share_root_scope_without_flattening_child_or_disabled_scopes() {
+    use SourceDocumentOutputKind::{Fence, Program};
+    let source = "~~~mech\n~answer := 40\nanswer\n~~~\n~~~mech:child\n~answer := 100\nanswer\n~~~\n~~~mech:disabled\nanswer += 100\n~~~\n```rust\nnot Mech code!\n```\n\nShown {{answer += 100}}.\n\nanswer += 2\nanswer\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "42"), (Fence, "40")],
+            &[(Program, "44"), (Fence, "42")],
+        ],
+    );
+}
+
+#[test]
+fn repeated_fence_results_and_inline_only_documents_have_stable_distinct_bindings() {
+    use SourceDocumentOutputKind::{Fence, Inline, Program};
+    rendered_turns(
+        "~~~mech\n1\n~~~\n~~~mech\n1\n~~~\n",
+        &[&[(Program, "1"), (Fence, "1"), (Fence, "1")]],
+    );
+    rendered_turns("Evaluated {1 + 2}.\n", &[&[(Program, "3"), (Inline, "3")]]);
+}
+
+#[test]
+fn deferred_inline_does_not_become_the_aggregate_result_when_a_later_definition_resolves_it() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "Value {answer}.\n~answer := 41\n";
+    let compiled = compile(source);
+    assert_eq!(
+        compiled.document_outputs(),
+        [
+            mech_engine::SourceDocumentOutput {
+                output: 0,
+                kind: Program,
+                visible: true,
+            },
+            mech_engine::SourceDocumentOutput {
+                output: 1,
+                kind: Inline,
+                visible: true,
+            },
+        ]
+    );
+    let program_anchor = compiled.source_map().outputs[0];
+    assert_eq!(
+        &source[program_anchor.range.start.0 as usize..program_anchor.range.end.0 as usize],
+        "~answer := 41"
+    );
+    rendered_turns(source, &[&[(Program, "41"), (Inline, "41")]]);
+}
+
+#[test]
+fn deferred_inline_preserves_already_bound_state_at_its_source_position() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "~y := 0\nValue {x + y}.\ny += 1\nx := 1\nx\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "1"), (Inline, "1")],
+            &[(Program, "1"), (Inline, "2")],
+        ],
+    );
+}
+
+#[test]
+fn deferred_inline_snapshots_each_forward_local_when_it_becomes_available() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    let source = "Value {x + z}.\n~x := 1\nx += 10\nz := 2\nz\n";
+    rendered_turns(
+        source,
+        &[
+            &[(Program, "2"), (Inline, "3")],
+            &[(Program, "2"), (Inline, "13")],
+        ],
+    );
+}
+
+#[test]
+fn forward_local_slice_stems_defer_without_manufacturing_external_inputs() {
+    use SourceDocumentOutputKind::{Inline, Program};
+    rendered_turns(
+        "Value {answer[1]}.\nanswer := [41]\n",
+        &[&[(Program, "[41]"), (Inline, "41")]],
+    );
+}
+
+#[test]
+fn deferred_presentation_does_not_change_executable_statement_visibility() {
+    let compiled = compile("before := answer\n~answer := 41\nbefore\n");
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert_eq!(compiled.program().inputs[0].name, "answer");
+    assert_eq!(
+        compiled.program().outputs[0].source,
+        mech_engine::SourceValue::Input(0)
+    );
+}
+
+#[test]
+fn colonless_named_and_disabled_fences_do_not_execute_in_root_scope() {
+    use mech_engine::SourceDocumentOutputKind::Program;
+    for info in [
+        "mechanics",
+        "mechdisabled",
+        "mechchild",
+        "mecchild",
+        "🤖child",
+    ] {
+        let source = format!("~answer := 0\n~~~{info}\nanswer += 100\n~~~\nanswer\n");
+        rendered_turns(&source, &[&[(Program, "0")], &[(Program, "0")]]);
+    }
+}

@@ -1,0 +1,48 @@
+{
+  "ast": {
+    "Prompt": {
+      "Image": {
+        "caption": {
+          "elements": [
+            {
+              "Text": {
+                "chars": [
+                  "P",
+                  "r",
+                  "o",
+                  "m",
+                  "p",
+                  "t"
+                ],
+                "kind": "Text"
+              }
+            }
+          ]
+        },
+        "src": {
+          "chars": [
+            "p",
+            "r",
+            "o",
+            "m",
+            "p",
+            "t",
+            ".",
+            "p",
+            "n",
+            "g"
+          ],
+          "kind": "Alpha"
+        },
+        "style": null
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 24,
+    "remaining_source": "",
+    "source_graphemes": 24
+  },
+  "entry_point": "prompt",
+  "rule": "prompt"
+}

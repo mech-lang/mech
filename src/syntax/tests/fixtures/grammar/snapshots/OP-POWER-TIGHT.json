@@ -1,0 +1,54 @@
+{
+  "ast": {
+    "Formula": {
+      "Term": {
+        "lhs": {
+          "Expression": {
+            "Literal": {
+              "Number": {
+                "Real": {
+                  "Integer": {
+                    "chars": [
+                      "1"
+                    ],
+                    "kind": "Number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rhs": [
+          [
+            {
+              "Power": "Pow"
+            },
+            {
+              "Expression": {
+                "Literal": {
+                  "Number": {
+                    "Real": {
+                      "Integer": {
+                        "chars": [
+                          "2"
+                        ],
+                        "kind": "Number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        ]
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "expression",
+  "rule": "expression"
+}

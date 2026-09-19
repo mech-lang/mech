@@ -1,0 +1,40 @@
+{
+  "ast": {
+    "WarningBlock": [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "I",
+                "s",
+                "o",
+                "l",
+                "a",
+                "t",
+                "e",
+                "d",
+                " ",
+                "w",
+                "a",
+                "r",
+                "n",
+                "i",
+                "n",
+                "g"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 22,
+    "remaining_source": "",
+    "source_graphemes": 22
+  },
+  "entry_point": "warning-block",
+  "rule": "warning-block"
+}

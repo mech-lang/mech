@@ -172,6 +172,8 @@ fn collect_loaded_modules(
                 module.name,
                 module_version,
                 version.source.clone(),
+                #[cfg(feature = "source")]
+                version.source_document.clone(),
                 version.syntax_tree.clone(),
             ),
         );
@@ -206,6 +208,7 @@ fn source_snapshot(
     canonical_uri: String,
     module_version: ModuleVersionId,
     source: Option<MechSourceCode>,
+    #[cfg(feature = "source")] source_document: Option<crate::SourceDocument>,
     syntax_tree: Option<std::sync::Arc<mech_core::Program>>,
 ) -> RuntimeWorkspaceSourceSnapshot {
     let path = file_uri_path(&canonical_uri);
@@ -223,6 +226,8 @@ fn source_snapshot(
         canonical_uri,
         path,
         source,
+        #[cfg(feature = "source")]
+        source_document,
         syntax_tree,
         module_version: Some(module_version),
         content_hash,
@@ -239,4 +244,50 @@ pub(super) fn file_uri_path(canonical_uri: &str) -> Option<PathBuf> {
     }
 
     crate::resolver::file_uri_to_path(canonical_uri).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{MechRuntime, ModuleBuildOptions, RuntimeConfig};
+
+    #[test]
+    fn workspace_snapshot_preserves_the_exact_accepted_source_revision() {
+        let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
+        let version = runtime
+            .put_canonical_source_module(
+                "main.mec",
+                "memory:main.mec",
+                "value := 1\n",
+                ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+            )
+            .unwrap();
+        let stored = runtime
+            .workspace_module_records(version)
+            .unwrap()
+            .unwrap()
+            .1
+            .source_document
+            .unwrap();
+        let snapshot = collect_snapshot(
+            &runtime,
+            PathBuf::new(),
+            BTreeMap::new(),
+            vec![version],
+            Vec::new(),
+        )
+        .unwrap();
+        let transferred = snapshot
+            .sources
+            .get("memory:main.mec")
+            .unwrap()
+            .source_document
+            .as_ref()
+            .unwrap();
+        assert_eq!(
+            transferred.source().revision(),
+            mech_syntax::document::Revision(0)
+        );
+        assert!(std::ptr::eq(stored.snapshot(), transferred.snapshot()));
+    }
 }

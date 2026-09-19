@@ -1,0 +1,25 @@
+{
+  "ast": {
+    "element": {
+      "Literal": {
+        "Number": {
+          "Real": {
+            "Integer": {
+              "chars": [
+                "1"
+              ],
+              "kind": "Number"
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 2,
+    "remaining_source": "",
+    "source_graphemes": 2
+  },
+  "entry_point": "table-column",
+  "rule": "table-column"
+}

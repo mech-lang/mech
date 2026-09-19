@@ -49,21 +49,9 @@ fn initial_output_index(
         InitialValueProjection::FirstPublishedOutput => {
             (!artifact.outputs().is_empty()).then_some(0)
         }
-        // Interactive compilation publishes formatted-document outputs, then
-        // the program's root result, then named-symbol aliases. The aliases
-        // carry `interactive_binding`; the root result is therefore the final
-        // ordinary, non-constraint output even when a rich document precedes
-        // the REPL entry. Integrity constraints have their own projection and
-        // must not replace the program's implicit display value.
         #[cfg(feature = "resident-routing-source")]
         InitialValueProjection::InteractiveRootResult => {
-            artifact.outputs().iter().rposition(|output| {
-                output.interactive_binding.is_none()
-                    && !artifact
-                        .constraints()
-                        .iter()
-                        .any(|constraint| constraint.name == output.name)
-            })
+            super::value::program_result_output_index(artifact)
         }
     }
 }
@@ -665,7 +653,10 @@ impl MechRuntime {
     ) -> MResult<ActivationFacts> {
         let mut facts = ActivationFacts::default();
         for node in artifact.nodes() {
-            let Some(requirement) = node.requirement else {
+            let Some(requirement) = node
+                .as_operation()
+                .and_then(|operation| operation.requirement)
+            else {
                 continue;
             };
             let Some(ApplicationRequirement::Resource(request)) =

@@ -57,27 +57,8 @@ fn expression_value(
     feature = "matrix"
 ))]
 fn composite_pack_contract() -> OperationContractDeclaration {
-    OperationContractDeclaration {
-        inputs: InputPortLayout::Variadic {
-            prefix: Box::new([]),
-            repeated: InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            },
-            min_repetitions: 0,
-        },
-        outputs: vec![OutputPortPolicy {
-            access: AccessMode::Write,
-            delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::FullWrite {
-                shape: ShapeRule::Declared,
-            },
-            alias: AliasPolicy::NoAlias,
-            change_detection: ChangeDetectionPolicy::KernelReported,
-        }]
-        .into_boxed_slice(),
-        interaction: ExternalInteraction::Pure,
-    }
+    mech_core::maintained_operation_contract("core/composite-pack", 0, false)
+        .expect("canonical composite declaration is maintained")
 }
 
 #[cfg(any(

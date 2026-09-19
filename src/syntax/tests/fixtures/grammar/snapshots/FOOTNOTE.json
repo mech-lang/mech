@@ -1,0 +1,46 @@
+{
+  "ast": [
+    {
+      "chars": [
+        "n",
+        "o",
+        "t",
+        "e"
+      ],
+      "kind": "Alpha"
+    },
+    [
+      {
+        "elements": [
+          {
+            "Text": {
+              "chars": [
+                "F",
+                "o",
+                "o",
+                "t",
+                "n",
+                "o",
+                "t",
+                "e",
+                " ",
+                "t",
+                "e",
+                "x",
+                "t"
+              ],
+              "kind": "Text"
+            }
+          }
+        ]
+      }
+    ]
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 23,
+    "remaining_source": "",
+    "source_graphemes": 23
+  },
+  "entry_point": "normalized-footnote",
+  "rule": "citation"
+}

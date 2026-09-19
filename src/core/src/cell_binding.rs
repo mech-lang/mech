@@ -6026,7 +6026,8 @@ impl MechErrorKind for ValueCellOutputConstructionUnsupported {
     }
 }
 
-fn shape_change_allowed(
+#[doc(hidden)]
+pub fn shape_change_allowed(
     schema: &crate::Schema,
     current: &ShapeInstance,
     next: &ShapeInstance,

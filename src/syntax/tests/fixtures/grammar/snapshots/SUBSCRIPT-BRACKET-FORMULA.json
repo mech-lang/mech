@@ -1,0 +1,33 @@
+{
+  "ast": [
+    {
+      "Bracket": [
+        {
+          "Formula": {
+            "Expression": {
+              "Literal": {
+                "Number": {
+                  "Real": {
+                    "Integer": {
+                      "chars": [
+                        "1"
+                      ],
+                      "kind": "Number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "subscript",
+  "rule": "subscript"
+}

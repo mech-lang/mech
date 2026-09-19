@@ -65,6 +65,14 @@ def full_architecture_contracts() -> str:
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_landing_source_fixture_is_fetched_before_offline_execution(self):
+        block = job_block(CI, "standard-linux")
+        fetch = "cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
+        run = "cargo +nightly-2026-03-03 run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml"
+        self.assertLess(block.index(fetch), block.index("Build and exercise"))
+        self.assertLess(block.index(fetch), block.index(run))
+        self.assertIn("if: needs.impact.outputs.landing_candidate == 'true'", block)
+
     def test_native_plan_starts_early_once_on_the_exact_head(self):
         early = job_block(CI, "early-native-plan")
         delegated = job_block(FULL, "native-plan")
@@ -120,6 +128,22 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="false"))
         self.assertTrue(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="skipped"))
         self.assertFalse(accepts(cargo, NATIVE_PLAN_IN_CALLER="true", NATIVE_PLAN_RESULT="failure"))
+
+    def test_docs_only_gate_accepts_successful_browser_skip_verification(self):
+        block = job_block(CI, "pr-gate")
+        script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "skipped")
+        environment.update(DOCS_ONLY="true", FULL_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success")
+        def accepts(**changes):
+            return subprocess.run(["/bin/bash", "-e", "-c", script],
+                env=environment | changes, capture_output=True).returncode == 0
+        self.assertTrue(accepts())
+        for result in ("failure", "cancelled", "skipped", ""):
+            with self.subTest(result=result):
+                self.assertFalse(accepts(BROWSER_RESULT=result))
+        self.assertFalse(accepts(STATIC_RESULT="failure"))
+        self.assertFalse(accepts(FULL_REQUIRED="true"))
+        self.assertTrue(accepts(FULL_REQUIRED="true", FULL_RESULT="success", NATIVE_PLAN_RESULT="success"))
 
     def test_architecture_mutations_are_bounded_parallel_exact_head_shards(self):
         normal = job_block(CI, "static-mutations")
@@ -377,6 +401,20 @@ class FullWorkflowContractTests(unittest.TestCase):
         closure = "python3 scripts/check-r1-artifact-closure.py ${{ matrix.representative }}"
         self.assertIn(fetch, block)
         self.assertLess(block.index(fetch), block.index(closure))
+
+    def test_language_census_prefetches_before_offline_metadata_tests(self):
+        block = job_block(FULL, "cargo-language")
+        fetch = "cargo fetch --locked"
+        self.assertIn(fetch, block)
+        for profile in ("full", "base"):
+            command = (
+                "cargo +nightly-2026-03-03 test --locked -p mech-syntax "
+                f"--tests --no-default-features --features {profile}"
+            )
+            with self.subTest(profile=profile):
+                self.assertIn(command, block)
+                self.assertLess(block.index(fetch), block.index(command))
+        self.assertNotIn("continue-on-error", block)
 
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")

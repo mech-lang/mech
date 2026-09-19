@@ -1,0 +1,25 @@
+{
+  "ast": {
+    "Var": {
+      "context": null,
+      "kind": null,
+      "name": {
+        "name": {
+          "chars": [
+            "a",
+            "-",
+            "b"
+          ],
+          "kind": "Identifier"
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 3,
+    "remaining_source": "",
+    "source_graphemes": 3
+  },
+  "entry_point": "expression",
+  "rule": "identifier"
+}

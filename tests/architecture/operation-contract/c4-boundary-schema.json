@@ -27,11 +27,13 @@
     },
     "artifact_contract_fields": {
       "type": "object",
-      "required": ["ProgramArtifact", "NodeDeclaration", "IntegrityConstraintDeclaration"],
+      "required": ["ProgramArtifact", "NodeDeclaration", "OperationNodeBody", "ControlOperation", "IntegrityConstraintDeclaration"],
       "additionalProperties": false,
       "properties": {
         "ProgramArtifact": { "const": "contracts: OperationContractTable" },
-        "NodeDeclaration": { "const": "contract: OperationContractId" },
+        "NodeDeclaration": { "const": "body: ExecutableNodeBody" },
+        "OperationNodeBody": { "const": "contract: OperationContractId" },
+        "ControlOperation": { "const": "body: ControlOperationBody" },
         "IntegrityConstraintDeclaration": { "const": "contract: OperationContractId" }
       }
     },

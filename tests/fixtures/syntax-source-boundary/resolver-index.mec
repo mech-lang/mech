@@ -1,0 +1,4 @@
+```mech
++> @env := cli/env
+home := @env/HOME
+```

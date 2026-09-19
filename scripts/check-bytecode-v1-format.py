@@ -16,28 +16,30 @@ CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
-EXPECTED_MANIFEST_SHA256 = "2a9e0d3f38dbfea1743a3b65535256d78325475f4044859d9d170289ff6d52b0"
+# Source fixtures were regenerated for graph payload revision 6; their only wire
+# changes in that migration are the graph revision and checksum.
+EXPECTED_MANIFEST_SHA256 = "ede0190e85ae582d8ac7ad44fcc3f0c2cb18841fa3cd9b6c3ecea73a5c9b3fc7"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
-    "literal-f64.mecb": "ee2bb56ea808f5f0eb394e19c50c297a3f77c43c08238eae29e61112e481ee06",
-    "scalar-add-f64.mecb": "0ca719d6cbfeddf431b4e0e5a82408a5f63780f0d4d4b68a4d9eecf7405e824c",
-    "fixed-matrix-add-f64.mecb": "f58faf82972d24921c908251046d11a750c608ec43c0d339dbd89de8bfe345f2",
-    "dynamic-matrix-add-f64.mecb": "51feae0e363828cdde860c14c8969eb79a32382699f64f14a18e3f966b86ea9d",
-    "variadic-horzcat-f64.mecb": "4f1a78777c046c7da86db3b8394b5e712cd0838938d9aa3c27ea8fdaf724094a",
-    "string.mecb": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
-    "unary.mecb": "06121a378e5e5e1881ff767b12017e5f1531e043626a692f117d4068af9c5026",
-    "ternary.mecb": "f6f3956e0e0ad1ac4dbfbe34501ab46ce758fc5808adfebc68c1651aa3df35cb",
-    "quaternary.mecb": "12fb2a340abaa236dbd726868656e5746e4b5f6ac34ae15b4688c05911123079",
-    "named-module-operation.mecb": "994a63985c5f0f36626603f55d8dc6b7a5e6b1f5a42a115ee9f48ae68a94fe6e",
-    "cli-stdout.mecb": "6e5456c54a93a98112694410027941a244122eb15b44fb144d68d67f342474e4",
-    "console.mecb": "01e2d267d7e48075a6785ba6030cf9fe5efaf9d9240cdb291ba8df3863ae59f2",
-    "time.mecb": "4151d91d2fa3765d4966f1e0045063b504788328fd4ea5fea4db5b4e965bf175",
-    "timer.mecb": "f3ecd5c2bed4f2ad1701424ec63e3e7ce62686962dcbafe6e4cd5b43bb8a70c5",
-    "scene.mecb": "c27893275f0f8d3fdc5c7a618b1fd9125870c97bb0cff6a1b4bf86e17f60e997",
-    "robot-arm.mecb": "ad2ddf30cc62963b96c75618204de5ad89aa41354f2cc59b72d7352028387ebe",
-    "synthetic-live-read.mecb": "5a91a7cf32e83297a4e2c119e6cf46d93b692c82c08cc24f77fe0c4153793139",
+    "literal-f64.mecb": "3fd8f7df9daa659e5e88f7374dcd7e36ebd39dbd1de37c1c797343d294ee3fe4",
+    "scalar-add-f64.mecb": "a1c43f488106e4ce0d6a04a1ec607db3c8ad649f3022f814609073ba58e39a38",
+    "fixed-matrix-add-f64.mecb": "d9aeffc68f48d999f87cf5ebd9967fb451762ceb8e5d73b3678862b4c424b59a",
+    "dynamic-matrix-add-f64.mecb": "15cf15fcf07fdf2ad9707bcc7b0f3865466214969c12ccc62bd4211458b8b70d",
+    "variadic-horzcat-f64.mecb": "a1a0663a6654c3fb31dee8fb7237d226bd36ff5bd14eccd02807babefa8c9264",
+    "string.mecb": "0b21399fdb95eaf8e12d807d6d60054f9a59c063ff918376b09c8d1a34c6322d",
+    "unary.mecb": "70590b0e98a6235c452f41a018d0147187016dffa859d2e4e0b342665cbfe4f8",
+    "ternary.mecb": "3fe6a426b4c251b15e94fd563d0c5c2715c5241d7c90a30317617678756222e7",
+    "quaternary.mecb": "688abbf3e78f1762a05bf4db6549c13b7c7586ab254d54e6562f125058abb6b2",
+    "named-module-operation.mecb": "d2d00a8c5a397ffc68e04f4670cb9e4746053078d5d6bcafd6cb36c343eb2853",
+    "cli-stdout.mecb": "2a18c360d1d52a7192575f62478e40307ed263594ea230dd5aeb676819cdd0fb",
+    "console.mecb": "78ca711545bf078a20fed6099152bc390eb28e1c9dab9cf6f66c8850f6d5855b",
+    "time.mecb": "efd64c497ff89770472599d12397a00d32eaeb7886beb4b07ce253fe36bf3295",
+    "timer.mecb": "2bb725959230a85176122a9cfc5a30568d9b5e5312ae7ac7ece268606c4a91fe",
+    "scene.mecb": "26395c552758654776d8356b3be41b46f342988345762d76e74c03fb1e80e716",
+    "robot-arm.mecb": "122fb44b70c93923225bee1791c8fda16427d28300182f470fdaca1fea4ea228",
+    "synthetic-live-read.mecb": "757428e2adb8d492bd9e74270b523f7eb8b393c38421523f65866a6fb8aedaad",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",

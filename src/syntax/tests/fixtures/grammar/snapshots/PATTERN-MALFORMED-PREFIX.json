@@ -1,0 +1,28 @@
+{
+  "ast": {
+    "Expression": {
+      "Literal": {
+        "Atom": {
+          "name": {
+            "name": {
+              "chars": [
+                "s",
+                "o",
+                "m",
+                "e"
+              ],
+              "kind": "Identifier"
+            }
+          }
+        }
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 5,
+    "remaining_source": "(",
+    "source_graphemes": 6
+  },
+  "entry_point": "pattern",
+  "rule": "pattern"
+}

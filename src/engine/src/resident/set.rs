@@ -80,6 +80,7 @@ fn cardinality_bounds(
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     let canonical = ImplementationMemoryClass::CanonicalSortUnique;
+    builder.insert_resident_factory(["set"], "define", canonical, bind_set_define)?;
     let no_scratch = ImplementationMemoryClass::NoAdditionalScratch;
     builder.insert_resident_factory(["set"], "union", canonical, bind_union)?;
     builder.insert_resident_factory(
@@ -3392,4 +3393,121 @@ mod tests {
         );
         assert_eq!(output, [0]);
     }
+}
+
+fn bind_set_define(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let expected =
+        mech_core::maintained_operation_contract("set/define", request.inputs.len(), false)
+            .expect("maintained set constructor");
+    let Some(schema) = request.schemas.get(request.output.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let SchemaBody::Set { cardinality, .. } = schema.body() else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if contract.inputs.len() != request.inputs.len()
+        || contract.outputs.len() != 1
+        || contract.interaction != expected.interaction
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, input)| {
+                port.schema != input.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+        || request.inputs.iter().any(|input| {
+            input.shape != ResidentShape::SCALAR
+                || !set_element_schema_matches(
+                    request.schemas,
+                    input.schema_id,
+                    request.output.schema_id,
+                )
+        })
+        || request.output.kind != ResidentValueKind::Snapshot
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    let policy = &expected.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != policy.access
+        || output.delivery != policy.delivery
+        || output.construction != policy.construction
+        || output.alias != policy.alias
+        || output.change_detection != policy.change_detection
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let shape = request.output.shape_instance.clone();
+    let (exact_cardinality, maximum_cardinality) = cardinality_bounds(cardinality, &shape)?;
+    Ok(BoundResidentKernel::new(define_set, Box::new([]))
+        .with_snapshot_output(ResidentSnapshotOutput {
+            schema: request.output.schema_id,
+            schema_key: request.output.schema_key,
+            shape,
+            exact_cardinality,
+            maximum_cardinality,
+        })
+        .with_snapshot_schemas(request.schemas.clone()))
+}
+
+fn define_set(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let mut meter = ResidentBudgetMeter::default();
+    let mut payload = 0_u64;
+    let mut nodes = 0_u64;
+    let mut compare = 0_u64;
+    for index in 0..inputs.len() {
+        let cost = scalar_element_retained_cost(kernel, inputs, index, &mut meter)?;
+        payload = checked_cost_sum(&[payload, cost.retained_bytes])?;
+        nodes = checked_cost_sum(&[nodes, cost.retained_nodes])?;
+        compare = checked_cost_sum(&[compare, cost.comparison_work])?;
+    }
+    if let ResidentValueMut::Snapshot([Some(previous)]) = &output {
+        value_retained_cost(&mut meter, kernel, previous)?;
+    }
+    // Reserve recursive key comparisons and both draft/final populations before cloning.
+    let levels = u64::from(usize::BITS - inputs.len().max(1).leading_zeros()) + 1;
+    let work = checked_cost_product(&[compare.max(1), levels])?;
+    let container = checked_cost_product(&[
+        checked_u64(inputs.len())?,
+        checked_u64(core::mem::size_of::<ValueDataDraft>())?,
+    ])?;
+    let bytes = checked_cost_sum(&[
+        payload,
+        container,
+        checked_u64(core::mem::size_of::<Value>())?,
+    ])?;
+    let measured = meter.estimate();
+    let cost = super::budget::resident_cost! {
+        comparison_work: checked_cost_sum(&[measured.comparison_work(), work])?,
+        compute_work: checked_cost_sum(&[measured.compute_work(), work, checked_u64(inputs.len())?])?,
+        output_elements: inputs.len(), output_bytes: bytes,
+        temporary_bytes: checked_cost_product(&[bytes, 3])?, cloned_bytes: checked_cost_product(&[payload, 2])?,
+        retained_nodes: checked_cost_sum(&[measured.retained_nodes(), checked_cost_product(&[nodes, 2])?, 4])?,
+        ..KernelCostEstimate::default()
+    };
+    let budget = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
+        .admit()?
+        .into_plan();
+    let values = (0..inputs.len())
+        .map(|index| scalar_element_draft(inputs, index))
+        .collect::<Result<Vec<_>, _>>()?;
+    let next = finalize_snapshot_with_work_budget(
+        kernel,
+        ValueDataDraft::Set(values.into_boxed_slice()),
+        Some(budget),
+    )?;
+    write_changed_snapshot(kernel, output, next)
 }

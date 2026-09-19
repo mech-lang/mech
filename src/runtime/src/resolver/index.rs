@@ -1,3 +1,9 @@
+#[cfg(feature = "source")]
+#[path = "canonical_index.rs"]
+mod canonical;
+#[cfg(feature = "source")]
+pub use canonical::{CanonicalDocumentIndex, CanonicalMikaIndex, CanonicalSourceIndexError};
+
 use mech_core::{
     ActivationArmBody, ActivationBody, ComprehensionQualifier, ContextBase, ContextCapabilityScope,
     Expression, Factor, FsmArm, FsmImplementation, FunctionDefine, MResult, MechCode, MechError,

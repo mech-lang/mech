@@ -50,6 +50,7 @@ impl Default for CompilerPlanningConfig {
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
     bytecode: Vec<u8>,
+    source_dependencies: std::collections::BTreeMap<String, u64>,
     instruction_type_bindings: Vec<Option<mech_core::BoundCall>>,
     instruction_type_binding_requirements: Vec<bool>,
     instruction_memory_plans: Vec<Option<mech_core::CallMemoryPlan>>,
@@ -65,6 +66,12 @@ pub struct ProgramArtifactCompilationProduct {
 
 #[cfg(feature = "semantic-compiler")]
 impl ProgramArtifactCompilationProduct {
+    /// Wrap an already compiled canonical artifact for immediate activation.
+    /// No planner cells or duplicate durable bytecode are retained.
+    pub fn from_artifact(artifact: ProgramArtifact) -> Self {
+        Self { artifact }
+    }
+
     pub const fn artifact(&self) -> &ProgramArtifact {
         &self.artifact
     }
@@ -87,6 +94,30 @@ pub struct CompiledResourceSendOperation {
 
 #[cfg(feature = "semantic-compiler")]
 impl ProgramCompilationProduct {
+    /// Build the durable product directly from a canonical ProgramArtifact.
+    /// Canonical artifacts already carry their operation contracts, schemas,
+    /// memory declarations, inputs, outputs, and requirements in artifact sections.
+    /// The decoded instruction stream is empty, as are its native binding sidecars.
+    pub fn from_canonical_artifact(artifact: ProgramArtifact) -> MResult<Self> {
+        let bytecode = encode_program_artifact_bytecode_v1(&artifact).map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to encode canonical ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        Ok(Self {
+            artifact,
+            bytecode,
+            source_dependencies: Default::default(),
+            instruction_type_bindings: Vec::new(),
+            instruction_type_binding_requirements: Vec::new(),
+            instruction_memory_plans: Vec::new(),
+        })
+    }
+
     pub const fn artifact(&self) -> &ProgramArtifact {
         &self.artifact
     }
@@ -97,6 +128,20 @@ impl ProgramCompilationProduct {
 
     pub fn into_parts(self) -> (ProgramArtifact, Vec<u8>) {
         (self.artifact, self.bytecode)
+    }
+
+    /// Exact resolved source snapshots whose exports were embedded in this product.
+    pub fn source_dependencies(&self) -> &std::collections::BTreeMap<String, u64> {
+        &self.source_dependencies
+    }
+
+    /// Attach provenance collected by the same source-resolution pass that compiled the root.
+    pub fn with_source_dependencies(
+        mut self,
+        dependencies: std::collections::BTreeMap<String, u64>,
+    ) -> Self {
+        self.source_dependencies = dependencies;
+        self
     }
 
     pub fn instruction_type_bindings(&self) -> &[Option<mech_core::BoundCall>] {
@@ -612,6 +657,7 @@ impl CompilerPlanningProgram {
         Ok(ProgramCompilationProduct {
             artifact,
             bytecode,
+            source_dependencies: Default::default(),
             instruction_type_bindings,
             instruction_type_binding_requirements,
             instruction_memory_plans,
@@ -1110,7 +1156,7 @@ mod tests {
             assert!(!artifact_a.schemas().is_empty());
             executable_node_count += artifact_a.nodes().len();
             assert!(artifact_a.nodes().iter().all(|node| matches!(
-                artifact_a.contracts().get(node.contract),
+                artifact_a.contracts().get(node.as_operation().unwrap().contract),
                 Some(mech_core::ResolvedOperationContract::Declared(_))
             )));
         }
@@ -1153,8 +1199,8 @@ mod tests {
                 .nodes()
                 .iter()
                 .find(|node| {
-                    node.operation.module_path.as_ref() == ["core"]
-                        && node.operation.operation_name == "composite-pack"
+                    node.as_operation().unwrap().operation.module_path.as_ref() == ["core"]
+                        && node.as_operation().unwrap().operation.operation_name == "composite-pack"
                 })
                 .expect("source tuple must retain a reactive composite-pack node");
             assert!(composite.input_bindings.len() >= 2);
@@ -1172,7 +1218,10 @@ mod tests {
             .expect("mutable matrix must retain a state slot");
         let InitializerReference::Constant(initializer) = state
             .initializer
-            .expect("mutable matrix state must retain its declaration initializer");
+            .expect("mutable matrix state must retain its declaration initializer")
+        else {
+            panic!("compiler fixture requires a constant initializer")
+        };
         let ValueData::Matrix(initializer) = matrix.constants().get(initializer).unwrap().data()
         else {
             panic!("mutable matrix initializer must remain a matrix")

@@ -147,7 +147,11 @@ run = [
 project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
-bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime"]
+bundle_web_core = [
+      "project", "web_host", "formatter_core", "serde",
+      "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
+      "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      ]
 bundle_web = ["cli_core", "bundle_web_core"]
 # `mech serve` owns the same retained source-to-resident compilation boundary as
 # `mech run`, plus browser hosts and workspace watching.  Keep the compiler and
@@ -169,7 +173,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # closure explicit without pulling in the semantic compiler.
 formatter = [
       "cli_core", "formatter_core",
-      "mech-runtime", "mech-runtime/source", "mech-runtime/serde",
+      "mech-runtime", "mech-runtime/source", "mech-runtime/pretty_print", "mech-runtime/serde",
       ]
 async = []
 trace = ["mech-engine/trace"]

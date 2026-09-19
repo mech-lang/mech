@@ -1,0 +1,77 @@
+{
+  "ast": {
+    "kind": {
+      "Table": [
+        [
+          [
+            {
+              "name": {
+                "chars": [
+                  "x"
+                ],
+                "kind": "Identifier"
+              }
+            },
+            {
+              "Scalar": {
+                "name": {
+                  "chars": [
+                    "u",
+                    "6",
+                    "4"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          ],
+          [
+            {
+              "name": {
+                "chars": [
+                  "y"
+                ],
+                "kind": "Identifier"
+              }
+            },
+            {
+              "Scalar": {
+                "name": {
+                  "chars": [
+                    "s",
+                    "t",
+                    "r",
+                    "i",
+                    "n",
+                    "g"
+                  ],
+                  "kind": "Identifier"
+                }
+              }
+            }
+          ]
+        ],
+        {
+          "Number": {
+            "Real": {
+              "Integer": {
+                "chars": [
+                  "1",
+                  "0"
+                ],
+                "kind": "Number"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 23,
+    "remaining_source": "",
+    "source_graphemes": 23
+  },
+  "entry_point": "kind-annotation",
+  "rule": "kind-annotation"
+}

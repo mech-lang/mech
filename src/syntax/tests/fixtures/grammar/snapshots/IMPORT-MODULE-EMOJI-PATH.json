@@ -1,0 +1,41 @@
+{
+  "ast": {
+    "alias": null,
+    "group_items": null,
+    "item": {
+      "segments": [
+        {
+          "Name": {
+            "name": {
+              "chars": [
+                "🤖"
+              ],
+              "kind": "Identifier"
+            }
+          }
+        }
+      ]
+    },
+    "kind": "Item",
+    "module": {
+      "name": {
+        "chars": [
+          "r",
+          "o",
+          "b",
+          "o",
+          "t",
+          "s"
+        ],
+        "kind": "Identifier"
+      }
+    }
+  },
+  "consumption": {
+    "consumed_source_graphemes": 11,
+    "remaining_source": "",
+    "source_graphemes": 11
+  },
+  "entry_point": "module-import",
+  "rule": "identifier-path-segment-emoji"
+}

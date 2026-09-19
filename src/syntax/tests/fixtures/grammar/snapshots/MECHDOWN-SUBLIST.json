@@ -1,0 +1,85 @@
+{
+  "ast": {
+    "Unordered": [
+      [
+        [
+          null,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "p",
+                    "a",
+                    "r",
+                    "e",
+                    "n",
+                    "t"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ],
+        {
+          "Unordered": [
+            [
+              [
+                null,
+                {
+                  "elements": [
+                    {
+                      "Text": {
+                        "chars": [
+                          "c",
+                          "h",
+                          "i",
+                          "l",
+                          "d"
+                        ],
+                        "kind": "Text"
+                      }
+                    }
+                  ]
+                }
+              ],
+              null
+            ]
+          ]
+        }
+      ],
+      [
+        [
+          null,
+          {
+            "elements": [
+              {
+                "Text": {
+                  "chars": [
+                    "s",
+                    "i",
+                    "b",
+                    "l",
+                    "i",
+                    "n",
+                    "g"
+                  ],
+                  "kind": "Text"
+                }
+              }
+            ]
+          }
+        ],
+        null
+      ]
+    ]
+  },
+  "consumption": {
+    "consumed_source_graphemes": 29,
+    "remaining_source": "",
+    "source_graphemes": 29
+  },
+  "entry_point": "mechdown-list",
+  "rule": "sublist"
+}

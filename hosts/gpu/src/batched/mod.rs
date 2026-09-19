@@ -6,9 +6,10 @@ use std::{
 
 use mech_compute::{
     ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeConstraint,
-    FixedShapeInputStorage, FixedShapeIr, FixedShapeStateStorage, FixedShapeStoragePlan,
-    LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
-    build_compute_region_interface, plan_compute_artifact, resolve_compute_slot_dimensions,
+    FixedShapeInputStorage, FixedShapeIr, FixedShapePublicationStorage, FixedShapeStateStorage,
+    FixedShapeStoragePlan, LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand,
+    ScalarPredicate, build_compute_region_interface, plan_compute_artifact,
+    resolve_compute_slot_dimensions,
 };
 use mech_core::{
     CellSlotId, DimensionExpr, ExecutionTargetSet, FloatWidth, IntegrityConstraintId, NodeId,
@@ -172,6 +173,11 @@ fn evaluate_scalar_computation_simd(computation: &ScalarComputation, registers: 
                     BinaryOperation::Subtract => values[0] - values[1],
                     BinaryOperation::Multiply => values[0] * values[1],
                     BinaryOperation::Divide => values[0] / values[1],
+                    BinaryOperation::Remainder => {
+                        let left = values[0].to_array();
+                        let right = values[1].to_array();
+                        f32x4::from(core::array::from_fn(|lane| left[lane] % right[lane]))
+                    }
                 },
                 ElementwiseOperation::Unary(operation) => match operation {
                     UnaryOperation::Sin => values[0].sin(),
@@ -441,6 +447,7 @@ fn prune_dead_instructions(
     instructions: Vec<ScalarInstruction>,
     states: &BTreeMap<CellSlotId, PendingState>,
     constraints: &[BatchedConstraint],
+    publications: &[FixedShapePublicationStorage],
 ) -> Vec<ScalarInstruction> {
     let mut live = BTreeSet::new();
     for state in states.values() {
@@ -452,6 +459,11 @@ fn prune_dead_instructions(
     }
     for constraint in constraints {
         constraint.predicate.collect_registers(&mut live);
+    }
+    for publication in publications {
+        for source in &publication.value {
+            collect_operand_register(*source, &mut live);
+        }
     }
 
     let mut retained = Vec::with_capacity(instructions.len());
@@ -475,6 +487,9 @@ struct BatchedInput {
 
 #[derive(Clone, Debug)]
 struct BatchedState {
+    /// Only recurrence state is loaded into the turn registers. Derived
+    /// publications share transactional double buffering, not recurrence reads.
+    recurrence: bool,
     slot: CellSlotId,
     shape: FixedShape,
     initializer: Vec<f32>,
@@ -682,21 +697,31 @@ impl FixedShapeKernel {
                 "resident fixed-shape storage requires a fixed-shape kernel",
             ));
         }
-        let state_slots = storage
+        let retained_slots = storage
             .states
             .iter()
             .map(|state| state.slot)
+            .chain(
+                storage
+                    .publications
+                    .iter()
+                    .map(|publication| publication.slot),
+            )
             .collect::<BTreeSet<_>>();
-        if let Some(output) = program
+        if program
             .interface()
             .outputs
             .iter()
-            .find(|output| !state_slots.contains(&output.slot))
+            .any(|output| !retained_slots.contains(&output.slot))
         {
-            return Err(fixed_shape_program_error(format!(
-                "fixed-shape output `{}` is derived storage; browser and native GPU backends require every published output to be resident state",
-                output.name,
-            )));
+            return Err(fixed_shape_program_error(
+                "fixed-shape output has no publication storage",
+            ));
+        }
+        if retained_slots.len() != storage.states.len() + storage.publications.len() {
+            return Err(fixed_shape_program_error(
+                "fixed-shape retained storage slots overlap",
+            ));
         }
 
         let mut binding = 0_u32;
@@ -714,11 +739,12 @@ impl FixedShapeKernel {
                 physical
             })
             .collect::<Vec<_>>();
-        let states = storage
+        let mut states = storage
             .states
             .iter()
             .map(|state| {
                 let physical = BatchedState {
+                    recurrence: true,
                     slot: state.slot,
                     shape: state.shape,
                     initializer: state.initializer.to_vec(),
@@ -730,6 +756,23 @@ impl FixedShapeKernel {
                 physical
             })
             .collect::<Vec<_>>();
+        for publication in &storage.publications {
+            if publication.value.len() != publication.shape.elements() {
+                return Err(fixed_shape_program_error(
+                    "publication extent differs from its value",
+                ));
+            }
+            states.push(BatchedState {
+                recurrence: false,
+                slot: publication.slot,
+                shape: publication.shape,
+                initializer: vec![0.0; publication.shape.elements()],
+                update: publication.value.to_vec(),
+                read_binding: binding,
+                write_binding: binding + 1,
+            });
+            binding += 2;
+        }
         let constraints = storage
             .constraints
             .iter()
@@ -1041,7 +1084,7 @@ impl BatchedCpuSession {
                     self.registers[offset..offset + elements]
                         .copy_from_slice(&values[instance * elements..(instance + 1) * elements]);
                 }
-                for state in &self.program.states {
+                for state in self.program.states.iter().filter(|state| state.recurrence) {
                     let offset = self.program.register_offsets[&state.slot];
                     let elements = state.shape.elements();
                     let values = &self.state[&state.slot];
@@ -1124,7 +1167,7 @@ impl BatchedSimdCpuSession {
                             gather_simd(values, first_instance, instances, elements, component);
                     }
                 }
-                for state in &self.program.states {
+                for state in self.program.states.iter().filter(|state| state.recurrence) {
                     let offset = self.program.register_offsets[&state.slot];
                     let elements = state.shape.elements();
                     let values = &self.state[&state.slot];
@@ -1259,7 +1302,9 @@ fn infer_broadcast_instances(
         .iter()
         .filter(|input| required_slots.contains(&input.slot))
     {
-        let Some(values) = inputs.get(&input.name) else {
+        let source_name = mech_engine::decode_source_input_name(&input.name)
+            .unwrap_or_else(|| input.name.clone());
+        let Some(values) = inputs.get(&source_name) else {
             diagnostics.push(GpuDiagnostic {
                 code: GpuDiagnosticCode::ShapeMismatch,
                 node: None,
@@ -1359,6 +1404,7 @@ struct PendingState {
 }
 
 struct BatchCompiler<'a> {
+    activation: mech_compute::ComputeActivationValues<'a>,
     artifact: &'a ProgramArtifact,
     instances: u32,
     resolved_dimensions: BTreeMap<CellSlotId, Box<[u64]>>,
@@ -1452,6 +1498,7 @@ impl<'a> BatchCompiler<'a> {
     fn new(artifact: &'a ProgramArtifact, instances: u32) -> Self {
         Self {
             artifact,
+            activation: mech_compute::ComputeActivationValues::new(artifact),
             instances,
             resolved_dimensions: resolve_compute_slot_dimensions(artifact),
             shapes: BTreeMap::new(),
@@ -1560,10 +1607,33 @@ impl<'a> BatchCompiler<'a> {
                 diagnostics: self.diagnostics,
             });
         }
+        let interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        let mut published = BTreeSet::new();
+        let publications = interface
+            .outputs
+            .iter()
+            .filter(|output| {
+                !self.states.contains_key(&output.slot) && published.insert(output.slot)
+            })
+            .map(|output| {
+                let shape = self.shape(output.slot)?;
+                let value = (0..shape.elements())
+                    .map(|component| self.operand(ArtifactSource::Slot(output.slot), component))
+                    .collect::<Result<Box<[_]>, _>>()?;
+                Ok(FixedShapePublicationStorage {
+                    slot: output.slot,
+                    shape,
+                    value,
+                })
+            })
+            .collect::<Result<Box<[_]>, String>>()
+            .map_err(fixed_shape_program_error)?;
         self.instructions = prune_dead_instructions(
             std::mem::take(&mut self.instructions),
             &self.states,
             &constraints,
+            &publications,
         );
 
         let mut binding = 0_u32;
@@ -1589,6 +1659,7 @@ impl<'a> BatchCompiler<'a> {
                 let write_binding = binding + 1;
                 binding += 2;
                 BatchedState {
+                    recurrence: true,
                     slot: state.slot,
                     shape: state.shape,
                     initializer: state.initializer,
@@ -1598,8 +1669,6 @@ impl<'a> BatchCompiler<'a> {
                 }
             })
             .collect::<Vec<_>>();
-        let interface =
-            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
         let kernel = ComputeKernel::FixedShape(FixedShapeIr {
             register_count: self.register_count,
@@ -1608,6 +1677,7 @@ impl<'a> BatchCompiler<'a> {
         let storage = FixedShapeStoragePlan {
             instances: self.instances,
             register_offsets: self.register_offsets,
+            publications,
             inputs: inputs
                 .iter()
                 .map(|input| FixedShapeInputStorage {
@@ -1682,9 +1752,12 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             if let ProducerReference::NodeOutput { node, .. } = slot.producer {
-                let producer = &self.artifact.nodes()[node.get() as usize].operation;
-                if producer.module_path.as_ref() == ["core"]
-                    && producer.operation_name == "composite-pack"
+                if self.artifact.nodes()[node.get() as usize]
+                    .as_operation()
+                    .is_some_and(|producer| {
+                        producer.operation.module_path.as_ref() == ["core"]
+                            && producer.operation.operation_name == "composite-pack"
+                    })
                 {
                     continue;
                 }
@@ -1710,7 +1783,7 @@ impl<'a> BatchCompiler<'a> {
             self.register_offsets.insert(slot.slot, self.register_count);
             self.register_count += shape.elements();
             if slot.role == SlotRole::State {
-                match constant_values(self.artifact, slot.initializer, shape) {
+                match initializer_values(&mut self.activation, slot.initializer, shape) {
                     Ok(initializer) => {
                         self.states.insert(
                             slot.slot,
@@ -1751,7 +1824,9 @@ impl<'a> BatchCompiler<'a> {
             if required_slots.contains(&input.slot)
                 && let Some(shape) = self.shapes.get(&input.slot).copied()
             {
-                self.inputs.push((input.slot, input.name.clone(), shape));
+                let name = mech_engine::decode_source_input_name(&input.name)
+                    .unwrap_or_else(|| input.name.clone());
+                self.inputs.push((input.slot, name, shape));
             }
         }
     }
@@ -1762,6 +1837,14 @@ impl<'a> BatchCompiler<'a> {
             if !required.contains(&node.node) {
                 continue;
             }
+            let Some(node) = node.as_operation() else {
+                self.reject(
+                    Some(node.node),
+                    None,
+                    "Typed match control requires resident execution".to_owned(),
+                );
+                continue;
+            };
             let operation = display_operation(&node.operation);
             if operation == "core/composite-pack" {
                 continue;
@@ -1795,7 +1878,7 @@ impl<'a> BatchCompiler<'a> {
             }
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
                 match self.lower_state(&operation, &inputs, &outputs) {
-                    Ok(output) => match self.concrete_execution_case(node, &inputs, output) {
+                    Ok(output) => match self.concrete_execution_case(&node, &inputs, output) {
                         Ok(case) => self.concrete_cases.push(case),
                         Err(detail) => self.reject(
                             Some(node.node),
@@ -1845,7 +1928,9 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_compare(output, &inputs, comparison)
             } else if let Some(logic) = logic_operation(&operation) {
                 self.lower_logic(output, &inputs, logic)
-            } else if let Some(elementwise) = scalar_operation(&operation) {
+            } else if let Some(mech_compute::ElementwiseLowering::Apply(elementwise)) =
+                mech_compute::elementwise_lowering(&node.operation)
+            {
                 self.lower_elementwise(output, &inputs, elementwise)
             } else {
                 Err(format!(
@@ -1853,7 +1938,7 @@ impl<'a> BatchCompiler<'a> {
                 ))
             };
             match result {
-                Ok(()) => match self.concrete_execution_case(node, &inputs, output) {
+                Ok(()) => match self.concrete_execution_case(&node, &inputs, output) {
                     Ok(case) => self.concrete_cases.push(case),
                     Err(detail) => self.reject(
                         Some(node.node),
@@ -1872,7 +1957,7 @@ impl<'a> BatchCompiler<'a> {
 
     fn concrete_execution_case(
         &self,
-        node: &mech_engine::NodeDeclaration,
+        node: &mech_engine::OperationNodeView<'_>,
         inputs: &[ArtifactSource],
         output: CellSlotId,
     ) -> Result<ConcreteGpuExecutionCase, String> {
@@ -1941,18 +2026,39 @@ impl<'a> BatchCompiler<'a> {
             ));
         }
         let shape = self.shape(output)?;
+        let input_shapes = inputs
+            .iter()
+            .map(|source| {
+                let input = self.source_shape(*source)?;
+                if (input.rows != shape.rows && input.rows != 1)
+                    || (input.columns != shape.columns && input.columns != 1)
+                {
+                    return Err(format!(
+                        "input shape {input:?} cannot broadcast to {shape:?}"
+                    ));
+                }
+                Ok(input)
+            })
+            .collect::<Result<Vec<_>, String>>()?;
         self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
         for component in 0..shape.elements() {
             let operands = inputs
                 .iter()
-                .map(|source| {
-                    let input_shape = self.source_shape(*source)?;
-                    let component = if input_shape.elements() == 1 {
+                .zip(&input_shapes)
+                .map(|(source, input)| {
+                    // Fixed-shape registers use column-major order. Project
+                    // each logical axis before converting back to an offset.
+                    let row = if input.rows == 1 {
                         0
                     } else {
-                        component
+                        component % shape.rows
                     };
-                    self.operand(*source, component)
+                    let column = if input.columns == 1 {
+                        0
+                    } else {
+                        component / shape.rows
+                    };
+                    self.operand(*source, input.index(row, column))
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             self.emit(
@@ -2129,7 +2235,11 @@ impl<'a> BatchCompiler<'a> {
         let ProducerReference::NodeOutput { node, .. } = slot.producer else {
             return None;
         };
-        let node = self.artifact.nodes().get(node.get() as usize)?;
+        let node = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)?
+            .as_operation()?;
         if display_operation(&node.operation) != "math/abs" {
             return None;
         }
@@ -2647,6 +2757,9 @@ impl<'a> BatchCompiler<'a> {
                             node.get()
                         ));
                     };
+                    let Some(node) = node.as_operation() else {
+                        return Ok(None);
+                    };
                     let inputs = node
                         .input_bindings
                         .clone()
@@ -2792,6 +2905,9 @@ impl<'a> BatchCompiler<'a> {
                             node.get()
                         ));
                     };
+                    let Some(node) = node.as_operation() else {
+                        return Ok(None);
+                    };
                     if display_operation(&node.operation) != "access/index" {
                         return Ok(None);
                     }
@@ -2833,6 +2949,9 @@ impl<'a> BatchCompiler<'a> {
         let Some(producer) = self.artifact.nodes().get(node.get() as usize) else {
             return false;
         };
+        let Some(producer) = producer.as_operation() else {
+            return false;
+        };
         if display_operation(&producer.operation) == "access/index" {
             return true;
         }
@@ -2854,6 +2973,7 @@ impl<'a> BatchCompiler<'a> {
                 self.artifact
                     .nodes()
                     .get(consumer.get() as usize)
+                    .and_then(mech_engine::NodeDeclaration::as_operation)
                     .is_some_and(|node| display_operation(&node.operation) == "access/index")
             })
     }
@@ -2895,23 +3015,6 @@ impl<'a> BatchCompiler<'a> {
             operation,
             detail: detail.into(),
         });
-    }
-}
-
-fn scalar_operation(name: &str) -> Option<ElementwiseOperation> {
-    use super::{BinaryOperation, UnaryOperation};
-
-    match name {
-        "math/add" => Some(ElementwiseOperation::Binary(BinaryOperation::Add)),
-        "math/sub" => Some(ElementwiseOperation::Binary(BinaryOperation::Subtract)),
-        "math/mul" => Some(ElementwiseOperation::Binary(BinaryOperation::Multiply)),
-        "math/div" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
-        "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
-        "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
-        "math/sqrt" => Some(ElementwiseOperation::Unary(UnaryOperation::Sqrt)),
-        "math/ceil" => Some(ElementwiseOperation::Unary(UnaryOperation::Ceil)),
-        "math/atan2" => Some(ElementwiseOperation::Atan2),
-        _ => None,
     }
 }
 
@@ -3108,23 +3211,26 @@ fn artifact_constant_values(
     }
 }
 
-fn constant_values(
-    artifact: &ProgramArtifact,
+fn initializer_values(
+    activation: &mut mech_compute::ComputeActivationValues<'_>,
     initializer: Option<mech_engine::InitializerReference>,
     shape: FixedShape,
 ) -> Result<Vec<f32>, String> {
-    let Some(mech_engine::InitializerReference::Constant(constant)) = initializer else {
-        return Err("batch state requires a constant initializer".to_owned());
-    };
-    let values = artifact_constant_values(artifact, constant)?;
-    if values.len() != shape.elements() {
+    let row_major = activation.initializer(initializer)?;
+    if row_major.len() != shape.elements() {
         return Err(format!(
             "state initializer has {} elements, expected {}",
-            values.len(),
+            row_major.len(),
             shape.elements()
         ));
     }
-    Ok(values)
+    let mut column_major = vec![0.0; row_major.len()];
+    for row in 0..shape.rows {
+        for column in 0..shape.columns {
+            column_major[shape.index(row, column)] = row_major[row * shape.columns + column];
+        }
+    }
+    Ok(column_major)
 }
 
 fn generate_wgsl(
@@ -3180,7 +3286,7 @@ fn generate_wgsl(
             ));
         }
     }
-    for state in states {
+    for state in states.iter().filter(|state| state.recurrence) {
         let offset = register_offsets[&state.slot];
         for component in 0..state.shape.elements() {
             shader.push_str(&format!(
@@ -4501,14 +4607,19 @@ mod native {
                     .map_err(BatchedExecutionError::Native)?;
                 let submission = self.queue.submit(Some(encoder.finish()));
                 unsubmitted.record_submitted(submission);
-                crate::settle_submissions(
+                // The submission owns the host transfer interval until the
+                // mapped integrity result has been copied. Settle even when
+                // readback fails so accepted GPU work cannot strand its hold.
+                let readback_result = self.read_integrity_fault();
+                let completion_result = crate::settle_submissions(
                     &self.device,
                     &mut self.submission_tracker,
                     &self.managed_memory,
                 )
-                .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+                .map_err(|error| BatchedExecutionError::Native(error.to_string()));
+                let words = readback_result?;
+                completion_result?;
                 self.record_completed_writes(&uploaded_objects, [group == 0, group == 1])?;
-                let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
                     let packed = words[1];
                     let code = packed & 0xff;
