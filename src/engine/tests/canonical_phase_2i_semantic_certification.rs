@@ -530,13 +530,23 @@ fn semantic_snapshot_hash(compiled: &CanonicalSourceProgram, artifact: &ProgramA
 
 #[test]
 fn semantic_evidence_distinguishes_non_wire_shape_values_and_slot_ownership() {
-    let compiled = CanonicalSourceFrontend
-        .compile_expression(&expression("1..3"))
-        .unwrap();
-    let schema = compiled
-        .schemas()
-        .get(compiled.program().outputs[0].schema)
-        .unwrap();
+    let parameter = mech_core::DimensionParameterId::new(0);
+    let schema = mech_core::SchemaDraft {
+        dimension_parameters: vec![mech_core::DimensionParameterDeclaration {
+            id: parameter,
+            origin: mech_core::DimensionParameterOrigin::Explicit,
+            lifetime: mech_core::DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(1),
+            upper_bound: Some(DimensionExpr::Constant(3)),
+        }]
+        .into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: vec![DimensionExpr::Parameter(parameter)].into_boxed_slice(),
+        },
+    }
+    .finalize()
+    .unwrap();
     assert_eq!(schema.dimension_parameters().len(), 1);
     let two = schema.instantiate_shape(Box::new([2])).unwrap();
     let three = schema.instantiate_shape(Box::new([3])).unwrap();
