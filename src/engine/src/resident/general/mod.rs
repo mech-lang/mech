@@ -2652,6 +2652,34 @@ fn source_extents(
     }
 }
 
+fn source_has_activation_shape_fact(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+) -> bool {
+    let ArtifactSource::Slot(slot) = source else {
+        return true;
+    };
+    if facts.slot_shapes.contains_key(&slot) || artifact.slot_shape_hint(slot).is_some() {
+        return true;
+    }
+    let declaration = &artifact.slots()[slot.get() as usize];
+    match declaration.initializer {
+        Some(InitializerReference::Constant(_)) => return true,
+        Some(InitializerReference::Activation(source)) => {
+            return source_has_activation_shape_fact(artifact, ArtifactSource::Slot(source), facts);
+        }
+        None => {}
+    }
+    if let ProducerReference::Output { source, .. } = declaration.producer {
+        return source_has_activation_shape_fact(artifact, source, facts);
+    }
+    artifact
+        .schemas()
+        .get(declaration.schema)
+        .is_some_and(|schema| schema.dimension_parameters().is_empty())
+}
+
 fn matrix_shape_for_extents(
     schema: &mech_core::Schema,
     extents: &[u64],
@@ -2866,6 +2894,13 @@ fn complete_activation_shape_facts(
                 }
                 continue;
             }
+            if inputs
+                .iter()
+                .copied()
+                .any(|input| !source_has_activation_shape_fact(artifact, input, &facts))
+            {
+                continue;
+            }
             let vertical = node.operation.operation_name == "vertcat";
             let mut common = None;
             let mut varying = 0_u64;
@@ -3017,6 +3052,9 @@ fn complete_activation_shape_facts(
             let [source] = inputs.as_slice() else {
                 return Err(ResidentActivationError::InvalidDependency { node: node.node });
             };
+            if !source_has_activation_shape_fact(artifact, *source, &facts) {
+                continue;
+            }
             let source_dimensions = source_extents(artifact, *source, &facts)?;
             let [rows, columns] = source_dimensions.as_ref() else {
                 return Err(ResidentActivationError::InvalidDependency { node: node.node });
@@ -3318,8 +3356,7 @@ fn build_layout(
             SlotRole::Output => ResidentStorageClass::State,
         };
         let shape = slot_shape(artifact, declaration.slot, facts)?;
-        let activation_fixed =
-            slot_has_activation_fixed_shape(artifact, declaration.slot, facts, classes);
+        let activation_fixed = slot_has_activation_fixed_shape(artifact, declaration.slot, facts);
         let (kind, resident_shape) = schema_layout(
             artifact,
             declaration.schema,
@@ -3628,7 +3665,10 @@ fn slot_shape(
         SchemaBody::Matrix { element, dimensions }
             if dimensions.len() == 2 && dense_resident_kind(element).is_some()
     );
-    if !requires_dense_matrix_shape || comprehension::owns_output(artifact, slot) {
+    if !requires_dense_matrix_shape
+        || comprehension::owns_output(artifact, slot)
+        || matches!(declaration.producer, ProducerReference::NodeOutput { .. })
+    {
         return mech_core::shape_for_declared_lower_bounds(schema)
             .map_err(|_| ResidentActivationError::UnresolvedShape { slot });
     }
@@ -3639,7 +3679,6 @@ fn slot_has_activation_fixed_shape(
     artifact: &ProgramArtifact,
     slot: CellSlotId,
     facts: &ActivationFacts,
-    classes: &[NodeClass],
 ) -> bool {
     if facts.slot_shapes.contains_key(&slot) || artifact.slot_shape_hint(slot).is_some() {
         return true;
@@ -3653,13 +3692,11 @@ fn slot_has_activation_fixed_shape(
         return true;
     }
     match declaration.producer {
-        ProducerReference::NodeOutput { node, .. } => {
-            classes[node.get() as usize] == NodeClass::Activation
-        }
+        ProducerReference::NodeOutput { .. } => false,
         ProducerReference::Output {
             source: ArtifactSource::Slot(source),
             ..
-        } => slot_has_activation_fixed_shape(artifact, source, facts, classes),
+        } => slot_has_activation_fixed_shape(artifact, source, facts),
         _ => false,
     }
 }
@@ -3730,6 +3767,19 @@ fn schema_layout(
     let needs_dense_shape = matches!(schema_entry.schema().body(),
         SchemaBody::Matrix { element, dimensions }
             if dimensions.len() == 2 && dense_resident_kind(element).is_some());
+    let produced_without_shape_fact = slot.is_some_and(|slot| {
+        matches!(
+            artifact.slots()[slot.get() as usize].producer,
+            ProducerReference::NodeOutput { .. } | ProducerReference::Output { .. }
+        )
+    });
+    if needs_dense_shape
+        && !schema_entry.schema().dimension_parameters().is_empty()
+        && !has_activation_shape_fact
+        && produced_without_shape_fact
+    {
+        return Ok((ResidentValueKind::Snapshot, ResidentShape::SCALAR));
+    }
     if needs_dense_shape
         && schema_entry
             .schema()
