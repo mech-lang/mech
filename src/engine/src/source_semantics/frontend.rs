@@ -3258,9 +3258,22 @@ impl SemanticBuilder {
     fn resolve_declared_call(
         &mut self,
         name: &str,
+        inputs: Vec<PendingValue>,
+        syntax: &SyntaxNode,
+        declaration: mech_core::FunctionTypeDeclaration,
+    ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
+        self.resolve_declared_call_with_destination(name, inputs, syntax, declaration, None)
+    }
+
+    // Addressed arithmetic resolves the selected destination's type without
+    // emitting a gather or converting a value that the RMW kernel reads itself.
+    fn resolve_declared_call_with_destination(
+        &mut self,
+        name: &str,
         mut inputs: Vec<PendingValue>,
         syntax: &SyntaxNode,
         mut declaration: mech_core::FunctionTypeDeclaration,
+        destination: Option<SchemaDraft>,
     ) -> Result<(Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
         // Both operator and call syntax enter this inference boundary. These
         // peer operations infer an undeclared input from the other operand;
@@ -3308,19 +3321,24 @@ impl SemanticBuilder {
                     )?;
                 }
                 (false, true) => {
-                    inputs[1] = self.conform_dynamic_to_schema(
-                        inputs[1],
-                        &self.schema_draft_of(inputs[0])?,
-                        syntax,
-                    )?;
+                    let expected = match &destination {
+                        Some(selected) => selected.clone(),
+                        None => self.schema_draft_of(inputs[0])?,
+                    };
+                    inputs[1] = self.conform_dynamic_to_schema(inputs[1], &expected, syntax)?;
                 }
                 _ => {}
             }
         }
         let input_types = inputs
             .iter()
-            .map(|input| {
-                let schema = self.schema_draft_of(*input)?;
+            .enumerate()
+            .map(|(index, input)| {
+                let schema = if index == 0 && destination.is_some() {
+                    destination.clone().unwrap()
+                } else {
+                    self.schema_draft_of(*input)?
+                };
                 if matches!(schema.body, SchemaBody::Dynamic) {
                     return Err(SourceSemanticError {
                         code: "source-semantics/unresolved-call-kind",
@@ -3394,12 +3412,13 @@ impl SemanticBuilder {
             message: error.to_string(),
             anchor: SourceSemanticAnchor::for_node(syntax),
         })?;
-        for ((input, actual), conversion) in inputs
+        for (index, ((input, actual), conversion)) in inputs
             .iter_mut()
             .zip(&input_types)
             .zip(resolved.conversions.iter())
+            .enumerate()
         {
-            if actual == &conversion.target {
+            if (index == 0 && destination.is_some()) || actual == &conversion.target {
                 continue;
             }
             *input =
@@ -3443,10 +3462,13 @@ impl SemanticBuilder {
                 format!("maintained function {name} selected conflicting output-schema rules"),
             ));
         }
-        let input_schemas = inputs
+        let mut input_schemas = inputs
             .iter()
             .map(|input| self.schema_draft_of(*input))
             .collect::<Result<Vec<_>, _>>()?;
+        if let Some(destination) = destination {
+            input_schemas[0] = destination;
+        }
         Ok((
             inputs,
             materialize_source_output_draft(

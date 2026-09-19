@@ -1,3 +1,6 @@
+mod promoted_assignment;
+mod selection_address;
+
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
 use mech_core::snapshot::{
@@ -604,6 +607,24 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
             }
         };
     }
+    register_canonical_finalize(
+        builder,
+        &["core", "assign"],
+        "identity-indices",
+        selection_address::bind_identity_indices,
+    )?;
+    register_canonical_finalize(
+        builder,
+        &["core", "assign"],
+        "selection-order",
+        selection_address::bind_selection_order,
+    )?;
+    register_canonical_finalize(
+        builder,
+        &["core", "assign"],
+        "broadcast",
+        selection_address::bind_broadcast,
+    )?;
     compound_selection!("add", 0);
     compound_selection!("sub", 1);
     compound_selection!("mul", 2);
@@ -3065,6 +3086,20 @@ fn bind_compound_selection<const MODE: u8, const OPERATION: u64>(
     let SchemaBody::Matrix { element, .. } = schema.body() else {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     };
+    let incoming = request
+        .inputs
+        .get(1)
+        .and_then(|input| request.schemas.get(input.schema_id))
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let incoming_element = match incoming.body() {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        scalar => scalar,
+    };
+    if incoming_element != element.as_ref()
+        || (MODE != 0 && matches!(incoming.body(), SchemaBody::Matrix { .. }))
+    {
+        return promoted_assignment::bind(request, MODE, arithmetic);
+    }
     if !snapshot_arithmetic_element_supported(arithmetic, element) {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
@@ -3944,6 +3979,10 @@ fn is_snapshot_index_assign_element(body: &SchemaBody) -> bool {
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64
+            | SchemaBody::Record(_)
+            | SchemaBody::Tuple(_)
+            | SchemaBody::Map { .. }
+            | SchemaBody::Table { .. }
     )
 }
 

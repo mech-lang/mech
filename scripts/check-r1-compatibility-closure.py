@@ -82,7 +82,7 @@ ARTIFACT_COMPLETENESS_PROOFS = (
         ),
     ),
     (
-        "src/engine/src/resident/numeric.rs",
+        "src/engine/src/resident/numeric/mod.rs",
         (
             "fn bool_vector_not(",
             "one_by_one_boolean_matrix_not_uses_matrix_change_contract",

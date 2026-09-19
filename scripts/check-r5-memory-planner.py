@@ -35,7 +35,7 @@ REQUIRED = (
     "src/engine/src/resident/general/live.rs",
     "src/engine/src/resident/general/mod.rs",
     "src/engine/src/resident/matrix_literal.rs",
-    "src/engine/src/resident/numeric.rs",
+    "src/engine/src/resident/numeric/mod.rs",
     "src/compute/src/memory.rs",
     "src/compute/src/program.rs",
     "hosts/gpu/src/execution_plan.rs",
@@ -551,7 +551,7 @@ def failures(root: Path) -> list[str]:
         found.append("resident budget manufactures a synthetic TurnMemoryPlan")
     for relative in (
         "src/engine/src/resident/matrix_literal.rs",
-        "src/engine/src/resident/numeric.rs",
+        "src/engine/src/resident/numeric/mod.rs",
     ):
         for name, body in function_bodies(sources.get(relative, ""), "bind_"):
             if "PreparedKernel" in body or re.search(r"\badmit_\w*\s*\(", body):
