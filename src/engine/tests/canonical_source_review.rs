@@ -2392,3 +2392,55 @@ fn review_ordered_extrema_infer_their_peer_at_the_artifact_boundary() {
         );
     }
 }
+
+#[test]
+fn fixed_matrix_snapshots_bind_to_inferred_input_dimensions() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_core::{DimensionExpr, SchemaDraft, SchemaTableBuilder};
+    for (rows, columns) in [(2, 2), (1, 4), (3, 1)] {
+        let mut table = SchemaTableBuilder::new();
+        let handle = table
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Constant(rows),
+                            DimensionExpr::Constant(columns),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = table.finish().unwrap();
+        let schema = built.resolve(handle).unwrap();
+        let (table, _) = built.into_parts();
+        let value = ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                (0..rows * columns)
+                    .map(ValueDataDraft::U64)
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::new(&table))
+        .unwrap();
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression("matrix<[u64]>"))
+            .unwrap()
+            .bind_input_constants(&[(0, value)])
+            .unwrap();
+        assert!(compiled.program().inputs.is_empty());
+        let SourceValue::Constant(id) = compiled.program().outputs[0].source else {
+            panic!("bound input must become constant");
+        };
+        let value = compiled.constants().get(id).unwrap();
+        assert_eq!(value.shape().parameter_values(), &[rows, columns]);
+    }
+}
