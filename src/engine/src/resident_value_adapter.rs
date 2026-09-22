@@ -14,6 +14,12 @@ use crate::resident::general::{
 
 impl ReactiveInstance {
     pub fn copied_output(&self, output: usize) -> Result<Value, ResidentActivationError> {
+        if output >= self.plan.outputs.len() {
+            return Err(ResidentActivationError::UnknownOutput { output });
+        }
+        if self.output_borrow(output).is_none() {
+            return Err(ResidentActivationError::OutputUnavailable { output });
+        }
         self.copied_output_at(output, self.published_epoch())
     }
 

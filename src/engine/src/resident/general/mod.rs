@@ -369,6 +369,34 @@ struct ActivatedOutputMaterialization {
     source: ResidentReadLocation,
 }
 
+fn output_materialization_depends_on_match(
+    plan: &ActivatedPlan,
+    materialization: ActivatedOutputMaterialization,
+    match_index: usize,
+    match_region: ResidentRegion,
+) -> bool {
+    if materialization.source == ResidentReadLocation::Scratch(match_region) {
+        return true;
+    }
+    let producer = plan.steps.iter().position(|step| {
+        let region = match step {
+            ActivatedTurnStep::Kernel(node) => Some(node.write.region),
+            ActivatedTurnStep::Match(node) => Some(node.write.region),
+            ActivatedTurnStep::Recur(node) => Some(node.write.region),
+            ActivatedTurnStep::Comprehension(node) => Some(node.write.region),
+            ActivatedTurnStep::External(_)
+            | ActivatedTurnStep::Suspend(_)
+            | ActivatedTurnStep::Publish(_) => None,
+        };
+        region.is_some_and(|region| materialization.source == ResidentReadLocation::Scratch(region))
+    });
+    producer.is_some_and(|producer| {
+        plan.topology.same_turn_downstream_masks[match_index]
+            .get(producer / 64)
+            .is_some_and(|word| word & (1 << (producer % 64)) != 0)
+    })
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ActivatedConstraint {
     pub artifact_id: IntegrityConstraintId,
@@ -1493,7 +1521,7 @@ impl ReactiveInstance {
         wakeup.instance == self.id
             && wakeup.plan_generation == self.plan.plan_generation
             && wakeup.layout_generation == self.plan.layout_generation
-            && self.ready_continuations.contains(&wakeup.continuation)
+            && self.ready_continuations.front() == Some(&wakeup.continuation)
     }
 
     pub(crate) fn output_borrow_at(
@@ -1821,6 +1849,9 @@ pub enum ResidentActivationError {
         slot: CellSlotId,
     },
     UnknownOutput {
+        output: usize,
+    },
+    OutputUnavailable {
         output: usize,
     },
     ActiveCandidate,
@@ -2338,13 +2369,17 @@ fn activate_internal(
                     plan.slots[materialization.target.get() as usize].physical_index == output.slot
                 })
                 .all(|materialization| {
-                    !plan.steps.iter().any(|step| {
+                    !plan.steps.iter().enumerate().any(|(index, step)| {
                         matches!(
                             step,
                             ActivatedTurnStep::Match(control)
                                 if control.continuation
-                                    && ResidentReadLocation::Scratch(control.write.region)
-                                        == materialization.source
+                                    && output_materialization_depends_on_match(
+                                        &plan,
+                                        *materialization,
+                                        index,
+                                        control.write.region,
+                                    )
                         )
                     })
                 })

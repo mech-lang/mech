@@ -40,6 +40,21 @@ struct FsmControlArm {
     syntax: SyntaxNode,
 }
 
+fn fsm_payload_irrefutable<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
+        crate::CollectionPattern::Tuple(items) => items.iter().all(fsm_payload_irrefutable),
+        crate::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } if prefix.is_empty() && suffix.is_empty() => fsm_payload_irrefutable(rest),
+        crate::CollectionPattern::Equal(_)
+        | crate::CollectionPattern::Enum { .. }
+        | crate::CollectionPattern::Array { .. } => false,
+    }
+}
+
 fn variable_name(
     variable: &VariableSyntax,
     role: &'static str,
@@ -319,6 +334,21 @@ impl SemanticBuilder {
             return Err(SourceSemanticError {
                 code: "source-semantics/declared-fsm-pipe-stages",
                 message: "a declared FSM invocation cannot append an undeclared pipe".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(pipe.syntax()),
+            });
+        }
+        if self.control_depth > 0
+            && self.fsm_control_arms(&machine)?.iter().any(|arm| {
+                arm.transitions
+                    .iter()
+                    .any(|transition| matches!(transition, FsmBodyTransitionSyntax::Async(_)))
+            })
+        {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-nested-fsm-suspension",
+                message:
+                    "an FSM with a suspended transition cannot run inside another FSM control block"
+                        .to_owned(),
                 anchor: SourceSemanticAnchor::for_node(pipe.syntax()),
             });
         }
@@ -769,6 +799,7 @@ impl SemanticBuilder {
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
         let mut coverage = vec![false; machine.states.len()];
+        let mut zero_guard_partitions = BTreeMap::<(u32, String), u8>::new();
         if self.control_depth == 0 {
             self.next_control_block = 0;
         }
@@ -856,13 +887,59 @@ impl SemanticBuilder {
             self.nodes.truncate(binding_start);
             let lowered_arm = lowered_arm?;
             if let crate::MatchPattern::Structural(crate::CollectionPattern::Enum {
-                ordinal, ..
+                ordinal,
+                payload,
             }) = &lowered_arm.pattern
-                && let Some(covered) = coverage.get_mut(*ordinal as usize)
+                && payload.as_deref().is_none_or(fsm_payload_irrefutable)
             {
-                *covered = true;
+                if arm.guard.is_none() {
+                    coverage[*ordinal as usize] = true;
+                } else if let Some(state) = machine
+                    .states
+                    .values()
+                    .find(|state| state.ordinal == *ordinal)
+                {
+                    let pattern_text = node_text(arm.pattern.syntax())?;
+                    let binders = pattern_text
+                        .split_once('(')
+                        .and_then(|(_, payload)| payload.trim().strip_suffix(')'))
+                        .map(|payload| payload.split(',').map(str::trim).collect::<Vec<_>>());
+                    if let (Some(binders), Some(guard)) = (binders, arm.guard.as_ref())
+                        && binders.len() == state.fields.len()
+                    {
+                        let text = node_text(guard.syntax())?
+                            .chars()
+                            .filter(|ch| !ch.is_whitespace())
+                            .collect::<String>();
+                        for (binder, field) in binders.into_iter().zip(&state.fields) {
+                            if !matches!(field, SchemaBody::UnsignedInteger(IntegerWidth::W64))
+                                || binder.is_empty()
+                                || !binder
+                                    .chars()
+                                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+                            {
+                                continue;
+                            }
+                            let witness = if text == format!("{binder}>0u64") {
+                                1
+                            } else if text == format!("{binder}==0u64") {
+                                2
+                            } else {
+                                0
+                            };
+                            *zero_guard_partitions
+                                .entry((*ordinal, binder.to_owned()))
+                                .or_default() |= witness;
+                        }
+                    }
+                }
             }
             lowered.push(lowered_arm);
+        }
+        for ((ordinal, _), partition) in zero_guard_partitions {
+            if partition == 3 {
+                coverage[ordinal as usize] = true;
+            }
         }
         if coverage.iter().any(|covered| !covered) {
             return Err(SourceSemanticError {

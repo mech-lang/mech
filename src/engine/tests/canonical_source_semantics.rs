@@ -2035,6 +2035,14 @@ fn declared_fsm_diagnostics_reject_invalid_declarations_calls_and_transitions() 
         ),
         "source-semantics/duplicate-fsm-implementation-parameter",
     );
+    assert_code(
+        "#Partial(value<u64>) => <u64>\n  | :Start(value<u64>)\n  | :Done(value<u64>).\n#Partial(value) -> :Start(value)\n  :Start(value)\n    | value == 0u64 -> :Done(value)\n  :Done(value) => value.\n#Partial(1u64)\n",
+        "source-semantics/non-exhaustive-fsm",
+    );
+    assert_code(
+        "#Partial(value<u64>) => <u64>\n  | :Start(value<u64>)\n  | :Done(value<u64>).\n#Partial(value) -> :Start(value)\n  :Start(0u64) -> :Done(0u64)\n  :Done(value) => value.\n#Partial(1u64)\n",
+        "source-semantics/non-exhaustive-fsm",
+    );
 }
 
 #[test]
@@ -2070,6 +2078,7 @@ fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
 
         let epoch = instance.published_epoch();
         let prepared = instance.prepare_turn(&[]).unwrap();
+        assert!(prepared.copied_output(0).is_err());
         prepared.abort();
         assert_eq!(instance.published_epoch(), epoch);
         assert!(!instance.has_ready_continuation());
@@ -2079,6 +2088,7 @@ fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
         assert!(instance.has_ready_continuation());
         assert_eq!(instance.ready_continuation_count(), 1);
         assert!(instance.output_borrow(0).is_none());
+        assert!(instance.copied_output(0).is_err());
 
         instance.turn(&[]).unwrap();
         assert!(instance.has_ready_continuation());
@@ -2501,6 +2511,86 @@ fn declared_fsm_wakeup_drains_are_bounded_and_fair_across_instances() {
     assert_eq!(third.len(), 1);
     assert_eq!(third[0].instance(), left.id);
     assert!(left.accepts_continuation_wakeup(third[0]));
+}
+
+#[test]
+fn one_turn_resumes_only_one_of_two_ready_fsm_nodes() {
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 72),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 1);
+}
+
+#[test]
+fn downstream_fsm_output_stays_unavailable_until_resume() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\nresult := #Deferred()\nplus := result + 1u64\n";
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    let artifact = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog(&document(source), catalog.clone())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let plus = artifact
+        .outputs()
+        .iter()
+        .position(|output| {
+            output
+                .interactive_binding
+                .as_ref()
+                .is_some_and(|binding| binding.lexical_name == "plus")
+        })
+        .unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 74),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.output_borrow(plus).is_none());
+    assert!(instance.copied_output(plus).is_err());
+    instance.turn(&[]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(plus)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(42)
+    );
+}
+
+#[test]
+fn nested_fsm_suspension_is_rejected_during_source_admission() {
+    let source = "#Inner() => <u64>\n  | :Start\n  | :Later\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Later\n  :Later -> :Done\n  :Done => 7u64.\n#Outer() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Outer() -> :Start\n  :Start -> :Done(#Inner())\n  :Done(value) => value.\n#Outer()\n";
+    let error = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .err()
+        .unwrap();
+    assert_eq!(
+        error.code,
+        "source-semantics/unsupported-nested-fsm-suspension"
+    );
 }
 
 #[test]
