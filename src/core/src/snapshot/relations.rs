@@ -1268,6 +1268,23 @@ fn exact_sequence_eq(schema: &SchemaBody, left: &SequenceStorage, right: &Sequen
                     .zip(right.iter())
                     .all(|(left, right)| exact_data_eq(schema, left, right))
         }
+        (SequenceStorage::Values(left), right) => {
+            let right = right.view();
+            left.len() == right.len()
+                && left.iter().enumerate().all(|(index, left)| {
+                    right
+                        .value_at(index)
+                        .is_some_and(|right| exact_data_eq(schema, left, &right))
+                })
+        }
+        (left, SequenceStorage::Values(right)) => {
+            let left = left.view();
+            left.len() == right.len()
+                && right.iter().enumerate().all(|(index, right)| {
+                    left.value_at(index)
+                        .is_some_and(|left| exact_data_eq(schema, &left, right))
+                })
+        }
         _ => sequence_exact_eq(left, right),
     }
 }
@@ -1492,6 +1509,33 @@ mod tests {
         let complex = SchemaBody::Complex(FloatWidth::W64);
         assert!(language_data_eq(&complex, &positive, &negative));
         assert!(!exact_data_eq(&complex, &positive, &negative));
+    }
+
+    #[test]
+    fn exact_sequence_equality_is_independent_of_storage_layout() {
+        let schema = SchemaBody::FloatingPoint(FloatWidth::W64);
+        let packed = SequenceStorage::F64(
+            vec![F64Bits::from_f64(1.0), F64Bits::from_f64(-0.0)].into_boxed_slice(),
+        );
+        let unpacked = SequenceStorage::Values(
+            vec![
+                ValueData::F64(F64Bits::from_f64(1.0)),
+                ValueData::F64(F64Bits::from_f64(-0.0)),
+            ]
+            .into_boxed_slice(),
+        );
+        assert!(exact_sequence_eq(&schema, &packed, &unpacked));
+        assert!(exact_sequence_eq(&schema, &unpacked, &packed));
+
+        let positive_zero = SequenceStorage::Values(
+            vec![
+                ValueData::F64(F64Bits::from_f64(1.0)),
+                ValueData::F64(F64Bits::from_f64(0.0)),
+            ]
+            .into_boxed_slice(),
+        );
+        assert!(!exact_sequence_eq(&schema, &packed, &positive_zero));
+        assert!(!exact_sequence_eq(&schema, &positive_zero, &packed));
     }
 }
 

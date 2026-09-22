@@ -1882,6 +1882,7 @@ impl<'a> ProgramCompilerView<'a> {
             .map_err(|error| MechError::new(error, None))?;
         let external_input_names = canonical_declared_compute_inputs(&index.root)?;
         let retained_outputs = canonical_declared_compute_outputs(&index.root)?;
+        let declared_compute_reads = canonical_declared_compute_reads(&index.root)?;
         // Retained host paths name flattened interface leaves (e.g. result.1.0).
         // Source publication owns their lexical producers; the interface below
         // remains the authority for validating exact leaf names.
@@ -2004,6 +2005,15 @@ impl<'a> ProgramCompilerView<'a> {
                     "compute output projection exposed an undeclared sampled output",
                 ));
             }
+        }
+
+        // A declared compute capability is part of the interface contract even
+        // when no executable coordinator expression reads it. Validate every
+        // literal path here so misspelled telemetry cannot become conditionally
+        // valid based on source reachability.
+        for path in &declared_compute_reads {
+            let key = RuntimeResourceKey::new("compute://declared/kernel", path)?;
+            plan_compute_read(&compute.interface, &key).map_err(classify_source_planning)?;
         }
 
         let mut compute_read_schemas = BTreeMap::new();
@@ -2960,6 +2970,11 @@ fn canonical_declared_compute_inputs(index: &SourceIndex) -> MResult<BTreeSet<St
 #[cfg(feature = "compute")]
 fn canonical_declared_compute_outputs(index: &SourceIndex) -> MResult<BTreeSet<String>> {
     canonical_declared_compute_paths(index, "read", "sample/")
+}
+
+#[cfg(feature = "compute")]
+fn canonical_declared_compute_reads(index: &SourceIndex) -> MResult<BTreeSet<String>> {
+    canonical_declared_compute_paths(index, "read", "")
 }
 
 #[cfg(feature = "compute")]

@@ -128,6 +128,23 @@ fn canonical_mixed_unknown_compute_reads_reject_at_the_interface() {
     }
 }
 
+#[test]
+fn canonical_mixed_validates_unread_declared_telemetry_paths() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let source = "@compute := compute://worker/kernel{:write(turn), :read(unknown)}\n@compute/turn <- 1\n42\n\ncalculation @compute\n-------------------\n~counter := 0f32\ncounter += 1f32\ncounter\n";
+    let error = compiler
+        .compile_mixed_source(source)
+        .err()
+        .expect("an invalid declared telemetry path must fail without a read expression");
+    assert!(
+        format!("{error:?}").contains("unknown compute telemetry path `unknown`"),
+        "{error:?}"
+    );
+}
+
 #[derive(Debug)]
 struct OrdinaryProvider(std::sync::Arc<std::sync::atomic::AtomicUsize>);
 impl mech_runtime::RuntimeResourceProvider for OrdinaryProvider {
