@@ -268,6 +268,7 @@ impl MechRuntime {
         document: &crate::SourceDocument,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::from(document.source().byte_len().0))?;
         self.load_production_with(durability, |runtime| {
             Ok(Arc::new(
                 runtime.plan_document_product(document)?.into_parts().0,
@@ -283,6 +284,7 @@ impl MechRuntime {
         document: &crate::SourceDocument,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::from(document.source().byte_len().0))?;
         self.load_production_with_projection(
             durability,
             InitialValueProjection::InteractiveRootResult,
@@ -399,6 +401,7 @@ impl MechRuntime {
             &self.module_builder,
             &self.host_interfaces,
             &self.module_manifests,
+            self.config.limits.max_steps_per_turn_as_usize()?,
         ))
     }
 
