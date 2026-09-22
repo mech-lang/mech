@@ -1,5 +1,39 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R16 review repair
+
+**Candidate:** the designated accumulated deleted-parser C remains draft #830 on
+the R26 stack. This record is a continuation checkpoint, not qualification of C
+or permission to merge. The protected target remains `integration/v0.4`.
+
+**Completed:** the stack has been restacked through R14. Published exact heads
+are R12 `c7a852b62`, R13 `6cf874391`, and R14 `f41df10ea`; R16 is the active
+owner repair on top of R14. The R16 semantic suite passed 46/46 after addressing
+the existing review findings for scalar pattern functions lifted over matrix
+elements, declared output coercion per arm, and refutable enum payload coverage.
+Repository formatting passed on the uncommitted repair. The bytecode corpus
+regeneration exposed one further compile gap in runtime diagnostics for the new
+shape-preserving comprehension kind; that owner fix is in the R16 worktree and
+the isolated generator is being rerun. This is not an exact-head seal.
+
+**Remaining:** finish deterministic corpus regeneration and frozen hash updates,
+run the bytecode format and determinism seals, commit and publish exact R16,
+request a new review, resolve any actionable findings, then rebase R17 and
+continue upward one owner at a time. Run focused product checks after coherent
+batches. Assemble the accepted stack into the single C candidate, qualify its
+exact head with full protected CI and review, merge through the protected path,
+and verify the landed `integration/v0.4` result.
+
+**Current action:** finish the R16 isolated corpus build and seal; do not treat
+the prior 46/46 semantic result as full distribution qualification.
+
+**Next action:** publish and review exact R16 after its checks pass, then address
+the existing R17 review notes on a rebase over that exact accepted head.
+
+**External blocker:** none for R16 fixes, tests, review, or routine restacking.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-17
 
 **Candidate:** `codex/syntax-s8c-cutover` /
