@@ -1196,7 +1196,14 @@ pub struct TurnWorkspace {
     // Only activation-invariant fixed-width plans are cached. Payload-bearing
     // values and deferred regions still supply live facts on every execution.
     fixed_turn_plans: Box<[Option<std::sync::Arc<crate::memory_planner::TurnMemoryPlan>>]>,
-    recursive_scrutinees: Vec<(ActivatedNodeIndex, ResidentReadLocation)>,
+    recursive_scrutinees: Vec<RecursiveFrame>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RecursiveFrame {
+    target: ActivatedNodeIndex,
+    argument: ResidentReadLocation,
+    saved_bytes: u64,
 }
 
 impl TurnWorkspace {
@@ -2009,7 +2016,7 @@ fn append_comprehension_execution_cases(
                     cases,
                 )?;
             }
-            crate::ControlOperationBody::Recur => {}
+            crate::ControlOperationBody::Recur(_) => {}
         }
     }
     Ok(())
@@ -2066,7 +2073,7 @@ fn append_match_execution_cases(
                         cases,
                     )?;
                 }
-                crate::ControlOperationBody::Recur => {}
+                crate::ControlOperationBody::Recur(_) => {}
                 crate::ControlOperationBody::Operation {
                     operation: reference,
                     contract,
@@ -4650,7 +4657,7 @@ fn build_plan(
             &mut steps,
             &mut reads,
             &mut control_calls,
-            Some(root),
+            &[root],
         )?;
         let ActivatedTurnStep::Match(matched) = &mut steps[artifact_to_activated
             [node.node.get() as usize]
@@ -6661,7 +6668,7 @@ fn bind_match_arms(
         crate::memory_planner::CallSiteMemoryTemplate,
         mech_core::CallMemoryPlan,
     )>,
-    recursive_root: Option<ActivatedNodeIndex>,
+    recursive_roots: &[ActivatedNodeIndex],
 ) -> Result<Box<[ActivatedMatchArm]>, ResidentActivationError> {
     control
         .arms
@@ -6738,7 +6745,7 @@ fn bind_match_arms(
                     steps,
                     reads,
                     calls,
-                    recursive_root,
+                    recursive_roots,
                 )
             };
             let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
@@ -6786,7 +6793,7 @@ fn bind_control_block(
         crate::memory_planner::CallSiteMemoryTemplate,
         mech_core::CallMemoryPlan,
     )>,
-    recursive_root: Option<ActivatedNodeIndex>,
+    recursive_roots: &[ActivatedNodeIndex],
 ) -> Result<ActivatedControlBlock, ResidentActivationError> {
     let source = |value: crate::ControlValue| -> ArtifactSource {
         match value {
@@ -6901,6 +6908,8 @@ fn bind_control_block(
                         layout,
                     )?;
                     steps.push(ActivatedTurnStep::Match(prepared));
+                    let mut nested_roots = recursive_roots.to_vec();
+                    nested_roots.push(ActivatedNodeIndex(index));
                     let arms = bind_match_arms(
                         artifact,
                         catalog,
@@ -6911,7 +6920,7 @@ fn bind_control_block(
                         steps,
                         reads,
                         calls,
-                        recursive_root,
+                        &nested_roots,
                     )?;
                     let ActivatedTurnStep::Match(prepared) = &mut steps[index as usize] else {
                         unreachable!()
@@ -6982,8 +6991,12 @@ fn bind_control_block(
                         memory,
                     ));
                 }
-                crate::ControlOperationBody::Recur => {
-                    let target = recursive_root
+                crate::ControlOperationBody::Recur(ancestor) => {
+                    let target = recursive_roots
+                        .len()
+                        .checked_sub(usize::from(*ancestor) + 1)
+                        .and_then(|index| recursive_roots.get(index))
+                        .copied()
                         .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
                     let [argument] = inputs.as_slice() else {
                         return Err(ResidentActivationError::UnsupportedControlLayout {

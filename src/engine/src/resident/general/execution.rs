@@ -1694,6 +1694,8 @@ impl ReactiveInstance {
                 before_epoch,
                 working_epoch,
                 probe,
+                live_bytes,
+                live_nodes,
             );
         }
         if matches!(
@@ -1740,7 +1742,7 @@ impl ReactiveInstance {
             .recursive_scrutinees
             .iter()
             .rev()
-            .find_map(|(target, source)| (*target == node_index).then_some(*source))
+            .find_map(|frame| (frame.target == node_index).then_some(frame.argument))
             .unwrap_or(matched.scrutinee);
         let scrutinee_schema = matched.scrutinee_schema;
         let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
@@ -2343,6 +2345,8 @@ impl ReactiveInstance {
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel {
             node: call.artifact_node,
@@ -2373,8 +2377,13 @@ impl ReactiveInstance {
                     .ok_or(ResidentKernelError::InvalidShape)
             })
             .map_err(fail)?;
-        let live_frame_bytes = frame_bytes
-            .checked_mul((depth + 1) as u64)
+        let live_frame_bytes = self
+            .workspace
+            .recursive_scrutinees
+            .iter()
+            .try_fold(frame_bytes, |total, frame| {
+                total.checked_add(frame.saved_bytes)
+            })
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         (|| -> Result<(), ResidentKernelError> {
             budget::PreparedKernel::new(
@@ -2401,12 +2410,29 @@ impl ReactiveInstance {
                 )
             })
             .collect::<Vec<_>>();
+        let target_index = call.target.get() as usize;
+        let target_initialized = bit_is_set(&self.workspace.initialized_output_bits, target_index);
         self.workspace
             .recursive_scrutinees
-            .push((call.target, call.argument));
-        let invoked =
-            self.execute_match_expression(call.target, before_epoch, working_epoch, probe);
+            .push(super::RecursiveFrame {
+                target: call.target,
+                argument: call.argument,
+                saved_bytes: frame_bytes,
+            });
+        let invoked = self.execute_match_expression(
+            call.target,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        );
         self.workspace.recursive_scrutinees.pop();
+        if target_initialized {
+            set_bit(&mut self.workspace.initialized_output_bits, target_index);
+        } else {
+            clear_bit(&mut self.workspace.initialized_output_bits, target_index);
+        }
 
         let result = invoked.and_then(|changed| {
             let location = match returned.storage {
@@ -2424,15 +2450,16 @@ impl ReactiveInstance {
         });
 
         for (region, value) in &frame {
-            super::copy_owned_activation_value(value, self.workspace.scratch.write(*region))
-                .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+            copy_input(&mut self.workspace.scratch, *region, value.as_ref())
+                .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
         }
         let (changed, result) = result?;
-        super::copy_owned_activation_value(
-            &result,
-            self.workspace.scratch.write(call.write.region),
+        copy_input(
+            &mut self.workspace.scratch,
+            call.write.region,
+            result.as_ref(),
         )
-        .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+        .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
         set_bit(
             &mut self.workspace.initialized_output_bits,
             node_index.get() as usize,
@@ -4284,6 +4311,10 @@ fn bit_is_set(words: &[u64], bit: usize) -> bool {
 
 fn set_bit(words: &mut [u64], bit: usize) {
     words[bit / 64] |= 1_u64 << (bit % 64);
+}
+
+fn clear_bit(words: &mut [u64], bit: usize) {
+    words[bit / 64] &= !(1_u64 << (bit % 64));
 }
 
 fn or_bits(target: &mut [u64], source: &[u64]) {

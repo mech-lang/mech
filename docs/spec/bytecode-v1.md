@@ -443,11 +443,12 @@ grammar:
 - `{"Tuple":[structural_pattern,...]}`
 - `{"Array":{"prefix":[structural_pattern,...],"rest":structural_pattern_or_null,"suffix":[structural_pattern,...]}}`
 
-A lexical operation body may also be `"Recur"`. It has exactly one input with
-the enclosing function-match scrutinee schema and produces the enclosing match
-result schema. The back-edge remains inside the owning match artifact; resident
-activation binds it to bounded call-frame storage rather than expanding the
-graph or interpreting source text.
+A lexical operation body may also be `{"Recur":ancestor_depth}`. Depth zero
+targets the current function match; each increment names one enclosing match.
+It has exactly one input with that lexical target's scrutinee schema and produces
+that target's result schema. The back-edge remains inside the owning match
+artifact; resident activation binds it to bounded call-frame storage rather than
+expanding the graph or interpreting source text.
 
 Structural binding IDs are dense within their arm. A binding equality refers to an earlier binding
 in that arm. Array prefixes and suffixes match in source order; a present rest consumes the middle
