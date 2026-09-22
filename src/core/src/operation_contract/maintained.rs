@@ -70,6 +70,13 @@ pub fn maintained_operation_contract(
     } else {
         ChangeDetectionPolicy::ExactScalar
     };
+    if matches!(
+        name,
+        "core/assign/identity-indices" | "core/assign/selection-order" | "core/assign/broadcast"
+    ) {
+        return (input_count == 1)
+            .then(|| elementwise_operation_contract(1, ChangeDetectionPolicy::KernelReported));
+    }
     // Compound selected writes have the same addressed RMW contract as a
     // replacement; their numeric operation is retained in the semantic identity.
     let assignment_name = match name.rsplit_once('/') {
