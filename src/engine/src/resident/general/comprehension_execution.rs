@@ -3905,7 +3905,7 @@ fn collection_canonicalization_work(
     kind: crate::ComprehensionKind,
     count: usize,
 ) -> Result<u64, ResidentKernelError> {
-    if kind == crate::ComprehensionKind::Matrix {
+    if kind != crate::ComprehensionKind::Set {
         return Ok(0);
     }
     (count as u64)
@@ -4659,7 +4659,7 @@ impl ReactiveInstance {
         admit_generator_schema_workspace(shape_workspace, live_bytes, live_nodes, &mut meter)
             .map_err(fail)?;
         let (count, footprint, shape_values, data) = match control.kind {
-            crate::ComprehensionKind::Matrix => {
+            crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape => {
                 let mech_core::SchemaBody::Matrix { .. } = schema.body() else {
                     return Err(fail(ResidentKernelError::InvalidOutput));
                 };
@@ -4667,13 +4667,52 @@ impl ReactiveInstance {
                     .map(Ok)
                     .unwrap_or_else(|| lower_bound_yield_body(control.yield_schema, &schemas))
                     .map_err(fail)?;
-                let actual = SchemaBody::Matrix {
-                    element: Box::new(element),
-                    dimensions: vec![
+                let dimensions = if control.kind == crate::ComprehensionKind::MatrixPreserveShape {
+                    let source_shape = control.steps.iter().find_map(|step| match step {
+                        crate::resident::general::comprehension::ActivatedCollectionStep::Generator {
+                            source_schema,
+                            shape_values,
+                            ..
+                        } => Some((*source_schema, shape_values.as_ref())),
+                        _ => None,
+                    });
+                    let (source_schema, shape_values) =
+                        source_shape.ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                    let source = schemas
+                        .get(source_schema)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                    let source_shape = source
+                        .instantiate_shape(shape_values.to_vec().into_boxed_slice())
+                        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+                    let SchemaBody::Matrix { dimensions, .. } =
+                        source
+                            .closed_body(&source_shape)
+                            .map_err(|_| fail(ResidentKernelError::InvalidShape))?
+                    else {
+                        return Err(fail(ResidentKernelError::InvalidInput));
+                    };
+                    let source_count = dimensions.iter().try_fold(1u64, |count, dimension| {
+                        let DimensionExpr::Constant(dimension) = dimension else {
+                            return Err(fail(ResidentKernelError::InvalidShape));
+                        };
+                        count
+                            .checked_mul(*dimension)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))
+                    })?;
+                    if usize::try_from(source_count).ok() != Some(draft_count) {
+                        return Err(fail(ResidentKernelError::InvalidShape));
+                    }
+                    dimensions
+                } else {
+                    vec![
                         DimensionExpr::Constant(1),
                         DimensionExpr::Constant(draft_count as u64),
                     ]
-                    .into_boxed_slice(),
+                    .into_boxed_slice()
+                };
+                let actual = SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions,
                 };
                 let shape = mech_core::shape_for_schema_components(
                     schema,
@@ -6011,15 +6050,17 @@ impl ReactiveInstance {
                 .map_err(fail)?;
         }
         match control.kind {
-            crate::ComprehensionKind::Matrix => admit_output(
-                next,
-                current_capacity,
-                next_footprint,
-                retained_shape_parameter_count,
-                schema_arena_bytes,
-                live_locals,
-                *meter,
-            ),
+            crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape => {
+                admit_output(
+                    next,
+                    current_capacity,
+                    next_footprint,
+                    retained_shape_parameter_count,
+                    schema_arena_bytes,
+                    live_locals,
+                    *meter,
+                )
+            }
             crate::ComprehensionKind::Set => admit_set_draft(
                 next,
                 current_capacity,

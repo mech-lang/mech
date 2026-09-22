@@ -100,6 +100,21 @@ pub struct MatchDeclaration<C = OperationContractId> {
     pub arms: Box<[ControlMatchArm<C>]>,
 }
 
+pub(super) fn structurally_irrefutable<S, V>(pattern: &super::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        super::CollectionPattern::Wildcard | super::CollectionPattern::Bind { .. } => true,
+        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        super::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        super::CollectionPattern::Equal(_)
+        | super::CollectionPattern::Enum { .. }
+        | super::CollectionPattern::Array { .. } => false,
+    }
+}
+
 fn component_schema(
     parent: &mech_core::Schema,
     body: &mech_core::SchemaBody,
