@@ -1260,6 +1260,9 @@ fn exact_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bo
 }
 
 fn exact_sequence_eq(schema: &SchemaBody, left: &SequenceStorage, right: &SequenceStorage) -> bool {
+    if left.view().len() != right.view().len() {
+        return false;
+    }
     match (left, right) {
         (SequenceStorage::Values(left), SequenceStorage::Values(right)) => {
             left.len() == right.len()
@@ -1475,7 +1478,7 @@ const fn normalize_f64(bits: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::snapshot::{Complex64Bits, F32Bits, F64Bits};
+    use crate::snapshot::{Complex64Bits, F32Bits, F64Bits, Rational64Value};
 
     #[test]
     fn equal_schema_keys_still_require_equal_canonical_definitions() {
@@ -1536,6 +1539,23 @@ mod tests {
         );
         assert!(!exact_sequence_eq(&schema, &packed, &positive_zero));
         assert!(!exact_sequence_eq(&schema, &positive_zero, &packed));
+    }
+
+    #[test]
+    fn exact_rational_sequence_equality_rejects_packed_prefixes() {
+        let schema = SchemaBody::Rational64;
+        let short = SequenceStorage::Rational64(
+            vec![Rational64Value::new(1, 2).unwrap()].into_boxed_slice(),
+        );
+        let long = SequenceStorage::Rational64(
+            vec![
+                Rational64Value::new(1, 2).unwrap(),
+                Rational64Value::new(2, 3).unwrap(),
+            ]
+            .into_boxed_slice(),
+        );
+        assert!(!exact_sequence_eq(&schema, &short, &long));
+        assert!(!exact_sequence_eq(&schema, &long, &short));
     }
 }
 

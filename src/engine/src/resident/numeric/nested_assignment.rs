@@ -537,6 +537,12 @@ fn execute(
                 )?
                 .checked_add(value)
         })
+        .and_then(|value| {
+            value.checked_add(
+                usize::from(plan.dense_f64)
+                    .checked_mul(selected_count.checked_mul(core::mem::size_of::<u64>())?)?,
+            )
+        })
         .ok_or(ResidentKernelError::InvalidShape)?;
     super::super::budget::PreparedKernel::new((), super::super::budget::resident_cost! {
         compute_work: super::super::budget::checked_u64(elements.checked_mul(if plan.rational_power { 128 } else { 8 }).ok_or(ResidentKernelError::InvalidShape)?)?,
@@ -578,8 +584,15 @@ fn execute(
         if source.len() != plan.source_len || target.len() != count {
             return Err(ResidentKernelError::InvalidShape);
         }
-        let mut changed = false;
-        for (ordinal, position) in positions.into_iter().enumerate() {
+        let original = positions
+            .iter()
+            .map(|position| {
+                let row = position.destination / plan.columns;
+                let column = position.destination % plan.columns;
+                target[column * plan.rows + row].to_bits()
+            })
+            .collect::<Vec<_>>();
+        for (ordinal, position) in positions.iter().copied().enumerate() {
             let source_position = source_index(
                 plan,
                 source.len(),
@@ -600,9 +613,13 @@ fn execute(
                 target[destination],
                 source[source_position],
             );
-            changed |= target[destination].to_bits() != next.to_bits();
             target[destination] = next;
         }
+        let changed = positions.iter().zip(original).any(|(position, original)| {
+            let row = position.destination / plan.columns;
+            let column = position.destination % plan.columns;
+            target[column * plan.rows + row].to_bits() != original
+        });
         return Ok(changed);
     }
 

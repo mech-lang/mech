@@ -1856,6 +1856,55 @@ fn selected_f64_matrix_updates_propagate_signed_zero_changes() {
             }
         }
     }
+
+    let source = "~a := [10 20; 30 40]\na[[1 1],:][:,1] += [1; -1]\na[1,1]\n";
+    let artifact = compiled(source).compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59c, 1),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let updates = instance
+            .plan
+            .steps
+            .iter()
+            .enumerate()
+            .filter_map(|(index, step)| match step {
+                mech_engine::resident::ActivatedTurnStep::Kernel(node)
+                    if matches!(
+                        node.construction,
+                        mech_core::OutputConstruction::ReadModifyWrite { .. }
+                    ) =>
+                {
+                    Some((index, node.kernel.clone()))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(!updates.is_empty());
+        for (index, kernel) in updates {
+            instance.plan.replace_kernel_for_test(
+                index,
+                mech_core::BoundResidentKernel::new(checked_update, Box::new([]))
+                    .with_retained_state(std::sync::Arc::new(kernel)),
+            );
+        }
+        instance.turn(&[]).unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let ValueData::F64(actual) = output.data() else {
+            panic!("{output:?}")
+        };
+        assert_eq!(actual.to_f64(), 10.0);
+    }
 }
 
 #[test]
