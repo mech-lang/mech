@@ -1370,7 +1370,13 @@ impl ReactiveInstance {
     }
 
     fn select_activation_roots(&mut self, trigger_inputs: &[mech_core::CellSlotId]) {
-        for (node, inputs) in &self.plan.activation_turn_inputs {
+        for (node, _, sampled) in &self.plan.activation_turn_inputs {
+            clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            for sampled_node in sampled.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+            }
+        }
+        for (node, inputs, sampled) in &self.plan.activation_turn_inputs {
             // An input-free scope has no host fact that can name its trigger.
             // Every explicit turn therefore admits it; initial publication uses
             // the dedicated preparation path above to keep it dormant.
@@ -1378,15 +1384,19 @@ impl ReactiveInstance {
                 inputs.is_empty() || inputs.iter().any(|input| trigger_inputs.contains(input));
             if active {
                 set_bit(&mut self.workspace.dirty_bits, node.get() as usize);
-            } else {
-                clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+                for sampled_node in sampled.iter() {
+                    set_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                }
             }
         }
     }
 
     fn clear_activation_roots(&mut self) {
-        for (node, _) in &self.plan.activation_turn_inputs {
+        for (node, _, sampled) in &self.plan.activation_turn_inputs {
             clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            for sampled_node in sampled.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+            }
         }
     }
 
