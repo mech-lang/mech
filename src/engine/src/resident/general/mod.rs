@@ -146,8 +146,21 @@ pub struct ResidentEffectIntent {
 }
 
 #[derive(Clone, Debug)]
+pub struct ActivatedControlStep {
+    pub node: ActivatedNodeIndex,
+    /// Prefix of the block's shared local inventory that is initialized when
+    /// this child executes.
+    pub retained_local_count: u32,
+    /// Sorted local indices already owned by the child's call contract.
+    pub excluded_locals: Box<[u32]>,
+}
+
+#[derive(Clone, Debug)]
 pub struct ActivatedControlBlock {
-    pub steps: std::sync::Arc<[ActivatedNodeIndex]>,
+    pub steps: std::sync::Arc<[ActivatedControlStep]>,
+    /// Pattern bindings followed by operation outputs in source order. Steps
+    /// share this inventory and retain only a prefix plus compact exclusions.
+    pub locals: std::sync::Arc<[ResidentRegion]>,
     pub yield_value: ResidentReadLocation,
     pub yield_layout: ResidentPortLayout,
 }
@@ -6624,6 +6637,56 @@ fn bind_match_arms(
         .iter()
         .map(|arm| {
             let owner_block = arm.body.id.0;
+            let pattern =
+                activate_match_pattern(artifact, owner, owner_block, &arm.pattern, layout)?;
+            fn collect_binding_regions(
+                pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+                bindings: &mut Vec<(u32, ResidentRegion)>,
+            ) {
+                match pattern {
+                    crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => {}
+                    crate::CollectionPattern::Bind { local, schema } => {
+                        bindings.push((*local, schema.region));
+                    }
+                    crate::CollectionPattern::Tuple(items) => {
+                        for item in items {
+                            collect_binding_regions(item, bindings);
+                        }
+                    }
+                    crate::CollectionPattern::Array {
+                        prefix,
+                        rest,
+                        suffix,
+                    } => {
+                        for item in prefix {
+                            collect_binding_regions(item, bindings);
+                        }
+                        if let Some(rest) = rest {
+                            collect_binding_regions(rest, bindings);
+                        }
+                        for item in suffix {
+                            collect_binding_regions(item, bindings);
+                        }
+                    }
+                }
+            }
+            let mut bindings = Vec::new();
+            if let ActivatedMatchPattern::Structural { pattern, .. } = &pattern {
+                collect_binding_regions(pattern, &mut bindings);
+            }
+            let binding_regions = bindings
+                .iter()
+                .map(|(_, region)| *region)
+                .collect::<Vec<_>>();
+            let binding_local_indices = bindings
+                .iter()
+                .enumerate()
+                .map(|(index, (local, _))| {
+                    u32::try_from(index)
+                        .map(|index| (*local, index))
+                        .map_err(|_| ResidentActivationError::RegionSizeOverflow)
+                })
+                .collect::<Result<std::collections::BTreeMap<_, _>, _>>()?;
             let mut bind = |block: &crate::ControlBlock| {
                 bind_control_block(
                     artifact,
@@ -6633,6 +6696,8 @@ fn bind_match_arms(
                     control,
                     block,
                     captures,
+                    &binding_regions,
+                    &binding_local_indices,
                     layout,
                     steps,
                     reads,
@@ -6641,41 +6706,6 @@ fn bind_match_arms(
             };
             let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
             let body = bind(&arm.body)?;
-            let pattern =
-                activate_match_pattern(artifact, owner, owner_block, &arm.pattern, layout)?;
-            fn collect_binding_regions(
-                pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
-                regions: &mut Vec<ResidentRegion>,
-            ) {
-                match pattern {
-                    crate::CollectionPattern::Wildcard | crate::CollectionPattern::Equal(_) => {}
-                    crate::CollectionPattern::Bind { schema, .. } => regions.push(schema.region),
-                    crate::CollectionPattern::Tuple(items) => {
-                        for item in items {
-                            collect_binding_regions(item, regions);
-                        }
-                    }
-                    crate::CollectionPattern::Array {
-                        prefix,
-                        rest,
-                        suffix,
-                    } => {
-                        for item in prefix {
-                            collect_binding_regions(item, regions);
-                        }
-                        if let Some(rest) = rest {
-                            collect_binding_regions(rest, regions);
-                        }
-                        for item in suffix {
-                            collect_binding_regions(item, regions);
-                        }
-                    }
-                }
-            }
-            let mut binding_regions = Vec::new();
-            if let ActivatedMatchPattern::Structural { pattern, .. } = &pattern {
-                collect_binding_regions(pattern, &mut binding_regions);
-            }
             let guard_regions = arm
                 .guard
                 .iter()
@@ -6709,6 +6739,8 @@ fn bind_control_block(
     control: &crate::MatchDeclaration,
     block: &crate::ControlBlock,
     captures: &[ArtifactSource],
+    binding_regions: &[ResidentRegion],
+    binding_local_indices: &std::collections::BTreeMap<u32, u32>,
     layout: &LayoutBuild,
     steps: &mut Vec<ActivatedTurnStep>,
     reads: &mut Vec<ResidentReadLocation>,
@@ -6759,6 +6791,10 @@ fn bind_control_block(
         }
     };
     let mut direct_steps = Vec::new();
+    let mut local_regions = binding_regions.to_vec();
+    let binding_count = u32::try_from(binding_regions.len())
+        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+    let mut operation_locals = std::collections::BTreeMap::new();
     for operation in &block.operations {
         let (output_slot, physical_node) =
             layout.control_locals[&(owner, block.id.0, operation.node)];
@@ -6771,7 +6807,45 @@ fn bind_control_block(
             .collect::<Vec<_>>();
         let index =
             u32::try_from(steps.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-        direct_steps.push(ActivatedNodeIndex(index));
+        let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
+        let prior_local_count = u32::try_from(local_regions.len())
+            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+        let current_local = prior_local_count;
+        local_regions.push(output.region);
+        operation_locals.insert(operation.node, current_local);
+        let retained_local_count = prior_local_count
+            .checked_add(u32::from(nested_match))
+            .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+        let excluded_locals = if nested_match {
+            Box::new([])
+        } else {
+            let mut excluded = operation
+                .inputs
+                .iter()
+                .filter_map(|value| match value {
+                    crate::ControlValue::Parameter { ordinal, .. } => {
+                        let parameter = &block.parameters[*ordinal as usize];
+                        let crate::ControlParameterSource::PatternBinding(local) = parameter.source
+                        else {
+                            return None;
+                        };
+                        binding_local_indices.get(&local).copied()
+                    }
+                    crate::ControlValue::Local { node, .. } => operation_locals.get(node).copied(),
+                    crate::ControlValue::Constant(_) => None,
+                })
+                .filter(|local| *local < retained_local_count)
+                .collect::<Vec<_>>();
+            excluded.sort_unstable();
+            excluded.dedup();
+            excluded.into_boxed_slice()
+        };
+        debug_assert!(retained_local_count >= binding_count);
+        direct_steps.push(ActivatedControlStep {
+            node: ActivatedNodeIndex(index),
+            retained_local_count,
+            excluded_locals,
+        });
         let crate::ControlOperationBody::Operation {
             operation: reference,
             contract: contract_id,
@@ -6924,6 +6998,7 @@ fn bind_control_block(
     let yielded = source(block.yield_value);
     Ok(ActivatedControlBlock {
         steps: direct_steps.into(),
+        locals: local_regions.into(),
         yield_value: resolve_read(layout, yielded)?,
         yield_layout: port(yielded)?,
     })

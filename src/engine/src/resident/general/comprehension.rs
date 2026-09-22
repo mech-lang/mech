@@ -15,12 +15,14 @@ pub enum ActivatedCollectionStep {
     Operation {
         node: ActivatedNodeIndex,
         work: u64,
-        /// Managed outer locals that remain allocated while this operation
-        /// executes but are neither inputs nor the output being replaced.
-        /// The operation's own memory facts account for consumed inputs and
-        /// its prior output; these unrelated locals must travel as additional
-        /// live demand.
-        retained_locals: Box<[ResidentRegion]>,
+        /// Prefix of the control's shared local inventory that is initialized
+        /// when this operation executes. Nested matches retain their current
+        /// output too because they have no call-local memory contract.
+        retained_local_count: u32,
+        /// Sorted indices in that prefix which the operation's own call plan
+        /// already accounts for. Keeping only compact exclusions avoids a
+        /// quadratic retained-region array for large comprehensions.
+        excluded_locals: Box<[u32]>,
     },
     Filter(ResidentReadLocation),
 }
@@ -211,6 +213,31 @@ fn primitive(body: &SchemaBody) -> bool {
             | SchemaBody::Index
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
     )
+}
+
+fn operation_retained_local_scope(
+    operation: &crate::ComprehensionOperation,
+) -> Option<(u32, Box<[u32]>)> {
+    let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
+    let retained_local_count = operation.local.checked_add(u32::from(nested_match))?;
+    let excluded_locals = if nested_match {
+        Box::new([])
+    } else {
+        let mut excluded = operation
+            .inputs
+            .iter()
+            .filter_map(|value| match value {
+                crate::ComprehensionValue::Local(local) if *local < retained_local_count => {
+                    Some(*local)
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        excluded.sort_unstable();
+        excluded.dedup();
+        excluded.into_boxed_slice()
+    };
+    Some((retained_local_count, excluded_locals))
 }
 
 fn canonical_component_schema(
@@ -636,16 +663,8 @@ pub(super) fn bind_inner(
                     .copied()
                     .map(|source| resolve_read(layout, source))
                     .collect::<Result<Vec<_>, _>>()?;
-                let retained_locals = locals
-                    .iter()
-                    .copied()
-                    .filter(|local| *local != output.region)
-                    .filter(|local| {
-                        !input_reads.iter().any(|read| {
-                            matches!(read, ResidentReadLocation::Scratch(region) if region == local)
-                        })
-                    })
-                    .collect::<Box<[_]>>();
+                let (retained_local_count, excluded_locals) =
+                    operation_retained_local_scope(operation).ok_or_else(unsupported)?;
                 let (reference, contract_id) = match &operation.body {
                     crate::ControlOperationBody::Operation {
                         operation,
@@ -682,7 +701,8 @@ pub(super) fn bind_inner(
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
-                            retained_locals,
+                            retained_local_count,
+                            excluded_locals,
                         });
                         continue;
                     }
@@ -752,7 +772,8 @@ pub(super) fn bind_inner(
                         instructions.push(ActivatedCollectionStep::Operation {
                             node: index,
                             work: 0,
-                            retained_locals,
+                            retained_local_count,
+                            excluded_locals,
                         });
                         continue;
                     }
@@ -884,7 +905,8 @@ pub(super) fn bind_inner(
                 instructions.push(ActivatedCollectionStep::Operation {
                     node: index,
                     work,
-                    retained_locals,
+                    retained_local_count,
+                    excluded_locals,
                 });
             }
         }
@@ -1108,6 +1130,24 @@ mod tests {
         for (local, definition) in definitions.into_iter().enumerate() {
             assert_eq!(definition, (false, false, 7, local as u32, schema));
         }
+        let scopes = control
+            .steps
+            .iter()
+            .map(|step| {
+                let crate::ComprehensionStep::Operation(operation) = step else {
+                    unreachable!()
+                };
+                operation_retained_local_scope(operation).unwrap()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(scopes.len(), OPERATION_COUNT as usize);
+        assert!(
+            scopes
+                .iter()
+                .enumerate()
+                .all(|(local, (count, excluded))| *count == local as u32 && excluded.is_empty()),
+            "each operation retains only a constant-sized view of the shared inventory"
+        );
     }
 
     #[test]

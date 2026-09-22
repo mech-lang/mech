@@ -815,7 +815,7 @@ mod lazy_execution {
                 .iter()
                 .find_map(|step| match step {
                     ActivatedTurnStep::Match(matched) => {
-                        Some(matched.arms[0].body.steps[0].get() as usize)
+                        Some(matched.arms[0].body.steps[0].node.get() as usize)
                     }
                     _ => None,
                 })

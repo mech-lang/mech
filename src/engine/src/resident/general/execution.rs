@@ -1890,8 +1890,10 @@ impl ReactiveInstance {
                 continue;
             }
             if let Some(guard) = guard {
-                for step in guard.steps.iter().copied() {
-                    self.execute_step_with_live_demand(
+                for step in guard.steps.iter() {
+                    self.execute_control_step_with_live_demand(
+                        node,
+                        &guard,
                         step,
                         before_epoch,
                         working_epoch,
@@ -1915,10 +1917,12 @@ impl ReactiveInstance {
                     continue;
                 }
             }
-            for step in body.steps.iter().copied() {
+            for step in body.steps.iter() {
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
-                self.execute_step_with_live_demand(
+                self.execute_control_step_with_live_demand(
+                    node,
+                    &body,
                     step,
                     before_epoch,
                     working_epoch,
@@ -2157,6 +2161,45 @@ impl ReactiveInstance {
             return Ok(!initialized || !unchanged);
         }
         Err(fail())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn execute_control_step_with_live_demand(
+        &mut self,
+        owner: NodeId,
+        block: &super::ActivatedControlBlock,
+        step: &super::ActivatedControlStep,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
+        let mut meter = budget::ResidentBudgetMeter::default();
+        let locals = self
+            .shared_local_prefix_footprint(
+                &block.locals,
+                step.retained_local_count,
+                &step.excluded_locals,
+                &self.plan.schemas,
+                &mut meter,
+            )
+            .map_err(fail)?;
+        let live_bytes = live_bytes
+            .checked_add(locals.retained_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let live_nodes = live_nodes
+            .checked_add(locals.node_count)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        self.execute_step_with_live_demand(
+            step.node,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
     }
 
     fn match_structural_pattern_item(
@@ -4133,20 +4176,103 @@ mod tests {
             };
             control.steps.iter().find_map(|step| {
                 let ActivatedCollectionStep::Operation {
-                    retained_locals, ..
+                    retained_local_count,
+                    excluded_locals,
+                    ..
                 } = step
                 else {
                     return None;
                 };
-                Some(retained_locals)
+                Some((
+                    control
+                        .locals
+                        .get(..*retained_local_count as usize)
+                        .expect("validated retained-local prefix"),
+                    excluded_locals.as_ref(),
+                ))
             })
         });
-        let retained = retained.expect("ordinary operation inside the comprehension");
+        let (retained, excluded) = retained.expect("ordinary operation inside the comprehension");
         assert!(
             retained
                 .iter()
-                .any(|local| local.kind == ResidentValueKind::Snapshot),
+                .enumerate()
+                .any(|(index, local)| local.kind == ResidentValueKind::Snapshot
+                    && !excluded.contains(&(index as u32))),
             "the unconsumed rest binding remains live across the arithmetic step"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn selected_structural_arm_steps_retain_unconsumed_binding_demand() {
+        let instance = source_instance("[1 2 3] ? | [head | rest] => head + 1 | * => 0");
+        let control = instance.plan.steps.iter().find_map(|step| {
+            let ActivatedTurnStep::Match(control) = step else {
+                return None;
+            };
+            control
+                .arms
+                .iter()
+                .find(|arm| !arm.binding_regions.is_empty())
+                .map(|arm| (control, arm))
+        });
+        let (_, arm) = control.expect("structural match arm");
+        let (binding_index, binding) = arm
+            .binding_regions
+            .iter()
+            .copied()
+            .enumerate()
+            .find(|(_, binding)| binding.kind == ResidentValueKind::Snapshot)
+            .expect("managed rest binding");
+        assert_eq!(binding.kind, ResidentValueKind::Snapshot);
+        assert_eq!(arm.body.locals[binding_index], binding);
+        assert!(arm.body.steps.iter().all(|step| {
+            step.retained_local_count > binding_index as u32
+                && !step.excluded_locals.contains(&(binding_index as u32))
+        }));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_match_operations_retain_managed_inputs_and_prior_output() {
+        let instance = source_instance("[(item ? | * => item) | item <- signal<[string]:1,1>]");
+        let (control, operation) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Comprehension(control) = step else {
+                    return None;
+                };
+                control.steps.iter().find_map(|operation| {
+                    let ActivatedCollectionStep::Operation { node, .. } = operation else {
+                        return None;
+                    };
+                    matches!(
+                        instance.plan.steps[node.get() as usize],
+                        ActivatedTurnStep::Match(_)
+                    )
+                    .then_some((control.as_ref(), operation))
+                })
+            })
+            .expect("nested match operation");
+        let ActivatedCollectionStep::Operation {
+            retained_local_count,
+            excluded_locals,
+            ..
+        } = operation
+        else {
+            unreachable!()
+        };
+        assert_eq!(*retained_local_count as usize, control.locals.len());
+        assert!(excluded_locals.is_empty());
+        assert!(
+            control.locals.iter().all(|local| matches!(
+                local.kind,
+                ResidentValueKind::String | ResidentValueKind::Snapshot
+            )),
+            "the match scrutinee and previous output are both managed locals"
         );
     }
 

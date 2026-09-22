@@ -3812,56 +3812,14 @@ fn collection_canonicalization_work(
 }
 
 impl ReactiveInstance {
-    fn kernel_scratch_output_region(&self, index: ActivatedNodeIndex) -> Option<ResidentRegion> {
-        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
-            nodes.get(index.get() as usize)?
-        } else {
-            let ActivatedTurnStep::Kernel(node) = self.plan.steps.get(index.get() as usize)? else {
-                return None;
-            };
-            node
-        };
-        (node.write.storage == ResidentStorageClass::Scratch).then_some(node.write.region)
-    }
-
-    fn comprehension_live_local_footprint(
+    fn resident_local_footprint(
         &self,
-        locals: &[ResidentRegion],
-        excluded: Option<ResidentRegion>,
-        kernel: Option<ActivatedNodeIndex>,
+        locals: impl IntoIterator<Item = ResidentRegion>,
         schemas: &mech_core::SchemaTable,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<ValueFootprint, ResidentKernelError> {
-        let kernel = kernel
-            .map(|index| {
-                if let Some(nodes) = &self.plan.pure_kernel_steps {
-                    nodes.get(index.get() as usize)
-                } else {
-                    match self.plan.steps.get(index.get() as usize) {
-                        Some(ActivatedTurnStep::Kernel(node)) => Some(node),
-                        _ => None,
-                    }
-                }
-                .ok_or(ResidentKernelError::InvalidInput)
-            })
-            .transpose()?;
         let mut footprint = ValueFootprint::zero();
-        for local in locals
-            .iter()
-            .copied()
-            .filter(|local| Some(*local) != excluded)
-        {
-            if let Some(kernel) = kernel {
-                let inputs =
-                    &self.plan.reads[kernel.reads.start as usize..kernel.reads.end as usize];
-                meter.charge_comparison_work(budget::checked_u64(inputs.len())?)?;
-                if inputs.iter().any(|input| {
-                    matches!(input, ResidentReadLocation::Scratch(region) if *region == local)
-                }) || matches!(kernel.rmw_base, Some(ResidentReadLocation::Scratch(region)) if region == local)
-                {
-                    continue;
-                }
-            }
+        for local in locals {
             match self.workspace.scratch.read(local) {
                 ResidentValueRef::String(values) => {
                     for value in values {
@@ -3895,6 +3853,56 @@ impl ReactiveInstance {
             }
         }
         Ok(footprint)
+    }
+
+    fn comprehension_live_local_footprint(
+        &self,
+        locals: &[ResidentRegion],
+        excluded: Option<ResidentRegion>,
+        schemas: &mech_core::SchemaTable,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<ValueFootprint, ResidentKernelError> {
+        self.resident_local_footprint(
+            locals
+                .iter()
+                .copied()
+                .filter(|local| Some(*local) != excluded),
+            schemas,
+            meter,
+        )
+    }
+
+    pub(super) fn shared_local_prefix_footprint(
+        &self,
+        locals: &[ResidentRegion],
+        retained_local_count: u32,
+        excluded_locals: &[u32],
+        schemas: &mech_core::SchemaTable,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<ValueFootprint, ResidentKernelError> {
+        let retained_local_count =
+            usize::try_from(retained_local_count).map_err(|_| ResidentKernelError::InvalidShape)?;
+        let prefix = locals
+            .get(..retained_local_count)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let mut exclusions = excluded_locals.iter().copied().peekable();
+        self.resident_local_footprint(
+            prefix
+                .iter()
+                .copied()
+                .enumerate()
+                .filter_map(|(index, local)| {
+                    let index = index as u32;
+                    if exclusions.peek().copied() == Some(index) {
+                        exclusions.next();
+                        None
+                    } else {
+                        Some(local)
+                    }
+                }),
+            schemas,
+            meter,
+        )
     }
 
     fn comprehension_schema_arena(
@@ -4403,7 +4411,7 @@ impl ReactiveInstance {
             probe,
         )?;
         let live_locals = self
-            .comprehension_live_local_footprint(&control.locals, None, None, &schemas, &mut meter)
+            .comprehension_live_local_footprint(&control.locals, None, &schemas, &mut meter)
             .map_err(fail)?;
         let draft_count = values.len();
         let draft_capacity = values.capacity();
@@ -4724,7 +4732,7 @@ impl ReactiveInstance {
             .binding_resolution_workspace(binding.schema, source_shape_values, schemas)
             .map_err(fail)?;
         let live_locals = self
-            .comprehension_live_local_footprint(locals, None, None, schemas, meter)
+            .comprehension_live_local_footprint(locals, None, schemas, meter)
             .map_err(fail)?;
         let live_item = ValueFootprint {
             encoded_bytes: selected_footprint
@@ -4856,7 +4864,6 @@ impl ReactiveInstance {
                     .comprehension_live_local_footprint(
                         locals,
                         Some(binding.region),
-                        None,
                         schemas,
                         meter,
                     )
@@ -4979,7 +4986,7 @@ impl ReactiveInstance {
                     .len();
                 let shape_values = vec![0; parameter_count].into_boxed_slice();
                 let other_live_locals = self
-                    .comprehension_live_local_footprint(locals, None, None, schemas, meter)
+                    .comprehension_live_local_footprint(locals, None, schemas, meter)
                     .map_err(fail)?;
                 admit_pattern_binding_finalization(
                     peer.schema,
@@ -5497,7 +5504,8 @@ impl ReactiveInstance {
                 ActivatedCollectionStep::Operation {
                     node,
                     work,
-                    retained_locals,
+                    retained_local_count,
+                    excluded_locals,
                 } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
                     let kernel = if self.plan.pure_kernel_steps.is_some()
@@ -5511,10 +5519,10 @@ impl ReactiveInstance {
                     };
                     let output = kernel.and_then(|kernel| self.kernel_scratch_output_region(kernel));
                     let live_locals = self
-                        .comprehension_live_local_footprint(
-                            retained_locals,
-                            output,
-                            kernel,
+                        .shared_local_prefix_footprint(
+                            &control.locals,
+                            *retained_local_count,
+                            excluded_locals,
                             schemas,
                             meter,
                         )
@@ -5667,7 +5675,7 @@ impl ReactiveInstance {
             .dimension_parameters()
             .len();
         let live_locals = self
-            .comprehension_live_local_footprint(&control.locals, None, None, schemas, meter)
+            .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
             .map_err(fail)?;
         let current_capacity = values.capacity();
         if next > current_capacity {
