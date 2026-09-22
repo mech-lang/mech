@@ -5375,6 +5375,47 @@ points := [1.0 2.0]
 }
 
 #[test]
+fn initial_publication_replays_with_activations_dormant() {
+    let (mut runtime, scene) = product_nbody_runtime();
+    runtime
+        .load_source_program(
+            "@scene := scene://orbit/frame{:write(points)}\ntrigger := true\n~count := 0\n~> trigger { count = count + 1 }\npoints := [1.0 2.0]\n@scene/points <- points\n",
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("initial publication must use the external resident route")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let record = execution.coordinator.receipts().next().unwrap().1.clone();
+    assert!(record.body.initial_publication);
+
+    let catalog = mech_stdlib::source_catalog();
+    let instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        instance,
+        artifact,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(matches!(
+        replay.execute_replay_batch(None, &record).unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert_eq!(replay.receipts().next().unwrap().1, &record);
+    assert_eq!(scene.lock().unwrap().deliveries, 1);
+}
+
+#[test]
 fn initial_external_export_rejection_precedes_effect_and_epoch_publication() {
     let source = format!(
         r#"

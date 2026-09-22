@@ -482,7 +482,13 @@ pub struct ActivatedPlan {
     pub turn_trigger_inputs: Box<[CellSlotId]>,
     /// Per-activation input roots. Runtime turns use this to schedule exactly
     /// the scopes whose trigger observations arrived in the admitted batch.
-    activation_turn_inputs: Box<[(ActivatedNodeIndex, Box<[CellSlotId]>)]>,
+    activation_turn_inputs: Box<
+        [(
+            ActivatedNodeIndex,
+            Box<[CellSlotId]>,
+            Box<[ActivatedNodeIndex]>,
+        )],
+    >,
     pub outputs: Box<[ActivatedOutput]>,
     output_materializations: Box<[ActivatedOutputMaterialization]>,
     pub constraints: Box<[ActivatedConstraint]>,
@@ -5035,7 +5041,7 @@ fn build_plan(
     // Pure nodes used only to compute an activation capture belong to that
     // capture's sampled dependency cone. Host updates may refresh their input
     // snapshots, but only the activation scrutinee schedules their execution.
-    let mut sampled_nodes = BTreeSet::new();
+    let mut sampled_nodes = BTreeMap::<NodeId, BTreeSet<NodeId>>::new();
     for node in artifact.nodes().iter().rev() {
         let pure = match &node.body {
             crate::ExecutableNodeBody::Operation(operation) => matches!(
@@ -5060,10 +5066,24 @@ fn build_plan(
         let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
         if !uses.is_empty()
             && uses.iter().all(|(consumer, ordinal)| {
-                activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains(consumer)
+                activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains_key(consumer)
             })
         {
-            sampled_nodes.insert(node.node);
+            let owners = uses
+                .iter()
+                .flat_map(|(consumer, ordinal)| {
+                    if activation_sample_edge(*consumer, *ordinal) {
+                        vec![*consumer]
+                    } else {
+                        sampled_nodes
+                            .get(consumer)
+                            .into_iter()
+                            .flat_map(|owners| owners.iter().copied())
+                            .collect()
+                    }
+                })
+                .collect();
+            sampled_nodes.insert(node.node, owners);
         }
     }
     let turn_trigger_inputs = inputs
@@ -5078,7 +5098,8 @@ fn build_plan(
                 .unwrap_or(&[]);
             uses.is_empty()
                 || !uses.iter().all(|(consumer, ordinal)| {
-                    activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains(consumer)
+                    activation_sample_edge(*consumer, *ordinal)
+                        || sampled_nodes.contains_key(consumer)
                 })
         })
         .map(|input| input.artifact_slot)
@@ -5106,6 +5127,12 @@ fn build_plan(
             activated,
             dependencies
                 .into_iter()
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            sampled_nodes
+                .iter()
+                .filter(|(_, owners)| owners.contains(&node.node))
+                .filter_map(|(sampled, _)| artifact_to_activated[sampled.get() as usize])
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         ));

@@ -2244,6 +2244,9 @@ fn computed_activation_pattern_dependencies_remain_sample_only() {
                 value: ResidentValueRef::F64(&expected),
             },
         ];
+        let initial = instance.prepare_initial_turn(&inputs).unwrap();
+        assert_eq!(initial.summary().dirty_nodes, 0);
+        initial.abort();
         instance.turn(&inputs).unwrap();
         assert_eq!(
             instance
@@ -2254,6 +2257,82 @@ fn computed_activation_pattern_dependencies_remain_sample_only() {
             ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0))
         );
     }
+}
+
+#[test]
+fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
+    use mech_engine::__resident::CapturedValueInput;
+
+    let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\nother := other-source<f64>\n~selected := 0\n~count := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\n~> other { count = count + 1 }\ncount\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let context = SnapshotValidationContext::new(artifact.schemas());
+    let values = artifact
+        .inputs()
+        .iter()
+        .enumerate()
+        .map(|(index, input)| {
+            let data = match index {
+                0 => ValueDataDraft::Matrix(
+                    [1.0, 2.0]
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .into(),
+                ),
+                1 => ValueDataDraft::F64(F64Bits::from_f64(2.0)),
+                2 => ValueDataDraft::F64(F64Bits::from_f64(4.0)),
+                _ => panic!("unexpected activation input"),
+            };
+            mech_core::ValueDraft {
+                schema: input.schema,
+                shape_values: Box::new([]),
+                data,
+            }
+            .finalize(&context)
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 76),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    assert_eq!(instance.plan.inputs.len(), 3);
+    let inputs = values
+        .iter()
+        .zip(instance.plan.inputs.iter())
+        .map(|(value, input)| CapturedValueInput {
+            slot: input.slot,
+            value,
+        })
+        .collect::<Vec<_>>();
+    let other_trigger = instance.plan.inputs[2].artifact_slot;
+    let initial = instance.prepare_initial_turn_values(&inputs).unwrap();
+    assert_eq!(initial.summary().dirty_nodes, 0);
+    initial.abort();
+    let prepared = instance
+        .prepare_turn_values_with_activation_triggers(&inputs, &[other_trigger])
+        .unwrap();
+    // The other scope and its downstream state/output steps execute; the
+    // first scope's sampled add would increase this count to four.
+    assert_eq!(prepared.summary().dirty_nodes, 3);
+    prepared.publish().unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(F64Bits::from_f64(1.0))
+    );
 }
 
 #[test]
@@ -2323,6 +2402,29 @@ fn activation_structural_patterns_and_computed_samples_are_canonical_and_stable(
             }
         }
     }
+}
+
+#[test]
+fn ordinary_match_bytecode_rejects_activation_only_sampled_patterns() {
+    let source = "expected := 2\nevent := [1 2]\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    let activation = graph["nodes"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|node| node["body"].get("Activation").is_some())
+        .unwrap();
+    let declaration = activation["body"]["Activation"].take();
+    activation["body"] = serde_json::json!({"Match": declaration});
+    sections.nodes = serde_json::to_vec(&graph).unwrap();
+    let error = mech_engine::decode_program_artifact_sections(&sections).unwrap_err();
+    assert!(format!("{error:?}").contains("invalid structural match pattern"));
 }
 
 #[test]

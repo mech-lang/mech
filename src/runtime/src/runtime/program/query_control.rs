@@ -335,8 +335,10 @@ impl Comparison<'_> {
                 ControlOperationBody::Comprehension(left),
                 ControlOperationBody::Comprehension(right),
             ) => self.comprehension_declaration(left, right),
-            (ControlOperationBody::Recur, ControlOperationBody::Recur)
-            | (ControlOperationBody::Suspend, ControlOperationBody::Suspend)
+            (ControlOperationBody::Recur(left), ControlOperationBody::Recur(right)) => {
+                left == right
+            }
+            (ControlOperationBody::Suspend, ControlOperationBody::Suspend)
             | (ControlOperationBody::Publish, ControlOperationBody::Publish) => true,
             _ => false,
         }
