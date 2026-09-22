@@ -532,6 +532,10 @@ fn comprehension_computed_patterns_evaluate_in_lexical_order() {
         "y := [x | x <- [1 2], x + 1 <- [2 4]]",
         [(vec![], matrix(&[1.0]))],
     );
+    execute(
+        "y := {x | (x, 1 + 1) <- {(1, 2)}}",
+        [(vec![], Data::Set(vec![f(1.0)].into_boxed_slice()))],
+    );
 }
 
 #[test]
