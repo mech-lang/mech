@@ -203,30 +203,6 @@ impl SemanticBuilder {
         Ok(self.emit_with_schema_draft(operation, inputs, schema, statement, "state-update", None))
     }
 
-    fn document_selection_order(
-        &mut self,
-        value: PendingValue,
-        syntax: &SyntaxNode,
-    ) -> Result<PendingValue, SourceSemanticError> {
-        let mut schema = self.schema_draft_of(value)?;
-        let SchemaBody::Matrix { dimensions, .. } = &mut schema.body else {
-            return Ok(value);
-        };
-        *dimensions = vec![
-            DimensionExpr::Multiply(dimensions.clone()),
-            DimensionExpr::Constant(1),
-        ]
-        .into_boxed_slice();
-        Ok(self.emit_with_schema_draft(
-            "core/assign/selection-order",
-            vec![value],
-            schema,
-            syntax,
-            "selection-addresses",
-            None,
-        ))
-    }
-
     fn document_nested_matrix_update(
         &mut self,
         base: PendingValue,
@@ -234,114 +210,70 @@ impl SemanticBuilder {
         replacement: PendingValue,
         arithmetic: &str,
         statement: &SyntaxNode,
-        value_syntax: &SyntaxNode,
+        _value_syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         let schema = self.schema_draft_of(base)?;
-        let SchemaBody::Matrix { element, .. } = &schema.body else {
+        let SchemaBody::Matrix { .. } = &schema.body else {
             unreachable!()
         };
-        let mut index_schema = schema.clone();
-        if let SchemaBody::Matrix { element, .. } = &mut index_schema.body {
-            *element = Box::new(SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64));
-        }
-        let mut indices = self.emit_with_schema_draft(
-            "core/assign/identity-indices",
-            vec![base],
-            index_schema,
-            statement,
-            "selection-addresses",
-            None,
-        );
+        // The final RMW owner retains the complete selector chain. This keeps
+        // turn-varying selector populations live without materializing a dense
+        // selected-value proxy or a base-sized identity-address matrix.
+        let mut selected_schema = schema.clone();
+        let mut selection_plan = Vec::new();
         for item in items {
-            indices = self.select(indices, item)?;
-        }
-        let mut selected_schema = self.schema_draft_of(indices)?;
-        match &mut selected_schema.body {
-            SchemaBody::Matrix {
-                element: selected, ..
-            } => *selected = element.clone(),
-            body => *body = *element.clone(),
-        }
-        let incoming = self.schema_draft_of(replacement)?;
-        let incoming_element = match &incoming.body {
-            SchemaBody::Matrix { element, .. } => element.as_ref(),
-            scalar => scalar,
-        };
-        let replacement = if incoming_element == element.as_ref() {
-            let replacement = self.document_assignment_broadcast(
-                replacement,
-                selected_schema.clone(),
-                value_syntax,
-            )?;
-            self.conform_assignment_value(replacement, selected_schema.clone(), value_syntax)?
-        } else {
-            let mut selected = base;
-            for item in items {
-                selected = self.select(selected, item)?;
-            }
-            let Some((inputs, _)) =
-                self.resolve_maintained_call(arithmetic, vec![selected, replacement], statement)?
-            else {
-                return Err(internal(
-                    SourceSemanticAnchor::for_node(statement),
-                    format!("assignment operation {arithmetic} has no maintained type declaration"),
-                ));
+            let selectors = match item {
+                SubscriptItemSyntax::Bracket(bracket) => {
+                    self.subscript_values(&bracket.values())?
+                }
+                SubscriptItemSyntax::Brace(brace) => self.subscript_values(&brace.values())?,
+                _ => unreachable!("nested matrix updates admit bracket and brace selectors"),
             };
-            inputs[1]
-        };
-        let replacement =
-            self.document_assignment_broadcast(replacement, selected_schema, value_syntax)?;
-        let indices = self.document_selection_order(indices, statement)?;
-        let replacement = self.document_selection_order(replacement, value_syntax)?;
+            let mode = match selectors.as_slice() {
+                [None] => 1,
+                [Some(_)] => 2,
+                [Some(_), None] => 3,
+                [None, Some(_)] => 4,
+                [Some(_), Some(_)] => 5,
+                [None, None] => 6,
+                _ => unreachable!("selection validation checks arity"),
+            };
+            let (_, selectors, next_schema) =
+                self.prepare_selection_schema(selected_schema, selectors, item.syntax())?;
+            selection_plan
+                .push(self.constant_exact(SchemaBody::Index, ValueDataDraft::Index(mode)));
+            selection_plan.extend(selectors);
+            selected_schema = next_schema;
+        }
+        let declaration = self.source_type_declaration(arithmetic).map_err(|_| {
+            internal(
+                SourceSemanticAnchor::for_node(statement),
+                format!("assignment operation {arithmetic} has no maintained type declaration"),
+            )
+        })?;
+        let (inputs, _) = self.resolve_declared_call_with_destination(
+            arithmetic,
+            vec![base, replacement],
+            statement,
+            declaration,
+            Some(selected_schema),
+        )?;
         let operation = format!(
-            "core/assign/indexed-axis/{}",
+            "core/assign/nested/{}",
             arithmetic.strip_prefix("math/").unwrap()
         );
-        Ok(self.emit_with_schema_draft(
-            &operation,
-            vec![base, replacement, indices],
-            schema,
-            statement,
-            "state-update",
-            None,
-        ))
-    }
-
-    fn document_assignment_broadcast(
-        &mut self,
-        value: PendingValue,
-        mut selected: SchemaDraft,
-        syntax: &SyntaxNode,
-    ) -> Result<PendingValue, SourceSemanticError> {
-        let incoming = self.schema_draft_of(value)?;
-        let SchemaBody::Matrix {
-            element,
-            dimensions,
-        } = &incoming.body
-        else {
-            return Ok(value);
-        };
-        let SchemaBody::Matrix {
-            element: target,
-            dimensions: target_dimensions,
-        } = &mut selected.body
-        else {
-            return Ok(value);
-        };
-        if dimensions == target_dimensions {
-            return Ok(value);
-        }
-        // Preserve the arithmetic operand kind and materialize its maintained
-        // broadcast before flattening nested selection addresses.
-        *target = element.clone();
-        Ok(self.emit_with_schema_draft(
-            "core/assign/broadcast",
-            vec![value],
-            selected,
-            syntax,
-            "assignment-broadcast",
-            None,
-        ))
+        let mut inputs = vec![base, inputs[1]];
+        inputs.extend(selection_plan);
+        Ok(
+            self.emit_with_schema_draft(
+                &operation,
+                inputs,
+                schema,
+                statement,
+                "state-update",
+                None,
+            ),
+        )
     }
 
     fn conform_assignment_value(

@@ -151,6 +151,18 @@ pub struct CanonicalMixedSourcePrograms {
     pub compute_initializers: CanonicalSourceProgram,
 }
 
+pub use document_lowering::CanonicalCoordinatorPlan;
+
+/// Compute programs plus retained coordinator lowering, ready for interface planning.
+/// The runtime compiles the compute artifacts before completing `coordinator`.
+pub struct CanonicalMixedSourcePreparation {
+    pub region_name: String,
+    pub placement: ComputePlacement,
+    pub coordinator: CanonicalCoordinatorPlan,
+    pub compute: CanonicalSourceProgram,
+    pub compute_initializers: CanonicalSourceProgram,
+}
+
 /// A typed route from document presentation to an existing artifact output.
 /// Source anchors are held once in `SourceSemanticMap::outputs[output]`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -864,8 +876,38 @@ impl CanonicalSourceFrontend {
         retained_outputs: &BTreeSet<String>,
         resolved_source_modules: &BTreeSet<String>,
     ) -> Result<CanonicalMixedSourcePrograms, SourceSemanticError> {
+        let prepared = self.prepare_mixed_document_with_planning_contract(
+            document,
+            catalog,
+            input_schemas,
+            resource_writes,
+            external_inputs,
+            retained_outputs,
+            resolved_source_modules,
+        )?;
+        Ok(CanonicalMixedSourcePrograms {
+            region_name: prepared.region_name,
+            placement: prepared.placement,
+            coordinator: prepared.coordinator.compile(BTreeMap::new())?,
+            compute: prepared.compute,
+            compute_initializers: prepared.compute_initializers,
+        })
+    }
+
+    /// Compile the compute partitions and retain coordinator units until the
+    /// caller can provide schemas for sampled outputs and compute telemetry.
+    pub fn prepare_mixed_document_with_planning_contract(
+        &self,
+        document: &DocumentSyntax,
+        catalog: Arc<mech_core::FunctionCatalog>,
+        input_schemas: BTreeMap<String, SchemaBody>,
+        resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
+        external_inputs: &BTreeSet<String>,
+        retained_outputs: &BTreeSet<String>,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> Result<CanonicalMixedSourcePreparation, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_mixed_document_with_catalog_and_resources(
+        document_lowering::prepare_mixed_document_with_catalog_and_resources(
             document,
             catalog,
             input_schemas,
@@ -5290,6 +5332,23 @@ impl SemanticBuilder {
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<PendingSelection, SourceSemanticError> {
+        let (operation, selected, schema) =
+            self.prepare_selection_schema(self.schema_draft_of(source)?, selectors, syntax)?;
+        let mut inputs = vec![source];
+        inputs.extend(selected);
+        Ok(PendingSelection {
+            operation,
+            inputs,
+            schema,
+        })
+    }
+
+    fn prepare_selection_schema(
+        &mut self,
+        source: SchemaDraft,
+        selectors: Vec<Option<PendingValue>>,
+        syntax: &SyntaxNode,
+    ) -> Result<(Option<&'static str>, Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
         if selectors.is_empty() || selectors.len() > 2 {
             return Err(SourceSemanticError {
                 code: "source-semantics/invalid-selection-arity",
@@ -5298,26 +5357,18 @@ impl SemanticBuilder {
             });
         }
         if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
-            return Ok(PendingSelection {
-                operation: None,
-                inputs: vec![source],
-                schema: self.schema_draft_of(source)?,
-            });
+            return Ok((None, Vec::new(), source));
         }
         let mut parameters = Vec::new();
         let body = embed_schema_draft(
-            &self.schema_draft_of(source)?,
+            &source,
             &mut parameters,
             SourceSemanticAnchor::for_node(syntax),
         )?;
         if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
-            return Ok(PendingSelection {
-                operation: None,
-                inputs: vec![source],
-                schema: self.schema_draft_of(source)?,
-            });
+            return Ok((None, Vec::new(), source));
         }
-        let mut inputs = vec![source];
+        let mut inputs = Vec::new();
         let mut counts = Vec::new();
         let mut scalar = Vec::new();
         for selector in &selectors {
@@ -5445,14 +5496,14 @@ impl SemanticBuilder {
                 });
             }
         };
-        Ok(PendingSelection {
-            operation: Some(name),
+        Ok((
+            Some(name),
             inputs,
-            schema: SchemaDraft {
+            SchemaDraft {
                 body: output,
                 dimension_parameters: parameters.into_boxed_slice(),
             },
-        })
+        ))
     }
 
     fn constant_selection_ordinal(&self, value: PendingValue) -> Option<u64> {
