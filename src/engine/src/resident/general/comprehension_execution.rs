@@ -437,6 +437,7 @@ fn indexed_schema_id(index: &[(SchemaKey, SchemaId)], key: SchemaKey) -> Option<
 
 fn source_schema_contexts(
     value: &mech_core::snapshot::Value,
+    plan_schemas: &SchemaTable,
 ) -> Option<(Arc<SourceSchemaContext>, Arc<[Arc<SourceSchemaContext>]>)> {
     let root_owner = value.schemas()?;
     let mut discovery_meter = ResidentBudgetMeter::default();
@@ -468,6 +469,8 @@ fn source_schema_contexts(
                 .enumerate()
                 .filter_map(|(index, (_, schemas, _))| (index != root_index).then_some(schemas)),
         )
+        .ok()?
+        .extend_preserving_ids(plan_schemas)
         .ok()?;
     let binding_schema_index = source_schema_index(&binding_schemas).ok()?;
     let binding_schemas = Arc::new(binding_schemas);
@@ -643,6 +646,7 @@ impl SourceContextMaterializationBound {
 
 fn source_context_materialization_bound(
     value: &mech_core::snapshot::Value,
+    plan_schemas: &SchemaTable,
     meter: &mut ResidentBudgetMeter,
 ) -> Result<SourceContextMaterializationBound, ResidentKernelError> {
     let mut bound = SourceContextMaterializationBound::default();
@@ -650,6 +654,13 @@ fn source_context_materialization_bound(
     bound.temporary_bytes = owners.allocation_bytes;
     for owner in &owners.owners {
         bound.add_owner(owner, meter)?;
+    }
+    if !owners
+        .owners
+        .iter()
+        .any(|owner| std::ptr::eq(owner.as_ref(), plan_schemas))
+    {
+        bound.add_owner(plan_schemas, meter)?;
     }
     bound.add_binding_merge_work()?;
     Ok(bound)
@@ -794,6 +805,23 @@ fn adapt_resolved_pattern_item(
     schemas: &SchemaTable,
     projections: &StructuralProjectionTable,
 ) -> Result<Option<ValueDataDraft>, ResidentKernelError> {
+    fn binding_projection_schema(
+        schema: Option<SchemaId>,
+        projection_schemas: &SchemaTable,
+        source_context: Option<&SourceSchemaContext>,
+    ) -> Result<Option<SchemaId>, ResidentKernelError> {
+        let (Some(schema), Some(context)) = (schema, source_context) else {
+            return Ok(schema);
+        };
+        let key = projection_schemas
+            .entry(schema)
+            .ok_or(ResidentKernelError::InvalidInput)?
+            .key();
+        indexed_schema_id(&context.binding_schema_index, key)
+            .map(Some)
+            .ok_or(ResidentKernelError::InvalidInput)
+    }
+
     if matches!(target, SchemaBody::Dynamic) {
         let schema = item.value_schema.ok_or(ResidentKernelError::InvalidInput)?;
         let data = if let (Some(source_data), Some(context)) =
@@ -861,10 +889,16 @@ fn adapt_resolved_pattern_item(
                 .into_vec()
                 .into_iter()
                 .map(|data| {
+                    let projection_schema = projection.as_ref().map(|(schema, _)| *schema);
+                    let value_schema = binding_projection_schema(
+                        projection_schema,
+                        projection_schemas,
+                        source_context.as_deref(),
+                    )?;
                     adapt_resolved_pattern_item(
                         ResolvedPatternItem {
-                            projection_schema: projection.as_ref().map(|(schema, _)| *schema),
-                            value_schema: projection.as_ref().map(|(schema, _)| *schema),
+                            projection_schema,
+                            value_schema,
                             shape_values: projection
                                 .as_ref()
                                 .map_or_else(Box::default, |(_, shape)| shape.clone()),
@@ -901,10 +935,16 @@ fn adapt_resolved_pattern_item(
                             projection_schemas,
                         )
                     });
+                    let projection_schema = projection.as_ref().map(|(schema, _)| *schema);
+                    let value_schema = binding_projection_schema(
+                        projection_schema,
+                        projection_schemas,
+                        source_context.as_deref(),
+                    )?;
                     adapt_resolved_pattern_item(
                         ResolvedPatternItem {
-                            projection_schema: projection.as_ref().map(|(schema, _)| *schema),
-                            value_schema: projection.as_ref().map(|(schema, _)| *schema),
+                            projection_schema,
+                            value_schema,
                             shape_values: projection.map_or_else(Box::default, |(_, shape)| shape),
                             body: source,
                             data,
@@ -2304,7 +2344,7 @@ pub(super) fn resident_pattern_item(
         if value.schema_key() != definition.key() || source != definition.schema() {
             return None;
         }
-        let (context, contexts) = source_schema_contexts(value)?;
+        let (context, contexts) = source_schema_contexts(value, schemas)?;
         let source_schema = value.schema();
         let body = context
             .schemas
@@ -2349,9 +2389,9 @@ pub(super) fn admit_pattern_item_materialization(
     schema: SchemaId,
     array: bool,
     pattern_work: u64,
-    binding_count: u64,
+    _binding_count: u64,
     equality_count: u64,
-    dense_finalization_count: u64,
+    snapshot_finalization_count: u64,
     clone_multiplicity: u64,
     schemas: &mech_core::SchemaTable,
 ) -> Result<u64, ResidentKernelError> {
@@ -2369,13 +2409,7 @@ pub(super) fn admit_pattern_item_materialization(
                 | ResidentValueRef::F64(_)
                 | ResidentValueRef::String(_)
         );
-    let finalization_count = if dense_array {
-        dense_finalization_count
-    } else {
-        binding_count
-            .checked_add(equality_count)
-            .ok_or(ResidentKernelError::InvalidShape)?
-    };
+    let finalization_count = snapshot_finalization_count;
     let footprint = match value {
         ResidentValueRef::Snapshot([Some(value)]) => {
             let expected = schemas
@@ -2388,7 +2422,8 @@ pub(super) fn admit_pattern_item_materialization(
             if value.schema_key() != expected.key() || source != expected.schema() {
                 return Err(ResidentKernelError::InvalidInput);
             }
-            source_context_bound = source_context_materialization_bound(value, &mut meter)?;
+            source_context_bound =
+                source_context_materialization_bound(value, schemas, &mut meter)?;
             let footprint = budget::measure_canonical_value_footprint(&mut meter, value, &owner)?;
             if finalization_count > 0 {
                 let mut finalization_meter = ResidentBudgetMeter::default();
@@ -2537,13 +2572,15 @@ pub(super) fn admit_pattern_item_materialization(
         .ok_or(ResidentKernelError::InvalidShape)?;
     meter.charge_comparison_work(equality_work)?;
     meter.charge_compute_work(source_context_bound.work)?;
-    // One owned draft is materialized for the shared scrutinee. Pattern descent
-    // keeps every ancestor alive while cloning the next child, and a binding or
-    // equality leaf can clone once more. `clone_multiplicity` is the sum of the
-    // maximum structural depth of every arm that can be attempted.
-    let copies = clone_multiplicity
-        .checked_add(1)
-        .ok_or(ResidentKernelError::InvalidShape)?;
+    // One owned draft is materialized for the shared scrutinee. Source-backed
+    // descent owns both the draft child and its canonical source child at every
+    // level while their ancestors remain live. Other lanes own one child per
+    // level. `clone_multiplicity` is the sum of the maximum structural depth of
+    // every arm that can be attempted.
+    let copies = pattern_item_copy_multiplicity(
+        matches!(value, ResidentValueRef::Snapshot([Some(_)])),
+        clone_multiplicity,
+    )?;
     meter.charge_temporary_bytes(
         item_clone_bytes(footprint)?
             .checked_mul(copies)
@@ -2569,6 +2606,16 @@ pub(super) fn admit_pattern_item_materialization(
         .admit_control()?
         .into_plan();
     Ok(canonical_finalization_work)
+}
+
+fn pattern_item_copy_multiplicity(
+    source_backed: bool,
+    clone_multiplicity: u64,
+) -> Result<u64, ResidentKernelError> {
+    clone_multiplicity
+        .checked_mul(if source_backed { 2 } else { 1 })
+        .and_then(|copies| copies.checked_add(1))
+        .ok_or(ResidentKernelError::InvalidShape)
 }
 
 pub(super) fn resident_array_pattern_item(
@@ -6900,6 +6947,13 @@ mod tests {
     }
 
     #[test]
+    fn source_backed_descent_counts_draft_and_canonical_children_per_level() {
+        assert_eq!(pattern_item_copy_multiplicity(false, 3).unwrap(), 4);
+        assert_eq!(pattern_item_copy_multiplicity(true, 3).unwrap(), 7);
+        assert!(pattern_item_copy_multiplicity(true, u64::MAX).is_err());
+    }
+
+    #[test]
     fn snapshot_pattern_binding_and_equality_bound_canonical_finalization() {
         let mut builder = SchemaTableBuilder::new();
         let schema = builder
@@ -6946,7 +7000,7 @@ mod tests {
             1,
             1,
             0,
-            0,
+            1,
             1,
             &schemas,
         )
@@ -6980,7 +7034,7 @@ mod tests {
             1,
             0,
             1,
-            0,
+            1,
             1,
             &schemas,
         )
@@ -7022,14 +7076,14 @@ mod tests {
                 schema,
                 false,
                 1,
+                0,
+                0,
                 u64::MAX,
-                0,
-                0,
                 1,
                 &schemas,
             )
             .is_err(),
-            "aggregate binding work must be checked before any binding is finalized"
+            "aggregate snapshot finalization work must be checked before finalization"
         );
     }
 
@@ -7948,7 +8002,7 @@ mod tests {
         )
         .unwrap();
         assert!(saw_plan && saw_foreign);
-        let (_, contexts) = source_schema_contexts(&outer).expect("source contexts");
+        let (_, contexts) = source_schema_contexts(&outer, &plan).expect("source contexts");
         assert!(contexts.windows(2).all(|pair| {
             (Arc::as_ptr(&pair[0].owner) as usize) < (Arc::as_ptr(&pair[1].owner) as usize)
         }));
@@ -8251,8 +8305,21 @@ mod tests {
         )
         .unwrap();
         let plan_matrix = matrix(&mut plan);
+        let plan_adaptation = plan
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::Dynamic, SchemaBody::Dynamic].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
         let plan = plan.finish().unwrap();
         let plan_matrix = plan.resolve(plan_matrix).unwrap();
+        let plan_adaptation = plan.resolve(plan_adaptation).unwrap();
         let (plan, _) = plan.into_parts();
         assert!(
             plan.find_by_key(foreign.entry(tuple).unwrap().key())
@@ -8300,6 +8367,31 @@ mod tests {
         let tuple_item = item.child(0, &plan, &projections).unwrap();
         let number = tuple_item.clone().child(0, &plan, &projections).unwrap();
         assert!(matches!(number.scalar(), Some(Item::F64(value)) if value == 7.0));
+
+        let adapted = tuple_item
+            .clone()
+            .into_binding(plan_adaptation, &[], &plan, &projections)
+            .unwrap()
+            .expect("the foreign tuple adapts to a plan-only annotated tuple");
+        let adapted = finalize_pattern_binding(
+            plan_adaptation,
+            &adapted.shape_values,
+            adapted.data,
+            adapted.schemas,
+            adapted.schema_index,
+            &plan,
+            &SnapshotCanonicalizationBudget::new(1_000_000),
+        )
+        .expect("the merged binding arena owns the plan-only adaptation target");
+        let ValueData::Tuple(adapted) = adapted.data() else {
+            panic!("plan-only adaptation is a tuple")
+        };
+        assert!(matches!(
+            adapted.as_ref(),
+            [ValueData::Dynamic(left), ValueData::Dynamic(right)]
+                if matches!(left.value().map(Value::data), Some(ValueData::F64(value)) if value.to_f64() == 7.0)
+                    && matches!(right.value().map(Value::data), Some(ValueData::Bool(true)))
+        ));
 
         let dynamic = projections
             .matrix_element(plan_matrix)
@@ -8542,6 +8634,27 @@ mod tests {
             .child(0, &root, &root_projections)
             .expect("the nested owner supplies its own tuple projection");
         assert!(matches!(number.scalar(), Some(Item::F64(value)) if value == 9.0));
+        let number = number
+            .into_binding(dynamic, &[], &root, &root_projections)
+            .unwrap()
+            .expect("the projected nested-owner child binds through Dynamic");
+        let number = finalize_pattern_binding(
+            dynamic,
+            &number.shape_values,
+            number.data,
+            number.schemas,
+            number.schema_index,
+            &root,
+            &SnapshotCanonicalizationBudget::new(1_000_000),
+        )
+        .expect("the projected child ID is translated into the merged arena");
+        let ValueData::Dynamic(number) = number.data() else {
+            panic!("projected number binding is Dynamic")
+        };
+        assert!(matches!(
+            number.value().map(Value::data),
+            Some(ValueData::F64(value)) if value.to_f64() == 9.0
+        ));
     }
 
     #[test]

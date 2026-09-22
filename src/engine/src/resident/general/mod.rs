@@ -177,7 +177,7 @@ pub enum ActivatedMatchPattern {
         work: u64,
         binding_count: u64,
         equality_count: u64,
-        dense_finalization_count: u64,
+        snapshot_finalization_count: u64,
         clone_depth: u64,
     },
 }
@@ -5840,6 +5840,40 @@ mod shape_fact_tests {
     };
 
     #[test]
+    fn structural_finalization_count_follows_activated_snapshot_storage() {
+        let region = |kind| ResidentRegion {
+            kind,
+            offset: 0,
+            len: 1,
+            shape: ResidentShape::SCALAR,
+        };
+        let pattern = crate::CollectionPattern::Tuple(
+            vec![
+                crate::CollectionPattern::Bind {
+                    local: 0,
+                    schema: ActivatedPatternBinding {
+                        region: region(ResidentValueKind::F64),
+                        schema: SchemaId::new(0),
+                    },
+                },
+                crate::CollectionPattern::Bind {
+                    local: 1,
+                    schema: ActivatedPatternBinding {
+                        region: region(ResidentValueKind::Snapshot),
+                        schema: SchemaId::new(1),
+                    },
+                },
+                crate::CollectionPattern::Equal(ActivatedPatternValue {
+                    location: ResidentReadLocation::Constant(region(ResidentValueKind::Snapshot)),
+                    schema: SchemaId::new(2),
+                }),
+            ]
+            .into_boxed_slice(),
+        );
+        assert_eq!(snapshot_pattern_finalization_count(&pattern), Some(2));
+    }
+
+    #[test]
     fn aborted_state_payload_is_discarded_before_epoch_evidence() {
         fn string_arena(budget: &ManagedMemoryBudget) -> TypedResidentArena {
             let mut arena = TypedResidentArena::allocate_projected_sizes(ResidentArenaSizes {
@@ -6389,6 +6423,40 @@ fn prepare_match_node(
     })
 }
 
+fn snapshot_pattern_finalization_count(
+    pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+) -> Option<u64> {
+    let mut pending = vec![pattern];
+    let mut count = 0_u64;
+    while let Some(pattern) = pending.pop() {
+        match pattern {
+            crate::CollectionPattern::Wildcard => {}
+            crate::CollectionPattern::Bind { schema, .. }
+                if schema.region.kind == ResidentValueKind::Snapshot =>
+            {
+                count = count.checked_add(1)?;
+            }
+            crate::CollectionPattern::Equal(value)
+                if value.location.region().kind == ResidentValueKind::Snapshot =>
+            {
+                count = count.checked_add(1)?;
+            }
+            crate::CollectionPattern::Bind { .. } | crate::CollectionPattern::Equal(_) => {}
+            crate::CollectionPattern::Tuple(items) => pending.extend(items.iter()),
+            crate::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            } => {
+                pending.extend(prefix.iter());
+                pending.extend(rest.iter().map(Box::as_ref));
+                pending.extend(suffix.iter());
+            }
+        }
+    }
+    Some(count)
+}
+
 fn activate_match_pattern(
     artifact: &ProgramArtifact,
     owner: NodeId,
@@ -6471,8 +6539,11 @@ fn activate_match_pattern(
         crate::MatchPattern::Structural(pattern) => {
             let metrics = crate::pattern_metrics(pattern)
                 .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+            let pattern = structural(artifact, owner, owner_block, pattern, layout)?;
+            let snapshot_finalization_count = snapshot_pattern_finalization_count(&pattern)
+                .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
             ActivatedMatchPattern::Structural {
-                pattern: structural(artifact, owner, owner_block, pattern, layout)?,
+                pattern,
                 work: u64::try_from(metrics.nodes).map_err(|_| {
                     ResidentActivationError::UnsupportedControlLayout { node: owner }
                 })?,
@@ -6482,9 +6553,7 @@ fn activate_match_pattern(
                 equality_count: u64::try_from(metrics.equalities).map_err(|_| {
                     ResidentActivationError::UnsupportedControlLayout { node: owner }
                 })?,
-                dense_finalization_count: u64::try_from(metrics.dense_finalizations).map_err(
-                    |_| ResidentActivationError::UnsupportedControlLayout { node: owner },
-                )?,
+                snapshot_finalization_count,
                 clone_depth: u64::try_from(metrics.depth).map_err(|_| {
                     ResidentActivationError::UnsupportedControlLayout { node: owner }
                 })?,

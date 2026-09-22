@@ -1216,6 +1216,16 @@
           "--locked",
           "--offline",
           "-p",
+          "mech-core",
+          "--lib"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
           "mech-engine",
           "--no-default-features",
           "--features",
