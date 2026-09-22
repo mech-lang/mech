@@ -2492,12 +2492,22 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
     );
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
     let program = CanonicalSourceFrontend
         .compile_ordered_documents_with_catalog(
             &[dependency, main],
-            std::sync::Arc::new(catalog.build().unwrap()),
+            std::sync::Arc::clone(&catalog),
         )
         .unwrap();
+    let mut first_hidden = root(2, "value := 1\n<+ value\nvalue\n");
+    first_hidden.publish_result = false;
+    let mut second_hidden = root(2, "value := 2\n<+ value\nvalue\n");
+    second_hidden.publish_result = false;
+    let error = CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(&[first_hidden, second_hidden], catalog)
+        .err()
+        .unwrap();
+    assert!(error.message.contains("ordered root identity is repeated"));
     assert_eq!(
         program
             .program()
