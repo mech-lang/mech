@@ -1684,3 +1684,116 @@ fn selected_f64_matrix_updates_propagate_signed_zero_changes() {
         }
     }
 }
+
+#[test]
+fn selected_snapshot_matrix_updates_propagate_signed_zero_changes() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_engine::resident::CapturedValueInput;
+
+    struct CheckedUpdate {
+        kernel: mech_core::BoundResidentKernel,
+        schemas: mech_core::SchemaTable,
+    }
+
+    fn checked_update(
+        kernel: &mech_core::BoundResidentKernel,
+        inputs: &dyn mech_core::ResidentKernelInputs,
+        output: mech_core::ResidentValueMut<'_>,
+    ) -> Result<bool, mech_core::ResidentKernelError> {
+        struct Inputs<'a>(&'a dyn mech_core::ResidentKernelInputs);
+        impl mech_core::ResidentKernelInputs for Inputs<'_> {
+            fn len(&self) -> usize {
+                self.0.len()
+            }
+            fn get(&self, index: usize) -> Option<mech_core::ResidentValueRef<'_>> {
+                self.0.get(index)
+            }
+        }
+        let checked = kernel.retained_state::<CheckedUpdate>().unwrap();
+        let mech_core::ResidentValueMut::Snapshot(target) = output else {
+            panic!("expected a snapshot selected update")
+        };
+        assert_eq!(target.len(), 1);
+        let before = target[0].clone();
+        let changed = checked.kernel.execute(
+            &Inputs(inputs),
+            mech_core::ResidentValueMut::Snapshot(target),
+        )?;
+        let expected = match (before.as_ref(), target[0].as_ref()) {
+            (Some(before), Some(after)) => !before
+                .snapshot_eq(&checked.schemas, after, &checked.schemas)
+                .map_err(|_| mech_core::ResidentKernelError::InvalidOutput)?,
+            (None, None) => false,
+            _ => true,
+        };
+        assert_eq!(
+            changed, expected,
+            "kernel must report representation changes"
+        );
+        Ok(changed)
+    }
+
+    let source = "delta := signal<f32>\n~a := [-0.0<f32> -0.0<f32>; -0.0<f32> -0.0<f32>]\na[1,:] += [delta]\n1.0<f32> / a[1,1]\n";
+    let compiled = compiled(source);
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    for artifact in [
+        artifact,
+        mech_engine::decode_program_artifact_bytecode_v1(&bytecode).unwrap(),
+    ] {
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x59d, 0),
+            &artifact,
+            &catalog.build().unwrap(),
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let updates = instance
+            .plan
+            .steps
+            .iter()
+            .enumerate()
+            .filter_map(|(index, step)| match step {
+                mech_engine::resident::ActivatedTurnStep::Kernel(node)
+                    if matches!(
+                        node.construction,
+                        mech_core::OutputConstruction::ReadModifyWrite { .. }
+                    ) =>
+                {
+                    Some((index, node.kernel.clone()))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(!updates.is_empty());
+        for (index, kernel) in updates {
+            instance.plan.replace_kernel_for_test(
+                index,
+                mech_core::BoundResidentKernel::new(checked_update, Box::new([]))
+                    .with_retained_state(std::sync::Arc::new(CheckedUpdate {
+                        kernel,
+                        schemas: artifact.schemas().clone(),
+                    })),
+            );
+        }
+        for delta in [-0.0_f32, 0.0_f32, -0.0_f32] {
+            let value = ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::F32(mech_core::snapshot::F32Bits::from_f32(delta)),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            instance
+                .prepare_turn_values(&[CapturedValueInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: &value,
+                }])
+                .unwrap()
+                .publish()
+                .unwrap();
+        }
+    }
+}

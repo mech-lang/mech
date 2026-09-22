@@ -287,7 +287,7 @@ fn execute(
     let changed = match output {
         ResidentValueMut::Snapshot([target]) => {
             let changed = !current
-                .language_eq(schemas, &next, schemas)
+                .snapshot_eq(schemas, &next, schemas)
                 .map_err(|_| ResidentKernelError::InvalidOutput)?;
             *target = Some(next);
             changed
