@@ -410,9 +410,13 @@ fn compile_collected_document(
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let mut builder = match catalog {
         Some(catalog) if !input_schemas.is_empty() => {
-            SemanticBuilder::with_function_catalog_and_input_schemas(anchor, catalog, input_schemas)
+            SemanticBuilder::with_function_catalog_and_input_schemas(
+                anchor,
+                catalog,
+                input_schemas,
+            )?
         }
-        Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog),
+        Some(catalog) => SemanticBuilder::with_function_catalog(anchor, catalog)?,
         None => SemanticBuilder::new(anchor),
     };
     builder.resource_writes = resource_writes;
@@ -1404,7 +1408,7 @@ pub(super) fn compile_ordered_documents(
         )
     })?;
     let anchor = SourceSemanticAnchor::for_node(first.document.syntax());
-    let mut builder = SemanticBuilder::with_function_catalog(anchor, catalog);
+    let mut builder = SemanticBuilder::with_function_catalog(anchor, catalog)?;
     let mut exports_by_root = BTreeMap::<usize, BTreeMap<String, PendingBinding>>::new();
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
@@ -1417,6 +1421,19 @@ pub(super) fn compile_ordered_documents(
                 "ordered root identity is repeated".to_owned(),
             ));
         }
+        // Each retained root owns its callable imports and local definitions.
+        // Shared graph values do not grant another root's function visibility.
+        builder.function_environment = Some(
+            crate::FunctionEnvironment::from_catalog_defaults(
+                builder
+                    .function_catalog
+                    .as_ref()
+                    .expect("ordered roots have a catalog"),
+            )
+            .map_err(|error| internal(anchor, error.display_message()))?,
+        );
+        builder.function_imports.clear();
+        builder.local_functions.clear();
         builder.resource_writes = root.resource_writes.clone();
         builder.resolved_source_modules = root.resolved_modules.clone();
         builder.input_schema_overrides = root
