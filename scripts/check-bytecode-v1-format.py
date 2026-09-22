@@ -18,14 +18,15 @@ MANIFEST = CORPUS / "manifest.json"
 # Native-build plans have their own content-addressed contract and are excluded.
 # Source fixtures were regenerated for graph payload revision 10; their only wire
 # changes in that migration are the graph revision and checksum.
-EXPECTED_MANIFEST_SHA256 = "d63561351b5a4dc9c778cdbf685e1122942c2a1418cf7c7826142cbd67be28af"
+# R16 also updates the structural-match fixture's canonical pattern metadata.
+EXPECTED_MANIFEST_SHA256 = "30e8fd02318891384a36225089098c20172afa6e28912ede0a5713d95ebb6545"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
     "literal-f64.mecb": "a0985b7d263a4bdf76c6df38e17da1ed72cb6d0ac6099945f95eebba5923cf98",
     "scalar-add-f64.mecb": "0737fe5c68f0918b484eaab67b608a94268584061823f84c311cc6f8efad542d",
-    "structural-match.mecb": "d9395ecb91313247f48d864332e3db2d2f4811d237ecbb9f43bfbad35619d73f",
+    "structural-match.mecb": "c5792ea811f22b827e7d17feb3c098948b267368d834111135d394bbd5cbb6c7",
     "fixed-matrix-add-f64.mecb": "db8655ef7a99f7bcb1d54a0251a8ea33518c1fe6f835d1899c60f0b1608888bc",
     "dynamic-matrix-add-f64.mecb": "da476b9ca85677957ee5b90a66c3716189d4a66c762436c02c8635f8073788d6",
     "variadic-horzcat-f64.mecb": "2666e3463e45b558b47d55dfe5c0313d07e61300727b8614625115e9aa2c5d38",

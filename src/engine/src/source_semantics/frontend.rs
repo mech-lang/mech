@@ -2655,6 +2655,21 @@ struct SourceMatchArm {
     syntax: SyntaxNode,
 }
 
+fn structurally_irrefutable<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
+        crate::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        crate::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        crate::CollectionPattern::Equal(_)
+        | crate::CollectionPattern::Enum { .. }
+        | crate::CollectionPattern::Array { .. } => false,
+    }
+}
+
 #[derive(Clone, Copy)]
 enum PendingControlValue {
     Constant(usize),
@@ -8933,7 +8948,7 @@ impl SemanticBuilder {
                 })
             })
             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
-        self.lower_match_expression(scrutinee, &arms, syntax, false)
+        self.lower_match_expression(scrutinee, &arms, syntax, false, None)
     }
 
     fn lower_match_expression(
@@ -8942,6 +8957,7 @@ impl SemanticBuilder {
         arms: &[SourceMatchArm],
         syntax: &SyntaxNode,
         partial: bool,
+        expected_result: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
         let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
             code: "source-semantics/unsupported-match",
@@ -9035,12 +9051,15 @@ impl SemanticBuilder {
                                     }) if matches!(
                                         scrutinee_schema.body,
                                         SchemaBody::Enum { .. }
-                                    ) => crate::MatchPattern::Structural(
-                                        crate::CollectionPattern::Enum {
-                                            ordinal: *ordinal,
-                                            payload: None,
-                                        },
-                                    ),
+                                    ) =>
+                                    {
+                                        crate::MatchPattern::Structural(
+                                            crate::CollectionPattern::Enum {
+                                                ordinal: *ordinal,
+                                                payload: None,
+                                            },
+                                        )
+                                    }
                                     _ => crate::MatchPattern::Literal(index),
                                 }
                             }
@@ -9104,6 +9123,7 @@ impl SemanticBuilder {
                         scrutinee,
                         &mut inputs,
                         &mut captures,
+                        None,
                     )?;
                     if schema.body != SchemaBody::Bool {
                         return Err(SourceSemanticError {
@@ -9124,6 +9144,7 @@ impl SemanticBuilder {
                     scrutinee,
                     &mut inputs,
                     &mut captures,
+                    expected_result,
                 )?;
                 if result_schema
                     .as_ref()
@@ -9212,6 +9233,7 @@ impl SemanticBuilder {
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
         captures: &mut Vec<(u16, SchemaDraft)>,
+        expected: Option<&SchemaDraft>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
@@ -9227,9 +9249,18 @@ impl SemanticBuilder {
             .ok_or_else(unsupported)?;
         let start = self.nodes.len();
         self.control_depth += 1;
-        let result = self
-            .expression(expression)
-            .and_then(|(value, _)| self.schema_draft_of(value).map(|schema| (value, schema)));
+        let result = self.expression(expression).and_then(|(value, _)| {
+            let value = expected.map_or(Ok(value), |expected| {
+                self.conform_schema_draft(
+                    value,
+                    expected,
+                    expression.syntax(),
+                    "source-semantics/incompatible-function-output",
+                    "function arm does not satisfy its declared output kind",
+                )
+            })?;
+            self.schema_draft_of(value).map(|schema| (value, schema))
+        });
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;

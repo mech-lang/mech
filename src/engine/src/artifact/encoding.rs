@@ -295,6 +295,7 @@ impl CanonicalArtifactWriter {
         self.u8(match control.kind {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
+            super::ComprehensionKind::MatrixPreserveShape => 2,
         });
         self.u64(control.steps.len() as u64);
         for step in &control.steps {

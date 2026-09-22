@@ -8,12 +8,17 @@ enum DocumentFunctionBody {
     Patterns(SyntaxNode),
 }
 
-struct SetPatternLift {
+enum PatternLiftOutput {
+    Set { upper_bound: Option<DimensionExpr> },
+    Matrix { source_schema: SchemaDraft },
+}
+
+struct PatternLift {
     id: crate::ControlBlockId,
     start: usize,
     source: PendingValue,
     element: SchemaDraft,
-    upper_bound: Option<DimensionExpr>,
+    output: PatternLiftOutput,
 }
 
 fn function_parameter(
@@ -172,8 +177,7 @@ impl SemanticBuilder {
         let mut local_bindings = BTreeMap::new();
         let mut parameter_names = BTreeSet::new();
         let mut arguments = Vec::new();
-        let mut lifted_matrix = None;
-        let mut lifted_set = None;
+        let mut lifted_collection = None;
         for ((parameter, schema), input) in parameters.iter().zip(selected) {
             if !parameter_names.insert(parameter.clone()) {
                 return Err(error(
@@ -193,15 +197,43 @@ impl SemanticBuilder {
                 && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
                 && matches!(
-                    &actual.body,
-                    SchemaBody::Set { element, .. } if element.as_ref() == &schema.body
+                        &actual.body,
+                        SchemaBody::Set { element, .. } if element.as_ref() == &schema.body
                 );
             let value = if matrix_lift {
-                lifted_matrix = Some(actual);
-                input
+                let (lift, value) = self.begin_pattern_lift(
+                    input,
+                    schema,
+                    PatternLiftOutput::Matrix {
+                        source_schema: actual,
+                    },
+                    call,
+                )?;
+                lifted_collection = Some(lift);
+                value
             } else if set_lift {
-                let (lift, value) = self.begin_set_pattern_lift(input, &actual, schema, call)?;
-                lifted_set = Some(lift);
+                let SchemaBody::Set { cardinality, .. } = &actual.body else {
+                    unreachable!("set lifting retains its source schema")
+                };
+                if !actual.dimension_parameters.is_empty() {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/incompatible-function-argument",
+                        message: "set-lifted function input requires a closed element kind"
+                            .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(call),
+                    });
+                }
+                let upper_bound = match cardinality {
+                    CardinalitySpec::Exact(value) => Some(value.clone()),
+                    CardinalitySpec::Dynamic { upper_bound } => upper_bound.clone(),
+                };
+                let (lift, value) = self.begin_pattern_lift(
+                    input,
+                    schema,
+                    PatternLiftOutput::Set { upper_bound },
+                    call,
+                )?;
+                lifted_collection = Some(lift);
                 value
             } else {
                 self.conform_schema_draft(
@@ -223,17 +255,13 @@ impl SemanticBuilder {
             DocumentFunctionBody::Statements(body) => {
                 self.inline_statement_function_body(name, &body, call, &error)
             }
-            DocumentFunctionBody::Patterns(body) => self.inline_pattern_function_body(
-                name,
-                &body,
-                &arguments,
-                lifted_matrix.as_ref(),
-                call,
-            ),
+            DocumentFunctionBody::Patterns(body) => {
+                self.inline_pattern_function_body(name, &body, &arguments, call)
+            }
         })();
-        let result = if let Some(lift) = lifted_set {
+        let result = if let Some(lift) = lifted_collection {
             self.control_depth -= 1;
-            result.and_then(|result| self.finish_set_pattern_lift(lift, result, name, call))
+            result.and_then(|result| self.finish_pattern_lift(lift, result, name, call))
         } else {
             result
         };
@@ -244,22 +272,18 @@ impl SemanticBuilder {
         result
     }
 
-    fn begin_set_pattern_lift(
+    fn begin_pattern_lift(
         &mut self,
         source: PendingValue,
-        source_schema: &SchemaDraft,
         element: &SchemaDraft,
+        output: PatternLiftOutput,
         call: &SyntaxNode,
-    ) -> Result<(SetPatternLift, PendingValue), SourceSemanticError> {
-        let SchemaBody::Set { cardinality, .. } = &source_schema.body else {
-            unreachable!("set lifting retains its source schema")
-        };
-        if !source_schema.dimension_parameters.is_empty()
-            || !element.dimension_parameters.is_empty()
-        {
+    ) -> Result<(PatternLift, PendingValue), SourceSemanticError> {
+        if !element.dimension_parameters.is_empty() {
             return Err(SourceSemanticError {
                 code: "source-semantics/incompatible-function-argument",
-                message: "set-lifted function input requires a closed element kind".to_owned(),
+                message: "collection-lifted function input requires a closed element kind"
+                    .to_owned(),
                 anchor: SourceSemanticAnchor::for_node(call),
             });
         }
@@ -272,7 +296,7 @@ impl SemanticBuilder {
             .filter(|id| *id as usize <= crate::MAX_CONTROL_BLOCKS)
             .ok_or_else(|| SourceSemanticError {
                 code: "source-semantics/unsupported-function-body",
-                message: "set-lifted function exhausted control block identities".to_owned(),
+                message: "collection-lifted function exhausted control block identities".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(call),
             })?;
         self.control_depth += 1;
@@ -280,7 +304,7 @@ impl SemanticBuilder {
         let binding = PendingValue::Node(u32::try_from(start).map_err(|_| {
             internal(
                 SourceSemanticAnchor::for_node(call),
-                "set-lifted function exhausted node identities".to_owned(),
+                "collection-lifted function exhausted node identities".to_owned(),
             )
         })?);
         self.nodes.push(PendingNode {
@@ -293,29 +317,25 @@ impl SemanticBuilder {
             semantic: SourceSemanticNode {
                 operation: String::new(),
                 role: "collection-binding",
-                detail: Some("set-lifted function element".to_owned()),
+                detail: Some("collection-lifted function element".to_owned()),
                 anchor: SourceSemanticAnchor::for_node(call),
             },
         });
-        let upper_bound = match cardinality {
-            CardinalitySpec::Exact(value) => Some(value.clone()),
-            CardinalitySpec::Dynamic { upper_bound } => upper_bound.clone(),
-        };
         Ok((
-            SetPatternLift {
+            PatternLift {
                 id: crate::ControlBlockId(id),
                 start,
                 source,
                 element: element.clone(),
-                upper_bound,
+                output,
             },
             binding,
         ))
     }
 
-    fn finish_set_pattern_lift(
+    fn finish_pattern_lift(
         &mut self,
-        lift: SetPatternLift,
+        lift: PatternLift,
         result: PendingValue,
         name: &str,
         call: &SyntaxNode,
@@ -324,11 +344,14 @@ impl SemanticBuilder {
         if !output_element.dimension_parameters.is_empty() {
             return Err(SourceSemanticError {
                 code: "source-semantics/incompatible-function-output",
-                message: "set-lifted function output requires a closed element kind".to_owned(),
+                message: "collection-lifted function output requires a closed element kind"
+                    .to_owned(),
                 anchor: SourceSemanticAnchor::for_node(call),
             });
         }
-        require_keyable_set_element(&output_element.body, &[], call)?;
+        if matches!(lift.output, PatternLiftOutput::Set { .. }) {
+            require_keyable_set_element(&output_element.body, &[], call)?;
+        }
 
         let mut inputs = Vec::new();
         let mut capture =
@@ -350,7 +373,8 @@ impl SemanticBuilder {
                         Ok(PendingCollectionValue::Input(
                             u16::try_from(ordinal).map_err(|_| SourceSemanticError {
                                 code: "source-semantics/unsupported-function-body",
-                                message: "set-lifted function has too many captures".to_owned(),
+                                message: "collection-lifted function has too many captures"
+                                    .to_owned(),
                                 anchor: SourceSemanticAnchor::for_node(call),
                             })?,
                         ))
@@ -390,7 +414,8 @@ impl SemanticBuilder {
                 _ => {
                     return Err(SourceSemanticError {
                         code: "source-semantics/unsupported-function-body",
-                        message: "set-lifted functions require pure element operations".to_owned(),
+                        message: "collection-lifted functions require pure element operations"
+                            .to_owned(),
                         anchor: SourceSemanticAnchor::for_node(call),
                     });
                 }
@@ -408,29 +433,50 @@ impl SemanticBuilder {
                 },
             ));
         }
+        let (kind, operation, schema) = match lift.output {
+            PatternLiftOutput::Set { upper_bound } => (
+                crate::ComprehensionKind::Set,
+                "set/comprehension",
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Set {
+                        element: Box::new(output_element.body),
+                        cardinality: CardinalitySpec::Dynamic { upper_bound },
+                    },
+                },
+            ),
+            PatternLiftOutput::Matrix { source_schema } => {
+                let SchemaBody::Matrix { dimensions, .. } = source_schema.body else {
+                    unreachable!("matrix lifting retains its source schema")
+                };
+                (
+                    crate::ComprehensionKind::MatrixPreserveShape,
+                    "matrix/comprehension",
+                    SchemaDraft {
+                        dimension_parameters: source_schema.dimension_parameters,
+                        body: SchemaBody::Matrix {
+                            element: Box::new(output_element.body),
+                            dimensions,
+                        },
+                    },
+                )
+            }
+        };
         let node = self.nodes.len() as u32;
         self.nodes.push(PendingNode {
             body: PendingNodeBody::Comprehension(PendingComprehension {
                 id: lift.id,
-                kind: crate::ComprehensionKind::Set,
+                kind,
                 steps: steps.into_boxed_slice(),
                 yield_value,
             }),
             inferable_projection: false,
             inputs,
-            schema: SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: SchemaBody::Set {
-                    element: Box::new(output_element.body),
-                    cardinality: CardinalitySpec::Dynamic {
-                        upper_bound: lift.upper_bound,
-                    },
-                },
-            },
+            schema,
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
-                operation: "set/comprehension".to_owned(),
+                operation: operation.to_owned(),
                 role: "function-lift",
                 detail: Some(name.to_owned()),
                 anchor: SourceSemanticAnchor::for_node(call),
@@ -538,7 +584,6 @@ impl SemanticBuilder {
         name: &str,
         body: &SyntaxNode,
         arguments: &[PendingValue],
-        lifted_matrix: Option<&SchemaDraft>,
         call: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
         let output = body
@@ -550,28 +595,6 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(body),
             })?;
         let expected = self.annotation_schema_draft(&output)?;
-        let expected = if let Some(matrix) = lifted_matrix {
-            let SchemaBody::Matrix { dimensions, .. } = &matrix.body else {
-                unreachable!("matrix lifting retains its source schema")
-            };
-            if !expected.dimension_parameters.is_empty() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/incompatible-function-output",
-                    message: "matrix-lifted function output requires a scalar element kind"
-                        .to_owned(),
-                    anchor: SourceSemanticAnchor::for_node(output.syntax()),
-                });
-            }
-            SchemaDraft {
-                dimension_parameters: matrix.dimension_parameters.clone(),
-                body: SchemaBody::Matrix {
-                    element: Box::new(expected.body),
-                    dimensions: dimensions.clone(),
-                },
-            }
-        } else {
-            expected
-        };
         let scrutinee = if let [argument] = arguments {
             *argument
         } else {
@@ -623,7 +646,8 @@ impl SemanticBuilder {
             self.schema_draft_of(scrutinee)?.body,
             SchemaBody::Enum { .. }
         );
-        let result = self.lower_match_expression(scrutinee, &arms, body, !enum_input)?;
+        let result =
+            self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected))?;
         self.conform_schema_draft(
             result,
             &expected,

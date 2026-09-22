@@ -1112,6 +1112,17 @@ fn pattern_functions_lower_to_ordered_partial_control() {
             .iter()
             .find_map(|node| match &node.body {
                 mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+                mech_engine::ExecutableNodeBody::Comprehension(control) => {
+                    control.steps.iter().find_map(|step| match step {
+                        mech_engine::ComprehensionStep::Operation(operation) => {
+                            match &operation.body {
+                                mech_engine::ControlOperationBody::Match(control) => Some(control),
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    })
+                }
                 _ => None,
             })
             .expect("pattern function call lowers to match control");
@@ -1120,6 +1131,72 @@ fn pattern_functions_lower_to_ordered_partial_control() {
         let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
         assert_eq!(decoded.revision(), artifact.revision());
     }
+}
+
+#[test]
+fn pattern_functions_apply_per_matrix_element_and_preserve_source_shape() {
+    let source = "classify(n<f64>) => <f64>\n\
+                    | 0 => 1\n\
+                    | n => n.\n\
+                  result := classify([0 2; 0 3])\n\
+                  result\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let output = artifact
+        .schemas()
+        .get(artifact.outputs()[0].schema)
+        .unwrap();
+    assert!(matches!(
+        output.body(),
+        SchemaBody::Matrix { dimensions, .. }
+            if dimensions.as_ref()
+                == [
+                    mech_core::DimensionExpr::Constant(2),
+                    mech_core::DimensionExpr::Constant(2),
+                ]
+    ));
+    execute_document(
+        source,
+        [(
+            Vec::new(),
+            ValueDataDraft::Matrix(
+                [1.0, 2.0, 1.0, 3.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+}
+
+#[test]
+fn pattern_function_arms_conform_to_the_declared_output_before_joining() {
+    execute_document(
+        "convert(n<f64>) => <f64>\n\
+           | 0 => 1u8\n\
+           | n => n.\n\
+         convert(0)\n",
+        [(
+            Vec::new(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0)),
+        )],
+    );
+}
+
+#[test]
+fn refutable_enum_payload_pattern_does_not_make_a_variant_exhaustive() {
+    let source = "<choice> := :some<f64> | :none\n\
+                  classify(value<choice>) => <f64>\n\
+                    | :some(0) => 1\n\
+                    | :none => 0.\n\
+                  classify(:choice/none)\n";
+    let error = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .err()
+        .unwrap();
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
 }
 
 #[test]

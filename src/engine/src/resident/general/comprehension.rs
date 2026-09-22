@@ -1019,6 +1019,7 @@ fn materialization_memory(
 ) -> Result<mech_core::CallMemoryPlan, ResidentActivationError> {
     let name = match kind {
         crate::ComprehensionKind::Matrix => "matrix-comprehension",
+        crate::ComprehensionKind::MatrixPreserveShape => "shape-preserving-matrix-comprehension",
         crate::ComprehensionKind::Set => "set-comprehension",
     };
     let declaration = mech_core::OperationContractDeclaration {

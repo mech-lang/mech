@@ -1706,6 +1706,7 @@ fn wire_comprehension(
         kind: match control.kind {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
+            super::ComprehensionKind::MatrixPreserveShape => 2,
         },
         steps: control
             .steps
@@ -2098,6 +2099,7 @@ fn comprehension_from_wire(
         kind: match control.kind {
             0 => super::ComprehensionKind::Matrix,
             1 => super::ComprehensionKind::Set,
+            2 => super::ComprehensionKind::MatrixPreserveShape,
             tag => {
                 return Err(ArtifactBytecodeError::InvalidWireTag {
                     section: "comprehension kind",
