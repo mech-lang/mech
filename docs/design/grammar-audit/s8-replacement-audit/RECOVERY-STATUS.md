@@ -1,6 +1,6 @@
 # Recovery continuation after audit acceptance
 
-## Live landing checkpoint — 2026-09-22, R18 published; R19 owner repair
+## Live landing checkpoint — 2026-09-22, R19 published; R20 next
 
 **Candidate:** the designated accumulated deleted-parser C is still draft #830
 and has not been restacked or qualified on the current owner heads. The protected
@@ -11,19 +11,23 @@ semantic checks; three later findings are deferred to the next sealing pass by
 owner direction. R17 was rebased and published at `be33847b5` on #873; its six
 review findings were fixed, answered, and resolved, with 26/26 completion
 checks and the bytecode format check passing. R18 was rebased onto R17 and
-published at `0aafe91f6` on #874. All seven existing R18 review threads were
+published at `8c6010684` on #874. All seven existing R18 review threads were
 answered and resolved. Its focused semantic and completion suites passed 62/62
 and 26/26, including downstream output readiness and explicit admission
-rejection for unsupported nested suspended FSMs. No repeat review was requested.
+rejection for unsupported nested suspended FSMs. The corrected R18 head also
+passes the runtime compile check. No repeat review was requested.
 
-**In progress:** R19 is rebased once onto exact R18 and is addressing its three
-remaining review notes on sampled-input artifact validation, activation-owned
-sampled dependency cones, and initial-publication replay evidence. The focused
-R19 engine suites passed 68/68 semantic and 26/26 completion before the latest
-regression additions; runtime replay checks and the final R19 head are pending.
+**Completed next:** R19 was rebased onto exact R18 and published at `c13333ce9`
+on #876. Its three remaining review notes were fixed, answered, and resolved:
+ordinary matches reject sampled-input patterns, sampled computation follows its
+activation owner, and recorded initial publication replays with activations
+dormant. Focused checks pass 70/70 semantic and 26/26 completion tests, plus
+replay, activation reuse, sampled-capture, and initial-publication runtime
+checks. No repeat review was requested.
 
-**Remaining:** finish, check, publish, and answer R19 on its existing review
-round. Continue upward one PR at a time through R26, addressing each owner's
+**In progress:** move R20 onto exact R19, then fix its own notes and conflicts.
+
+**Remaining:** continue upward one PR at a time through R26, addressing each owner's
 notes and conflicts, with focused product checks after coherent batches.
 Scratch rebases currently reach R26, but those heads are not sealed or
 published as the accepted stack. Restack the single C candidate after the owner
