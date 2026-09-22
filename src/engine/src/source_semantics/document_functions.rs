@@ -140,12 +140,6 @@ impl SemanticBuilder {
             message,
             anchor: SourceSemanticAnchor::for_node(call),
         };
-        if self.active_functions.len() >= crate::MAX_CONTROL_DEPTH as usize {
-            return Err(error(
-                "source-semantics/function-expansion-depth",
-                format!("function {name} exceeds the lexical expansion depth"),
-            ));
-        }
         let function = self.local_functions[name].clone();
         let parameters = function
             .children()
@@ -213,15 +207,27 @@ impl SemanticBuilder {
                     format!("function {name} requires a pattern body for canonical recursion"),
                 ));
             }
-            let expected = self
+            let (expected, root_depth) = self
                 .active_recursive_outputs
                 .iter()
                 .rev()
-                .find_map(|(active, output)| (active == name).then_some(output.clone()))
+                .find_map(|(active, output, root_depth)| {
+                    (active == name).then_some((output.clone(), *root_depth))
+                })
                 .ok_or_else(|| {
                     error(
                         "source-semantics/recursive-function",
                         format!("function {name} has no active callable frame"),
+                    )
+                })?;
+            let ancestor = self
+                .match_depth
+                .checked_sub(root_depth)
+                .and_then(|depth| u8::try_from(depth).ok())
+                .ok_or_else(|| {
+                    error(
+                        "source-semantics/recursive-function",
+                        format!("function {name} has no enclosing lexical match"),
                     )
                 })?;
             let arguments = parameters
@@ -265,7 +271,7 @@ impl SemanticBuilder {
             };
             let index = self.nodes.len() as u32;
             self.nodes.push(PendingNode {
-                body: PendingNodeBody::RecursiveCall,
+                body: PendingNodeBody::RecursiveCall(ancestor),
                 inferable_projection: false,
                 inputs: vec![argument],
                 schema: expected,
@@ -279,6 +285,12 @@ impl SemanticBuilder {
                 },
             });
             return Ok(PendingValue::Node(index));
+        }
+        if self.active_functions.len() >= crate::MAX_CONTROL_DEPTH as usize {
+            return Err(error(
+                "source-semantics/function-expansion-depth",
+                format!("function {name} exceeds the lexical expansion depth"),
+            ));
         }
         let mut local_bindings = BTreeMap::new();
         let mut parameter_names = BTreeSet::new();
@@ -795,8 +807,11 @@ impl SemanticBuilder {
             self.schema_draft_of(scrutinee)?.body,
             SchemaBody::Enum { .. }
         );
-        self.active_recursive_outputs
-            .push((name.to_owned(), expected.clone()));
+        self.active_recursive_outputs.push((
+            name.to_owned(),
+            expected.clone(),
+            self.match_depth + 1,
+        ));
         let result =
             self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected));
         self.active_recursive_outputs.pop();
