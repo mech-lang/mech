@@ -1,5 +1,30 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R21 published; R22 owner repair
+
+**Candidate:** the accumulated deleted-parser C remains draft #830, unqualified
+on the current owner heads. The protected target is `integration/v0.4`.
+
+**Completed:** R18 #874 `8c6010684`, R19 #876 `c13333ce9`, R20 #877
+`25e0d2a1e`, and R21 #878 `2deb63f61` are published in owner order. The open
+review threads on each were answered and resolved, with no repeat reviews
+requested. R21 restored the configured canonical planning bound, retained
+canonical documents for textual custom resolver results, and enforced source
+byte limits on both document loaders. Its three new regressions and focused
+retained-document and ordered-root product checks pass. The remote R21 head
+matches the local head, with zero unresolved review threads.
+
+**In progress:** R22 is rebased onto exact R21. Its four open review notes
+concern browser presentation ordinals, live documentation placeholders, REPL
+document boundaries after clear commands, and interactive output layout.
+
+**Remaining:** fix and publish R22, continue one owner at a time through R26,
+return to deferred R16 findings during the sealing pass, then restack and fully
+qualify the single C candidate. Merge through the protected path and verify
+the landed `integration/v0.4` result. Checkpoints are not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R20 published; R21 owner repair
 
 **Candidate:** the single accumulated deleted-parser C remains draft #830 and
