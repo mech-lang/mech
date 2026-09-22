@@ -1972,17 +1972,24 @@ pub(super) fn compile_ordered_documents(
     let mut exports_by_root = BTreeMap::<usize, BTreeMap<String, PendingBinding>>::new();
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
+    let mut seen_identities = BTreeSet::new();
     let mut presentation = Vec::new();
     let mut nominal_owners =
         BTreeMap::<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>::new();
     for root in documents {
         let anchor = SourceSemanticAnchor::for_node(root.document.syntax());
-        if results.contains_key(&root.identity) {
+        if !seen_identities.insert(root.identity) {
             return Err(internal(
                 anchor,
                 "ordered root identity is repeated".to_owned(),
             ));
         }
+        // Hidden dependencies contribute exported graph values without adding
+        // private names to the caller's ordered lexical scope.
+        let visible_bindings =
+            (!root.publish_result).then(|| core::mem::take(&mut builder.bindings));
+        let visible_definitions =
+            (!root.publish_result).then(|| core::mem::take(&mut builder.scope_definitions));
         // Each retained root owns its callable imports and local definitions.
         // Shared graph values do not grant another root's function visibility.
         builder.function_environment = Some(
@@ -2159,6 +2166,12 @@ pub(super) fn compile_ordered_documents(
             if let Some(input) = builder.input_by_name.remove(name) {
                 builder.inputs[input as usize].name = format!("root:{}/{name}", root.identity);
             }
+        }
+        if let Some(visible_bindings) = visible_bindings {
+            builder.bindings = visible_bindings;
+        }
+        if let Some(visible_definitions) = visible_definitions {
+            builder.scope_definitions = visible_definitions;
         }
     }
     // Constraints remain constraints; requested roots and visible document

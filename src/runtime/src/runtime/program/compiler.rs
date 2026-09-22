@@ -1127,15 +1127,30 @@ impl<'a> ProgramCompilerView<'a> {
                     continue;
                 };
                 let dependency = dependency.admit_canonical_document()?;
-                let dependency_id =
-                    if let Some(identity) = identities.get(&dependency.canonical_uri).copied() {
-                        identity
-                    } else {
-                        let identity = resolved.len();
-                        identities.insert(dependency.canonical_uri.clone(), identity);
-                        resolved.push(dependency);
-                        identity
-                    };
+                let dependency_id = if let Some(identity) =
+                    identities.get(&dependency.canonical_uri).copied()
+                {
+                    let retained = resolved[identity].source_document().ok_or_else(|| {
+                        canonical_compilation_error("ordered root has no retained document")
+                    })?;
+                    let current = dependency.source_document().ok_or_else(|| {
+                        canonical_compilation_error("canonical dependency has no retained document")
+                    })?;
+                    if mech_core::hash_str(&retained.source().to_contiguous_string())
+                        != mech_core::hash_str(&current.source().to_contiguous_string())
+                    {
+                        return Err(canonical_compilation_error(format!(
+                            "canonical dependency {} changed during compilation",
+                            dependency.canonical_uri
+                        )));
+                    }
+                    identity
+                } else {
+                    let identity = resolved.len();
+                    identities.insert(dependency.canonical_uri.clone(), identity);
+                    resolved.push(dependency);
+                    identity
+                };
                 detached
                     .imports
                     .retain(|item| item.declaration != declaration);

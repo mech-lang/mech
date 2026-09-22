@@ -3200,6 +3200,109 @@ fn transitive_explicit_root_reuses_one_live_graph_in_caller_order() {
 }
 
 #[test]
+fn hidden_dependency_locals_do_not_replace_ordered_root_bindings() {
+    let catalog = mech_stdlib::source_catalog();
+    let compile = |second: &str| {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("first.mec", "seed := 41\n").unwrap();
+        resolver
+            .insert_string(
+                "dep.mec",
+                "seed := 100\nsecret := 200\nvalue := 1\n<+ value\nvalue\n",
+            )
+            .unwrap();
+        resolver.insert_string("second.mec", second).unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(Arc::clone(&catalog))
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        compiler.compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+    };
+    let product = compile("+> ./dep.mec\nanswer := seed + 1\nanswer\n").unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let mut instance = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(0x833, 0),
+            artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert_eq!(canonical_f64(&instance.copied_output(0).unwrap()), 41.0);
+        assert_eq!(canonical_f64(&instance.copied_output(1).unwrap()), 42.0);
+    }
+    let unexported = compile("+> ./dep.mec\nanswer := secret + 1\nanswer\n").unwrap();
+    assert_eq!(
+        unexported.artifact().inputs().len(),
+        1,
+        "an unexported dependency local remains a free source input"
+    );
+}
+
+#[test]
+fn repeated_canonical_dependency_must_keep_its_source_identity() {
+    #[derive(Debug)]
+    struct ChangingDependency {
+        first: InMemorySourceResolver,
+        changed: InMemorySourceResolver,
+        dependency_reads: AtomicUsize,
+    }
+    impl crate::SourceResolver for ChangingDependency {
+        fn resolve(&self, request: &SourceRequest) -> MResult<Option<crate::ResolvedSource>> {
+            let changed = request.specifier.ends_with("dep.mec")
+                && self.dependency_reads.fetch_add(1, Ordering::SeqCst) > 0;
+            crate::SourceResolver::resolve(
+                if changed { &self.changed } else { &self.first },
+                request,
+            )
+        }
+    }
+    let make_resolver = |dependency: &str| {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_string("first.mec", "+> ./dep.mec\nanswer := dep/value\nanswer\n")
+            .unwrap();
+        resolver
+            .insert_string(
+                "second.mec",
+                "+> ./dep.mec\nother := dep/value + 1\nother\n",
+            )
+            .unwrap();
+        resolver.insert_string("dep.mec", dependency).unwrap();
+        resolver
+    };
+    let resolver = ChangingDependency {
+        first: make_resolver("value := 1\n<+ value\nvalue\n"),
+        changed: make_resolver("value := 2\n<+ value\nvalue\n"),
+        dependency_reads: AtomicUsize::new(0),
+    };
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let error = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .err()
+        .unwrap();
+    assert!(format!("{error:?}").contains("changed during compilation"));
+}
+
+#[test]
 fn transitive_explicit_provider_is_planned_and_read_once_per_turn() {
     let plans = Arc::new(AtomicUsize::new(0));
     let reads = Arc::new(AtomicUsize::new(0));
