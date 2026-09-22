@@ -457,6 +457,7 @@ impl ProgramCompiler {
             &self.module_builder,
             &self.host_interfaces,
             &self.module_manifests,
+            self.program_config.limits.max_planning_steps,
         )
     }
 }
@@ -470,6 +471,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     module_builder: &'a ModuleBuilder,
     host_interfaces: &'a HostInterfaceCatalog,
     module_manifests: &'a ModuleManifestCatalog,
+    max_planning_steps: usize,
 }
 
 /// One resolution/planning session. Module versions use the same ModuleBuilder
@@ -531,6 +533,7 @@ impl<'a> ProgramCompilerView<'a> {
         module_builder: &'a ModuleBuilder,
         host_interfaces: &'a HostInterfaceCatalog,
         module_manifests: &'a ModuleManifestCatalog,
+        max_planning_steps: usize,
     ) -> Self {
         Self {
             function_catalog,
@@ -539,6 +542,7 @@ impl<'a> ProgramCompilerView<'a> {
             module_builder,
             host_interfaces,
             module_manifests,
+            max_planning_steps,
         }
     }
 
@@ -737,6 +741,12 @@ impl<'a> ProgramCompilerView<'a> {
         program: &CanonicalSourceProgram,
         values: &BTreeMap<String, Value>,
     ) -> MResult<()> {
+        if program.program().nodes.len() > self.max_planning_steps {
+            return Err(canonical_compilation_error(format!(
+                "canonical planning exceeds the configured {} step limit",
+                self.max_planning_steps
+            )));
+        }
         let has_write = program.program().nodes.iter().any(|node| {
             let mech_engine::SourceNodeBody::Operation {
                 requirement: Some(id),
@@ -2425,30 +2435,6 @@ mod resource_send_scope_tests {
         );
         assert_eq!(resource_send_path_specificity(None, "messages/42"), Some(0));
     }
-}
-
-fn install_context_imports(
-    program: &mut CompilerPlanningProgram,
-    imports: &[SourceImportDeclaration],
-    contexts: &[crate::SourceContextDeclaration],
-) -> MResult<()> {
-    for import in imports {
-        let Some(SourceImportAlias::Context(alias)) = &import.alias else {
-            continue;
-        };
-        let declaration = contexts
-            .iter()
-            .find(|context| context.name == *alias)
-            .ok_or_else(|| invalid_context_import(&import.specifier, "materialized declaration"))?;
-        let crate::SourceContextBase::ResourceUri(base_uri) = &declaration.base else {
-            return Err(invalid_context_import(
-                &import.specifier,
-                "resolved resource URI",
-            ));
-        };
-        program.install_compiler_context(alias, base_uri);
-    }
-    Ok(())
 }
 
 fn invalid_context_import(specifier: &str, missing: &'static str) -> mech_core::MechError {

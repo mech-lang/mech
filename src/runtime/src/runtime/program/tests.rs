@@ -3585,6 +3585,46 @@ fn retained_document_can_be_loaded_as_a_production_resident_program() {
 }
 
 #[test]
+fn retained_document_loaders_enforce_the_source_byte_limit() {
+    let source = "answer := 1 + 2\nanswer\n";
+    let document = canonical_planning_test_document(source);
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_source_bytes = Some((source.len() - 1) as u64);
+    let mut runtime = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_catalog())
+        .build()
+        .unwrap();
+    for interactive in [false, true] {
+        let error = if interactive {
+            runtime.load_interactive_document_program(
+                &document,
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+        } else {
+            runtime.load_document_program(&document, crate::ResidentDurabilityPolicy::Volatile)
+        }
+        .err()
+        .unwrap();
+        assert_eq!(error.kind_name(), "ResourceBudgetExceeded");
+    }
+}
+
+#[test]
+fn canonical_compiler_observes_configured_planning_steps() {
+    let source = "signal := signal-source<f64>\nfirst := signal + 1\nresult := first + 1\nresult\n";
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(1);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let error = compiler.compile_canonical_source(source).err().unwrap();
+    assert!(format!("{error:?}").contains("configured 1 step limit"));
+}
+
+#[test]
 fn production_source_and_bytecode_load_residently_without_engine_selection() {
     let mut source_runtime = runtime();
     let source = source_runtime
