@@ -166,6 +166,7 @@ fn validate_structural_pattern(
     expected: &mech_core::Schema,
     bindings: &mut Vec<SchemaId>,
     inputs: &[SchemaId],
+    allow_sampled_input: bool,
 ) -> Option<()> {
     use mech_core::SchemaBody;
     let compatible = |schema: &mech_core::Schema| {
@@ -195,6 +196,9 @@ fn validate_structural_pattern(
             }
         }
         super::CollectionPattern::Equal(MatchPatternValue::Input(input)) => {
+            if !allow_sampled_input {
+                return None;
+            }
             let schema = draft.schemas.get(*inputs.get(*input as usize)?)?;
             if !compatible(schema) {
                 return None;
@@ -209,6 +213,7 @@ fn validate_structural_pattern(
                         &component_schema(expected, &SchemaBody::Dynamic)?,
                         bindings,
                         inputs,
+                        allow_sampled_input,
                     )?;
                 }
                 return Some(());
@@ -231,6 +236,7 @@ fn validate_structural_pattern(
                     &component_schema(&enum_expected, schema)?,
                     bindings,
                     inputs,
+                    allow_sampled_input,
                 )?,
                 (None, None) => {}
                 _ => return None,
@@ -252,6 +258,7 @@ fn validate_structural_pattern(
                     )?,
                     bindings,
                     inputs,
+                    allow_sampled_input,
                 )?;
             }
         }
@@ -272,6 +279,7 @@ fn validate_structural_pattern(
                     &component_schema(expected, element)?,
                     bindings,
                     inputs,
+                    allow_sampled_input,
                 )?;
             }
             if let Some(rest) = rest {
@@ -281,6 +289,7 @@ fn validate_structural_pattern(
                     &super::comprehension::array_rest_schema(expected, element, None)?,
                     bindings,
                     inputs,
+                    allow_sampled_input,
                 )?;
             }
             for item in suffix {
@@ -290,6 +299,7 @@ fn validate_structural_pattern(
                     &component_schema(expected, element)?,
                     bindings,
                     inputs,
+                    allow_sampled_input,
                 )?;
             }
         }
@@ -608,6 +618,7 @@ pub(super) fn validate_match(
         inputs,
         output,
         Some((input, output)),
+        false,
         &mut 0,
         &[],
         false,
@@ -629,6 +640,7 @@ pub(super) fn validate_activation(
         inputs,
         output,
         None,
+        true,
         &mut 0,
         &[],
         false,
@@ -726,6 +738,7 @@ pub(super) fn validate_match_inner(
     inputs: &[SchemaId],
     output: SchemaId,
     lexical_signature: Option<(SchemaId, SchemaId)>,
+    allow_sampled_pattern: bool,
     next_block: &mut u32,
     enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
     inside_comprehension: bool,
@@ -828,8 +841,15 @@ pub(super) fn validate_match_inner(
                 .schemas
                 .get(scrutinee)
                 .ok_or_else(|| invalid("unknown structural scrutinee schema"))?;
-            validate_structural_pattern(draft, pattern, schema, &mut pattern_bindings, inputs)
-                .ok_or_else(|| invalid("invalid structural match pattern"))?;
+            validate_structural_pattern(
+                draft,
+                pattern,
+                schema,
+                &mut pattern_bindings,
+                inputs,
+                allow_sampled_pattern,
+            )
+            .ok_or_else(|| invalid("invalid structural match pattern"))?;
         }
         for (block, is_guard) in arm
             .guard
@@ -933,6 +953,7 @@ pub(super) fn validate_match_inner(
                             &inputs,
                             operation.schema,
                             lexical_signature,
+                            false,
                             next_block,
                             &match_schemas,
                             inside_comprehension,

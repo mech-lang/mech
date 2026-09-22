@@ -477,6 +477,7 @@ pub(super) fn validate_comprehension_inner(
                             &operation_inputs,
                             operation.schema,
                             None,
+                            false,
                             next_block,
                             &[],
                             true,
