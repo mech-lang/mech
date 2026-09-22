@@ -104,7 +104,7 @@ pub(super) fn all_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur => {}
+                        | crate::ControlOperationBody::Recur(_) => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
@@ -148,7 +148,7 @@ pub(super) fn all_local_definitions(
                             append_comprehension(nested, output)
                         }
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur => {}
+                        | crate::ControlOperationBody::Recur(_) => {}
                     }
                 }
                 crate::ComprehensionStep::Filter(_) => {}
@@ -179,7 +179,7 @@ pub(super) fn all_match_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur => {}
+                        | crate::ControlOperationBody::Recur(_) => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
                         crate::ControlOperationBody::Comprehension(nested) => {
                             output.extend(all_local_definitions(nested));
@@ -755,7 +755,7 @@ pub(super) fn bind_inner(
                             steps,
                             reads,
                             calls,
-                            None,
+                            &[index],
                         )?;
                         let ActivatedTurnStep::Match(prepared) = &mut steps[index.get() as usize]
                         else {
@@ -841,7 +841,7 @@ pub(super) fn bind_inner(
                         });
                         continue;
                     }
-                    crate::ControlOperationBody::Recur => {
+                    crate::ControlOperationBody::Recur(_) => {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
                             node: owner,
                         });

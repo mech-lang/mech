@@ -161,6 +161,79 @@ fn recursive_pattern_functions_use_bounded_call_local_frames() {
 }
 
 #[test]
+fn nested_recursive_helper_calls_its_own_pattern_match() {
+    execute_document(
+        "outer(n<f64>) => <f64>\n  | 0 => 0\n  | n => helper(n).\nhelper(n<f64>) => <f64>\n  | 0 => 1\n  | n => helper(n - 1).\nouter(3)\n",
+        f(1.0),
+    );
+}
+
+#[test]
+fn recursion_inside_a_nested_match_keeps_the_outer_function_target() {
+    execute_document(
+        "walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => ((n > 0) ? | true => walk(n - 1) | * => 0).\nwalk(3)\n",
+        f(0.0),
+    );
+}
+
+#[test]
+fn direct_recursion_at_the_eighth_lexical_function_level_is_admitted() {
+    execute_document(
+        "f1(n<f64>) => <f64> | n => f2(n).\n\
+         f2(n<f64>) => <f64> | n => f3(n).\n\
+         f3(n<f64>) => <f64> | n => f4(n).\n\
+         f4(n<f64>) => <f64> | n => f5(n).\n\
+         f5(n<f64>) => <f64> | n => f6(n).\n\
+         f6(n<f64>) => <f64> | n => f7(n).\n\
+         f7(n<f64>) => <f64> | n => f8(n).\n\
+         f8(n<f64>) => <f64> | 0 => 0 | n => f8(n - 1).\n\
+         f1(2)\n",
+        f(0.0),
+    );
+}
+
+#[test]
+fn structural_root_bind_remains_exhaustive() {
+    execute(
+        "result := signal<bool> ? | value => value",
+        [(vec![ResidentValueRef::Bool(&[1])], Data::Bool(true))],
+    );
+}
+
+#[test]
+fn recursive_match_initialization_schedules_downstream_output() {
+    let source = "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\nresult := countdown(signal<f64>) + 1\nresult\n";
+    let compiled = compile_document(source);
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x556, 2),
+        &decoded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let slot = instance.plan.inputs[0].slot;
+    instance
+        .turn(&[CapturedSignalInput {
+            slot,
+            value: ResidentValueRef::F64(&[5.0]),
+        }])
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        f(1.0)
+    );
+}
+
+#[test]
 fn recursive_frame_limit_rolls_back_and_allows_retry() {
     let source = "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\ncountdown(signal<f64>)\n";
     let compiled = compile_document(source);

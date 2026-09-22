@@ -118,7 +118,10 @@ impl CanonicalArtifactWriter {
                 self.u8(2);
                 self.comprehension(control);
             }
-            super::ControlOperationBody::Recur => self.u8(3),
+            super::ControlOperationBody::Recur(ancestor) => {
+                self.u8(3);
+                self.u8(*ancestor);
+            }
         }
     }
 

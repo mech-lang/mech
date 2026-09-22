@@ -353,7 +353,7 @@ enum WireControlOperationBody {
     Operation { operation: u32, contract: u32 },
     Match(WireMatchDeclaration),
     Comprehension(WireComprehensionDeclaration),
-    Recur,
+    Recur(u8),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -1695,7 +1695,7 @@ fn wire_control_operation_body(
         super::ControlOperationBody::Comprehension(control) => {
             WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
         }
-        super::ControlOperationBody::Recur => WireControlOperationBody::Recur,
+        super::ControlOperationBody::Recur(ancestor) => WireControlOperationBody::Recur(*ancestor),
     }
 }
 
@@ -2089,7 +2089,7 @@ fn control_operation_body_from_wire(
         WireControlOperationBody::Comprehension(control) => {
             super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
         }
-        WireControlOperationBody::Recur => super::ControlOperationBody::Recur,
+        WireControlOperationBody::Recur(ancestor) => super::ControlOperationBody::Recur(ancestor),
     })
 }
 
@@ -2263,7 +2263,7 @@ fn control_body_operation_references(
         super::ControlOperationBody::Comprehension(control) => {
             comprehension_operation_references(control)
         }
-        super::ControlOperationBody::Recur => Vec::new(),
+        super::ControlOperationBody::Recur(_) => Vec::new(),
     }
 }
 
@@ -2306,7 +2306,7 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Comprehension(control) => {
             wire_comprehension_operation_ids(control)
         }
-        WireControlOperationBody::Recur => Vec::new(),
+        WireControlOperationBody::Recur(_) => Vec::new(),
     }
 }
 
