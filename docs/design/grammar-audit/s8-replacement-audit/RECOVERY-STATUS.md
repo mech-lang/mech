@@ -1,5 +1,34 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R20 published; R21 owner repair
+
+**Candidate:** the single accumulated deleted-parser C remains draft #830 and
+has not been qualified on the current owner stack. `integration/v0.4` remains
+the protected target. This is a continuation checkpoint.
+
+**Completed:** R18 #874 is published at `8c6010684`; R19 #876 is published at
+`c13333ce9`; R20 #877 is published at `25e0d2a1e`. Each was rebased onto the
+preceding exact owner head, its existing review notes were answered and
+resolved, and no repeat review was requested. R20's three fixes reject
+duplicate hidden identities, keep hidden dependency locals out of ordered root
+scope, and reject a canonical URI whose source changes during compilation.
+Focused ordered-root, transitive graph, provider-planning, hidden-scope, and
+changed-source product checks pass; the remote R20 head matches the local head
+and has no unresolved review threads.
+
+**In progress:** R21 is rebased onto exact R20. Its three open review notes
+concern the configured planning-step limit, retained documents for textual
+custom resolver results, and source-byte limits on document loaders. Owner
+fixes and focused tests are in progress.
+
+**Remaining:** finish and publish R21, then continue one owner at a time to
+R26. Return to the three deferred R16 findings during the later sealing pass.
+Restack and qualify the single C candidate on accepted owner heads, complete
+the protected merge, and verify `integration/v0.4`. Checkpoints are not
+completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R19 published; R20 next
 
 **Candidate:** the designated accumulated deleted-parser C is still draft #830
