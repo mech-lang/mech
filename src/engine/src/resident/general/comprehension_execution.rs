@@ -6090,15 +6090,17 @@ impl ReactiveInstance {
         // The allocator may grant more than the requested slot. Re-admit its
         // actual live capacity before retaining the new result item.
         match control.kind {
-            crate::ComprehensionKind::Matrix => admit_output(
-                next,
-                values.capacity(),
-                next_footprint,
-                retained_shape_parameter_count,
-                schema_arena_bytes,
-                live_locals,
-                *meter,
-            ),
+            crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape => {
+                admit_output(
+                    next,
+                    values.capacity(),
+                    next_footprint,
+                    retained_shape_parameter_count,
+                    schema_arena_bytes,
+                    live_locals,
+                    *meter,
+                )
+            }
             crate::ComprehensionKind::Set => admit_set_draft(
                 next,
                 values.capacity(),

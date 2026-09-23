@@ -1,6 +1,8 @@
 //! Local function calls expand into the same canonical operation graph as their caller.
 
-use super::comprehension::{PendingCollectionValue, PendingComprehensionOperation};
+use super::comprehension::{
+    PendingCollectionValue, PendingComprehensionOperation, PendingComprehensionStep,
+};
 use super::*;
 
 enum DocumentFunctionBody {
