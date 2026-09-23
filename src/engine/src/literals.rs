@@ -894,6 +894,10 @@ fn planned_type_conversion_instance(
     reified_constraints: Option<ReifiedTargetConstraints>,
     reified_target: Option<ValueCell>,
 ) -> (Box<dyn MechFunction>, FunctionInvocation) {
+    let invocation = match &reified_target {
+        Some(target) => FunctionInvocation::binary(output.clone(), source.clone(), target.clone()),
+        None => FunctionInvocation::unary(output.clone(), source.clone()),
+    };
     (
         Box::new(PlannedTypeConversion {
             source: source.clone(),
@@ -902,7 +906,7 @@ fn planned_type_conversion_instance(
             reified_constraints,
             reified_target,
         }),
-        FunctionInvocation::unary(output, source),
+        invocation,
     )
 }
 
@@ -962,8 +966,10 @@ fn runtime_reified_constraints(
     let schemas = source_snapshot
         .schemas()
         .ok_or_else(|| invalid_reified_conversion_target("source schema context is unavailable"))?;
+    let source_body = source.closed_schema_body()?;
     let (mut target, declarations) = schema_body_from_reified_kind(kind, &schemas)?;
-    inherit_reified_dynamic_cardinality(&source.closed_schema_body()?, &mut target, &declarations)?;
+    close_reified_enum_targets(&source_body, &mut target);
+    inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
     let constraints = ReifiedTargetConstraints {
         target,
         declarations,
@@ -1239,6 +1245,86 @@ static CHECKED_TYPE_CONVERSION_CONTRACT: std::sync::LazyLock<OperationContractDe
         mech_core::maintained_operation_contract("convert/kind", 2, false)
             .expect("maintained reified conversion contract")
     });
+
+#[cfg(feature = "convert")]
+fn close_reified_enum_targets(source: &SchemaBody, target: &mut SchemaBody) {
+    match (source, target) {
+        (
+            SchemaBody::Enum {
+                key: source_key,
+                variants: source_variants,
+            },
+            SchemaBody::Enum {
+                key: target_key,
+                variants: target_variants,
+            },
+        ) if source_key == target_key => *target_variants = source_variants.clone(),
+        (SchemaBody::Option(source), SchemaBody::Option(target)) => {
+            close_reified_enum_targets(source, target)
+        }
+        (source, SchemaBody::Option(target)) => close_reified_enum_targets(source, target),
+        (
+            SchemaBody::Matrix {
+                element: source, ..
+            },
+            SchemaBody::Matrix {
+                element: target, ..
+            },
+        )
+        | (
+            SchemaBody::Set {
+                element: source, ..
+            },
+            SchemaBody::Set {
+                element: target, ..
+            },
+        ) => {
+            close_reified_enum_targets(source, target);
+        }
+        (SchemaBody::Tuple(source), SchemaBody::Tuple(target)) => {
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                close_reified_enum_targets(source, target);
+            }
+        }
+        (SchemaBody::Record(source), SchemaBody::Record(target)) => {
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                if source.name == target.name {
+                    close_reified_enum_targets(&source.schema, &mut target.schema);
+                }
+            }
+        }
+        (
+            SchemaBody::Map {
+                key: source_key,
+                value: source_value,
+                ..
+            },
+            SchemaBody::Map {
+                key: target_key,
+                value: target_value,
+                ..
+            },
+        ) => {
+            close_reified_enum_targets(source_key, target_key);
+            close_reified_enum_targets(source_value, target_value);
+        }
+        (
+            SchemaBody::Table {
+                columns: source, ..
+            },
+            SchemaBody::Table {
+                columns: target, ..
+            },
+        ) => {
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                if source.name == target.name {
+                    close_reified_enum_targets(&source.schema, &mut target.schema);
+                }
+            }
+        }
+        _ => {}
+    }
+}
 
 #[cfg(feature = "convert")]
 fn schema_body_from_reified_kind(
@@ -1922,6 +2008,7 @@ fn narrow_joint_reified_domains(
 #[cfg(feature = "convert")]
 fn solve_bounded_joint_reified_dimensions(
     equations: &[(Vec<i128>, i128)],
+    concrete_equations: &[(&DimensionExpr, &DimensionExpr)],
     declarations: &[DimensionParameterDeclaration],
     bindings: &[Option<DimensionExpr>],
     unknown: &[usize],
@@ -1958,6 +2045,7 @@ fn solve_bounded_joint_reified_dimensions(
 
     fn search(
         equations: &[(Vec<i128>, i128)],
+        concrete_equations: &[(&DimensionExpr, &DimensionExpr)],
         declarations: &[DimensionParameterDeclaration],
         bindings: &[Option<DimensionExpr>],
         unknown: &[usize],
@@ -1994,7 +2082,17 @@ fn solve_bounded_joint_reified_dimensions(
                 for (index, value) in unknown.iter().zip(&values) {
                     candidate[*index] = Some(DimensionExpr::Constant(*value));
                 }
-                if validate_reified_parameter_bindings(declarations, &candidate).is_ok() {
+                let concrete_equations_hold = concrete_equations.iter().all(|(source, target)| {
+                    reified_dimension_value(source).is_some_and(|source_value| {
+                        substitute_reified_dimension(target, &candidate)
+                            .ok()
+                            .and_then(|resolved| reified_dimension_value(&resolved))
+                            == Some(source_value)
+                    })
+                });
+                if concrete_equations_hold
+                    && validate_reified_parameter_bindings(declarations, &candidate).is_ok()
+                {
                     solutions.push(values);
                 }
             }
@@ -2015,6 +2113,7 @@ fn solve_bounded_joint_reified_dimensions(
             branch[index] = (value, value);
             search(
                 equations,
+                concrete_equations,
                 declarations,
                 bindings,
                 unknown,
@@ -2033,6 +2132,7 @@ fn solve_bounded_joint_reified_dimensions(
     let mut solutions = Vec::new();
     search(
         equations,
+        concrete_equations,
         declarations,
         bindings,
         unknown,
@@ -2119,7 +2219,7 @@ fn solve_joint_reified_dimensions(
         integer_rows.push((coefficients, target));
         Ok(())
     };
-    for (source, target) in equations {
+    for &(source, target) in &equations {
         if reified_dimension_value(source).is_some() {
             add_equation(source, target)?;
         }
@@ -2178,9 +2278,18 @@ fn solve_joint_reified_dimensions(
         ));
     }
     if pivot_row != unknown.len() {
-        if let Some(values) =
-            solve_bounded_joint_reified_dimensions(&integer_rows, declarations, bindings, &unknown)?
-        {
+        let concrete_equations = equations
+            .iter()
+            .copied()
+            .filter(|(source, _)| reified_dimension_value(source).is_some())
+            .collect::<Vec<_>>();
+        if let Some(values) = solve_bounded_joint_reified_dimensions(
+            &integer_rows,
+            &concrete_equations,
+            declarations,
+            bindings,
+            &unknown,
+        )? {
             for (index, value) in unknown.iter().zip(values) {
                 bindings[*index] = Some(DimensionExpr::Constant(value));
             }
@@ -2209,73 +2318,89 @@ fn inherit_reified_dynamic_cardinality(
     target: &mut SchemaBody,
     declarations: &[DimensionParameterDeclaration],
 ) -> MResult<()> {
-    fn expression_uses(dimension: &DimensionExpr, id: DimensionParameterId) -> usize {
+    if !has_dynamic_cardinality(source) {
+        return Ok(());
+    }
+    fn count_expression(dimension: &DimensionExpr, counts: &mut [usize]) {
         match dimension {
-            DimensionExpr::Parameter(found) if *found == id => 1,
+            DimensionExpr::Parameter(id) => {
+                if let Some(count) = counts.get_mut(id.get() as usize) {
+                    *count = count.saturating_add(1);
+                }
+            }
             DimensionExpr::Add(children)
             | DimensionExpr::Multiply(children)
             | DimensionExpr::Min(children)
-            | DimensionExpr::Max(children) => children
-                .iter()
-                .map(|child| expression_uses(child, id))
-                .sum(),
-            _ => 0,
+            | DimensionExpr::Max(children) => {
+                for child in children {
+                    count_expression(child, counts);
+                }
+            }
+            _ => {}
         }
     }
-    fn cardinality_uses(cardinality: &CardinalitySpec, id: DimensionParameterId) -> usize {
-        match cardinality {
-            CardinalitySpec::Exact(dimension) => expression_uses(dimension, id),
-            CardinalitySpec::Dynamic { .. } => 0,
+    fn count_cardinality(cardinality: &CardinalitySpec, counts: &mut [usize]) {
+        if let CardinalitySpec::Exact(dimension) = cardinality {
+            count_expression(dimension, counts);
         }
     }
-    fn body_uses(body: &SchemaBody, id: DimensionParameterId) -> usize {
+    fn count_body(body: &SchemaBody, counts: &mut [usize]) {
         match body {
             SchemaBody::Matrix {
                 element,
                 dimensions,
             } => {
-                dimensions
-                    .iter()
-                    .map(|dimension| expression_uses(dimension, id))
-                    .sum::<usize>()
-                    + body_uses(element, id)
+                for dimension in dimensions {
+                    count_expression(dimension, counts);
+                }
+                count_body(element, counts);
             }
             SchemaBody::Set {
                 element,
                 cardinality,
-            } => cardinality_uses(cardinality, id) + body_uses(element, id),
+            } => {
+                count_cardinality(cardinality, counts);
+                count_body(element, counts);
+            }
             SchemaBody::Map {
                 key,
                 value,
                 cardinality,
-            } => cardinality_uses(cardinality, id) + body_uses(key, id) + body_uses(value, id),
+            } => {
+                count_cardinality(cardinality, counts);
+                count_body(key, counts);
+                count_body(value, counts);
+            }
             SchemaBody::Table { columns, rows } => {
-                cardinality_uses(rows, id)
-                    + columns
-                        .iter()
-                        .map(|column| body_uses(&column.schema, id))
-                        .sum::<usize>()
+                count_cardinality(rows, counts);
+                for column in columns {
+                    count_body(&column.schema, counts);
+                }
             }
-            SchemaBody::Option(payload) => body_uses(payload, id),
+            SchemaBody::Option(payload) => count_body(payload, counts),
             SchemaBody::Tuple(elements) => {
-                elements.iter().map(|element| body_uses(element, id)).sum()
+                for element in elements {
+                    count_body(element, counts);
+                }
             }
-            SchemaBody::Record(fields) => fields
-                .iter()
-                .map(|field| body_uses(&field.schema, id))
-                .sum(),
-            SchemaBody::Enum { variants, .. } => variants
-                .iter()
-                .filter_map(|variant| variant.payload.as_ref())
-                .map(|payload| body_uses(payload, id))
-                .sum(),
-            _ => 0,
+            SchemaBody::Record(fields) => {
+                for field in fields {
+                    count_body(&field.schema, counts);
+                }
+            }
+            SchemaBody::Enum { variants, .. } => {
+                for payload in variants
+                    .iter()
+                    .filter_map(|variant| variant.payload.as_ref())
+                {
+                    count_body(payload, counts);
+                }
+            }
+            _ => {}
         }
     }
-    let use_counts = declarations
-        .iter()
-        .map(|declaration| body_uses(target, declaration.id))
-        .collect::<Vec<_>>();
+    let mut use_counts = vec![0; declarations.len()];
+    count_body(target, &mut use_counts);
     inherit_reified_dynamic_cardinality_inner(source, target, declarations, &use_counts)
 }
 
@@ -2879,6 +3004,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         let (target, reified_constraints) = if let Some(declarations) = reified_dimensions {
             let source_body = source.closed_schema_body()?;
             let mut concrete_template = target;
+            close_reified_enum_targets(&source_body, &mut concrete_template);
             inherit_reified_dynamic_cardinality(
                 &source_body,
                 &mut concrete_template,
@@ -2921,7 +3047,11 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         } else {
             "convert/kind"
         };
-        context.resolve_syntax_operation_contract(&PURE_TYPE_CONVERSION_CONTRACT)?;
+        context.resolve_syntax_operation_contract(if reified_target.is_some() {
+            &CHECKED_TYPE_CONVERSION_CONTRACT
+        } else {
+            &PURE_TYPE_CONVERSION_CONTRACT
+        })?;
         context.certify_instance(
             planned_type_conversion_instance(
                 source,
@@ -2951,7 +3081,12 @@ impl MechFunctionImpl for PlannedTypeConversion {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        if let Some(constraints) = &self.reified_constraints {
+        if let Some(target) = &self.reified_target {
+            let source_schema = self.source.closed_schema_body()?;
+            let expected = conversion_target_schema(&source_schema, &self.plan.step)
+                .map_err(conversion_execution_error)?;
+            runtime_reified_constraints(&self.source, target, &expected)?.validate(&self.source)?;
+        } else if let Some(constraints) = &self.reified_constraints {
             constraints.validate(&self.source)?;
         }
         stage_conversion_output(frame, &self.source, &self.output, &self.plan)?;
@@ -2964,7 +3099,11 @@ impl MechFunctionImpl for PlannedTypeConversion {
 
     #[cfg(feature = "semantic-compiler")]
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&PURE_TYPE_CONVERSION_CONTRACT)
+        Some(if self.reified_target.is_some() {
+            &CHECKED_TYPE_CONVERSION_CONTRACT
+        } else {
+            &PURE_TYPE_CONVERSION_CONTRACT
+        })
     }
 
     fn to_string(&self) -> String {
@@ -3973,6 +4112,51 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn direct_reified_conversion_tracks_and_rechecks_target_cell() {
+        let reified_scalar = |name| {
+            let (id, path) = builtin_scalar_named_kind(mech_core::hash_str(name)).unwrap();
+            let kind = ReifiedKind::from_closed_kind(
+                &KindExpr::Named(id),
+                &[],
+                &NamedKinds(BTreeMap::from([(id, path)])),
+            )
+            .unwrap();
+            ValueCell::from_schema_data(
+                SchemaBody::ReifiedType,
+                ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                    kind.canonical_bytes().to_vec().into_boxed_slice(),
+                )),
+            )
+            .unwrap()
+        };
+        let source = ValueCell::from_exact(7.0_f64).unwrap();
+        let output = ValueCell::from_exact(7.0_f64).unwrap();
+        let source_type = source.resolved_type().unwrap();
+        let plan = plan_explicit_cast(&source_type, &source_type).unwrap();
+        let target = reified_scalar("f64");
+        let instance =
+            planned_type_conversion_instance(source, output, plan, None, Some(target.clone()));
+        assert!(instance.1.clone().expect_binary().is_ok());
+        let conversion = SpecializedFunction::syntax_directed(
+            instance,
+            ResolvedOperationDescriptor::from_name(
+                "convert/kind/reified",
+                CHECKED_TYPE_CONVERSION_CONTRACT.clone(),
+            )
+            .unwrap(),
+            RuntimeFunctionId::from_name("convert/kind/reified"),
+            ExecutionTarget::DirectRuntime,
+            mech_core::ImplementationMemoryClass::CanonicalFinalize,
+        )
+        .unwrap();
+        conversion.instance().solve_result().unwrap();
+        target
+            .replace(&reified_scalar("u8").snapshot().unwrap())
+            .unwrap();
+        assert!(conversion.instance().solve_result().is_err());
+    }
+
+    #[test]
     fn runtime_reified_conversion_rejects_output_that_differs_from_target() {
         let (kind_id, path) = builtin_scalar_named_kind(mech_core::hash_str("f64")).unwrap();
         let kind = ReifiedKind::from_closed_kind(
@@ -4187,6 +4371,96 @@ mod canonical_conversion_tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn finite_ranges_validate_non_affine_reified_axes() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let declaration = |id, lower, upper| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(lower),
+            upper_bound: Some(DimensionExpr::Constant(upper)),
+        };
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into(),
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [
+                DimensionExpr::Min(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+                ),
+                DimensionExpr::Max(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+                ),
+            ]
+            .into(),
+        };
+        let declarations = [declaration(p, 0, 2), declaration(q, 3, 4)];
+        assert_eq!(
+            solve_reified_target_bindings(&source, &target, &declarations).unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(2)),
+                Some(DimensionExpr::Constant(3))
+            ]
+        );
+        let product = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [
+                DimensionExpr::Multiply(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+                ),
+                DimensionExpr::Max(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+                ),
+            ]
+            .into(),
+        };
+        let product_source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(6), DimensionExpr::Constant(3)].into(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&product_source, &product, &declarations).unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(2)),
+                Some(DimensionExpr::Constant(3))
+            ]
+        );
+    }
+
+    #[test]
+    fn reified_nominal_enum_target_uses_closed_source_payloads() {
+        let path = CanonicalNominalPath::new(vec!["test".to_owned(), "Sized".to_owned()]).unwrap();
+        let key = NominalKey::from_path(NominalKind::Enum, &path);
+        let source = SchemaBody::Enum {
+            key,
+            variants: [EnumVariantSchema {
+                name: "Some".to_owned(),
+                payload: Some(SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Index),
+                    dimensions: [DimensionExpr::Constant(2)].into(),
+                }),
+            }]
+            .into(),
+        };
+        let mut target = SchemaBody::Enum {
+            key,
+            variants: [EnumVariantSchema {
+                name: "Some".to_owned(),
+                payload: Some(SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Index),
+                    dimensions: [DimensionExpr::Parameter(DimensionParameterId::new(0))].into(),
+                }),
+            }]
+            .into(),
+        };
+        close_reified_enum_targets(&source, &mut target);
+        assert_eq!(target, source);
     }
 
     #[test]
