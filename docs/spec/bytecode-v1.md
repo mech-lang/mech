@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:10,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:11,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
