@@ -1,5 +1,30 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R22 published; R23 next
+
+**Candidate:** the single accumulated deleted-parser C remains draft #830,
+unqualified on the current owner heads. The protected target remains
+`integration/v0.4`.
+
+**Completed:** R22 #879 was rebased onto exact R21 and published at
+`c1ddea58b`. Its four existing review notes were fixed, answered, and resolved:
+presentation IDs are rebuilt after source edits, documentation fragments carry
+live inline and fence placeholders, source-changing REPL commands advance the
+document boundary, and output IDs use the interactive compilation layout.
+The browser unit suite passed 61/61; the live renderer regression, browser
+compile check, and format check passed. The remote R22 head matches the local
+head, and no R22 review threads remain open. No repeat review was requested.
+
+**In progress:** move R23 onto exact R22 and address its five existing review
+notes and any rebase conflicts. Continue owner by owner up to C, then return
+to the deferred R16 findings during the sealing pass.
+
+**Remaining:** complete owner fixes and focused batch checks, qualify the exact
+C head, merge through the protected path, and verify the landed
+`integration/v0.4` result. Checkpoints are not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R21 published; R22 owner repair
 
 **Candidate:** the accumulated deleted-parser C remains draft #830, unqualified
