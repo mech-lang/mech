@@ -1,5 +1,26 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R24 published; R02 next
+
+**Candidate:** the single accumulated deleted-parser C remains draft #830,
+unqualified on the current owner stack. The protected target remains
+`integration/v0.4`.
+
+**Completed:** R24 #882 was rebased onto exact R23 and published at
+`87602a480`. Its Index range implementation passed all three focused source
+and bytecode regressions, repository formatting, and patch checks. The remote
+head matches, the PR is mergeable, and it has no review threads. No repeat
+review was requested.
+
+**In progress:** rebase R02 #883 onto exact R24, fix its three open numeric
+review notes, and continue one owner at a time through R06 and R26 to C.
+
+**Remaining:** seal the owner heads, revisit deferred R16 findings, fully
+qualify exact C, merge through the protected path, and verify the landed
+`integration/v0.4` result. Checkpoints are not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R23 published; R24 next
 
 **Candidate:** the accumulated deleted-parser C remains draft #830 and is not
