@@ -1355,7 +1355,7 @@ fn pattern_function_lift_uses_live_matrix_dimensions_on_each_turn() {
 
 #[test]
 fn set_lift_rejects_results_the_resident_cannot_canonicalize() {
-    let source = "render(n<f64>) => <string>\n  | n => \"item\".\nrender({1. 2.})\n";
+    let source = "render(n<f64>) => <string>\n  | n => \"item\".\nrender({1, 2})\n";
     let error = CanonicalSourceFrontend
         .compile_document(&document(source))
         .err()
@@ -1388,7 +1388,7 @@ fn refutable_enum_payload_pattern_does_not_make_a_variant_exhaustive() {
                     | :none => 0.\n\
                   classify(:choice/none)\n";
     let error = CanonicalSourceFrontend
-        .compile_document(&document(source))
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
         .err()
         .unwrap();
     assert_eq!(error.code, "source-semantics/non-exhaustive-match");
