@@ -2145,15 +2145,40 @@ impl ReactiveInstance {
         &self,
         locals: &[ResidentRegion],
         excluded: Option<ResidentRegion>,
+        kernel: Option<ActivatedNodeIndex>,
         schemas: &mech_core::SchemaTable,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<ValueFootprint, ResidentKernelError> {
+        let kernel = kernel
+            .map(|index| {
+                if let Some(nodes) = &self.plan.pure_kernel_steps {
+                    nodes.get(index.get() as usize)
+                } else {
+                    match self.plan.steps.get(index.get() as usize) {
+                        Some(ActivatedTurnStep::Kernel(node)) => Some(node),
+                        _ => None,
+                    }
+                }
+                .ok_or(ResidentKernelError::InvalidInput)
+            })
+            .transpose()?;
         let mut footprint = ValueFootprint::zero();
         for local in locals
             .iter()
             .copied()
             .filter(|local| Some(*local) != excluded)
         {
+            if let Some(kernel) = kernel {
+                let inputs =
+                    &self.plan.reads[kernel.reads.start as usize..kernel.reads.end as usize];
+                meter.charge_comparison_work(budget::checked_u64(inputs.len())?)?;
+                if inputs.iter().any(|input| {
+                    matches!(input, ResidentReadLocation::Scratch(region) if *region == local)
+                }) || matches!(kernel.rmw_base, Some(ResidentReadLocation::Scratch(region)) if region == local)
+                {
+                    continue;
+                }
+            }
             match self.workspace.scratch.read(local) {
                 ResidentValueRef::String(values) => {
                     for value in values {
@@ -2621,7 +2646,7 @@ impl ReactiveInstance {
             probe,
         )?;
         let live_locals = self
-            .comprehension_live_local_footprint(&control.locals, None, &schemas, &mut meter)
+            .comprehension_live_local_footprint(&control.locals, None, None, &schemas, &mut meter)
             .map_err(fail)?;
         let draft_count = values.len();
         let draft_capacity = values.capacity();
@@ -2841,7 +2866,8 @@ impl ReactiveInstance {
             })
             .ok_or(ResidentKernelError::InvalidShape)?;
         meter.charge_compute_work(metadata_bytes)?;
-        let live_locals = self.comprehension_live_local_footprint(locals, None, schemas, meter)?;
+        let live_locals =
+            self.comprehension_live_local_footprint(locals, None, None, schemas, meter)?;
         admit_item_clone(
             footprint,
             metadata_bytes,
@@ -2931,11 +2957,21 @@ impl ReactiveInstance {
             .binding_resolution_workspace(binding.schema, source_shape_values, schemas)
             .map_err(fail)?;
         let live_locals = self
-            .comprehension_live_local_footprint(locals, None, schemas, meter)
+            .comprehension_live_local_footprint(locals, None, None, schemas, meter)
             .map_err(fail)?;
-        let live_item = selected_footprint
-            .checked_add(concrete_footprint)
-            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        // Both footprints describe the same owned item at different stages of
+        // Dynamic unwrapping. Only one item is live during binding.
+        let live_item = ValueFootprint {
+            encoded_bytes: selected_footprint
+                .encoded_bytes
+                .max(concrete_footprint.encoded_bytes),
+            retained_bytes: selected_footprint
+                .retained_bytes
+                .max(concrete_footprint.retained_bytes),
+            node_count: selected_footprint
+                .node_count
+                .max(concrete_footprint.node_count),
+        };
         let (live_bytes, live_nodes) = item_clone_live_demand(
             live_item,
             item.metadata_bytes().map_err(fail)?,
@@ -3037,6 +3073,7 @@ impl ReactiveInstance {
                     .comprehension_live_local_footprint(
                         locals,
                         Some(binding.region),
+                        None,
                         schemas,
                         meter,
                     )
@@ -3385,7 +3422,13 @@ impl ReactiveInstance {
                     meter.charge_compute_work(*work).map_err(fail)?;
                     let output = self.kernel_scratch_output_region(*node);
                     let live_locals = self
-                        .comprehension_live_local_footprint(&control.locals, output, schemas, meter)
+                        .comprehension_live_local_footprint(
+                            &control.locals,
+                            output,
+                            Some(*node),
+                            schemas,
+                            meter,
+                        )
                         .map_err(fail)?;
                     let shape_parameter_count = schemas
                         .get(control.output_schema)
@@ -3432,7 +3475,13 @@ impl ReactiveInstance {
                         .dimension_parameters()
                         .len();
                     let live_locals = self
-                        .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
+                        .comprehension_live_local_footprint(
+                            &control.locals,
+                            None,
+                            None,
+                            schemas,
+                            meter,
+                        )
                         .map_err(fail)?;
                     let (live_bytes, live_nodes) = comprehension_nested_live_demand(
                         values.len(),
@@ -3557,7 +3606,7 @@ impl ReactiveInstance {
             .dimension_parameters()
             .len();
         let live_locals = self
-            .comprehension_live_local_footprint(&control.locals, None, schemas, meter)
+            .comprehension_live_local_footprint(&control.locals, None, None, schemas, meter)
             .map_err(fail)?;
         let current_capacity = values.capacity();
         if next > current_capacity {
