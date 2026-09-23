@@ -44,6 +44,7 @@ fn resident_element_kind(element: &SchemaBody) -> Option<ResidentValueKind> {
         | SchemaBody::ReifiedType
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::FloatingPoint(FloatWidth::W32)
         | SchemaBody::Complex(_)
         | SchemaBody::Rational64

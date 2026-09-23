@@ -172,6 +172,9 @@ pub enum SnapshotValueError {
         path: SnapshotPath,
         value: u64,
     },
+    IntegerIntervalViolationV1 {
+        path: SnapshotPath,
+    },
     AggregateArityMismatchV1 {
         path: SnapshotPath,
         expected: u64,

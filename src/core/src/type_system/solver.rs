@@ -1672,6 +1672,7 @@ fn rewrite_kind_once(kind: &KindExpr, source: &KindExpr, target: &KindExpr) -> K
             KindExpr::TypeOf(Box::new(rewrite_kind_once(inner, source, target)))
         }
         KindExpr::Named(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)
@@ -2105,6 +2106,7 @@ fn collect_kind_nodes<'a>(kind: &'a KindExpr, nodes: &mut Vec<&'a KindExpr>) {
         | KindExpr::Hole
         | KindExpr::Parameter(_)
         | KindExpr::Named(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)

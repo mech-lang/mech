@@ -1352,6 +1352,7 @@ fn schema_body_contains_dynamic(schema: &SchemaBody) -> bool {
             schema_body_contains_dynamic(key) || schema_body_contains_dynamic(value)
         }
         SchemaBody::Bool
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
         | SchemaBody::FloatingPoint(_)
@@ -1387,6 +1388,8 @@ fn closed_schema_rebind_compatible(source: &SchemaBody, target: &SchemaBody) -> 
     let dynamic_target =
         |target: &crate::CardinalitySpec| matches!(target, crate::CardinalitySpec::Dynamic { .. });
     match (source, target) {
+        (source, SchemaBody::IntegerInterval(interval)) => source == &interval.base_body(),
+        (SchemaBody::IntegerInterval(interval), target) => &interval.base_body() == target,
         (SchemaBody::ReifiedType, SchemaBody::Dynamic) => true,
         (SchemaBody::Option(source), SchemaBody::Option(target)) => {
             closed_schema_rebind_compatible(source, target)
@@ -1479,6 +1482,16 @@ fn adapt_dynamic_bytecode_placeholders(
     }
     let actual = draft.kind();
     match (source, target, draft) {
+        (source, SchemaBody::IntegerInterval(interval), draft)
+            if source == &interval.base_body() =>
+        {
+            Ok(draft)
+        }
+        (SchemaBody::IntegerInterval(interval), target, draft)
+            if &interval.base_body() == target =>
+        {
+            Ok(draft)
+        }
         (SchemaBody::ReifiedType, SchemaBody::Dynamic, ValueDataDraft::Type(_)) => {
             Ok(ValueDataDraft::Dynamic(None))
         }
@@ -1759,6 +1772,14 @@ fn canonical_data_to_draft_with_target(
     target_context: Option<&SnapshotValidationContext<'_>>,
 ) -> Result<ValueDataDraft, SnapshotValueError> {
     let draft = match (schema, data) {
+        (SchemaBody::IntegerInterval(interval), data) => {
+            return canonical_data_to_draft_with_target(
+                &interval.base_body(),
+                data,
+                path,
+                target_context,
+            );
+        }
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => {
             let value = value
                 .value()
@@ -3352,6 +3373,27 @@ pub(super) fn finalize_data(
     context: &SnapshotValidationContext<'_>,
     path: &SnapshotPath,
 ) -> Result<ValueData, SnapshotValueError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        let value = finalize_data(&interval.base_body(), draft, shape, context, path)?;
+        let contained = match &value {
+            ValueData::U8(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U16(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U32(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U64(v) => interval.contains_unsigned(u128::from(*v)),
+            ValueData::U128(v) => interval.contains_unsigned(*v),
+            ValueData::I8(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I16(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I32(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I64(v) => interval.contains_signed(i128::from(*v)),
+            ValueData::I128(v) => interval.contains_signed(*v),
+            _ => false,
+        };
+        return if contained {
+            Ok(value)
+        } else {
+            Err(SnapshotValueError::IntegerIntervalViolationV1 { path: path.clone() })
+        };
+    }
     let actual_kind = draft.kind();
     macro_rules! exact {
         ($schema:pat, $draft:pat => $value:expr) => {
@@ -3996,6 +4038,12 @@ fn data_mismatch_kind(
 
 pub(super) const fn schema_kind(schema: &SchemaBody) -> SchemaDataKind {
     match schema {
+        SchemaBody::IntegerInterval(crate::IntegerInterval::Unsigned { .. }) => {
+            SchemaDataKind::UnsignedInteger
+        }
+        SchemaBody::IntegerInterval(crate::IntegerInterval::Signed { .. }) => {
+            SchemaDataKind::SignedInteger
+        }
         SchemaBody::Dynamic => SchemaDataKind::Dynamic,
         SchemaBody::Bool => SchemaDataKind::Bool,
         SchemaBody::UnsignedInteger(_) => SchemaDataKind::UnsignedInteger,
@@ -4030,6 +4078,103 @@ mod tests {
         DimensionParameterOrigin, NominalKey, SchemaDraft, SchemaField, SchemaTableBuilder,
     };
     use core::cell::{Cell, RefCell};
+
+    #[test]
+    fn integer_interval_finalization_and_rebind_check_every_boundary() {
+        let interval = crate::IntegerInterval::Unsigned {
+            width: IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let base = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let constrained = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::IntegerInterval(interval),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let base = build.resolve(base).unwrap();
+        let constrained = build.resolve(constrained).unwrap();
+        let schemas = build.table;
+        let context = SnapshotValidationContext::new(&schemas);
+        let draft = |schema, value| ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::U8(value),
+        };
+        for value in [1, 9] {
+            let accepted = draft(constrained, value).finalize(&context).unwrap();
+            assert_eq!(accepted.schema(), constrained);
+            let base_value = draft(base, value).finalize(&context).unwrap();
+            assert_eq!(
+                base_value
+                    .rebind(constrained, base_value.shape(), &schemas)
+                    .unwrap()
+                    .schema(),
+                constrained
+            );
+        }
+        for value in [0, 10] {
+            assert!(matches!(
+                draft(constrained, value).finalize(&context),
+                Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+            ));
+            let base_value = draft(base, value).finalize(&context).unwrap();
+            assert!(matches!(
+                base_value.rebind(constrained, base_value.shape(), &schemas),
+                Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+            ));
+        }
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::IntegerInterval(interval)),
+                        dimensions: vec![DimensionExpr::Constant(2)].into_boxed_slice(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let matrix_schemas = build.table;
+        let matrix_draft = |second| ValueDraft {
+            schema: matrix,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(second)].into_boxed_slice(),
+            ),
+        };
+        assert!(
+            matrix_draft(9)
+                .finalize(&SnapshotValidationContext::new(&matrix_schemas))
+                .is_ok()
+        );
+        assert!(matches!(
+            matrix_draft(10).finalize(&SnapshotValidationContext::new(&matrix_schemas)),
+            Err(SnapshotValueError::IntegerIntervalViolationV1 { .. })
+        ));
+    }
 
     #[test]
     fn canonical_table_builder_zero_columns_cannot_claim_nonzero_rows() {

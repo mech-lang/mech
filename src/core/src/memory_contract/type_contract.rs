@@ -229,6 +229,7 @@ fn body_evolution(
 ) -> Result<ExtentEvolution, SemanticModelError> {
     match body {
         SchemaBody::Dynamic => Ok(ExtentEvolution::TurnUnbounded),
+        SchemaBody::IntegerInterval(_) => Ok(ExtentEvolution::Fixed),
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -355,6 +356,9 @@ pub(crate) fn derive_type_memory_contract(
     parameters: &[DimensionParameter],
 ) -> Result<TypeMemoryContract, SemanticModelError> {
     let contract = match body {
+        SchemaBody::IntegerInterval(interval) => {
+            derive_type_memory_contract(&interval.base_body(), parameters)?
+        }
         SchemaBody::Dynamic => TypeMemoryContract {
             topology: MemoryTopology::Dynamic,
             extent: MemoryExtent::Single,

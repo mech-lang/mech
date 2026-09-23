@@ -150,6 +150,22 @@ pub(super) struct ActivationPatternCapture {
 
 fn default_draft(schema: &SchemaBody) -> MResult<ValueDataDraft> {
     Ok(match schema {
+        SchemaBody::IntegerInterval(interval) => match *interval {
+            mech_core::IntegerInterval::Unsigned { width, lower, .. } => match width {
+                IntegerWidth::W8 => ValueDataDraft::U8(lower as u8),
+                IntegerWidth::W16 => ValueDataDraft::U16(lower as u16),
+                IntegerWidth::W32 => ValueDataDraft::U32(lower as u32),
+                IntegerWidth::W64 => ValueDataDraft::U64(lower as u64),
+                IntegerWidth::W128 => ValueDataDraft::U128(lower),
+            },
+            mech_core::IntegerInterval::Signed { width, lower, .. } => match width {
+                IntegerWidth::W8 => ValueDataDraft::I8(lower as i8),
+                IntegerWidth::W16 => ValueDataDraft::I16(lower as i16),
+                IntegerWidth::W32 => ValueDataDraft::I32(lower as i32),
+                IntegerWidth::W64 => ValueDataDraft::I64(lower as i64),
+                IntegerWidth::W128 => ValueDataDraft::I128(lower),
+            },
+        },
         SchemaBody::Dynamic => ValueDataDraft::Dynamic(None),
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => ValueDataDraft::U8(0),
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => ValueDataDraft::U16(0),

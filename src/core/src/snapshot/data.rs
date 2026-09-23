@@ -431,6 +431,7 @@ fn kind_requires_named_resolver(kind: &KindExpr) -> bool {
         | KindExpr::Never
         | KindExpr::Hole
         | KindExpr::Parameter(_)
+        | KindExpr::IntegerInterval(_)
         | KindExpr::Id
         | KindExpr::Index
         | KindExpr::Atom(_)
@@ -743,6 +744,55 @@ fn decode_canonical_kind_body(
         },
         16 => KindExpr::Reference(Box::new(decode_kind_child(reader, named_kinds)?)),
         17 => KindExpr::TypeOf(Box::new(decode_kind_child(reader, named_kinds)?)),
+        18 => {
+            let signed = reader.u8()?;
+            let width = u16::from_le_bytes(
+                reader
+                    .take(2)?
+                    .try_into()
+                    .map_err(|_| SnapshotValueError::InvalidCanonicalReifiedKindV1)?,
+            );
+            let width = match width {
+                8 => crate::IntegerWidth::W8,
+                16 => crate::IntegerWidth::W16,
+                32 => crate::IntegerWidth::W32,
+                64 => crate::IntegerWidth::W64,
+                128 => crate::IntegerWidth::W128,
+                _ => return invalid_reified_kind(),
+            };
+            let lower = reader
+                .take(16)?
+                .try_into()
+                .map_err(|_| SnapshotValueError::InvalidCanonicalReifiedKindV1)?;
+            let upper = reader
+                .take(16)?
+                .try_into()
+                .map_err(|_| SnapshotValueError::InvalidCanonicalReifiedKindV1)?;
+            let upper_inclusive = match reader.u8()? {
+                0 => false,
+                1 => true,
+                _ => return invalid_reified_kind(),
+            };
+            let interval = match signed {
+                0 => crate::IntegerInterval::Unsigned {
+                    width,
+                    lower: u128::from_le_bytes(lower),
+                    upper: u128::from_le_bytes(upper),
+                    upper_inclusive,
+                },
+                1 => crate::IntegerInterval::Signed {
+                    width,
+                    lower: i128::from_le_bytes(lower),
+                    upper: i128::from_le_bytes(upper),
+                    upper_inclusive,
+                },
+                _ => return invalid_reified_kind(),
+            };
+            if !interval.is_valid() {
+                return invalid_reified_kind();
+            }
+            KindExpr::IntegerInterval(interval)
+        }
         _ => return invalid_reified_kind(),
     })
 }

@@ -6,8 +6,8 @@ use std::path::PathBuf;
 #[cfg(feature = "resident-artifact")]
 use mech_core::snapshot::{ReifiedKind, ReifiedTypeDraft};
 use mech_core::{
-    CanonicalNominalPath, ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody,
-    ShapeRule, ValueData,
+    CanonicalNominalPath, ChangeDetectionPolicy, IntegerInterval, IntegerWidth,
+    OutputConstruction, SchemaBody, ShapeRule, ValueData,
 };
 #[cfg(feature = "resident-artifact")]
 use mech_core::{
@@ -4869,12 +4869,11 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
 
     let constrained_optional = CanonicalSourceFrontend
         .compile_expression(&expression("signal<u8:1..10?>"))
-        .err()
-        .expect("unsupported constrained annotations must be diagnosed");
-    assert_eq!(
-        constrained_optional.code,
-        "source-semantics/unsupported-kind-constraint"
-    );
+        .expect("fixed integer interval input annotations are admitted");
+    assert!(matches!(
+        constrained_optional.schemas().get(constrained_optional.program().inputs[0].schema).unwrap().body(),
+        SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::IntegerInterval(_))
+    ));
     let matrix = CanonicalSourceFrontend
         .compile_expression(&expression("matrix<[u64]>"))
         .expect("dimensionless matrix annotations retain independent extents");
@@ -5025,13 +5024,19 @@ fn canonical_numeric_kinds_annotations_strings_and_state_are_preserved() {
 
 #[test]
 fn semantic_kind_edges_are_resolved_before_graph_emission() {
-    let dynamic_option = CanonicalSourceFrontend
+    let constrained_option = CanonicalSourceFrontend
         .compile_expression(&expression("1<u8:1..10?>"))
-        .err()
-        .expect("unsupported constrained annotations must be diagnosed");
-    assert_eq!(
-        dynamic_option.code,
-        "source-semantics/unsupported-kind-constraint"
+        .expect("lower endpoint belongs to a fixed interval");
+    let SourceValue::Constant(id) = constrained_option.program().outputs[0].source else {
+        panic!("constrained literal did not produce a constant")
+    };
+    assert!(
+        matches!(constrained_option.constants().get(id).unwrap().data(),
+        ValueData::Option(Some(value)) if matches!(value.as_ref(), ValueData::U8(1)))
+    );
+    assert!(
+        matches!(constrained_option.schemas().get(constrained_option.program().outputs[0].schema).unwrap().body(),
+        SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::IntegerInterval(IntegerInterval::Unsigned { lower: 1, upper: 10, upper_inclusive: false, .. })))
     );
 
     for (source, numerator, denominator) in [("2/4", 1, 2), ("7/7", 1, 1)] {
@@ -5129,6 +5134,117 @@ fn semantic_kind_edges_are_resolved_before_graph_emission() {
     assert_eq!(
         rational_range.code,
         "source-semantics/invalid-range-endpoint-kind"
+    );
+}
+
+#[test]
+fn fixed_integer_intervals_keep_identity_and_check_boundaries() {
+    for source in [
+        "1⟨u8:1..10⟩",
+        "9⟨u8:1..10⟩",
+        "10⟨u8:1..=10⟩",
+        "-2⟨i8:-2..=2⟩",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap();
+        assert!(
+            matches!(
+                compiled
+                    .schemas()
+                    .get(compiled.program().outputs[0].schema)
+                    .unwrap()
+                    .body(),
+                SchemaBody::IntegerInterval(_)
+            ),
+            "{source}"
+        );
+        let artifact = compiled
+            .compile_artifact()
+            .expect("admitted interval constant finalizes");
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert!(
+            matches!(
+                decoded
+                    .schemas()
+                    .get(decoded.outputs()[0].schema)
+                    .unwrap()
+                    .body(),
+                SchemaBody::IntegerInterval(_)
+            ),
+            "{source}"
+        );
+        assert_eq!(
+            mech_engine::encode_program_artifact_bytecode_v1(&decoded).unwrap(),
+            bytes
+        );
+    }
+    for (source, code) in [
+        ("0⟨u8:1..10⟩", "source-semantics/integer-interval-violation"),
+        (
+            "10⟨u8:1..10⟩",
+            "source-semantics/integer-interval-violation",
+        ),
+        ("1⟨u8:2..2⟩", "source-semantics/invalid-interval-bound"),
+        (
+            "1⟨f64:1..10⟩",
+            "source-semantics/unsupported-interval-domain",
+        ),
+        (
+            "1⟨u8:1..2..3⟩",
+            "source-semantics/unsupported-interval-step",
+        ),
+        (
+            "-3⟨i8:-2..=2⟩",
+            "source-semantics/integer-interval-violation",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect("out-of-contract interval is rejected");
+        assert_eq!(error.code, code, "{source}");
+    }
+    let reified = CanonicalSourceFrontend
+        .compile_expression(&expression("⟨u8:1..10⟩"))
+        .unwrap();
+    let reified = reified
+        .compile_artifact()
+        .expect("reified interval kind finalizes");
+    let reified_bytes = mech_engine::encode_program_artifact_bytecode_v1(&reified).unwrap();
+    mech_engine::decode_program_artifact_bytecode_v1(&reified_bytes).unwrap();
+    let compiled_document = CanonicalSourceFrontend
+        .compile_document(&document("x := 2<u8:1..10?>\nx\n"))
+        .expect("the audit's constrained definition has executable semantics");
+    let artifact = compiled_document.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    for source in [
+        "x⟨u8:1..10⟩ := 2\nx\n",
+        "x⟨i8:-2..=2⟩ := -1\nx\n",
+        "~state⟨u8:1..10⟩ := 2\nstate = 3\nstate\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("{source:?}: {error:?}"))
+            .compile_artifact()
+            .unwrap();
+    }
+    let update = CanonicalSourceFrontend
+        .compile_document(&document("~state⟨u8:1..10⟩ := 2\nstate = 10\nstate\n"))
+        .err()
+        .expect("out-of-range mutable update must be rejected");
+    assert_eq!(update.code, "source-semantics/integer-interval-violation");
+    let live_update = CanonicalSourceFrontend
+        .compile_document(&document(
+            "~state⟨u8:1..10⟩ := 2\nstate = signal<u8>\nstate\n",
+        ))
+        .err()
+        .expect("live narrowing requires a checked conversion owner");
+    assert_eq!(
+        live_update.code,
+        "source-semantics/unsupported-live-interval-conversion"
     );
 }
 

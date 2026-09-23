@@ -514,6 +514,9 @@ fn visit_data_work<E>(
     count_encoded: bool,
     visitor: &mut impl FnMut(CanonicalDataWork) -> Result<(), E>,
 ) -> Result<(), CanonicalDataWorkError<E>> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return visit_data_work(&interval.base_body(), data, count_encoded, visitor);
+    }
     let scalar = match (schema, data) {
         (SchemaBody::Bool, ValueData::Bool(_)) => Some(1),
         (SchemaBody::UnsignedInteger(IntegerWidth::W8), ValueData::U8(_))
@@ -997,6 +1000,9 @@ fn retained_data_footprint(
     schema: &SchemaBody,
     data: &ValueData,
 ) -> Result<ValueFootprint, ValueFootprintError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return retained_data_footprint(&interval.base_body(), data);
+    }
     let inline = checked_size_of::<ValueData>()?;
     match (schema, data) {
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => {
@@ -1139,6 +1145,9 @@ fn retained_data_footprint(
 }
 
 pub(super) fn encode_data(schema: &SchemaBody, data: &ValueData, sink: &mut dyn SnapshotByteSink) {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return encode_data(&interval.base_body(), data, sink);
+    }
     match (schema, data) {
         (SchemaBody::Dynamic, ValueData::Dynamic(value)) => sink.write(&value.canonical),
         (SchemaBody::Bool, ValueData::Bool(value)) => write_u8(sink, u8::from(*value)),

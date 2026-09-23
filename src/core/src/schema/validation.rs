@@ -50,6 +50,11 @@ pub(super) fn finalize_schema(draft: SchemaDraft) -> Result<Schema, SemanticMode
 
 fn validate_names_and_keyability(body: &SchemaBody) -> Result<(), SemanticModelError> {
     match body {
+        SchemaBody::IntegerInterval(interval) => {
+            if !interval.is_valid() {
+                return Err(SemanticModelError::InvalidIntegerIntervalV1);
+            }
+        }
         SchemaBody::Enum { variants, .. } => {
             validate_unique_names(
                 variants.iter().map(|variant| &variant.name),
@@ -133,6 +138,7 @@ fn validate_unique_names<'a>(
 
 pub(crate) fn is_body_keyable(body: &SchemaBody) -> bool {
     match body {
+        SchemaBody::IntegerInterval(_) => true,
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
@@ -160,6 +166,7 @@ pub(super) fn collect_body_dimension_references(
     references: &mut Vec<DimensionParameterId>,
 ) {
     match body {
+        SchemaBody::IntegerInterval(_) => {}
         SchemaBody::Enum { variants, .. } => {
             for variant in variants {
                 if let Some(payload) = &variant.payload {
@@ -232,6 +239,7 @@ fn rewrite_body_dimensions(
     old_to_new: &[Option<DimensionParameterId>],
 ) -> Result<SchemaBody, SemanticModelError> {
     Ok(match body {
+        SchemaBody::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
         SchemaBody::Dynamic => SchemaBody::Dynamic,
         SchemaBody::Bool => SchemaBody::Bool,
         SchemaBody::UnsignedInteger(width) => SchemaBody::UnsignedInteger(*width),
