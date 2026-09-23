@@ -448,7 +448,9 @@ targets the current function match; each increment names one enclosing match.
 It has exactly one input with that lexical target's scrutinee schema and produces
 that target's result schema. The back-edge remains inside the owning match
 artifact; resident activation binds it to bounded call-frame storage rather than
-expanding the graph or interpreting source text.
+expanding the graph or interpreting source text. A recursive target cannot use
+a direct bind arm or capture its own scrutinee input; artifact finalization
+rejects either layout.
 
 Structural binding IDs are dense within their arm. A binding equality refers to an earlier binding
 in that arm. Array prefixes and suffixes match in source order; a present rest consumes the middle

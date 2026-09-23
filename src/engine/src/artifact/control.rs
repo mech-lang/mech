@@ -565,7 +565,7 @@ pub(super) fn validate_match_inner(
     inputs: &[SchemaId],
     output: SchemaId,
     next_block: &mut u32,
-    enclosing_matches: &[(SchemaId, SchemaId, bool)],
+    enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -601,6 +601,10 @@ pub(super) fn validate_match_inner(
             .arms
             .iter()
             .any(|arm| matches!(&arm.pattern, MatchPattern::Bind)),
+        declaration
+            .captures
+            .iter()
+            .any(|capture| capture.input == declaration.scrutinee),
     ));
     if !closed_value(output)
         || (!scalar(scrutinee)
@@ -786,6 +790,11 @@ pub(super) fn validate_match_inner(
                             if target.2 {
                                 return Err(invalid(
                                     "recursive target cannot use a direct bind pattern",
+                                ));
+                            }
+                            if target.3 {
+                                return Err(invalid(
+                                    "recursive target cannot capture its own scrutinee",
                                 ));
                             }
                         }
