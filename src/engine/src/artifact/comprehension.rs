@@ -515,8 +515,12 @@ pub(super) fn validate_comprehension_inner(
                 "shape-preserving matrix collection output does not track its source shape",
             ));
         }
-        let element = component_schema(output, element)
-            .ok_or_else(|| invalid("invalid shape-preserving matrix element schema"))?;
+        let element = mech_core::SchemaDraft {
+            body: element.as_ref().clone(),
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .map_err(|_| invalid("invalid shape-preserving matrix element schema"))?;
         if element.key() != yielded.key() {
             return Err(invalid(
                 "shape-preserving matrix collection yield does not match its element schema",

@@ -1173,6 +1173,33 @@ fn pattern_functions_apply_per_matrix_element_and_preserve_source_shape() {
 }
 
 #[test]
+fn pattern_function_lifts_keep_dynamic_collection_shape_ownership() {
+    for source in [
+        "twice(n<f64>) => <f64>\n  | n => n * 2.\ntwice(signal<[f64]>)\n",
+        "positive(n<f64>) => <bool>\n  | n => n > 0.\npositive(signal<{f64}>)\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"))
+            .compile_artifact()
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+    }
+}
+
+#[test]
+fn set_lift_rejects_results_the_resident_cannot_canonicalize() {
+    let source = "render(n<f64>) => <string>\n  | n => \"item\".\nrender({1. 2.})\n";
+    let error = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .err()
+        .expect("string set output cannot enter resident canonicalization");
+    assert_eq!(
+        error.code,
+        "source-semantics/unsupported-lifted-set-result-kind"
+    );
+}
+
+#[test]
 fn pattern_function_arms_conform_to_the_declared_output_before_joining() {
     execute_document(
         "convert(n<f64>) => <f64>\n\
