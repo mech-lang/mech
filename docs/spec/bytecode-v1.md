@@ -466,8 +466,10 @@ Global schema, constant, operation, and contract IDs refer to the enclosing
 artifact tables.
 
 Finalization checks scope and dominance, closed value schemas, pure ordinary
-operation contracts, Boolean guard yields, identical arm result schemas, and
-an unguarded wildcard/binding or coverage of both Boolean values. It rejects cross-block references
+operation contracts, Boolean guard yields, and identical arm result schemas.
+When `partial` is false, it also requires an unguarded wildcard/binding or
+coverage of both Boolean values. When `partial` is true, an unmatched value
+fails execution instead of producing a result. It rejects cross-block references
 and undeclared captures. Decoder admission counts nested control arrays before
 allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
 and 262,144 operands across the artifact. Mixed control nesting is limited to eight
