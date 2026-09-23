@@ -2309,32 +2309,36 @@ fn declared_fsm_resume_keeps_arguments_and_reads_external_inputs_live() {
         .unwrap()
         .compile_artifact()
         .unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
     let catalog = catalog.build().unwrap();
-    let mut instance = activate(
-        ReactiveInstanceId::new(0x540, 81),
-        &artifact,
-        &catalog,
-        &ActivationFacts::default(),
-    )
-    .unwrap();
-    for value in [10.0, 99.0] {
-        let input = [value];
-        let inputs = [CapturedSignalInput {
-            slot: instance.plan.inputs[0].slot,
-            value: ResidentValueRef::F64(&input),
-        }];
-        instance.turn(&inputs).unwrap();
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 81 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for value in [10.0, 99.0] {
+            let input = [value];
+            let inputs = [CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&input),
+            }];
+            instance.turn(&inputs).unwrap();
+        }
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(109.0))
+        );
     }
-    assert_eq!(
-        instance
-            .copied_output(0)
-            .unwrap()
-            .canonical_data_draft()
-            .unwrap(),
-        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(109.0))
-    );
 }
 
 #[test]
