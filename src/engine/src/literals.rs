@@ -49,10 +49,11 @@ pub fn kind_value(
     p: &InterpreterExecution<'_>,
 ) -> MResult<ValueCell> {
     let mut named = SourceNamedKinds::default();
-    let kind = canonical_kind_annotation(knd, p, &mut named)?;
-    let reified = ReifiedKind::from_closed_kind(&kind, &[], &named).map_err(|error| {
-        MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
-    })?;
+    let mut dimensions = DimensionEnvironmentBuilder::new();
+    let kind = canonical_kind_annotation(knd, p, &mut named, &mut dimensions)?;
+    let reified = ReifiedKind::from_closed_kind(&kind, dimensions.declarations(), &named).map_err(
+        |error| MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc(),
+    )?;
     ValueCell::from_schema_data(
         SchemaBody::ReifiedType,
         ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
@@ -87,24 +88,25 @@ fn canonical_kind_annotation(
     knd: &mech_core::nodes::Kind,
     p: &InterpreterExecution<'_>,
     named: &mut SourceNamedKinds,
+    dimensions: &mut DimensionEnvironmentBuilder,
 ) -> MResult<KindExpr> {
     Ok(match knd {
-        mech_core::nodes::Kind::Kind(inner) => {
-            KindExpr::TypeOf(Box::new(canonical_kind_annotation(inner, p, named)?))
-        }
+        mech_core::nodes::Kind::Kind(inner) => KindExpr::TypeOf(Box::new(
+            canonical_kind_annotation(inner, p, named, dimensions)?,
+        )),
         mech_core::nodes::Kind::Any => KindExpr::Wildcard,
         mech_core::nodes::Kind::Atom(identifier) => {
             let path = source_nominal_path(&identifier.to_string())?;
             KindExpr::Atom(NominalKey::from_path(NominalKind::Atom, &path))
         }
-        mech_core::nodes::Kind::Empty => KindExpr::Hole,
+        mech_core::nodes::Kind::Empty => KindExpr::Never,
         mech_core::nodes::Kind::Record(fields) => KindExpr::Record(
             fields
                 .iter()
                 .map(|(name, kind)| {
                     Ok(KindField {
                         name: name.to_string(),
-                        kind: canonical_kind_annotation(kind, p, named)?,
+                        kind: canonical_kind_annotation(kind, p, named, dimensions)?,
                     })
                 })
                 .collect::<MResult<Vec<_>>>()?
@@ -113,71 +115,100 @@ fn canonical_kind_annotation(
         mech_core::nodes::Kind::Tuple(elements) => KindExpr::Tuple(
             elements
                 .iter()
-                .map(|element| canonical_kind_annotation(element, p, named))
+                .map(|element| canonical_kind_annotation(element, p, named, dimensions))
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
         ),
         mech_core::nodes::Kind::Map(key, value) => KindExpr::Map {
-            key: Box::new(canonical_kind_annotation(key, p, named)?),
-            value: Box::new(canonical_kind_annotation(value, p, named)?),
-            cardinality: DimensionExpr::Hole,
+            key: Box::new(canonical_kind_annotation(key, p, named, dimensions)?),
+            value: Box::new(canonical_kind_annotation(value, p, named, dimensions)?),
+            cardinality: inferred_interpreter_kind_dimension(dimensions)?,
         },
         mech_core::nodes::Kind::Scalar(identifier) => {
+            let name = identifier.to_string();
             let scalar_id = identifier.hash();
-            if let Ok((id, path)) = builtin_scalar_named_kind(scalar_id) {
+            if name == "id" {
+                KindExpr::Id
+            } else if name == "ix" || name == "index" {
+                KindExpr::Index
+            } else if let Ok((id, path)) = builtin_scalar_named_kind(scalar_id) {
                 named.0.insert(id, path);
                 KindExpr::Named(id)
             } else if p.state.borrow().enums.contains_key(&scalar_id) {
-                let path = source_nominal_path(&identifier.to_string())?;
+                let path = source_nominal_path(&name)?;
                 KindExpr::Enum(NominalKey::from_path(NominalKind::Enum, &path))
             } else {
                 return Err(SemanticModelError::BuiltinScalarKindUnresolved { scalar_id }.into());
             }
         }
-        mech_core::nodes::Kind::Matrix((element, dimensions)) => KindExpr::Matrix {
-            element: Box::new(canonical_kind_annotation(element, p, named)?),
-            dimensions: dimensions
+        mech_core::nodes::Kind::Matrix((element, dimension_nodes)) => {
+            let mut extents = dimension_nodes
                 .iter()
                 .map(|dimension| {
-                    literal_usize(dimension, p).map(|value| {
-                        value.map_or(DimensionExpr::Hole, |value| {
-                            DimensionExpr::Constant(value as u64)
-                        })
+                    literal_usize(dimension, p).and_then(|value| {
+                        value.map_or_else(
+                            || inferred_interpreter_kind_dimension(dimensions),
+                            |value| Ok(DimensionExpr::Constant(value as u64)),
+                        )
                     })
                 })
-                .collect::<MResult<Vec<_>>>()?
-                .into_boxed_slice(),
-        },
-        mech_core::nodes::Kind::Option(element) => {
-            KindExpr::Option(Box::new(canonical_kind_annotation(element, p, named)?))
+                .collect::<MResult<Vec<_>>>()?;
+            if extents.is_empty() {
+                extents.push(inferred_interpreter_kind_dimension(dimensions)?);
+                extents.push(inferred_interpreter_kind_dimension(dimensions)?);
+            }
+            KindExpr::Matrix {
+                element: Box::new(canonical_kind_annotation(element, p, named, dimensions)?),
+                dimensions: extents.into_boxed_slice(),
+            }
         }
+        mech_core::nodes::Kind::Option(element) => KindExpr::Option(Box::new(
+            canonical_kind_annotation(element, p, named, dimensions)?,
+        )),
         mech_core::nodes::Kind::Table((columns, rows)) => KindExpr::Table {
             columns: columns
                 .iter()
                 .map(|(name, kind)| {
                     Ok(KindField {
                         name: name.to_string(),
-                        kind: canonical_kind_annotation(kind, p, named)?,
+                        kind: canonical_kind_annotation(kind, p, named, dimensions)?,
                     })
                 })
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
-            rows: literal_usize(rows, p)?.map_or(DimensionExpr::Hole, |value| {
-                DimensionExpr::Constant(value as u64)
-            }),
+            rows: literal_usize(rows, p)?.map_or_else(
+                || inferred_interpreter_kind_dimension(dimensions),
+                |value| Ok(DimensionExpr::Constant(value as u64)),
+            )?,
         },
         mech_core::nodes::Kind::Set(element, cardinality) => KindExpr::Set {
-            element: Box::new(canonical_kind_annotation(element, p, named)?),
+            element: Box::new(canonical_kind_annotation(element, p, named, dimensions)?),
             cardinality: cardinality
                 .as_ref()
                 .map(|value| literal_usize(value, p))
                 .transpose()?
                 .flatten()
-                .map_or(DimensionExpr::Hole, |value| {
-                    DimensionExpr::Constant(value as u64)
-                }),
+                .map_or_else(
+                    || inferred_interpreter_kind_dimension(dimensions),
+                    |value| Ok(DimensionExpr::Constant(value as u64)),
+                )?,
         },
     })
+}
+
+#[cfg(feature = "kind_annotation")]
+fn inferred_interpreter_kind_dimension(
+    dimensions: &mut DimensionEnvironmentBuilder,
+) -> MResult<DimensionExpr> {
+    dimensions
+        .declare(
+            DimensionParameterOrigin::Inferred,
+            DimensionLifetime::Activation,
+            DimensionExpr::Constant(0),
+            None,
+        )
+        .map(DimensionExpr::Parameter)
+        .map_err(MechError::from)
 }
 
 #[cfg(feature = "kind_annotation")]
@@ -386,6 +417,15 @@ fn materialize_declared_conversion_semantic_shape(
     source: &KindExpr,
     target: &SchemaBody,
 ) -> SchemaBody {
+    materialize_conversion_semantic_shape(source, target, false)
+}
+
+#[cfg(feature = "convert")]
+fn materialize_conversion_semantic_shape(
+    source: &KindExpr,
+    target: &SchemaBody,
+    preserve_source_axes: bool,
+) -> SchemaBody {
     match (source, target) {
         (
             KindExpr::Matrix {
@@ -397,21 +437,22 @@ fn materialize_declared_conversion_semantic_shape(
                 dimensions: target_dimensions,
             },
         ) => SchemaBody::Matrix {
-            element: Box::new(materialize_declared_conversion_semantic_shape(
+            element: Box::new(materialize_conversion_semantic_shape(
                 source_element,
                 target_element,
+                preserve_source_axes,
             )),
-            dimensions: if target_dimensions.is_empty() {
+            dimensions: if preserve_source_axes || target_dimensions.is_empty() {
                 source_dimensions.clone()
             } else {
                 target_dimensions.clone()
             },
         },
         (KindExpr::Option(source), SchemaBody::Option(target)) => SchemaBody::Option(Box::new(
-            materialize_declared_conversion_semantic_shape(source, target),
+            materialize_conversion_semantic_shape(source, target, preserve_source_axes),
         )),
         (source, SchemaBody::Option(target)) => SchemaBody::Option(Box::new(
-            materialize_declared_conversion_semantic_shape(source, target),
+            materialize_conversion_semantic_shape(source, target, preserve_source_axes),
         )),
         (KindExpr::Tuple(source), SchemaBody::Tuple(target)) if source.len() == target.len() => {
             SchemaBody::Tuple(
@@ -419,7 +460,7 @@ fn materialize_declared_conversion_semantic_shape(
                     .iter()
                     .zip(target.iter())
                     .map(|(source, target)| {
-                        materialize_declared_conversion_semantic_shape(source, target)
+                        materialize_conversion_semantic_shape(source, target, preserve_source_axes)
                     })
                     .collect(),
             )
@@ -437,9 +478,10 @@ fn materialize_declared_conversion_semantic_shape(
                     .zip(target.iter())
                     .map(|(source, target)| SchemaField {
                         name: target.name.clone(),
-                        schema: materialize_declared_conversion_semantic_shape(
+                        schema: materialize_conversion_semantic_shape(
                             &source.kind,
                             &target.schema,
+                            preserve_source_axes,
                         ),
                     })
                     .collect(),
@@ -455,10 +497,14 @@ fn materialize_declared_conversion_semantic_shape(
                 cardinality,
             },
         ) => SchemaBody::Set {
-            element: Box::new(materialize_declared_conversion_semantic_shape(
-                source, target,
+            element: Box::new(materialize_conversion_semantic_shape(
+                source,
+                target,
+                preserve_source_axes,
             )),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+            cardinality: if preserve_source_axes
+                || matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None })
+            {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -476,14 +522,19 @@ fn materialize_declared_conversion_semantic_shape(
                 cardinality,
             },
         ) => SchemaBody::Map {
-            key: Box::new(materialize_declared_conversion_semantic_shape(
-                source_key, key,
+            key: Box::new(materialize_conversion_semantic_shape(
+                source_key,
+                key,
+                preserve_source_axes,
             )),
-            value: Box::new(materialize_declared_conversion_semantic_shape(
+            value: Box::new(materialize_conversion_semantic_shape(
                 source_value,
                 value,
+                preserve_source_axes,
             )),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+            cardinality: if preserve_source_axes
+                || matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None })
+            {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -510,13 +561,16 @@ fn materialize_declared_conversion_semantic_shape(
                     .zip(target.iter())
                     .map(|(source, target)| SchemaField {
                         name: target.name.clone(),
-                        schema: materialize_declared_conversion_semantic_shape(
+                        schema: materialize_conversion_semantic_shape(
                             &source.kind,
                             &target.schema,
+                            preserve_source_axes,
                         ),
                     })
                     .collect(),
-                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
+                rows: if preserve_source_axes
+                    || matches!(rows, CardinalitySpec::Dynamic { upper_bound: None })
+                {
                     CardinalitySpec::Exact(source_rows.clone())
                 } else {
                     rows.clone()
@@ -1503,11 +1557,330 @@ fn solve_reified_target_bindings(
             break;
         }
     }
+    if bindings.iter().any(Option::is_none) {
+        solve_joint_reified_dimensions(source, target, &mut bindings)?;
+    }
     // With all available witnesses bound, every deferred compound equation
     // must match. Unresolved parameters remain an invalid ambiguous target.
     substitute_reified_target(target, &bindings)?;
     bind_reified_target_dimensions(source, target, declarations, &mut bindings)?;
     Ok(bindings)
+}
+
+#[cfg(feature = "convert")]
+fn collect_reified_dimension_equations<'a>(
+    source: &'a SchemaBody,
+    target: &'a SchemaBody,
+    equations: &mut Vec<(&'a DimensionExpr, &'a DimensionExpr)>,
+) {
+    match (source, target) {
+        (
+            SchemaBody::Matrix {
+                element: source_element,
+                dimensions: source_axes,
+            },
+            SchemaBody::Matrix {
+                element: target_element,
+                dimensions: target_axes,
+            },
+        ) => {
+            equations.extend(source_axes.iter().zip(target_axes.iter()));
+            collect_reified_dimension_equations(source_element, target_element, equations);
+        }
+        (SchemaBody::Option(source), SchemaBody::Option(target)) => {
+            collect_reified_dimension_equations(source, target, equations);
+        }
+        (source, SchemaBody::Option(target)) => {
+            collect_reified_dimension_equations(source, target, equations);
+        }
+        (SchemaBody::Tuple(source), SchemaBody::Tuple(target)) => {
+            for (source, target) in source.iter().zip(target.iter()) {
+                collect_reified_dimension_equations(source, target, equations);
+            }
+        }
+        (SchemaBody::Record(source), SchemaBody::Record(target)) => {
+            for (source, target) in source.iter().zip(target.iter()) {
+                if source.name == target.name {
+                    collect_reified_dimension_equations(&source.schema, &target.schema, equations);
+                }
+            }
+        }
+        (
+            SchemaBody::Set {
+                element: source_element,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Set {
+                element: target_element,
+                cardinality: target_cardinality,
+            },
+        ) => {
+            if let (CardinalitySpec::Exact(source), CardinalitySpec::Exact(target)) =
+                (source_cardinality, target_cardinality)
+            {
+                equations.push((source, target));
+            }
+            collect_reified_dimension_equations(source_element, target_element, equations);
+        }
+        (
+            SchemaBody::Map {
+                key: source_key,
+                value: source_value,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Map {
+                key: target_key,
+                value: target_value,
+                cardinality: target_cardinality,
+            },
+        ) => {
+            if let (CardinalitySpec::Exact(source), CardinalitySpec::Exact(target)) =
+                (source_cardinality, target_cardinality)
+            {
+                equations.push((source, target));
+            }
+            collect_reified_dimension_equations(source_key, target_key, equations);
+            collect_reified_dimension_equations(source_value, target_value, equations);
+        }
+        (
+            SchemaBody::Table {
+                columns: source,
+                rows: source_rows,
+            },
+            SchemaBody::Table {
+                columns: target,
+                rows: target_rows,
+            },
+        ) => {
+            if let (CardinalitySpec::Exact(source), CardinalitySpec::Exact(target)) =
+                (source_rows, target_rows)
+            {
+                equations.push((source, target));
+            }
+            for (source, target) in source.iter().zip(target.iter()) {
+                if source.name == target.name {
+                    collect_reified_dimension_equations(&source.schema, &target.schema, equations);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+#[cfg(feature = "convert")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct DimensionRatio {
+    numerator: i128,
+    denominator: i128,
+}
+
+#[cfg(feature = "convert")]
+impl DimensionRatio {
+    fn integer(value: i128) -> Self {
+        Self {
+            numerator: value,
+            denominator: 1,
+        }
+    }
+
+    fn new(numerator: i128, denominator: i128) -> Option<Self> {
+        if denominator == 0 {
+            return None;
+        }
+        let (numerator, denominator) = if denominator < 0 {
+            (numerator.checked_neg()?, denominator.checked_neg()?)
+        } else {
+            (numerator, denominator)
+        };
+        let mut a = numerator.unsigned_abs();
+        let mut b = denominator as u128;
+        while b != 0 {
+            (a, b) = (b, a % b);
+        }
+        let divisor = i128::try_from(a).ok()?;
+        Some(Self {
+            numerator: numerator / divisor,
+            denominator: denominator / divisor,
+        })
+    }
+
+    fn multiply(self, other: Self) -> Option<Self> {
+        Self::new(
+            self.numerator.checked_mul(other.numerator)?,
+            self.denominator.checked_mul(other.denominator)?,
+        )
+    }
+
+    fn subtract(self, other: Self) -> Option<Self> {
+        Self::new(
+            self.numerator
+                .checked_mul(other.denominator)?
+                .checked_sub(other.numerator.checked_mul(self.denominator)?)?,
+            self.denominator.checked_mul(other.denominator)?,
+        )
+    }
+
+    fn divide(self, other: Self) -> Option<Self> {
+        Self::new(
+            self.numerator.checked_mul(other.denominator)?,
+            self.denominator.checked_mul(other.numerator)?,
+        )
+    }
+}
+
+#[cfg(feature = "convert")]
+fn affine_reified_dimension(
+    dimension: &DimensionExpr,
+    bindings: &[Option<DimensionExpr>],
+) -> Option<(i128, Vec<i128>)> {
+    let zero = || vec![0; bindings.len()];
+    match dimension {
+        DimensionExpr::Constant(value) => Some((i128::from(*value), zero())),
+        DimensionExpr::Parameter(id) => {
+            let index = id.get() as usize;
+            if let Some(bound) = bindings.get(index)?.as_ref() {
+                Some((i128::from(reified_dimension_value(bound)?), zero()))
+            } else {
+                let mut coefficients = zero();
+                coefficients[index] = 1;
+                Some((0, coefficients))
+            }
+        }
+        DimensionExpr::Add(children) => {
+            let mut constant = 0_i128;
+            let mut coefficients = zero();
+            for child in children {
+                let (value, terms) = affine_reified_dimension(child, bindings)?;
+                constant = constant.checked_add(value)?;
+                for (coefficient, term) in coefficients.iter_mut().zip(terms) {
+                    *coefficient = coefficient.checked_add(term)?;
+                }
+            }
+            Some((constant, coefficients))
+        }
+        DimensionExpr::Multiply(children) => {
+            let mut constant = 1_i128;
+            let mut coefficients = zero();
+            for child in children {
+                let (value, terms) = affine_reified_dimension(child, bindings)?;
+                if coefficients.iter().any(|coefficient| *coefficient != 0)
+                    && terms.iter().any(|term| *term != 0)
+                {
+                    return None;
+                }
+                let next = coefficients
+                    .iter()
+                    .zip(&terms)
+                    .map(|(coefficient, term)| {
+                        coefficient
+                            .checked_mul(value)?
+                            .checked_add(term.checked_mul(constant)?)
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+                constant = constant.checked_mul(value)?;
+                coefficients = next;
+            }
+            Some((constant, coefficients))
+        }
+        _ => None,
+    }
+}
+
+#[cfg(feature = "convert")]
+fn solve_joint_reified_dimensions(
+    source: &SchemaBody,
+    target: &SchemaBody,
+    bindings: &mut [Option<DimensionExpr>],
+) -> MResult<()> {
+    let unknown = bindings
+        .iter()
+        .enumerate()
+        .filter_map(|(index, binding)| binding.is_none().then_some(index))
+        .collect::<Vec<_>>();
+    if unknown.is_empty() {
+        return Ok(());
+    }
+    let mut equations = Vec::new();
+    collect_reified_dimension_equations(source, target, &mut equations);
+    let mut rows = Vec::<Vec<DimensionRatio>>::new();
+    for (source, target) in equations {
+        let (Some(extent), Some((constant, coefficients))) = (
+            reified_dimension_value(source),
+            affine_reified_dimension(target, bindings),
+        ) else {
+            continue;
+        };
+        let mut row = unknown
+            .iter()
+            .map(|index| DimensionRatio::integer(coefficients[*index]))
+            .collect::<Vec<_>>();
+        row.push(DimensionRatio::integer(i128::from(extent) - constant));
+        rows.push(row);
+    }
+    let mut pivot_row = 0;
+    for column in 0..unknown.len() {
+        let Some(found) = (pivot_row..rows.len()).find(|row| rows[*row][column].numerator != 0)
+        else {
+            continue;
+        };
+        rows.swap(pivot_row, found);
+        let pivot = rows[pivot_row][column];
+        for entry in &mut rows[pivot_row] {
+            *entry = entry.divide(pivot).ok_or_else(|| {
+                invalid_reified_conversion_target(
+                    "joint dimension equation exceeds exact arithmetic",
+                )
+            })?;
+        }
+        let pivot_values = rows[pivot_row].clone();
+        for row in 0..rows.len() {
+            if row == pivot_row {
+                continue;
+            }
+            let factor = rows[row][column];
+            for entry in 0..=unknown.len() {
+                rows[row][entry] = rows[row][entry]
+                    .subtract(factor.multiply(pivot_values[entry]).ok_or_else(|| {
+                        invalid_reified_conversion_target(
+                            "joint dimension equation exceeds exact arithmetic",
+                        )
+                    })?)
+                    .ok_or_else(|| {
+                        invalid_reified_conversion_target(
+                            "joint dimension equation exceeds exact arithmetic",
+                        )
+                    })?;
+            }
+        }
+        pivot_row += 1;
+    }
+    if rows.iter().any(|row| {
+        row[..unknown.len()]
+            .iter()
+            .all(|value| value.numerator == 0)
+            && row[unknown.len()].numerator != 0
+    }) {
+        return Err(invalid_reified_conversion_target(
+            "joint target dimensions have no source witness",
+        ));
+    }
+    if pivot_row != unknown.len() {
+        return Ok(());
+    }
+    let unknown_count = unknown.len();
+    for (column, index) in unknown.into_iter().enumerate() {
+        let value = rows[column][unknown_count];
+        if value.denominator != 1 {
+            return Err(invalid_reified_conversion_target(
+                "joint target dimensions require fractional extents",
+            ));
+        }
+        let value = u64::try_from(value.numerator).map_err(|_| {
+            invalid_reified_conversion_target("joint target dimension is outside the extent range")
+        })?;
+        bindings[index] = Some(DimensionExpr::Constant(value));
+    }
+    Ok(())
 }
 
 #[cfg(feature = "convert")]
@@ -2183,54 +2556,30 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         };
         let source_type = source.resolved_type()?;
         let is_reified_target = reified_dimensions.is_some();
-        let (target, semantic_reified_target, reified_constraints) =
-            if let Some(declarations) = reified_dimensions {
-                let source_body = source.closed_schema_body()?;
-                let source_snapshot = source.snapshot()?;
-                let source_schema = source_snapshot
-                    .schemas()
-                    .and_then(|schemas| schemas.get(source_snapshot.schema()).cloned())
-                    .ok_or_else(|| {
-                        invalid_reified_conversion_target("source schema context is unavailable")
-                    })?;
-                let mut semantic_template = target.clone();
-                inherit_reified_dynamic_cardinality(
-                    source_schema.body(),
-                    &mut semantic_template,
-                    &declarations,
-                )?;
-                let semantic_bindings = solve_reified_target_bindings(
-                    source_schema.body(),
-                    &semantic_template,
-                    &declarations,
-                )?;
-                let semantic_target =
-                    substitute_reified_target(&semantic_template, &semantic_bindings)?;
-                let mut concrete_template = target;
-                inherit_reified_dynamic_cardinality(
-                    &source_body,
-                    &mut concrete_template,
-                    &declarations,
-                )?;
-                let bindings =
-                    solve_reified_target_bindings(&source_body, &concrete_template, &declarations)?;
-                validate_reified_parameter_bindings(&declarations, &bindings)?;
-                let reified_constraints = ReifiedTargetConstraints {
-                    target: concrete_template.clone(),
-                    declarations,
-                };
-                (
-                    substitute_reified_target(&concrete_template, &bindings)?,
-                    Some(semantic_target),
-                    Some(reified_constraints),
-                )
-            } else {
-                (target, None, None)
+        let (target, reified_constraints) = if let Some(declarations) = reified_dimensions {
+            let source_body = source.closed_schema_body()?;
+            let mut concrete_template = target;
+            inherit_reified_dynamic_cardinality(
+                &source_body,
+                &mut concrete_template,
+                &declarations,
+            )?;
+            let bindings =
+                solve_reified_target_bindings(&source_body, &concrete_template, &declarations)?;
+            validate_reified_parameter_bindings(&declarations, &bindings)?;
+            let reified_constraints = ReifiedTargetConstraints {
+                target: concrete_template.clone(),
+                declarations,
             };
-        let semantic_target = materialize_declared_conversion_semantic_shape(
-            source_type.kind(),
-            semantic_reified_target.as_ref().unwrap_or(&target),
-        );
+            (
+                substitute_reified_target(&concrete_template, &bindings)?,
+                Some(reified_constraints),
+            )
+        } else {
+            (target, None)
+        };
+        let semantic_target =
+            materialize_conversion_semantic_shape(source_type.kind(), &target, is_reified_target);
         let target = materialize_declared_conversion_shape(&source.closed_schema_body()?, &target);
         let target_dimensions = if is_reified_target
             && !has_dynamic_cardinality(&semantic_target)
@@ -2522,6 +2871,48 @@ pub fn real(_: &RealNumber, _: &InterpreterExecution<'_>) -> MResult<ValueCell> 
 #[cfg(all(test, feature = "convert", feature = "f64", feature = "u8"))]
 mod canonical_conversion_tests {
     use super::*;
+
+    #[test]
+    fn interpreter_open_kind_values_declare_their_axes() {
+        for (source, expected_axes) in [
+            ("<[u8]>", 2),
+            ("<{u8:f64}>", 1),
+            ("<{u8}>", 1),
+            ("<|a<u8>|>", 1),
+        ] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let mut interpreter = Interpreter::with_function_catalog(
+                0,
+                10_000,
+                crate::test_support::catalog::function_catalog(),
+            );
+            let output = interpreter.interpret(&tree).unwrap().unwrap();
+            let snapshot = output.snapshot().unwrap();
+            let ValueData::Type(ReifiedType::Kind(kind)) = snapshot.data() else {
+                panic!("{source}: expected a reified kind")
+            };
+            let (_, dimensions, _) = kind.decoded_closed_kind().unwrap();
+            assert_eq!(dimensions.len(), expected_axes, "{source}");
+        }
+    }
+
+    #[test]
+    fn interpreter_identity_kind_values_match_source_kinds() {
+        for (source, expected) in [("<id>", KindExpr::Id), ("<ix>", KindExpr::Index)] {
+            let tree = mech_syntax::parser::parse(source).unwrap();
+            let mut interpreter = Interpreter::with_function_catalog(
+                0,
+                10_000,
+                crate::test_support::catalog::function_catalog(),
+            );
+            let output = interpreter.interpret(&tree).unwrap().unwrap();
+            let snapshot = output.snapshot().unwrap();
+            let ValueData::Type(ReifiedType::Kind(kind)) = snapshot.data() else {
+                panic!("{source}: expected a reified kind")
+            };
+            assert_eq!(kind.decoded_closed_kind().unwrap().0, expected);
+        }
+    }
 
     struct NamedKinds(BTreeMap<KindId, CanonicalNominalPath>);
 
@@ -2924,6 +3315,53 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn compound_reified_matrix_specializes_from_semantic_turn_axes() {
+        let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
+        let named = NamedKinds(BTreeMap::from([(id, path)]));
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let dimensions = [p, q].map(|id| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        });
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Matrix {
+                element: Box::new(KindExpr::Named(id)),
+                dimensions: [
+                    DimensionExpr::Add(
+                        [DimensionExpr::Parameter(p), DimensionExpr::Constant(1)].into(),
+                    ),
+                    DimensionExpr::Parameter(q),
+                ]
+                .into(),
+            },
+            &dimensions,
+            &named,
+        )
+        .unwrap();
+        let source = ValueCell::dynamic_matrix_from_cells(
+            1,
+            2,
+            &[
+                ValueCell::from_exact(1.0_f64).unwrap(),
+                ValueCell::from_exact(2.0_f64).unwrap(),
+            ],
+        )
+        .unwrap();
+        let converted = convert_reified(source, kind).unwrap();
+        assert_eq!(
+            converted.closed_schema_body().unwrap(),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: [DimensionExpr::Constant(1), DimensionExpr::Constant(2)].into(),
+            },
+        );
+    }
+
+    #[test]
     fn open_conversion_targets_reuse_nested_shapes_and_collection_cardinalities() {
         let source = SchemaBody::Tuple(
             vec![
@@ -3230,6 +3668,73 @@ mod canonical_conversion_tests {
             dimensions: [DimensionExpr::Constant(5)].into(),
         };
         assert!(solve_reified_target_bindings(&source, &ambiguous, &[declaration]).is_err());
+    }
+
+    #[test]
+    fn joint_affine_axes_determine_shared_reified_parameters() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let declarations = [p, q].map(|id| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        });
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [
+                DimensionExpr::Add(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+                ),
+                DimensionExpr::Add(
+                    [
+                        DimensionExpr::Multiply(
+                            [DimensionExpr::Constant(2), DimensionExpr::Parameter(p)].into(),
+                        ),
+                        DimensionExpr::Parameter(q),
+                    ]
+                    .into(),
+                ),
+            ]
+            .into(),
+        };
+        let source = |first, second| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [
+                DimensionExpr::Constant(first),
+                DimensionExpr::Constant(second),
+            ]
+            .into(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&source(5, 7), &target, &declarations).unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(2)),
+                Some(DimensionExpr::Constant(3))
+            ],
+        );
+        assert!(solve_reified_target_bindings(&source(5, 4), &target, &declarations).is_err());
+    }
+
+    #[test]
+    fn semantic_reified_conversion_retains_source_axis_provenance() {
+        let source_id = DimensionParameterId::new(0);
+        let source = KindExpr::Matrix {
+            element: Box::new(KindExpr::Index),
+            dimensions: [DimensionExpr::Parameter(source_id)].into(),
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: [DimensionExpr::Constant(8)].into(),
+        };
+        assert_eq!(
+            materialize_conversion_semantic_shape(&source, &target, true),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: [DimensionExpr::Parameter(source_id)].into(),
+            },
+        );
     }
 
     #[test]
