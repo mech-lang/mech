@@ -285,6 +285,8 @@ impl PatternItem {
         enum Cursor<'a> {
             Plain(&'a ValueDataDraft),
             Typed {
+                owner: &'a mech_core::Schema,
+                open_body: &'a SchemaBody,
                 body: &'a SchemaBody,
                 data: &'a ValueDataDraft,
             },
@@ -321,7 +323,12 @@ impl PatternItem {
                     (SchemaBody::Dynamic, ValueDataDraft::Dynamic(next)) => {
                         Cursor::Dynamic(next.as_deref())
                     }
-                    (body, data) => Cursor::Typed { body, data },
+                    (body, data) => Cursor::Typed {
+                        owner: schema,
+                        open_body: schema.body(),
+                        body,
+                        data,
+                    },
                 };
             }
         }
@@ -334,8 +341,18 @@ impl PatternItem {
                     }
                     _ => None,
                 },
-                Cursor::Typed { body, data } => match (body, data) {
-                    (SchemaBody::Tuple(fields), ValueDataDraft::Tuple(items)) => {
+                Cursor::Typed {
+                    owner,
+                    open_body,
+                    body,
+                    data,
+                } => match (open_body, body, data) {
+                    (
+                        SchemaBody::Tuple(open_fields),
+                        SchemaBody::Tuple(fields),
+                        ValueDataDraft::Tuple(items),
+                    ) => {
+                        let open_body = open_fields.get(index)?;
                         let body = fields.get(index)?;
                         let data = items.get(index)?;
                         if matches!(body, SchemaBody::Dynamic) {
@@ -344,10 +361,23 @@ impl PatternItem {
                             };
                             Some(Cursor::Dynamic(value.as_deref()))
                         } else {
-                            Some(Cursor::Typed { body, data })
+                            Some(Cursor::Typed {
+                                owner,
+                                open_body,
+                                body,
+                                data,
+                            })
                         }
                     }
-                    (SchemaBody::Matrix { element, .. }, ValueDataDraft::Matrix(items)) => {
+                    (
+                        SchemaBody::Matrix {
+                            element: open_element,
+                            ..
+                        },
+                        SchemaBody::Matrix { element, .. },
+                        ValueDataDraft::Matrix(items),
+                    ) => {
+                        let open_body = open_element.as_ref();
                         let body = element.as_ref();
                         let data = items.get(index)?;
                         if matches!(body, SchemaBody::Dynamic) {
@@ -356,7 +386,12 @@ impl PatternItem {
                             };
                             Some(Cursor::Dynamic(value.as_deref()))
                         } else {
-                            Some(Cursor::Typed { body, data })
+                            Some(Cursor::Typed {
+                                owner,
+                                open_body,
+                                body,
+                                data,
+                            })
                         }
                     }
                     _ => None,
@@ -368,7 +403,19 @@ impl PatternItem {
         let mut cursor = match self {
             Self::Plain(data) => Cursor::Plain(data),
             Self::Dynamic(value) => Cursor::Dynamic(value.as_deref()),
-            Self::Component { body, data, .. } => Cursor::Typed { body, data },
+            Self::Component {
+                schema, body, data, ..
+            } => Cursor::Typed {
+                owner: schemas
+                    .get(*schema)
+                    .ok_or(ResidentKernelError::InvalidInput)?,
+                open_body: schemas
+                    .get(*schema)
+                    .ok_or(ResidentKernelError::InvalidInput)?
+                    .body(),
+                body,
+                data,
+            },
         };
         let mut workspace = 0_u64;
         for index in path {
@@ -377,29 +424,62 @@ impl PatternItem {
                     .checked_mul(2)
                     .ok_or(ResidentKernelError::InvalidShape)?);
             };
+            let component_workspace = match &resolved {
+                Cursor::Typed {
+                    owner,
+                    open_body,
+                    body,
+                    ..
+                } => {
+                    let open = match open_body {
+                        SchemaBody::Tuple(fields) => fields.get(*index),
+                        SchemaBody::Matrix { element, .. } => Some(element.as_ref()),
+                        _ => None,
+                    };
+                    let closed = match body {
+                        SchemaBody::Tuple(fields) => fields.get(*index),
+                        SchemaBody::Matrix { element, .. } => Some(element.as_ref()),
+                        _ => None,
+                    };
+                    match (open, closed) {
+                        (Some(open), Some(closed)) => {
+                            let parameter_bytes = owner
+                                .clone_allocation_bound_bytes()
+                                .and_then(|total| {
+                                    total.checked_sub(owner.body().clone_allocation_bound_bytes()?)
+                                })
+                                .ok_or(ResidentKernelError::InvalidShape)?;
+                            let open_bytes = open
+                                .clone_allocation_bound_bytes()
+                                .ok_or(ResidentKernelError::InvalidShape)?;
+                            let closed_bytes = closed
+                                .clone_allocation_bound_bytes()
+                                .ok_or(ResidentKernelError::InvalidShape)?;
+                            let shape_bytes =
+                                budget::checked_u64(owner.dimension_parameters().len())?
+                                    .checked_mul(core::mem::size_of::<u64>() as u64)
+                                    .ok_or(ResidentKernelError::InvalidShape)?;
+                            parameter_bytes
+                                .checked_mul(3)
+                                .and_then(|bytes| bytes.checked_add(open_bytes.checked_mul(4)?))
+                                .and_then(|bytes| bytes.checked_add(closed_bytes.checked_mul(4)?))
+                                .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
+                                .ok_or(ResidentKernelError::InvalidShape)?
+                        }
+                        _ => 0,
+                    }
+                }
+                _ => 0,
+            };
             let Some(next) = child(resolved, *index) else {
                 return Ok(workspace
                     .checked_mul(2)
                     .ok_or(ResidentKernelError::InvalidShape)?);
             };
-            cursor = next;
-        }
-        // Component selection also clones the open and closed bodies, builds a
-        // canonical component schema, solves its shape, and closes that schema
-        // again. A clone of the complete schema context is a conservative
-        // allocation bound for that one-component construction, including
-        // dimension declarations and their expression trees. Only one such
-        // construction is live at a time while the consumed parent item is
-        // replaced by its selected child.
-        if !path.is_empty() {
             workspace = workspace
-                .checked_add(
-                    schemas
-                        .clone_allocation_bound_bytes()
-                        .and_then(|bytes| bytes.checked_mul(2))
-                        .ok_or(ResidentKernelError::InvalidShape)?,
-                )
+                .checked_add(component_workspace)
                 .ok_or(ResidentKernelError::InvalidShape)?;
+            cursor = next;
         }
         // The retained-footprint pass resolves a Dynamic at the selected leaf
         // even though `PatternItem::child` defers that final resolution.
@@ -3821,7 +3901,7 @@ mod tests {
     }
 
     #[test]
-    fn dynamic_child_descent_accounts_for_both_schema_closure_passes() {
+    fn dynamic_child_descent_ignores_unrelated_schema_storage() {
         let mut builder = SchemaTableBuilder::new();
         let tuple = builder
             .insert(
@@ -3845,6 +3925,16 @@ mod tests {
                 .unwrap(),
             )
             .unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(vec![SchemaBody::String; 4096].into_boxed_slice()),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
         let build = builder.finish().unwrap();
         let tuple = build.resolve(tuple).unwrap();
         let (schemas, _) = build.into_parts();
@@ -3862,10 +3952,13 @@ mod tests {
             .clone_allocation_bound_bytes()
             .unwrap();
 
-        let component_resolution = schemas.clone_allocation_bound_bytes().unwrap() * 4;
         assert_eq!(
             item.dynamic_descent_workspace(&[0], &schemas).unwrap(),
-            one_closure * 2 + component_resolution,
+            one_closure * 2,
+        );
+        assert!(
+            item.dynamic_descent_workspace(&[0], &schemas).unwrap()
+                < schemas.clone_allocation_bound_bytes().unwrap()
         );
     }
 

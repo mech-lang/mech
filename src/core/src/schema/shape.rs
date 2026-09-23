@@ -55,7 +55,7 @@ impl ShapeInstance {
     }
 
     pub fn canonical_bytes(&self) -> Box<[u8]> {
-        let mut bytes = Vec::new();
+        let mut bytes = Vec::with_capacity(5 + self.parameter_values.len() * 8);
         bytes.push(0x01);
         bytes.extend_from_slice(&(self.parameter_values.len() as u32).to_le_bytes());
         for value in &self.parameter_values {
