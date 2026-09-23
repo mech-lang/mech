@@ -2083,17 +2083,16 @@ fn collection_item_footprint(
         ResidentValueRef::String(values) => {
             let offset = dense_collection_offset(region, ordinal)
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            scalar_footprint(
-                values
-                    .get(offset)
-                    .ok_or(ResidentKernelError::InvalidShape)?
-                    .len(),
-            )?
+            let value = values
+                .get(offset)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            meter.charge_compute_work(budget::checked_u64(value.len())?)?;
+            scalar_footprint(value.len())?
         }
         ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
     };
-    // Native scalar lanes are borrowed directly; the generator loop already
-    // charges their visit. Recursive snapshot traversal is charged above.
+    // Fixed-width native lanes need no recursive traversal. String clone
+    // traffic and recursive snapshot traversal are charged above.
     Ok(footprint)
 }
 
@@ -4030,29 +4029,25 @@ impl ReactiveInstance {
                 .ok_or(ResidentKernelError::InvalidShape)?;
         }
         meter.charge_comparison_work(scan_work)?;
-        let (previous_arena_bytes, previous_arena_nodes) =
-            if let Some(previous_owner) = &previous_owner {
-                if owners
-                    .iter()
-                    .any(|owner| Arc::ptr_eq(&owner.owner, previous_owner))
-                {
-                    (0, 0)
-                } else {
-                    distinct_schema_owner_footprint(
-                        previous_owner,
-                        &self.plan.schemas,
-                        shared_owner_bytes,
-                    )?
-                }
-            } else {
-                (0, 0)
-            };
-        let peak = allocation_bound
+        let (previous_arena_bytes, previous_arena_nodes) = previous_owner
+            .as_ref()
+            .map(|owner| {
+                distinct_schema_owner_footprint(owner, &self.plan.schemas, shared_owner_bytes)
+            })
+            .transpose()?
+            .unwrap_or((0, 0));
+        let closure_construction_peak = allocation_bound
             .checked_mul(2)
             .and_then(|bytes| bytes.checked_add(closure_peak))
             .and_then(|bytes| bytes.checked_add(previous_arena_bytes))
             .and_then(|bytes| bytes.checked_add(owner_index_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?;
+        let merge_peak = allocation_bound
+            .checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(previous_arena_bytes))
+            .and_then(|bytes| bytes.checked_add(owner_index_bytes))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let peak = closure_construction_peak.max(merge_peak);
         // Each extend_preserving_ids call clones the arena accumulated so
         // far. Bound every rebuild by the final arena, not just the first.
         meter.charge_compute_work(
@@ -4067,9 +4062,9 @@ impl ReactiveInstance {
                 .and_then(|work| work.checked_add(allocation_bound))
                 .ok_or(ResidentKernelError::InvalidShape)?,
         )?;
-        // Closure and merge can overlap the source entries, closed entries,
-        // merge index, prior merged table, and replacement table. The final
-        // arena retains only one population, charged into `meter` below.
+        // Closure and merge can overlap the source entries, rooted closure,
+        // prior merged table, replacement vector, and boxed-slice shrink.
+        // The final arena retains only one population, charged below.
         let construction_nodes = retained_nodes
             .checked_mul(5)
             .and_then(|nodes| nodes.checked_add(previous_arena_nodes))
@@ -4101,7 +4096,7 @@ impl ReactiveInstance {
                 )
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
             merged = merged
-                .extend_preserving_ids(&closed)
+                .extend_preserving_ids_preallocated(&closed)
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
         }
         // Runtime source owners can append schemas that activation could not
@@ -4443,7 +4438,8 @@ impl ReactiveInstance {
         let value = self
             .read_location(source, working)
             .ok_or(ResidentKernelError::InvalidInput)?;
-        let footprint = collection_item_footprint(value, region(source), element, ordinal, meter)?;
+        let mut footprint =
+            collection_item_footprint(value, region(source), element, ordinal, meter)?;
         let metadata_bytes = element
             .clone_allocation_bound_bytes()
             .and_then(|bytes| bytes.checked_add(core::mem::size_of::<SchemaBody>() as u64))
@@ -4479,6 +4475,30 @@ impl ReactiveInstance {
         )
         .ok_or(ResidentKernelError::InvalidInput)?;
         meter.charge_comparison_work(canonical_budget.consumed())?;
+        if let (
+            ResidentValueRef::String(_),
+            PatternItem::Component {
+                data: ValueDataDraft::String(cloned),
+                ..
+            },
+        ) = (value, &item)
+        {
+            footprint.retained_bytes = footprint
+                .retained_bytes
+                .checked_add(budget::checked_u64(
+                    cloned.capacity().saturating_sub(cloned.len()),
+                )?)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            admit_item_clone(
+                footprint,
+                metadata_bytes,
+                retained_count,
+                retained_footprint,
+                retained_shape_parameter_count,
+                schema_arena_bytes,
+                *meter,
+            )?;
+        }
         for index in path {
             item = item
                 .child(*index, schemas, projections)
