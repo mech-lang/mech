@@ -2502,9 +2502,34 @@ impl ReactiveInstance {
                 },
                 ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(returned.region),
             };
-            self.read_location(location, working_epoch)
-                .map(|value| (changed, owned_resident_value(value)))
-                .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))
+            let value = self
+                .read_location(location, working_epoch)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+            let (result_bytes, result_nodes) =
+                resident_frame_value_footprint(value, &self.plan.schemas)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_frame_bytes
+                .checked_add(result_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_nodes = live_frame_nodes
+                .checked_add(result_nodes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    budget::resident_cost! {
+                        temporary_bytes: peak_bytes,
+                        cloned_bytes: result_bytes,
+                        retained_nodes: peak_nodes,
+                        ..budget::KernelCostEstimate::default()
+                    },
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            Ok((changed, owned_resident_value(value)))
         });
 
         for (region, value) in &frame {
