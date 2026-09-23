@@ -1831,6 +1831,219 @@ fn affine_reified_dimension(
 }
 
 #[cfg(feature = "convert")]
+fn joint_row_other_range(
+    coefficients: &[i128],
+    domains: &[(u64, u64)],
+    except: usize,
+) -> Option<(i128, i128)> {
+    coefficients.iter().zip(domains).enumerate().try_fold(
+        (0_i128, 0_i128),
+        |(minimum, maximum), (index, (coefficient, (lower, upper)))| {
+            if index == except {
+                return Some((minimum, maximum));
+            }
+            let (low, high) = if *coefficient < 0 {
+                (*upper, *lower)
+            } else {
+                (*lower, *upper)
+            };
+            Some((
+                minimum.checked_add(coefficient.checked_mul(i128::from(low))?)?,
+                maximum.checked_add(coefficient.checked_mul(i128::from(high))?)?,
+            ))
+        },
+    )
+}
+
+#[cfg(feature = "convert")]
+fn narrow_joint_reified_domains(
+    equations: &[(Vec<i128>, i128)],
+    domains: &mut [(u64, u64)],
+) -> MResult<()> {
+    // Bounds move inward only. A fixed iteration ceiling keeps dependent
+    // constraints from consuming unbounded work before the search limit.
+    for _ in 0..=domains.len().saturating_mul(2) {
+        let mut changed = false;
+        for (coefficients, target) in equations {
+            for (index, coefficient) in coefficients.iter().enumerate() {
+                if *coefficient == 0 {
+                    continue;
+                }
+                let Some((other_minimum, other_maximum)) =
+                    joint_row_other_range(coefficients, domains, index)
+                else {
+                    continue;
+                };
+                let (minimum, maximum, divisor) = if *coefficient > 0 {
+                    (
+                        target.checked_sub(other_maximum),
+                        target.checked_sub(other_minimum),
+                        Some(*coefficient),
+                    )
+                } else {
+                    (
+                        other_minimum.checked_sub(*target),
+                        other_maximum.checked_sub(*target),
+                        coefficient.checked_abs(),
+                    )
+                };
+                let (Some(minimum), Some(maximum), Some(divisor)) = (minimum, maximum, divisor)
+                else {
+                    continue;
+                };
+                let lower =
+                    minimum.div_euclid(divisor) + i128::from(minimum.rem_euclid(divisor) != 0);
+                let upper = maximum.div_euclid(divisor);
+                let lower = lower.max(0);
+                let upper = upper.min(i128::from(u64::MAX));
+                if lower > upper {
+                    return Err(invalid_reified_conversion_target(
+                        "joint target dimensions have no source witness",
+                    ));
+                }
+                let domain = &mut domains[index];
+                let next = (domain.0.max(lower as u64), domain.1.min(upper as u64));
+                if next.0 > next.1 {
+                    return Err(invalid_reified_conversion_target(
+                        "joint target dimensions have no source witness",
+                    ));
+                }
+                changed |= *domain != next;
+                *domain = next;
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "convert")]
+fn solve_bounded_joint_reified_dimensions(
+    equations: &[(Vec<i128>, i128)],
+    declarations: &[DimensionParameterDeclaration],
+    bindings: &[Option<DimensionExpr>],
+    unknown: &[usize],
+) -> MResult<Option<Vec<u64>>> {
+    const MAX_RANGE_SEARCH_STATES: usize = 65_536;
+    let mut domains = unknown
+        .iter()
+        .map(|index| {
+            let declaration = declarations
+                .iter()
+                .find(|declaration| declaration.id.get() as usize == *index)
+                .ok_or_else(|| {
+                    invalid_reified_conversion_target("unknown target dimension parameter")
+                })?;
+            let lower = substitute_reified_dimension(&declaration.lower_bound, bindings)
+                .ok()
+                .and_then(|bound| reified_dimension_value(&bound))
+                .unwrap_or(0);
+            let upper = declaration
+                .upper_bound
+                .as_ref()
+                .and_then(|bound| substitute_reified_dimension(bound, bindings).ok())
+                .and_then(|bound| reified_dimension_value(&bound))
+                .unwrap_or(u64::MAX);
+            if lower > upper {
+                return Err(invalid_reified_conversion_target(
+                    "target dimension bounds are inconsistent",
+                ));
+            }
+            Ok((lower, upper))
+        })
+        .collect::<MResult<Vec<_>>>()?;
+    narrow_joint_reified_domains(equations, &mut domains)?;
+
+    fn search(
+        equations: &[(Vec<i128>, i128)],
+        declarations: &[DimensionParameterDeclaration],
+        bindings: &[Option<DimensionExpr>],
+        unknown: &[usize],
+        domains: Vec<(u64, u64)>,
+        visited: &mut usize,
+        solutions: &mut Vec<Vec<u64>>,
+    ) -> MResult<()> {
+        if solutions.len() >= 2 {
+            return Ok(());
+        }
+        *visited += 1;
+        if *visited > MAX_RANGE_SEARCH_STATES {
+            return Err(invalid_reified_conversion_target(
+                "joint target dimension range search exceeds the solver limit",
+            ));
+        }
+        let mut domains = domains;
+        if narrow_joint_reified_domains(equations, &mut domains).is_err() {
+            return Ok(());
+        }
+        if domains.iter().all(|(lower, upper)| lower == upper) {
+            let values = domains.iter().map(|domain| domain.0).collect::<Vec<_>>();
+            let equations_hold = equations.iter().all(|(coefficients, target)| {
+                coefficients
+                    .iter()
+                    .zip(&values)
+                    .try_fold(0_i128, |total, (coefficient, value)| {
+                        total.checked_add(coefficient.checked_mul(i128::from(*value))?)
+                    })
+                    == Some(*target)
+            });
+            if equations_hold {
+                let mut candidate = bindings.to_vec();
+                for (index, value) in unknown.iter().zip(&values) {
+                    candidate[*index] = Some(DimensionExpr::Constant(*value));
+                }
+                if validate_reified_parameter_bindings(declarations, &candidate).is_ok() {
+                    solutions.push(values);
+                }
+            }
+            return Ok(());
+        }
+        let Some((index, (lower, upper))) = domains
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|(_, (lower, upper))| lower < upper && *upper != u64::MAX)
+            .min_by_key(|(_, (lower, upper))| upper - lower)
+        else {
+            return Ok(());
+        };
+        let mut value = lower;
+        loop {
+            let mut branch = domains.clone();
+            branch[index] = (value, value);
+            search(
+                equations,
+                declarations,
+                bindings,
+                unknown,
+                branch,
+                visited,
+                solutions,
+            )?;
+            if solutions.len() >= 2 || value == upper {
+                break;
+            }
+            value += 1;
+        }
+        Ok(())
+    }
+
+    let mut solutions = Vec::new();
+    search(
+        equations,
+        declarations,
+        bindings,
+        unknown,
+        domains,
+        &mut 0,
+        &mut solutions,
+    )?;
+    Ok((solutions.len() == 1).then(|| solutions.remove(0)))
+}
+
+#[cfg(feature = "convert")]
 fn solve_joint_reified_dimensions(
     source: &SchemaBody,
     target: &SchemaBody,
@@ -1866,6 +2079,7 @@ fn solve_joint_reified_dimensions(
         ));
     }
     let mut rows = Vec::<Vec<DimensionRatio>>::new();
+    let mut integer_rows = Vec::<(Vec<i128>, i128)>::new();
     let mut add_equation = |source: &DimensionExpr, target: &DimensionExpr| -> MResult<()> {
         let (
             Some((source_constant, source_coefficients)),
@@ -1877,11 +2091,10 @@ fn solve_joint_reified_dimensions(
         else {
             return Ok(());
         };
-        let mut row = (0..unknown.len())
+        let coefficients = (0..unknown.len())
             .map(|column| {
                 target_coefficients[column]
                     .checked_sub(source_coefficients[column])
-                    .map(DimensionRatio::integer)
                     .ok_or_else(|| {
                         invalid_reified_conversion_target(
                             "joint dimension equation exceeds exact arithmetic",
@@ -1889,16 +2102,21 @@ fn solve_joint_reified_dimensions(
                     })
             })
             .collect::<MResult<Vec<_>>>()?;
-        row.push(DimensionRatio::integer(
-            source_constant
-                .checked_sub(target_constant)
-                .ok_or_else(|| {
-                    invalid_reified_conversion_target(
-                        "joint dimension equation exceeds exact arithmetic",
-                    )
-                })?,
-        ));
+        let target = source_constant
+            .checked_sub(target_constant)
+            .ok_or_else(|| {
+                invalid_reified_conversion_target(
+                    "joint dimension equation exceeds exact arithmetic",
+                )
+            })?;
+        let mut row = coefficients
+            .iter()
+            .copied()
+            .map(DimensionRatio::integer)
+            .collect::<Vec<_>>();
+        row.push(DimensionRatio::integer(target));
         rows.push(row);
+        integer_rows.push((coefficients, target));
         Ok(())
     };
     for (source, target) in equations {
@@ -1960,6 +2178,13 @@ fn solve_joint_reified_dimensions(
         ));
     }
     if pivot_row != unknown.len() {
+        if let Some(values) =
+            solve_bounded_joint_reified_dimensions(&integer_rows, declarations, bindings, &unknown)?
+        {
+            for (index, value) in unknown.iter().zip(values) {
+                bindings[*index] = Some(DimensionExpr::Constant(value));
+            }
+        }
         return Ok(());
     }
     let unknown_count = unknown.len();
@@ -3885,6 +4110,83 @@ mod canonical_conversion_tests {
             ],
         );
         assert!(solve_reified_target_bindings(&source(5, 4), &target, &declarations).is_err());
+    }
+
+    #[test]
+    fn finite_ranges_can_make_joint_reified_dimensions_unique() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let declaration = |id, lower, upper| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(lower),
+            upper_bound: Some(DimensionExpr::Constant(upper)),
+        };
+        let source = |extent| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(extent)].into(),
+        };
+        let target = |first, second| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Add([first, second].into())].into(),
+        };
+        let sum = target(DimensionExpr::Parameter(p), DimensionExpr::Parameter(q));
+        assert_eq!(
+            solve_reified_target_bindings(
+                &source(5),
+                &sum,
+                &[declaration(p, 2, 3), declaration(q, 0, 2)],
+            )
+            .unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(3)),
+                Some(DimensionExpr::Constant(2))
+            ],
+        );
+        assert_eq!(
+            solve_reified_target_bindings(
+                &source(0),
+                &sum,
+                &[
+                    declaration(p, 0, 1_000_000_000),
+                    declaration(q, 0, 1_000_000_000)
+                ],
+            )
+            .unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(0)),
+                Some(DimensionExpr::Constant(0))
+            ],
+        );
+        let weighted = target(
+            DimensionExpr::Multiply(
+                [DimensionExpr::Constant(2), DimensionExpr::Parameter(p)].into(),
+            ),
+            DimensionExpr::Multiply(
+                [DimensionExpr::Constant(3), DimensionExpr::Parameter(q)].into(),
+            ),
+        );
+        assert_eq!(
+            solve_reified_target_bindings(
+                &source(5),
+                &weighted,
+                &[declaration(p, 0, 2), declaration(q, 0, 2)],
+            )
+            .unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(1)),
+                Some(DimensionExpr::Constant(1))
+            ],
+        );
+        assert!(
+            solve_reified_target_bindings(
+                &source(5),
+                &sum,
+                &[declaration(p, 2, 4), declaration(q, 0, 3)],
+            )
+            .is_err()
+        );
     }
 
     #[test]
