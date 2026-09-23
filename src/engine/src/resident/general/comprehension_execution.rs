@@ -1640,8 +1640,32 @@ impl PatternItem {
                 if matches!(binding.body(), SchemaBody::Dynamic) {
                     return Err(ResidentKernelError::InvalidInput);
                 }
+                let shape_values = if let (
+                    SchemaBody::Matrix { dimensions, .. },
+                    ValueDataDraft::Matrix(values),
+                ) = (binding.body(), &data)
+                    && dimensions.len() == 2
+                    && matches!(&dimensions[0], DimensionExpr::Constant(1))
+                    && matches!(&dimensions[1], DimensionExpr::Parameter(parameter)
+                        if parameter.get() as usize == source_shape_values.len())
+                    && binding.dimension_parameters().len() == source_shape_values.len() + 1
+                {
+                    // Plain native array-rest slices have no projected schema
+                    // on the item. The rest declaration appends one inferred
+                    // extent after the scrutinee's shape parameters.
+                    let mut values_for_shape = source_shape_values.to_vec();
+                    values_for_shape.push(budget::checked_u64(values.len())?);
+                    binding
+                        .instantiate_shape(values_for_shape.into_boxed_slice())
+                        .map_err(|_| ResidentKernelError::InvalidInput)?
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice()
+                } else {
+                    source_shape_values.to_vec().into_boxed_slice()
+                };
                 return Ok(Some(PatternBindingItem {
-                    shape_values: source_shape_values.to_vec().into_boxed_slice(),
+                    shape_values,
                     data,
                     schemas: None,
                     schema_index: None,
@@ -6186,6 +6210,42 @@ mod tests {
             SchemaBody::FloatingPoint(FloatWidth::W64)
         ));
         assert!(matches!(value.data, ValueDataDraft::F64(value) if value.to_f64() == 7.0));
+    }
+
+    #[test]
+    fn plain_native_array_rest_infers_its_binding_extent() {
+        let parent = SchemaDraft {
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                    .into_boxed_slice(),
+            },
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        builder.insert(parent.clone()).unwrap();
+        let rest = builder
+            .insert(
+                projected_rest_schema(&parent, SchemaBody::FloatingPoint(FloatWidth::W64)).unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let rest = build.resolve(rest).unwrap();
+        let (schemas, projections) = structural_projection_schema_context(&build.table).unwrap();
+        let native = PatternItem::new(ValueDataDraft::Matrix(
+            [1.0, 2.0, 3.0]
+                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                .into(),
+        ));
+        let middle = native.middle(1, 0, &schemas, &projections).unwrap();
+        let binding = middle
+            .into_binding(rest, &[], &schemas, &projections)
+            .unwrap()
+            .unwrap();
+        assert_eq!(binding.shape_values.as_ref(), [2]);
+        assert!(matches!(binding.data, ValueDataDraft::Matrix(values) if values.len() == 2));
     }
 
     #[test]
