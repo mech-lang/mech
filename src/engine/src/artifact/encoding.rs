@@ -135,6 +135,7 @@ impl CanonicalArtifactWriter {
         for capture in &control.captures {
             self.u16(capture.input);
             self.u32(capture.schema.get());
+            self.u8(u8::from(capture.freeze_on_suspend));
         }
         self.u64(control.arms.len() as u64);
         for arm in &control.arms {

@@ -724,13 +724,16 @@ impl ReactiveInstance {
                             source,
                         )
                     }
-                    ResidentReadLocation::Input(source) => self.state.stage_projection_from_arena(
-                        target,
-                        target_region,
-                        epoch,
-                        &self.workspace.input,
-                        source,
-                    ),
+                    ResidentReadLocation::Input(source)
+                    | ResidentReadLocation::LexicalInput(source) => {
+                        self.state.stage_projection_from_arena(
+                            target,
+                            target_region,
+                            epoch,
+                            &self.workspace.input,
+                            source,
+                        )
+                    }
                     ResidentReadLocation::Scratch(source) => {
                         self.state.stage_projection_from_arena(
                             target,
@@ -1067,6 +1070,7 @@ impl ReactiveInstance {
         self.workspace.completed_continuations.fill(0);
         self.workspace.continuation_publications.fill(0);
         self.workspace.continuation_capture_frames.clear();
+        self.workspace.active_resume_state = None;
         self.workspace
             .candidate_output_ready
             .clone_from(&self.output_ready);
@@ -1222,6 +1226,7 @@ impl ReactiveInstance {
         self.workspace.completed_continuations.fill(0);
         self.workspace.continuation_publications.fill(0);
         self.workspace.continuation_capture_frames.clear();
+        self.workspace.active_resume_state = None;
         self.workspace
             .candidate_output_ready
             .clone_from(&self.output_ready);
@@ -1425,6 +1430,18 @@ impl ReactiveInstance {
         self.validate_constraints(working_epoch)
     }
 
+    fn unpublished_continuation(&self, index: usize) -> bool {
+        matches!(
+            self.plan.steps.get(index),
+            Some(ActivatedTurnStep::Match(control))
+                if control.continuation
+                    && !bit_is_set(&self.workspace.continuation_publications, index)
+                    && (self.workspace.continuation_candidates[index].is_some()
+                        || (self.continuations[index].is_some()
+                            && !bit_is_set(&self.workspace.completed_continuations, index)))
+        )
+    }
+
     fn materialize_outputs(
         &mut self,
         before_epoch: InstanceEpoch,
@@ -1434,19 +1451,14 @@ impl ReactiveInstance {
         for index in 0..self.plan.output_materializations.len() {
             let materialization = self.plan.output_materializations[index];
             let suspended = self.plan.steps.iter().enumerate().any(|(step, node)| {
-                matches!(
-                    node,
-                    ActivatedTurnStep::Match(control)
-                        if control.continuation
-                            && self.workspace.continuation_candidates[step].is_some()
-                            && !bit_is_set(&self.workspace.continuation_publications, step)
-                            && output_materialization_depends_on_match(
-                                &self.plan,
-                                materialization,
-                                step,
-                                control.write.region,
-                            )
-                )
+                self.unpublished_continuation(step)
+                    && matches!(node, ActivatedTurnStep::Match(control)
+                    if output_materialization_depends_on_match(
+                        &self.plan,
+                        materialization,
+                        step,
+                        control.write.region,
+                    ))
             });
             if suspended {
                 continue;
@@ -1468,18 +1480,26 @@ impl ReactiveInstance {
                     })?;
                     self.state.tag(target, candidate, working_epoch);
                 }
-                ResidentReadLocation::Input(source) => {
+                ResidentReadLocation::Input(source)
+                | ResidentReadLocation::LexicalInput(source) => {
                     let candidate = self.state.candidate_buffer(target, before_epoch);
-                    copy_input(
-                        &mut self.state.buffers[candidate],
-                        target_region,
-                        self.workspace.input.read(source),
-                    )
-                    .map_err(|error| {
-                        error.at(ResidentExecutionError::InvalidOutputMaterialization {
-                            slot: target,
-                        })
-                    })?;
+                    let value = if matches!(
+                        materialization.source,
+                        ResidentReadLocation::LexicalInput(_)
+                    ) {
+                        lexical_capture(&self.workspace.continuation_capture_frames, source)
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(source))
+                    } else {
+                        self.workspace.input.read(source)
+                    };
+                    copy_input(&mut self.state.buffers[candidate], target_region, value).map_err(
+                        |error| {
+                            error.at(ResidentExecutionError::InvalidOutputMaterialization {
+                                slot: target,
+                            })
+                        },
+                    )?;
                     self.state.tag(target, candidate, working_epoch);
                 }
                 ResidentReadLocation::Scratch(source) => {
@@ -1550,6 +1570,34 @@ impl ReactiveInstance {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
+            let unpublished = self.plan.steps.iter().enumerate().any(|(index, step)| {
+                if !self.unpublished_continuation(index) {
+                    return false;
+                }
+                let ActivatedTurnStep::Match(control) = step else {
+                    return false;
+                };
+                let source = match constraint.predicate {
+                    ResidentReadLocation::State { slot, .. } => self
+                        .plan
+                        .output_materializations
+                        .iter()
+                        .find(|materialization| materialization.target == slot)
+                        .map_or(constraint.predicate, |materialization| {
+                            materialization.source
+                        }),
+                    source => source,
+                };
+                super::read_location_depends_on_match(
+                    &self.plan,
+                    source,
+                    index,
+                    control.write.region,
+                )
+            });
+            if unpublished {
+                continue;
+            }
             let predicate = match constraint.predicate {
                 ResidentReadLocation::State { slot, region }
                     if staged_outputs.is_some_and(|outputs| outputs.contains(&slot)) =>
@@ -1656,6 +1704,7 @@ impl ReactiveInstance {
                 locations: &self.plan.reads[node.reads.start as usize..node.reads.end as usize],
                 activation: &self.activation,
                 input: &self.workspace.input,
+                captures: &self.workspace.continuation_capture_frames,
                 state,
                 scratch: &self.workspace.scratch,
                 epoch: working_epoch,
@@ -1678,6 +1727,7 @@ impl ReactiveInstance {
                     locations: &self.plan.reads[node.reads.start as usize..node.reads.end as usize],
                     activation: &self.activation,
                     input: &self.workspace.input,
+                    captures: &self.workspace.continuation_capture_frames,
                     scratch: &self.workspace.scratch,
                 };
                 node.kernel.execute(&inputs, output)
@@ -1751,6 +1801,14 @@ impl ReactiveInstance {
             else {
                 unreachable!()
             };
+            if matched.continuation
+                && self.continuations[node_index.get() as usize].is_some()
+                && self.ready_continuations.front().copied() != Some(node_index)
+            {
+                // One drain resumes only the selected continuation. Other
+                // ready roots keep their state and lexical captures intact.
+                return Ok(false);
+            }
             let node = matched.artifact_node;
             let mut facts = crate::memory_planner::TurnMemoryFacts::default();
             facts.additional_demand.turn_peak_bytes = live_bytes;
@@ -1770,15 +1828,23 @@ impl ReactiveInstance {
                     error: ResidentKernelError::InvalidShape,
                 });
             }
-            let continuation_captures = (self.ready_continuations.front().copied()
-                == Some(node_index))
-            .then(|| self.continuations[node_index.get() as usize].as_ref())
-            .flatten()
-            .map(|continuation| continuation.captures.clone());
-            if let Some(captures) = continuation_captures.as_ref() {
+            let resuming = self.ready_continuations.front().copied() == Some(node_index)
+                && self.continuations[node_index.get() as usize].is_some();
+            if resuming {
                 self.workspace
                     .continuation_capture_frames
-                    .push(captures.clone());
+                    .try_reserve(1)
+                    .map_err(|_| ResidentExecutionError::Kernel {
+                        node,
+                        error: ResidentKernelError::InvalidShape,
+                    })?;
+                let saved = self.continuations[node_index.get() as usize]
+                    .take()
+                    .expect("selected continuation remains available");
+                self.workspace.active_resume_state = Some(saved.state);
+                self.workspace
+                    .continuation_capture_frames
+                    .push(saved.captures);
             }
             let result = budget::with_resident_turn_plan(turn_plan, || {
                 let result = budget::with_control_work_budget(|| {
@@ -1802,8 +1868,19 @@ impl ReactiveInstance {
                 }
                 result
             });
-            if continuation_captures.is_some() {
-                self.workspace.continuation_capture_frames.pop();
+            if resuming {
+                let captures = self
+                    .workspace
+                    .continuation_capture_frames
+                    .pop()
+                    .expect("selected continuation capture frame remains present");
+                let state = self
+                    .workspace
+                    .active_resume_state
+                    .take()
+                    .expect("selected continuation state remains present");
+                self.continuations[node_index.get() as usize] =
+                    Some(super::ResidentContinuation { state, captures });
             }
             return result;
         }
@@ -1834,10 +1911,15 @@ impl ReactiveInstance {
                 error,
             };
             let capture_bytes = core::iter::once(suspension.argument)
-                .chain(capture_sources.iter().copied())
+                .chain(
+                    capture_sources
+                        .iter()
+                        .copied()
+                        .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
+                )
                 .try_fold(0_u64, |total, source| {
                     let value = self.read_location(source, working_epoch)?;
-                    total.checked_add(resident_frame_value_bytes(value, &self.plan.schemas)?)
+                    total.checked_add(resident_frame_value_footprint(value, &self.plan.schemas)?.0)
                 })
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             (|| -> Result<(), ResidentKernelError> {
@@ -1862,6 +1944,7 @@ impl ReactiveInstance {
             let captures = capture_sources
                 .iter()
                 .copied()
+                .filter(|source| !matches!(source, ResidentReadLocation::Input(_)))
                 .map(|source| {
                     self.read_location(source, working_epoch)
                         .map(|value| (source, owned_resident_value(value)))
@@ -1878,13 +1961,39 @@ impl ReactiveInstance {
         }
         if let ActivatedTurnStep::Publish(publication) = self.plan.steps[node_index.get() as usize]
         {
+            let fail = |error| ResidentExecutionError::Kernel {
+                node: publication.artifact_node,
+                error,
+            };
+            let (bytes, nodes) = self
+                .read_location(publication.value, working_epoch)
+                .and_then(|value| resident_frame_value_footprint(value, &self.plan.schemas))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+            let cloned_bytes = bytes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let retained_nodes = nodes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    budget::resident_cost! {
+                        temporary_bytes: cloned_bytes,
+                        cloned_bytes,
+                        retained_nodes,
+                        ..budget::KernelCostEstimate::default()
+                    },
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
             let value = self
                 .read_location(publication.value, working_epoch)
                 .map(owned_resident_value)
-                .ok_or(ResidentExecutionError::Kernel {
-                    node: publication.artifact_node,
-                    error: ResidentKernelError::InvalidInput,
-                })?;
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
             let target = publication.target.get() as usize;
             let write = match &self.plan.steps[target] {
                 ActivatedTurnStep::Match(control)
@@ -1938,6 +2047,30 @@ impl ReactiveInstance {
         live_bytes: u64,
         live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
+        let resume_state = self.workspace.active_resume_state.take();
+        let result = self.execute_match_expression_with_state(
+            node_index,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+            resume_state.as_ref(),
+        );
+        self.workspace.active_resume_state = resume_state;
+        result
+    }
+
+    fn execute_match_expression_with_state(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+        resume_state: Option<&super::OwnedResidentValue>,
+    ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
             unreachable!()
@@ -1963,9 +2096,7 @@ impl ReactiveInstance {
             && matched.continuation
             && self.ready_continuations.front().copied() == Some(node_index)
         {
-            self.continuations[index]
-                .as_ref()
-                .map(|continuation| continuation.state.clone())
+            resume_state
         } else {
             None
         };
@@ -2038,7 +2169,7 @@ impl ReactiveInstance {
                 super::ActivatedMatchPattern::Literal(literal) => {
                     let scrutinee = continuation_scrutinee
                         .as_ref()
-                        .map(super::OwnedResidentValue::as_ref)
+                        .map(|value| value.as_ref())
                         .or_else(|| self.read_location(scrutinee_source, working_epoch))
                         .ok_or_else(fail)?;
                     match (
@@ -2092,7 +2223,7 @@ impl ReactiveInstance {
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
                         let scrutinee = continuation_scrutinee
                             .as_ref()
-                            .map(super::OwnedResidentValue::as_ref)
+                            .map(|value| value.as_ref())
                             .or_else(|| self.read_location(scrutinee_source, working_epoch))
                             .ok_or_else(fail)?;
                         let shape_values = match scrutinee {
@@ -2215,8 +2346,7 @@ impl ReactiveInstance {
                 .iter()
                 .rev()
                 .flat_map(|frame| frame.iter())
-                .find_map(|(source, value)| (*source == body.yield_value).then_some(value))
-                .cloned();
+                .find_map(|(source, value)| (*source == body.yield_value).then_some(value));
             if let Some(captured) = captured_yield {
                 let target = if write.storage == ResidentStorageClass::Constant {
                     &mut self.activation
@@ -2224,7 +2354,7 @@ impl ReactiveInstance {
                     &mut self.workspace.scratch
                 };
                 let unchanged = resident_values_equal(target.read(write.region), captured.as_ref());
-                super::copy_owned_activation_value(&captured, target.write(write.region))
+                super::copy_owned_activation_value(captured, target.write(write.region))
                     .map_err(|_| fail())?;
                 let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
                 set_bit(&mut self.workspace.initialized_output_bits, index);
@@ -2412,7 +2542,9 @@ impl ReactiveInstance {
                     match body.yield_value {
                         ResidentReadLocation::Constant(region) => (
                             regions_equal(&self.activation, write.region, &self.activation, region),
-                            self.activation.copy_region_within(write.region, region),
+                            self.activation
+                                .copy_region_within(write.region, region)
+                                .map_err(ResidentCopyError::Memory),
                         ),
                         ResidentReadLocation::Scratch(region) => (
                             regions_equal(
@@ -2421,11 +2553,9 @@ impl ReactiveInstance {
                                 &self.workspace.scratch,
                                 region,
                             ),
-                            self.activation.copy_region_from(
-                                write.region,
-                                &self.workspace.scratch,
-                                region,
-                            ),
+                            self.activation
+                                .copy_region_from(write.region, &self.workspace.scratch, region)
+                                .map_err(ResidentCopyError::Memory),
                         ),
                         _ => return Err(fail()),
                     }
@@ -2443,6 +2573,15 @@ impl ReactiveInstance {
                             &self.workspace.input,
                             region,
                         ),
+                        ResidentReadLocation::LexicalInput(region) => {
+                            let value = lexical_capture(
+                                &self.workspace.continuation_capture_frames,
+                                region,
+                            )
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(region));
+                            resident_values_equal(self.workspace.scratch.read(write.region), value)
+                        }
                         ResidentReadLocation::State { slot, region } => {
                             let buffer = self.state.select_buffer(slot, working_epoch);
                             regions_equal(
@@ -2466,27 +2605,38 @@ impl ReactiveInstance {
                         ResidentReadLocation::Constant(region) => self
                             .workspace
                             .scratch
-                            .copy_region_from(write.region, &self.activation, region),
+                            .copy_region_from(write.region, &self.activation, region)
+                            .map_err(ResidentCopyError::Memory),
                         ResidentReadLocation::Input(region) => self
                             .workspace
                             .scratch
-                            .copy_region_from(write.region, &self.workspace.input, region),
-                        ResidentReadLocation::State { slot, region } => {
-                            let buffer = self.state.select_buffer(slot, working_epoch);
-                            self.workspace.scratch.copy_region_from(
-                                write.region,
-                                &self.state.buffers[buffer],
+                            .copy_region_from(write.region, &self.workspace.input, region)
+                            .map_err(ResidentCopyError::Memory),
+                        ResidentReadLocation::LexicalInput(region) => {
+                            let value = lexical_capture(
+                                &self.workspace.continuation_capture_frames,
                                 region,
                             )
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(region));
+                            copy_input(&mut self.workspace.scratch, write.region, value)
+                        }
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            self.workspace
+                                .scratch
+                                .copy_region_from(write.region, &self.state.buffers[buffer], region)
+                                .map_err(ResidentCopyError::Memory)
                         }
                         ResidentReadLocation::Scratch(region) => self
                             .workspace
                             .scratch
-                            .copy_region_within(write.region, region),
+                            .copy_region_within(write.region, region)
+                            .map_err(ResidentCopyError::Memory),
                     };
                     (unchanged, copied)
                 };
-                copied.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                copied.map_err(|error| error.at(fail()))?;
                 let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
                 set_bit(&mut self.workspace.initialized_output_bits, index);
                 Ok(!initialized || !unchanged)
@@ -3288,6 +3438,12 @@ impl ReactiveInstance {
                 captured,
                 self.workspace.input.read(region),
             ),
+            ResidentReadLocation::LexicalInput(region) => {
+                let value = lexical_capture(&self.workspace.continuation_capture_frames, region)
+                    .map(super::OwnedResidentValue::as_ref)
+                    .unwrap_or_else(|| self.workspace.input.read(region));
+                copy_input(&mut self.workspace.effect_payloads, captured, value)
+            }
             ResidentReadLocation::State { slot, region } => {
                 let buffer = self.state.select_buffer(slot, working_epoch);
                 copy_input(
@@ -3373,25 +3529,40 @@ impl ReactiveInstance {
                         ResidentReadLocation::Constant(region) => self
                             .workspace
                             .scratch
-                            .copy_region_from(destination, &self.activation, region),
+                            .copy_region_from(destination, &self.activation, region)
+                            .map_err(ResidentCopyError::Memory),
                         ResidentReadLocation::Input(region) => self
                             .workspace
                             .scratch
-                            .copy_region_from(destination, &self.workspace.input, region),
-                        ResidentReadLocation::State { slot, region } => {
-                            let buffer = self.state.select_buffer(slot, working_epoch);
-                            self.workspace.scratch.copy_region_from(
-                                destination,
-                                &self.state.buffers[buffer],
+                            .copy_region_from(destination, &self.workspace.input, region)
+                            .map_err(ResidentCopyError::Memory),
+                        ResidentReadLocation::LexicalInput(region) => {
+                            let value = lexical_capture(
+                                &self.workspace.continuation_capture_frames,
                                 region,
                             )
+                            .map(super::OwnedResidentValue::as_ref)
+                            .unwrap_or_else(|| self.workspace.input.read(region));
+                            copy_input(&mut self.workspace.scratch, destination, value)
+                        }
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            self.workspace
+                                .scratch
+                                .copy_region_from(destination, &self.state.buffers[buffer], region)
+                                .map_err(ResidentCopyError::Memory)
                         }
                         ResidentReadLocation::Scratch(region) => self
                             .workspace
                             .scratch
-                            .copy_region_within(destination, region),
+                            .copy_region_within(destination, region)
+                            .map_err(ResidentCopyError::Memory),
                     };
-                    result.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    result.map_err(|error| {
+                        error.at(ResidentExecutionError::InvalidWrite {
+                            node: node.artifact_node,
+                        })
+                    })?;
                 }
                 let kernel_changed = if node.scratch_prefix_reads
                     && node.kernel.has_direct_f64_output()
@@ -3419,6 +3590,7 @@ impl ReactiveInstance {
                                 [node.reads.start as usize..node.reads.end as usize],
                             activation: &self.activation,
                             input: &self.workspace.input,
+                            captures: &self.workspace.continuation_capture_frames,
                             state: &self.state,
                             scratch,
                             epoch: working_epoch,
@@ -3449,6 +3621,7 @@ impl ReactiveInstance {
                                 [node.reads.start as usize..node.reads.end as usize],
                             activation: &self.activation,
                             input: &self.workspace.input,
+                            captures: &self.workspace.continuation_capture_frames,
                             state: &self.state,
                             scratch,
                             epoch: working_epoch,
@@ -3462,6 +3635,7 @@ impl ReactiveInstance {
                             [node.reads.start as usize..node.reads.end as usize],
                         activation: &self.activation,
                         input: &self.workspace.input,
+                        captures: &self.workspace.continuation_capture_frames,
                         state: &self.state,
                         scratch,
                         epoch: working_epoch,
@@ -3557,6 +3731,7 @@ impl ReactiveInstance {
                             [node.reads.start as usize..node.reads.end as usize],
                         activation: &self.activation,
                         input: &self.workspace.input,
+                        captures: &self.workspace.continuation_capture_frames,
                         state,
                         scratch: &self.workspace.scratch,
                         epoch: working_epoch,
@@ -3585,6 +3760,7 @@ impl ReactiveInstance {
                                 [node.reads.start as usize..node.reads.end as usize],
                             activation: &self.activation,
                             input: &self.workspace.input,
+                            captures: &self.workspace.continuation_capture_frames,
                             scratch: &self.workspace.scratch,
                         };
                         node.kernel.execute(&inputs, output)
@@ -3646,7 +3822,9 @@ impl ReactiveInstance {
         }
         match location {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
-            ResidentReadLocation::Input(region) => Some(self.workspace.input.read(region)),
+            ResidentReadLocation::Input(region) | ResidentReadLocation::LexicalInput(region) => {
+                Some(self.workspace.input.read(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 let buffer = self.state.select_buffer(slot, epoch);
                 Some(self.state.buffers[buffer].read(region))
@@ -4308,10 +4486,36 @@ impl ResidentKernelInputs for F64NonStateNodeInputs<'_> {
     }
 }
 
+type ResidentCaptureFrames = [Box<[(ResidentReadLocation, super::OwnedResidentValue)]>];
+
+fn lexical_capture<'a>(
+    frames: &'a ResidentCaptureFrames,
+    region: ResidentRegion,
+) -> Option<&'a super::OwnedResidentValue> {
+    frames
+        .iter()
+        .rev()
+        .flat_map(|frame| frame.iter())
+        .find_map(|(source, value)| {
+            (*source == ResidentReadLocation::LexicalInput(region)).then_some(value)
+        })
+}
+
+fn lexical_capture_f64<'a>(
+    frames: &'a ResidentCaptureFrames,
+    region: ResidentRegion,
+) -> Option<&'a [f64]> {
+    let super::OwnedResidentValue::F64(values) = lexical_capture(frames, region)? else {
+        return None;
+    };
+    Some(values)
+}
+
 struct ScratchNodeInputs<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     state: &'a StateArena,
     scratch: ScratchArenaReadAccess<'a>,
     epoch: InstanceEpoch,
@@ -4323,6 +4527,9 @@ impl ScratchNodeInputs<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 self.state.read_f64(slot, region, self.epoch)
             }
@@ -4340,6 +4547,9 @@ impl ResidentKernelInputs for ScratchNodeInputs<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::State { slot, region } => {
                 self.state.read(slot, region, self.epoch)
             }
@@ -4377,6 +4587,7 @@ struct GeneralScratchNodeInputs<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     state: &'a StateArena,
     scratch: ArenaReadAccess<'a>,
     epoch: InstanceEpoch,
@@ -4391,6 +4602,9 @@ impl ResidentKernelInputs for GeneralScratchNodeInputs<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::State { slot, region } => {
                 self.state.read(slot, region, self.epoch)
             }
@@ -4402,6 +4616,9 @@ impl ResidentKernelInputs for GeneralScratchNodeInputs<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 self.state.read_f64(slot, region, self.epoch)
             }
@@ -4414,6 +4631,7 @@ struct StateNodeInputsWithoutState<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     scratch: &'a TypedResidentArena,
 }
 
@@ -4426,6 +4644,9 @@ impl ResidentKernelInputs for StateNodeInputsWithoutState<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::Scratch(region) => Some(self.scratch.read(region)),
             ResidentReadLocation::State { .. } => None,
         }
@@ -4435,6 +4656,9 @@ impl ResidentKernelInputs for StateNodeInputsWithoutState<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::Scratch(region) => self.scratch.read_f64(region),
             ResidentReadLocation::State { .. } => None,
         }
@@ -4445,6 +4669,7 @@ struct StateNodeInputs<'a> {
     locations: &'a [ResidentReadLocation],
     activation: &'a TypedResidentArena,
     input: &'a TypedResidentArena,
+    captures: &'a ResidentCaptureFrames,
     state: StateReadAccess<'a>,
     scratch: &'a TypedResidentArena,
     epoch: InstanceEpoch,
@@ -4459,6 +4684,9 @@ impl ResidentKernelInputs for StateNodeInputs<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => Some(self.activation.read(region)),
             ResidentReadLocation::Input(region) => Some(self.input.read(region)),
+            ResidentReadLocation::LexicalInput(region) => lexical_capture(self.captures, region)
+                .map(super::OwnedResidentValue::as_ref)
+                .or_else(|| Some(self.input.read(region))),
             ResidentReadLocation::State { slot, region } => {
                 self.state.read(slot, region, self.epoch)
             }
@@ -4470,6 +4698,9 @@ impl ResidentKernelInputs for StateNodeInputs<'_> {
         match *self.locations.get(index)? {
             ResidentReadLocation::Constant(region) => self.activation.read_f64(region),
             ResidentReadLocation::Input(region) => self.input.read_f64(region),
+            ResidentReadLocation::LexicalInput(region) => {
+                lexical_capture_f64(self.captures, region).or_else(|| self.input.read_f64(region))
+            }
             ResidentReadLocation::State { slot, region } => {
                 self.state.read_f64(slot, region, self.epoch)
             }

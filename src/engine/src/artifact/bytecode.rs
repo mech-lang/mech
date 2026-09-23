@@ -200,7 +200,7 @@ enum WireNodeBody {
 struct WireMatchDeclaration {
     scrutinee: u16,
     partial: bool,
-    captures: Box<[(u16, u32)]>,
+    captures: Box<[(u16, u32, bool)]>,
     arms: Box<[WireMatchArm]>,
 }
 
@@ -1969,7 +1969,13 @@ fn wire_match(
         captures: control
             .captures
             .iter()
-            .map(|capture| (capture.input, capture.schema.get()))
+            .map(|capture| {
+                (
+                    capture.input,
+                    capture.schema.get(),
+                    capture.freeze_on_suspend,
+                )
+            })
             .collect(),
         arms: control
             .arms
@@ -2222,9 +2228,10 @@ fn match_from_wire(
         partial,
         captures: captures
             .into_iter()
-            .map(|(input, schema)| super::ControlCapture {
+            .map(|(input, schema, freeze_on_suspend)| super::ControlCapture {
                 input,
                 schema: SchemaId::new(schema),
+                freeze_on_suspend,
             })
             .collect(),
         arms: arms
