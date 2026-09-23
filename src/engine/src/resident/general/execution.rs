@@ -1910,6 +1910,7 @@ impl ReactiveInstance {
                 node: suspension.artifact_node,
                 error,
             };
+            let mut capture_meter = budget::ResidentBudgetMeter::default();
             let capture_bytes = core::iter::once(suspension.argument)
                 .chain(
                     capture_sources
@@ -1919,14 +1920,26 @@ impl ReactiveInstance {
                 )
                 .try_fold(0_u64, |total, source| {
                     let value = self.read_location(source, working_epoch)?;
-                    total.checked_add(resident_frame_value_footprint(value, &self.plan.schemas)?.0)
+                    total.checked_add(
+                        resident_frame_value_footprint(
+                            value,
+                            &self.plan.schemas,
+                            &mut capture_meter,
+                        )?
+                        .0,
+                    )
                 })
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let capture_work = capture_meter
+                .estimate()
+                .compute_work()
+                .checked_add(capture_bytes)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             (|| -> Result<(), ResidentKernelError> {
                 budget::PreparedKernel::new(
                     (),
                     budget::resident_cost! {
-                        compute_work: 1,
+                        compute_work: capture_work,
                         temporary_bytes: capture_bytes,
                         cloned_bytes: capture_bytes,
                         ..budget::KernelCostEstimate::default()
@@ -1965,9 +1978,16 @@ impl ReactiveInstance {
                 node: publication.artifact_node,
                 error,
             };
+            let mut publication_meter = budget::ResidentBudgetMeter::default();
             let (bytes, nodes) = self
                 .read_location(publication.value, working_epoch)
-                .and_then(|value| resident_frame_value_footprint(value, &self.plan.schemas))
+                .and_then(|value| {
+                    resident_frame_value_footprint(
+                        value,
+                        &self.plan.schemas,
+                        &mut publication_meter,
+                    )
+                })
                 .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
             let cloned_bytes = bytes
                 .checked_mul(2)
@@ -1975,10 +1995,16 @@ impl ReactiveInstance {
             let retained_nodes = nodes
                 .checked_mul(2)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let publication_work = publication_meter
+                .estimate()
+                .compute_work()
+                .checked_add(cloned_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             (|| -> Result<(), ResidentKernelError> {
                 budget::PreparedKernel::new(
                     (),
                     budget::resident_cost! {
+                        compute_work: publication_work,
                         temporary_bytes: cloned_bytes,
                         cloned_bytes,
                         retained_nodes,
