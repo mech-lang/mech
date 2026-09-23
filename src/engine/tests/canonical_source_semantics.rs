@@ -1086,6 +1086,10 @@ fn live_enum_publication_rolls_back_after_managed_allocation_failure() {
 fn document_type_environment_rejects_duplicates_cycles_and_unknown_kinds() {
     for (source, code) in [
         (
+            "1u16⟨u8:1..10⟩",
+            "source-semantics/incompatible-literal-kind",
+        ),
+        (
             "<count> := <u8>\n<count> := <u16>\nx := 1\nx\n",
             "source-semantics/duplicate-kind-declaration",
         ),
@@ -5139,6 +5143,13 @@ fn semantic_kind_edges_are_resolved_before_graph_emission() {
 
 #[test]
 fn fixed_integer_intervals_keep_identity_and_check_boundaries() {
+    let interval_matrix = CanonicalSourceFrontend
+        .compile_expression(&expression("[1⟨u8:1..10⟩ 2⟨u8:1..10⟩]"))
+        .expect("interval matrix literal has one exact element kind")
+        .compile_artifact()
+        .expect("interval matrix has a bytecode template");
+    let matrix_bytes = mech_engine::encode_program_artifact_bytecode_v1(&interval_matrix).unwrap();
+    mech_engine::decode_program_artifact_bytecode_v1(&matrix_bytes).unwrap();
     for source in [
         "1⟨u8:1..10⟩",
         "9⟨u8:1..10⟩",

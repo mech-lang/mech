@@ -381,9 +381,12 @@ fn schema_predicate_set(
         })
         .collect::<Vec<_>>();
     let mut predicates = intrinsic_kind_predicates(kind, &child_predicates);
-    // Nominal enum payloads are intentionally absent from KindExpr, so their
-    // closed schema remains the evidence authority for these two predicates.
-    if matches!(body, SchemaBody::Enum { .. }) {
+    // Enum payloads and integer intervals use their closed schema as the
+    // evidence authority for equality and keyability.
+    if matches!(
+        body,
+        SchemaBody::Enum { .. } | SchemaBody::IntegerInterval(_)
+    ) {
         if schema_equatable(body) {
             predicates.insert(BuiltinKindPredicate::Equatable);
         }

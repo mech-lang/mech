@@ -2482,8 +2482,44 @@ impl ValueCell {
         } else {
             None
         };
-        let allocated =
-            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?;
+        let allocated = if matches!(descriptor.schema().body(), SchemaBody::IntegerInterval(_)) {
+            // An exact primitive backing is rebound to the interval schema below.
+            // Seed it inside that interval before the required snapshot check.
+            match initial_data_for_descriptor(descriptor)? {
+                #[cfg(feature = "u8")]
+                ValueDataDraft::U8(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "u16")]
+                ValueDataDraft::U16(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "u32")]
+                ValueDataDraft::U32(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "u64")]
+                ValueDataDraft::U64(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "u128")]
+                ValueDataDraft::U128(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "i8")]
+                ValueDataDraft::I8(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "i16")]
+                ValueDataDraft::I16(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "i32")]
+                ValueDataDraft::I32(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "i64")]
+                ValueDataDraft::I64(value) => Self::from_exact_in(owner, value)?,
+                #[cfg(feature = "i128")]
+                ValueDataDraft::I128(value) => Self::from_exact_in(owner, value)?,
+                _ => {
+                    return Err(MechError::new(
+                        ValueCellOutputConstructionUnsupported {
+                            representation,
+                            reason: "interval output has no exact primitive backing".into(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc());
+                }
+            }
+        } else {
+            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?
+        };
         let mut builder = SchemaTableBuilder::new();
         let handle = builder
             .insert(descriptor.schema().clone())
@@ -7747,6 +7783,30 @@ mod tests {
     #[cfg(all(feature = "f64", feature = "matrix"))]
     use crate::{DimensionLifetime, DimensionParameterId, DimensionParameterOrigin};
     use crate::{DimensionParameterDeclaration, SchemaDraft, SchemaTableBuilder};
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn exact_interval_output_starts_at_the_admitted_lower_endpoint() {
+        let interval = SchemaBody::IntegerInterval(crate::IntegerInterval::Unsigned {
+            width: crate::IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let source = ValueCell::from_schema_data(interval, ValueDataDraft::U8(2)).unwrap();
+        let resolved = source.resolved_type().unwrap();
+        assert!(resolved.satisfies(crate::BuiltinKindPredicate::Equatable));
+        assert!(resolved.satisfies(crate::BuiltinKindPredicate::Keyable));
+        let output = ValueCell::allocate_for_descriptor(
+            &source.resolved_descriptor().unwrap(),
+            FunctionValueRepresentation::U8,
+        )
+        .unwrap();
+        assert_eq!(
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::U8(1)
+        );
+    }
 
     struct TestSchema {
         id: SchemaId,

@@ -4861,13 +4861,29 @@ impl SemanticBuilder {
         };
         let builtin = builtin_schema_for_body(&interval.base_body())
             .expect("integer interval has a builtin base");
-        let (_, data) = decode_number(&source, Some(builtin), selected_integer_suffix(number)?)
-            .ok_or_else(|| SourceSemanticError {
-                code: "source-semantics/invalid-interval-literal",
-                message: "integer literal cannot be represented by the interval's base kind"
+        let suffix = selected_integer_suffix(number)?;
+        let (decoded, data) = decode_number(
+            &source,
+            if suffix.is_some() {
+                None
+            } else {
+                Some(builtin)
+            },
+            suffix,
+        )
+        .ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/invalid-interval-literal",
+            message: "integer literal cannot be represented by the interval's base kind".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(number.syntax()),
+        })?;
+        if decoded != builtin {
+            return Err(SourceSemanticError {
+                code: "source-semantics/incompatible-literal-kind",
+                message: "explicit integer suffix does not match the interval's base kind"
                     .to_owned(),
                 anchor: SourceSemanticAnchor::for_node(number.syntax()),
-            })?;
+            });
+        }
         if !integer_interval_contains_draft(interval, &data) {
             return Err(SourceSemanticError {
                 code: "source-semantics/integer-interval-violation",
