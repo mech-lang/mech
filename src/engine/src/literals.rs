@@ -273,6 +273,107 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
         (SchemaBody::Option(source), SchemaBody::Option(target)) => SchemaBody::Option(Box::new(
             materialize_declared_conversion_shape(source, target),
         )),
+        (SchemaBody::Tuple(source), SchemaBody::Tuple(target)) if source.len() == target.len() => {
+            SchemaBody::Tuple(
+                source
+                    .iter()
+                    .zip(target.iter())
+                    .map(|(source, target)| materialize_declared_conversion_shape(source, target))
+                    .collect(),
+            )
+        }
+        (SchemaBody::Record(source), SchemaBody::Record(target))
+            if source.len() == target.len()
+                && source
+                    .iter()
+                    .zip(target.iter())
+                    .all(|(a, b)| a.name == b.name) =>
+        {
+            SchemaBody::Record(
+                source
+                    .iter()
+                    .zip(target.iter())
+                    .map(|(source, target)| SchemaField {
+                        name: target.name.clone(),
+                        schema: materialize_declared_conversion_shape(
+                            &source.schema,
+                            &target.schema,
+                        ),
+                    })
+                    .collect(),
+            )
+        }
+        (
+            SchemaBody::Set {
+                element: source,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Set {
+                element: target,
+                cardinality,
+            },
+        ) => SchemaBody::Set {
+            element: Box::new(materialize_declared_conversion_shape(source, target)),
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+                source_cardinality.clone()
+            } else {
+                cardinality.clone()
+            },
+        },
+        (
+            SchemaBody::Map {
+                key: source_key,
+                value: source_value,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            },
+        ) => SchemaBody::Map {
+            key: Box::new(materialize_declared_conversion_shape(source_key, key)),
+            value: Box::new(materialize_declared_conversion_shape(source_value, value)),
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+                source_cardinality.clone()
+            } else {
+                cardinality.clone()
+            },
+        },
+        (
+            SchemaBody::Table {
+                columns: source,
+                rows: source_rows,
+            },
+            SchemaBody::Table {
+                columns: target,
+                rows,
+            },
+        ) if source.len() == target.len()
+            && source
+                .iter()
+                .zip(target.iter())
+                .all(|(a, b)| a.name == b.name) =>
+        {
+            SchemaBody::Table {
+                columns: source
+                    .iter()
+                    .zip(target.iter())
+                    .map(|(source, target)| SchemaField {
+                        name: target.name.clone(),
+                        schema: materialize_declared_conversion_shape(
+                            &source.schema,
+                            &target.schema,
+                        ),
+                    })
+                    .collect(),
+                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
+                    source_rows.clone()
+                } else {
+                    rows.clone()
+                },
+            }
+        }
         _ => target.clone(),
     }
 }
@@ -306,6 +407,116 @@ fn materialize_declared_conversion_semantic_shape(
         (KindExpr::Option(source), SchemaBody::Option(target)) => SchemaBody::Option(Box::new(
             materialize_declared_conversion_semantic_shape(source, target),
         )),
+        (KindExpr::Tuple(source), SchemaBody::Tuple(target)) if source.len() == target.len() => {
+            SchemaBody::Tuple(
+                source
+                    .iter()
+                    .zip(target.iter())
+                    .map(|(source, target)| {
+                        materialize_declared_conversion_semantic_shape(source, target)
+                    })
+                    .collect(),
+            )
+        }
+        (KindExpr::Record(source), SchemaBody::Record(target))
+            if source.len() == target.len()
+                && source
+                    .iter()
+                    .zip(target.iter())
+                    .all(|(a, b)| a.name == b.name) =>
+        {
+            SchemaBody::Record(
+                source
+                    .iter()
+                    .zip(target.iter())
+                    .map(|(source, target)| SchemaField {
+                        name: target.name.clone(),
+                        schema: materialize_declared_conversion_semantic_shape(
+                            &source.kind,
+                            &target.schema,
+                        ),
+                    })
+                    .collect(),
+            )
+        }
+        (
+            KindExpr::Set {
+                element: source,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Set {
+                element: target,
+                cardinality,
+            },
+        ) => SchemaBody::Set {
+            element: Box::new(materialize_declared_conversion_semantic_shape(
+                source, target,
+            )),
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+                CardinalitySpec::Exact(source_cardinality.clone())
+            } else {
+                cardinality.clone()
+            },
+        },
+        (
+            KindExpr::Map {
+                key: source_key,
+                value: source_value,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            },
+        ) => SchemaBody::Map {
+            key: Box::new(materialize_declared_conversion_semantic_shape(
+                source_key, key,
+            )),
+            value: Box::new(materialize_declared_conversion_semantic_shape(
+                source_value,
+                value,
+            )),
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+                CardinalitySpec::Exact(source_cardinality.clone())
+            } else {
+                cardinality.clone()
+            },
+        },
+        (
+            KindExpr::Table {
+                columns: source,
+                rows: source_rows,
+            },
+            SchemaBody::Table {
+                columns: target,
+                rows,
+            },
+        ) if source.len() == target.len()
+            && source
+                .iter()
+                .zip(target.iter())
+                .all(|(a, b)| a.name == b.name) =>
+        {
+            SchemaBody::Table {
+                columns: source
+                    .iter()
+                    .zip(target.iter())
+                    .map(|(source, target)| SchemaField {
+                        name: target.name.clone(),
+                        schema: materialize_declared_conversion_semantic_shape(
+                            &source.kind,
+                            &target.schema,
+                        ),
+                    })
+                    .collect(),
+                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
+                    CardinalitySpec::Exact(source_rows.clone())
+                } else {
+                    rows.clone()
+                },
+            }
+        }
         _ => target.clone(),
     }
 }
@@ -786,6 +997,8 @@ fn schema_body_from_reified_kind(
             } => SchemaBody::Matrix {
                 element: Box::new(schema(element, dimensions, named, context)?),
                 dimensions: if !extents.is_empty()
+                    && extents.len() == 2
+                    && extents[0] != extents[1]
                     && extents
                         .iter()
                         .all(|extent| open_dimension(extent, dimensions))
@@ -1272,6 +1485,25 @@ mod canonical_conversion_tests {
             SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
                 .unwrap();
 
+        let repeated = ReifiedKind::from_closed_kind(
+            &KindExpr::Matrix {
+                element: Box::new(KindExpr::Named(id)),
+                dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0)); 2]
+                    .into_boxed_slice(),
+            },
+            &dimensions,
+            &named,
+        )
+        .unwrap();
+        assert_eq!(
+            schema_body_from_reified_kind(&repeated, &context).unwrap(),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: vec![DimensionExpr::Parameter(DimensionParameterId::new(0)); 2]
+                    .into_boxed_slice(),
+            }
+        );
+
         let specialized = ConvertKind
             .specialize_invocation(&invocation, &mut context)
             .unwrap();
@@ -1296,6 +1528,95 @@ mod canonical_conversion_tests {
                     == [ValueDataDraft::U8(1), ValueDataDraft::U8(2),
                         ValueDataDraft::U8(3), ValueDataDraft::U8(4)]
         ));
+    }
+
+    #[test]
+    fn open_conversion_targets_reuse_nested_shapes_and_collection_cardinalities() {
+        let source = SchemaBody::Tuple(
+            vec![
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                    dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into(),
+                },
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                SchemaBody::Record(
+                    vec![SchemaField {
+                        name: "map".to_owned(),
+                        schema: SchemaBody::Map {
+                            key: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                            value: Box::new(SchemaBody::Table {
+                                columns: vec![SchemaField {
+                                    name: "values".to_owned(),
+                                    schema: SchemaBody::Matrix {
+                                        element: Box::new(SchemaBody::UnsignedInteger(
+                                            IntegerWidth::W8,
+                                        )),
+                                        dimensions: vec![
+                                            DimensionExpr::Constant(2),
+                                            DimensionExpr::Constant(3),
+                                        ]
+                                        .into(),
+                                    },
+                                }]
+                                .into(),
+                                rows: CardinalitySpec::Dynamic { upper_bound: None },
+                            }),
+                            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                        },
+                    }]
+                    .into(),
+                ),
+            ]
+            .into(),
+        );
+        let target = SchemaBody::Tuple(
+            vec![
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                    dimensions: Box::new([]),
+                },
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                SchemaBody::Record(
+                    vec![SchemaField {
+                        name: "map".to_owned(),
+                        schema: SchemaBody::Map {
+                            key: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                            value: Box::new(SchemaBody::Table {
+                                columns: vec![SchemaField {
+                                    name: "values".to_owned(),
+                                    schema: SchemaBody::Matrix {
+                                        element: Box::new(SchemaBody::UnsignedInteger(
+                                            IntegerWidth::W8,
+                                        )),
+                                        dimensions: Box::new([]),
+                                    },
+                                }]
+                                .into(),
+                                rows: CardinalitySpec::Dynamic { upper_bound: None },
+                            }),
+                            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                        },
+                    }]
+                    .into(),
+                ),
+            ]
+            .into(),
+        );
+        assert_eq!(
+            materialize_declared_conversion_shape(&source, &target),
+            source
+        );
+        let resolved = ResolvedType::from_schema_body(&source, &[]).unwrap();
+        let semantic = materialize_declared_conversion_semantic_shape(resolved.kind(), &target);
+        let target_type =
+            ResolvedType::from_schema_body(&semantic, resolved.dimension_parameters()).unwrap();
+        assert!(exact_type_equal(&resolved, &target_type));
     }
 
     #[cfg(all(feature = "bool", feature = "string"))]
