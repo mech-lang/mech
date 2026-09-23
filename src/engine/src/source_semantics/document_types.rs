@@ -106,6 +106,20 @@ fn collect(
     Ok(())
 }
 
+pub(super) fn enum_declarations(
+    units: &[DocumentUnit],
+) -> Result<Vec<(String, SyntaxNode)>, SourceSemanticError> {
+    let mut declarations = BTreeMap::new();
+    collect(units, &mut declarations)?;
+    Ok(declarations
+        .into_iter()
+        .filter_map(|(name, declaration)| match declaration {
+            RawTypeDeclaration::Enum { syntax, .. } => Some((name, syntax)),
+            RawTypeDeclaration::Alias { .. } => None,
+        })
+        .collect())
+}
+
 impl SemanticBuilder {
     pub(super) fn register_document_types(
         &mut self,

@@ -236,6 +236,12 @@ pub struct ResolvedSource {
     pub name: String,
     pub canonical_uri: String,
     pub nominal_origin: Option<mech_core::CanonicalNominalPath>,
+    /// Resolver-owned package identity for collision checks; never part of a nominal key.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub nominal_package_id: Option<String>,
     pub source: MechSourceCode,
     /// Resolver-owned canonical revision. This is the source/syntax authority
     /// prepared for product compilation, indexing, rendering, and diagnostics.
@@ -269,6 +275,7 @@ impl ResolvedSource {
             name: name.into(),
             canonical_uri: canonical_uri.into(),
             nominal_origin: None,
+            nominal_package_id: None,
             source,
             #[cfg(feature = "source")]
             source_document: None,
@@ -298,6 +305,16 @@ impl ResolvedSource {
         self
     }
 
+    pub fn with_nominal_package_id(mut self, package_id: impl Into<String>) -> Self {
+        let package_id = package_id.into();
+        #[cfg(feature = "source")]
+        if let Some(document) = self.source_document.take() {
+            self.source_document = Some(document.with_nominal_package_id(package_id.clone()));
+        }
+        self.nominal_package_id = Some(package_id);
+        self
+    }
+
     /// Attach the canonical revision only when it retains the exact same raw
     /// source. This prevents a resolver record from publishing two source
     /// authorities with different bytes.
@@ -313,6 +330,23 @@ impl ResolvedSource {
             (Some(origin), _) => document.with_nominal_origin(origin.clone()),
             (None, Some(origin)) => {
                 self.nominal_origin = Some(origin.clone());
+                document
+            }
+            (None, None) => document,
+        };
+        let document = match (
+            self.nominal_package_id.as_deref(),
+            document.nominal_package_id(),
+        ) {
+            (Some(resolved), Some(retained)) if resolved != retained => {
+                return invalid_resolved_source(
+                    "nominal_package_id",
+                    "must agree with the retained document package identity",
+                );
+            }
+            (Some(package_id), _) => document.with_nominal_package_id(package_id),
+            (None, Some(package_id)) => {
+                self.nominal_package_id = Some(package_id.to_owned());
                 document
             }
             (None, None) => document,

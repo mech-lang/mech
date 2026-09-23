@@ -1190,6 +1190,7 @@ impl<'a> ProgramCompilerView<'a> {
             documents.push(CanonicalOrderedDocument {
                 document: document.document(),
                 nominal_origin: document.nominal_origin().cloned(),
+                nominal_package_id: document.nominal_package_id().map(str::to_owned),
                 identity: ordinal,
                 input_schemas: schemas,
                 resource_writes: writes,

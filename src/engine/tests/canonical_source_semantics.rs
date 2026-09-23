@@ -483,6 +483,21 @@ fn dynamic_enum_payloads_wrap_constant_and_live_values() {
 }
 
 #[test]
+fn enum_payloads_materialize_nested_deferred_constants() {
+    for source in [
+        "<event> := :data<*?>\nvalue<event> := :data(1)\nvalue\n",
+        "<event> := :data<*>\nvalue<event> := :data(1<*?>)\nvalue\n",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+            .unwrap_or_else(|error| panic!("nested payload {source:?}: {error:?}"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    }
+}
+
+#[test]
 fn live_enum_payloads_execute_after_artifact_roundtrip() {
     let first = [3.0];
     let second = [9.0];

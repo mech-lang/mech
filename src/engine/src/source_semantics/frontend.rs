@@ -107,6 +107,7 @@ pub struct CanonicalSourceProgram {
 pub struct CanonicalOrderedDocument {
     pub document: DocumentSyntax,
     pub nominal_origin: Option<CanonicalNominalPath>,
+    pub nominal_package_id: Option<String>,
     pub identity: usize,
     pub input_schemas: BTreeMap<String, SchemaBody>,
     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -2167,6 +2168,7 @@ struct PendingConstant {
     schema: SchemaDraft,
     data: ValueDataDraft,
     dynamic_payload: Option<(SchemaDraft, ValueDataDraft)>,
+    embedded_constant: Option<(usize, bool)>,
 }
 
 #[derive(Clone)]
@@ -2411,6 +2413,28 @@ impl SemanticBuilder {
         }
         let qualified_enum = qualified.is_some();
         let expected = qualified.or(expected_enum.as_ref());
+        // An imported value retains its exact enum schema, even though the
+        // defining root's declaration table is not visible in this root.
+        if let Some(schema) = expected
+            && let SchemaBody::Enum { variants, .. } = &schema.body
+        {
+            return variants
+                .iter()
+                .enumerate()
+                .find(|(_, variant)| variant.name == name)
+                .map(|(ordinal, variant)| {
+                    Some(DeclaredEnumVariant {
+                        schema: schema.clone(),
+                        ordinal: ordinal as u32,
+                        payload: variant.payload.clone(),
+                    })
+                })
+                .ok_or_else(|| SourceSemanticError {
+                    code: "source-semantics/unknown-enum-variant",
+                    message: format!("variant {name} does not belong to the expected enum"),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+        }
         let Some(variants) = self.declared_variants.get(name) else {
             if qualified_enum {
                 return Err(SourceSemanticError {
@@ -4601,6 +4625,8 @@ impl SemanticBuilder {
                         return false;
                     };
                     self.constants[index].schema == element_schema
+                        && self.constants[index].dynamic_payload.is_none()
+                        && self.constants[index].embedded_constant.is_none()
                 })
             {
                 let row_count = values.len() as u64;
@@ -5362,29 +5388,21 @@ impl SemanticBuilder {
                 "enum payload does not satisfy its declared kind",
             )?;
             if let PendingValue::Constant(index) = value {
-                if dynamic_payload
-                    && !matches!(self.constants[index].schema.body, SchemaBody::Dynamic)
-                {
-                    let payload = self.constants[index].schema.clone();
-                    let data = self.constants[index].data.clone();
-                    let index = self.constants.len();
-                    self.constants.push(PendingConstant {
-                        schema: variant.schema,
-                        data: ValueDataDraft::Enum(EnumDraft {
-                            ordinal: variant.ordinal,
-                            payload: None,
-                        }),
-                        dynamic_payload: Some((payload, data)),
-                    });
-                    return Ok(PendingValue::Constant(index));
-                }
-                return Ok(self.constant_draft(
-                    variant.schema,
-                    ValueDataDraft::Enum(EnumDraft {
+                let embedded = self.constants.len();
+                self.constants.push(PendingConstant {
+                    schema: variant.schema,
+                    data: ValueDataDraft::Enum(EnumDraft {
                         ordinal: variant.ordinal,
-                        payload: Some(Box::new(self.constants[index].data.clone())),
+                        payload: None,
                     }),
-                ));
+                    dynamic_payload: None,
+                    embedded_constant: Some((
+                        index,
+                        dynamic_payload
+                            && !matches!(self.constants[index].schema.body, SchemaBody::Dynamic),
+                    )),
+                });
+                return Ok(PendingValue::Constant(embedded));
             }
             let ordinal = self.constant(
                 BuiltinSchema::Index,
@@ -5803,6 +5821,11 @@ impl SemanticBuilder {
         let PendingValue::Constant(index) = value else {
             return None;
         };
+        if self.constants[index].dynamic_payload.is_some()
+            || self.constants[index].embedded_constant.is_some()
+        {
+            return None;
+        }
         let mut schemas = SchemaTableBuilder::new();
         let pending = schemas
             .insert(self.schema_draft_of(value).ok()?.finalize().ok()?)
@@ -6179,7 +6202,10 @@ impl SemanticBuilder {
         if self.schema_of(value)? == Some(target) {
             return Ok(value);
         }
-        if let PendingValue::Constant(index) = value {
+        if let PendingValue::Constant(index) = value
+            && self.constants[index].dynamic_payload.is_none()
+            && self.constants[index].embedded_constant.is_none()
+        {
             let data = execute_conversion_draft(self.constants[index].data.clone(), &plan.step)
                 .map_err(|error| SourceSemanticError {
                     code: "source-semantics/constant-conversion-failed",
@@ -6287,23 +6313,20 @@ impl SemanticBuilder {
                 let value =
                     self.conform_schema_draft(value, &payload_schema, syntax, code, message)?;
                 if let PendingValue::Constant(index) = value {
-                    let data = self.constants[index].data.clone();
                     let actual_payload = self.constants[index].schema.clone();
-                    if matches!(payload.as_ref(), SchemaBody::Dynamic)
-                        && !matches!(actual_payload.body, SchemaBody::Dynamic)
-                    {
-                        return Ok(self.constant_dynamic_option(actual_payload, data));
-                    }
-                    let index = self.constants.len();
+                    let wrap_dynamic = matches!(payload.as_ref(), SchemaBody::Dynamic)
+                        && !matches!(actual_payload.body, SchemaBody::Dynamic);
+                    let embedded = self.constants.len();
                     self.constants.push(PendingConstant {
                         schema: expected.clone(),
                         data: ValueDataDraft::Option(OptionDraft {
                             present: true,
-                            value: Some(Box::new(data)),
+                            value: None,
                         }),
                         dynamic_payload: None,
+                        embedded_constant: Some((index, wrap_dynamic)),
                     });
-                    return Ok(PendingValue::Constant(index));
+                    return Ok(PendingValue::Constant(embedded));
                 }
                 return Ok(self.emit_with_schema_draft(
                     "option/some",
@@ -6364,6 +6387,7 @@ impl SemanticBuilder {
             schema,
             data,
             dynamic_payload: None,
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6374,6 +6398,7 @@ impl SemanticBuilder {
             schema: builtin_schema_draft(schema),
             data,
             dynamic_payload: None,
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6387,6 +6412,7 @@ impl SemanticBuilder {
             },
             data,
             dynamic_payload: None,
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6404,6 +6430,7 @@ impl SemanticBuilder {
                 value: None,
             }),
             dynamic_payload: Some((payload_schema, payload)),
+            embedded_constant: None,
         });
         PendingValue::Constant(index)
     }
@@ -6581,9 +6608,10 @@ impl SemanticBuilder {
             .collect::<Vec<_>>();
         let mut constants = ConstantStoreBuilder::new(&schemas.table);
         let mut handles = Vec::with_capacity(self.constants.len());
+        let mut materialized = Vec::<ValueDataDraft>::with_capacity(self.constants.len());
         for (index, constant) in self.constants.into_iter().enumerate() {
             let schema = constant_schema_ids[index];
-            let data = match constant.dynamic_payload {
+            let mut data = match constant.dynamic_payload {
                 Some((_, payload)) => {
                     let payload_schema = schemas.dynamic_payload_id(index);
                     let retained = schemas
@@ -6629,6 +6657,58 @@ impl SemanticBuilder {
                 }
                 None => constant.data,
             };
+            if let Some((source, wrap_dynamic)) = constant.embedded_constant {
+                let source_data = materialized.get(source).ok_or_else(|| {
+                    internal(
+                        self.anchor,
+                        "embedded constant must precede its wrapper".to_owned(),
+                    )
+                })?;
+                let payload = if wrap_dynamic {
+                    let payload_schema = constant_schema_ids[source];
+                    let retained = schemas.table.get(payload_schema).ok_or_else(|| {
+                        internal(
+                            self.anchor,
+                            "embedded constant schema is unavailable".to_owned(),
+                        )
+                    })?;
+                    let shape_values = if retained.dimension_parameters().is_empty() {
+                        Box::new([]) as Box<[u64]>
+                    } else {
+                        mech_core::shape_for_value_data(retained, source_data, &[], None)
+                            .map_err(|failure| SourceSemanticError {
+                                code: "source-semantics/unresolved-constant-shape",
+                                message: format!(
+                                    "unable to resolve embedded payload shape: {failure}"
+                                ),
+                                anchor: self.anchor,
+                            })?
+                            .parameter_values()
+                            .to_vec()
+                            .into_boxed_slice()
+                    };
+                    ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                        schema: payload_schema,
+                        shape_values,
+                        data: source_data.clone(),
+                    })))
+                } else {
+                    source_data.clone()
+                };
+                match &mut data {
+                    ValueDataDraft::Option(option) => option.value = Some(Box::new(payload)),
+                    ValueDataDraft::Enum(enumeration) => {
+                        enumeration.payload = Some(Box::new(payload));
+                    }
+                    _ => {
+                        return Err(internal(
+                            self.anchor,
+                            "embedded constant has no enclosing value".to_owned(),
+                        ));
+                    }
+                }
+            }
+            materialized.push(data.clone());
             let constant_schema = schemas
                 .table
                 .get(schema)

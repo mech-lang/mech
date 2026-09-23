@@ -1499,6 +1499,7 @@ pub(super) fn compile_ordered_documents(
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
     let mut presentation = Vec::new();
+    let mut nominal_owners = BTreeMap::<Vec<String>, Option<String>>::new();
     for root in documents {
         let anchor = SourceSemanticAnchor::for_node(root.document.syntax());
         if results.contains_key(&root.identity) {
@@ -1576,6 +1577,33 @@ pub(super) fn compile_ordered_documents(
         let mut units = Vec::new();
         let mut exports = Vec::new();
         collect_document_units(root.document.syntax(), &mut units, &mut exports)?;
+        if let Some(origin) = root.nominal_origin.as_ref() {
+            for (name, syntax) in document_types::enum_declarations(&units)? {
+                let path = origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(name))
+                    .collect::<Vec<_>>();
+                if let Some(previous) = nominal_owners.get(&path) {
+                    if previous.is_none()
+                        || root.nominal_package_id.is_none()
+                        || previous != &root.nominal_package_id
+                    {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/ambiguous-nominal-declaration-v1",
+                            message: format!(
+                                "AmbiguousNominalDeclarationV1: {} has distinct defining packages",
+                                path.join("/")
+                            ),
+                            anchor: SourceSemanticAnchor::for_node(&syntax),
+                        });
+                    }
+                } else {
+                    nominal_owners.insert(path, root.nominal_package_id.clone());
+                }
+            }
+        }
         builder.register_document_types(&units, root.nominal_origin.as_ref())?;
         builder.register_document_functions(&units)?;
         builder.register_document_imports(&units, &root.resolved_modules)?;

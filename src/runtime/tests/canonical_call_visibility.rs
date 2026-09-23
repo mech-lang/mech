@@ -207,6 +207,7 @@ fn ordered_roots_do_not_share_callable_imports() {
         identity,
         document: document(source).document(),
         nominal_origin: None,
+        nominal_package_id: None,
         input_schemas: BTreeMap::new(),
         resource_writes: BTreeMap::new(),
         imports: BTreeMap::new(),
