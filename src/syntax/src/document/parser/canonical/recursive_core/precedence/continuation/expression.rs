@@ -150,6 +150,14 @@ impl Continuation {
                     parser.rewind(checkpoint);
                     self.expression(Phase::DelimitedOperator(range, seed, checkpoint, probe + 1));
                     self.push(Frame::Operator(probe, 0));
+                } else if probe == LEVELS.len() {
+                    // Range has its own expression continuation. Probe it
+                    // before concluding that the delimited seed ended here.
+                    parser.rewind(checkpoint);
+                    self.expression(Phase::DelimitedOperator(range, seed, checkpoint, probe + 1));
+                    self.push(Frame::LeafOperator(Box::new(operators::Continuation::new(
+                        rules::RANGE_OPERATOR,
+                    ))));
                 } else {
                     parser.rewind(checkpoint);
                     self.expression(Phase::DelimitedMatchSpace(range, seed, checkpoint));

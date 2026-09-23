@@ -272,6 +272,15 @@ fn shared_prefixes_select_the_exact_outer_structure() {
     }
 
     for (text, kind) in [
+        ("{x | x <- xs}..10", SyntaxKind::SetComprehension),
+        ("[x | x <- xs]..10", SyntaxKind::MatrixComprehension),
+    ] {
+        let parsed = parse(rules::EXPRESSION, text);
+        assert!(contains_kind(&parsed.syntax(), kind));
+        assert!(contains_kind(&parsed.syntax(), SyntaxKind::RangeExpression));
+    }
+
+    for (text, kind) in [
         ("{1} ∪ {2}", SyntaxKind::SetExpression),
         ("[1] + [2]", SyntaxKind::AdditiveExpression),
     ] {

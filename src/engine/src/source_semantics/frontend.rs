@@ -8268,6 +8268,12 @@ impl SemanticBuilder {
                 .finalize()
                 .is_ok_and(|schema| crate::is_control_value_schema(&schema))
         };
+        let intermediate_value = |schema: &SchemaDraft| {
+            schema
+                .clone()
+                .finalize()
+                .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
+        };
         if !closed_value(&schema) {
             return Err(unsupported());
         }
@@ -8339,8 +8345,11 @@ impl SemanticBuilder {
             };
         let mut operations = Vec::new();
         for node in nodes {
+            // Intermediate results may carry per-turn dimensions through
+            // pure operations. Only the selected block's final yield must be
+            // a closed match value.
             if node.state.is_some()
-                || (!closed_value(&node.schema)
+                || (!intermediate_value(&node.schema)
                     && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
             {
                 return Err(unsupported());

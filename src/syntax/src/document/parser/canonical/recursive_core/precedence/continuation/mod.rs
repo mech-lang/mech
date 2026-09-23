@@ -1601,6 +1601,7 @@ mod tests {
             (rules::SET_COMPREHENSION, "{x | x <-, y = 1}"),
             (rules::SET_COMPREHENSION, "{x | }"),
             (rules::SET_COMPREHENSION, "{x | x <- xs,"),
+            (rules::EXPRESSION, "[x | x <- xs]..10"),
             (rules::EXPRESSION, "x ? | _ => 1 ."),
         ]);
     }
