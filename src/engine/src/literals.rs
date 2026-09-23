@@ -961,20 +961,14 @@ fn runtime_reified_constraints(
         .schemas()
         .ok_or_else(|| invalid_reified_conversion_target("source schema context is unavailable"))?;
     let source_body = source.closed_schema_body()?;
-    let kind = match target_value.data() {
-        ValueData::Type(ReifiedType::Kind(kind)) => kind,
+    let (mut target, declarations) = match target_value.data() {
+        ValueData::Type(ReifiedType::Kind(kind)) => schema_body_from_reified_kind(kind, &schemas)?,
         ValueData::Type(ReifiedType::Schema(key)) => {
             let schema = schemas
                 .find_by_key(*key)
                 .and_then(|id| schemas.get(id))
                 .ok_or_else(|| invalid_reified_conversion_target("unknown target schema key"))?;
-            let expected = materialize_declared_conversion_shape(&source_body, schema.body());
-            if expected_output != &expected {
-                return Err(invalid_reified_conversion_target(
-                    "compiled reified conversion output differs from target schema",
-                ));
-            }
-            return Ok(None);
+            (schema.body().clone(), schema_target_declarations(schema))
         }
         _ => {
             return Err(invalid_reified_conversion_target(
@@ -982,7 +976,6 @@ fn runtime_reified_constraints(
             ));
         }
     };
-    let (mut target, declarations) = schema_body_from_reified_kind(kind, &schemas)?;
     close_reified_enum_targets(&source_body, &mut target);
     inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
     let constraints = ReifiedTargetConstraints {
@@ -1347,6 +1340,22 @@ fn close_reified_enum_targets(source: &SchemaBody, target: &mut SchemaBody) {
 }
 
 #[cfg(feature = "convert")]
+fn schema_target_declarations(schema: &mech_core::Schema) -> Box<[DimensionParameterDeclaration]> {
+    schema
+        .dimension_parameters()
+        .iter()
+        .enumerate()
+        .map(|(index, parameter)| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(index as u32),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: parameter.lifetime(),
+            lower_bound: parameter.lower_bound().clone(),
+            upper_bound: parameter.upper_bound().cloned(),
+        })
+        .collect()
+}
+
+#[cfg(feature = "convert")]
 fn schema_body_from_reified_kind(
     value: &ReifiedKind,
     schemas: &mech_core::SchemaTable,
@@ -1673,6 +1682,75 @@ const MAX_REIFIED_BINDING_PARAMETERS: usize = 128;
 const MAX_REIFIED_SOLVER_PARAMETERS: usize = 64;
 #[cfg(feature = "convert")]
 const MAX_REIFIED_SOLVER_EQUATIONS: usize = 128;
+#[cfg(feature = "convert")]
+const MAX_REIFIED_BINDING_VISITS: usize = 1_000_000;
+
+#[cfg(feature = "convert")]
+fn reified_binding_traversal_size(body: &SchemaBody) -> usize {
+    fn dimension_size(dimension: &DimensionExpr) -> usize {
+        match dimension {
+            DimensionExpr::Add(children)
+            | DimensionExpr::Multiply(children)
+            | DimensionExpr::Min(children)
+            | DimensionExpr::Max(children) => children.iter().fold(1usize, |size, child| {
+                size.saturating_add(dimension_size(child))
+            }),
+            _ => 1,
+        }
+    }
+    fn cardinality_size(cardinality: &CardinalitySpec) -> usize {
+        match cardinality {
+            CardinalitySpec::Exact(dimension) => dimension_size(dimension),
+            CardinalitySpec::Dynamic { upper_bound } => {
+                upper_bound.as_ref().map(dimension_size).unwrap_or(1)
+            }
+        }
+    }
+    match body {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => dimensions.iter().fold(
+            1usize.saturating_add(reified_binding_traversal_size(element)),
+            |size, dimension| size.saturating_add(dimension_size(dimension)),
+        ),
+        SchemaBody::Option(inner) => 1usize.saturating_add(reified_binding_traversal_size(inner)),
+        SchemaBody::Tuple(elements) => elements.iter().fold(1usize, |size, element| {
+            size.saturating_add(reified_binding_traversal_size(element))
+        }),
+        SchemaBody::Record(fields) => fields.iter().fold(1usize, |size, field| {
+            size.saturating_add(reified_binding_traversal_size(&field.schema))
+        }),
+        SchemaBody::Set {
+            element,
+            cardinality,
+        } => 1usize
+            .saturating_add(cardinality_size(cardinality))
+            .saturating_add(reified_binding_traversal_size(element)),
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality,
+        } => 1usize
+            .saturating_add(cardinality_size(cardinality))
+            .saturating_add(reified_binding_traversal_size(key))
+            .saturating_add(reified_binding_traversal_size(value)),
+        SchemaBody::Table { columns, rows } => columns.iter().fold(
+            1usize.saturating_add(cardinality_size(rows)),
+            |size, column| size.saturating_add(reified_binding_traversal_size(&column.schema)),
+        ),
+        SchemaBody::Enum { variants, .. } => variants.iter().fold(1usize, |size, variant| {
+            size.saturating_add(
+                variant
+                    .payload
+                    .as_ref()
+                    .map(reified_binding_traversal_size)
+                    .unwrap_or(1),
+            )
+        }),
+        _ => 1,
+    }
+}
 
 #[cfg(feature = "convert")]
 fn solve_reified_target_bindings(
@@ -1685,6 +1763,13 @@ fn solve_reified_target_bindings(
     // before either loop runs; the joint equation limit applies only to axes
     // still unresolved after these direct-binding passes.
     if declarations.len() > MAX_REIFIED_BINDING_PARAMETERS {
+        return Err(invalid_reified_conversion_target(
+            "joint target dimension system exceeds the solver limit",
+        ));
+    }
+    if reified_binding_traversal_size(target).saturating_mul(declarations.len().saturating_add(1))
+        > MAX_REIFIED_BINDING_VISITS
+    {
         return Err(invalid_reified_conversion_target(
             "joint target dimension system exceeds the solver limit",
         ));
@@ -1718,6 +1803,24 @@ fn solve_reified_target_bindings(
     for _ in 0..=declarations.len() {
         let prior = bindings.clone();
         bind_reified_target_dimensions(source, target, declarations, &mut bindings)?;
+        for declaration in declarations {
+            let index = declaration.id.get() as usize;
+            if let (Some(witness), Some(upper)) = (
+                bindings.get(index).and_then(Option::as_ref),
+                declaration.upper_bound.as_ref(),
+            ) && upper == &declaration.lower_bound
+            {
+                let witness = witness.clone();
+                // An exact declaration is an equation. A body witness can
+                // determine a dependency that occurs only in that bound.
+                let _ = bind_reified_dimension(
+                    &witness,
+                    &declaration.lower_bound,
+                    declarations,
+                    &mut bindings,
+                );
+            }
+        }
         if prior == bindings {
             break;
         }
@@ -3136,7 +3239,11 @@ impl CanonicalFunctionSpecializer for ConvertKind {
                 (target, Some(dimensions))
             }
             ValueData::Type(ReifiedType::Schema(key)) => {
-                (context.schema(*key)?.body().clone(), None)
+                let schema = context.schema(*key)?;
+                (
+                    schema.body().clone(),
+                    Some(schema_target_declarations(schema)),
+                )
             }
             _ => {
                 return Err(MechError::new(
@@ -4342,6 +4449,59 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn parameterized_schema_target_closes_against_each_source_shape() {
+        let matrix = |rows, values: &[f64]| {
+            ValueCell::dynamic_matrix_from_cells(
+                rows,
+                2,
+                &values
+                    .iter()
+                    .map(|value| ValueCell::from_exact(*value).unwrap())
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+        let source = matrix(1, &[1.0, 2.0]);
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(source.schema_key())),
+        )
+        .unwrap();
+        let invocation = SpecializationInvocation::from_cells(
+            vec![source.clone(), target.clone()].into_boxed_slice(),
+        );
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
+        let conversion = ConvertKind
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        let output = conversion.output().clone();
+        assert!(
+            RuntimeReifiedKindConversion::new_invocation(FunctionInvocation::binary(
+                output.clone(),
+                source.clone(),
+                target,
+            ))
+            .is_ok()
+        );
+        source
+            .replace(&matrix(2, &[1.0, 2.0, 3.0, 4.0]).snapshot().unwrap())
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert_eq!(
+            output.closed_schema_body().unwrap(),
+            source.closed_schema_body().unwrap()
+        );
+    }
+
+    #[test]
     fn runtime_reified_conversion_rejects_output_that_differs_from_target() {
         let (kind_id, path) = builtin_scalar_named_kind(mech_core::hash_str("f64")).unwrap();
         let kind = ReifiedKind::from_closed_kind(
@@ -4869,6 +5029,94 @@ mod canonical_conversion_tests {
                 Some(DimensionExpr::Constant(5)),
                 Some(DimensionExpr::Constant(5)),
             ]
+        );
+    }
+
+    #[test]
+    fn non_affine_exact_bound_propagates_a_unique_dependency() {
+        let q = DimensionParameterId::new(0);
+        let p = DimensionParameterId::new(1);
+        let bound =
+            DimensionExpr::Max([DimensionExpr::Parameter(q), DimensionExpr::Constant(3)].into());
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: q,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: p,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: bound.clone(),
+                upper_bound: Some(bound),
+            },
+        ];
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Parameter(p)].into(),
+        };
+        let source = |extent| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(extent)].into(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&source(5), &target, &declarations).unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(5)),
+                Some(DimensionExpr::Constant(5)),
+            ]
+        );
+        let ambiguous = solve_reified_target_bindings(&source(3), &target, &declarations).unwrap();
+        assert!(validate_reified_parameter_bindings(&declarations, &ambiguous).is_err());
+    }
+
+    #[test]
+    fn repeated_binding_work_is_bounded_by_target_size() {
+        let count = MAX_REIFIED_BINDING_PARAMETERS;
+        let declarations = (0..count)
+            .map(|index| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(index as u32),
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            })
+            .collect::<Vec<_>>();
+        let mut source_axes = vec![DimensionExpr::Constant(1); 9_000];
+        let mut target_axes = source_axes.clone();
+        for index in 0..count {
+            source_axes.push(DimensionExpr::Constant(if index + 1 == count {
+                1
+            } else {
+                2
+            }));
+            let parameter = DimensionExpr::Parameter(DimensionParameterId::new(index as u32));
+            target_axes.push(if index + 1 == count {
+                parameter
+            } else {
+                DimensionExpr::Add(
+                    [
+                        parameter,
+                        DimensionExpr::Parameter(DimensionParameterId::new((index + 1) as u32)),
+                    ]
+                    .into(),
+                )
+            });
+        }
+        let matrix = |dimensions: Vec<DimensionExpr>| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: dimensions.into_boxed_slice(),
+        };
+        assert!(
+            solve_reified_target_bindings(
+                &matrix(source_axes),
+                &matrix(target_axes),
+                &declarations,
+            )
+            .is_err()
         );
     }
 
