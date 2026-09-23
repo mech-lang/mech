@@ -1325,6 +1325,17 @@
           "--locked",
           "--offline",
           "-p",
+          "mech-syntax",
+          "--test",
+          "canonical_phase_2i_ambiguity"
+        ],
+        [
+          "cargo",
+          "+nightly-2026-03-03",
+          "test",
+          "--locked",
+          "--offline",
+          "-p",
           "mech-engine",
           "--no-default-features",
           "--features",
