@@ -42,20 +42,23 @@ async function bootstrap(manifest) {
 }
 
 test('static bootstrap fetches served prose and only the configured root artifact', async () => {
-  const result = await bootstrap({ version: 3, roots: ['main.mec'], sources: [
-    { specifier: 'main.mec', url: 'source/main.mec', artifactUrl: 'code/main.mec' },
+  const result = await bootstrap({ version: 4, roots: ['main.mec'], sources: [
+    { specifier: 'main.mec', url: 'source/main.mec', artifactUrl: 'code/main.mec',
+      nominalOrigin: { segments: ['sample', 'main'] }, nominalPackageId: 'sample@1' },
     { specifier: 'notes.mec', url: 'source/notes.mec' },
   ] });
   assert.deepEqual(result.errors, []);
   assert.equal(result.admitted.length, 1);
   assert.deepEqual(Object.keys(result.admitted[0][2]), ['main.mec']);
   assert.equal(result.admitted[0][1]['notes.mec'], 'Presentation notes.');
+  assert.equal(result.admitted[0][4]['main.mec'].nominalOrigin.segments[0], 'sample');
+  assert.equal(result.admitted[0][4]['main.mec'].nominalPackageId, 'sample@1');
   assert.ok(result.fetched.includes('/app/source/notes.mec'));
   assert.ok(!result.fetched.includes('/app/code/notes.mec'));
 });
 
 test('static bootstrap rejects a configured root without its artifact', async () => {
-  const result = await bootstrap({ version: 3, roots: ['main.mec'], sources: [
+  const result = await bootstrap({ version: 4, roots: ['main.mec'], sources: [
     { specifier: 'main.mec', url: 'source/main.mec' },
   ] });
   assert.equal(result.admitted.length, 0);
