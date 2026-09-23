@@ -2787,8 +2787,8 @@ pub(super) fn admit_pattern_item_materialization(
     // One owned draft is materialized for the shared scrutinee. Source-backed
     // descent owns both the draft child and its canonical source child at every
     // level while their ancestors remain live. Other lanes own one child per
-    // level. `clone_multiplicity` is the sum of the maximum structural depth of
-    // every arm that can be attempted.
+    // level. `clone_multiplicity` is the maximum structural depth of one arm;
+    // separate arms are attempted sequentially.
     let copies = pattern_item_copy_multiplicity(
         matches!(value, ResidentValueRef::Snapshot([Some(_)])),
         clone_multiplicity,

@@ -5,6 +5,16 @@ mod comprehension_execution;
 
 pub(super) use comprehension_execution::StructuralProjectionTable;
 
+fn peak_structural_clone_depth(arms: &[super::ActivatedMatchArm]) -> u64 {
+    arms.iter()
+        .filter_map(|arm| match &arm.pattern {
+            super::ActivatedMatchPattern::Structural { clone_depth, .. } => Some(*clone_depth),
+            _ => None,
+        })
+        .max()
+        .unwrap_or(0)
+}
+
 pub(super) fn structural_projection_schema_context(
     schemas: &mech_core::SchemaTable,
 ) -> Result<(mech_core::SchemaTable, StructuralProjectionTable), mech_core::SemanticModelError> {
@@ -1663,12 +1673,9 @@ impl ReactiveInstance {
             };
             total.checked_add(*work)
         });
-        let structural_clone_multiplicity = matched.arms.iter().try_fold(0u64, |total, arm| {
-            let super::ActivatedMatchPattern::Structural { clone_depth, .. } = &arm.pattern else {
-                return Some(total);
-            };
-            total.checked_add(*clone_depth)
-        });
+        // Arms are attempted in order and release their descent copies before
+        // the next arm. Only the deepest arm's copies can coexist.
+        let structural_clone_multiplicity = peak_structural_clone_depth(&matched.arms);
         let structural_dynamic_target_depth = matched
             .arms
             .iter()
@@ -1766,8 +1773,7 @@ impl ReactiveInstance {
                     if structural_scrutinee.is_none() {
                         let work = structural_work
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
-                        let clone_multiplicity = structural_clone_multiplicity
-                            .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let clone_multiplicity = structural_clone_multiplicity;
                         let dynamic_target_depth = structural_dynamic_target_depth;
                         let equality_count = structural_equality_count
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
@@ -4131,6 +4137,39 @@ mod tests {
                 released(&instance);
             }
         }
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn structural_arm_clone_admission_uses_peak_depth() {
+        let instance = source_instance(
+            "(\"payload\", true) ? | (text, false) => 0 | (text, true) => 1 | * => 2",
+        );
+        let arms = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| match step {
+                ActivatedTurnStep::Match(matched) => Some(matched.arms.as_ref()),
+                _ => None,
+            })
+            .expect("structural match step");
+        let depths = arms
+            .iter()
+            .filter_map(|arm| match &arm.pattern {
+                super::super::ActivatedMatchPattern::Structural { clone_depth, .. } => {
+                    Some(*clone_depth)
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(depths.len(), 2);
+        assert!(depths.iter().all(|depth| *depth > 0));
+        assert_eq!(
+            peak_structural_clone_depth(arms),
+            *depths.iter().max().unwrap()
+        );
+        assert!(peak_structural_clone_depth(arms) < depths.iter().sum());
     }
 
     #[cfg(feature = "source")]

@@ -310,6 +310,27 @@ fn structural_match_patterns_bind_guard_and_fall_through_after_roundtrip() {
 }
 
 #[test]
+fn sequential_structural_match_arms_admit_peak_clone_depth() {
+    use mech_core::snapshot::{SnapshotValidationContext, ValueDraft};
+
+    let source = "x := signal<(string,bool)> ? | (text, false) => 0 | (text, true) => 1 | * => 2";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let input_schema = artifact.inputs()[0].schema;
+    let payload = "x".repeat(10);
+    let input = ValueDraft {
+        schema: input_schema,
+        shape_values: Box::new([]),
+        data: Data::Tuple(vec![Data::String(payload), Data::Bool(true)].into_boxed_slice()),
+    }
+    .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+    .unwrap();
+    execute(
+        source,
+        [(vec![ResidentValueRef::Snapshot(&[Some(input)])], f(1.0))],
+    );
+}
+
+#[test]
 fn structural_match_patterns_follow_live_scrutinee_values_without_binding_leaks() {
     let source = "x := signal<(f64,f64)> ? | (left, right), left > 0 => left + right | * => 0";
     let artifact = compile(source).compile_artifact().unwrap();
