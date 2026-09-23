@@ -3210,10 +3210,11 @@ fn logical_selector_population(
 }
 
 struct ConstantComparisonOperand<'a> {
+    schema: &'a SchemaBody,
+    data: &'a mech_core::ValueData,
     element: &'a SchemaBody,
     rows: usize,
     columns: usize,
-    values: Vec<mech_core::ValueData>,
 }
 
 fn constant_comparison_operand<'a>(
@@ -3234,7 +3235,7 @@ fn constant_comparison_operand<'a>(
         .entry(value.schema())
         .ok_or(ResidentActivationError::RegionSizeOverflow)?
         .schema();
-    let (element, rows, columns, values) = match (schema.body(), value.data()) {
+    let (element, rows, columns) = match (schema.body(), value.data()) {
         (SchemaBody::Matrix { element, .. }, mech_core::ValueData::Matrix(matrix)) => {
             let extents = source_extents(artifact, source, facts)?;
             let [rows, columns] = extents.as_ref() else {
@@ -3244,19 +3245,22 @@ fn constant_comparison_operand<'a>(
                 usize::try_from(*rows).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
             let columns = usize::try_from(*columns)
                 .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
-            let values = matrix.elements().to_values();
-            if rows.checked_mul(columns) != Some(values.len()) {
+            let Some(count) = rows.checked_mul(columns) else {
+                return Err(ResidentActivationError::RegionSizeOverflow);
+            };
+            if count > MAX_STATIC_SELECTOR_SOURCE_STEPS || count != matrix.elements().len() {
                 return Ok(None);
             }
-            (element.as_ref(), rows, columns, values)
+            (element.as_ref(), rows, columns)
         }
-        (body, data) => (body, 1, 1, vec![data.clone()]),
+        (body, _) => (body, 1, 1),
     };
     Ok(Some(ConstantComparisonOperand {
+        schema: schema.body(),
+        data: value.data(),
         element,
         rows,
         columns,
-        values,
     }))
 }
 
@@ -3275,6 +3279,19 @@ fn closed_comparison_population(
     if operation.operation.module_path.as_ref() != ["compare"] {
         return Ok(None);
     }
+    let name = operation.operation.operation_name.as_str();
+    if !matches!(
+        name,
+        "eq" | "neq" | "seq" | "sneq" | "lt" | "lte" | "gt" | "gte"
+    ) {
+        return Ok(None);
+    }
+    let output = node_output_slot(artifact, node)?;
+    let output_schema = artifact
+        .schemas()
+        .get(artifact.slots()[output.get() as usize].schema)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    let scalar_output = matches!(output_schema.body(), SchemaBody::Bool);
     let inputs = node_inputs(artifact, node)?;
     let [left, right] = inputs.as_slice() else {
         return Ok(None);
@@ -3285,7 +3302,23 @@ fn closed_comparison_population(
     let Some(right) = constant_comparison_operand(artifact, node, *right, facts)? else {
         return Ok(None);
     };
-    if left.element != right.element {
+    if scalar_output {
+        if left.schema != right.schema {
+            return Ok(None);
+        }
+        let matches = match name {
+            "eq" => schema_data_language_eq(left.schema, left.data, right.data),
+            "neq" => !schema_data_language_eq(left.schema, left.data, right.data),
+            "seq" => schema_data_snapshot_eq(left.schema, left.data, right.data),
+            "sneq" => !schema_data_snapshot_eq(left.schema, left.data, right.data),
+            _ => return Ok(None),
+        };
+        return Ok(Some(u64::from(matches)));
+    }
+    if matches!(name, "seq" | "sneq")
+        || !matches!(output_schema.body(), SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool)
+        || left.element != right.element
+    {
         return Ok(None);
     }
     let broadcast_axis = |left, right| {
@@ -3311,10 +3344,16 @@ fn closed_comparison_population(
     if output_len > MAX_STATIC_SELECTOR_SOURCE_STEPS {
         return Ok(None);
     }
+    let values = |operand: &ConstantComparisonOperand<'_>| match operand.data {
+        mech_core::ValueData::Matrix(matrix) => matrix.elements().to_values(),
+        data => vec![data.clone()],
+    };
+    let left_values = values(&left);
+    let right_values = values(&right);
     let element = left.element;
     let compare = |left: &mech_core::ValueData, right: &mech_core::ValueData| {
         let order = || schema_data_partial_cmp(element, left, right);
-        Some(match operation.operation.operation_name.as_str() {
+        match name {
             "eq" => schema_data_language_eq(element, left, right),
             "neq" => !schema_data_language_eq(element, left, right),
             "seq" => schema_data_snapshot_eq(element, left, right),
@@ -3329,15 +3368,15 @@ fn closed_comparison_population(
                 order(),
                 Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
             ),
-            _ => return None,
-        })
+            _ => unreachable!("comparison operation checked above"),
+        }
     };
     let mut population = 0_u64;
     for row in 0..rows {
         for column in 0..columns {
             let left_index = (row % left.rows) * left.columns + column % left.columns;
             let right_index = (row % right.rows) * right.columns + column % right.columns;
-            if compare(&left.values[left_index], &right.values[right_index]).unwrap_or(false) {
+            if compare(&left_values[left_index], &right_values[right_index]) {
                 population = population
                     .checked_add(1)
                     .ok_or(ResidentActivationError::RegionSizeOverflow)?;
