@@ -14692,7 +14692,7 @@ mod tests {
     }
 
     #[test]
-    fn promoted_rows_consume_runtime_sized_snapshot_sources() {
+    fn promoted_rows_admit_runtime_sized_sources_and_selectors() {
         use mech_core::{
             DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
             DimensionParameterOrigin, SchemaDraft,
@@ -14731,7 +14731,27 @@ mod tests {
                 .unwrap(),
             )
             .unwrap();
-        let selector = builder.insert(test_schema(SchemaBody::Index)).unwrap();
+        let selector = builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: Some(DimensionExpr::Constant(2)),
+                    }]
+                    .into_boxed_slice(),
+                    body: matrix(
+                        SchemaBody::Index,
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                        DimensionExpr::Constant(1),
+                    ),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
         let built = builder.finish().unwrap();
         let base = built.resolve(base).unwrap();
         let source = built.resolve(source).unwrap();
@@ -14778,9 +14798,9 @@ mod tests {
                 ),
                 layout(
                     selector,
-                    ResidentValueKind::Index,
+                    ResidentValueKind::Snapshot,
                     ResidentShape::SCALAR,
-                    &[],
+                    &[0],
                 ),
             ],
             output: layout(
@@ -14794,9 +14814,9 @@ mod tests {
         let source_value = [Some(
             ValueDraft {
                 schema: source,
-                shape_values: vec![1].into_boxed_slice(),
+                shape_values: vec![2].into_boxed_slice(),
                 data: ValueDataDraft::Matrix(
-                    [1.5, 2.5]
+                    [1.5, 2.5, 3.5, 4.5]
                         .into_iter()
                         .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
                         .collect::<Vec<_>>()
@@ -14806,10 +14826,24 @@ mod tests {
             .finalize(&SnapshotValidationContext::new(&schemas))
             .unwrap(),
         )];
-        let selector_value = [2_u64];
+        let selector_value = [Some(
+            ValueDraft {
+                schema: selector,
+                shape_values: vec![2].into_boxed_slice(),
+                data: ValueDataDraft::Matrix(
+                    [1, 2]
+                        .into_iter()
+                        .map(ValueDataDraft::Index)
+                        .collect::<Vec<_>>()
+                        .into_boxed_slice(),
+                ),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap(),
+        )];
         let inputs = [
             ResidentValueRef::Snapshot(&source_value),
-            ResidentValueRef::Index(&selector_value),
+            ResidentValueRef::Snapshot(&selector_value),
         ];
         let mut output = [Some(test_value(
             &schemas,
@@ -14832,7 +14866,7 @@ mod tests {
         let SequenceView::I32(values) = values.elements() else {
             panic!("promoted rows must retain the destination element type")
         };
-        assert_eq!(values, &[10, 11, 21, 23]);
+        assert_eq!(values, &[11, 13, 23, 25]);
     }
 
     #[test]

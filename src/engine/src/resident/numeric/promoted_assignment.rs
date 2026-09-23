@@ -17,7 +17,6 @@ struct Plan {
     source: SnapshotAccessSelectorLayout,
     target: SnapshotAccessSelectorLayout,
     selectors: Box<[SnapshotAccessSelectorLayout]>,
-    max_writes: usize,
     promote: ConversionPlan,
     assign: ConversionPlan,
 }
@@ -97,26 +96,16 @@ pub(super) fn bind(
         shape: port.shape_instance.clone(),
         resident_shape: port.shape,
     };
-    let mut axis_capacities = Vec::new();
     let mut logical_selector = false;
     for selector in &request.inputs[2..] {
         if !positional_selector_layout(request, selector) {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
-        let axis_capacity = declared_selector_cardinality(request, selector)?;
         logical_selector |= request
             .schemas
             .get(selector.schema_id)
             .is_some_and(|schema| is_logical_selector_schema(schema.body()));
-        axis_capacities.push(axis_capacity);
     }
-    let max_writes = match mode {
-        0 => Some(axis_capacities[0]),
-        1 => axis_capacities[0].checked_mul(columns),
-        2 => axis_capacities[0].checked_mul(rows),
-        _ => axis_capacities[0].checked_mul(axis_capacities[1]),
-    }
-    .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             mode,
@@ -129,7 +118,6 @@ pub(super) fn bind(
             source: layout(source),
             target: layout(&request.output),
             selectors: request.inputs[2..].iter().map(layout).collect(),
-            max_writes,
             promote,
             assign,
         }))
@@ -196,23 +184,32 @@ fn execute(
         return Err(ResidentKernelError::InvalidShape);
     }
     let mut selector_cost = SelectorMaterializationCost::default();
+    let mut live_selector_capacities = [0; 2];
     for (index, selector) in plan.selectors.iter().enumerate() {
-        selector_cost = add_selector_cost(
-            selector_cost,
-            snapshot_selector_materialization_cost(
-                schemas,
-                selector,
-                input(inputs, index + 1)?,
-                &mut meter,
-            )?,
+        let cost = snapshot_selector_materialization_cost(
+            schemas,
+            selector,
+            input(inputs, index + 1)?,
+            &mut meter,
         )?;
+        live_selector_capacities[index] = cost.elements;
+        selector_cost = add_selector_cost(selector_cost, cost)?;
     }
+    // Each positional occurrence can write once; a Boolean selector can only
+    // select a subset. Use the live validated cardinalities before admission.
+    let max_writes = match plan.mode {
+        0 => Some(live_selector_capacities[0]),
+        1 => live_selector_capacities[0].checked_mul(plan.columns),
+        2 => live_selector_capacities[0].checked_mul(plan.rows),
+        _ => live_selector_capacities[0].checked_mul(live_selector_capacities[1]),
+    }
+    .ok_or(ResidentKernelError::InvalidShape)?;
     // Numeric snapshots have fixed scalar payloads. Admit the complete draft,
     // selector, conversion and publication storage before materializing it.
     let elements = count
         .checked_add(source_len)
         .and_then(|n| n.checked_add(selector_cost.elements))
-        .and_then(|n| n.checked_add(plan.max_writes))
+        .and_then(|n| n.checked_add(max_writes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let draft_bytes = elements
         .checked_mul(core::mem::size_of::<ValueDataDraft>())
