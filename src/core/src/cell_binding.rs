@@ -5171,6 +5171,61 @@ fn initial_data_for_descriptor(
 fn initial_data_for_schema(schema: &SchemaBody, shape: &ShapeInstance) -> MResult<ValueDataDraft> {
     use crate::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits};
     Ok(match schema {
+        SchemaBody::IntegerInterval(interval) => {
+            use crate::{IntegerInterval, IntegerWidth};
+            match interval {
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W8,
+                    lower,
+                    ..
+                } => ValueDataDraft::U8(*lower as u8),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W16,
+                    lower,
+                    ..
+                } => ValueDataDraft::U16(*lower as u16),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W32,
+                    lower,
+                    ..
+                } => ValueDataDraft::U32(*lower as u32),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W64,
+                    lower,
+                    ..
+                } => ValueDataDraft::U64(*lower as u64),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W128,
+                    lower,
+                    ..
+                } => ValueDataDraft::U128(*lower),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W8,
+                    lower,
+                    ..
+                } => ValueDataDraft::I8(*lower as i8),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W16,
+                    lower,
+                    ..
+                } => ValueDataDraft::I16(*lower as i16),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W32,
+                    lower,
+                    ..
+                } => ValueDataDraft::I32(*lower as i32),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W64,
+                    lower,
+                    ..
+                } => ValueDataDraft::I64(*lower as i64),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W128,
+                    lower,
+                    ..
+                } => ValueDataDraft::I128(*lower),
+            }
+        }
         SchemaBody::Dynamic => ValueDataDraft::Dynamic(None),
         SchemaBody::Bool => ValueDataDraft::Bool(false),
         SchemaBody::UnsignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::U8(0),
@@ -7271,6 +7326,7 @@ impl canonical_cell_sealed::Sealed for Value {
 
 fn representation_for_schema(schema: &SchemaBody) -> FunctionValueRepresentation {
     match schema {
+        SchemaBody::IntegerInterval(interval) => representation_for_schema(&interval.base_body()),
         SchemaBody::Dynamic => FunctionValueRepresentation::AnyValue,
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => FunctionValueRepresentation::U8,
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => FunctionValueRepresentation::U16,
@@ -7424,6 +7480,7 @@ pub(crate) fn close_schema_body(body: &SchemaBody, shape: &ShapeInstance) -> MRe
     }
 
     Ok(match body {
+        SchemaBody::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
         SchemaBody::Dynamic => SchemaBody::Dynamic,
         SchemaBody::Bool => SchemaBody::Bool,
         SchemaBody::UnsignedInteger(width) => SchemaBody::UnsignedInteger(*width),

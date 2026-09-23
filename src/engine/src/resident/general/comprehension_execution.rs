@@ -480,6 +480,7 @@ fn collect_projection_schemas(
         | SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
+        | SchemaBody::IntegerInterval(_)
         | SchemaBody::FloatingPoint(_)
         | SchemaBody::Complex(_)
         | SchemaBody::Rational64
@@ -3846,6 +3847,7 @@ fn component_closure_is_addressable(
             | SchemaBody::Bool
             | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
+            | SchemaBody::IntegerInterval(_)
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64

@@ -132,6 +132,7 @@ fn encode_canonical_data(
         })
     };
     match (schema, data) {
+        (SchemaBody::IntegerInterval(interval), data) => nested(&interval.base_body(), data),
         (SchemaBody::Dynamic, ValueData::Dynamic(_)) if dynamic_placeholder => {
             scalar(RuntimeType::Any, 1, Vec::new())
         }
@@ -410,6 +411,7 @@ fn encode_canonical_data(
 #[cfg(feature = "semantic-compiler")]
 fn runtime_type_for_schema(schema: &SchemaBody) -> MResult<RuntimeType> {
     Ok(match schema {
+        SchemaBody::IntegerInterval(interval) => runtime_type_for_schema(&interval.base_body())?,
         SchemaBody::Dynamic => RuntimeType::Any,
         SchemaBody::Bool => RuntimeType::Bool,
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => RuntimeType::U8,
