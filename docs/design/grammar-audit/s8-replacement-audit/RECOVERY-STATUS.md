@@ -1,5 +1,29 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R02 published; R06 next
+
+**Candidate:** the accumulated deleted-parser C remains draft #830 and is not
+qualified on the current owner stack. The protected target is
+`integration/v0.4`.
+
+**Completed:** R02 #883 was rebased onto exact R24 and published at
+`c437628f7`. Its three remaining review notes were fixed, answered, and
+resolved: complex division preserves representable large numerators; checked
+integer powers accept wide exponents; and integral complex powers stay on the
+exact squaring path across the represented exponent range. The 100/100 numeric
+unit suite, four source and bytecode numeric regressions, formatting, and patch
+checks pass. The remote head matches, the PR is mergeable, and zero review
+threads remain open. No repeat review was requested.
+
+**In progress:** rebase R06 #884 onto exact R02 and address its four open
+logical-mask review notes before moving to R26 and C.
+
+**Remaining:** seal owner heads, revisit deferred R16 findings, fully qualify
+exact C, merge through the protected path, and verify the landed
+`integration/v0.4` result. Checkpoints are not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R24 published; R02 next
 
 **Candidate:** the single accumulated deleted-parser C remains draft #830,
