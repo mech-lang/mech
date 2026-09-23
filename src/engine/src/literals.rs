@@ -317,7 +317,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
             },
         ) => SchemaBody::Set {
             element: Box::new(materialize_declared_conversion_shape(source, target)),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
                 source_cardinality.clone()
             } else {
                 cardinality.clone()
@@ -337,7 +337,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
         ) => SchemaBody::Map {
             key: Box::new(materialize_declared_conversion_shape(source_key, key)),
             value: Box::new(materialize_declared_conversion_shape(source_value, value)),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
                 source_cardinality.clone()
             } else {
                 cardinality.clone()
@@ -370,7 +370,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
                         ),
                     })
                     .collect(),
-                rows: if matches!(rows, CardinalitySpec::Dynamic { .. }) {
+                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
                     source_rows.clone()
                 } else {
                     rows.clone()
@@ -458,7 +458,7 @@ fn materialize_declared_conversion_semantic_shape(
             element: Box::new(materialize_declared_conversion_semantic_shape(
                 source, target,
             )),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -483,7 +483,7 @@ fn materialize_declared_conversion_semantic_shape(
                 source_value,
                 value,
             )),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -516,7 +516,7 @@ fn materialize_declared_conversion_semantic_shape(
                         ),
                     })
                     .collect(),
-                rows: if matches!(rows, CardinalitySpec::Dynamic { .. }) {
+                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
                     CardinalitySpec::Exact(source_rows.clone())
                 } else {
                     rows.clone()
@@ -804,6 +804,28 @@ struct PlannedTypeConversion {
     source: ValueCell,
     output: ValueCell,
     plan: ConversionPlan,
+    reified_constraints: Option<ReifiedTargetConstraints>,
+}
+
+#[cfg(feature = "convert")]
+#[derive(Debug)]
+struct ReifiedTargetConstraints {
+    target: SchemaBody,
+    declarations: Box<[DimensionParameterDeclaration]>,
+}
+
+#[cfg(feature = "convert")]
+impl ReifiedTargetConstraints {
+    fn validate(&self, source: &ValueCell) -> MResult<()> {
+        let mut bindings = vec![None; self.declarations.len()];
+        bind_reified_target_dimensions(
+            &source.closed_schema_body()?,
+            &self.target,
+            &self.declarations,
+            &mut bindings,
+        )?;
+        validate_reified_parameter_bindings(&self.declarations, &bindings)
+    }
 }
 
 #[cfg(feature = "convert")]
@@ -811,12 +833,14 @@ fn planned_type_conversion_instance(
     source: ValueCell,
     output: ValueCell,
     plan: ConversionPlan,
+    reified_constraints: Option<ReifiedTargetConstraints>,
 ) -> (Box<dyn MechFunction>, FunctionInvocation) {
     (
         Box::new(PlannedTypeConversion {
             source: source.clone(),
             output: output.clone(),
             plan,
+            reified_constraints,
         }),
         FunctionInvocation::unary(output, source),
     )
@@ -828,7 +852,7 @@ fn planned_type_conversion_specialized(
     output: ValueCell,
     plan: ConversionPlan,
 ) -> MResult<SpecializedFunction> {
-    let instance = planned_type_conversion_instance(source, output, plan);
+    let instance = planned_type_conversion_instance(source, output, plan, None);
     SpecializedFunction::syntax_directed(
         instance,
         ResolvedOperationDescriptor::from_name(
@@ -1970,7 +1994,9 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         };
         let source_type = source.resolved_type()?;
         let is_reified_target = reified_dimensions.is_some();
-        let (target, semantic_reified_target) = if let Some(declarations) = reified_dimensions {
+        let (target, semantic_reified_target, reified_constraints) = if let Some(declarations) =
+            reified_dimensions
+        {
             let source_body = source.closed_schema_body()?;
             let mut target = target;
             inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
@@ -1992,12 +2018,17 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             let mut bindings = vec![None; declarations.len()];
             bind_reified_target_dimensions(&source_body, &target, &declarations, &mut bindings)?;
             validate_reified_parameter_bindings(&declarations, &bindings)?;
+            let reified_constraints = ReifiedTargetConstraints {
+                target: target.clone(),
+                declarations,
+            };
             (
                 substitute_reified_target(&target, &bindings)?,
                 Some(semantic_target),
+                Some(reified_constraints),
             )
         } else {
-            (target, None)
+            (target, None, None)
         };
         let semantic_target = materialize_declared_conversion_semantic_shape(
             source_type.kind(),
@@ -2021,7 +2052,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         let _ = target_cell;
         context.resolve_syntax_operation_contract(&PURE_TYPE_CONVERSION_CONTRACT)?;
         context.certify_instance(
-            planned_type_conversion_instance(source, output, plan),
+            planned_type_conversion_instance(source, output, plan, reified_constraints),
             mech_core::RuntimeFunctionId::from_name("convert/kind"),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::CanonicalFinalize,
@@ -2043,6 +2074,9 @@ impl MechFunctionImpl for PlannedTypeConversion {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
+        if let Some(constraints) = &self.reified_constraints {
+            constraints.validate(&self.source)?;
+        }
         stage_conversion_output(frame, &self.source, &self.output, &self.plan)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
@@ -2785,6 +2819,65 @@ mod canonical_conversion_tests {
             let target_type = ResolvedType::from_schema_body(&semantic, &[]).unwrap();
             assert!(exact_type_equal(&resolved, &target_type));
         }
+    }
+
+    #[test]
+    fn explicit_bounded_dynamic_cardinality_survives_shape_materialization() {
+        let source = SchemaBody::Set {
+            element: Box::new(SchemaBody::Index),
+            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(5)),
+        };
+        let target = SchemaBody::Set {
+            element: Box::new(SchemaBody::Index),
+            cardinality: CardinalitySpec::Dynamic {
+                upper_bound: Some(DimensionExpr::Constant(2)),
+            },
+        };
+        assert_eq!(
+            materialize_declared_conversion_shape(&source, &target),
+            target
+        );
+        let resolved = ResolvedType::from_schema_body(&source, &[]).unwrap();
+        assert_eq!(
+            materialize_declared_conversion_semantic_shape(resolved.kind(), &target),
+            target
+        );
+    }
+
+    #[test]
+    fn bounded_reified_matrix_constraint_checks_each_source_turn() {
+        let id = DimensionParameterId::new(0);
+        let constraints = ReifiedTargetConstraints {
+            target: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(1)].into(),
+            },
+            declarations: [DimensionParameterDeclaration {
+                id,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Constant(2)),
+            }]
+            .into(),
+        };
+        let matrix = |rows, values: &[f64]| {
+            ValueCell::dynamic_matrix_from_cells(
+                rows,
+                1,
+                &values
+                    .iter()
+                    .map(|value| ValueCell::from_exact(*value).unwrap())
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+        let source = matrix(1, &[1.0]);
+        constraints.validate(&source).unwrap();
+        source
+            .replace(&matrix(3, &[1.0, 2.0, 3.0]).snapshot().unwrap())
+            .unwrap();
+        assert!(constraints.validate(&source).is_err());
     }
 
     #[test]
