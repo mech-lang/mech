@@ -1,5 +1,36 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R26 → R15 → C linked
+
+**Candidate:** the single accumulated deleted-parser C remains draft #830 at
+exact head `719d5d8a9c8d527f084868f91f6dda1c230cff39`, based on R15 #891
+`b05509b6b18cf1177b41ca915970d8e63de03c1d`, which is based on R26 #885
+`6b43274a85ca1c835ebac908b526cf0090ae023a`. GitHub stack #892 lists
+those PRs in that order; the protected target remains `integration/v0.4`.
+
+**Completed:** R15 implements fixed integer intervals with explicit width,
+closed decimal compile-time endpoints, exclusive or inclusive upper bounds,
+and canonical schema/kind/bytecode representations. It rejects invalid bounds
+and unsupported domains. One R15 review was requested. The R15 exact-head
+checks passed: 71 source semantic and 69 core tests, the top-level `mech`
+library check, formatting, and patch checks. C was rebased onto R15 with no
+rebase conflict; a C-only native-feature match was updated for the interval
+schema. On the restacked C head, 72 source semantic tests, the top-level
+library check, formatting, and patch checks passed. The C remote matches the
+local head. The previous GitHub stack #889 was unstacked and its existing PRs
+were relinked as #892 with R15 inserted between R26 and C; no PR was replaced.
+
+**In progress:** inspect the single R15 review and current exact-head CI,
+resolve accepted owner findings, then perform the remaining sealing and full
+qualification on the final accumulated C head.
+
+**Remaining:** finish owner review acceptance and focused product checks after
+fix batches, pass exact-head full qualification, merge through the protected
+path, and verify the post-merge `integration/v0.4` result. This checkpoint is
+not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, accumulated C published; sealing next
 
 **Candidate:** the single accumulated deleted-parser C is draft #830 at exact
