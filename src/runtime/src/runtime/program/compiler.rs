@@ -687,7 +687,7 @@ struct CanonicalGraphCompilation<'a> {
     exports: HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
     source_dependencies: BTreeMap<String, u64>,
     module_versions: HashMap<String, crate::ModuleVersionId>,
-    nominal_owners: BTreeMap<Vec<String>, Option<String>>,
+    nominal_owners: BTreeMap<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>,
 }
 
 impl<'a> CanonicalGraphCompilation<'a> {
@@ -1478,15 +1478,18 @@ impl<'a> ProgramCompilerView<'a> {
                 .chain(std::iter::once(name))
                 .collect::<Vec<_>>();
             let owner = document.nominal_package_id().map(str::to_owned);
+            let defining_document = document.source().document();
             if let Some(previous) = context.nominal_owners.get(&path) {
-                if previous.is_none() || owner.is_none() || previous != &owner {
+                if previous.0 != owner || previous.1 != defining_document {
                     return Err(canonical_compilation_error(format!(
-                        "source-semantics/ambiguous-nominal-declaration-v1: {} has distinct defining packages",
+                        "source-semantics/ambiguous-nominal-declaration-v1: {} has distinct defining sources",
                         path.join("/")
                     )));
                 }
             } else {
-                context.nominal_owners.insert(path, owner);
+                context
+                    .nominal_owners
+                    .insert(path, (owner, defining_document));
             }
         }
         Ok(())

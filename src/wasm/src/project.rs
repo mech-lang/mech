@@ -24,10 +24,10 @@ use mech_engine::{
     insert_root_document_program_output_capture, root_document_inline_eval_count,
     root_document_output_ids, root_document_program_output_id,
 };
-#[cfg(feature = "served_project_authority")]
-use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
+#[cfg(feature = "served_project_authority")]
+use mech_runtime::{CanonicalDependencySource, CanonicalProgramBundle};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
     MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
@@ -49,6 +49,14 @@ use mech_time::BrowserTimeHostFactory;
 use mech_timer::BrowserTimerHostFactory;
 #[cfg(feature = "served_project_authority")]
 use serde::Deserialize;
+
+#[cfg(feature = "served_project_authority")]
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServedSourceProvenance {
+    nominal_origin: mech_core::CanonicalNominalPath,
+    nominal_package_id: Option<String>,
+}
 
 #[cfg(feature = "browser_host_dom")]
 use crate::host::WasmBrowserDomBackend;
@@ -159,13 +167,23 @@ impl WasmProject {
         sources: JsValue,
         artifacts: JsValue,
         roots: JsValue,
+        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let artifact_map = source_map_from_js(artifacts)?;
         let roots = bundle_roots_from_js(roots)?;
+        let provenance: HashMap<String, ServedSourceProvenance> =
+            serde_wasm_bindgen::from_value(provenance)
+                .map_err(|error| js_error(format!("invalid bundle nominal provenance: {error}")))?;
+        if provenance
+            .keys()
+            .any(|specifier| !source_map.contains_key(specifier))
+        {
+            return Err(js_error("bundle nominal provenance has an unknown source"));
+        }
         replace_bundle_run_paths(&mut document, roots.clone())?;
-        Self::from_served_project_bundle(document, source_map, artifact_map, roots)
+        Self::from_served_project_bundle(document, source_map, artifact_map, roots, provenance)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -174,14 +192,15 @@ impl WasmProject {
         source_map: HashMap<String, String>,
         artifact_map: HashMap<String, String>,
         roots: Vec<String>,
+        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver =
-            project_source_resolver_with_resolutions(&source_map, &[]).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_provenance(&source_map, &provenance)
+            .map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(
             &document,
             &authority,
@@ -205,12 +224,25 @@ impl WasmProject {
                 "canonical bundle root artifact is missing: {root}"
             ))
         })?;
-        let bundle = CanonicalProgramBundle::decode(encoded, Some(source)).map_err(to_js_error)?;
+        let root_provenance = provenance.get(root);
+        let bundle = CanonicalProgramBundle::decode_with_root_provenance(
+            encoded,
+            Some(source),
+            root_provenance.map(|item| &item.nominal_origin),
+            root_provenance.and_then(|item| item.nominal_package_id.as_deref()),
+        )
+        .map_err(to_js_error)?;
         bundle
-            .validate_dependency_sources(|uri| {
-                uri.strip_prefix("bundle:///")
-                    .and_then(|specifier| source_map.get(specifier))
-                    .map(String::as_str)
+            .validate_dependency_sources_with_provenance(|uri| {
+                let specifier = uri.strip_prefix("bundle:///")?;
+                let source = source_map.get(specifier)?.as_str();
+                let retained = provenance.get(specifier);
+                Some(CanonicalDependencySource {
+                    source,
+                    nominal_origin: retained.map(|item| &item.nominal_origin),
+                    nominal_package_id: retained
+                        .and_then(|item| item.nominal_package_id.as_deref()),
+                })
             })
             .map_err(to_js_error)?;
         if bundle.canonical_uri != format!("bundle:///{root}") {
@@ -2449,6 +2481,40 @@ fn project_source_resolver(
     let mut resolver = InMemorySourceResolver::new();
     for (specifier, source) in sources {
         resolver.insert_string(specifier, source)?;
+    }
+    Ok(resolver)
+}
+
+#[cfg(feature = "served_project_authority")]
+fn project_source_resolver_with_provenance(
+    sources: &HashMap<String, String>,
+    provenance: &HashMap<String, ServedSourceProvenance>,
+) -> mech_core::MResult<InMemorySourceResolver> {
+    let mut resolver = InMemorySourceResolver::new();
+    for (specifier, source) in sources {
+        if let Some(retained) = provenance.get(specifier) {
+            let mut resolved = ResolvedSource::new(
+                specifier,
+                format!("memory:{specifier}"),
+                MechSourceCode::String(source.clone()),
+            )
+            .with_kind(SourceKind::Mech)
+            .with_nominal_origin(retained.nominal_origin.clone());
+            if let Some(package_id) = &retained.nominal_package_id {
+                resolved = resolved.with_nominal_package_id(package_id.clone());
+            }
+            resolver.insert_source(
+                specifier,
+                resolved
+                    .retain_source_document(
+                        mech_syntax::document::Revision(0),
+                        mech_syntax::document::ParseConfig::default(),
+                    )?
+                    .admit_canonical_document()?,
+            )?;
+        } else {
+            resolver.insert_string(specifier, source)?;
+        }
     }
     Ok(resolver)
 }

@@ -1550,7 +1550,8 @@ pub(super) fn compile_ordered_documents(
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
     let mut presentation = Vec::new();
-    let mut nominal_owners = BTreeMap::<Vec<String>, Option<String>>::new();
+    let mut nominal_owners =
+        BTreeMap::<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>::new();
     for root in documents {
         let anchor = SourceSemanticAnchor::for_node(root.document.syntax());
         if results.contains_key(&root.identity) {
@@ -1636,22 +1637,23 @@ pub(super) fn compile_ordered_documents(
                     .cloned()
                     .chain(std::iter::once(name.clone()))
                     .collect::<Vec<_>>();
+                let defining_document = anchor.document;
                 if let Some(previous) = nominal_owners.get(&path) {
-                    if previous.is_none()
-                        || root.nominal_package_id.is_none()
-                        || previous != &root.nominal_package_id
-                    {
+                    if previous.0 != root.nominal_package_id || previous.1 != defining_document {
                         return Err(SourceSemanticError {
                             code: "source-semantics/ambiguous-nominal-declaration-v1",
                             message: format!(
-                                "AmbiguousNominalDeclarationV1: {} has distinct defining packages",
+                                "AmbiguousNominalDeclarationV1: {} has distinct defining sources",
                                 path.join("/")
                             ),
                             anchor: SourceSemanticAnchor::for_node(&syntax),
                         });
                     }
                 } else {
-                    nominal_owners.insert(path.clone(), root.nominal_package_id.clone());
+                    nominal_owners.insert(
+                        path.clone(),
+                        (root.nominal_package_id.clone(), defining_document),
+                    );
                 }
                 let key = NominalKey::from_path(
                     NominalKind::Enum,

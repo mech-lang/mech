@@ -2530,7 +2530,7 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
 }
 
 #[test]
-fn ordered_roots_reject_same_nominal_path_from_distinct_packages() {
+fn ordered_roots_reject_same_nominal_path_from_distinct_sources() {
     use mech_engine::CanonicalOrderedDocument;
     use std::collections::{BTreeMap, BTreeSet};
     let origin = CanonicalNominalPath::new(vec!["shared".to_owned(), "events".to_owned()]).unwrap();
@@ -2558,17 +2558,20 @@ fn ordered_roots_reject_same_nominal_path_from_distinct_packages() {
     };
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
-    let error = CanonicalSourceFrontend
-        .compile_ordered_documents_with_catalog(
-            &[root(1, "package-one"), root(2, "package-two")],
-            std::sync::Arc::new(catalog.build().unwrap()),
-        )
-        .err()
-        .expect("distinct packages must not share a nominal declaration path");
-    assert_eq!(
-        error.code,
-        "source-semantics/ambiguous-nominal-declaration-v1"
-    );
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    for second_package in ["package-one", "package-two"] {
+        let error = CanonicalSourceFrontend
+            .compile_ordered_documents_with_catalog(
+                &[root(1, "package-one"), root(2, second_package)],
+                catalog.clone(),
+            )
+            .err()
+            .expect("distinct documents must not share a nominal declaration path");
+        assert_eq!(
+            error.code,
+            "source-semantics/ambiguous-nominal-declaration-v1"
+        );
+    }
 }
 
 #[test]

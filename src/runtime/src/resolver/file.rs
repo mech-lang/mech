@@ -149,6 +149,15 @@ impl FileSourceResolver {
         &self.roots
     }
 
+    /// Return the defining package and module before a caller remaps a file
+    /// to another transport URI, as static browser bundles do.
+    pub fn nominal_provenance_for_path(
+        &self,
+        path: &Path,
+    ) -> MResult<Option<(mech_core::CanonicalNominalPath, String)>> {
+        self.manifest_nominal_origin(path)
+    }
+
     /// Resolve a file's defining package and module from its nearest Cargo
     /// package manifest. A workspace-only manifest does not define a package.
     fn manifest_nominal_origin(

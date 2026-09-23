@@ -46,7 +46,7 @@ fn product_compiler_uses_the_retained_defining_origin_for_enums() {
 }
 
 #[test]
-fn recursive_graph_imports_reject_distinct_package_owners_of_one_enum_path() {
+fn recursive_graph_imports_reject_distinct_sources_of_one_enum_path() {
     let source = "<event> := :idle | :busy\nvalue<event> := :idle\n<+ value\n";
     let origin = CanonicalNominalPath::new(vec!["shared".to_owned()]).unwrap();
     let dependency = |name: &str, owner: &str| {
@@ -61,22 +61,24 @@ fn recursive_graph_imports_reject_distinct_package_owners_of_one_enum_path() {
         .with_nominal_origin(origin.clone())
         .with_nominal_package_id(owner)
     };
-    let resolver = InMemorySourceResolver::new()
-        .with_string(
-            "app/main.mec",
-            "+> ./a.mec\n+> ./b.mec\nvalue := 1\nvalue\n",
-        )
-        .with_source("app/a.mec", dependency("a.mec", "package-a"))
-        .with_source("app/b.mec", dependency("b.mec", "package-b"));
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .source_resolver(resolver)
-        .build_compiler()
-        .unwrap();
-    let error = compiler
-        .compile_canonical_root(SourceRequest::new("app/main.mec"))
-        .expect_err("distinct packages cannot own one nominal enum path");
-    assert!(format!("{error:?}").contains("ambiguous-nominal-declaration-v1"));
+    for second_owner in ["package-a", "package-b"] {
+        let resolver = InMemorySourceResolver::new()
+            .with_string(
+                "app/main.mec",
+                "+> ./a.mec\n+> ./b.mec\nvalue := 1\nvalue\n",
+            )
+            .with_source("app/a.mec", dependency("a.mec", "package-a"))
+            .with_source("app/b.mec", dependency("b.mec", second_owner));
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        let error = compiler
+            .compile_canonical_root(SourceRequest::new("app/main.mec"))
+            .expect_err("distinct source files cannot own one nominal enum path");
+        assert!(format!("{error:?}").contains("ambiguous-nominal-declaration-v1"));
+    }
 }
 
 #[test]
