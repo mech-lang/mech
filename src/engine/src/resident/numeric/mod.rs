@@ -17517,6 +17517,25 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
 }
 
 fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
+    let scale = right.0.abs().max(right.1.abs());
+    if scale.is_finite() && scale > 0.0 && left.0.is_finite() && left.1.is_finite() {
+        let real = right.0 / scale;
+        let imaginary = right.1 / scale;
+        let denominator = real * real + imaginary * imaginary;
+        let real_weight = real / denominator;
+        let imaginary_weight = imaginary / denominator;
+        let scaled_left = (left.0 / scale, left.1 / scale);
+        if scaled_left.0.is_finite() && scaled_left.1.is_finite() {
+            return (
+                scaled_left.0 * real_weight + scaled_left.1 * imaginary_weight,
+                scaled_left.1 * real_weight - scaled_left.0 * imaginary_weight,
+            );
+        }
+        return (
+            (left.0 * real_weight + left.1 * imaginary_weight) / scale,
+            (left.1 * real_weight - left.0 * imaginary_weight) / scale,
+        );
+    }
     if right.0.abs() >= right.1.abs() {
         let ratio = right.1 / right.0;
         let denominator = 1.0 + ratio * ratio;
@@ -17562,6 +17581,25 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
 
 #[cfg(feature = "c64")]
 fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    let scale = right.0.abs().max(right.1.abs());
+    if scale.is_finite() && scale > 0.0 && left.0.is_finite() && left.1.is_finite() {
+        let real = right.0 / scale;
+        let imaginary = right.1 / scale;
+        let denominator = real * real + imaginary * imaginary;
+        let real_weight = real / denominator;
+        let imaginary_weight = imaginary / denominator;
+        let scaled_left = (left.0 / scale, left.1 / scale);
+        if scaled_left.0.is_finite() && scaled_left.1.is_finite() {
+            return (
+                scaled_left.0 * real_weight + scaled_left.1 * imaginary_weight,
+                scaled_left.1 * real_weight - scaled_left.0 * imaginary_weight,
+            );
+        }
+        return (
+            (left.0 * real_weight + left.1 * imaginary_weight) / scale,
+            (left.1 * real_weight - left.0 * imaginary_weight) / scale,
+        );
+    }
     if right.0.abs() >= right.1.abs() {
         let ratio = right.1 / right.0;
         let denominator = 1.0 + ratio * ratio;
@@ -17729,11 +17767,24 @@ fn numeric_power(
 ) -> Result<ValueDataDraft, ResidentKernelError> {
     macro_rules! checked_integer_power {
         ($base:expr, $exponent:expr, $variant:ident) => {{
-            let exponent = u32::try_from($exponent).map_err(|_| ResidentKernelError::Arithmetic)?;
-            $base
-                .checked_pow(exponent)
-                .map(ValueDataDraft::$variant)
-                .ok_or(ResidentKernelError::Arithmetic)
+            let mut exponent =
+                u128::try_from($exponent).map_err(|_| ResidentKernelError::Arithmetic)?;
+            let mut base = $base;
+            let mut result = base.checked_pow(0).ok_or(ResidentKernelError::Arithmetic)?;
+            while exponent != 0 {
+                if exponent & 1 != 0 {
+                    result = result
+                        .checked_mul(base)
+                        .ok_or(ResidentKernelError::Arithmetic)?;
+                }
+                exponent >>= 1;
+                if exponent != 0 {
+                    base = base
+                        .checked_mul(base)
+                        .ok_or(ResidentKernelError::Arithmetic)?;
+                }
+            }
+            Ok(ValueDataDraft::$variant(result))
         }};
     }
     match (left, right) {
@@ -17797,18 +17848,18 @@ fn numeric_power(
     }
 }
 
-fn complex32_integer_power(mut base: (f32, f32), exponent: i32) -> (f32, f32) {
-    if exponent < 0 {
+fn complex32_integer_power(mut base: (f32, f32), exponent: f32) -> (f32, f32) {
+    if exponent < 0.0 {
         base = complex32_divide((1.0, 0.0), base);
     }
-    let mut exponent = exponent.unsigned_abs();
+    let mut exponent = exponent.abs();
     let mut result = (1.0, 0.0);
-    while exponent != 0 {
-        if exponent & 1 == 1 {
+    while exponent >= 1.0 {
+        if exponent % 2.0 == 1.0 {
             result = complex32_multiply(result, base);
         }
-        exponent >>= 1;
-        if exponent != 0 {
+        exponent = libm::floorf(exponent / 2.0);
+        if exponent >= 1.0 {
             base = complex32_multiply(base, base);
         }
     }
@@ -17816,12 +17867,8 @@ fn complex32_integer_power(mut base: (f32, f32), exponent: i32) -> (f32, f32) {
 }
 
 fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
-    if exponent.1 == 0.0
-        && exponent.0 >= -2_147_483_648.0
-        && exponent.0 < 2_147_483_648.0
-        && libm::truncf(exponent.0) == exponent.0
-    {
-        return complex32_integer_power(base, exponent.0 as i32);
+    if exponent.1 == 0.0 && exponent.0.is_finite() && libm::truncf(exponent.0) == exponent.0 {
+        return complex32_integer_power(base, exponent.0);
     }
     if exponent == (0.0, 0.0) {
         return (1.0, 0.0);
@@ -17840,18 +17887,18 @@ fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
 }
 
 #[cfg(feature = "c64")]
-fn complex64_integer_power(mut base: (f64, f64), exponent: i32) -> (f64, f64) {
-    if exponent < 0 {
+fn complex64_integer_power(mut base: (f64, f64), exponent: f64) -> (f64, f64) {
+    if exponent < 0.0 {
         base = complex64_divide((1.0, 0.0), base);
     }
-    let mut exponent = exponent.unsigned_abs();
+    let mut exponent = exponent.abs();
     let mut result = (1.0, 0.0);
-    while exponent != 0 {
-        if exponent & 1 == 1 {
+    while exponent >= 1.0 {
+        if exponent % 2.0 == 1.0 {
             result = complex64_multiply(result, base);
         }
-        exponent >>= 1;
-        if exponent != 0 {
+        exponent = libm::floor(exponent / 2.0);
+        if exponent >= 1.0 {
             base = complex64_multiply(base, base);
         }
     }
@@ -17860,12 +17907,8 @@ fn complex64_integer_power(mut base: (f64, f64), exponent: i32) -> (f64, f64) {
 
 #[cfg(feature = "c64")]
 fn complex64_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
-    if exponent.1 == 0.0
-        && exponent.0 >= -2_147_483_648.0
-        && exponent.0 < 2_147_483_648.0
-        && libm::trunc(exponent.0) == exponent.0
-    {
-        return complex64_integer_power(base, exponent.0 as i32);
+    if exponent.1 == 0.0 && exponent.0.is_finite() && libm::trunc(exponent.0) == exponent.0 {
+        return complex64_integer_power(base, exponent.0);
     }
     if exponent == (0.0, 0.0) {
         return (1.0, 0.0);
@@ -22255,6 +22298,52 @@ mod tests {
             assert_eq!(
                 numeric_divide(rational(1, u64::MAX), rational(1, u64::MAX)),
                 Ok(rational(1, 1))
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_numeric_extremes_preserve_representable_results() {
+        let c32 = complex32_divide((3.0e38, 3.0e38), (1.0, 1.0));
+        assert_eq!(c32, (3.0e38, 0.0));
+        assert_eq!(
+            complex32_divide((f32::MIN_POSITIVE, 0.0), (f32::MIN_POSITIVE, 0.0)),
+            (1.0, 0.0)
+        );
+        let wide = u64::from(u32::MAX) + 1;
+        assert_eq!(
+            numeric_power(ValueDataDraft::U64(1), ValueDataDraft::U64(wide)),
+            Ok(ValueDataDraft::U64(1))
+        );
+        assert_eq!(
+            numeric_power(ValueDataDraft::U64(0), ValueDataDraft::U64(wide)),
+            Ok(ValueDataDraft::U64(0))
+        );
+        assert_eq!(
+            numeric_power(
+                ValueDataDraft::I128(-1),
+                ValueDataDraft::I128(i128::from(wide) + 1)
+            ),
+            Ok(ValueDataDraft::I128(-1))
+        );
+        assert_eq!(
+            complex32_power((-1.0, 0.0), (2_147_483_648.0, 0.0)),
+            (1.0, 0.0)
+        );
+
+        #[cfg(feature = "c64")]
+        {
+            assert_eq!(
+                complex64_divide((1.0e308, 1.0e308), (1.0, 1.0)),
+                (1.0e308, 0.0)
+            );
+            assert_eq!(
+                complex64_divide((f64::MIN_POSITIVE, 0.0), (f64::MIN_POSITIVE, 0.0)),
+                (1.0, 0.0)
+            );
+            assert_eq!(
+                complex64_power((-1.0, 0.0), (9_007_199_254_740_992.0, 0.0)),
+                (1.0, 0.0)
             );
         }
     }
