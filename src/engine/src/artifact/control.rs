@@ -1447,6 +1447,7 @@ fn is_builtin_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
         body,
         SchemaBody::Bool
             | SchemaBody::Index
+            | SchemaBody::IntegerInterval(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::UnsignedInteger(_)
             | SchemaBody::FloatingPoint(_)
