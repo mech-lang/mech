@@ -243,7 +243,8 @@ fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment(
     assert_eq!(
         CanonicalSourceFrontend
             .compile_document(&source)
-            .unwrap_err()
+            .err()
+            .expect("enum declarations require defining provenance")
             .code,
         "source-semantics/nominal-origin-required"
     );
