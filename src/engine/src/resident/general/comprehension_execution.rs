@@ -16,6 +16,12 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+#[derive(Clone, Copy, Default)]
+struct ComprehensionLiveLocalFootprint {
+    retained_prefix: usize,
+    footprint: ValueFootprint,
+}
+
 #[derive(Clone, Copy)]
 pub(super) enum Item {
     Bool(bool),
@@ -3858,37 +3864,65 @@ impl ReactiveInstance {
         )
     }
 
-    pub(super) fn shared_local_prefix_footprint(
+    fn incremental_comprehension_live_local_footprint(
         &self,
         locals: &[ResidentRegion],
         retained_local_count: u32,
         excluded_locals: &[u32],
+        nested_match: bool,
+        live: &mut ComprehensionLiveLocalFootprint,
         schemas: &mech_core::SchemaTable,
         meter: &mut ResidentBudgetMeter,
     ) -> Result<ValueFootprint, ResidentKernelError> {
-        let retained_local_count =
+        let retained =
             usize::try_from(retained_local_count).map_err(|_| ResidentKernelError::InvalidShape)?;
-        let prefix = locals
-            .get(..retained_local_count)
+        // A match may replace its prior output. Measure that slot for this
+        // call, but keep it out of the cached prefix until the next step.
+        let stable_end = retained
+            .checked_sub(usize::from(nested_match))
             .ok_or(ResidentKernelError::InvalidShape)?;
-        let mut exclusions = excluded_locals.iter().copied().peekable();
-        self.resident_local_footprint(
-            prefix
-                .iter()
-                .copied()
-                .enumerate()
-                .filter_map(|(index, local)| {
-                    let index = index as u32;
-                    if exclusions.peek().copied() == Some(index) {
-                        exclusions.next();
-                        None
-                    } else {
-                        Some(local)
-                    }
-                }),
-            schemas,
-            meter,
-        )
+        let added = locals
+            .get(live.retained_prefix..stable_end)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        live.footprint = live
+            .footprint
+            .checked_add(self.resident_local_footprint(added.iter().copied(), schemas, meter)?)
+            .map_err(|_| ResidentKernelError::InvalidShape)?;
+        live.retained_prefix = stable_end;
+        let mut footprint = live.footprint;
+        if nested_match {
+            let prior_output = *locals
+                .get(stable_end)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            footprint = footprint
+                .checked_add(self.resident_local_footprint([prior_output], schemas, meter)?)
+                .map_err(|_| ResidentKernelError::InvalidShape)?;
+        }
+        let mut excluded = ValueFootprint::zero();
+        for index in excluded_locals.iter().copied() {
+            let index = usize::try_from(index).map_err(|_| ResidentKernelError::InvalidShape)?;
+            if index >= retained {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let region = *locals.get(index).ok_or(ResidentKernelError::InvalidShape)?;
+            excluded = excluded
+                .checked_add(self.resident_local_footprint([region], schemas, meter)?)
+                .map_err(|_| ResidentKernelError::InvalidShape)?;
+        }
+        Ok(ValueFootprint {
+            encoded_bytes: footprint
+                .encoded_bytes
+                .checked_sub(excluded.encoded_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            retained_bytes: footprint
+                .retained_bytes
+                .checked_sub(excluded.retained_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            node_count: footprint
+                .node_count
+                .checked_sub(excluded.node_count)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        })
     }
 
     fn comprehension_schema_arena(
@@ -4390,6 +4424,7 @@ impl ReactiveInstance {
         self.collection_from(
             control,
             0,
+            ComprehensionLiveLocalFootprint::default(),
             &mut values,
             &mut footprint,
             &mut nested_finalization_work,
@@ -5476,6 +5511,7 @@ impl ReactiveInstance {
         &mut self,
         control: &ActivatedComprehensionNode,
         start: usize,
+        mut live_local: ComprehensionLiveLocalFootprint,
         values: &mut Vec<ValueDataDraft>,
         footprint: &mut ValueFootprint,
         nested_finalization_work: &mut u64,
@@ -5504,11 +5540,17 @@ impl ReactiveInstance {
                     excluded_locals,
                 } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
+                    let nested_match = matches!(
+                        self.plan.steps[node.get() as usize],
+                        ActivatedTurnStep::Match(_)
+                    );
                     let live_locals = self
-                        .shared_local_prefix_footprint(
+                        .incremental_comprehension_live_local_footprint(
                             &control.locals,
                             *retained_local_count,
                             excluded_locals,
+                            nested_match,
+                            &mut live_local,
                             schemas,
                             meter,
                         )
@@ -5619,6 +5661,7 @@ impl ReactiveInstance {
                             self.collection_from(
                                 control,
                                 position + 1,
+                                live_local,
                                 values,
                                 footprint,
                                 nested_finalization_work,

@@ -139,6 +139,13 @@ impl Continuation {
                     parser.rewind(checkpoint);
                     self.expression(Phase::Seeded(range));
                     self.push(Frame::SeedTranspose(seed, false));
+                    if probe == 0 {
+                        // The first lookahead consumed the apostrophe. After
+                        // rewinding, parse it again into the seeded factor.
+                        self.push(Frame::LeafOperator(Box::new(operators::Continuation::new(
+                            rules::TRANSPOSE,
+                        ))));
+                    }
                 } else if probe < LEVELS.len() {
                     parser.rewind(checkpoint);
                     self.expression(Phase::DelimitedOperator(range, seed, checkpoint, probe + 1));
