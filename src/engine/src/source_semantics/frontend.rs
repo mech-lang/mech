@@ -4245,13 +4245,23 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(value.syntax()),
                     });
                 }
-                return Ok(self.constant_draft(
+                let enumeration = self.constant_draft(
                     variant.schema,
                     ValueDataDraft::Enum(EnumDraft {
                         ordinal: variant.ordinal,
                         payload: None,
                     }),
-                ));
+                );
+                return match annotation {
+                    Some(annotation) => self.conform_schema_draft(
+                        enumeration,
+                        &annotation,
+                        value.syntax(),
+                        "source-semantics/incompatible-literal-kind",
+                        "enum variant does not satisfy its explicit kind annotation",
+                    ),
+                    None => Ok(enumeration),
+                };
             }
             let path = CanonicalNominalPath::new(
                 source

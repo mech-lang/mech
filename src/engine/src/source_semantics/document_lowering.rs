@@ -289,8 +289,15 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
             }
         }
     }
-    let mut shared_units = Vec::new();
-    collect_shared_units(&coordinator_units, &mut shared_units);
+    let mut compute_units = Vec::new();
+    collect_shared_units(&coordinator_units, &mut compute_units);
+    let mut initializer_units = Vec::new();
+    collect_shared_units(&coordinator_units, &mut initializer_units);
+    let region = &sections[region_index];
+    let mut region_units = Vec::new();
+    let mut compute_exports = Vec::new();
+    collect_document_units(region.syntax(), &mut region_units, &mut compute_exports)?;
+    collect_shared_units(&region_units, &mut coordinator_units);
     let coordinator = CanonicalCoordinatorPlan {
         owner: document.scope_id(),
         anchor,
@@ -304,11 +311,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         resolved_source_modules: resolved_source_modules.clone(),
     };
 
-    let region = &sections[region_index];
-    let mut compute_units = Vec::new();
-    collect_shared_units(&coordinator.units, &mut compute_units);
-    let mut compute_exports = Vec::new();
-    collect_document_units(region.syntax(), &mut compute_units, &mut compute_exports)?;
+    compute_units.extend(region_units);
     let compute = compile_collected_document(
         document.scope_id(),
         anchor,
@@ -326,7 +329,6 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
-    let mut initializer_units = shared_units;
     let mut initializer_exports = Vec::new();
     collect_document_units(
         region.syntax(),

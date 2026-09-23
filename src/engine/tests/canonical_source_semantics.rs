@@ -251,6 +251,23 @@ fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment(
 }
 
 #[test]
+fn literal_owned_enum_annotation_conforms_to_optional_kind() {
+    let source = "<event> := :idle | :busy\nvalue := :idle<event?>\nvalue\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .expect("annotated enum atom conforms to its optional kind");
+    assert!(matches!(
+        compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(_)
+    ));
+    compiled.compile_artifact().unwrap();
+}
+
+#[test]
 fn unused_invalid_kind_declaration_fails_at_declaration() {
     let error = CanonicalSourceFrontend
         .compile_document(&document("<bad> := <{a<u8>,a<bool>}>\nvalue := 1\nvalue\n"))
