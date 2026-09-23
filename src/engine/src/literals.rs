@@ -944,14 +944,13 @@ pub struct RuntimeReifiedKindConversion {
     target: FunctionValueInput,
     output: FunctionValueOutput,
     plan: ConversionPlan,
-    constraints: ReifiedTargetConstraints,
 }
 
 #[cfg(feature = "convert")]
 fn runtime_reified_constraints(
     source: &ValueCell,
     target: &ValueCell,
-    output: &ValueCell,
+    expected_output: &SchemaBody,
 ) -> MResult<ReifiedTargetConstraints> {
     let target_value = target.snapshot()?;
     let ValueData::Type(ReifiedType::Kind(kind)) = target_value.data() else {
@@ -971,7 +970,7 @@ fn runtime_reified_constraints(
     };
     let resolved = constraints.resolved_target(source)?;
     let expected = materialize_declared_conversion_shape(&source.closed_schema_body()?, &resolved);
-    if output.closed_schema_body()? != expected {
+    if expected_output != &expected {
         return Err(invalid_reified_conversion_target(
             "compiled reified conversion output differs from target kind",
         ));
@@ -1043,13 +1042,16 @@ impl MechFunctionFactory for RuntimeReifiedKindConversion {
         let source = source.value();
         let target = target.value();
         let plan = runtime_kind_conversion_plan(output.cell(), source.cell())?;
-        let constraints = runtime_reified_constraints(source.cell(), target.cell(), output.cell())?;
+        runtime_reified_constraints(
+            source.cell(),
+            target.cell(),
+            &output.cell().closed_schema_body()?,
+        )?;
         Ok(Box::new(Self {
             source,
             target,
             output,
             plan,
-            constraints,
         }))
     }
 
@@ -1107,7 +1109,11 @@ impl MechFunctionImpl for RuntimeReifiedKindConversion {
         frame: &mut mech_core::KernelMemoryFrame<'_>,
         _services: &mut dyn mech_core::MechExecutionServices,
     ) -> MResult<mech_core::ReactiveSolveStatus> {
-        self.constraints.validate(self.source.cell())?;
+        let source_schema = self.source.cell().closed_schema_body()?;
+        let expected = conversion_target_schema(&source_schema, &self.plan.step)
+            .map_err(conversion_execution_error)?;
+        runtime_reified_constraints(self.source.cell(), self.target.cell(), &expected)?
+            .validate(self.source.cell())?;
         stage_conversion_output(frame, self.source.cell(), self.output.cell(), &self.plan)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
@@ -1183,7 +1189,7 @@ fn validate_runtime_reified_kind_conversion(
         ));
     };
     runtime_kind_conversion_plan(output, source)?;
-    runtime_reified_constraints(source, target, output).map(|_| ())
+    runtime_reified_constraints(source, target, &output.closed_schema_body()?).map(|_| ())
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -1595,7 +1601,7 @@ fn solve_reified_target_bindings(
         }
     }
     if bindings.iter().any(Option::is_none) {
-        solve_joint_reified_dimensions(source, target, &mut bindings)?;
+        solve_joint_reified_dimensions(source, target, declarations, &mut bindings)?;
     }
     // With all available witnesses bound, every deferred compound equation
     // must match. Unresolved parameters remain an invalid ambiguous target.
@@ -1769,8 +1775,9 @@ impl DimensionRatio {
 fn affine_reified_dimension(
     dimension: &DimensionExpr,
     bindings: &[Option<DimensionExpr>],
+    unknown: &[usize],
 ) -> Option<(i128, Vec<i128>)> {
-    let zero = || vec![0; bindings.len()];
+    let zero = || vec![0; unknown.len()];
     match dimension {
         DimensionExpr::Constant(value) => Some((i128::from(*value), zero())),
         DimensionExpr::Parameter(id) => {
@@ -1779,7 +1786,7 @@ fn affine_reified_dimension(
                 Some((i128::from(reified_dimension_value(bound)?), zero()))
             } else {
                 let mut coefficients = zero();
-                coefficients[index] = 1;
+                coefficients[unknown.binary_search(&index).ok()?] = 1;
                 Some((0, coefficients))
             }
         }
@@ -1787,7 +1794,7 @@ fn affine_reified_dimension(
             let mut constant = 0_i128;
             let mut coefficients = zero();
             for child in children {
-                let (value, terms) = affine_reified_dimension(child, bindings)?;
+                let (value, terms) = affine_reified_dimension(child, bindings, unknown)?;
                 constant = constant.checked_add(value)?;
                 for (coefficient, term) in coefficients.iter_mut().zip(terms) {
                     *coefficient = coefficient.checked_add(term)?;
@@ -1799,7 +1806,7 @@ fn affine_reified_dimension(
             let mut constant = 1_i128;
             let mut coefficients = zero();
             for child in children {
-                let (value, terms) = affine_reified_dimension(child, bindings)?;
+                let (value, terms) = affine_reified_dimension(child, bindings, unknown)?;
                 if coefficients.iter().any(|coefficient| *coefficient != 0)
                     && terms.iter().any(|term| *term != 0)
                 {
@@ -1827,8 +1834,13 @@ fn affine_reified_dimension(
 fn solve_joint_reified_dimensions(
     source: &SchemaBody,
     target: &SchemaBody,
+    declarations: &[DimensionParameterDeclaration],
     bindings: &mut [Option<DimensionExpr>],
 ) -> MResult<()> {
+    // The elimination below is dense. Bound it before constructing any rows
+    // so a small sparse source cannot force quadratic allocation or cubic work.
+    const MAX_UNKNOWNS: usize = 64;
+    const MAX_EQUATIONS: usize = 128;
     let unknown = bindings
         .iter()
         .enumerate()
@@ -1837,22 +1849,68 @@ fn solve_joint_reified_dimensions(
     if unknown.is_empty() {
         return Ok(());
     }
+    if unknown.len() > MAX_UNKNOWNS {
+        return Err(invalid_reified_conversion_target(
+            "joint target dimension system exceeds the solver limit",
+        ));
+    }
     let mut equations = Vec::new();
     collect_reified_dimension_equations(source, target, &mut equations);
+    let exact_bounds = declarations
+        .iter()
+        .filter(|declaration| declaration.upper_bound.as_ref() == Some(&declaration.lower_bound))
+        .collect::<Vec<_>>();
+    if equations.len().saturating_add(exact_bounds.len()) > MAX_EQUATIONS {
+        return Err(invalid_reified_conversion_target(
+            "joint target dimension system exceeds the solver limit",
+        ));
+    }
     let mut rows = Vec::<Vec<DimensionRatio>>::new();
-    for (source, target) in equations {
-        let (Some(extent), Some((constant, coefficients))) = (
-            reified_dimension_value(source),
-            affine_reified_dimension(target, bindings),
-        ) else {
-            continue;
+    let mut add_equation = |source: &DimensionExpr, target: &DimensionExpr| -> MResult<()> {
+        let (
+            Some((source_constant, source_coefficients)),
+            Some((target_constant, target_coefficients)),
+        ) = (
+            affine_reified_dimension(source, bindings, &unknown),
+            affine_reified_dimension(target, bindings, &unknown),
+        )
+        else {
+            return Ok(());
         };
-        let mut row = unknown
-            .iter()
-            .map(|index| DimensionRatio::integer(coefficients[*index]))
-            .collect::<Vec<_>>();
-        row.push(DimensionRatio::integer(i128::from(extent) - constant));
+        let mut row = (0..unknown.len())
+            .map(|column| {
+                target_coefficients[column]
+                    .checked_sub(source_coefficients[column])
+                    .map(DimensionRatio::integer)
+                    .ok_or_else(|| {
+                        invalid_reified_conversion_target(
+                            "joint dimension equation exceeds exact arithmetic",
+                        )
+                    })
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        row.push(DimensionRatio::integer(
+            source_constant
+                .checked_sub(target_constant)
+                .ok_or_else(|| {
+                    invalid_reified_conversion_target(
+                        "joint dimension equation exceeds exact arithmetic",
+                    )
+                })?,
+        ));
         rows.push(row);
+        Ok(())
+    };
+    for (source, target) in equations {
+        if reified_dimension_value(source).is_some() {
+            add_equation(source, target)?;
+        }
+    }
+    for declaration in exact_bounds {
+        add_equation(
+            &DimensionExpr::Parameter(declaration.id),
+            &declaration.lower_bound,
+        )?;
     }
     let mut pivot_row = 0;
     for column in 0..unknown.len() {
@@ -3611,7 +3669,7 @@ mod canonical_conversion_tests {
         let plan = plan_explicit_cast(&source_type, &source_type).unwrap();
         let output =
             execute_conversion_plan(&source, &source.closed_schema_body().unwrap(), &plan).unwrap();
-        let invocation = FunctionInvocation::binary(output.clone(), source.clone(), target);
+        let invocation = FunctionInvocation::binary(output.clone(), source.clone(), target.clone());
         let function = RuntimeReifiedKindConversion::new_invocation(invocation.clone()).unwrap();
         let conversion = SpecializedFunction::syntax_directed(
             (function, invocation),
@@ -3629,6 +3687,56 @@ mod canonical_conversion_tests {
             .replace(&matrix(2, &[1.0, 2.0]).snapshot().unwrap())
             .unwrap();
         conversion.instance().solve_result().unwrap();
+        let narrower = ReifiedKind::from_closed_kind(
+            &KindExpr::Matrix {
+                element: Box::new(KindExpr::Named(kind_id)),
+                dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(1)].into(),
+            },
+            &[DimensionParameterDeclaration {
+                id,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Constant(1)),
+            }],
+            &named,
+        )
+        .unwrap();
+        let narrower = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                narrower.canonical_bytes().to_vec().into_boxed_slice(),
+            )),
+        )
+        .unwrap();
+        let original_target = target.snapshot().unwrap();
+        target.replace(&narrower.snapshot().unwrap()).unwrap();
+        assert!(conversion.instance().solve_result().is_err());
+        assert_eq!(
+            output.current_top_level_extents().unwrap().as_ref(),
+            &[2, 1]
+        );
+        let (other_id, other_path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
+        let other_kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Named(other_id),
+            &[],
+            &NamedKinds(BTreeMap::from([(other_id, other_path)])),
+        )
+        .unwrap();
+        let other_target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                other_kind.canonical_bytes().to_vec().into_boxed_slice(),
+            )),
+        )
+        .unwrap();
+        target.replace(&other_target.snapshot().unwrap()).unwrap();
+        assert!(conversion.instance().solve_result().is_err());
+        assert_eq!(
+            output.current_top_level_extents().unwrap().as_ref(),
+            &[2, 1]
+        );
+        target.replace(&original_target).unwrap();
         source
             .replace(&matrix(3, &[1.0, 2.0, 3.0]).snapshot().unwrap())
             .unwrap();
@@ -3777,6 +3885,74 @@ mod canonical_conversion_tests {
             ],
         );
         assert!(solve_reified_target_bindings(&source(5, 4), &target, &declarations).is_err());
+    }
+
+    #[test]
+    fn exact_reified_bound_propagates_a_body_witness_back_to_its_dependency() {
+        let q = DimensionParameterId::new(0);
+        let p = DimensionParameterId::new(1);
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: q,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: p,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Parameter(q),
+                upper_bound: Some(DimensionExpr::Parameter(q)),
+            },
+        ];
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(5)].into(),
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Parameter(p)].into(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&source, &target, &declarations).unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(5)),
+                Some(DimensionExpr::Constant(5)),
+            ]
+        );
+    }
+
+    #[test]
+    fn joint_reified_solver_rejects_oversized_sparse_system_before_dense_rows() {
+        let parameters = (0..65).map(DimensionParameterId::new).collect::<Vec<_>>();
+        let declarations = parameters
+            .iter()
+            .map(|id| DimensionParameterDeclaration {
+                id: *id,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            })
+            .collect::<Vec<_>>();
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(5)].into(),
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Add(
+                parameters
+                    .iter()
+                    .copied()
+                    .map(DimensionExpr::Parameter)
+                    .collect(),
+            )]
+            .into(),
+        };
+        assert!(solve_reified_target_bindings(&source, &target, &declarations).is_err());
     }
 
     #[test]
