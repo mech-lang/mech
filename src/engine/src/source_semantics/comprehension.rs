@@ -922,16 +922,17 @@ impl SemanticBuilder {
         start: usize,
         names: &mut BTreeMap<String, PendingValue>,
     ) -> Result<SourcePattern, SourceSemanticError> {
-        if let SchemaBody::Enum { variants, .. } = &expected.body {
+        if let SchemaBody::Enum { key, variants } = &expected.body {
             let name_text = node_text(name)?;
             let variant_name = name_text.trim_start_matches(':');
             let variant_name = if let Some((qualifier, variant)) = variant_name.rsplit_once('/') {
                 // Imported enum values carry their exact schema, although
                 // their defining declaration is not local to this document.
-                if self
-                    .declared_kinds
-                    .get(qualifier)
-                    .is_some_and(|schema| schema.body != expected.body)
+                let local = self.declared_kinds.get(qualifier);
+                if !local.is_some_and(|schema| schema.body == expected.body)
+                    && (local.is_some()
+                        || self.imported_enum_qualifiers.get(key).map(String::as_str)
+                            != Some(qualifier))
                 {
                     return Err(unsupported(name, "unknown enum qualifier in pattern"));
                 }

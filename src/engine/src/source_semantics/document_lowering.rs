@@ -82,6 +82,7 @@ pub(super) fn compile_document(
     compile_document_with_options(
         document,
         nominal_origin,
+        &BTreeMap::new(),
         None,
         BTreeMap::new(),
         false,
@@ -107,6 +108,7 @@ pub(super) fn compile_document_with_catalog(
     compile_document_with_options(
         document,
         nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         BTreeMap::new(),
         false,
@@ -125,6 +127,7 @@ pub(super) fn compile_interactive_document_with_catalog(
     compile_document_with_options(
         document,
         nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         BTreeMap::new(),
         true,
@@ -144,6 +147,7 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
     compile_document_with_options(
         document,
         nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         input_schemas,
         false,
@@ -165,6 +169,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
     compile_document_with_options(
         document,
         nominal_origin,
+        &BTreeMap::new(),
         Some(catalog),
         input_schemas,
         interactive,
@@ -182,6 +187,7 @@ pub struct CanonicalCoordinatorPlan {
     owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
     nominal_origin: Option<CanonicalNominalPath>,
+    imported_enum_qualifiers: BTreeMap<NominalKey, String>,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Arc<mech_core::FunctionCatalog>,
@@ -201,6 +207,7 @@ impl CanonicalCoordinatorPlan {
             self.owner,
             self.anchor,
             self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
             self.units,
             self.exports,
             Some(self.catalog),
@@ -217,6 +224,7 @@ impl CanonicalCoordinatorPlan {
 pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     document: &DocumentSyntax,
     nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -287,6 +295,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         owner: document.scope_id(),
         anchor,
         nominal_origin: nominal_origin.cloned(),
+        imported_enum_qualifiers: imported_enum_qualifiers.clone(),
         units: coordinator_units,
         exports: coordinator_exports,
         catalog: Arc::clone(&catalog),
@@ -304,6 +313,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         document.scope_id(),
         anchor,
         nominal_origin,
+        imported_enum_qualifiers,
         compute_units,
         compute_exports,
         Some(Arc::clone(&catalog)),
@@ -327,6 +337,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
         document.scope_id(),
         anchor,
         nominal_origin,
+        imported_enum_qualifiers,
         initializer_units,
         initializer_exports,
         Some(catalog),
@@ -351,6 +362,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
 pub(super) fn compile_document_with_options(
     document: &DocumentSyntax,
     nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
@@ -367,6 +379,7 @@ pub(super) fn compile_document_with_options(
         document.scope_id(),
         anchor,
         nominal_origin,
+        imported_enum_qualifiers,
         units,
         exports,
         catalog,
@@ -424,10 +437,12 @@ fn compile_named_scope(
         let children: Vec<_> = node.children().collect();
         pending.extend(children.into_iter().rev());
     }
+    reject_isolated_nominal_declarations(&units)?;
     compile_collected_document(
         owner,
         anchor,
         nominal_origin,
+        &BTreeMap::new(),
         units,
         exports,
         None,
@@ -455,10 +470,12 @@ pub(super) fn compile_mika_section(
     let mut units = Vec::new();
     let mut exports = Vec::new();
     collect_document_units(body.syntax(), &mut units, &mut exports)?;
+    reject_isolated_nominal_declarations(&units)?;
     compile_collected_document(
         section.scope_id(),
         anchor,
         nominal_origin,
+        &BTreeMap::new(),
         units,
         exports,
         None,
@@ -471,10 +488,24 @@ pub(super) fn compile_mika_section(
     )
 }
 
+fn reject_isolated_nominal_declarations(units: &[DocumentUnit]) -> Result<(), SourceSemanticError> {
+    if let Some((_, syntax)) = document_types::enum_declarations(units)?.into_iter().next() {
+        return Err(SourceSemanticError {
+            code: "source-semantics/isolated-nominal-origin-required",
+            message:
+                "isolated document scopes need a durable scope namespace before declaring enums"
+                    .to_owned(),
+            anchor: SourceSemanticAnchor::for_node(&syntax),
+        });
+    }
+    Ok(())
+}
+
 fn compile_collected_document(
     owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
     nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
@@ -497,6 +528,7 @@ fn compile_collected_document(
         None => SemanticBuilder::new(anchor),
     };
     builder.resource_writes = resource_writes;
+    builder.imported_enum_qualifiers = imported_enum_qualifiers.clone();
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
     builder.register_document_types(&units, nominal_origin)?;
@@ -1499,6 +1531,7 @@ impl SemanticBuilder {
 pub(super) fn compile_ordered_documents(
     documents: &[CanonicalOrderedDocument],
     catalog: Arc<mech_core::FunctionCatalog>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let first = documents.first().ok_or_else(|| {
         internal(
@@ -1512,6 +1545,7 @@ pub(super) fn compile_ordered_documents(
     })?;
     let anchor = SourceSemanticAnchor::for_node(first.document.syntax());
     let mut builder = SemanticBuilder::with_function_catalog(anchor, catalog)?;
+    builder.imported_enum_qualifiers = imported_enum_qualifiers.clone();
     let mut exports_by_root = BTreeMap::<usize, BTreeMap<String, PendingBinding>>::new();
     let mut constants = BTreeMap::new();
     let mut results = BTreeMap::new();
@@ -1600,7 +1634,7 @@ pub(super) fn compile_ordered_documents(
                     .segments()
                     .iter()
                     .cloned()
-                    .chain(std::iter::once(name))
+                    .chain(std::iter::once(name.clone()))
                     .collect::<Vec<_>>();
                 if let Some(previous) = nominal_owners.get(&path) {
                     if previous.is_none()
@@ -1617,8 +1651,15 @@ pub(super) fn compile_ordered_documents(
                         });
                     }
                 } else {
-                    nominal_owners.insert(path, root.nominal_package_id.clone());
+                    nominal_owners.insert(path.clone(), root.nominal_package_id.clone());
                 }
+                let key = NominalKey::from_path(
+                    NominalKind::Enum,
+                    &CanonicalNominalPath::new(path).map_err(|error| {
+                        internal(anchor, format!("invalid enum declaration path: {error:?}"))
+                    })?,
+                );
+                builder.imported_enum_qualifiers.insert(key, name);
             }
         }
         builder.register_document_types(&units, root.nominal_origin.as_ref())?;

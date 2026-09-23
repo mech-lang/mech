@@ -7,7 +7,8 @@ use mech_engine::resident::{ActivationFacts, activate};
 use mech_engine::{CanonicalSourceFrontend, SourceSemanticError};
 use mech_runtime::resolver::InMemorySourceResolver;
 use mech_runtime::{
-    ResolvedSource, RuntimeBuilder, RuntimeValueSnapshot, SourceDocument, SourceKind, SourceRequest,
+    ModuleBuildOptions, ResolvedSource, RuntimeBuilder, RuntimeValueSnapshot, SourceDocument,
+    SourceKind, SourceRequest,
 };
 use mech_syntax::document::{ParseConfig, Revision};
 use std::collections::BTreeSet;
@@ -79,6 +80,46 @@ fn recursive_graph_imports_reject_distinct_package_owners_of_one_enum_path() {
 }
 
 #[test]
+fn ordered_root_and_detached_dependency_share_nominal_collision_registry() {
+    let enum_source = "<event> := :idle | :busy\nvalue<event> := :idle\n<+ value\nvalue\n";
+    let origin = CanonicalNominalPath::new(vec!["shared".to_owned()]).unwrap();
+    let retained = |name: &str, owner: &str| {
+        ResolvedSource::new(
+            name,
+            format!("memory:app/{name}"),
+            MechSourceCode::String(enum_source.to_owned()),
+        )
+        .with_kind(SourceKind::Mech)
+        .retain_source_document(Revision(0), ParseConfig::default())
+        .unwrap()
+        .with_nominal_origin(origin.clone())
+        .with_nominal_package_id(owner)
+    };
+    let resolver = InMemorySourceResolver::new()
+        .with_source("app/first.mec", retained("first.mec", "package-a"))
+        .with_string(
+            "app/second.mec",
+            "+> ./dep.mec\nresult := dep/value\nresult\n",
+        )
+        .with_source("app/dep.mec", retained("dep.mec", "package-b"));
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let error = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("app/first.mec"),
+                SourceRequest::new("app/second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .expect_err("root and detached dependency cannot own one nominal path");
+    assert!(format!("{error:?}").contains("ambiguous-nominal-declaration-v1"));
+}
+
+#[test]
 fn imported_enum_uses_its_contextual_schema_for_qualified_payload_patterns() {
     let dependency_source =
         "<event> := :data<f64> | :idle\nvalue<event> := :data(3.0)\n<+ value\nvalue\n";
@@ -108,6 +149,37 @@ fn imported_enum_uses_its_contextual_schema_for_qualified_payload_patterns() {
         .compile_canonical_root(SourceRequest::new("app/main.mec"))
         .expect("an imported enum's exact schema admits its qualified payload pattern");
     assert!(!compiled.bytecode().is_empty());
+}
+
+#[test]
+fn imported_enum_rejects_a_misspelled_qualified_payload_pattern() {
+    let dependency_source =
+        "<event> := :data<f64> | :idle\nvalue<event> := :data(3.0)\n<+ value\nvalue\n";
+    let dependency = ResolvedSource::new(
+        "dep.mec",
+        "memory:app/dep.mec",
+        MechSourceCode::String(dependency_source.to_owned()),
+    )
+    .with_kind(SourceKind::Mech)
+    .retain_source_document(Revision(0), ParseConfig::default())
+    .unwrap()
+    .with_nominal_origin(CanonicalNominalPath::new(vec!["sample-package".to_owned()]).unwrap())
+    .with_nominal_package_id("sample-package");
+    let root_source =
+        "+> ./dep.mec\nresult := dep/value?\n  | :evnet/data(x) => x\n  | * => 0.\nresult\n";
+    document(root_source);
+    let resolver = InMemorySourceResolver::new()
+        .with_string("app/main.mec", root_source)
+        .with_source("app/dep.mec", dependency);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let error = compiler
+        .compile_canonical_root(SourceRequest::new("app/main.mec"))
+        .expect_err("a typo cannot borrow the imported enum schema");
+    assert!(format!("{error:?}").contains("unknown enum qualifier"));
 }
 
 fn rejected(source: &str, catalog: Arc<FunctionCatalog>) -> SourceSemanticError {

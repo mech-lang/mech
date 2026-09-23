@@ -138,7 +138,11 @@ impl CanonicalSourceFrontend {
         for root in documents {
             reject_recovered_syntax(&root.document)?;
         }
-        document_lowering::compile_ordered_documents(documents, catalog)
+        document_lowering::compile_ordered_documents(
+            documents,
+            catalog,
+            &self.imported_enum_qualifiers,
+        )
     }
 }
 
@@ -606,6 +610,7 @@ impl std::error::Error for SourceSemanticError {}
 #[derive(Clone, Debug, Default)]
 pub struct CanonicalSourceFrontend {
     nominal_origin: Option<CanonicalNominalPath>,
+    imported_enum_qualifiers: BTreeMap<NominalKey, String>,
 }
 
 #[expect(
@@ -614,12 +619,21 @@ pub struct CanonicalSourceFrontend {
 )]
 pub const CanonicalSourceFrontend: CanonicalSourceFrontend = CanonicalSourceFrontend {
     nominal_origin: None,
+    imported_enum_qualifiers: BTreeMap::new(),
 };
 
 impl CanonicalSourceFrontend {
     pub fn with_nominal_origin(&self, origin: CanonicalNominalPath) -> Self {
         Self {
             nominal_origin: Some(origin),
+            imported_enum_qualifiers: self.imported_enum_qualifiers.clone(),
+        }
+    }
+
+    pub fn with_imported_enum_qualifiers(&self, qualifiers: BTreeMap<NominalKey, String>) -> Self {
+        Self {
+            nominal_origin: self.nominal_origin.clone(),
+            imported_enum_qualifiers: qualifiers,
         }
     }
     pub fn compile_expression(
@@ -878,6 +892,7 @@ impl CanonicalSourceFrontend {
         document_lowering::compile_document_with_options(
             document,
             self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
             Some(catalog),
             input_schemas,
             interactive,
@@ -959,6 +974,7 @@ impl CanonicalSourceFrontend {
         document_lowering::prepare_mixed_document_with_catalog_and_resources(
             document,
             self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
             catalog,
             input_schemas,
             resource_writes,
@@ -2385,6 +2401,7 @@ struct SemanticBuilder {
     input_declarations: BTreeMap<String, SchemaDraft>,
     declared_kinds: BTreeMap<String, SchemaDraft>,
     declared_variants: BTreeMap<String, Vec<DeclaredEnumVariant>>,
+    imported_enum_qualifiers: BTreeMap<NominalKey, String>,
     nodes: Vec<PendingNode>,
     states: Vec<PendingState>,
     outputs: Vec<PendingOutput>,
@@ -2453,9 +2470,24 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(syntax),
                     });
                 }
-                // Imports retain the exact expected enum schema but do not
-                // import the defining root's local declaration table.
-                None if expected_enum.is_some() => (variant, None),
+                // Imports retain the exact enum key. The compiler also
+                // supplies its defining qualifier, so a typo cannot silently
+                // select a same-named variant from that schema.
+                None if expected_enum.as_ref().is_some_and(|schema| {
+                    matches!(&schema.body, SchemaBody::Enum { key, .. }
+                            if self.imported_enum_qualifiers.get(key).map(String::as_str)
+                                == Some(qualifier))
+                }) =>
+                {
+                    (variant, None)
+                }
+                None if expected_enum.is_some() => {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/unknown-enum-variant",
+                        message: format!("unknown enum qualifier {qualifier}"),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
                 None => (name, None),
             },
             None => (name, None),
@@ -2536,6 +2568,7 @@ impl SemanticBuilder {
             input_declarations: BTreeMap::new(),
             declared_kinds: BTreeMap::new(),
             declared_variants: BTreeMap::new(),
+            imported_enum_qualifiers: BTreeMap::new(),
             nodes: Vec::new(),
             states: Vec::new(),
             outputs: Vec::new(),

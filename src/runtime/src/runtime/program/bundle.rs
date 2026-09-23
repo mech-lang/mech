@@ -3,7 +3,16 @@ use mech_engine::{ProgramCompilationProduct, decode_program_artifact_bytecode_v1
 
 use crate::SourceDocument;
 
-pub const CANONICAL_PROGRAM_BUNDLE_VERSION: u32 = 2;
+pub const CANONICAL_PROGRAM_BUNDLE_VERSION: u32 = 3;
+
+/// Retained dependency text and the defining provenance that participated in
+/// nominal compilation. Text-only callers may validate sources without
+/// nominal declarations; provenance-bearing dependencies require this form.
+pub struct CanonicalDependencySource<'a> {
+    pub source: &'a str,
+    pub nominal_origin: Option<&'a mech_core::CanonicalNominalPath>,
+    pub nominal_package_id: Option<&'a str>,
+}
 
 /// Versioned browser handoff that keeps exact retained source and executable
 /// artifact identity in one admission unit. It is deliberately incompatible
@@ -17,7 +26,7 @@ pub struct CanonicalProgramBundle {
     pub source_revision: u64,
     pub source_hash: u64,
     pub source: String,
-    /// Resolved transitive dependency URI -> exact retained source hash.
+    /// Resolved transitive dependency URI -> retained source/provenance hash.
     pub source_dependencies: std::collections::BTreeMap<String, u64>,
     pub artifact_revision: [u8; 32],
     pub bytecode: Vec<u8>,
@@ -94,15 +103,35 @@ impl CanonicalProgramBundle {
         &self,
         mut source: impl FnMut(&str) -> Option<&'a str>,
     ) -> MResult<()> {
+        self.validate_dependency_sources_with_provenance(|uri| {
+            source(uri).map(|source| CanonicalDependencySource {
+                source,
+                nominal_origin: None,
+                nominal_package_id: None,
+            })
+        })
+    }
+
+    /// Validate dependency text together with its current defining origin and
+    /// package owner. A moved package cannot reuse a bundle with old keys.
+    pub fn validate_dependency_sources_with_provenance<'a>(
+        &self,
+        mut source: impl FnMut(&str) -> Option<CanonicalDependencySource<'a>>,
+    ) -> MResult<()> {
         for (uri, expected_hash) in &self.source_dependencies {
-            let text = source(uri).ok_or_else(|| {
+            let retained = source(uri).ok_or_else(|| {
                 bundle_error(format!(
                     "canonical bundle dependency {uri} is missing; regenerate the bundle"
                 ))
             })?;
-            if mech_core::hash_str(text) != *expected_hash {
+            if super::compiler::canonical_dependency_identity_hash(
+                retained.source,
+                retained.nominal_origin,
+                retained.nominal_package_id,
+            ) != *expected_hash
+            {
                 return Err(bundle_error(format!(
-                    "canonical bundle dependency {uri} differs from the compiled source; regenerate the bundle"
+                    "canonical bundle dependency {uri} differs from the compiled source or nominal provenance; regenerate the bundle"
                 )));
             }
         }
@@ -139,9 +168,10 @@ fn bundle_error(message: impl Into<String>) -> MechError {
 
 #[cfg(all(test, feature = "serde", feature = "compiler_default"))]
 mod tests {
-    use super::CanonicalProgramBundle;
+    use super::{CanonicalDependencySource, CanonicalProgramBundle};
     use crate::SourceDocument;
-    use mech_core::MResult;
+    use mech_core::{CanonicalNominalPath, MResult};
+    use std::collections::BTreeMap;
     use std::sync::Arc;
 
     use mech_syntax::document::{ParseConfig, Revision};
@@ -176,6 +206,57 @@ mod tests {
         let legacy = mech_core::nodes::compress_and_encode(&legacy).unwrap();
         let error = CanonicalProgramBundle::decode(&legacy, Some(source)).unwrap_err();
         assert!(error.display_message().contains("retired AST"));
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_bundle_dependency_freshness_includes_nominal_provenance() -> MResult<()> {
+        let root_source = "answer := 42\n";
+        let dependency_source = "<event> := :idle\n";
+        let origin =
+            CanonicalNominalPath::new(vec!["package-a".to_owned(), "module".to_owned()]).unwrap();
+        let changed_origin =
+            CanonicalNominalPath::new(vec!["package-a".to_owned(), "other-module".to_owned()])
+                .unwrap();
+        let document = SourceDocument::parse_resolved(
+            "bundle://answer.mec",
+            Revision(7),
+            Arc::<str>::from(root_source),
+            ParseConfig::default(),
+        )
+        .unwrap();
+        let mut compiler = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()?;
+        let product = compiler
+            .compile_document(&document)?
+            .with_source_dependencies(BTreeMap::from([(
+                "bundle://dep.mec".to_owned(),
+                super::super::compiler::canonical_dependency_identity_hash(
+                    dependency_source,
+                    Some(&origin),
+                    Some("package-a"),
+                ),
+            )]));
+        let bundle =
+            CanonicalProgramBundle::from_product("bundle://answer.mec", &document, &product)?;
+        let retained = |origin, package_id| {
+            bundle.validate_dependency_sources_with_provenance(|_| {
+                Some(CanonicalDependencySource {
+                    source: dependency_source,
+                    nominal_origin: origin,
+                    nominal_package_id: package_id,
+                })
+            })
+        };
+        retained(Some(&origin), Some("package-a"))?;
+        assert!(retained(Some(&changed_origin), Some("package-a")).is_err());
+        assert!(retained(Some(&origin), Some("package-b")).is_err());
+        assert!(
+            bundle
+                .validate_dependency_sources(|_| Some(dependency_source))
+                .is_err()
+        );
         Ok(())
     }
 }
