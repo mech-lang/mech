@@ -867,6 +867,7 @@ dependencies = [
  "mech-syntax",
  "serde",
  "serde_derive",
+ "toml_edit",
  "uuid",
  "web-time",
 ]
