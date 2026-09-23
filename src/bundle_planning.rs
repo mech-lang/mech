@@ -1,5 +1,18 @@
 //! Retained source graph for static browser bundles.
 use mech_core::{MResult, MechError};
+use sha2::{Digest, Sha256};
+
+fn transport_package_id(package_id: &str) -> String {
+    let mut digest = Sha256::new();
+    digest.update(b"mech-bundle-nominal-package-v1\0");
+    digest.update(package_id.as_bytes());
+    let mut result = String::from("sha256:");
+    for byte in digest.finalize() {
+        use std::fmt::Write as _;
+        write!(&mut result, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    result
+}
 
 pub(super) fn retained_sources(
     paths: &[std::path::PathBuf],
@@ -30,6 +43,10 @@ pub(super) fn retained_sources(
         .map_err(|error| super::validation_error(format!("invalid bundle source: {error:?}")))?;
         let mut source = ResolvedSource::new(&uri, &uri, mech_core::MechSourceCode::String(text));
         if let Some((origin, package_id)) = provenance {
+            // The retained graph is the public bundle's compilation boundary.
+            // Keep path-bearing filesystem IDs out of both its manifest and
+            // encoded program while retaining an exact collision discriminator.
+            let package_id = transport_package_id(&package_id);
             document = document
                 .with_nominal_origin(origin.clone())
                 .with_nominal_package_id(package_id.clone());

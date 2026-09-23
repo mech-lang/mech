@@ -2296,6 +2296,21 @@ struct PendingMatchArm {
     body: PendingControlBlock,
 }
 
+fn structurally_irrefutable<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
+        crate::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        crate::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        crate::CollectionPattern::Equal(_)
+        | crate::CollectionPattern::Enum { .. }
+        | crate::CollectionPattern::Array { .. } => false,
+    }
+}
+
 #[derive(Clone, Copy)]
 enum PendingControlValue {
     Constant(usize),
@@ -8567,6 +8582,10 @@ impl SemanticBuilder {
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
         let mut coverage = [false; 2];
+        let mut enum_coverage = match &scrutinee_schema.body {
+            SchemaBody::Enum { variants, .. } => Some(vec![false; variants.len()]),
+            _ => None,
+        };
         let mut result_schema = None;
         if self.control_depth == 0 {
             self.next_control_block = 0;
@@ -8764,18 +8783,36 @@ impl SemanticBuilder {
                         }
                     }
                     crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {
-                        coverage = [true; 2]
+                        coverage = [true; 2];
+                        if let Some(variants) = &mut enum_coverage {
+                            variants.fill(true);
+                        }
+                    }
+                    crate::MatchPattern::Structural(crate::CollectionPattern::Enum {
+                        ordinal,
+                        payload,
+                    }) => {
+                        if payload.as_deref().is_none_or(structurally_irrefutable)
+                            && let Some(variants) = &mut enum_coverage
+                            && let Some(covered) = variants.get_mut(*ordinal as usize)
+                        {
+                            *covered = true;
+                        }
                     }
                     crate::MatchPattern::Structural(_) => {}
                 }
             }
             lowered.push(lowered_arm);
         }
-        if coverage != [true; 2] {
+        let exhaustive = enum_coverage
+            .as_ref()
+            .map_or(coverage == [true; 2], |variants| {
+                variants.iter().all(|covered| *covered)
+            });
+        if !exhaustive {
             return Err(SourceSemanticError {
                 code: "source-semantics/non-exhaustive-match",
-                message: "match needs an unguarded wildcard/binding or both Boolean literal cases"
-                    .to_owned(),
+                message: "match needs an unguarded wildcard/binding, both Boolean literal cases, or every enum variant".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }

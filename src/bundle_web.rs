@@ -1459,6 +1459,12 @@ export default async function init() {}
         let origin: CanonicalNominalPath =
             serde_json::from_value(dependency["nominalOrigin"].clone()).unwrap();
         let package_id = dependency["nominalPackageId"].as_str().unwrap();
+        assert!(package_id.starts_with("sha256:"));
+        assert!(
+            !manifest
+                .to_string()
+                .contains(&root.to_string_lossy().to_string())
+        );
         let root_source = fs::read_to_string(app.join("src/main.mec")).unwrap();
         let encoded = fs::read_to_string(root.join("out/code/src/main.mec")).unwrap();
         let bundle = CanonicalProgramBundle::decode(&encoded, Some(&root_source)).unwrap();
@@ -1516,14 +1522,22 @@ export default async function init() {}
             serde_json::from_value(retained["nominalOrigin"].clone()).unwrap();
         assert_eq!(origin.segments(), &["bundle-enum", "demo"]);
         let package_id = retained["nominalPackageId"].as_str().unwrap();
+        assert!(package_id.starts_with("sha256:"));
+        assert!(
+            !manifest
+                .to_string()
+                .contains(&root.to_string_lossy().to_string())
+        );
         let encoded = fs::read_to_string(out.join("code/demo.mec")).unwrap();
-        CanonicalProgramBundle::decode_with_root_provenance(
+        let bundle = CanonicalProgramBundle::decode_with_root_provenance(
             &encoded,
             Some(source),
             Some(&origin),
             Some(package_id),
         )
         .expect("browser bundle retains the defining enum origin");
+        assert_eq!(bundle.root_nominal_package_id.as_deref(), Some(package_id));
+        assert!(!encoded.contains(&root.to_string_lossy().to_string()));
         fs::remove_dir_all(root).unwrap();
     }
 

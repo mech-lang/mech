@@ -388,6 +388,34 @@ fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
 }
 
 #[test]
+fn complete_enum_variant_arms_are_exhaustive_without_a_wildcard() {
+    execute_document(
+        "<event> := :idle | :timeout\n\
+         value<event> := :timeout\n\
+         result := value?\n\
+           | :idle => false\n\
+           | :timeout => true.\n\
+         result\n",
+        [(vec![], ValueDataDraft::Bool(true))],
+    );
+}
+
+#[test]
+fn refutable_enum_payload_arm_does_not_complete_variant_coverage() {
+    let source = "<choice> := :some<f64> | :none\n\
+                  value<choice> := :choice/none\n\
+                  result := value?\n\
+                    | :some(0) => 1\n\
+                    | :none => 0.\n\
+                  result\n";
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .err()
+        .expect("a payload literal leaves the variant partly uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
 fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
     let source = "<first> := :idle | :busy\n\
                   <second> := :idle | :done\n\

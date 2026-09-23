@@ -148,7 +148,7 @@ project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = [
-      "project", "web_host", "formatter_core", "serde",
+      "project", "web_host", "formatter_core", "serde", "dep:sha2",
       "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source",
       ]
@@ -441,6 +441,7 @@ mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false
 mech-robot-arm = { version = "0.3.5", path = "hosts/robot-arm", default-features = false, optional = true }
 mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
 mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
+sha2 = { version = "0.10", optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
