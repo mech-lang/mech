@@ -2425,30 +2425,20 @@ impl ReactiveInstance {
         let frame_nodes = value_nodes
             .checked_add(2)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-        let live_frame_bytes = self
-            .workspace
-            .recursive_scrutinees
-            .iter()
-            .try_fold(frame_bytes, |total, frame| {
-                total.checked_add(frame.saved_bytes)
-            })
-            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-        let live_frame_nodes = self
-            .workspace
-            .recursive_scrutinees
-            .iter()
-            .try_fold(frame_nodes, |total, frame| {
-                total.checked_add(frame.saved_nodes)
-            })
-            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         (|| -> Result<(), ResidentKernelError> {
+            let peak_bytes = live_bytes
+                .checked_add(frame_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let peak_nodes = live_nodes
+                .checked_add(frame_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
             budget::PreparedKernel::new(
                 (),
                 budget::resident_cost! {
                     compute_work: 1,
-                    temporary_bytes: live_frame_bytes,
+                    temporary_bytes: peak_bytes,
                     cloned_bytes: frame_bytes,
-                    retained_nodes: live_frame_nodes,
+                    retained_nodes: peak_nodes,
                     ..budget::KernelCostEstimate::default()
                 },
             )
@@ -2457,6 +2447,29 @@ impl ReactiveInstance {
             Ok(())
         })()
         .map_err(fail)?;
+
+        let child_live_bytes = live_bytes
+            .checked_add(frame_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let child_live_nodes = live_nodes
+            .checked_add(frame_nodes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let budget_node = match &self.plan.steps[call.target.get() as usize] {
+            ActivatedTurnStep::Match(target) => target.budget_node,
+            _ => unreachable!("recursive target was checked above"),
+        };
+        let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+        facts.additional_demand.turn_peak_bytes = child_live_bytes;
+        facts.additional_demand.retained_nodes = child_live_nodes;
+        let child_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            budget_node,
+            &facts,
+        )
+        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        if !child_plan.budget_violations.is_empty() {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
 
         let frame = regions
             .iter()
@@ -2474,17 +2487,17 @@ impl ReactiveInstance {
             .push(super::RecursiveFrame {
                 target: call.target,
                 argument: call.argument,
-                saved_bytes: frame_bytes,
-                saved_nodes: frame_nodes,
             });
-        let invoked = self.execute_match_expression(
-            call.target,
-            before_epoch,
-            working_epoch,
-            probe,
-            live_bytes,
-            live_nodes,
-        );
+        let invoked = budget::with_resident_turn_plan(child_plan, || {
+            self.execute_match_expression(
+                call.target,
+                before_epoch,
+                working_epoch,
+                probe,
+                child_live_bytes,
+                child_live_nodes,
+            )
+        });
         self.workspace.recursive_scrutinees.pop();
         if target_initialized {
             set_bit(&mut self.workspace.initialized_output_bits, target_index);
@@ -2508,11 +2521,13 @@ impl ReactiveInstance {
             let (result_bytes, result_nodes) =
                 resident_frame_value_footprint(value, &self.plan.schemas)
                     .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let peak_bytes = live_frame_bytes
-                .checked_add(result_bytes)
+            let peak_bytes = live_bytes
+                .checked_add(frame_bytes)
+                .and_then(|bytes| bytes.checked_add(result_bytes))
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
-            let peak_nodes = live_frame_nodes
-                .checked_add(result_nodes)
+            let peak_nodes = live_nodes
+                .checked_add(frame_nodes)
+                .and_then(|nodes| nodes.checked_add(result_nodes))
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             (|| -> Result<(), ResidentKernelError> {
                 budget::PreparedKernel::new(

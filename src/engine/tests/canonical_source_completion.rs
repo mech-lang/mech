@@ -8,8 +8,9 @@ use mech_core::{
 };
 use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{
-    ArtifactBuildError, CanonicalSourceFrontend, CanonicalSourceProgram, ControlOperationBody,
-    ControlParameterSource, ExecutableNodeBody, MatchPattern, ProgramArtifactDraft,
+    ArtifactBuildError, CanonicalSourceFrontend, CanonicalSourceProgram, ControlCapture,
+    ControlOperationBody, ControlParameterSource, ExecutableNodeBody, MatchPattern,
+    ProgramArtifactDraft,
 };
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
@@ -164,6 +165,25 @@ fn recursive_pattern_functions_use_bounded_call_local_frames() {
 }
 
 #[test]
+fn recursive_target_cannot_capture_its_own_scrutinee() {
+    for source in [
+        "zero(n<f64>) => <f64>\n  | 0 => n\n  | x => zero(x - 1).\nzero(3)\n",
+        "zero(n<f64>) => <f64>\n  | 0 => 0\n  | * => zero(n - 1).\nzero(3)\n",
+    ] {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x556), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let error = CanonicalSourceFrontend
+            .compile_document(&document)
+            .err()
+            .unwrap();
+        assert_eq!(error.code, "source-semantics/recursive-function-capture");
+    }
+}
+
+#[test]
 fn nested_recursive_helper_calls_its_own_pattern_match() {
     execute_document(
         "outer(n<f64>) => <f64>\n  | 0 => 0\n  | n => helper(n).\nhelper(n<f64>) => <f64>\n  | 0 => 1\n  | n => helper(n - 1).\nouter(3)\n",
@@ -249,6 +269,59 @@ fn artifact_rejects_direct_bind_as_a_recursive_target() {
             reason: "recursive target cannot use a direct bind pattern",
             ..
         }
+    ));
+}
+
+#[test]
+fn artifact_rejects_recursive_target_capture_of_its_scrutinee() {
+    let artifact = compile_document(
+        "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\ncountdown(2)\n",
+    )
+    .compile_artifact()
+    .unwrap();
+    let mut draft = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().into(),
+        slots: artifact.slots().into(),
+        nodes: artifact.nodes().into(),
+        bindings: artifact.bindings().into(),
+        outputs: artifact.outputs().into(),
+        constraints: artifact.constraints().into(),
+        compute_regions: artifact.compute_regions().into(),
+    };
+    let control = draft
+        .nodes
+        .iter_mut()
+        .find_map(|node| match &mut node.body {
+            ExecutableNodeBody::Match(control) => Some(control),
+            _ => None,
+        })
+        .unwrap();
+    let schema = control
+        .arms
+        .iter()
+        .find_map(|arm| match &arm.pattern {
+            MatchPattern::Literal(constant) => {
+                draft.constants.get(*constant).map(|value| value.schema())
+            }
+            _ => None,
+        })
+        .unwrap();
+    let mut captures = control.captures.to_vec();
+    captures.push(ControlCapture {
+        input: control.scrutinee,
+        schema,
+    });
+    control.captures = captures.into_boxed_slice();
+    assert!(matches!(
+        draft.finalize(),
+        Err(ArtifactBuildError::InvalidControl {
+            reason: "recursive target cannot capture its own scrutinee",
+            ..
+        })
     ));
 }
 
