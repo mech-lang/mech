@@ -2312,6 +2312,18 @@ impl SemanticBuilder {
         )
     }
 
+    fn scalar_annotation_schema(
+        &self,
+        annotation: &KindAnnotationSyntax,
+    ) -> Result<BuiltinSchema, SourceSemanticError> {
+        let draft = self.annotation_schema_draft(annotation)?;
+        builtin_schema_for_annotation_body(&draft.body).ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/unsupported-kind-annotation",
+            message: "this value position requires a builtin scalar kind annotation".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(annotation.syntax()),
+        })
+    }
+
     fn declared_enum_variant(
         &self,
         name: &str,
@@ -4102,7 +4114,7 @@ impl SemanticBuilder {
         }
         let annotation = literal
             .annotation()
-            .map(|annotation| annotation_schema(&annotation))
+            .map(|annotation| self.scalar_annotation_schema(&annotation))
             .transpose()?;
         if literal.true_token().is_some() {
             return self.literal_constant(
@@ -4227,7 +4239,7 @@ impl SemanticBuilder {
         };
         let annotation = literal
             .annotation()
-            .map(|annotation| annotation_schema(&annotation))
+            .map(|annotation| self.scalar_annotation_schema(&annotation))
             .transpose()?;
         let suffix = selected_integer_suffix(&number)?;
         for schema in [annotation, suffix].into_iter().flatten() {
@@ -4296,7 +4308,7 @@ impl SemanticBuilder {
         kind: &KindAnnotationSyntax,
         annotation: Option<BuiltinSchema>,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let (kind_expr, dimensions) = annotation_kind_expr(kind)?;
+        let (kind_expr, dimensions) = annotation_kind_expr(kind, &self.declared_kinds)?;
         let paths = BuiltinKindPaths::build(SourceSemanticAnchor::for_node(kind.syntax()))?;
         let reified =
             ReifiedKind::from_closed_kind(&kind_expr, &dimensions, &paths).map_err(|error| {
@@ -5288,6 +5300,7 @@ impl SemanticBuilder {
                 body: payload,
                 dimension_parameters: Box::new([]),
             };
+            let dynamic_payload = matches!(payload_schema.body, SchemaBody::Dynamic);
             let value = self.contextual_expression(
                 &value,
                 Some(&payload_schema),
@@ -5295,6 +5308,22 @@ impl SemanticBuilder {
                 "enum payload does not satisfy its declared kind",
             )?;
             if let PendingValue::Constant(index) = value {
+                if dynamic_payload
+                    && !matches!(self.constants[index].schema.body, SchemaBody::Dynamic)
+                {
+                    let payload = self.constants[index].schema.clone();
+                    let data = self.constants[index].data.clone();
+                    let index = self.constants.len();
+                    self.constants.push(PendingConstant {
+                        schema: variant.schema,
+                        data: ValueDataDraft::Enum(EnumDraft {
+                            ordinal: variant.ordinal,
+                            payload: None,
+                        }),
+                        dynamic_payload: Some((payload, data)),
+                    });
+                    return Ok(PendingValue::Constant(index));
+                }
                 return Ok(self.constant_draft(
                     variant.schema,
                     ValueDataDraft::Enum(EnumDraft {
@@ -6501,16 +6530,49 @@ impl SemanticBuilder {
         for (index, constant) in self.constants.into_iter().enumerate() {
             let schema = constant_schema_ids[index];
             let data = match constant.dynamic_payload {
-                Some((_, payload)) => ValueDataDraft::Option(OptionDraft {
-                    present: true,
-                    value: Some(Box::new(ValueDataDraft::Dynamic(Some(Box::new(
-                        ValueDraft {
-                            schema: schemas.dynamic_payload_id(index),
-                            shape_values: Box::new([]),
-                            data: payload,
-                        },
-                    ))))),
-                }),
+                Some((_, payload)) => {
+                    let payload_schema = schemas.dynamic_payload_id(index);
+                    let retained = schemas
+                        .table
+                        .get(payload_schema)
+                        .expect("dynamic payload schema is retained");
+                    let shape_values = if retained.dimension_parameters().is_empty() {
+                        Box::new([]) as Box<[u64]>
+                    } else {
+                        mech_core::shape_for_value_data(retained, &payload, &[], None)
+                            .map_err(|failure| SourceSemanticError {
+                                code: "source-semantics/unresolved-constant-shape",
+                                message: format!(
+                                    "unable to resolve dynamic payload shape: {failure}"
+                                ),
+                                anchor: self.anchor,
+                            })?
+                            .parameter_values()
+                            .to_vec()
+                            .into_boxed_slice()
+                    };
+                    let wrapped = ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                        schema: payload_schema,
+                        shape_values,
+                        data: payload,
+                    })));
+                    match constant.data {
+                        ValueDataDraft::Option(mut option) => {
+                            option.value = Some(Box::new(wrapped));
+                            ValueDataDraft::Option(option)
+                        }
+                        ValueDataDraft::Enum(mut enumeration) => {
+                            enumeration.payload = Some(Box::new(wrapped));
+                            ValueDataDraft::Enum(enumeration)
+                        }
+                        _ => {
+                            return Err(internal(
+                                self.anchor,
+                                "dynamic payload has no enclosing value".to_owned(),
+                            ));
+                        }
+                    }
+                }
                 None => constant.data,
             };
             let constant_schema = schemas
@@ -6836,30 +6898,33 @@ fn operator_name(operator: CanonicalOperator) -> (&'static str, Option<BuiltinSc
 
 fn annotation_kind_expr(
     annotation: &KindAnnotationSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<(KindExpr, Box<[DimensionParameterDeclaration]>), SourceSemanticError> {
     let mut dimensions = DimensionEnvironmentBuilder::new();
-    let kind = annotation_kind_expr_with(annotation, &mut dimensions)?;
+    let kind = annotation_kind_expr_with(annotation, &mut dimensions, declarations)?;
     Ok((kind, dimensions.into_declarations()))
 }
 
 fn annotation_kind_expr_with(
     annotation: &KindAnnotationSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<KindExpr, SourceSemanticError> {
     let kind = annotation
         .kind()
         .ok_or_else(|| missing_kind_child(annotation.syntax(), "kind annotation"))?;
-    kind_with_option_expr(&kind, dimensions)
+    kind_with_option_expr(&kind, dimensions, declarations)
 }
 
 fn kind_with_option_expr(
     kind: &mech_syntax::document::KindWithOptionSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<KindExpr, SourceSemanticError> {
     let inner = kind
         .kind()
         .ok_or_else(|| missing_kind_child(kind.syntax(), "optional kind"))?;
-    let inner = kind_expr(&inner, dimensions)?;
+    let inner = kind_expr(&inner, dimensions, declarations)?;
     Ok(if kind.question_mark().is_some() {
         KindExpr::Option(Box::new(inner))
     } else {
@@ -6870,6 +6935,7 @@ fn kind_with_option_expr(
 fn kind_expr(
     kind: &KindSyntax,
     dimensions: &mut DimensionEnvironmentBuilder,
+    declarations: &BTreeMap<String, SchemaDraft>,
 ) -> Result<KindExpr, SourceSemanticError> {
     let value = kind
         .value()
@@ -6883,6 +6949,7 @@ fn kind_expr(
                 .kind()
                 .ok_or_else(|| missing_kind_child(nested.syntax(), "nested kind"))?,
             dimensions,
+            declarations,
         )?)),
         KindValueSyntax::Atom(atom) => {
             let name = atom
@@ -6914,13 +6981,31 @@ fn kind_expr(
             match node_text(name.syntax())?.as_str() {
                 "id" => KindExpr::Id,
                 "ix" | "index" => KindExpr::Index,
-                name => builtin_kind_named(name)
-                    .map(BuiltinScalarKind::kind_expr)
-                    .ok_or_else(|| SourceSemanticError {
-                        code: "source-semantics/unsupported-kind-value",
-                        message: format!("unknown scalar kind {name:?}"),
-                        anchor,
-                    })?,
+                name => {
+                    if let Some(schema) = declarations.get(name) {
+                        let resolved = ResolvedType::from_schema_body(
+                            &schema.body,
+                            &schema.dimension_parameters,
+                        )
+                        .map_err(|error| internal(anchor, error.to_string()))?;
+                        if !resolved.dimension_parameters().is_empty() {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/unsupported-kind-value",
+                                message: format!("declared kind {name:?} is not closed"),
+                                anchor,
+                            });
+                        }
+                        resolved.kind().clone()
+                    } else {
+                        builtin_kind_named(name)
+                            .map(BuiltinScalarKind::kind_expr)
+                            .ok_or_else(|| SourceSemanticError {
+                                code: "source-semantics/unsupported-kind-value",
+                                message: format!("unknown scalar kind {name:?}"),
+                                anchor,
+                            })?
+                    }
+                }
             }
         }
         KindValueSyntax::Map(map) => KindExpr::Map {
@@ -6928,11 +7013,13 @@ fn kind_expr(
                 &map.key()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map key kind"))?,
                 dimensions,
+                declarations,
             )?),
             value: Box::new(kind_expr(
                 &map.value()
                     .ok_or_else(|| missing_kind_child(map.syntax(), "map value kind"))?,
                 dimensions,
+                declarations,
             )?),
             cardinality: inferred_kind_dimension(dimensions, anchor)?,
         },
@@ -6941,6 +7028,7 @@ fn kind_expr(
                 &set.element()
                     .ok_or_else(|| missing_kind_child(set.syntax(), "set element kind"))?,
                 dimensions,
+                declarations,
             )?),
             cardinality: set
                 .literal_constraint()
@@ -6969,7 +7057,7 @@ fn kind_expr(
                 });
             }
             KindExpr::Matrix {
-                element: Box::new(kind_with_option_expr(&element, dimensions)?),
+                element: Box::new(kind_with_option_expr(&element, dimensions, declarations)?),
                 dimensions: extents.into_boxed_slice(),
             }
         }
@@ -6977,7 +7065,7 @@ fn kind_expr(
             tuple
                 .items()
                 .iter()
-                .map(|kind| kind_expr(kind, dimensions))
+                .map(|kind| kind_expr(kind, dimensions, declarations))
                 .collect::<Result<Vec<_>, _>>()?
                 .into_boxed_slice(),
         ),
@@ -6994,7 +7082,7 @@ fn kind_expr(
                     .map(|(name, kind)| {
                         Ok(KindField {
                             name: node_text(name.syntax())?,
-                            kind: annotation_kind_expr_with(kind, dimensions)?,
+                            kind: annotation_kind_expr_with(kind, dimensions, declarations)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -7014,7 +7102,7 @@ fn kind_expr(
                     .map(|(name, kind)| {
                         Ok(KindField {
                             name: node_text(name.syntax())?,
-                            kind: annotation_kind_expr_with(kind, dimensions)?,
+                            kind: annotation_kind_expr_with(kind, dimensions, declarations)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?

@@ -53,7 +53,7 @@ struct CompositeTablePlan {
 #[derive(Clone, Debug)]
 struct EnumPackPlan {
     payload: CompositeChildPlan,
-    accepted_ordinals: Box<[u32]>,
+    accepted_ordinals: Box<[(u32, bool)]>,
     output: mech_core::ResidentPortLayout,
     schemas: Arc<mech_core::SchemaTable>,
 }
@@ -407,12 +407,12 @@ fn bind_enum_pack(
         .iter()
         .enumerate()
         .filter_map(|(index, variant)| {
-            variant
-                .payload
-                .as_ref()
-                .is_some_and(|expected| port_matches_schema_body(request, payload, expected))
-                .then(|| u32::try_from(index).ok())
-                .flatten()
+            let expected = variant.payload.as_ref()?;
+            port_matches_schema_body(request, payload, expected).then_some((
+                u32::try_from(index).ok()?,
+                matches!(expected, SchemaBody::Dynamic)
+                    && !matches!(payload_schema.body(), SchemaBody::Dynamic),
+            ))
         })
         .collect::<Vec<_>>();
     let input_is_matrix = matches!(payload_schema.body(), SchemaBody::Matrix { .. });
@@ -474,8 +474,9 @@ fn bind_enum_pack(
 fn enum_payload_draft(
     input: ResidentValueRef<'_>,
     plan: &EnumPackPlan,
+    dynamic: bool,
 ) -> Result<ValueDataDraft, ResidentKernelError> {
-    if let ResidentValueRef::Snapshot([Some(value)]) = input {
+    let (data, shape_values) = if let ResidentValueRef::Snapshot([Some(value)]) = input {
         if value.schema_key() != plan.payload.source.schema_key {
             return Err(ResidentKernelError::InvalidInput);
         }
@@ -490,18 +491,39 @@ fn enum_payload_draft(
         ) {
             return Err(ResidentKernelError::InvalidShape);
         }
-        return value
-            .canonical_data_draft()
-            .map_err(|_| ResidentKernelError::InvalidInput);
-    }
-    let data =
-        composite_child_data(input, &plan.payload).ok_or(ResidentKernelError::InvalidInput)?;
-    let schema = plan
-        .schemas
-        .get(plan.payload.source.schema_id)
-        .ok_or(ResidentKernelError::InvalidInput)?;
-    mech_core::snapshot::canonical_snapshot_data_draft(schema.body(), &data)
-        .map_err(|_| ResidentKernelError::InvalidInput)
+        (
+            value
+                .canonical_data_draft()
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+            value.shape().parameter_values().to_vec().into_boxed_slice(),
+        )
+    } else {
+        let data =
+            composite_child_data(input, &plan.payload).ok_or(ResidentKernelError::InvalidInput)?;
+        let schema = plan
+            .schemas
+            .get(plan.payload.source.schema_id)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        (
+            mech_core::snapshot::canonical_snapshot_data_draft(schema.body(), &data)
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+            plan.payload
+                .source
+                .shape_instance
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+    };
+    Ok(if dynamic {
+        ValueDataDraft::Dynamic(Some(Box::new(mech_core::ValueDraft {
+            schema: plan.payload.source.schema_id,
+            shape_values,
+            data,
+        })))
+    } else {
+        data
+    })
 }
 
 fn enum_pack(
@@ -525,13 +547,17 @@ fn enum_pack(
         .checked_sub(1)
         .and_then(|ordinal| u32::try_from(ordinal).ok())
         .ok_or(ResidentKernelError::InvalidInput)?;
-    if !plan.accepted_ordinals.contains(&ordinal) {
-        return Err(ResidentKernelError::InvalidInput);
-    }
+    let dynamic = plan
+        .accepted_ordinals
+        .iter()
+        .find_map(|(accepted, dynamic)| (*accepted == ordinal).then_some(*dynamic))
+        .ok_or(ResidentKernelError::InvalidInput)?;
     let payload_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
     let mut meter = super::budget::ResidentBudgetMeter::default();
+    let mut payload_plan = plan.payload.clone();
+    payload_plan.dynamic = dynamic;
     let (payload_bytes, payload_nodes, payload_encoded_bytes) =
-        resident_child_clone_cost(&mut meter, payload_input, &plan.payload)?;
+        resident_child_clone_cost(&mut meter, payload_input, &payload_plan)?;
     let finalization_work = match payload_input {
         ResidentValueRef::Snapshot([Some(value)]) => {
             let schema = plan
@@ -605,7 +631,7 @@ fn enum_pack(
     )
     .admit()?
     .into_plan();
-    let payload = enum_payload_draft(payload_input, plan)?;
+    let payload = enum_payload_draft(payload_input, plan, dynamic)?;
     let canonicalization_budget =
         mech_core::snapshot::SnapshotCanonicalizationBudget::new(finalization_work);
     let context =

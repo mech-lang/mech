@@ -900,6 +900,18 @@ impl SemanticBuilder {
         if let SchemaBody::Enum { variants, .. } = &expected.body {
             let name_text = node_text(name)?;
             let variant_name = name_text.trim_start_matches(':');
+            let variant_name = if let Some((qualifier, variant)) = variant_name.rsplit_once('/') {
+                if self
+                    .declared_kinds
+                    .get(qualifier)
+                    .is_none_or(|schema| schema.body != expected.body)
+                {
+                    return Err(unsupported(name, "unknown enum qualifier in pattern"));
+                }
+                variant
+            } else {
+                variant_name
+            };
             let (ordinal, variant) = variants
                 .iter()
                 .enumerate()

@@ -3,8 +3,9 @@
 use std::fs;
 use std::path::PathBuf;
 
+use mech_core::snapshot::{ReifiedKind, ReifiedTypeDraft};
 use mech_core::{
-    ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, ManagedMemoryBudget,
+    ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, KindExpr, ManagedMemoryBudget,
     OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody, ShapeRule, ValueData,
     ValueDataDraft,
 };
@@ -194,6 +195,57 @@ fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment(
 }
 
 #[test]
+fn declared_scalar_aliases_type_literal_values_and_negation() {
+    for source in [
+        "<count> := <u8>\nx := 1<count>\nx\n",
+        "<flag> := <bool>\nx := true<flag>\nx\n",
+        "<word> := <string>\nx := \"hi\"<word>\nx\n",
+        "<signed> := <i8>\nx := -1<signed>\nx\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("declared literal alias {source:?}: {error:?}"))
+            .compile_artifact()
+            .unwrap();
+    }
+}
+
+#[test]
+fn declared_enum_kind_values_reify_the_nominal_kind() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document("<color> := :red | :blue\n<color>\n"))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for program in [&artifact, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 3),
+            program,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        let ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(bytes)) = instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap()
+        else {
+            panic!("declared enum kind must produce a canonical kind value");
+        };
+        let reified = ReifiedKind::from_canonical_bytes(bytes).unwrap();
+        let (kind, dimensions, _) = reified.decoded_closed_kind().unwrap();
+        assert!(matches!(kind, KindExpr::Enum(_)));
+        assert!(dimensions.is_empty());
+    }
+}
+
+#[test]
 fn contextual_and_qualified_enum_atoms_resolve_exact_nominal_kinds() {
     let contextual = CanonicalSourceFrontend
         .compile_document(&document(
@@ -289,6 +341,79 @@ fn enum_payload_patterns_retain_nominal_identity_through_bytecode() {
         })
         .expect("decoded enum match control");
     assert_eq!(decoded_match, match_node);
+}
+
+#[test]
+fn qualified_enum_payload_pattern_matches_its_declared_variant() {
+    execute_document(
+        "<color> := :red<f64> | :green<f64>\n\
+         value<color> := :color/red(3)\n\
+         result := value?\n\
+           | :color/red(x) => x\n\
+           | * => 0.\n\
+         result\n",
+        [(
+            vec![],
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(3.0)),
+        )],
+    );
+}
+
+#[test]
+fn dynamic_enum_payloads_wrap_constant_and_live_values() {
+    let samples = [
+        (
+            "<event> := :data<*>\nvalue<event> := :data(1)\nvalue\n",
+            None,
+        ),
+        (
+            "<event> := :data<*>\nvalue<event> := :data(signal<f64>)\nvalue\n",
+            Some(7.0),
+        ),
+    ];
+    for (source, input) in samples {
+        let compiled = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("dynamic enum {source:?}: {error:?}"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let sample = [input.unwrap_or_default()];
+        for artifact in [&artifact, &decoded] {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x540, 8),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            let captured = input
+                .map(|_| CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&sample),
+                })
+                .into_iter()
+                .collect::<Vec<_>>();
+            instance.turn(&captured).unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::Enum(enumeration) = output.data() else {
+                panic!("declared enum output");
+            };
+            assert_eq!(enumeration.ordinal(), 0);
+            let Some(ValueData::Dynamic(dynamic)) = enumeration.payload() else {
+                panic!("enum payload must carry a Dynamic envelope");
+            };
+            let Some(value) = dynamic.value() else {
+                panic!("dynamic payload must retain its concrete value");
+            };
+            assert!(
+                matches!(value.data(), ValueData::F64(number) if number.to_f64() == input.unwrap_or(1.0))
+            );
+        }
+    }
 }
 
 #[test]

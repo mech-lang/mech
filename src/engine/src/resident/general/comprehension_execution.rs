@@ -2633,6 +2633,9 @@ pub(super) fn pattern_dynamic_target_depth(
         crate::CollectionPattern::Wildcard => Ok(0),
         crate::CollectionPattern::Bind { schema, .. } => target(schema.schema),
         crate::CollectionPattern::Equal(peer) => target(peer.schema),
+        crate::CollectionPattern::Enum { payload, .. } => payload
+            .as_deref()
+            .map_or(Ok(0), |item| pattern_dynamic_target_depth(item, schemas)),
         crate::CollectionPattern::Tuple(items) => items.iter().try_fold(0, |depth, item| {
             Ok(depth.max(pattern_dynamic_target_depth(item, schemas)?))
         }),
