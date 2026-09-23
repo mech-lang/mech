@@ -23,6 +23,25 @@ struct PatternLift {
     output: PatternLiftOutput,
 }
 
+fn lift_element_conforms(element: &SchemaBody, parameter: &SchemaDraft) -> bool {
+    if element == &parameter.body {
+        return true;
+    }
+    if matches!(
+        parameter.body,
+        SchemaBody::Matrix { .. } | SchemaBody::Set { .. } | SchemaBody::Dynamic
+    ) {
+        return false;
+    }
+    let Ok(source) = ResolvedType::from_schema_body(element, &[]) else {
+        return false;
+    };
+    let Ok(target) = ResolvedType::from_schema_body(&parameter.body, &[]) else {
+        return false;
+    };
+    plan_explicit_cast(&source, &target).is_ok()
+}
+
 fn function_parameter(
     builder: &SemanticBuilder,
     node: &SyntaxNode,
@@ -191,11 +210,19 @@ impl SemanticBuilder {
             let matrix_lift = parameters.len() == 1
                 && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
-                && matches!(&actual.body, SchemaBody::Matrix { .. });
+                && matches!(
+                    &actual.body,
+                    SchemaBody::Matrix { element, .. }
+                        if lift_element_conforms(element, schema)
+                );
             let set_lift = parameters.len() == 1
                 && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
-                && matches!(&actual.body, SchemaBody::Set { .. });
+                && matches!(
+                    &actual.body,
+                    SchemaBody::Set { element, .. }
+                        if lift_element_conforms(element, schema)
+                );
             let value = if matrix_lift {
                 let SchemaBody::Matrix { element, .. } = &actual.body else {
                     unreachable!("matrix lifting retains its source schema")

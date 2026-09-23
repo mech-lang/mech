@@ -1202,6 +1202,24 @@ fn pattern_function_lifts_conform_each_collection_element() {
 }
 
 #[test]
+fn pattern_function_matrix_parameter_consumes_the_whole_matrix() {
+    execute_document(
+        "identity(n<[f64]>) => <[f64]>\n\
+           | n => n.\n\
+         identity([1 2])\n",
+        [(
+            Vec::new(),
+            ValueDataDraft::Matrix(
+                [1.0, 2.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+}
+
+#[test]
 fn pattern_function_lifts_keep_dynamic_collection_shape_ownership() {
     for source in [
         "twice(n<f64>) => <f64>\n  | n => n * 2.\ntwice(signal<[f64]>)\n",
