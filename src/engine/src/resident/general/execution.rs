@@ -25,6 +25,7 @@ use crate::resident::budget;
 use core::ops::Range;
 use core::sync::atomic::Ordering;
 
+use mech_core::snapshot::ValueFootprint;
 use mech_core::{
     ApplicationRequirementId, CellSlotId, ChangeDetectionPolicy, ExternalInteraction,
     InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, NodeId,
@@ -44,6 +45,12 @@ use super::{
 pub struct CapturedSignalInput<'a> {
     pub slot: SlotIndex,
     pub value: ResidentValueRef<'a>,
+}
+
+#[derive(Default)]
+struct ControlBlockLiveFootprint {
+    retained_prefix: usize,
+    footprint: ValueFootprint,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1890,11 +1897,13 @@ impl ReactiveInstance {
                 continue;
             }
             if let Some(guard) = guard {
+                let mut guard_live = ControlBlockLiveFootprint::default();
                 for step in guard.steps.iter() {
                     self.execute_control_step_with_live_demand(
                         node,
                         &guard,
                         step,
+                        &mut guard_live,
                         (before_epoch, working_epoch),
                         probe,
                         (live_bytes, live_nodes),
@@ -1915,6 +1924,7 @@ impl ReactiveInstance {
                     continue;
                 }
             }
+            let mut body_live = ControlBlockLiveFootprint::default();
             for step in body.steps.iter() {
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
@@ -1922,6 +1932,7 @@ impl ReactiveInstance {
                     node,
                     &body,
                     step,
+                    &mut body_live,
                     (before_epoch, working_epoch),
                     probe,
                     (live_bytes, live_nodes),
@@ -2164,6 +2175,7 @@ impl ReactiveInstance {
         owner: NodeId,
         block: &super::ActivatedControlBlock,
         step: &super::ActivatedControlStep,
+        block_live: &mut ControlBlockLiveFootprint,
         epochs: (InstanceEpoch, InstanceEpoch),
         probe: &mut ResidentStructuralProbe,
         live: (u64, u64),
@@ -2172,15 +2184,83 @@ impl ReactiveInstance {
         let (live_bytes, live_nodes) = live;
         let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
         let mut meter = budget::ResidentBudgetMeter::default();
-        let locals = self
-            .shared_local_prefix_footprint(
-                &block.locals,
-                step.retained_local_count,
-                &step.excluded_locals,
-                &self.plan.schemas,
-                &mut meter,
+        let retained = usize::try_from(step.retained_local_count)
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        let nested_match = matches!(
+            self.plan.steps[step.node.get() as usize],
+            ActivatedTurnStep::Match(_)
+        );
+        // Nested matches count their prior output while executing, but may
+        // replace it. Keep that slot out of the persistent prefix and measure
+        // its new value only when the following step needs it.
+        let stable_end = if nested_match {
+            retained
+                .checked_sub(1)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?
+        } else {
+            retained
+        };
+        let added = block
+            .locals
+            .get(block_live.retained_prefix..stable_end)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        block_live.footprint = block_live
+            .footprint
+            .checked_add(
+                self.resident_local_footprint(
+                    added.iter().copied(),
+                    &self.plan.schemas,
+                    &mut meter,
+                )
+                .map_err(fail)?,
             )
-            .map_err(fail)?;
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        block_live.retained_prefix = stable_end;
+        let mut locals = block_live.footprint;
+        if nested_match {
+            let prior_output = *block
+                .locals
+                .get(stable_end)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            locals = locals
+                .checked_add(
+                    self.resident_local_footprint([prior_output], &self.plan.schemas, &mut meter)
+                        .map_err(fail)?,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        }
+        let mut excluded = ValueFootprint::zero();
+        for index in step.excluded_locals.iter().copied() {
+            let index =
+                usize::try_from(index).map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+            if index >= retained {
+                return Err(fail(ResidentKernelError::InvalidShape));
+            }
+            let region = *block
+                .locals
+                .get(index)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            excluded = excluded
+                .checked_add(
+                    self.resident_local_footprint([region], &self.plan.schemas, &mut meter)
+                        .map_err(fail)?,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        }
+        locals = ValueFootprint {
+            encoded_bytes: locals
+                .encoded_bytes
+                .checked_sub(excluded.encoded_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            retained_bytes: locals
+                .retained_bytes
+                .checked_sub(excluded.retained_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            node_count: locals
+                .node_count
+                .checked_sub(excluded.node_count)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+        };
         let live_bytes = live_bytes
             .checked_add(locals.retained_bytes)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;

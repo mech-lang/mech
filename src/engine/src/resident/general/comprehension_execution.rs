@@ -3798,7 +3798,7 @@ fn collection_canonicalization_work(
 }
 
 impl ReactiveInstance {
-    fn resident_local_footprint(
+    pub(super) fn resident_local_footprint(
         &self,
         locals: impl IntoIterator<Item = ResidentRegion>,
         schemas: &mech_core::SchemaTable,
