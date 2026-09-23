@@ -79,6 +79,7 @@ jobs:
           fi
       - name: Check formatting and global contracts
         run: |
+          python3 scripts/check-canonical-evidence-imports.py
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest \
             tests.ci.test_ci_impact \

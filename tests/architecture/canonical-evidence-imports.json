@@ -1,0 +1,36 @@
+{
+  "canonical_source_completion.rs": {
+    "root": [
+      "FunctionCatalogBuilder",
+      "ReactiveInstanceId",
+      "ResidentValueRef",
+      "ValueDataDraftasData"
+    ],
+    "snapshot": [
+      "MapEntryDraft",
+      "NamedValueDraft",
+      "TableColumnDraft"
+    ]
+  },
+  "canonical_source_semantics.rs": {
+    "root": [
+      "CanonicalNominalPath",
+      "ChangeDetectionPolicy",
+      "FunctionCatalogBuilder",
+      "IntegerWidth",
+      "KindExpr",
+      "ManagedMemoryBudget",
+      "OutputConstruction",
+      "ReactiveInstanceId",
+      "ResidentValueRef",
+      "SchemaBody",
+      "ShapeRule",
+      "ValueData",
+      "ValueDataDraft"
+    ],
+    "snapshot": [
+      "ReifiedKind",
+      "ReifiedTypeDraft"
+    ]
+  }
+}
