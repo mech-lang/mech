@@ -94,6 +94,24 @@ enum BindingFootprint {
 }
 
 impl PatternItem {
+    fn metadata_bytes(&self) -> Result<u64, ResidentKernelError> {
+        match self {
+            Self::Component {
+                body, shape_values, ..
+            } => body
+                .clone_allocation_bound_bytes()
+                .and_then(|bytes| bytes.checked_add(core::mem::size_of::<SchemaBody>() as u64))
+                .and_then(|bytes| {
+                    u64::try_from(shape_values.len())
+                        .ok()?
+                        .checked_mul(core::mem::size_of::<u64>() as u64)?
+                        .checked_add(bytes)
+                })
+                .ok_or(ResidentKernelError::InvalidShape),
+            Self::Plain(_) | Self::Dynamic(_) => Ok(0),
+        }
+    }
+
     fn new(data: ValueDataDraft) -> Self {
         match data {
             ValueDataDraft::Dynamic(value) => Self::Dynamic(value),
@@ -1506,6 +1524,7 @@ fn retained_value_footprint(
 
 fn admit_item_clone(
     item: ValueFootprint,
+    metadata_bytes: u64,
     retained_count: usize,
     retained_capacity: usize,
     retained: ValueFootprint,
@@ -1517,6 +1536,7 @@ fn admit_item_clone(
 ) -> Result<(), ResidentKernelError> {
     let (temporary, retained_nodes) = item_clone_live_demand(
         item,
+        metadata_bytes,
         retained_count,
         retained_capacity,
         retained,
@@ -1530,7 +1550,9 @@ fn admit_item_clone(
         (),
         budget::resident_cost! {
             temporary_bytes: temporary,
-            cloned_bytes: item.retained_bytes,
+            cloned_bytes: item.retained_bytes
+                .checked_add(metadata_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             retained_nodes,
             ..meter.estimate()
         },
@@ -1542,6 +1564,7 @@ fn admit_item_clone(
 
 fn item_clone_live_demand(
     item: ValueFootprint,
+    metadata_bytes: u64,
     retained_count: usize,
     retained_capacity: usize,
     retained: ValueFootprint,
@@ -1559,6 +1582,7 @@ fn item_clone_live_demand(
         )?)
         .ok_or(ResidentKernelError::InvalidShape)?
         .checked_add(item_temporary)
+        .and_then(|bytes| bytes.checked_add(metadata_bytes))
         .and_then(|bytes| bytes.checked_add(schema_arena_bytes))
         .and_then(|bytes| bytes.checked_add(live_locals.retained_bytes))
         .and_then(|bytes| bytes.checked_add(published_output_bytes))
@@ -1806,6 +1830,7 @@ struct SchemaOwnerRoots {
     root_start: usize,
     root_len: usize,
     root_capacity: usize,
+    closure_capacity: usize,
 }
 
 impl SchemaOwnerRoots {
@@ -1983,6 +2008,7 @@ fn schema_root_requires_import(
     nested_dynamic: bool,
     plan: &Arc<mech_core::SchemaTable>,
     meter: &mut ResidentBudgetMeter,
+    live_index_bytes: u64,
 ) -> Result<bool, ResidentKernelError> {
     // Equal arenas prove every ordinary root is already addressable without
     // constructing canonical component schemas. Foreign arenas and Dynamic
@@ -2009,7 +2035,9 @@ fn schema_root_requires_import(
     PreparedKernel::new(
         (),
         budget::resident_cost! {
-            temporary_bytes: construction_bytes,
+            temporary_bytes: construction_bytes
+                .checked_add(live_index_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
             retained_nodes,
             ..meter.estimate()
         },
@@ -2129,6 +2157,7 @@ impl ReactiveInstance {
                             nested_dynamic,
                             &self.plan.schemas,
                             meter,
+                            0,
                         )? {
                             root_occurrences = root_occurrences
                                 .checked_add(1)
@@ -2208,6 +2237,7 @@ impl ReactiveInstance {
                             nested_dynamic,
                             &self.plan.schemas,
                             meter,
+                            owner_buffer_bytes,
                         )? {
                             return Ok(());
                         }
@@ -2227,6 +2257,7 @@ impl ReactiveInstance {
                                     root_start: 0,
                                     root_len: 0,
                                     root_capacity: 0,
+                                    closure_capacity: 0,
                                 });
                                 owners.len() - 1
                             }
@@ -2286,6 +2317,7 @@ impl ReactiveInstance {
                             nested_dynamic,
                             &self.plan.schemas,
                             meter,
+                            owner_index_bytes,
                         )? {
                             return Ok(());
                         }
@@ -2318,7 +2350,7 @@ impl ReactiveInstance {
             .ok_or(ResidentKernelError::InvalidShape)?;
         let mut retained_nodes = plan_entries;
         let mut scan_work = 0_u64;
-        for owner in &owners {
+        for owner in &mut owners {
             let remaining = meter.estimate().remaining_incremental_work()?;
             let closure_budget = SnapshotCanonicalizationBudget::new(remaining);
             let (owner_allocation, owner_construction, owner_nodes) = owner
@@ -2328,7 +2360,16 @@ impl ReactiveInstance {
                     &closure_budget,
                 )
                 .ok_or(ResidentKernelError::InvalidShape)?;
-            meter.charge_comparison_work(closure_budget.consumed())?;
+            // The reserved builder validates the same rooted bound once more
+            // before it allocates, so account for both traversals here.
+            meter.charge_comparison_work(
+                closure_budget
+                    .consumed()
+                    .checked_mul(2)
+                    .ok_or(ResidentKernelError::InvalidShape)?,
+            )?;
+            owner.closure_capacity =
+                usize::try_from(owner_nodes).map_err(|_| ResidentKernelError::InvalidShape)?;
             scan_work = owner_nodes
                 .checked_mul(plan_entries)
                 .and_then(|work| work.checked_mul(key_bytes))
@@ -2410,7 +2451,10 @@ impl ReactiveInstance {
         for owner in &owners {
             let closed = owner
                 .owner
-                .component_closure_for_roots(owner.roots(&roots))
+                .component_closure_for_roots_with_capacity(
+                    owner.roots(&roots),
+                    owner.closure_capacity,
+                )
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
             merged = merged
                 .extend_preserving_ids(&closed)
@@ -2706,9 +2750,21 @@ impl ReactiveInstance {
             .read_location(source, working)
             .ok_or(ResidentKernelError::InvalidInput)?;
         let footprint = collection_item_footprint(value, region(source), element, ordinal, meter)?;
+        let metadata_bytes = element
+            .clone_allocation_bound_bytes()
+            .and_then(|bytes| bytes.checked_add(core::mem::size_of::<SchemaBody>() as u64))
+            .and_then(|bytes| {
+                u64::try_from(element_shape_values.len())
+                    .ok()?
+                    .checked_mul(core::mem::size_of::<u64>() as u64)?
+                    .checked_add(bytes)
+            })
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        meter.charge_compute_work(metadata_bytes)?;
         let live_locals = self.comprehension_live_local_footprint(locals, None, schemas, meter)?;
         admit_item_clone(
             footprint,
+            metadata_bytes,
             retained_count,
             retained_capacity,
             retained_footprint,
@@ -2737,6 +2793,7 @@ impl ReactiveInstance {
         if descent_workspace > 0 {
             let (live_bytes, live_nodes) = item_clone_live_demand(
                 footprint,
+                item.metadata_bytes()?,
                 retained_count,
                 retained_capacity,
                 retained_footprint,
@@ -2801,6 +2858,7 @@ impl ReactiveInstance {
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         let (live_bytes, live_nodes) = item_clone_live_demand(
             live_item,
+            item.metadata_bytes().map_err(fail)?,
             retained_count,
             retained_capacity,
             retained_footprint,
@@ -3679,6 +3737,7 @@ mod tests {
         assert!(
             admit_item_clone(
                 item,
+                0,
                 0,
                 0,
                 ValueFootprint::zero(),
@@ -5055,6 +5114,7 @@ mod tests {
                 item,
                 0,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -5065,6 +5125,22 @@ mod tests {
             .is_ok(),
             "the current item fits by itself"
         );
+        assert!(
+            admit_item_clone(
+                item,
+                12 * 1024 * 1024,
+                0,
+                0,
+                ValueFootprint::zero(),
+                0,
+                0,
+                ValueFootprint::zero(),
+                0,
+                ResidentBudgetMeter::default(),
+            )
+            .is_err(),
+            "a large cloned element schema overlaps the selected draft",
+        );
         let retained = ValueFootprint {
             encoded_bytes: 11 * 1024 * 1024,
             retained_bytes: 11 * 1024 * 1024,
@@ -5073,6 +5149,7 @@ mod tests {
         assert!(
             admit_item_clone(
                 item,
+                0,
                 1,
                 1,
                 retained,
@@ -5104,6 +5181,7 @@ mod tests {
                 item,
                 0,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -5117,6 +5195,7 @@ mod tests {
         assert!(
             admit_item_clone(
                 item,
+                0,
                 0,
                 0,
                 ValueFootprint::zero(),
@@ -5140,6 +5219,7 @@ mod tests {
                 ValueFootprint::zero(),
                 0,
                 0,
+                0,
                 ValueFootprint::zero(),
                 0,
                 0,
@@ -5152,6 +5232,7 @@ mod tests {
         assert!(
             admit_item_clone(
                 ValueFootprint::zero(),
+                0,
                 0,
                 oversized_capacity,
                 ValueFootprint::zero(),
@@ -5697,9 +5778,22 @@ mod tests {
                 true,
                 &sparse,
                 &mut ResidentBudgetMeter::default(),
+                0,
             )
             .unwrap(),
             "a local Dynamic root with missing component entries still needs closure",
+        );
+        assert!(
+            schema_root_requires_import(
+                &sparse,
+                tuple,
+                true,
+                &sparse,
+                &mut ResidentBudgetMeter::default(),
+                u64::MAX,
+            )
+            .is_err(),
+            "the closure probe must include buffers already live at the scan point",
         );
         let closed = Arc::new(
             sparse
@@ -5713,6 +5807,7 @@ mod tests {
                 true,
                 &closed,
                 &mut ResidentBudgetMeter::default(),
+                0,
             )
             .unwrap(),
             "a source-built component-closed plan needs no redundant clone or merge",
@@ -5741,6 +5836,7 @@ mod tests {
                 false,
                 &closed,
                 &mut ResidentBudgetMeter::default(),
+                0,
             )
             .unwrap(),
             "an independently owned arena with unrelated entries reuses an addressable root closure",
@@ -5755,6 +5851,7 @@ mod tests {
             root_start: 0,
             root_len: 0,
             root_capacity: 2,
+            closure_capacity: 0,
         };
         let mut storage = vec![SchemaId::new(0); 2];
         let allocation = storage.as_ptr();

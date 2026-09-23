@@ -301,8 +301,22 @@ mod tests {
             .component_closure_bounds_for_roots_with_budget(&[tuple], &budget)
             .unwrap();
         let closed = build.table.component_closure_for_roots(&[tuple]).unwrap();
+        let admitted = build
+            .table
+            .component_closure_for_roots_with_capacity(&[tuple], nodes as usize)
+            .unwrap();
 
         assert_eq!(closed.len(), 3);
+        assert_eq!(
+            admitted
+                .entries()
+                .map(SchemaEntry::canonical_bytes)
+                .collect::<Vec<_>>(),
+            closed
+                .entries()
+                .map(SchemaEntry::canonical_bytes)
+                .collect::<Vec<_>>()
+        );
         assert!(
             closed
                 .entries()
@@ -580,7 +594,15 @@ impl SchemaTable {
     /// structural projection needs one to publish the selected child.
     #[doc(hidden)]
     pub fn extend_with_component_closure_preserving_ids(&self) -> Result<Self, SemanticModelError> {
-        let mut entries = self.entries.to_vec();
+        let capacity = self
+            .component_closure_entry_count_bound()
+            .and_then(|count| usize::try_from(count).ok())
+            .ok_or(SemanticModelError::SchemaIdExhausted)?;
+        let mut entries = Vec::new();
+        entries
+            .try_reserve_exact(capacity)
+            .map_err(|_| SemanticModelError::SchemaIdExhausted)?;
+        entries.extend_from_slice(&self.entries);
         for entry in self.entries.iter() {
             retain_component_children(&entry.schema, entry.schema.body(), &mut entries)?;
         }
@@ -597,7 +619,29 @@ impl SchemaTable {
         &self,
         roots: &[SchemaId],
     ) -> Result<Self, SemanticModelError> {
+        let capacity = component_closure_cost_for_roots_with_budget(self, Some(roots), None)
+            .and_then(|cost| usize::try_from(cost.entry_count).ok())
+            .ok_or(SemanticModelError::SchemaIdExhausted)?;
+        self.component_closure_for_roots_with_capacity(roots, capacity)
+    }
+
+    /// Builds a rooted closure using the entry bound admitted by the caller.
+    #[doc(hidden)]
+    pub fn component_closure_for_roots_with_capacity(
+        &self,
+        roots: &[SchemaId],
+        entry_capacity: usize,
+    ) -> Result<Self, SemanticModelError> {
+        let required = component_closure_cost_for_roots_with_budget(self, Some(roots), None)
+            .and_then(|cost| usize::try_from(cost.entry_count).ok())
+            .ok_or(SemanticModelError::SchemaIdExhausted)?;
+        if entry_capacity < required {
+            return Err(SemanticModelError::SchemaIdExhausted);
+        }
         let mut entries = Vec::new();
+        entries
+            .try_reserve_exact(entry_capacity)
+            .map_err(|_| SemanticModelError::SchemaIdExhausted)?;
         for root in roots {
             let entry = self
                 .entry(*root)
@@ -614,6 +658,9 @@ impl SchemaTable {
         for index in 0..root_count {
             let schema = entries[index].schema.clone();
             retain_component_children(&schema, schema.body(), &mut entries)?;
+        }
+        if entries.len() > entry_capacity {
+            return Err(SemanticModelError::SchemaIdExhausted);
         }
         Ok(Self {
             entries: entries.into_boxed_slice(),
