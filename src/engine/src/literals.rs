@@ -3032,6 +3032,10 @@ fn has_dynamic_cardinality(body: &SchemaBody) -> bool {
         SchemaBody::Record(fields) => fields
             .iter()
             .any(|field| has_dynamic_cardinality(&field.schema)),
+        SchemaBody::Enum { variants, .. } => variants
+            .iter()
+            .filter_map(|variant| variant.payload.as_ref())
+            .any(has_dynamic_cardinality),
         _ => false,
     }
 }
@@ -5336,6 +5340,61 @@ mod canonical_conversion_tests {
             )
             .is_err()
         );
+
+        let valid_source = ValueCell::from_schema_data(
+            enum_body(DimensionExpr::Constant(2)),
+            ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Matrix(
+                    (1..=2).map(ValueDataDraft::Index).collect(),
+                ))),
+            }),
+        )
+        .unwrap();
+        let invocation = SpecializationInvocation::from_cells(
+            vec![valid_source.clone(), target_cell.clone()].into_boxed_slice(),
+        );
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
+        let conversion = ConvertKind
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+    }
+
+    #[test]
+    fn enum_payload_dynamic_cardinality_uses_the_same_inheritance_rule() {
+        let path = CanonicalNominalPath::new(vec!["test".to_owned(), "Open".to_owned()]).unwrap();
+        let key = NominalKey::from_path(NominalKind::Enum, &path);
+        let id = DimensionParameterId::new(0);
+        let enum_body = |cardinality| SchemaBody::Enum {
+            key,
+            variants: [EnumVariantSchema {
+                name: "Items".to_owned(),
+                payload: Some(SchemaBody::Set {
+                    element: Box::new(SchemaBody::Index),
+                    cardinality,
+                }),
+            }]
+            .into(),
+        };
+        let source = enum_body(CardinalitySpec::Dynamic { upper_bound: None });
+        let mut target = enum_body(CardinalitySpec::Exact(DimensionExpr::Parameter(id)));
+        let declaration = DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        inherit_reified_dynamic_cardinality(&source, &mut target, &[declaration]).unwrap();
+        assert_eq!(target, source);
     }
 
     #[test]
