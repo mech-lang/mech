@@ -539,6 +539,23 @@ fn comprehension_computed_patterns_evaluate_in_lexical_order() {
 }
 
 #[test]
+fn comprehension_rejects_computed_pattern_with_incompatible_schema() {
+    let source = "y := [1 | 1 > 0 <- [2 3]]";
+    let error = CanonicalSourceFrontend
+        .compile_definition(&definition(source))
+        .err()
+        .expect("computed pattern must match its generator element before artifact lowering");
+    assert_eq!(
+        error.code,
+        "source-semantics/unsupported-comprehension-control"
+    );
+    assert!(
+        error.message.contains("computed pattern differs"),
+        "{error:?}"
+    );
+}
+
+#[test]
 fn nested_comprehension_rejects_inconsistent_element_shapes_before_publish() {
     let source = "x := [[z | z <- [1 2], z <= item] | item <- [1 2]]";
     let artifact = compile(source).compile_artifact().unwrap();

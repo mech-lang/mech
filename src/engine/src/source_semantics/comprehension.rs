@@ -733,7 +733,17 @@ impl SemanticBuilder {
                             }
                         }
                     } else {
-                        CollectionPattern::Equal(self.expression(&expression)?.0)
+                        let value = self.expression(&expression)?.0;
+                        if !is_dynamic_schema_draft(expected) {
+                            self.conform_dynamic_to_schema(value, expected, pattern.syntax())?;
+                            if self.schema_draft_of(value)? != *expected {
+                                return Err(unsupported(
+                                    pattern.syntax(),
+                                    "computed pattern differs from the collection element kind",
+                                ));
+                            }
+                        }
+                        CollectionPattern::Equal(value)
                     }
                 }
                 PatternValueSyntax::Tuple(tuple) => self.collection_tuple_pattern(
