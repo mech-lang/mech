@@ -1814,10 +1814,37 @@ fn remap_schema_body(
 fn schema_draft_from_resolved(
     resolved: &ResolvedType,
     anchor: SourceSemanticAnchor,
+    known: &[SchemaDraft],
 ) -> Result<SchemaDraft, SourceSemanticError> {
+    fn enum_body(body: &SchemaBody, key: NominalKey) -> Option<SchemaBody> {
+        match body {
+            SchemaBody::Enum { key: candidate, .. } if *candidate == key => Some(body.clone()),
+            SchemaBody::Enum { variants, .. } => variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+                .find_map(|payload| enum_body(payload, key)),
+            SchemaBody::Option(element)
+            | SchemaBody::Matrix { element, .. }
+            | SchemaBody::Set { element, .. } => enum_body(element, key),
+            SchemaBody::Tuple(items) => items.iter().find_map(|item| enum_body(item, key)),
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .find_map(|field| enum_body(&field.schema, key)),
+            SchemaBody::Table { columns, .. } => columns
+                .iter()
+                .find_map(|field| enum_body(&field.schema, key)),
+            SchemaBody::Map {
+                key: map_key,
+                value,
+                ..
+            } => enum_body(map_key, key).or_else(|| enum_body(value, key)),
+            _ => None,
+        }
+    }
     fn body(
         kind: &KindExpr,
         anchor: SourceSemanticAnchor,
+        known: &[SchemaDraft],
     ) -> Result<SchemaBody, SourceSemanticError> {
         Ok(match kind {
             KindExpr::Wildcard => SchemaBody::Dynamic,
@@ -1832,18 +1859,38 @@ fn schema_draft_from_resolved(
             KindExpr::Id => SchemaBody::Id,
             KindExpr::Index => SchemaBody::Index,
             KindExpr::Atom(key) => SchemaBody::Atom(*key),
+            KindExpr::Enum(key) => {
+                let mut witnesses = known
+                    .iter()
+                    .filter_map(|draft| enum_body(&draft.body, *key));
+                let first = witnesses.next().ok_or_else(|| {
+                    internal(
+                        anchor,
+                        "resolved enum kind has no source schema witness".to_owned(),
+                    )
+                })?;
+                if witnesses.any(|witness| witness != first) {
+                    return Err(internal(
+                        anchor,
+                        "resolved enum kind has conflicting source schema witnesses".to_owned(),
+                    ));
+                }
+                first
+            }
             KindExpr::Matrix {
                 element,
                 dimensions,
             } => SchemaBody::Matrix {
-                element: Box::new(body(element, anchor)?),
+                element: Box::new(body(element, anchor, known)?),
                 dimensions: dimensions.clone(),
             },
-            KindExpr::Option(payload) => SchemaBody::Option(Box::new(body(payload, anchor)?)),
+            KindExpr::Option(payload) => {
+                SchemaBody::Option(Box::new(body(payload, anchor, known)?))
+            }
             KindExpr::Tuple(items) => SchemaBody::Tuple(
                 items
                     .iter()
-                    .map(|item| body(item, anchor))
+                    .map(|item| body(item, anchor, known))
                     .collect::<Result<Vec<_>, _>>()?
                     .into_boxed_slice(),
             ),
@@ -1853,7 +1900,7 @@ fn schema_draft_from_resolved(
                     .map(|field| {
                         Ok(SchemaField {
                             name: field.name.clone(),
-                            schema: body(&field.kind, anchor)?,
+                            schema: body(&field.kind, anchor, known)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -1865,7 +1912,7 @@ fn schema_draft_from_resolved(
                     .map(|field| {
                         Ok(SchemaField {
                             name: field.name.clone(),
-                            schema: body(&field.kind, anchor)?,
+                            schema: body(&field.kind, anchor, known)?,
                         })
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
@@ -1876,7 +1923,7 @@ fn schema_draft_from_resolved(
                 element,
                 cardinality,
             } => SchemaBody::Set {
-                element: Box::new(body(element, anchor)?),
+                element: Box::new(body(element, anchor, known)?),
                 cardinality: CardinalitySpec::Exact(cardinality.clone()),
             },
             KindExpr::Map {
@@ -1884,16 +1931,12 @@ fn schema_draft_from_resolved(
                 value,
                 cardinality,
             } => SchemaBody::Map {
-                key: Box::new(body(key, anchor)?),
-                value: Box::new(body(value, anchor)?),
+                key: Box::new(body(key, anchor, known)?),
+                value: Box::new(body(value, anchor, known)?),
                 cardinality: CardinalitySpec::Exact(cardinality.clone()),
             },
             KindExpr::TypeOf(_) => SchemaBody::ReifiedType,
-            KindExpr::Enum(_)
-            | KindExpr::Never
-            | KindExpr::Hole
-            | KindExpr::Parameter(_)
-            | KindExpr::Reference(_) => {
+            KindExpr::Never | KindExpr::Hole | KindExpr::Parameter(_) | KindExpr::Reference(_) => {
                 return Err(internal(
                     anchor,
                     format!("resolved output kind cannot become a source schema: {kind:?}"),
@@ -1904,7 +1947,7 @@ fn schema_draft_from_resolved(
 
     Ok(SchemaDraft {
         dimension_parameters: resolved.dimension_parameters().to_vec().into_boxed_slice(),
-        body: body(resolved.kind(), anchor)?,
+        body: body(resolved.kind(), anchor, known)?,
     })
 }
 
@@ -1915,7 +1958,9 @@ fn materialize_source_output_draft(
     anchor: SourceSemanticAnchor,
 ) -> Result<SchemaDraft, SourceSemanticError> {
     match rule {
-        ResolvedOutputSchemaRule::FromResolvedType => schema_draft_from_resolved(resolved, anchor),
+        ResolvedOutputSchemaRule::FromResolvedType => {
+            schema_draft_from_resolved(resolved, anchor, inputs)
+        }
         ResolvedOutputSchemaRule::FromInput(index) => {
             let input = inputs.get(*index).ok_or_else(|| {
                 internal(
@@ -1923,7 +1968,7 @@ fn materialize_source_output_draft(
                     format!("output schema input {index} is unavailable"),
                 )
             })?;
-            let draft = schema_draft_from_resolved(resolved, anchor)?;
+            let draft = schema_draft_from_resolved(resolved, anchor, inputs)?;
             let (
                 SchemaBody::Set {
                     element,
@@ -2385,6 +2430,17 @@ impl SemanticBuilder {
         expected: Option<&SchemaDraft>,
         syntax: &SyntaxNode,
     ) -> Result<Option<DeclaredEnumVariant>, SourceSemanticError> {
+        let expected_enum = expected.and_then(|expected| match &expected.body {
+            SchemaBody::Enum { .. } => Some(expected.clone()),
+            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
+                Some(SchemaDraft {
+                    body: payload.as_ref().clone(),
+                    dimension_parameters: expected.dimension_parameters.clone(),
+                })
+            }
+            _ => None,
+        });
+        let qualified_enum = name.contains('/');
         let (name, qualified) = match name.rsplit_once('/') {
             Some((qualifier, variant)) => match self.declared_kinds.get(qualifier) {
                 Some(schema) if matches!(schema.body, SchemaBody::Enum { .. }) => {
@@ -2397,20 +2453,13 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(syntax),
                     });
                 }
+                // Imports retain the exact expected enum schema but do not
+                // import the defining root's local declaration table.
+                None if expected_enum.is_some() => (variant, None),
                 None => (name, None),
             },
             None => (name, None),
         };
-        let expected_enum = expected.and_then(|expected| match &expected.body {
-            SchemaBody::Enum { .. } => Some(expected.clone()),
-            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
-                Some(SchemaDraft {
-                    body: payload.as_ref().clone(),
-                    dimension_parameters: expected.dimension_parameters.clone(),
-                })
-            }
-            _ => None,
-        });
         if let (Some(expected), Some(qualified)) = (expected_enum.as_ref(), qualified)
             && expected != qualified
         {
@@ -2420,7 +2469,6 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }
-        let qualified_enum = qualified.is_some();
         let expected = qualified.or(expected_enum.as_ref());
         // An imported value retains its exact enum schema, even though the
         // defining root's declaration table is not visible in this root.
@@ -6246,8 +6294,13 @@ impl SemanticBuilder {
         if let Some(target_schema) = builtin_kind_from_resolved(target).and_then(builtin_schema) {
             return self.apply_conversion(value, target_schema, plan, syntax);
         }
-        let target = schema_draft_from_resolved(target, SourceSemanticAnchor::for_node(syntax))?;
-        if self.schema_draft_of(value)? == target {
+        let source = self.schema_draft_of(value)?;
+        let target = schema_draft_from_resolved(
+            target,
+            SourceSemanticAnchor::for_node(syntax),
+            &[source.clone()],
+        )?;
+        if source == target {
             return Ok(value);
         }
         Ok(self.emit_with_schema_draft(
@@ -7686,6 +7739,7 @@ fn specialize_annotation_dimensions(
     {
         actual.body = SchemaBody::Option(Box::new(actual.body));
     }
+    let known = [actual.clone(), expected.clone()];
     let actual = ResolvedType::from_schema_body(&actual.body, &actual.dimension_parameters)
         .map_err(|failure| error(failure.to_string()))?;
     let expected = ResolvedType::from_schema_body(&expected.body, &expected.dimension_parameters)
@@ -7704,7 +7758,7 @@ fn specialize_annotation_dimensions(
     ))
     .solve_scheme(&scheme, &[actual], None)
     .map_err(|failure| error(failure.to_string()))?;
-    schema_draft_from_resolved(&resolved.outputs[0], anchor)
+    schema_draft_from_resolved(&resolved.outputs[0], anchor, &known)
 }
 
 fn schema_annotation_accepts(actual: &SchemaBody, expected: &SchemaBody) -> bool {

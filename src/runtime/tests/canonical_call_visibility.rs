@@ -78,6 +78,38 @@ fn recursive_graph_imports_reject_distinct_package_owners_of_one_enum_path() {
     assert!(format!("{error:?}").contains("ambiguous-nominal-declaration-v1"));
 }
 
+#[test]
+fn imported_enum_uses_its_contextual_schema_for_qualified_payload_patterns() {
+    let dependency_source =
+        "<event> := :data<f64> | :idle\nvalue<event> := :data(3.0)\n<+ value\nvalue\n";
+    document(dependency_source);
+    let dependency = ResolvedSource::new(
+        "dep.mec",
+        "memory:app/dep.mec",
+        MechSourceCode::String(dependency_source.to_owned()),
+    )
+    .with_kind(SourceKind::Mech)
+    .retain_source_document(Revision(0), ParseConfig::default())
+    .unwrap()
+    .with_nominal_origin(CanonicalNominalPath::new(vec!["sample-package".to_owned()]).unwrap())
+    .with_nominal_package_id("sample-package");
+    let root_source =
+        "+> ./dep.mec\nresult := dep/value?\n  | :event/data(x) => x\n  | * => 0.\nresult\n";
+    document(root_source);
+    let resolver = InMemorySourceResolver::new()
+        .with_string("app/main.mec", root_source)
+        .with_source("app/dep.mec", dependency);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let compiled = compiler
+        .compile_canonical_root(SourceRequest::new("app/main.mec"))
+        .expect("an imported enum's exact schema admits its qualified payload pattern");
+    assert!(!compiled.bytecode().is_empty());
+}
+
 fn rejected(source: &str, catalog: Arc<FunctionCatalog>) -> SourceSemanticError {
     let document = document(source);
     CanonicalSourceFrontend

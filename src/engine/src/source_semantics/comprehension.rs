@@ -926,10 +926,12 @@ impl SemanticBuilder {
             let name_text = node_text(name)?;
             let variant_name = name_text.trim_start_matches(':');
             let variant_name = if let Some((qualifier, variant)) = variant_name.rsplit_once('/') {
+                // Imported enum values carry their exact schema, although
+                // their defining declaration is not local to this document.
                 if self
                     .declared_kinds
                     .get(qualifier)
-                    .is_none_or(|schema| schema.body != expected.body)
+                    .is_some_and(|schema| schema.body != expected.body)
                 {
                     return Err(unsupported(name, "unknown enum qualifier in pattern"));
                 }

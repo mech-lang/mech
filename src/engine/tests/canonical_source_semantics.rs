@@ -251,6 +251,15 @@ fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment(
 }
 
 #[test]
+fn unused_invalid_kind_declaration_fails_at_declaration() {
+    let error = CanonicalSourceFrontend
+        .compile_document(&document("<bad> := <{a<u8>,a<bool>}>\nvalue := 1\nvalue\n"))
+        .err()
+        .expect("duplicate record fields are invalid even when the alias is unused");
+    assert_eq!(error.code, "source-semantics/invalid-kind-declaration");
+}
+
+#[test]
 fn declared_scalar_aliases_type_literal_values_and_negation() {
     for source in [
         "<count> := <u8>\nx := 1<count>\nx\n",

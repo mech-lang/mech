@@ -265,13 +265,24 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
             )?;
         }
     }
-    let root_imports = coordinator_units
-        .iter()
-        .filter_map(|unit| match unit {
-            DocumentUnit::Import(import) => Some(import.clone()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
+    // Each mixed projection compiles its own source environment. Imports and
+    // document-level type declarations must be present in every projection,
+    // even when their source section is outside the compute region.
+    fn collect_shared_units(units: &[DocumentUnit], shared: &mut Vec<DocumentUnit>) {
+        for unit in units {
+            match unit {
+                DocumentUnit::Import(import) => shared.push(DocumentUnit::Import(import.clone())),
+                DocumentUnit::Kind(kind) => shared.push(DocumentUnit::Kind(kind.clone())),
+                DocumentUnit::Enum(enumeration) => {
+                    shared.push(DocumentUnit::Enum(enumeration.clone()));
+                }
+                DocumentUnit::Fence(_, _, nested) => collect_shared_units(nested, shared),
+                _ => {}
+            }
+        }
+    }
+    let mut shared_units = Vec::new();
+    collect_shared_units(&coordinator_units, &mut shared_units);
     let coordinator = CanonicalCoordinatorPlan {
         owner: document.scope_id(),
         anchor,
@@ -285,11 +296,8 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     };
 
     let region = &sections[region_index];
-    let mut compute_units = root_imports
-        .iter()
-        .cloned()
-        .map(DocumentUnit::Import)
-        .collect();
+    let mut compute_units = Vec::new();
+    collect_shared_units(&coordinator.units, &mut compute_units);
     let mut compute_exports = Vec::new();
     collect_document_units(region.syntax(), &mut compute_units, &mut compute_exports)?;
     let compute = compile_collected_document(
@@ -308,7 +316,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     )?
     .with_compute_region(region_name.clone(), placement)?;
 
-    let mut initializer_units = root_imports.into_iter().map(DocumentUnit::Import).collect();
+    let mut initializer_units = shared_units;
     let mut initializer_exports = Vec::new();
     collect_document_units(
         region.syntax(),
