@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:11,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:12,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -427,7 +427,10 @@ read-only artifact.
 ### Typed graph bodies (graph revision 12)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
-A control body is `{"Match":{"scrutinee":input_ordinal,"partial":bool,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
+A control body is `{"Match":{"scrutinee":input_ordinal,"partial":bool,"captures":[[input_ordinal,schema_id,freeze_on_suspend]],"arms":[...]}}`.
+The capture flag is Boolean. A true capture retains its lexical value across a
+suspension; a false capture reads the current external input when execution
+resumes. The flag participates in artifact identity.
 The decoder requires revision 12 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
@@ -454,6 +457,8 @@ inside their owning match. `Recur` uses admitted resident call-frame storage;
 output for atomic commitment with a later suspension.
 A recursive target cannot use a direct bind arm or capture its own scrutinee
 input; artifact finalization rejects either layout.
+`Suspend` is valid only as the final operation and yield of an FSM arm body;
+guards and operations after it are rejected.
 
 Structural binding IDs are dense within their arm. A binding equality refers to an earlier binding
 in that arm. Array prefixes and suffixes match in source order; a present rest consumes the middle
