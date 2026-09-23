@@ -1203,8 +1203,6 @@ pub struct TurnWorkspace {
 struct RecursiveFrame {
     target: ActivatedNodeIndex,
     argument: ResidentReadLocation,
-    saved_bytes: u64,
-    saved_nodes: u64,
 }
 
 impl TurnWorkspace {

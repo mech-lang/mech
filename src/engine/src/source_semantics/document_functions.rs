@@ -4,6 +4,7 @@ use super::comprehension::{
     PendingCollectionValue, PendingComprehensionOperation, PendingComprehensionStep,
 };
 use super::*;
+use mech_syntax::document::FunctionCallSyntax;
 
 enum DocumentFunctionBody {
     Statements(SyntaxNode),
@@ -21,6 +22,36 @@ struct PatternLift {
     source: PendingValue,
     element: SchemaDraft,
     output: PatternLiftOutput,
+}
+
+fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
+    if let Some(call) = FunctionCallSyntax::cast(node.clone())
+        && let Some(function) = call.function()
+        && node_text(function.syntax())? == name
+    {
+        return Ok(true);
+    }
+    for child in node.children() {
+        if calls_function(&child, name)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn references_variable(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
+    if let Some(variable) = VariableSyntax::cast(node.clone())
+        && let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+        && node_text(identifier.syntax())? == name
+    {
+        return Ok(true);
+    }
+    for child in node.children() {
+        if references_variable(&child, name)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 fn lift_element_conforms(element: &SchemaBody, parameter: &SchemaDraft) -> bool {
@@ -809,6 +840,33 @@ impl SemanticBuilder {
                 })
             })
             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+        if arms
+            .iter()
+            .map(|arm| calls_function(arm.value.syntax(), name))
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .any(|recursive| recursive)
+        {
+            for arm in &arms {
+                let mut bindings = Vec::new();
+                if let Some(pattern) = &arm.pattern {
+                    collect_pattern_bindings(pattern, &mut bindings)?;
+                }
+                for parameter in &self.scope_definitions {
+                    if !bindings.iter().any(|binding| &binding.name == parameter)
+                        && references_variable(arm.value.syntax(), parameter)?
+                    {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/recursive-function-capture",
+                            message: format!(
+                                "recursive function {name} must bind parameter {parameter} in every arm that reads it"
+                            ),
+                            anchor: SourceSemanticAnchor::for_node(&arm.syntax),
+                        });
+                    }
+                }
+            }
+        }
         let enum_input = matches!(
             self.schema_draft_of(scrutinee)?.body,
             SchemaBody::Enum { .. }
