@@ -1733,19 +1733,11 @@ impl PatternItem {
             let Some(observation) = binding_shape_observation(binding.body(), &item.body) else {
                 return Ok(None);
             };
-            let selected_rest_shape = matches!(
-                (binding.body(), &item.body),
-                (
-                    SchemaBody::Matrix { dimensions, .. },
-                    SchemaBody::Matrix { .. },
-                ) if dimensions.len() == 2
-                    && matches!(&dimensions[0], DimensionExpr::Constant(1))
-                    && matches!(&dimensions[1], DimensionExpr::Parameter(parameter)
-                        if parameter.get() as usize + 1 == item.shape_values.len())
-                    && binding.dimension_parameters().len() == item.shape_values.len()
-                    && item.projection_schema.is_some()
-            );
-            if let Some(shape) = selected_rest_shape
+            // A projected child carries the selected parent's dimension
+            // witnesses even when its own body does not mention every one.
+            let selected_projection_shape = item.projection_schema.is_some()
+                && binding.dimension_parameters().len() == item.shape_values.len();
+            if let Some(shape) = selected_projection_shape
                 .then(|| binding.instantiate_shape(item.shape_values.clone()).ok())
                 .flatten()
                 .filter(|shape| binding.closed_body(shape).ok().as_ref() == Some(&observation))
@@ -2930,7 +2922,11 @@ pub(super) fn resident_array_pattern_item(
     for ordinal in 0..count {
         let offset = dense_collection_offset(region, ordinal)?;
         items.push(match value {
-            ResidentValueRef::Bool(values) => ValueDataDraft::Bool(*values.get(offset)? != 0),
+            ResidentValueRef::Bool(values) => match *values.get(offset)? {
+                0 => ValueDataDraft::Bool(false),
+                1 => ValueDataDraft::Bool(true),
+                _ => return None,
+            },
             ResidentValueRef::Index(values) => ValueDataDraft::Index(*values.get(offset)?),
             ResidentValueRef::F64(values) => {
                 ValueDataDraft::F64(F64Bits::from_f64(*values.get(offset)?))
@@ -6317,6 +6313,65 @@ mod tests {
             .unwrap();
         assert_eq!(binding.shape_values.as_ref(), [2]);
         assert!(matches!(binding.data, ValueDataDraft::Matrix(values) if values.len() == 2));
+    }
+
+    #[test]
+    fn native_bool_array_pattern_rejects_noncanonical_bytes() {
+        let region = ResidentRegion {
+            kind: ResidentValueKind::Bool,
+            offset: 0,
+            len: 1,
+            shape: mech_core::ResidentShape::SCALAR,
+        };
+        assert!(resident_array_pattern_item(ResidentValueRef::Bool(&[2]), region).is_none());
+        assert!(matches!(
+            resident_array_pattern_item(ResidentValueRef::Bool(&[1]), region),
+            Some(PatternItem::Plain(ValueDataDraft::Matrix(values)))
+                if matches!(values.first(), Some(ValueDataDraft::Bool(true)))
+        ));
+    }
+
+    #[test]
+    fn projected_tuple_binding_keeps_unused_rest_extent() {
+        let body = SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+        let mut builder = SchemaTableBuilder::new();
+        let binding = builder
+            .insert(
+                SchemaDraft {
+                    body: body.clone(),
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let binding = build.resolve(binding).unwrap();
+        let (schemas, projections) = structural_projection_schema_context(&build.table).unwrap();
+        for extent in [2, 3] {
+            let item = PatternItem::component(
+                Some(binding),
+                body.clone(),
+                vec![extent].into_boxed_slice(),
+                ValueDataDraft::Tuple(vec![ValueDataDraft::Index(7)].into_boxed_slice()),
+            );
+            let bound = item
+                .into_binding(binding, &[], &schemas, &projections)
+                .unwrap()
+                .unwrap();
+            assert_eq!(bound.shape_values.as_ref(), [extent]);
+            let value = pattern_binding_draft(binding, &bound.shape_values, bound.data)
+                .finalize(&SnapshotValidationContext::new(&schemas))
+                .unwrap();
+            assert_eq!(value.shape().parameter_values(), [extent]);
+        }
     }
 
     #[test]
