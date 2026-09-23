@@ -264,7 +264,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
                 source_element,
                 target_element,
             )),
-            dimensions: if target_dimensions.is_empty() && source_dimensions.len() == 2 {
+            dimensions: if target_dimensions.is_empty() {
                 source_dimensions.clone()
             } else {
                 target_dimensions.clone()
@@ -401,7 +401,7 @@ fn materialize_declared_conversion_semantic_shape(
                 source_element,
                 target_element,
             )),
-            dimensions: if target_dimensions.is_empty() && source_dimensions.len() == 2 {
+            dimensions: if target_dimensions.is_empty() {
                 source_dimensions.clone()
             } else {
                 target_dimensions.clone()
@@ -1067,37 +1067,443 @@ fn invalid_reified_conversion_target(context: &'static str) -> MechError {
 }
 
 #[cfg(feature = "convert")]
+fn reified_dimension_value(dimension: &DimensionExpr) -> Option<u64> {
+    match dimension {
+        DimensionExpr::Constant(value) => Some(*value),
+        DimensionExpr::Add(children) => children.iter().try_fold(0_u64, |sum, child| {
+            sum.checked_add(reified_dimension_value(child)?)
+        }),
+        DimensionExpr::Multiply(children) => children.iter().try_fold(1_u64, |product, child| {
+            product.checked_mul(reified_dimension_value(child)?)
+        }),
+        DimensionExpr::Min(children) => children
+            .iter()
+            .map(reified_dimension_value)
+            .collect::<Option<Vec<_>>>()?
+            .into_iter()
+            .min(),
+        DimensionExpr::Max(children) => children
+            .iter()
+            .map(reified_dimension_value)
+            .collect::<Option<Vec<_>>>()?
+            .into_iter()
+            .max(),
+        DimensionExpr::Hole | DimensionExpr::Parameter(_) => None,
+    }
+}
+
+#[cfg(feature = "convert")]
+fn reified_parameter_bounds(
+    declaration: &DimensionParameterDeclaration,
+    bindings: &[Option<DimensionExpr>],
+) -> MResult<(u64, u64)> {
+    let lower = substitute_reified_dimension(&declaration.lower_bound, bindings)?;
+    let lower = reified_dimension_value(&lower).ok_or_else(|| {
+        invalid_reified_conversion_target("unresolved target dimension lower bound")
+    })?;
+    let upper = declaration
+        .upper_bound
+        .as_ref()
+        .map(|upper| {
+            let upper = substitute_reified_dimension(upper, bindings)?;
+            reified_dimension_value(&upper).ok_or_else(|| {
+                invalid_reified_conversion_target("unresolved target dimension upper bound")
+            })
+        })
+        .transpose()?
+        .unwrap_or(u64::MAX);
+    if lower > upper {
+        return Err(invalid_reified_conversion_target(
+            "target dimension bounds are inconsistent",
+        ));
+    }
+    Ok((lower, upper))
+}
+
+#[cfg(feature = "convert")]
+fn unbound_reified_parameter(
+    dimension: &DimensionExpr,
+    bindings: &[Option<DimensionExpr>],
+    selected: &mut Option<DimensionParameterId>,
+) -> MResult<()> {
+    match dimension {
+        DimensionExpr::Parameter(id) if bindings.get(id.get() as usize).is_none() => {
+            return Err(invalid_reified_conversion_target(
+                "unknown target dimension parameter",
+            ));
+        }
+        DimensionExpr::Parameter(id) if bindings[id.get() as usize].is_none() => {
+            if selected.is_some_and(|previous| previous != *id) {
+                return Err(invalid_reified_conversion_target(
+                    "target dimension has multiple unbound parameters",
+                ));
+            }
+            *selected = Some(*id);
+        }
+        DimensionExpr::Add(children)
+        | DimensionExpr::Multiply(children)
+        | DimensionExpr::Min(children)
+        | DimensionExpr::Max(children) => {
+            for child in children {
+                unbound_reified_parameter(child, bindings, selected)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+#[cfg(feature = "convert")]
 fn bind_reified_dimension(
     source: &DimensionExpr,
     target: &DimensionExpr,
     declarations: &[DimensionParameterDeclaration],
     bindings: &mut [Option<DimensionExpr>],
 ) -> MResult<()> {
-    let DimensionExpr::Parameter(id) = target else {
+    let mut selected = None;
+    unbound_reified_parameter(target, bindings, &mut selected)?;
+    let Some(id) = selected else {
+        if let Ok(resolved) = substitute_reified_dimension(target, bindings)
+            && let (Some(actual), Some(expected)) = (
+                reified_dimension_value(source),
+                reified_dimension_value(&resolved),
+            )
+            && actual != expected
+        {
+            return Err(invalid_reified_conversion_target(
+                "target dimension differs from source extent",
+            ));
+        }
         return Ok(());
     };
     let index = id.get() as usize;
     let declaration = declarations
         .get(index)
-        .filter(|declaration| declaration.id == *id)
+        .filter(|declaration| declaration.id == id)
         .ok_or_else(|| invalid_reified_conversion_target("unknown target dimension parameter"))?;
-    if declaration.lower_bound != DimensionExpr::Constant(0) || declaration.upper_bound.is_some() {
+    let (lower, upper) = reified_parameter_bounds(declaration, bindings)?;
+    let witness = if target == &DimensionExpr::Parameter(id) {
+        source.clone()
+    } else {
+        let extent = reified_dimension_value(source).ok_or_else(|| {
+            invalid_reified_conversion_target("compound target requires a concrete source extent")
+        })?;
+        let mut trial = bindings.to_vec();
+        let mut evaluate = |candidate| {
+            trial[index] = Some(DimensionExpr::Constant(candidate));
+            substitute_reified_dimension(target, &trial)
+                .ok()
+                .and_then(|dimension| reified_dimension_value(&dimension))
+        };
+        let (mut low, mut high) = (lower, upper);
+        while low < high {
+            let middle = low + (high - low) / 2;
+            if evaluate(middle).is_some_and(|value| value < extent) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        if evaluate(low) != Some(extent) || (low < upper && evaluate(low + 1) == Some(extent)) {
+            return Err(invalid_reified_conversion_target(
+                "compound target dimension has no unique source witness",
+            ));
+        }
+        DimensionExpr::Constant(low)
+    };
+    let value = reified_dimension_value(&witness);
+    if let Some(value) = value {
+        if value < lower || value > upper {
+            return Err(invalid_reified_conversion_target(
+                "source extent is outside target dimension bounds",
+            ));
+        }
+    } else if lower != 0 || upper != u64::MAX {
         return Err(invalid_reified_conversion_target(
-            "bounded target dimension requires explicit conversion evidence",
+            "bounded target dimension requires a concrete source extent",
         ));
     }
-    let binding = bindings
-        .get_mut(index)
-        .ok_or_else(|| invalid_reified_conversion_target("unknown target dimension parameter"))?;
-    match binding {
-        Some(existing) if existing != source => Err(invalid_reified_conversion_target(
-            "shared target dimension has unequal source extents",
-        )),
-        Some(_) => Ok(()),
-        slot @ None => {
-            *slot = Some(source.clone());
-            Ok(())
+    bindings[index] = Some(witness);
+    Ok(())
+}
+
+#[cfg(feature = "convert")]
+fn inherit_reified_dynamic_cardinality(
+    source: &SchemaBody,
+    target: &mut SchemaBody,
+    declarations: &[DimensionParameterDeclaration],
+) -> MResult<()> {
+    fn expression_uses(dimension: &DimensionExpr, id: DimensionParameterId) -> usize {
+        match dimension {
+            DimensionExpr::Parameter(found) if *found == id => 1,
+            DimensionExpr::Add(children)
+            | DimensionExpr::Multiply(children)
+            | DimensionExpr::Min(children)
+            | DimensionExpr::Max(children) => children
+                .iter()
+                .map(|child| expression_uses(child, id))
+                .sum(),
+            _ => 0,
         }
+    }
+    fn cardinality_uses(cardinality: &CardinalitySpec, id: DimensionParameterId) -> usize {
+        match cardinality {
+            CardinalitySpec::Exact(dimension) => expression_uses(dimension, id),
+            CardinalitySpec::Dynamic { .. } => 0,
+        }
+    }
+    fn body_uses(body: &SchemaBody, id: DimensionParameterId) -> usize {
+        match body {
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } => {
+                dimensions
+                    .iter()
+                    .map(|dimension| expression_uses(dimension, id))
+                    .sum::<usize>()
+                    + body_uses(element, id)
+            }
+            SchemaBody::Set {
+                element,
+                cardinality,
+            } => cardinality_uses(cardinality, id) + body_uses(element, id),
+            SchemaBody::Map {
+                key,
+                value,
+                cardinality,
+            } => cardinality_uses(cardinality, id) + body_uses(key, id) + body_uses(value, id),
+            SchemaBody::Table { columns, rows } => {
+                cardinality_uses(rows, id)
+                    + columns
+                        .iter()
+                        .map(|column| body_uses(&column.schema, id))
+                        .sum::<usize>()
+            }
+            SchemaBody::Option(payload) => body_uses(payload, id),
+            SchemaBody::Tuple(elements) => {
+                elements.iter().map(|element| body_uses(element, id)).sum()
+            }
+            SchemaBody::Record(fields) => fields
+                .iter()
+                .map(|field| body_uses(&field.schema, id))
+                .sum(),
+            SchemaBody::Enum { variants, .. } => variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+                .map(|payload| body_uses(payload, id))
+                .sum(),
+            _ => 0,
+        }
+    }
+    let use_counts = declarations
+        .iter()
+        .map(|declaration| body_uses(target, declaration.id))
+        .collect::<Vec<_>>();
+    inherit_reified_dynamic_cardinality_inner(source, target, declarations, &use_counts)
+}
+
+#[cfg(feature = "convert")]
+fn inherit_reified_dynamic_cardinality_inner(
+    source: &SchemaBody,
+    target: &mut SchemaBody,
+    declarations: &[DimensionParameterDeclaration],
+    use_counts: &[usize],
+) -> MResult<()> {
+    fn cardinality(
+        source: &CardinalitySpec,
+        target: &mut CardinalitySpec,
+        declarations: &[DimensionParameterDeclaration],
+        use_counts: &[usize],
+    ) -> MResult<()> {
+        if let CardinalitySpec::Dynamic { .. } = source
+            && let CardinalitySpec::Exact(dimension) = target
+        {
+            let DimensionExpr::Parameter(id) = dimension else {
+                return Err(invalid_reified_conversion_target(
+                    "dynamic source cannot bind an exact target cardinality",
+                ));
+            };
+            let declaration = declarations
+                .get(id.get() as usize)
+                .filter(|declaration| declaration.id == *id)
+                .ok_or_else(|| {
+                    invalid_reified_conversion_target("unknown target dimension parameter")
+                })?;
+            if declaration.lower_bound != DimensionExpr::Constant(0)
+                || declaration.upper_bound.is_some()
+            {
+                return Err(invalid_reified_conversion_target(
+                    "dynamic source cannot establish bounded target cardinality",
+                ));
+            }
+            if use_counts.get(id.get() as usize) != Some(&1) {
+                return Err(invalid_reified_conversion_target(
+                    "dynamic source cannot satisfy a shared target cardinality parameter",
+                ));
+            }
+            *target = source.clone();
+        }
+        Ok(())
+    }
+    match (source, target) {
+        (
+            SchemaBody::Matrix {
+                element: source, ..
+            },
+            SchemaBody::Matrix {
+                element: target, ..
+            },
+        )
+        | (SchemaBody::Option(source), SchemaBody::Option(target)) => {
+            inherit_reified_dynamic_cardinality_inner(source, target, declarations, use_counts)?;
+        }
+        (source, SchemaBody::Option(target)) => {
+            inherit_reified_dynamic_cardinality_inner(source, target, declarations, use_counts)?;
+        }
+        (SchemaBody::Tuple(source), SchemaBody::Tuple(target)) if source.len() == target.len() => {
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                inherit_reified_dynamic_cardinality_inner(
+                    source,
+                    target,
+                    declarations,
+                    use_counts,
+                )?;
+            }
+        }
+        (SchemaBody::Record(source), SchemaBody::Record(target))
+            if source.len() == target.len()
+                && source
+                    .iter()
+                    .zip(target.iter())
+                    .all(|(source, target)| source.name == target.name) =>
+        {
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                inherit_reified_dynamic_cardinality_inner(
+                    &source.schema,
+                    &mut target.schema,
+                    declarations,
+                    use_counts,
+                )?;
+            }
+        }
+        (
+            SchemaBody::Set {
+                element: source_element,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Set {
+                element: target_element,
+                cardinality: target_cardinality,
+            },
+        ) => {
+            cardinality(
+                source_cardinality,
+                target_cardinality,
+                declarations,
+                use_counts,
+            )?;
+            inherit_reified_dynamic_cardinality_inner(
+                source_element,
+                target_element,
+                declarations,
+                use_counts,
+            )?;
+        }
+        (
+            SchemaBody::Map {
+                key: source_key,
+                value: source_value,
+                cardinality: source_cardinality,
+            },
+            SchemaBody::Map {
+                key: target_key,
+                value: target_value,
+                cardinality: target_cardinality,
+            },
+        ) => {
+            cardinality(
+                source_cardinality,
+                target_cardinality,
+                declarations,
+                use_counts,
+            )?;
+            inherit_reified_dynamic_cardinality_inner(
+                source_key,
+                target_key,
+                declarations,
+                use_counts,
+            )?;
+            inherit_reified_dynamic_cardinality_inner(
+                source_value,
+                target_value,
+                declarations,
+                use_counts,
+            )?;
+        }
+        (
+            SchemaBody::Table {
+                columns: source,
+                rows: source_rows,
+            },
+            SchemaBody::Table {
+                columns: target,
+                rows: target_rows,
+            },
+        ) if source.len() == target.len()
+            && source
+                .iter()
+                .zip(target.iter())
+                .all(|(source, target)| source.name == target.name) =>
+        {
+            cardinality(source_rows, target_rows, declarations, use_counts)?;
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                inherit_reified_dynamic_cardinality_inner(
+                    &source.schema,
+                    &mut target.schema,
+                    declarations,
+                    use_counts,
+                )?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+#[cfg(feature = "convert")]
+fn has_dynamic_cardinality(body: &SchemaBody) -> bool {
+    match body {
+        SchemaBody::Set {
+            element,
+            cardinality,
+        } => {
+            matches!(cardinality, CardinalitySpec::Dynamic { .. })
+                || has_dynamic_cardinality(element)
+        }
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality,
+        } => {
+            matches!(cardinality, CardinalitySpec::Dynamic { .. })
+                || has_dynamic_cardinality(key)
+                || has_dynamic_cardinality(value)
+        }
+        SchemaBody::Table { columns, rows } => {
+            matches!(rows, CardinalitySpec::Dynamic { .. })
+                || columns
+                    .iter()
+                    .any(|column| has_dynamic_cardinality(&column.schema))
+        }
+        SchemaBody::Matrix { element, .. } | SchemaBody::Option(element) => {
+            has_dynamic_cardinality(element)
+        }
+        SchemaBody::Tuple(elements) => elements.iter().any(has_dynamic_cardinality),
+        SchemaBody::Record(fields) => fields
+            .iter()
+            .any(|field| has_dynamic_cardinality(&field.schema)),
+        _ => false,
     }
 }
 
@@ -1435,13 +1841,11 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         let source_type = source.resolved_type()?;
         let is_reified_target = reified_dimensions.is_some();
         let target = if let Some(declarations) = reified_dimensions {
+            let source_body = source.closed_schema_body()?;
+            let mut target = target;
+            inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
             let mut bindings = vec![None; declarations.len()];
-            bind_reified_target_dimensions(
-                &source.closed_schema_body()?,
-                &target,
-                &declarations,
-                &mut bindings,
-            )?;
+            bind_reified_target_dimensions(&source_body, &target, &declarations, &mut bindings)?;
             substitute_reified_target(&target, &bindings)?
         } else {
             target
@@ -1449,7 +1853,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         let semantic_target =
             materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
         let target = materialize_declared_conversion_shape(&source.closed_schema_body()?, &target);
-        let target_dimensions = if is_reified_target {
+        let target_dimensions = if is_reified_target && !has_dynamic_cardinality(&target) {
             &[][..]
         } else {
             source_type.dimension_parameters()
@@ -1971,6 +2375,280 @@ mod canonical_conversion_tests {
         let target_type =
             ResolvedType::from_schema_body(&semantic, resolved.dimension_parameters()).unwrap();
         assert!(exact_type_equal(&resolved, &target_type));
+    }
+
+    #[test]
+    fn open_matrix_annotations_inherit_every_source_rank() {
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: Box::new([]),
+        };
+        for extents in [vec![3], vec![2, 3], vec![2, 3, 4]] {
+            let source = SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: extents.into_iter().map(DimensionExpr::Constant).collect(),
+            };
+            assert_eq!(
+                materialize_declared_conversion_shape(&source, &target),
+                source
+            );
+            let resolved = ResolvedType::from_schema_body(&source, &[]).unwrap();
+            let semantic = materialize_declared_conversion_semantic_shape(resolved.kind(), &target);
+            let target_type = ResolvedType::from_schema_body(&semantic, &[]).unwrap();
+            assert!(exact_type_equal(&resolved, &target_type));
+        }
+    }
+
+    #[test]
+    fn bounded_and_compound_reified_dimensions_bind_unique_extents() {
+        let id = DimensionParameterId::new(0);
+        let declaration = DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(2),
+            upper_bound: Some(DimensionExpr::Constant(10)),
+        };
+        let mut bindings = vec![None];
+        bind_reified_dimension(
+            &DimensionExpr::Constant(8),
+            &DimensionExpr::Parameter(id),
+            &[declaration.clone()],
+            &mut bindings,
+        )
+        .unwrap();
+        assert_eq!(bindings, vec![Some(DimensionExpr::Constant(8))]);
+        assert!(
+            bind_reified_dimension(
+                &DimensionExpr::Constant(11),
+                &DimensionExpr::Parameter(id),
+                &[declaration.clone()],
+                &mut vec![None],
+            )
+            .is_err()
+        );
+
+        let compound =
+            DimensionExpr::Add([DimensionExpr::Parameter(id), DimensionExpr::Constant(1)].into());
+        let mut bindings = vec![None];
+        bind_reified_dimension(
+            &DimensionExpr::Constant(8),
+            &compound,
+            &[declaration.clone()],
+            &mut bindings,
+        )
+        .unwrap();
+        assert_eq!(bindings, vec![Some(DimensionExpr::Constant(7))]);
+        let mut bindings = vec![None];
+        bind_reified_dimension(
+            &DimensionExpr::Constant(14),
+            &DimensionExpr::Multiply(
+                [DimensionExpr::Constant(2), DimensionExpr::Parameter(id)].into(),
+            ),
+            &[declaration.clone()],
+            &mut bindings,
+        )
+        .unwrap();
+        assert_eq!(bindings, vec![Some(DimensionExpr::Constant(7))]);
+        assert!(
+            bind_reified_dimension(
+                &DimensionExpr::Constant(5),
+                &DimensionExpr::Min(
+                    [DimensionExpr::Parameter(id), DimensionExpr::Constant(5)].into(),
+                ),
+                &[declaration],
+                &mut vec![None],
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn open_reified_collection_targets_keep_dynamic_cardinality() {
+        let source = SchemaBody::Tuple(
+            [
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::Index),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::Index),
+                    value: Box::new(SchemaBody::Index),
+                    cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+                SchemaBody::Table {
+                    columns: [SchemaField {
+                        name: "value".to_owned(),
+                        schema: SchemaBody::Index,
+                    }]
+                    .into(),
+                    rows: CardinalitySpec::Dynamic { upper_bound: None },
+                },
+            ]
+            .into(),
+        );
+        let parameters = [0, 1, 2].map(|index| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(index),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        });
+        let exact = |index| {
+            CardinalitySpec::Exact(DimensionExpr::Parameter(DimensionParameterId::new(index)))
+        };
+        let mut target = SchemaBody::Tuple(
+            [
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::Index),
+                    cardinality: exact(0),
+                },
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::Index),
+                    value: Box::new(SchemaBody::Index),
+                    cardinality: exact(1),
+                },
+                SchemaBody::Table {
+                    columns: [SchemaField {
+                        name: "value".to_owned(),
+                        schema: SchemaBody::Index,
+                    }]
+                    .into(),
+                    rows: exact(2),
+                },
+            ]
+            .into(),
+        );
+        inherit_reified_dynamic_cardinality(&source, &mut target, &parameters).unwrap();
+        assert_eq!(target, source);
+        let mut bindings = vec![None; parameters.len()];
+        bind_reified_target_dimensions(&source, &target, &parameters, &mut bindings).unwrap();
+        assert_eq!(
+            substitute_reified_target(&target, &bindings).unwrap(),
+            source
+        );
+    }
+
+    #[test]
+    fn dynamic_cardinality_cannot_discard_a_shared_dimension_constraint() {
+        let id = DimensionParameterId::new(0);
+        let declaration = DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let set = |cardinality| SchemaBody::Set {
+            element: Box::new(SchemaBody::Index),
+            cardinality,
+        };
+        let dynamic = CardinalitySpec::Dynamic { upper_bound: None };
+        let exact = CardinalitySpec::Exact(DimensionExpr::Parameter(id));
+        let source = SchemaBody::Tuple(
+            [
+                set(dynamic.clone()),
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Index),
+                    dimensions: [DimensionExpr::Constant(2)].into(),
+                },
+            ]
+            .into(),
+        );
+        let mut target = SchemaBody::Tuple(
+            [
+                set(exact.clone()),
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Index),
+                    dimensions: [DimensionExpr::Parameter(id)].into(),
+                },
+            ]
+            .into(),
+        );
+        assert!(
+            inherit_reified_dynamic_cardinality(&source, &mut target, &[declaration.clone()])
+                .is_err()
+        );
+
+        let source = SchemaBody::Tuple([set(dynamic.clone()), set(dynamic)].into());
+        let mut target = SchemaBody::Tuple([set(exact.clone()), set(exact)].into());
+        assert!(inherit_reified_dynamic_cardinality(&source, &mut target, &[declaration]).is_err());
+    }
+
+    #[test]
+    fn dynamic_set_converts_to_its_open_reified_kind() {
+        let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
+        let named = NamedKinds(BTreeMap::from([(id, path)]));
+        let parameter = DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Set {
+                element: Box::new(KindExpr::Named(id)),
+                cardinality: DimensionExpr::Parameter(parameter.id),
+            },
+            &[parameter],
+            &named,
+        )
+        .unwrap();
+        let schema = SchemaBody::Set {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
+        };
+        let source = ValueCell::from_schema_data(
+            schema.clone(),
+            ValueDataDraft::Set([ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into()),
+        )
+        .unwrap();
+        let converted = convert_reified(source, kind).unwrap();
+        assert_eq!(converted.closed_schema_body().unwrap(), schema);
+    }
+
+    #[test]
+    fn compound_bounded_reified_matrix_extent_converts_end_to_end() {
+        let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
+        let named = NamedKinds(BTreeMap::from([(id, path)]));
+        let parameter = DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(16)),
+        };
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Matrix {
+                element: Box::new(KindExpr::Named(id)),
+                dimensions: [
+                    DimensionExpr::Constant(2),
+                    DimensionExpr::Add(
+                        [
+                            DimensionExpr::Parameter(parameter.id),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into(),
+                    ),
+                ]
+                .into(),
+            },
+            &[parameter],
+            &named,
+        )
+        .unwrap();
+        let schema = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: [DimensionExpr::Constant(2), DimensionExpr::Constant(8)].into(),
+        };
+        let source = ValueCell::from_schema_data(
+            schema.clone(),
+            ValueDataDraft::Matrix((0..16).map(ValueDataDraft::U8).collect()),
+        )
+        .unwrap();
+        let converted = convert_reified(source, kind).unwrap();
+        assert_eq!(converted.closed_schema_body().unwrap(), schema);
     }
 
     #[test]
