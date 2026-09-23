@@ -270,6 +270,7 @@ impl SemanticBuilder {
         let saved_definitions = core::mem::take(&mut self.scope_definitions);
         let start = self.nodes.len();
         self.control_depth += 1;
+        self.comprehension_depth += 1;
         let compiled = self.collection_body(
             syntax,
             result,
@@ -279,6 +280,7 @@ impl SemanticBuilder {
             start,
         );
         self.control_depth -= 1;
+        self.comprehension_depth -= 1;
         self.bindings = saved;
         self.scope_definitions = saved_definitions;
         compiled
