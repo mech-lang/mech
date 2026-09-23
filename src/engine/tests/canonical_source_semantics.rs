@@ -276,6 +276,16 @@ fn declared_scalar_aliases_type_literal_values_and_negation() {
 }
 
 #[test]
+fn declared_scalar_aliases_type_kind_extent_literals() {
+    let source = "<count> := <u8>\n<row> := <[f64]:1<count>,3>\n<group> := <{u8}:2<count>>\n<ledger> := <|value<u8>|:2<count>>\nvalue := 1\nvalue\n";
+    CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .expect("declared integer alias is valid in matrix, set, and table extents")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn declared_enum_kind_values_reify_the_nominal_kind() {
     let compiled = CanonicalSourceFrontend
         .compile_document_with_nominal_origin(

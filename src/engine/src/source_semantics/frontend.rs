@@ -7262,7 +7262,7 @@ fn kind_expr(
             cardinality: set
                 .literal_constraint()
                 .as_ref()
-                .map(kind_dimension)
+                .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                 .transpose()?
                 .map_or_else(
                     || inferred_kind_dimension(dimensions, anchor),
@@ -7276,7 +7276,7 @@ fn kind_expr(
             let extents = matrix
                 .dimensions()
                 .iter()
-                .map(kind_dimension)
+                .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                 .collect::<Result<Vec<_>, _>>()?;
             if extents.is_empty() {
                 return Err(SourceSemanticError {
@@ -7339,7 +7339,7 @@ fn kind_expr(
                 rows: table
                     .constraint()
                     .as_ref()
-                    .map(kind_dimension)
+                    .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                     .transpose()?
                     .map_or_else(
                         || inferred_kind_dimension(dimensions, anchor),
@@ -7365,10 +7365,12 @@ fn inferred_kind_dimension(
         .map_err(|error| internal(anchor, format!("unable to declare kind extent: {error:?}")))
 }
 
-fn annotation_schema(
+fn annotation_schema_with_declarations(
     annotation: &KindAnnotationSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
 ) -> Result<BuiltinSchema, SourceSemanticError> {
-    let draft = annotation_schema_draft(annotation)?;
+    let draft = annotation_schema_draft_with_declarations(annotation, declarations, pending)?;
     builtin_schema_for_annotation_body(&draft.body).ok_or_else(|| SourceSemanticError {
         code: "source-semantics/unsupported-kind-annotation",
         message: "this value position requires a builtin scalar kind annotation".to_owned(),
@@ -7382,12 +7384,6 @@ fn builtin_schema_for_annotation_body(body: &SchemaBody) -> Option<BuiltinSchema
         SchemaBody::Option(payload) => option_schema(builtin_schema_for_annotation_body(payload)?),
         _ => builtin_schema_for_body(body),
     }
-}
-
-fn annotation_schema_draft(
-    annotation: &KindAnnotationSyntax,
-) -> Result<SchemaDraft, SourceSemanticError> {
-    annotation_schema_draft_with_declarations(annotation, &BTreeMap::new(), &BTreeSet::new())
 }
 
 fn annotation_schema_draft_with_declarations(
@@ -7529,7 +7525,7 @@ fn kind_schema_body(
                 declarations,
                 pending,
             )?),
-            cardinality: kind_extent(set.literal_constraint().as_ref())?,
+            cardinality: kind_extent(set.literal_constraint().as_ref(), declarations, pending)?,
         },
         KindValueSyntax::Matrix(matrix) => {
             let element = matrix
@@ -7548,7 +7544,7 @@ fn kind_schema_body(
             let mut extents = matrix
                 .dimensions()
                 .iter()
-                .map(kind_dimension)
+                .map(|literal| kind_dimension(literal, declarations, pending))
                 .collect::<Result<Vec<_>, _>>()?;
             if extents.is_empty() {
                 // Mech matrix values have row and column extents. An omitted
@@ -7628,20 +7624,34 @@ fn kind_schema_body(
                     })
                     .collect::<Result<Vec<_>, SourceSemanticError>>()?
                     .into_boxed_slice(),
-                rows: kind_extent(table.constraint().as_ref())?,
+                rows: kind_extent(table.constraint().as_ref(), declarations, pending)?,
             }
         }
     })
 }
 
-fn kind_extent(literal: Option<&LiteralSyntax>) -> Result<CardinalitySpec, SourceSemanticError> {
+fn kind_extent(
+    literal: Option<&LiteralSyntax>,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
+) -> Result<CardinalitySpec, SourceSemanticError> {
     literal.map_or(
         Ok(CardinalitySpec::Dynamic { upper_bound: None }),
-        |literal| Ok(CardinalitySpec::Exact(kind_dimension(literal)?)),
+        |literal| {
+            Ok(CardinalitySpec::Exact(kind_dimension(
+                literal,
+                declarations,
+                pending,
+            )?))
+        },
     )
 }
 
-fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemanticError> {
+fn kind_dimension(
+    literal: &LiteralSyntax,
+    declarations: &BTreeMap<String, SchemaDraft>,
+    pending: &BTreeSet<String>,
+) -> Result<DimensionExpr, SourceSemanticError> {
     let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-kind-dimension",
@@ -7651,7 +7661,7 @@ fn kind_dimension(literal: &LiteralSyntax) -> Result<DimensionExpr, SourceSemant
     };
     let annotation = literal
         .annotation()
-        .map(|annotation| annotation_schema(&annotation))
+        .map(|annotation| annotation_schema_with_declarations(&annotation, declarations, pending))
         .transpose()?;
     let suffix = selected_integer_suffix(&number)?;
     if let Some(kind) = annotation.or(suffix)

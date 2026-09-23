@@ -97,6 +97,23 @@ pub(super) fn canonical_dependency_identity_hash(
     mech_core::hash_bytes(&bytes)
 }
 
+fn canonical_document_dependency_hash(document: &SourceDocument) -> MResult<u64> {
+    let source = document.source().to_contiguous_string();
+    let nominal = !canonical_frontend(document)
+        .declared_enum_names(&document.document())
+        .map_err(|error| canonical_compilation_error(error.to_string()))?
+        .is_empty();
+    Ok(if nominal {
+        canonical_dependency_identity_hash(
+            &source,
+            document.nominal_origin(),
+            document.nominal_package_id(),
+        )
+    } else {
+        mech_core::hash_str(&source)
+    })
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CanonicalProgramCompilationError {
     pub reason: String,
@@ -1219,15 +1236,7 @@ impl<'a> ProgramCompilerView<'a> {
                 });
                 context.source_dependencies.insert(
                     target.canonical_uri.clone(),
-                    canonical_dependency_identity_hash(
-                        &target
-                            .source_document()
-                            .unwrap()
-                            .source()
-                            .to_contiguous_string(),
-                        target.nominal_origin.as_ref(),
-                        target.nominal_package_id.as_deref(),
-                    ),
+                    canonical_document_dependency_hash(target.source_document().unwrap())?,
                 );
             }
             let modules = imports
@@ -1561,11 +1570,7 @@ impl<'a> ProgramCompilerView<'a> {
             let dependency_document = dependency.source_document().ok_or_else(|| {
                 canonical_compilation_error("canonical dependency has no retained document")
             })?;
-            let source_hash = canonical_dependency_identity_hash(
-                &dependency_document.source().to_contiguous_string(),
-                dependency_document.nominal_origin(),
-                dependency_document.nominal_package_id(),
-            );
+            let source_hash = canonical_document_dependency_hash(dependency_document)?;
             if context
                 .source_dependencies
                 .insert(dependency.canonical_uri.clone(), source_hash)

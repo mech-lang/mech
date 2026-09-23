@@ -120,6 +120,39 @@ fn ordered_root_and_detached_dependency_share_nominal_collision_registry() {
 }
 
 #[test]
+fn non_nominal_dependency_keeps_text_only_freshness_with_package_metadata() {
+    let dependency_source = "value := 1\n<+ value\nvalue\n";
+    let dependency = ResolvedSource::new(
+        "dep.mec",
+        "memory:app/dep.mec",
+        MechSourceCode::String(dependency_source.to_owned()),
+    )
+    .with_kind(SourceKind::Mech)
+    .retain_source_document(Revision(0), ParseConfig::default())
+    .unwrap()
+    .with_nominal_origin(CanonicalNominalPath::new(vec!["package-a".to_owned()]).unwrap())
+    .with_nominal_package_id("package-a");
+    let resolver = InMemorySourceResolver::new()
+        .with_string(
+            "app/main.mec",
+            "+> ./dep.mec\nresult := dep/value\nresult\n",
+        )
+        .with_source("app/dep.mec", dependency);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_root(SourceRequest::new("app/main.mec"))
+        .unwrap();
+    assert_eq!(
+        product.source_dependencies().get("memory:app/dep.mec"),
+        Some(&mech_core::hash_str(dependency_source)),
+    );
+}
+
+#[test]
 fn imported_enum_uses_its_contextual_schema_for_qualified_payload_patterns() {
     let dependency_source =
         "<event> := :data<f64> | :idle\nvalue<event> := :data(3.0)\n<+ value\nvalue\n";
