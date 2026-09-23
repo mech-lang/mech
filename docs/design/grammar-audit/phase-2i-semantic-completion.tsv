@@ -3,5 +3,5 @@ implemented-recursive-behavior	recursive-core	behavior-demonstrated	resident-art
 fsm-artifact	fsm-pipe	artifact-ready	program-artifact-v1	S5	false	src/engine/tests/canonical_phase_2i_semantic_certification.rs::every_semantic_rule_meets_its_required_witness_outcome
 fsm-runtime	fsm-pipe	intentionally-unavailable	resident-artifact	S4	true	src/engine/tests/canonical_source_semantics.rs::typed_fsm_fails_closed_until_the_resident_continuation_owner_lands
 comprehension-composite-bindings-yields	matrix-comprehension|set-comprehension	behavior-demonstrated	resident-artifact	S8	true	src/engine/tests/canonical_document_state.rs::comprehension_whole_tuple_binding_projects_live_collection_shape_parameters
-computed-pattern-blocks	pattern	unfinished-implementation	resident-artifact	S4	true	docs/design/grammar-audit/comprehension-certification-migration.md
+computed-pattern-blocks	pattern	behavior-demonstrated	resident-artifact	S8	true	src/engine/tests/canonical_source_completion.rs::comprehension_computed_patterns_evaluate_in_lexical_order
 nested-comprehension-composition	matrix-comprehension|set-comprehension	behavior-demonstrated	resident-artifact	S8	true	src/engine/tests/canonical_source_completion.rs::comprehensions_execute_nested_canonical_control

@@ -57,9 +57,9 @@ machine identity, argument roles, ordered stage kinds, and recursively typed
 values survive artifact bytecode without source-string reconstruction. Borrowed
 tuple, array, and tagged-pattern projection executes with primitive bindings,
 and matches support compound results and nested match bodies and guards.
-Comprehension composite bindings/yields, computed pattern blocks, composition
-with nested comprehensions, the FSM resident continuation owner, and other S4
-limits remain open. FSM continuations follow the next-eligible internally
+Comprehension composite bindings/yields, recursive comprehension control, and
+ordered computed-pattern evaluation now execute through the canonical artifact.
+The FSM resident continuation owner and other S4 limits remain open. FSM continuations follow the next-eligible internally
 scheduled turn contract in the normative specification. S6 stages the atomic
 registry transition here, but it is not active or qualified until S4 completes.
 The machine-checked `grammar-audit/phase-2i-semantic-completion.tsv` record keeps

@@ -68,6 +68,108 @@ enum Qualifier {
     Filter(PendingValue),
 }
 
+fn assign_pattern_binding_locals(
+    pattern: &SourcePattern,
+    start: u32,
+    next_local: &mut u32,
+    local_ids: &mut BTreeMap<u32, u32>,
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    let mut bindings = Vec::new();
+    pattern.bindings(&mut |local, _| bindings.push(local));
+    for local in bindings {
+        let node = start
+            .checked_add(local)
+            .ok_or_else(|| unsupported(syntax, "collection local identity space was exhausted"))?;
+        if local_ids.insert(node, *next_local).is_some() {
+            return Err(internal(
+                SourceSemanticAnchor::for_node(syntax),
+                "collection binding received more than one local identity".to_owned(),
+            ));
+        }
+        *next_local = next_local
+            .checked_add(1)
+            .ok_or_else(|| unsupported(syntax, "collection local identity space was exhausted"))?;
+    }
+    Ok(())
+}
+
+fn assign_qualifier_locals(
+    qualifier: &Qualifier,
+    start: u32,
+    next_local: &mut u32,
+    local_ids: &mut BTreeMap<u32, u32>,
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    if let Qualifier::Generator { pattern, .. } = qualifier {
+        assign_pattern_binding_locals(pattern, start, next_local, local_ids, syntax)?;
+    }
+    Ok(())
+}
+
+fn remap_pattern_binding_locals(
+    pattern: &mut CollectionPattern<SchemaDraft, PendingCollectionValue>,
+    start: u32,
+    local_ids: &BTreeMap<u32, u32>,
+    syntax: &SyntaxNode,
+) -> Result<(), SourceSemanticError> {
+    match pattern {
+        CollectionPattern::Wildcard | CollectionPattern::Equal(_) => {}
+        CollectionPattern::Bind { local, .. } => {
+            let node = start.checked_add(*local).ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "collection binding identity overflowed during canonical remapping".to_owned(),
+                )
+            })?;
+            *local = *local_ids.get(&node).ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "collection binding was absent from the canonical local schedule".to_owned(),
+                )
+            })?;
+        }
+        CollectionPattern::Tuple(items) => {
+            for item in items {
+                remap_pattern_binding_locals(item, start, local_ids, syntax)?;
+            }
+        }
+        CollectionPattern::Array {
+            prefix,
+            rest,
+            suffix,
+        } => {
+            for item in prefix {
+                remap_pattern_binding_locals(item, start, local_ids, syntax)?;
+            }
+            if let Some(rest) = rest {
+                remap_pattern_binding_locals(rest, start, local_ids, syntax)?;
+            }
+            for item in suffix {
+                remap_pattern_binding_locals(item, start, local_ids, syntax)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn require_preceding_collection_inputs(
+    inputs: Box<[PendingCollectionValue]>,
+    local: u32,
+    syntax: &SyntaxNode,
+) -> Result<Box<[PendingCollectionValue]>, SourceSemanticError> {
+    if inputs
+        .iter()
+        .any(|input| matches!(input, PendingCollectionValue::Local(input) if *input >= local))
+    {
+        return Err(unsupported(
+            syntax,
+            "computed pattern operations cannot depend on bindings declared by the same generator",
+        ));
+    }
+    Ok(inputs)
+}
+
 fn unsupported(syntax: &SyntaxNode, message: &str) -> SourceSemanticError {
     SourceSemanticError {
         code: "source-semantics/unsupported-comprehension-control",
@@ -218,15 +320,13 @@ impl SemanticBuilder {
                         generator.syntax(),
                         "a generator pattern",
                     )?;
-                    let before_bindings = self.nodes.len();
                     let pattern = self.collection_pattern(&pattern, &element, start, &mut names)?;
-                    let mut pattern_values = Vec::new();
-                    collect_pattern_values(&pattern, &mut pattern_values);
-                    if pattern_values.iter().any(|value| matches!(value, PendingValue::Node(index)
-                        if *index as usize >= before_bindings && !matches!(self.nodes[*index as usize].body, PendingNodeBody::CollectionBinding))) {
-                        return Err(unsupported(generator.syntax(), "computed pattern expressions require an executable pattern evaluation block"));
-                    }
-                    events.push((before_bindings, Qualifier::Generator { source, pattern }));
+                    // Pattern expressions are ordinary pure lexical operations. Place
+                    // their executable steps before this generator so each value is
+                    // evaluated in the current outer binding before candidate matching.
+                    // Newly declared pattern bindings remain private to the generator
+                    // and are omitted from the step stream below.
+                    events.push((self.nodes.len(), Qualifier::Generator { source, pattern }));
                 }
                 ComprehensionQualifierValueSyntax::Definition(definition) => {
                     if definition.mutability_marker().is_some() {
@@ -309,14 +409,62 @@ impl SemanticBuilder {
                 },
             }
         };
+        // Canonical local identities follow executable declaration order, not
+        // raw semantic-node order. A computed pattern may create operations
+        // after an earlier binder node, but those operations execute before
+        // the generator declares its bindings.
+        let start_node = u32::try_from(start)
+            .map_err(|_| unsupported(syntax, "collection local identity space was exhausted"))?;
+        let mut local_ids = BTreeMap::new();
+        let mut next_local = 0_u32;
+        let mut event_index = 0;
+        for (offset, node) in self.nodes[start..].iter().enumerate() {
+            while events
+                .get(event_index)
+                .is_some_and(|(position, _)| *position == start + offset)
+            {
+                assign_qualifier_locals(
+                    &events[event_index].1,
+                    start_node,
+                    &mut next_local,
+                    &mut local_ids,
+                    syntax,
+                )?;
+                event_index += 1;
+            }
+            if !matches!(node.body, PendingNodeBody::CollectionBinding) {
+                let node = start_node
+                    .checked_add(u32::try_from(offset).map_err(|_| {
+                        unsupported(syntax, "collection local identity space was exhausted")
+                    })?)
+                    .ok_or_else(|| {
+                        unsupported(syntax, "collection local identity space was exhausted")
+                    })?;
+                local_ids.insert(node, next_local);
+                next_local = next_local.checked_add(1).ok_or_else(|| {
+                    unsupported(syntax, "collection local identity space was exhausted")
+                })?;
+            }
+        }
+        while let Some((_, event)) = events.get(event_index) {
+            assign_qualifier_locals(event, start_node, &mut next_local, &mut local_ids, syntax)?;
+            event_index += 1;
+        }
+
         let mut inputs = Vec::new();
         let mut capture =
             |value: PendingValue| -> Result<PendingCollectionValue, SourceSemanticError> {
                 match value {
                     PendingValue::Constant(id) => Ok(PendingCollectionValue::Constant(id)),
-                    PendingValue::Node(index) if index as usize >= start => {
-                        Ok(PendingCollectionValue::Local(index - start as u32))
-                    }
+                    PendingValue::Node(index) if index as usize >= start => Ok(
+                        PendingCollectionValue::Local(*local_ids.get(&index).ok_or_else(|| {
+                            internal(
+                                SourceSemanticAnchor::for_node(syntax),
+                                "collection value was absent from the canonical local schedule"
+                                    .to_owned(),
+                            )
+                        })?),
+                    ),
                     PendingValue::UnresolvedEmpty(anchor) => Err(unresolved_empty(anchor)),
                     _ => {
                         let ordinal = match inputs.iter().position(|existing| *existing == value) {
@@ -347,7 +495,7 @@ impl SemanticBuilder {
                         .copied()
                         .map(&mut capture)
                         .collect::<Result<Vec<_>, _>>()?;
-                    let pattern = pattern.map(
+                    let mut pattern = pattern.map(
                         &|value| {
                             self.schema_draft_of(*value)
                                 .expect("retained lexical binding")
@@ -359,6 +507,7 @@ impl SemanticBuilder {
                                 .unwrap()]
                         },
                     );
+                    remap_pattern_binding_locals(&mut pattern, start_node, &local_ids, syntax)?;
                     PendingComprehensionStep::Generator {
                         source: capture(source)?,
                         pattern,
@@ -378,6 +527,19 @@ impl SemanticBuilder {
             {
                 steps.push(events.next().unwrap().1);
             }
+            let raw_node = start_node
+                .checked_add(u32::try_from(offset).map_err(|_| {
+                    unsupported(syntax, "collection local identity space was exhausted")
+                })?)
+                .ok_or_else(|| {
+                    unsupported(syntax, "collection local identity space was exhausted")
+                })?;
+            let scheduled_local = *local_ids.get(&raw_node).ok_or_else(|| {
+                internal(
+                    SourceSemanticAnchor::for_node(syntax),
+                    "collection node was absent from the canonical local schedule".to_owned(),
+                )
+            })?;
             match node.body {
                 PendingNodeBody::CollectionBinding => {}
                 PendingNodeBody::Operation {
@@ -387,47 +549,59 @@ impl SemanticBuilder {
                 } if node.state.is_none()
                     && contract.interaction == mech_core::ExternalInteraction::Pure =>
                 {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
                     steps.push(PendingComprehensionStep::Operation(
                         PendingComprehensionOperation {
-                            local: offset as u32,
+                            local: scheduled_local,
                             body: PendingControlOperationBody::Operation {
                                 operation,
                                 contract,
                             },
                             schema: node.schema,
-                            inputs: node
-                                .inputs
-                                .into_iter()
-                                .map(&mut capture)
-                                .collect::<Result<Box<[_]>, _>>()?,
+                            inputs,
                         },
                     ));
                 }
                 PendingNodeBody::Match(control) if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
                     steps.push(PendingComprehensionStep::Operation(
                         PendingComprehensionOperation {
-                            local: offset as u32,
+                            local: scheduled_local,
                             body: PendingControlOperationBody::Match(control),
                             schema: node.schema,
-                            inputs: node
-                                .inputs
-                                .into_iter()
-                                .map(&mut capture)
-                                .collect::<Result<Box<[_]>, _>>()?,
+                            inputs,
                         },
                     ));
                 }
                 PendingNodeBody::Comprehension(control) if node.state.is_none() => {
+                    let inputs = require_preceding_collection_inputs(
+                        node.inputs
+                            .into_iter()
+                            .map(&mut capture)
+                            .collect::<Result<Box<[_]>, _>>()?,
+                        scheduled_local,
+                        syntax,
+                    )?;
                     steps.push(PendingComprehensionStep::Operation(
                         PendingComprehensionOperation {
-                            local: offset as u32,
+                            local: scheduled_local,
                             body: PendingControlOperationBody::Comprehension(control),
                             schema: node.schema,
-                            inputs: node
-                                .inputs
-                                .into_iter()
-                                .map(&mut capture)
-                                .collect::<Result<Box<[_]>, _>>()?,
+                            inputs,
                         },
                     ));
                 }
@@ -559,7 +733,17 @@ impl SemanticBuilder {
                             }
                         }
                     } else {
-                        CollectionPattern::Equal(self.expression(&expression)?.0)
+                        let value = self.expression(&expression)?.0;
+                        if !is_dynamic_schema_draft(expected) {
+                            self.conform_dynamic_to_schema(value, expected, pattern.syntax())?;
+                            if self.schema_draft_of(value)? != *expected {
+                                return Err(unsupported(
+                                    pattern.syntax(),
+                                    "computed pattern differs from the collection element kind",
+                                ));
+                            }
+                        }
+                        CollectionPattern::Equal(value)
                     }
                 }
                 PatternValueSyntax::Tuple(tuple) => self.collection_tuple_pattern(
@@ -868,10 +1052,7 @@ mod tests {
         ] {
             compile(source).compile_artifact().unwrap();
         }
-        for source in [
-            "[x | x <- [1 2], x<bool> <- [true false]]",
-            "[1 | 1 + 1 <- [2 3]]",
-        ] {
+        for source in ["[x | x <- [1 2], x<bool> <- [true false]]"] {
             let error = CanonicalSourceFrontend
                 .compile_expression(&expression(source))
                 .err()
@@ -881,6 +1062,15 @@ mod tests {
                 "{source}: {error:?}"
             );
         }
+        let source = "{x | (x, x + 1) <- {(1, 2)}}";
+        let error = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .err()
+            .expect("a pre-generator expression cannot consume that generator's binding");
+        assert_eq!(
+            error.code, "source-semantics/unsupported-comprehension-control",
+            "{source}: {error:?}"
+        );
     }
 
     #[test]
@@ -897,6 +1087,9 @@ mod tests {
             "[item + 1 | item <- [1 2 3], item > 1]",
             "{item + 1 | item <- {1,2,3}, item > 1}",
             "[(x,y) | x <- [1 2], x <- [2 3], y <- [4 5]]",
+            "[1 | 1 + 1 <- [2 3]]",
+            "[x | x <- [1 2], x + 1 <- [2 4]]",
+            "{x | (x, 1 + 1) <- {(1, 2)}}",
         ] {
             let mut compiled = compile(source);
             let artifact = compiled
