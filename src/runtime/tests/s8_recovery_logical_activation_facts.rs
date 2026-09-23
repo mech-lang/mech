@@ -87,6 +87,22 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
 }
 
 #[test]
+fn closed_whole_value_comparisons_have_scalar_populations() {
+    exact_closed_mask(
+        "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := [1 2] !== [1 3]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := [:Point :Point] == [:Point :Point]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+}
+
+#[test]
 fn live_masks_still_require_one_explicit_fixed_population_fact() {
     let artifact = compile("x := [1 2 3]\nx[mask<[bool]:1,3>]\n");
     let decoded = roundtrip(&artifact);
