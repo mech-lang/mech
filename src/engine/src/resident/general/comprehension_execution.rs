@@ -4670,19 +4670,30 @@ impl ReactiveInstance {
                 let dimensions = if control.kind == crate::ComprehensionKind::MatrixPreserveShape {
                     let source_shape = control.steps.iter().find_map(|step| match step {
                         crate::resident::general::comprehension::ActivatedCollectionStep::Generator {
+                            source,
                             source_schema,
                             shape_values,
                             ..
-                        } => Some((*source_schema, shape_values.as_ref())),
+                        } => Some((*source, *source_schema, shape_values.as_ref())),
                         _ => None,
                     });
-                    let (source_schema, shape_values) =
+                    let (source_location, source_schema, activation_shape_values) =
                         source_shape.ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                    let source_value = self
+                        .read_location(source_location, working)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+                    let shape_values = generator_shape_values(
+                        source_value,
+                        source_schema,
+                        activation_shape_values,
+                        &schemas,
+                    )
+                    .map_err(fail)?;
                     let source = schemas
                         .get(source_schema)
                         .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
                     let source_shape = source
-                        .instantiate_shape(shape_values.to_vec().into_boxed_slice())
+                        .instantiate_shape(shape_values)
                         .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
                     let SchemaBody::Matrix { dimensions, .. } =
                         source

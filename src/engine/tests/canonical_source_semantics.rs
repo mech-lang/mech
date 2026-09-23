@@ -1187,6 +1187,106 @@ fn pattern_function_lifts_keep_dynamic_collection_shape_ownership() {
 }
 
 #[test]
+fn pattern_function_lift_uses_live_matrix_dimensions_on_each_turn() {
+    let source =
+        "identity(n<(f64,f64)>) => <(f64,f64)>\n  | n => n.\nidentity(signal<[(f64,f64)]>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let input_schema = artifact.inputs()[0].schema;
+    let schema = artifact.schemas().get(input_schema).unwrap();
+    let shape_for = |rows, columns| {
+        mech_core::shape_for_schema_components(
+            schema,
+            &[(
+                schema.body(),
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Tuple(
+                        vec![
+                            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                        ]
+                        .into_boxed_slice(),
+                    )),
+                    dimensions: vec![
+                        mech_core::DimensionExpr::Constant(rows),
+                        mech_core::DimensionExpr::Constant(columns),
+                    ]
+                    .into_boxed_slice(),
+                },
+            )],
+            None,
+        )
+        .unwrap()
+    };
+    let mut facts = ActivationFacts::default();
+    facts
+        .slot_shapes
+        .insert(artifact.inputs()[0].slot, shape_for(1, 6));
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 16),
+        &artifact,
+        &catalog,
+        &facts,
+    )
+    .unwrap();
+    for (rows, columns) in [(1, 6), (2, 3), (2, 2)] {
+        let shape = shape_for(rows, columns);
+        let input = mech_core::ValueDraft {
+            schema: input_schema,
+            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                (0..rows * columns)
+                    .map(|value| {
+                        ValueDataDraft::Tuple(
+                            vec![
+                                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(
+                                    value as f64,
+                                )),
+                                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0)),
+                            ]
+                            .into_boxed_slice(),
+                        )
+                    })
+                    .collect(),
+            ),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            artifact.schemas(),
+        ))
+        .unwrap();
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::Snapshot(&[Some(input)]),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = output
+            .schemas()
+            .unwrap()
+            .get(output.schema())
+            .unwrap()
+            .closed_body(output.shape())
+            .unwrap()
+        else {
+            panic!("lift must publish a matrix")
+        };
+        assert_eq!(
+            dimensions.as_ref(),
+            &[
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns)
+            ]
+        );
+    }
+}
+
+#[test]
 fn set_lift_rejects_results_the_resident_cannot_canonicalize() {
     let source = "render(n<f64>) => <string>\n  | n => \"item\".\nrender({1. 2.})\n";
     let error = CanonicalSourceFrontend
