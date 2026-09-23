@@ -955,17 +955,33 @@ fn runtime_reified_constraints(
     source: &ValueCell,
     target_value: &mech_core::Value,
     expected_output: &SchemaBody,
-) -> MResult<ReifiedTargetConstraints> {
-    let ValueData::Type(ReifiedType::Kind(kind)) = target_value.data() else {
-        return Err(invalid_reified_conversion_target(
-            "compiled reified conversion requires a kind target",
-        ));
-    };
+) -> MResult<Option<ReifiedTargetConstraints>> {
     let source_snapshot = source.snapshot()?;
     let schemas = source_snapshot
         .schemas()
         .ok_or_else(|| invalid_reified_conversion_target("source schema context is unavailable"))?;
     let source_body = source.closed_schema_body()?;
+    let kind = match target_value.data() {
+        ValueData::Type(ReifiedType::Kind(kind)) => kind,
+        ValueData::Type(ReifiedType::Schema(key)) => {
+            let schema = schemas
+                .find_by_key(*key)
+                .and_then(|id| schemas.get(id))
+                .ok_or_else(|| invalid_reified_conversion_target("unknown target schema key"))?;
+            let expected = materialize_declared_conversion_shape(&source_body, schema.body());
+            if expected_output != &expected {
+                return Err(invalid_reified_conversion_target(
+                    "compiled reified conversion output differs from target schema",
+                ));
+            }
+            return Ok(None);
+        }
+        _ => {
+            return Err(invalid_reified_conversion_target(
+                "compiled reified conversion requires a type target",
+            ));
+        }
+    };
     let (mut target, declarations) = schema_body_from_reified_kind(kind, &schemas)?;
     close_reified_enum_targets(&source_body, &mut target);
     inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
@@ -980,7 +996,7 @@ fn runtime_reified_constraints(
             "compiled reified conversion output differs from target kind",
         ));
     }
-    Ok(constraints)
+    Ok(Some(constraints))
 }
 
 #[cfg(feature = "convert")]
@@ -1118,8 +1134,11 @@ impl MechFunctionImpl for RuntimeReifiedKindConversion {
         let expected = conversion_target_schema(&source_schema, &self.plan.step)
             .map_err(conversion_execution_error)?;
         let target = frame.snapshot_input_cell(self.target.cell(), 1)?;
-        runtime_reified_constraints(self.source.cell(), &target, &expected)?
-            .validate(self.source.cell())?;
+        if let Some(constraints) =
+            runtime_reified_constraints(self.source.cell(), &target, &expected)?
+        {
+            constraints.validate(self.source.cell())?;
+        }
         stage_conversion_output(frame, self.source.cell(), self.output.cell(), &self.plan)?;
         Ok(mech_core::ReactiveSolveStatus::Changed)
     }
@@ -1661,14 +1680,11 @@ fn solve_reified_target_bindings(
     target: &SchemaBody,
     declarations: &[DimensionParameterDeclaration],
 ) -> MResult<Vec<Option<DimensionExpr>>> {
-    // Both the exact-bound propagation and the dimension-binding traversal
-    // can revisit the whole target once per parameter. Apply the same finite
-    // solver limits before either loop runs.
-    let mut equations = Vec::new();
-    collect_reified_dimension_equations(source, target, &mut equations);
-    if declarations.len() > MAX_REIFIED_BINDING_PARAMETERS
-        || equations.len() > MAX_REIFIED_SOLVER_EQUATIONS
-    {
+    // Both the exact-bound propagation and dimension-binding traversal can
+    // revisit the whole target once per parameter. Limit that repeated work
+    // before either loop runs; the joint equation limit applies only to axes
+    // still unresolved after these direct-binding passes.
+    if declarations.len() > MAX_REIFIED_BINDING_PARAMETERS {
         return Err(invalid_reified_conversion_target(
             "joint target dimension system exceeds the solver limit",
         ));
@@ -2289,8 +2305,19 @@ fn solve_joint_reified_dimensions(
             "joint target dimension system exceeds the solver limit",
         ));
     }
+    let mut collected = Vec::new();
+    collect_reified_dimension_equations(source, target, &mut collected);
     let mut equations = Vec::new();
-    collect_reified_dimension_equations(source, target, &mut equations);
+    for (source, target) in collected {
+        if reified_dimension_value(source).is_none() {
+            continue;
+        }
+        let mut unbound = Vec::new();
+        unbound_reified_parameter(target, bindings, &mut unbound)?;
+        if !unbound.is_empty() {
+            equations.push((source, target));
+        }
+    }
     let exact_bounds = declarations
         .iter()
         .filter(|declaration| exact_reified_parameter_bound(declaration, bindings, &unknown))
@@ -3163,17 +3190,8 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             MechError::from(error.with_origin(TypeConstraintOrigin::new("convert/kind", None)))
         })?;
         let output = execute_conversion_plan(&source, &target, &plan)?;
-        let reified_target = reified_constraints.as_ref().map(|_| target_cell);
-        let runtime_function = if reified_target.is_some() {
-            "convert/kind/reified"
-        } else {
-            "convert/kind"
-        };
-        context.resolve_syntax_operation_contract(if reified_target.is_some() {
-            &CHECKED_TYPE_CONVERSION_CONTRACT
-        } else {
-            &PURE_TYPE_CONVERSION_CONTRACT
-        })?;
+        let reified_target = Some(target_cell);
+        context.resolve_syntax_operation_contract(&CHECKED_TYPE_CONVERSION_CONTRACT)?;
         context.certify_instance(
             planned_type_conversion_instance(
                 source,
@@ -3182,7 +3200,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
                 reified_constraints,
                 reified_target,
             ),
-            mech_core::RuntimeFunctionId::from_name(runtime_function),
+            mech_core::RuntimeFunctionId::from_name("convert/kind/reified"),
             mech_core::ExecutionTarget::DirectRuntime,
             mech_core::ImplementationMemoryClass::CanonicalFinalize,
         )
@@ -3208,8 +3226,11 @@ impl MechFunctionImpl for PlannedTypeConversion {
             let expected = conversion_target_schema(&source_schema, &self.plan.step)
                 .map_err(conversion_execution_error)?;
             let target = frame.snapshot_input_cell(target, 1)?;
-            runtime_reified_constraints(&self.source, &target, &expected)?
-                .validate(&self.source)?;
+            if let Some(constraints) =
+                runtime_reified_constraints(&self.source, &target, &expected)?
+            {
+                constraints.validate(&self.source)?;
+            }
         } else if let Some(constraints) = &self.reified_constraints {
             constraints.validate(&self.source)?;
         }
@@ -4281,6 +4302,46 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn schema_target_remains_a_live_conversion_dependency() {
+        let source = ValueCell::from_exact(7.0_f64).unwrap();
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(source.schema_key())),
+        )
+        .unwrap();
+        let invocation = SpecializationInvocation::from_cells(
+            vec![source.clone(), target.clone()].into_boxed_slice(),
+        );
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
+        let conversion = ConvertKind
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+        assert_eq!(conversion.instance().inputs().len(), 2);
+        conversion.instance().solve_result().unwrap();
+        let runtime = FunctionInvocation::binary(
+            ValueCell::from_exact(0.0_f64).unwrap(),
+            source,
+            target.clone(),
+        );
+        assert!(RuntimeReifiedKindConversion::new_invocation(runtime).is_ok());
+        let other = ValueCell::from_exact(0_u8).unwrap();
+        let changed_target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(other.schema_key())),
+        )
+        .unwrap();
+        target.replace(&changed_target.snapshot().unwrap()).unwrap();
+        assert!(conversion.instance().solve_result().is_err());
+    }
+
+    #[test]
     fn runtime_reified_conversion_rejects_output_that_differs_from_target() {
         let (kind_id, path) = builtin_scalar_named_kind(mech_core::hash_str("f64")).unwrap();
         let kind = ReifiedKind::from_closed_kind(
@@ -4504,6 +4565,36 @@ mod canonical_conversion_tests {
                 .into_boxed_slice(),
         };
         assert!(solve_reified_target_bindings(&source, &target, &declarations).is_err());
+    }
+
+    #[test]
+    fn concrete_axes_do_not_consume_joint_solver_equation_limit() {
+        let axes = vec![DimensionExpr::Constant(1); MAX_REIFIED_SOLVER_EQUATIONS + 1];
+        let shape = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: axes.into_boxed_slice(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&shape, &shape, &[]).unwrap(),
+            vec![]
+        );
+        let id = DimensionParameterId::new(0);
+        let declaration = DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let repeated = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: vec![DimensionExpr::Parameter(id); MAX_REIFIED_SOLVER_EQUATIONS + 1]
+                .into_boxed_slice(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&shape, &repeated, &[declaration]).unwrap(),
+            vec![Some(DimensionExpr::Constant(1))],
+        );
     }
 
     #[test]
