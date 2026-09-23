@@ -5122,8 +5122,9 @@ impl ValueCell {
             .schemas
             .get(self.binding.schema)
             .expect("value-cell schema remains present");
+        let shape_values = admitted_copy_slice(shape.parameter_values(), construction)?;
         let shape = schema
-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .instantiate_shape(shape_values)
             .map_err(MechError::from)?;
         finalize_draft_with_construction(
             self.binding.schema,

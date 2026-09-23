@@ -871,13 +871,18 @@ struct ReifiedTargetConstraints {
 
 #[cfg(feature = "convert")]
 impl ReifiedTargetConstraints {
-    fn validate(&self, source: &ValueCell) -> MResult<()> {
+    fn resolved_target(&self, source: &ValueCell) -> MResult<SchemaBody> {
         let bindings = solve_reified_target_bindings(
             &source.closed_schema_body()?,
             &self.target,
             &self.declarations,
         )?;
-        validate_reified_parameter_bindings(&self.declarations, &bindings)
+        validate_reified_parameter_bindings(&self.declarations, &bindings)?;
+        substitute_reified_target(&self.target, &bindings)
+    }
+
+    fn validate(&self, source: &ValueCell) -> MResult<()> {
+        self.resolved_target(source).map(|_| ())
     }
 }
 
@@ -946,6 +951,7 @@ pub struct RuntimeReifiedKindConversion {
 fn runtime_reified_constraints(
     source: &ValueCell,
     target: &ValueCell,
+    output: &ValueCell,
 ) -> MResult<ReifiedTargetConstraints> {
     let target_value = target.snapshot()?;
     let ValueData::Type(ReifiedType::Kind(kind)) = target_value.data() else {
@@ -963,7 +969,13 @@ fn runtime_reified_constraints(
         target,
         declarations,
     };
-    constraints.validate(source)?;
+    let resolved = constraints.resolved_target(source)?;
+    let expected = materialize_declared_conversion_shape(&source.closed_schema_body()?, &resolved);
+    if output.closed_schema_body()? != expected {
+        return Err(invalid_reified_conversion_target(
+            "compiled reified conversion output differs from target kind",
+        ));
+    }
     Ok(constraints)
 }
 
@@ -1031,7 +1043,7 @@ impl MechFunctionFactory for RuntimeReifiedKindConversion {
         let source = source.value();
         let target = target.value();
         let plan = runtime_kind_conversion_plan(output.cell(), source.cell())?;
-        let constraints = runtime_reified_constraints(source.cell(), target.cell())?;
+        let constraints = runtime_reified_constraints(source.cell(), target.cell(), output.cell())?;
         Ok(Box::new(Self {
             source,
             target,
@@ -1171,7 +1183,7 @@ fn validate_runtime_reified_kind_conversion(
         ));
     };
     runtime_kind_conversion_plan(output, source)?;
-    runtime_reified_constraints(source, target).map(|_| ())
+    runtime_reified_constraints(source, target, output).map(|_| ())
 }
 
 mech_core::declare_native_runtime_factory! {
@@ -1550,6 +1562,31 @@ fn solve_reified_target_bindings(
     declarations: &[DimensionParameterDeclaration],
 ) -> MResult<Vec<Option<DimensionExpr>>> {
     let mut bindings = vec![None; declarations.len()];
+    // Exact bounds are witnesses even when their parameters occur only inside
+    // a compound equation. Resolve dependencies between exact bounds first.
+    for _ in 0..declarations.len() {
+        let mut changed = false;
+        for declaration in declarations {
+            let index = declaration.id.get() as usize;
+            if bindings.get(index).is_none() {
+                return Err(invalid_reified_conversion_target(
+                    "unknown target dimension parameter",
+                ));
+            }
+            if bindings[index].is_some() || declaration.upper_bound.is_none() {
+                continue;
+            }
+            if let Ok((lower, upper)) = reified_parameter_bounds(declaration, &bindings)
+                && lower == upper
+            {
+                bindings[index] = Some(DimensionExpr::Constant(lower));
+                changed = true;
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
     for _ in 0..=declarations.len() {
         let prior = bindings.clone();
         bind_reified_target_dimensions(source, target, declarations, &mut bindings)?;
@@ -3603,6 +3640,31 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn runtime_reified_conversion_rejects_output_that_differs_from_target() {
+        let (kind_id, path) = builtin_scalar_named_kind(mech_core::hash_str("f64")).unwrap();
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Named(kind_id),
+            &[],
+            &NamedKinds(BTreeMap::from([(kind_id, path)])),
+        )
+        .unwrap();
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                kind.canonical_bytes().to_vec().into_boxed_slice(),
+            )),
+        )
+        .unwrap();
+        let source = ValueCell::from_exact(1.5_f64).unwrap();
+        let wrong_output = ValueCell::from_exact(0_u8).unwrap();
+        let invocation = FunctionInvocation::binary(wrong_output, source.clone(), target.clone());
+        assert!(RuntimeReifiedKindConversion::new_invocation(invocation).is_err());
+        let matching_output = ValueCell::from_exact(0.0_f64).unwrap();
+        let invocation = FunctionInvocation::binary(matching_output, source, target);
+        assert!(RuntimeReifiedKindConversion::new_invocation(invocation).is_ok());
+    }
+
+    #[test]
     fn bounded_and_compound_reified_dimensions_bind_unique_extents() {
         let id = DimensionParameterId::new(0);
         let declaration = DimensionParameterDeclaration {
@@ -3715,6 +3777,101 @@ mod canonical_conversion_tests {
             ],
         );
         assert!(solve_reified_target_bindings(&source(5, 4), &target, &declarations).is_err());
+    }
+
+    #[test]
+    fn fixed_reified_bound_determines_other_compound_parameter() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: p,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(2),
+                upper_bound: Some(DimensionExpr::Constant(2)),
+            },
+            DimensionParameterDeclaration {
+                id: q,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+        ];
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Add(
+                [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+            )]
+            .into(),
+        };
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(5)].into(),
+        };
+        let bindings = solve_reified_target_bindings(&source, &target, &declarations).unwrap();
+        assert_eq!(
+            bindings,
+            vec![
+                Some(DimensionExpr::Constant(2)),
+                Some(DimensionExpr::Constant(3)),
+            ],
+        );
+        validate_reified_parameter_bindings(&declarations, &bindings).unwrap();
+    }
+
+    #[test]
+    fn dependent_fixed_reified_bounds_determine_compound_parameters() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let r = DimensionParameterId::new(2);
+        let exact_q =
+            DimensionExpr::Add([DimensionExpr::Parameter(p), DimensionExpr::Constant(1)].into());
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: p,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(2),
+                upper_bound: Some(DimensionExpr::Constant(2)),
+            },
+            DimensionParameterDeclaration {
+                id: q,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: exact_q.clone(),
+                upper_bound: Some(exact_q),
+            },
+            DimensionParameterDeclaration {
+                id: r,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+        ];
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Add(
+                [DimensionExpr::Parameter(q), DimensionExpr::Parameter(r)].into(),
+            )]
+            .into(),
+        };
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(6)].into(),
+        };
+        let bindings = solve_reified_target_bindings(&source, &target, &declarations).unwrap();
+        assert_eq!(
+            bindings,
+            vec![
+                Some(DimensionExpr::Constant(2)),
+                Some(DimensionExpr::Constant(3)),
+                Some(DimensionExpr::Constant(3)),
+            ],
+        );
+        validate_reified_parameter_bindings(&declarations, &bindings).unwrap();
     }
 
     #[test]
