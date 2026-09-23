@@ -106,6 +106,7 @@ pub struct CanonicalSourceProgram {
 /// to exported graph bindings, so their live dependencies remain in the artifact.
 pub struct CanonicalOrderedDocument {
     pub document: DocumentSyntax,
+    pub nominal_origin: Option<CanonicalNominalPath>,
     pub identity: usize,
     pub input_schemas: BTreeMap<String, SchemaBody>,
     pub resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -602,9 +603,24 @@ impl std::error::Error for SourceSemanticError {}
 
 /// Engine entry point for canonical typed source.
 #[derive(Clone, Debug, Default)]
-pub struct CanonicalSourceFrontend;
+pub struct CanonicalSourceFrontend {
+    nominal_origin: Option<CanonicalNominalPath>,
+}
+
+#[expect(
+    non_upper_case_globals,
+    reason = "preserve unit-style frontend construction while adding explicit nominal provenance"
+)]
+pub const CanonicalSourceFrontend: CanonicalSourceFrontend = CanonicalSourceFrontend {
+    nominal_origin: None,
+};
 
 impl CanonicalSourceFrontend {
+    pub fn with_nominal_origin(&self, origin: CanonicalNominalPath) -> Self {
+        Self {
+            nominal_origin: Some(origin),
+        }
+    }
     pub fn compile_expression(
         &self,
         expression: &ExpressionSyntax,
@@ -638,7 +654,19 @@ impl CanonicalSourceFrontend {
         document: &DocumentSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_document(document)
+        document_lowering::compile_document(document, self.nominal_origin.as_ref())
+    }
+
+    /// Compile nominal declarations using the defining package and module
+    /// namespace. The first origin segment is the manifest package name; any
+    /// remaining segments are the canonical defining module path.
+    pub fn compile_document_with_nominal_origin(
+        &self,
+        document: &DocumentSyntax,
+        origin: &CanonicalNominalPath,
+    ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::compile_document_with_nominal_origin(document, origin)
     }
 
     /// Executable root statements selected by the document compiler.
@@ -669,7 +697,11 @@ impl CanonicalSourceFrontend {
         catalog: Arc<mech_core::FunctionCatalog>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_document_with_catalog(document, catalog)
+        document_lowering::compile_document_with_catalog(
+            document,
+            self.nominal_origin.as_ref(),
+            catalog,
+        )
     }
 
     pub fn compile_interactive_document_with_catalog(
@@ -678,7 +710,11 @@ impl CanonicalSourceFrontend {
         catalog: Arc<mech_core::FunctionCatalog>,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_interactive_document_with_catalog(document, catalog)
+        document_lowering::compile_interactive_document_with_catalog(
+            document,
+            self.nominal_origin.as_ref(),
+            catalog,
+        )
     }
 
     /// Compile with detached planning-value schemas supplied by the product
@@ -693,6 +729,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_catalog_and_input_schemas(
             document,
+            self.nominal_origin.as_ref(),
             catalog,
             input_schemas,
         )
@@ -748,6 +785,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         let mut program = document_lowering::compile_document_with_catalog_and_resources(
             document,
+            self.nominal_origin.as_ref(),
             catalog,
             input_schemas,
             resource_writes,
@@ -829,6 +867,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_options(
             document,
+            self.nominal_origin.as_ref(),
             Some(catalog),
             input_schemas,
             interactive,
@@ -909,6 +948,7 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::prepare_mixed_document_with_catalog_and_resources(
             document,
+            self.nominal_origin.as_ref(),
             catalog,
             input_schemas,
             resource_writes,
@@ -927,7 +967,11 @@ impl CanonicalSourceFrontend {
         name: &str,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(document)?;
-        document_lowering::compile_named_document_scope(document, name)
+        document_lowering::compile_named_document_scope(
+            document,
+            name,
+            self.nominal_origin.as_ref(),
+        )
     }
     /// Compile one retained Mika-local body without importing its parent's or
     /// nested Mika children's bindings. The artifact owns this section's state.
@@ -936,7 +980,7 @@ impl CanonicalSourceFrontend {
         section: &mech_syntax::document::MikaSectionSyntax,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(section)?;
-        document_lowering::compile_mika_section(section, None)
+        document_lowering::compile_mika_section(section, None, self.nominal_origin.as_ref())
     }
 
     /// Compile repeated named fences within one Mika-local owner.
@@ -946,7 +990,7 @@ impl CanonicalSourceFrontend {
         name: &str,
     ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
         reject_recovered_syntax(section)?;
-        document_lowering::compile_mika_section(section, Some(name))
+        document_lowering::compile_mika_section(section, Some(name), self.nominal_origin.as_ref())
     }
 }
 
@@ -2346,7 +2390,17 @@ impl SemanticBuilder {
             },
             None => (name, None),
         };
-        if let (Some(expected), Some(qualified)) = (expected, qualified)
+        let expected_enum = expected.and_then(|expected| match &expected.body {
+            SchemaBody::Enum { .. } => Some(expected.clone()),
+            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
+                Some(SchemaDraft {
+                    body: payload.as_ref().clone(),
+                    dimension_parameters: expected.dimension_parameters.clone(),
+                })
+            }
+            _ => None,
+        });
+        if let (Some(expected), Some(qualified)) = (expected_enum.as_ref(), qualified)
             && expected != qualified
         {
             return Err(SourceSemanticError {
@@ -2356,7 +2410,7 @@ impl SemanticBuilder {
             });
         }
         let qualified_enum = qualified.is_some();
-        let expected = qualified.or(expected);
+        let expected = qualified.or(expected_enum.as_ref());
         let Some(variants) = self.declared_variants.get(name) else {
             if qualified_enum {
                 return Err(SourceSemanticError {
@@ -7249,16 +7303,15 @@ fn kind_schema_body(
                     Some(kind) => kind.schema_body(),
                     None => {
                         if let Some(declaration) = declarations.get(&name) {
-                            if !declaration.dimension_parameters.is_empty() {
-                                return Err(SourceSemanticError {
-                                    code: "source-semantics/declared-kind-requires-dimensions",
-                                    message: format!(
-                                        "declared kind {name:?} requires reified dimension lowering"
-                                    ),
-                                    anchor,
-                                });
-                            }
-                            declaration.body.clone()
+                            mech_core::rebase_schema_draft_dimensions(declaration, dimensions)
+                                .map_err(|error| {
+                                    internal(
+                                        anchor,
+                                        format!(
+                                            "unable to instantiate declared kind {name:?}: {error:?}"
+                                        ),
+                                    )
+                                })?
                         } else if pending.contains(&name) {
                             return Err(SourceSemanticError {
                                 code: "source-semantics/pending-kind-declaration",

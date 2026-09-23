@@ -5,9 +5,9 @@ use std::path::PathBuf;
 
 use mech_core::snapshot::{ReifiedKind, ReifiedTypeDraft};
 use mech_core::{
-    ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, KindExpr, ManagedMemoryBudget,
-    OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody, ShapeRule, ValueData,
-    ValueDataDraft,
+    CanonicalNominalPath, ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, KindExpr,
+    ManagedMemoryBudget, OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody,
+    ShapeRule, ValueData, ValueDataDraft,
 };
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate,
@@ -82,12 +82,16 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(snapshot.syntax()).expect("canonical Document")
 }
 
+fn nominal_origin() -> CanonicalNominalPath {
+    CanonicalNominalPath::new(vec!["mech-test".to_owned(), "canonical-source".to_owned()]).unwrap()
+}
+
 fn execute_document<'a>(
     source: &str,
     turns: impl IntoIterator<Item = (Vec<ResidentValueRef<'a>>, ValueDataDraft)>,
 ) {
     let compiled = CanonicalSourceFrontend
-        .compile_document(&document(source))
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
         .unwrap_or_else(|error| panic!("canonical document did not compile: {error:?}"));
     let artifact = compiled.compile_artifact().unwrap();
     let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
@@ -167,8 +171,27 @@ fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment(
     ));
     alias.compile_artifact().unwrap();
 
+    let shaped_alias = CanonicalSourceFrontend
+        .compile_document(&document("<row> := <[f64]>\nx<row> := [1 2]\nx\n"))
+        .expect("an open matrix alias specializes at each use");
+    shaped_alias.compile_artifact().unwrap();
+
+    for source in [
+        "<event> := :idle | :busy\nvalue<*> := :idle\nvalue\n",
+        "<event> := :idle | :busy\nvalue<event?> := :idle\nvalue\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+            .unwrap_or_else(|error| panic!("permissive enum context {source:?}: {error:?}"))
+            .compile_artifact()
+            .unwrap();
+    }
+
     let enumeration = CanonicalSourceFrontend
-        .compile_document(&document("<color> := Red | Green\nx := :Red\nx\n"))
+        .compile_document_with_nominal_origin(
+            &document("<color> := Red | Green\nx := :Red\nx\n"),
+            &nominal_origin(),
+        )
         .unwrap();
     let schema = enumeration
         .schemas()
@@ -192,6 +215,38 @@ fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment(
             .revision(),
         artifact.revision()
     );
+
+    let source = document("<color> := :red | :blue\nvalue := :red\nvalue\n");
+    let compile_in = |package: &str, module: &str| {
+        let origin =
+            CanonicalNominalPath::new(vec![package.to_owned(), module.to_owned()]).unwrap();
+        let compiled = CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&source, &origin)
+            .unwrap();
+        let schema = compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap();
+        let SchemaBody::Enum { key, .. } = schema.body() else {
+            panic!("declared enum output");
+        };
+        *key
+    };
+    assert_ne!(
+        compile_in("first-package", "colors"),
+        compile_in("second-package", "colors")
+    );
+    assert_ne!(
+        compile_in("first-package", "colors"),
+        compile_in("first-package", "other")
+    );
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_document(&source)
+            .unwrap_err()
+            .code,
+        "source-semantics/nominal-origin-required"
+    );
 }
 
 #[test]
@@ -213,7 +268,10 @@ fn declared_scalar_aliases_type_literal_values_and_negation() {
 #[test]
 fn declared_enum_kind_values_reify_the_nominal_kind() {
     let compiled = CanonicalSourceFrontend
-        .compile_document(&document("<color> := :red | :blue\n<color>\n"))
+        .compile_document_with_nominal_origin(
+            &document("<color> := :red | :blue\n<color>\n"),
+            &nominal_origin(),
+        )
         .unwrap();
     let artifact = compiled.compile_artifact().unwrap();
     let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
@@ -248,12 +306,15 @@ fn declared_enum_kind_values_reify_the_nominal_kind() {
 #[test]
 fn contextual_and_qualified_enum_atoms_resolve_exact_nominal_kinds() {
     let contextual = CanonicalSourceFrontend
-        .compile_document(&document(
-            "<first> := :none | :some<f64>\n\
+        .compile_document_with_nominal_origin(
+            &document(
+                "<first> := :none | :some<f64>\n\
              <second> := :none | :other<f64>\n\
              value<first> := :none\n\
              value\n",
-        ))
+            ),
+            &nominal_origin(),
+        )
         .unwrap();
     let contextual_schema = contextual
         .schemas()
@@ -263,9 +324,10 @@ fn contextual_and_qualified_enum_atoms_resolve_exact_nominal_kinds() {
     contextual.compile_artifact().unwrap();
 
     let qualified = CanonicalSourceFrontend
-        .compile_document(&document(
-            "<color> := :red | :green\nvalue<color> := :color/red\nvalue\n",
-        ))
+        .compile_document_with_nominal_origin(
+            &document("<color> := :red | :green\nvalue<color> := :color/red\nvalue\n"),
+            &nominal_origin(),
+        )
         .unwrap();
     let qualified_schema = qualified
         .schemas()
@@ -305,14 +367,17 @@ fn declared_annotations_in_comprehension_binding_prepasses_use_the_document_envi
 #[test]
 fn enum_payload_patterns_retain_nominal_identity_through_bytecode() {
     let compiled = CanonicalSourceFrontend
-        .compile_document(&document(
-            "<color> := :red<f64> | :green<f64>\n\
+        .compile_document_with_nominal_origin(
+            &document(
+                "<color> := :red<f64> | :green<f64>\n\
              my-color<color> := :red(300)\n\
              result := my-color?\n\
                | :red(x), x > 100 => x\n\
                | * => 0.\n\
              result\n",
-        ))
+            ),
+            &nominal_origin(),
+        )
         .unwrap();
     let artifact = compiled.compile_artifact().unwrap();
     let match_node = artifact
@@ -373,7 +438,7 @@ fn dynamic_enum_payloads_wrap_constant_and_live_values() {
     ];
     for (source, input) in samples {
         let compiled = CanonicalSourceFrontend
-            .compile_document(&document(source))
+            .compile_document_with_nominal_origin(&document(source), &nominal_origin())
             .unwrap_or_else(|error| panic!("dynamic enum {source:?}: {error:?}"));
         let artifact = compiled.compile_artifact().unwrap();
         let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
@@ -473,7 +538,7 @@ fn live_enum_publication_rolls_back_after_managed_allocation_failure() {
                   value<event> := :point((signal<f64>,true))\n\
                   value\n";
     let compiled = CanonicalSourceFrontend
-        .compile_document(&document(source))
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
         .unwrap();
     let artifact = compiled.compile_artifact().unwrap();
     let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();

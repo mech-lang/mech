@@ -235,6 +235,7 @@ pub enum SourceContextCapabilityScope {
 pub struct ResolvedSource {
     pub name: String,
     pub canonical_uri: String,
+    pub nominal_origin: Option<mech_core::CanonicalNominalPath>,
     pub source: MechSourceCode,
     /// Resolver-owned canonical revision. This is the source/syntax authority
     /// prepared for product compilation, indexing, rendering, and diagnostics.
@@ -267,6 +268,7 @@ impl ResolvedSource {
         Self {
             name: name.into(),
             canonical_uri: canonical_uri.into(),
+            nominal_origin: None,
             source,
             #[cfg(feature = "source")]
             source_document: None,
@@ -287,11 +289,34 @@ impl ResolvedSource {
         self
     }
 
+    pub fn with_nominal_origin(mut self, origin: mech_core::CanonicalNominalPath) -> Self {
+        #[cfg(feature = "source")]
+        if let Some(document) = self.source_document.take() {
+            self.source_document = Some(document.with_nominal_origin(origin.clone()));
+        }
+        self.nominal_origin = Some(origin);
+        self
+    }
+
     /// Attach the canonical revision only when it retains the exact same raw
     /// source. This prevents a resolver record from publishing two source
     /// authorities with different bytes.
     #[cfg(feature = "source")]
     pub fn with_source_document(mut self, document: SourceDocument) -> MResult<Self> {
+        let document = match (self.nominal_origin.as_ref(), document.nominal_origin()) {
+            (Some(resolved), Some(retained)) if resolved != retained => {
+                return invalid_resolved_source(
+                    "nominal_origin",
+                    "must agree with the retained document origin",
+                );
+            }
+            (Some(origin), _) => document.with_nominal_origin(origin.clone()),
+            (None, Some(origin)) => {
+                self.nominal_origin = Some(origin.clone());
+                document
+            }
+            (None, None) => document,
+        };
         self.validate_document_owner(&document)?;
         match &self.source {
             MechSourceCode::String(source)

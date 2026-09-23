@@ -77,9 +77,11 @@ pub(super) fn root_state_mutation_names(
 
 pub(super) fn compile_document(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
         None,
         BTreeMap::new(),
         false,
@@ -90,12 +92,21 @@ pub(super) fn compile_document(
     )
 }
 
+pub(super) fn compile_document_with_nominal_origin(
+    document: &DocumentSyntax,
+    origin: &CanonicalNominalPath,
+) -> Result<CanonicalSourceProgram, SourceSemanticError> {
+    compile_document(document, Some(origin))
+}
+
 pub(super) fn compile_document_with_catalog(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
         Some(catalog),
         BTreeMap::new(),
         false,
@@ -108,10 +119,12 @@ pub(super) fn compile_document_with_catalog(
 
 pub(super) fn compile_interactive_document_with_catalog(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
         Some(catalog),
         BTreeMap::new(),
         true,
@@ -124,11 +137,13 @@ pub(super) fn compile_interactive_document_with_catalog(
 
 pub(super) fn compile_document_with_catalog_and_input_schemas(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
         Some(catalog),
         input_schemas,
         false,
@@ -141,6 +156,7 @@ pub(super) fn compile_document_with_catalog_and_input_schemas(
 
 pub(super) fn compile_document_with_catalog_and_resources(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -148,6 +164,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_options(
         document,
+        nominal_origin,
         Some(catalog),
         input_schemas,
         interactive,
@@ -164,6 +181,7 @@ pub(super) fn compile_document_with_catalog_and_resources(
 pub struct CanonicalCoordinatorPlan {
     owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
+    nominal_origin: Option<CanonicalNominalPath>,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Arc<mech_core::FunctionCatalog>,
@@ -182,6 +200,7 @@ impl CanonicalCoordinatorPlan {
         compile_collected_document(
             self.owner,
             self.anchor,
+            self.nominal_origin.as_ref(),
             self.units,
             self.exports,
             Some(self.catalog),
@@ -197,6 +216,7 @@ impl CanonicalCoordinatorPlan {
 
 pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Arc<mech_core::FunctionCatalog>,
     input_schemas: BTreeMap<String, SchemaBody>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
@@ -255,6 +275,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     let coordinator = CanonicalCoordinatorPlan {
         owner: document.scope_id(),
         anchor,
+        nominal_origin: nominal_origin.cloned(),
         units: coordinator_units,
         exports: coordinator_exports,
         catalog: Arc::clone(&catalog),
@@ -274,6 +295,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     let compute = compile_collected_document(
         document.scope_id(),
         anchor,
+        nominal_origin,
         compute_units,
         compute_exports,
         Some(Arc::clone(&catalog)),
@@ -296,6 +318,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
     let compute_initializers = compile_collected_document(
         document.scope_id(),
         anchor,
+        nominal_origin,
         initializer_units,
         initializer_exports,
         Some(catalog),
@@ -319,6 +342,7 @@ pub(super) fn prepare_mixed_document_with_catalog_and_resources(
 
 pub(super) fn compile_document_with_options(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
@@ -334,6 +358,7 @@ pub(super) fn compile_document_with_options(
     compile_collected_document(
         document.scope_id(),
         anchor,
+        nominal_origin,
         units,
         exports,
         catalog,
@@ -349,14 +374,16 @@ pub(super) fn compile_document_with_options(
 pub(super) fn compile_named_document_scope(
     document: &DocumentSyntax,
     name: &str,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
-    compile_named_scope(document.syntax(), document.scope_id(), name)
+    compile_named_scope(document.syntax(), document.scope_id(), name, nominal_origin)
 }
 
 fn compile_named_scope(
     root: &SyntaxNode,
     owner: DocumentScopeId,
     name: &str,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(root);
     let mut units = Vec::new();
@@ -392,6 +419,7 @@ fn compile_named_scope(
     compile_collected_document(
         owner,
         anchor,
+        nominal_origin,
         units,
         exports,
         None,
@@ -407,13 +435,14 @@ fn compile_named_scope(
 pub(super) fn compile_mika_section(
     section: &mech_syntax::document::MikaSectionSyntax,
     name: Option<&str>,
+    nominal_origin: Option<&CanonicalNominalPath>,
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     let anchor = SourceSemanticAnchor::for_node(section.syntax());
     let body = section
         .body()
         .ok_or_else(|| internal(anchor, "Mika section has no retained body".to_owned()))?;
     if let Some(name) = name {
-        return compile_named_scope(body.syntax(), section.scope_id(), name);
+        return compile_named_scope(body.syntax(), section.scope_id(), name, nominal_origin);
     }
     let mut units = Vec::new();
     let mut exports = Vec::new();
@@ -421,6 +450,7 @@ pub(super) fn compile_mika_section(
     compile_collected_document(
         section.scope_id(),
         anchor,
+        nominal_origin,
         units,
         exports,
         None,
@@ -436,6 +466,7 @@ pub(super) fn compile_mika_section(
 fn compile_collected_document(
     owner: DocumentScopeId,
     anchor: SourceSemanticAnchor,
+    nominal_origin: Option<&CanonicalNominalPath>,
     units: Vec<DocumentUnit>,
     exports: Vec<ExportDeclarationSyntax>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
@@ -460,7 +491,7 @@ fn compile_collected_document(
     builder.resource_writes = resource_writes;
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
-    builder.register_document_types(&units)?;
+    builder.register_document_types(&units, nominal_origin)?;
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
@@ -1489,6 +1520,8 @@ pub(super) fn compile_ordered_documents(
         );
         builder.function_imports.clear();
         builder.local_functions.clear();
+        builder.declared_kinds.clear();
+        builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
         builder.resolved_source_modules = root.resolved_modules.clone();
         builder.input_schema_overrides = root
@@ -1543,6 +1576,7 @@ pub(super) fn compile_ordered_documents(
         let mut units = Vec::new();
         let mut exports = Vec::new();
         collect_document_units(root.document.syntax(), &mut units, &mut exports)?;
+        builder.register_document_types(&units, root.nominal_origin.as_ref())?;
         builder.register_document_functions(&units)?;
         builder.register_document_imports(&units, &root.resolved_modules)?;
         let mut bindings = builder.bindings.keys().cloned().collect();

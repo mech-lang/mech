@@ -110,6 +110,7 @@ impl SemanticBuilder {
     pub(super) fn register_document_types(
         &mut self,
         units: &[DocumentUnit],
+        nominal_origin: Option<&CanonicalNominalPath>,
     ) -> Result<(), SourceSemanticError> {
         let mut raw = BTreeMap::new();
         collect(units, &mut raw)?;
@@ -123,13 +124,25 @@ impl SemanticBuilder {
                         annotation_schema_draft_with_declarations(annotation, &resolved, &pending)
                     }
                     RawTypeDeclaration::Enum { variants, syntax } => {
-                        let path =
-                            CanonicalNominalPath::new(vec![name.clone()]).map_err(|error| {
-                                internal(
-                                    SourceSemanticAnchor::for_node(syntax),
-                                    format!("invalid enum path: {error:?}"),
-                                )
-                            })?;
+                        let origin = nominal_origin.ok_or_else(|| SourceSemanticError {
+                            code: "source-semantics/nominal-origin-required",
+                            message: "enum declarations require the defining package and module namespace".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(syntax),
+                        })?;
+                        let path = CanonicalNominalPath::new(
+                            origin
+                                .segments()
+                                .iter()
+                                .cloned()
+                                .chain(std::iter::once(name.clone()))
+                                .collect::<Vec<_>>(),
+                        )
+                        .map_err(|error| {
+                            internal(
+                                SourceSemanticAnchor::for_node(syntax),
+                                format!("invalid enum path: {error:?}"),
+                            )
+                        })?;
                         let variants = variants
                             .iter()
                             .map(|(variant, payload, syntax)| {

@@ -57,6 +57,15 @@ type ComputeRegionInterface = ();
 #[cfg(not(feature = "compute"))]
 type ComputeValue = ();
 
+fn canonical_frontend(document: &SourceDocument) -> CanonicalSourceFrontend {
+    document
+        .nominal_origin()
+        .cloned()
+        .map_or(CanonicalSourceFrontend, |origin| {
+            CanonicalSourceFrontend.with_nominal_origin(origin)
+        })
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CanonicalProgramCompilationError {
     pub reason: String,
@@ -749,7 +758,7 @@ impl<'a> ProgramCompilerView<'a> {
         published: &BTreeSet<String>,
         initialization: bool,
     ) -> MResult<CanonicalSourceProgram> {
-        let mut program = CanonicalSourceFrontend
+        let mut program = canonical_frontend(document)
             .compile_document_with_planning_contract(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
@@ -950,8 +959,9 @@ impl<'a> ProgramCompilerView<'a> {
         } else {
             CanonicalSourceFrontend::compile_document_with_catalog_and_resources
         };
+        let frontend = canonical_frontend(document);
         let mut program = compile(
-            &CanonicalSourceFrontend,
+            &frontend,
             &document.document(),
             Arc::clone(&self.function_catalog),
             input_schemas,
@@ -1179,6 +1189,7 @@ impl<'a> ProgramCompilerView<'a> {
             }
             documents.push(CanonicalOrderedDocument {
                 document: document.document(),
+                nominal_origin: document.nominal_origin().cloned(),
                 identity: ordinal,
                 input_schemas: schemas,
                 resource_writes: writes,
@@ -1298,8 +1309,9 @@ impl<'a> ProgramCompilerView<'a> {
         } else {
             CanonicalSourceFrontend::compile_document_with_planning_contract
         };
+        let frontend = canonical_frontend(document);
         let program = compile(
-            &CanonicalSourceFrontend,
+            &frontend,
             &document.document(),
             Arc::clone(&self.function_catalog),
             schemas,
@@ -1924,7 +1936,7 @@ impl<'a> ProgramCompilerView<'a> {
                     .or_else(|| module_namespace_for_import(&import.declaration))
             })
             .collect();
-        let mut programs = CanonicalSourceFrontend
+        let mut programs = canonical_frontend(document)
             .prepare_mixed_document_with_planning_contract(
                 &document.document(),
                 Arc::clone(&self.function_catalog),

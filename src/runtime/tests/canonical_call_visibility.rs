@@ -1,6 +1,6 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
-use mech_core::{FunctionCatalog, FunctionExposure, ReactiveInstanceId};
+use mech_core::{CanonicalNominalPath, FunctionCatalog, FunctionExposure, ReactiveInstanceId};
 use mech_engine::resident::{ActivationFacts, activate};
 use mech_engine::{CanonicalSourceFrontend, SourceSemanticError};
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot, SourceDocument};
@@ -22,6 +22,21 @@ fn document(source: &str) -> SourceDocument {
         document.snapshot().diagnostics
     );
     document
+}
+
+#[test]
+fn product_compiler_uses_the_retained_defining_origin_for_enums() {
+    let source = "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n";
+    let origin = CanonicalNominalPath::new(vec!["sample-package".to_owned()]).unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    assert!(compiler.compile_document(&document(source)).is_err());
+    let compiled = compiler
+        .compile_document(&document(source).with_nominal_origin(origin))
+        .expect("product compilation receives the defining package");
+    assert!(!compiled.bytecode().is_empty());
 }
 
 fn rejected(source: &str, catalog: Arc<FunctionCatalog>) -> SourceSemanticError {
@@ -191,6 +206,7 @@ fn ordered_roots_do_not_share_callable_imports() {
     let root = |identity, source: &str| CanonicalOrderedDocument {
         identity,
         document: document(source).document(),
+        nominal_origin: None,
         input_schemas: BTreeMap::new(),
         resource_writes: BTreeMap::new(),
         imports: BTreeMap::new(),

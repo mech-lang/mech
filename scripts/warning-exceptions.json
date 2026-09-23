@@ -182,6 +182,18 @@
       "reason": "retained as a frozen bytecode factory outside the standard linked runtime catalog"
     },
     {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when callers migrate from the unit-style frontend value to an explicit constructor.",
+      "introduced_release": "0.4.0",
+      "lint": "non_upper_case_globals",
+      "occurrences": 1,
+      "owner": "Canonical source frontend provenance",
+      "path": "src/engine/src/source_semantics/frontend.rs",
+      "production_or_test": "production",
+      "reason": "preserve unit-style frontend construction while adding explicit nominal provenance"
+    },
+    {
       "directive": "allow",
       "expires_release": "0.5.0",
       "expiry_condition": "Remove when structure dispatch no longer supports profiles with all structure variants disabled.",

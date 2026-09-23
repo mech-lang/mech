@@ -2472,6 +2472,7 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
         CanonicalOrderedDocument {
             identity,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: None,
             input_schemas: BTreeMap::new(),
             resource_writes: BTreeMap::new(),
             imports: BTreeMap::new(),

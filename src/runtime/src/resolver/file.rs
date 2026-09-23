@@ -1,6 +1,4 @@
-#[cfg(feature = "source")]
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 #[cfg(windows)]
@@ -63,6 +61,7 @@ enum FilesystemSourceSpecifier {
 #[derive(Clone, Debug)]
 pub struct FileSourceResolver {
     roots: Vec<PathBuf>,
+    nominal_origins: HashMap<String, mech_core::CanonicalNominalPath>,
     capability_kernel: Option<SharedCapabilityKernel>,
     capability_subject: Option<String>,
     #[cfg(feature = "source")]
@@ -70,9 +69,21 @@ pub struct FileSourceResolver {
 }
 
 impl FileSourceResolver {
+    /// Register the manifest-derived defining package and module path for one
+    /// canonical source URI. The resolver will attach it before admission.
+    pub fn with_nominal_origin(
+        mut self,
+        canonical_uri: impl Into<String>,
+        origin: mech_core::CanonicalNominalPath,
+    ) -> Self {
+        self.nominal_origins.insert(canonical_uri.into(), origin);
+        self
+    }
+
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self {
             roots: vec![root.into()],
+            nominal_origins: HashMap::new(),
             capability_kernel: None,
             capability_subject: None,
             #[cfg(feature = "source")]
@@ -83,6 +94,7 @@ impl FileSourceResolver {
     pub fn empty() -> Self {
         Self {
             roots: Vec::new(),
+            nominal_origins: HashMap::new(),
             capability_kernel: None,
             capability_subject: None,
             #[cfg(feature = "source")]
@@ -143,6 +155,9 @@ impl FileSourceResolver {
             .to_owned();
         let canonical_uri = path_to_file_uri(&path)?;
         let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        if let Some(origin) = self.nominal_origins.get(&canonical_uri) {
+            resolved = resolved.with_nominal_origin(origin.clone());
+        }
         if resolved.kind == SourceKind::Mech
             && matches!(&resolved.source, MechSourceCode::String(_))
         {
@@ -326,7 +341,10 @@ impl SourceResolver for FileSourceResolver {
             .to_string();
 
         let canonical_uri = path_to_file_uri(&path)?;
-        let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        if let Some(origin) = self.nominal_origins.get(&canonical_uri) {
+            resolved = resolved.with_nominal_origin(origin.clone());
+        }
 
         #[cfg(feature = "source")]
         let resolved = {

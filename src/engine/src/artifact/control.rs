@@ -155,7 +155,6 @@ fn validate_structural_pattern(
                 SchemaBody::Enum { variants, .. } => {
                     variants.get(*ordinal as usize)?.payload.as_ref()
                 }
-                SchemaBody::Dynamic => None,
                 _ => return None,
             };
             match (payload_schema, payload) {
@@ -166,14 +165,6 @@ fn validate_structural_pattern(
                     bindings,
                 )?,
                 (None, None) if matches!(expected.body(), SchemaBody::Enum { .. }) => {}
-                (_, Some(pattern)) if matches!(expected.body(), SchemaBody::Dynamic) => {
-                    validate_structural_pattern(
-                        draft,
-                        pattern,
-                        &component_schema(expected, &SchemaBody::Dynamic)?,
-                        bindings,
-                    )?;
-                }
                 _ => return None,
             }
         }

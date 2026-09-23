@@ -1312,14 +1312,30 @@ impl PatternItem {
         let Some(variant) = variants.get(value.ordinal as usize) else {
             return Err(ResidentKernelError::InvalidInput);
         };
+        let source_payload = resolved.source_data.as_ref().and_then(|data| match data {
+            ValueData::Enum(value) => value.payload().cloned(),
+            _ => None,
+        });
         let payload = match (variant.payload.as_ref(), value.payload) {
             (None, None) => None,
-            (Some(body), Some(data)) => Some(Self::component(
-                None,
-                body.clone(),
-                resolved.shape_values,
-                *data,
-            )),
+            (Some(body), Some(data)) => Some(
+                if let (Some(context), Some(contexts)) =
+                    (resolved.source_context, resolved.source_contexts)
+                {
+                    Self::source_component(
+                        None,
+                        None,
+                        body.clone(),
+                        resolved.shape_values,
+                        *data,
+                        source_payload,
+                        context,
+                        contexts,
+                    )
+                } else {
+                    Self::component(None, body.clone(), resolved.shape_values, *data)
+                },
+            ),
             _ => return Err(ResidentKernelError::InvalidInput),
         };
         Ok(Some((value.ordinal, payload)))
@@ -6147,6 +6163,95 @@ mod tests {
         };
         assert_eq!(ordinal, 0);
         assert_eq!(shape_values.as_ref(), [3]);
+    }
+
+    #[test]
+    fn enum_pattern_payload_retains_foreign_dynamic_schema_owner() {
+        let enum_body = SchemaBody::Enum {
+            key: NominalKey::from_bytes([0x31; 32]),
+            variants: vec![mech_core::EnumVariantSchema {
+                name: "wrapped".to_owned(),
+                payload: Some(SchemaBody::Dynamic),
+            }]
+            .into_boxed_slice(),
+        };
+        let schema = |body| {
+            SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut foreign = SchemaTableBuilder::new();
+        let foreign_tuple = foreign
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::FloatingPoint(FloatWidth::W64), SchemaBody::Bool]
+                    .into_boxed_slice(),
+            )))
+            .unwrap();
+        let foreign_enum = foreign.insert(schema(enum_body.clone())).unwrap();
+        let foreign = foreign.finish().unwrap();
+        let foreign_tuple = foreign.resolve(foreign_tuple).unwrap();
+        let foreign_enum = foreign.resolve(foreign_enum).unwrap();
+        let foreign = Arc::new(foreign.table);
+
+        let mut plan = SchemaTableBuilder::new();
+        plan.insert(schema(SchemaBody::Bool)).unwrap();
+        let plan_enum = plan.insert(schema(enum_body)).unwrap();
+        let plan = plan.finish().unwrap();
+        let plan_enum = plan.resolve(plan_enum).unwrap();
+        let plan = Arc::new(plan.table);
+        assert!(
+            plan.find_by_key(foreign.entry(foreign_tuple).unwrap().key())
+                .is_none()
+        );
+
+        let source = ValueDraft {
+            schema: foreign_enum,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Dynamic(Some(Box::new(
+                    ValueDraft {
+                        schema: foreign_tuple,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::Tuple(
+                            vec![
+                                ValueDataDraft::F64(F64Bits::from_f64(7.0)),
+                                ValueDataDraft::Bool(true),
+                            ]
+                            .into_boxed_slice(),
+                        ),
+                    },
+                ))))),
+            }),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&foreign))
+        .unwrap();
+        let lane = [Some(source)];
+        let item = resident_pattern_item(
+            ResidentValueRef::Snapshot(&lane),
+            ResidentRegion {
+                kind: ResidentValueKind::Snapshot,
+                offset: 0,
+                len: 1,
+                shape: mech_core::ResidentShape::SCALAR,
+            },
+            plan_enum,
+            &[],
+            &plan,
+            false,
+        )
+        .expect("matching nominal enum from a foreign schema arena");
+        let (ordinal, Some(payload)) = item.enum_variant(&plan).unwrap().unwrap() else {
+            panic!("enum payload remains available");
+        };
+        assert_eq!(ordinal, 0);
+        assert!(matches!(
+            payload.resolved_source_data().unwrap(),
+            Some(ValueDataDraft::Tuple(values)) if values.len() == 2
+        ));
     }
 
     #[test]

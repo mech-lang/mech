@@ -21,16 +21,19 @@ use super::{CanonicalDocumentIndex, CanonicalSourceIndexError};
 #[derive(Clone, Debug)]
 pub struct SourceDocument {
     snapshot: Arc<SyntaxSnapshot>,
+    nominal_origin: Option<mech_core::CanonicalNominalPath>,
 }
 
 impl PartialEq for SourceDocument {
     fn eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.snapshot, &other.snapshot)
-            || (self.snapshot.document == other.snapshot.document
-                && self.snapshot.revision == other.snapshot.revision
-                && self.snapshot.diagnostics == other.snapshot.diagnostics
-                && same_syntax_identity(&self.snapshot.root, &other.snapshot.root)
-                && self.source().to_contiguous_string() == other.source().to_contiguous_string())
+        self.nominal_origin == other.nominal_origin
+            && (Arc::ptr_eq(&self.snapshot, &other.snapshot)
+                || (self.snapshot.document == other.snapshot.document
+                    && self.snapshot.revision == other.snapshot.revision
+                    && self.snapshot.diagnostics == other.snapshot.diagnostics
+                    && same_syntax_identity(&self.snapshot.root, &other.snapshot.root)
+                    && self.source().to_contiguous_string()
+                        == other.source().to_contiguous_string()))
     }
 }
 
@@ -113,6 +116,17 @@ impl mech_core::MechErrorKind for SourceDocumentIndexError {
 }
 
 impl SourceDocument {
+    /// Attach the defining package and module namespace supplied by the
+    /// resolver. Nominal declarations require this before compilation.
+    pub fn with_nominal_origin(mut self, origin: mech_core::CanonicalNominalPath) -> Self {
+        self.nominal_origin = Some(origin);
+        self
+    }
+
+    pub fn nominal_origin(&self) -> Option<&mech_core::CanonicalNominalPath> {
+        self.nominal_origin.as_ref()
+    }
+
     /// Parse the exact resolver-owned text under a stable document identity.
     /// The canonical URI selects the document owner; the caller supplies the
     /// revision so replacements can retain an explicit revision sequence.
@@ -137,6 +151,7 @@ impl SourceDocument {
     pub fn parse(source: TextSnapshot, config: ParseConfig) -> Self {
         Self {
             snapshot: Arc::new(parse_canonical_document(source, config)),
+            nominal_origin: None,
         }
     }
 
@@ -150,6 +165,7 @@ impl SourceDocument {
         match stream.state() {
             StreamState::Finished => Ok(Self {
                 snapshot: stream.materialize()?,
+                nominal_origin: None,
             }),
             StreamState::Open | StreamState::Finishing => Err(StreamError::NotFinal),
             state => Err(StreamError::Closed(state)),
@@ -162,6 +178,7 @@ impl SourceDocument {
     pub fn from_session(session: &DocumentSession) -> Self {
         Self {
             snapshot: Arc::new(session.snapshot().clone()),
+            nominal_origin: None,
         }
     }
 
