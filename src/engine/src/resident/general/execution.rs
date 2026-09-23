@@ -46,7 +46,7 @@ use super::{
 // and frame-memory budget below. Keeping the emergency ceiling modest ensures
 // an adversarial call cannot reach the Rust stack limit before admission can
 // report a recoverable turn failure.
-const MAX_RESIDENT_RECURSION_DEPTH: usize = 32;
+const MAX_RESIDENT_RECURSION_DEPTH: usize = 24;
 
 #[derive(Clone, Copy, Debug)]
 pub struct CapturedSignalInput<'a> {

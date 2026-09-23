@@ -346,6 +346,7 @@ fn artifact_rejects_recursive_target_capture_of_its_scrutinee() {
     captures.push(ControlCapture {
         input: control.scrutinee,
         schema,
+        freeze_on_suspend: false,
     });
     control.captures = captures.into_boxed_slice();
     assert!(matches!(
