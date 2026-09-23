@@ -3949,11 +3949,6 @@ impl ValueCell {
                 schema: value.schema(),
             })
         })?;
-        let extents =
-            crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
-                .map_err(MechError::from)?
-                .current_extents()
-                .map_err(MechError::from)?;
         let target_schema = self
             .binding
             .schemas
@@ -3963,7 +3958,18 @@ impl ValueCell {
                     schema: self.binding.schema,
                 })
             })?;
-        let target_shape = crate::shape_for_resolved_extents(target_schema, &extents)?;
+        let target_shape = if source_schema.key() == target_schema.key() {
+            // Identical schemas own the same complete parameter vector. Keep
+            // nested tuple/record/option witnesses and turn-varying extents.
+            value.shape().clone()
+        } else {
+            let extents =
+                crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
+                    .map_err(MechError::from)?
+                    .current_extents()
+                    .map_err(MechError::from)?;
+            crate::shape_for_resolved_extents(target_schema, &extents)?
+        };
         value
             .rebind(
                 self.binding.schema,

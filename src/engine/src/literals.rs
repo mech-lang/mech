@@ -539,11 +539,29 @@ fn execute_conversion_plan(
             ConversionExecutionError::ConversionPlanSourceMismatch,
         ));
     }
-    let draft = value.snapshot()?.canonical_data_draft().map_err(|error| {
+    let snapshot = value.snapshot()?;
+    let draft = snapshot.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
     let converted =
         execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
+    if matches!(plan.step, ConversionStep::Identity) {
+        // Preserve nested shape witnesses while finalizing a fresh output.
+        let schema = snapshot
+            .schemas()
+            .and_then(|schemas| schemas.get(snapshot.schema()))
+            .cloned()
+            .ok_or_else(|| {
+                conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
+            })?;
+        let descriptor = mech_core::ResolvedValueDescriptor::new(
+            plan.target.clone(),
+            schema,
+            snapshot.shape().clone(),
+        )
+        .map_err(MechError::from)?;
+        return ValueCell::from_resolved_descriptor_data(&descriptor, converted);
+    }
     let current_extents = match target {
         SchemaBody::Matrix { .. }
         | SchemaBody::Set {
@@ -727,6 +745,19 @@ fn stage_conversion_output(
     plan: &ConversionPlan,
 ) -> MResult<()> {
     if let Some(footprint) = prospective_conversion_output_footprint(output, source, plan)? {
+        if matches!(plan.step, ConversionStep::Identity) {
+            return frame.with_admitted_canonical_output(
+                output,
+                footprint,
+                |frame, construction| {
+                    let snapshot =
+                        frame.snapshot_input_cell_with_construction(source, 0, construction)?;
+                    let next =
+                        construction.try_rebind_snapshot_candidate_with(output, || Ok(snapshot))?;
+                    Ok(((), next))
+                },
+            );
+        }
         frame.with_admitted_canonical_output(output, footprint, |frame, construction| {
             let next = construction.try_build_canonical_candidate_with(|construction| {
                 let snapshot =
@@ -1181,7 +1212,10 @@ fn bind_reified_dimension(
         .get(index)
         .filter(|declaration| declaration.id == id)
         .ok_or_else(|| invalid_reified_conversion_target("unknown target dimension parameter"))?;
-    let (lower, upper) = reified_parameter_bounds(declaration, bindings)?;
+    // Bounds can refer to another parameter that appears later in the body.
+    // Use them to narrow a compound search when available, then validate all
+    // witnesses together after traversal.
+    let (lower, upper) = reified_parameter_bounds(declaration, bindings).unwrap_or((0, u64::MAX));
     let witness = if target == &DimensionExpr::Parameter(id) {
         source.clone()
     } else {
@@ -1211,19 +1245,35 @@ fn bind_reified_dimension(
         }
         DimensionExpr::Constant(low)
     };
-    let value = reified_dimension_value(&witness);
-    if let Some(value) = value {
-        if value < lower || value > upper {
+    bindings[index] = Some(witness);
+    Ok(())
+}
+
+#[cfg(feature = "convert")]
+fn validate_reified_parameter_bindings(
+    declarations: &[DimensionParameterDeclaration],
+    bindings: &[Option<DimensionExpr>],
+) -> MResult<()> {
+    for declaration in declarations {
+        let Some(witness) = bindings
+            .get(declaration.id.get() as usize)
+            .and_then(Option::as_ref)
+        else {
+            continue;
+        };
+        let (lower, upper) = reified_parameter_bounds(declaration, bindings)?;
+        if let Some(value) = reified_dimension_value(witness) {
+            if value < lower || value > upper {
+                return Err(invalid_reified_conversion_target(
+                    "source extent is outside target dimension bounds",
+                ));
+            }
+        } else if lower != 0 || upper != u64::MAX {
             return Err(invalid_reified_conversion_target(
-                "source extent is outside target dimension bounds",
+                "bounded target dimension requires a concrete source extent",
             ));
         }
-    } else if lower != 0 || upper != u64::MAX {
-        return Err(invalid_reified_conversion_target(
-            "bounded target dimension requires a concrete source extent",
-        ));
     }
-    bindings[index] = Some(witness);
     Ok(())
 }
 
@@ -1846,6 +1896,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
             let mut bindings = vec![None; declarations.len()];
             bind_reified_target_dimensions(&source_body, &target, &declarations, &mut bindings)?;
+            validate_reified_parameter_bindings(&declarations, &bindings)?;
             substitute_reified_target(&target, &bindings)?
         } else {
             target
@@ -2151,6 +2202,109 @@ mod canonical_conversion_tests {
             .clone())
     }
 
+    fn convert_schema_identity(source: ValueCell) -> MResult<ValueCell> {
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(source.schema_key())),
+        )?;
+        let invocation =
+            SpecializationInvocation::from_cells(vec![source, target].into_boxed_slice());
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )?;
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)?;
+        Ok(ConvertKind
+            .specialize_invocation(&invocation, &mut context)?
+            .output()
+            .clone())
+    }
+
+    #[test]
+    fn nested_identity_conversion_keeps_shape_witnesses_and_separate_cell_identity() {
+        let id = DimensionParameterId::new(0);
+        let schema = SchemaDraft {
+            body: SchemaBody::Tuple(
+                [SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(2)].into(),
+                }]
+                .into(),
+            ),
+            dimension_parameters: [DimensionParameterDeclaration {
+                id,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            }]
+            .into(),
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape([1_u64].into()).unwrap();
+        let descriptor = mech_core::ResolvedValueDescriptor::from_schema(schema, shape).unwrap();
+        let source = ValueCell::from_resolved_descriptor_data(
+            &descriptor,
+            ValueDataDraft::Tuple(
+                [ValueDataDraft::Matrix(
+                    [
+                        ValueDataDraft::F64(F64Bits::from_f64(1.0)),
+                        ValueDataDraft::F64(F64Bits::from_f64(2.0)),
+                    ]
+                    .into(),
+                )]
+                .into(),
+            ),
+        )
+        .unwrap();
+        let output = convert_schema_identity(source.clone()).unwrap();
+        assert_ne!(source.reactive_cell_id(), output.reactive_cell_id());
+        assert_eq!(
+            source.closed_schema_body().unwrap(),
+            output.closed_schema_body().unwrap()
+        );
+        assert_eq!(
+            source.snapshot().unwrap().canonical_data_draft().unwrap(),
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+        );
+    }
+
+    #[test]
+    fn reactive_identity_conversion_tracks_new_matrix_extents() {
+        let matrix = |rows, columns, values: &[f64]| {
+            ValueCell::dynamic_matrix_from_cells(
+                rows,
+                columns,
+                &values
+                    .iter()
+                    .map(|value| ValueCell::from_exact(*value).unwrap())
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+        let source = matrix(1, 2, &[1.0, 2.0]);
+        let source_type = source.resolved_type().unwrap();
+        let target = source.closed_schema_body().unwrap();
+        let plan = plan_explicit_cast(&source_type, &source_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        let conversion =
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan).unwrap();
+        source
+            .replace(&matrix(2, 2, &[1.0, 2.0, 3.0, 4.0]).snapshot().unwrap())
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = output.closed_schema_body().unwrap() else {
+            panic!("identity output must remain a matrix")
+        };
+        assert_eq!(
+            dimensions.as_ref(),
+            &[DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
+        );
+        assert_ne!(source.reactive_cell_id(), output.reactive_cell_id());
+    }
+
     #[test]
     fn convert_kind_specializer_uses_reified_canonical_target() {
         let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
@@ -2418,14 +2572,17 @@ mod canonical_conversion_tests {
         )
         .unwrap();
         assert_eq!(bindings, vec![Some(DimensionExpr::Constant(8))]);
+        validate_reified_parameter_bindings(&[declaration.clone()], &bindings).unwrap();
+        let mut outside_bounds = vec![None];
+        bind_reified_dimension(
+            &DimensionExpr::Constant(11),
+            &DimensionExpr::Parameter(id),
+            &[declaration.clone()],
+            &mut outside_bounds,
+        )
+        .unwrap();
         assert!(
-            bind_reified_dimension(
-                &DimensionExpr::Constant(11),
-                &DimensionExpr::Parameter(id),
-                &[declaration.clone()],
-                &mut vec![None],
-            )
-            .is_err()
+            validate_reified_parameter_bindings(&[declaration.clone()], &outside_bounds).is_err()
         );
 
         let compound =
@@ -2461,6 +2618,44 @@ mod canonical_conversion_tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn reified_bound_dependencies_do_not_depend_on_axis_order() {
+        let p0 = DimensionParameterId::new(0);
+        let p1 = DimensionParameterId::new(1);
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: p0,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: p1,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Parameter(p0),
+                upper_bound: None,
+            },
+        ];
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Parameter(p1), DimensionExpr::Parameter(p0)].into(),
+        };
+        for (first, valid) in [(5, true), (1, false)] {
+            let source = SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Index),
+                dimensions: [DimensionExpr::Constant(first), DimensionExpr::Constant(2)].into(),
+            };
+            let mut bindings = vec![None; declarations.len()];
+            bind_reified_target_dimensions(&source, &target, &declarations, &mut bindings).unwrap();
+            assert_eq!(
+                validate_reified_parameter_bindings(&declarations, &bindings).is_ok(),
+                valid,
+            );
+        }
     }
 
     #[test]
