@@ -961,14 +961,23 @@ fn runtime_reified_constraints(
         .schemas()
         .ok_or_else(|| invalid_reified_conversion_target("source schema context is unavailable"))?;
     let source_body = source.closed_schema_body()?;
-    let (mut target, declarations) = match target_value.data() {
-        ValueData::Type(ReifiedType::Kind(kind)) => schema_body_from_reified_kind(kind, &schemas)?,
+    let (mut target, declarations, close_enum_payloads) = match target_value.data() {
+        ValueData::Type(ReifiedType::Kind(kind)) => {
+            let (target, declarations) = schema_body_from_reified_kind(kind, &schemas)?;
+            (target, declarations, true)
+        }
         ValueData::Type(ReifiedType::Schema(key)) => {
-            let schema = schemas
-                .find_by_key(*key)
-                .and_then(|id| schemas.get(id))
+            let target_schemas = target_value.schemas();
+            let schema = target_schemas
+                .as_ref()
+                .and_then(|table| table.find_by_key(*key).and_then(|id| table.get(id)))
+                .or_else(|| schemas.find_by_key(*key).and_then(|id| schemas.get(id)))
                 .ok_or_else(|| invalid_reified_conversion_target("unknown target schema key"))?;
-            (schema.body().clone(), schema_target_declarations(schema))
+            (
+                schema.body().clone(),
+                schema_target_declarations(schema),
+                false,
+            )
         }
         _ => {
             return Err(invalid_reified_conversion_target(
@@ -976,7 +985,9 @@ fn runtime_reified_constraints(
             ));
         }
     };
-    close_reified_enum_targets(&source_body, &mut target);
+    if close_enum_payloads {
+        close_reified_enum_targets(&source_body, &mut target);
+    }
     inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
     let constraints = ReifiedTargetConstraints {
         target,
@@ -1874,6 +1885,24 @@ fn collect_reified_dimension_equations<'a>(
             }
         }
         (
+            SchemaBody::Enum {
+                key: source_key,
+                variants: source,
+            },
+            SchemaBody::Enum {
+                key: target_key,
+                variants: target,
+            },
+        ) if source_key == target_key => {
+            for (source, target) in source.iter().zip(target.iter()) {
+                if source.name == target.name {
+                    if let (Some(source), Some(target)) = (&source.payload, &target.payload) {
+                        collect_reified_dimension_equations(source, target, equations);
+                    }
+                }
+            }
+        }
+        (
             SchemaBody::Set {
                 element: source_element,
                 cardinality: source_cardinality,
@@ -2166,6 +2195,66 @@ fn narrow_joint_reified_domains(
 }
 
 #[cfg(feature = "convert")]
+fn narrow_joint_reified_inequalities(
+    inequalities: &[(Vec<i128>, i128)],
+    domains: &mut [(u64, u64)],
+) -> MResult<()> {
+    for (coefficients, target) in inequalities {
+        let Some((minimum, _)) = joint_row_other_range(coefficients, domains, usize::MAX) else {
+            continue;
+        };
+        if minimum > *target {
+            return Err(invalid_reified_conversion_target(
+                "joint target dimensions have no source witness",
+            ));
+        }
+        for (index, coefficient) in coefficients.iter().copied().enumerate() {
+            if coefficient == 0 {
+                continue;
+            }
+            let Some((other_minimum, _)) = joint_row_other_range(coefficients, domains, index)
+            else {
+                continue;
+            };
+            let domain = &mut domains[index];
+            if coefficient > 0 {
+                let Some(limit) = target.checked_sub(other_minimum) else {
+                    continue;
+                };
+                let upper = limit.div_euclid(coefficient);
+                if upper < 0 {
+                    return Err(invalid_reified_conversion_target(
+                        "joint target dimensions have no source witness",
+                    ));
+                }
+                domain.1 = domain.1.min(upper.min(i128::from(u64::MAX)) as u64);
+            } else {
+                let (Some(numerator), Some(divisor)) = (
+                    other_minimum.checked_sub(*target),
+                    coefficient.checked_abs(),
+                ) else {
+                    continue;
+                };
+                let lower =
+                    numerator.div_euclid(divisor) + i128::from(numerator.rem_euclid(divisor) != 0);
+                if lower > i128::from(u64::MAX) {
+                    return Err(invalid_reified_conversion_target(
+                        "joint target dimensions have no source witness",
+                    ));
+                }
+                domain.0 = domain.0.max(lower.max(0) as u64);
+            }
+            if domain.0 > domain.1 {
+                return Err(invalid_reified_conversion_target(
+                    "joint target dimensions have no source witness",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "convert")]
 fn reified_dimension_range(
     dimension: &DimensionExpr,
     bindings: &[Option<DimensionExpr>],
@@ -2224,6 +2313,7 @@ fn reified_dimension_range(
 #[cfg(feature = "convert")]
 fn solve_bounded_joint_reified_dimensions(
     equations: &[(Vec<i128>, i128)],
+    inequalities: &[(Vec<i128>, i128)],
     concrete_equations: &[(&DimensionExpr, &DimensionExpr)],
     declarations: &[DimensionParameterDeclaration],
     bindings: &[Option<DimensionExpr>],
@@ -2259,6 +2349,7 @@ fn solve_bounded_joint_reified_dimensions(
         .collect::<MResult<Vec<_>>>()?;
     fn search(
         equations: &[(Vec<i128>, i128)],
+        inequalities: &[(Vec<i128>, i128)],
         concrete_equations: &[(&DimensionExpr, &DimensionExpr)],
         declarations: &[DimensionParameterDeclaration],
         bindings: &[Option<DimensionExpr>],
@@ -2280,6 +2371,9 @@ fn solve_bounded_joint_reified_dimensions(
         for _ in 0..=unknown.len().saturating_mul(2) {
             let previous = domains.clone();
             if narrow_joint_reified_domains(equations, &mut domains).is_err() {
+                return Ok(());
+            }
+            if narrow_joint_reified_inequalities(inequalities, &mut domains).is_err() {
                 return Ok(());
             }
             for (position, index) in unknown.iter().copied().enumerate() {
@@ -2356,6 +2450,7 @@ fn solve_bounded_joint_reified_dimensions(
             branch[index] = (value, value);
             search(
                 equations,
+                inequalities,
                 concrete_equations,
                 declarations,
                 bindings,
@@ -2375,6 +2470,7 @@ fn solve_bounded_joint_reified_dimensions(
     let mut solutions = Vec::new();
     search(
         equations,
+        inequalities,
         concrete_equations,
         declarations,
         bindings,
@@ -2482,6 +2578,57 @@ fn solve_joint_reified_dimensions(
             &declaration.lower_bound,
         )?;
     }
+    // Declaration ranges constrain dependencies even when the declared
+    // parameter already has a body witness. Keep their affine inequalities
+    // for the bounded search instead of considering only unknown declarations.
+    let mut inequalities = Vec::<(Vec<i128>, i128)>::new();
+    for declaration in declarations {
+        let subject = DimensionExpr::Parameter(declaration.id);
+        for (lower, upper) in [
+            Some((&declaration.lower_bound, &subject)),
+            declaration
+                .upper_bound
+                .as_ref()
+                .map(|upper| (&subject, upper)),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            let (
+                Some((lower_constant, lower_coefficients)),
+                Some((upper_constant, upper_coefficients)),
+            ) = (
+                affine_reified_dimension(lower, bindings, &unknown),
+                affine_reified_dimension(upper, bindings, &unknown),
+            )
+            else {
+                continue;
+            };
+            let coefficients = lower_coefficients
+                .iter()
+                .zip(&upper_coefficients)
+                .map(|(lower, upper)| lower.checked_sub(*upper))
+                .collect::<Option<Vec<_>>>()
+                .ok_or_else(|| {
+                    invalid_reified_conversion_target(
+                        "joint dimension inequality exceeds exact arithmetic",
+                    )
+                })?;
+            if coefficients.iter().any(|coefficient| *coefficient != 0) {
+                let target = upper_constant.checked_sub(lower_constant).ok_or_else(|| {
+                    invalid_reified_conversion_target(
+                        "joint dimension inequality exceeds exact arithmetic",
+                    )
+                })?;
+                inequalities.push((coefficients, target));
+            }
+        }
+    }
+    if integer_rows.len().saturating_add(inequalities.len()) > MAX_REIFIED_SOLVER_EQUATIONS {
+        return Err(invalid_reified_conversion_target(
+            "joint target dimension system exceeds the solver limit",
+        ));
+    }
     let mut pivot_row = 0;
     for column in 0..unknown.len() {
         let Some(found) = (pivot_row..rows.len()).find(|row| rows[*row][column].numerator != 0)
@@ -2537,6 +2684,7 @@ fn solve_joint_reified_dimensions(
             .collect::<Vec<_>>();
         if let Some(values) = solve_bounded_joint_reified_dimensions(
             &integer_rows,
+            &inequalities,
             &concrete_equations,
             declarations,
             bindings,
@@ -2592,8 +2740,12 @@ fn inherit_reified_dynamic_cardinality(
         }
     }
     fn count_cardinality(cardinality: &CardinalitySpec, counts: &mut [usize]) {
-        if let CardinalitySpec::Exact(dimension) = cardinality {
-            count_expression(dimension, counts);
+        match cardinality {
+            CardinalitySpec::Exact(dimension) => count_expression(dimension, counts),
+            CardinalitySpec::Dynamic {
+                upper_bound: Some(dimension),
+            } => count_expression(dimension, counts),
+            CardinalitySpec::Dynamic { upper_bound: None } => {}
         }
     }
     fn count_body(body: &SchemaBody, counts: &mut [usize]) {
@@ -2738,6 +2890,30 @@ fn inherit_reified_dynamic_cardinality_inner(
                     declarations,
                     use_counts,
                 )?;
+            }
+        }
+        (
+            SchemaBody::Enum {
+                key: source_key,
+                variants: source,
+            },
+            SchemaBody::Enum {
+                key: target_key,
+                variants: target,
+            },
+        ) if source_key == target_key && source.len() == target.len() => {
+            for (source, target) in source.iter().zip(target.iter_mut()) {
+                if source.name == target.name {
+                    if let (Some(source), Some(target)) = (&source.payload, target.payload.as_mut())
+                    {
+                        inherit_reified_dynamic_cardinality_inner(
+                            source,
+                            target,
+                            declarations,
+                            use_counts,
+                        )?;
+                    }
+                }
             }
         }
         (
@@ -2976,6 +3152,24 @@ fn bind_reified_target_dimensions(
             }
         }
         (
+            SchemaBody::Enum {
+                key: source_key,
+                variants: source,
+            },
+            SchemaBody::Enum {
+                key: target_key,
+                variants: target,
+            },
+        ) if source_key == target_key && source.len() == target.len() => {
+            for (source, target) in source.iter().zip(target.iter()) {
+                if source.name == target.name {
+                    if let (Some(source), Some(target)) = (&source.payload, &target.payload) {
+                        bind_reified_target_dimensions(source, target, declarations, bindings)?;
+                    }
+                }
+            }
+        }
+        (
             SchemaBody::Set {
                 element: source_element,
                 cardinality: source_cardinality,
@@ -3173,6 +3367,23 @@ fn substitute_reified_target(
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
         ),
+        SchemaBody::Enum { key, variants } => SchemaBody::Enum {
+            key: *key,
+            variants: variants
+                .iter()
+                .map(|variant| {
+                    Ok(EnumVariantSchema {
+                        name: variant.name.clone(),
+                        payload: variant
+                            .payload
+                            .as_ref()
+                            .map(|payload| substitute_reified_target(payload, bindings))
+                            .transpose()?,
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?
+                .into_boxed_slice(),
+        },
         SchemaBody::Set {
             element,
             cardinality,
@@ -3238,16 +3449,17 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             .cell()?
             .clone();
         let target_value = target_cell.snapshot()?;
-        let (target, reified_dimensions) = match target_value.data() {
+        let (target, reified_dimensions, close_enum_payloads) = match target_value.data() {
             ValueData::Type(ReifiedType::Kind(kind)) => {
                 let (target, dimensions) = schema_body_from_reified_kind(kind, context.schemas())?;
-                (target, Some(dimensions))
+                (target, Some(dimensions), true)
             }
             ValueData::Type(ReifiedType::Schema(key)) => {
                 let schema = context.schema(*key)?;
                 (
                     schema.body().clone(),
                     Some(schema_target_declarations(schema)),
+                    false,
                 )
             }
             _ => {
@@ -3265,7 +3477,9 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         let (target, reified_constraints) = if let Some(declarations) = reified_dimensions {
             let source_body = source.closed_schema_body()?;
             let mut concrete_template = target;
-            close_reified_enum_targets(&source_body, &mut concrete_template);
+            if close_enum_payloads {
+                close_reified_enum_targets(&source_body, &mut concrete_template);
+            }
             inherit_reified_dynamic_cardinality(
                 &source_body,
                 &mut concrete_template,
@@ -4454,6 +4668,50 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn runtime_schema_target_can_resolve_from_its_own_table() {
+        let source = ValueCell::from_exact(7.0_f64).unwrap();
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body: SchemaBody::Bool,
+        }
+        .finalize()
+        .unwrap();
+        let key = schema.key();
+        assert!(
+            source
+                .snapshot()
+                .unwrap()
+                .schemas()
+                .unwrap()
+                .find_by_key(key)
+                .is_none()
+        );
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(key)),
+        )
+        .unwrap();
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        builder.insert(schema).unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::ReifiedType,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let table = std::rc::Rc::new(builder.finish().unwrap().table);
+        let target = ValueCell::from_value(target.snapshot().unwrap(), table).unwrap();
+        assert!(
+            runtime_reified_constraints(&source, &target.snapshot().unwrap(), &SchemaBody::Bool,)
+                .is_ok()
+        );
+    }
+
+    #[test]
     fn parameterized_schema_target_closes_against_each_source_shape() {
         let matrix = |rows, values: &[f64]| {
             ValueCell::dynamic_matrix_from_cells(
@@ -5001,6 +5259,86 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn schema_enum_payload_keeps_its_dimension_bound() {
+        let path =
+            CanonicalNominalPath::new(vec!["test".to_owned(), "Bounded".to_owned()]).unwrap();
+        let key = NominalKey::from_path(NominalKind::Enum, &path);
+        let id = DimensionParameterId::new(0);
+        let enum_body = |dimension| SchemaBody::Enum {
+            key,
+            variants: [EnumVariantSchema {
+                name: "Some".to_owned(),
+                payload: Some(SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Index),
+                    dimensions: [dimension].into(),
+                }),
+            }]
+            .into(),
+        };
+        let source = enum_body(DimensionExpr::Constant(3));
+        let target = enum_body(DimensionExpr::Parameter(id));
+        let declaration = DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(2)),
+        };
+        let bindings =
+            solve_reified_target_bindings(&source, &target, &[declaration.clone()]).unwrap();
+        assert_eq!(bindings, vec![Some(DimensionExpr::Constant(3))]);
+        assert!(validate_reified_parameter_bindings(&[declaration.clone()], &bindings).is_err());
+
+        let source_cell = ValueCell::from_schema_data(
+            source.clone(),
+            ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Matrix(
+                    (1..=3).map(ValueDataDraft::Index).collect(),
+                ))),
+            }),
+        )
+        .unwrap();
+        let target_schema = SchemaDraft {
+            dimension_parameters: [declaration].into(),
+            body: target,
+        }
+        .finalize()
+        .unwrap();
+        let key = target_schema.key();
+        let target_cell = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(key)),
+        )
+        .unwrap();
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        builder.insert(target_schema).unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::ReifiedType,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let target_cell = ValueCell::from_value(
+            target_cell.snapshot().unwrap(),
+            std::rc::Rc::new(builder.finish().unwrap().table),
+        )
+        .unwrap();
+        assert!(
+            runtime_reified_constraints(
+                &source_cell,
+                &target_cell.snapshot().unwrap(),
+                &source_cell.closed_schema_body().unwrap(),
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
     fn exact_reified_bound_propagates_a_body_witness_back_to_its_dependency() {
         let q = DimensionParameterId::new(0);
         let p = DimensionParameterId::new(1);
@@ -5076,6 +5414,47 @@ mod canonical_conversion_tests {
         );
         let ambiguous = solve_reified_target_bindings(&source(3), &target, &declarations).unwrap();
         assert!(validate_reified_parameter_bindings(&declarations, &ambiguous).is_err());
+    }
+
+    #[test]
+    fn bound_body_witness_narrows_an_unbounded_dependency() {
+        let q = DimensionParameterId::new(0);
+        let p = DimensionParameterId::new(1);
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: q,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(5),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: p,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Parameter(q),
+                upper_bound: Some(DimensionExpr::Add(
+                    [DimensionExpr::Parameter(q), DimensionExpr::Constant(1)].into(),
+                )),
+            },
+        ];
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(5)].into(),
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Parameter(p)].into(),
+        };
+        let bindings = solve_reified_target_bindings(&source, &target, &declarations).unwrap();
+        assert_eq!(
+            bindings,
+            vec![
+                Some(DimensionExpr::Constant(5)),
+                Some(DimensionExpr::Constant(5)),
+            ]
+        );
+        validate_reified_parameter_bindings(&declarations, &bindings).unwrap();
     }
 
     #[test]
@@ -5522,7 +5901,25 @@ mod canonical_conversion_tests {
         );
 
         let source = SchemaBody::Tuple([set(dynamic.clone()), set(dynamic)].into());
-        let mut target = SchemaBody::Tuple([set(exact.clone()), set(exact)].into());
+        let mut target = SchemaBody::Tuple([set(exact.clone()), set(exact.clone())].into());
+        assert!(inherit_reified_dynamic_cardinality(&source, &mut target, &[declaration]).is_err());
+
+        let declaration = DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        };
+        let mut target = SchemaBody::Tuple(
+            [
+                set(exact),
+                set(CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Parameter(id)),
+                }),
+            ]
+            .into(),
+        );
         assert!(inherit_reified_dynamic_cardinality(&source, &mut target, &[declaration]).is_err());
     }
 
