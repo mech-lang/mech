@@ -1769,6 +1769,9 @@ impl ReactiveInstance {
                 total.checked_add(*snapshot_finalization_count)
             });
         let mut structural_scrutinee = None;
+        // This scope outlives every selected guard and body step. Repeated
+        // measurements of managed locals must consume cumulative control work.
+        let mut local_meter = budget::ResidentBudgetMeter::default();
         for arm_index in 0..arm_count {
             let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
                 unreachable!()
@@ -1904,6 +1907,7 @@ impl ReactiveInstance {
                         &guard,
                         step,
                         &mut guard_live,
+                        &mut local_meter,
                         (before_epoch, working_epoch),
                         probe,
                         (live_bytes, live_nodes),
@@ -1933,6 +1937,7 @@ impl ReactiveInstance {
                     &body,
                     step,
                     &mut body_live,
+                    &mut local_meter,
                     (before_epoch, working_epoch),
                     probe,
                     (live_bytes, live_nodes),
@@ -2176,6 +2181,7 @@ impl ReactiveInstance {
         block: &super::ActivatedControlBlock,
         step: &super::ActivatedControlStep,
         block_live: &mut ControlBlockLiveFootprint,
+        meter: &mut budget::ResidentBudgetMeter,
         epochs: (InstanceEpoch, InstanceEpoch),
         probe: &mut ResidentStructuralProbe,
         live: (u64, u64),
@@ -2183,7 +2189,6 @@ impl ReactiveInstance {
         let (before_epoch, working_epoch) = epochs;
         let (live_bytes, live_nodes) = live;
         let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
-        let mut meter = budget::ResidentBudgetMeter::default();
         let retained = usize::try_from(step.retained_local_count)
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         let nested_match = matches!(
@@ -2207,12 +2212,8 @@ impl ReactiveInstance {
         block_live.footprint = block_live
             .footprint
             .checked_add(
-                self.resident_local_footprint(
-                    added.iter().copied(),
-                    &self.plan.schemas,
-                    &mut meter,
-                )
-                .map_err(fail)?,
+                self.resident_local_footprint(added.iter().copied(), &self.plan.schemas, meter)
+                    .map_err(fail)?,
             )
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
         block_live.retained_prefix = stable_end;
@@ -2224,7 +2225,7 @@ impl ReactiveInstance {
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             locals = locals
                 .checked_add(
-                    self.resident_local_footprint([prior_output], &self.plan.schemas, &mut meter)
+                    self.resident_local_footprint([prior_output], &self.plan.schemas, meter)
                         .map_err(fail)?,
                 )
                 .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
@@ -2242,7 +2243,7 @@ impl ReactiveInstance {
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             excluded = excluded
                 .checked_add(
-                    self.resident_local_footprint([region], &self.plan.schemas, &mut meter)
+                    self.resident_local_footprint([region], &self.plan.schemas, meter)
                         .map_err(fail)?,
                 )
                 .map_err(|_| fail(ResidentKernelError::InvalidShape))?;

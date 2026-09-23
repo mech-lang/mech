@@ -47,7 +47,7 @@ joins. Matrix iteration follows canonical row-major order; set construction uses
 the core key relation for deduplication and float normalization. No diagnostic
 qualifier strings or ordinary-operation placeholders participate in execution.
 
-Resident comprehension execution currently supports Bool, Index, and F64
+At S4, resident comprehension execution supported Bool, Index, and F64
 bindings and yields, scalar patterns, and qualified ordinary kernels. Every
 inner call retains its ordinary contract and physical call-memory identity.
 The owning control accumulates work across calls, so repeated individually

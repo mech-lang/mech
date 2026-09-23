@@ -24,9 +24,11 @@ primitive Bool/Index/F64 bindings and yields. Live matrix/set inputs, repeated
 bindings, generator/filter/join behavior, normalization, work admission, and failed
 publication recovery have execution regressions. Compound match results and nested
 match bodies/guards now use the same ordinary construction and memory providers.
-Comprehension composite bindings/yields, computed pattern blocks, and the FSM
-resident continuation owner remain unfinished. Nested matches and comprehensions
-now compose through one recursive control body with owned element-shape witnesses.
+S8 now executes composite comprehension bindings and yields, including retained
+tuple values and whole-tuple bindings, and composes nested matches and
+comprehensions through one recursive control body with owned element-shape
+witnesses. Computed pattern blocks and the FSM resident continuation owner
+remain unfinished.
 FSM pipes now retain machine identity, named and positional argument bindings,
 ordered stage kinds, and recursively typed stage values in the artifact itself.
 Source-map strings are not an FSM execution input. The `~>` commit, resume,

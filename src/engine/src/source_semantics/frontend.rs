@@ -3,7 +3,7 @@ mod constant_binding;
 
 #[path = "comprehension.rs"]
 mod comprehension;
-use comprehension::{PendingComprehension, PendingComprehensionStep, resolve_comprehension};
+use comprehension::{PendingComprehension, resolve_comprehension};
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -2154,69 +2154,24 @@ struct PendingMatch {
 }
 
 impl PendingMatch {
-    fn blocks(&self) -> Vec<&PendingControlBlock> {
-        fn append<'a>(control: &'a PendingMatch, output: &mut Vec<&'a PendingControlBlock>) {
-            for block in control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            {
-                output.push(block);
+    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for arm in &self.arms {
+            if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
+                pattern.bindings(&mut |_, schema| visit(schema));
+            }
+            for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                for (_, schema) in &block.parameters {
+                    visit(schema);
+                }
                 for operation in &block.operations {
+                    visit(&operation.schema);
                     match &operation.body {
-                        PendingControlOperationBody::Match(nested) => append(nested, output),
+                        PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
                         PendingControlOperationBody::Comprehension(nested) => {
-                            for step in &nested.steps {
-                                if let PendingComprehensionStep::Operation(operation) = step
-                                    && let PendingControlOperationBody::Match(nested) =
-                                        &operation.body
-                                {
-                                    append(nested, output);
-                                }
-                            }
+                            nested.visit_schemas(visit)
                         }
                         PendingControlOperationBody::Operation { .. } => {}
                     }
-                }
-            }
-        }
-        let mut output = Vec::new();
-        append(self, &mut output);
-        output
-    }
-
-    fn visit_pattern_binding_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
-        fn append(control: &PendingMatch, visit: &mut impl FnMut(&SchemaDraft)) {
-            for arm in &control.arms {
-                if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
-                    pattern.bindings(&mut |_, schema| visit(schema));
-                }
-                for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
-                    for operation in &block.operations {
-                        match &operation.body {
-                            PendingControlOperationBody::Match(nested) => append(nested, visit),
-                            PendingControlOperationBody::Comprehension(nested) => {
-                                nested.visit_schemas(visit)
-                            }
-                            PendingControlOperationBody::Operation { .. } => {}
-                        }
-                    }
-                }
-            }
-        }
-        append(self, visit);
-    }
-
-    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
-        self.visit_pattern_binding_schemas(visit);
-        for block in self.blocks() {
-            for (_, schema) in &block.parameters {
-                visit(schema);
-            }
-            for operation in &block.operations {
-                visit(&operation.schema);
-                if let PendingControlOperationBody::Comprehension(nested) = &operation.body {
-                    nested.visit_schemas(visit);
                 }
             }
         }
@@ -7762,6 +7717,78 @@ fn syntax_kind_name(kind: SyntaxKind) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mixed_control_schema_walk_visits_each_nested_declaration_once() {
+        let schema = |body| SchemaDraft {
+            body,
+            dimension_parameters: Box::new([]),
+        };
+        let nested = PendingMatch {
+            captures: Vec::new(),
+            arms: vec![PendingMatchArm {
+                pattern: crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
+                    local: 0,
+                    schema: schema(SchemaBody::Bool),
+                }),
+                guard: None,
+                body: PendingControlBlock {
+                    id: crate::ControlBlockId(2),
+                    parameters: vec![(
+                        crate::ControlParameterSource::PatternBinding(0),
+                        schema(SchemaBody::Index),
+                    )],
+                    operations: Vec::new(),
+                    yield_value: PendingControlValue::Parameter(0),
+                },
+            }],
+        };
+        let comprehension = PendingComprehension {
+            id: crate::ControlBlockId(1),
+            kind: crate::ComprehensionKind::Matrix,
+            steps: vec![comprehension::PendingComprehensionStep::Operation(
+                comprehension::PendingComprehensionOperation {
+                    local: 0,
+                    body: PendingControlOperationBody::Match(nested),
+                    inputs: Box::new([]),
+                    schema: schema(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                },
+            )]
+            .into_boxed_slice(),
+            yield_value: comprehension::PendingCollectionValue::Local(0),
+        };
+        let root = PendingMatch {
+            captures: Vec::new(),
+            arms: vec![PendingMatchArm {
+                pattern: crate::MatchPattern::Wildcard,
+                guard: None,
+                body: PendingControlBlock {
+                    id: crate::ControlBlockId(0),
+                    parameters: Vec::new(),
+                    operations: vec![PendingControlOperation {
+                        body: PendingControlOperationBody::Comprehension(comprehension),
+                        inputs: Vec::new(),
+                        schema: schema(SchemaBody::String),
+                    }],
+                    yield_value: PendingControlValue::Local(0),
+                },
+            }],
+        };
+        let mut visited = Vec::new();
+        root.visit_schemas(&mut |schema| visited.push(schema.body.clone()));
+        assert_eq!(visited.len(), 4);
+        for body in [
+            SchemaBody::Bool,
+            SchemaBody::Index,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::String,
+        ] {
+            assert_eq!(
+                visited.iter().filter(|visited| **visited == body).count(),
+                1
+            );
+        }
+    }
 
     #[test]
     fn retained_components_follow_the_finalized_parent_parameter_order() {
