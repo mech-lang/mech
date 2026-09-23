@@ -812,6 +812,15 @@ fn collect_document_units(
     Ok(())
 }
 
+pub(super) fn declared_enum_names(
+    document: &DocumentSyntax,
+) -> Result<Vec<String>, SourceSemanticError> {
+    let mut units = Vec::new();
+    collect_document_units(document.syntax(), &mut units, &mut Vec::new())?;
+    document_types::enum_declarations(&units)
+        .map(|declarations| declarations.into_iter().map(|(name, _)| name).collect())
+}
+
 fn declare_document_inputs(
     builder: &mut SemanticBuilder,
     units: &[DocumentUnit],

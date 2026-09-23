@@ -235,6 +235,10 @@ pub enum SourceContextCapabilityScope {
 pub struct ResolvedSource {
     pub name: String,
     pub canonical_uri: String,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub nominal_origin: Option<mech_core::CanonicalNominalPath>,
     /// Resolver-owned package identity for collision checks; never part of a nominal key.
     #[cfg_attr(

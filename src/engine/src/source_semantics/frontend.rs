@@ -680,6 +680,15 @@ impl CanonicalSourceFrontend {
         document_lowering::root_statement_nodes(document)
     }
 
+    /// Names of executable enum declarations in this retained document.
+    pub fn declared_enum_names(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<Vec<String>, SourceSemanticError> {
+        reject_recovered_syntax(document)?;
+        document_lowering::declared_enum_names(document)
+    }
+
     /// Return the names assigned by the root execution scope.
     pub fn root_state_mutation_names(
         &self,

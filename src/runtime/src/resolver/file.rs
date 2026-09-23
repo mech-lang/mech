@@ -160,7 +160,12 @@ impl FileSourceResolver {
             if !manifest_path.is_file() {
                 continue;
             }
-            self.check(FS_READ, &manifest_path)?;
+            // A source grant need not include its ancestor manifest. Origin
+            // discovery is optional; nominal declarations will require an
+            // explicit origin at compilation if one cannot be read here.
+            if self.check(FS_READ, &manifest_path).is_err() {
+                return Ok(None);
+            }
             let manifest_source = std::fs::read_to_string(&manifest_path).map_err(|error| {
                 filesystem_specifier_error(
                     manifest_path.to_string_lossy().as_ref(),
@@ -1911,6 +1916,25 @@ mod capability_tests {
                 .resolve(&SourceRequest::new("outside/secret.mec"))
                 .is_err()
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn source_grant_does_not_require_ancestor_manifest_access() {
+        let root = temp_root("manifest-outside-grant");
+        let allowed = root.join("allowed");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"sample\"\nversion = \"1.0.0\"\n",
+        )
+        .unwrap();
+        std::fs::write(allowed.join("main.mec"), "value := 1\n").unwrap();
+        let resolved = resolver(&root, &allowed)
+            .resolve(&SourceRequest::new("allowed/main.mec"))
+            .unwrap()
+            .unwrap();
+        assert!(resolved.nominal_origin.is_none());
         std::fs::remove_dir_all(root).unwrap();
     }
 

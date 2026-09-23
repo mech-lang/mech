@@ -1,9 +1,14 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
-use mech_core::{CanonicalNominalPath, FunctionCatalog, FunctionExposure, ReactiveInstanceId};
+use mech_core::{
+    CanonicalNominalPath, FunctionCatalog, FunctionExposure, MechSourceCode, ReactiveInstanceId,
+};
 use mech_engine::resident::{ActivationFacts, activate};
 use mech_engine::{CanonicalSourceFrontend, SourceSemanticError};
-use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot, SourceDocument};
+use mech_runtime::resolver::InMemorySourceResolver;
+use mech_runtime::{
+    ResolvedSource, RuntimeBuilder, RuntimeValueSnapshot, SourceDocument, SourceKind, SourceRequest,
+};
 use mech_syntax::document::{ParseConfig, Revision};
 use std::collections::BTreeSet;
 use std::sync::Arc;
@@ -37,6 +42,40 @@ fn product_compiler_uses_the_retained_defining_origin_for_enums() {
         .compile_document(&document(source).with_nominal_origin(origin))
         .expect("product compilation receives the defining package");
     assert!(!compiled.bytecode().is_empty());
+}
+
+#[test]
+fn recursive_graph_imports_reject_distinct_package_owners_of_one_enum_path() {
+    let source = "<event> := :idle | :busy\nvalue<event> := :idle\n<+ value\n";
+    let origin = CanonicalNominalPath::new(vec!["shared".to_owned()]).unwrap();
+    let dependency = |name: &str, owner: &str| {
+        ResolvedSource::new(
+            name,
+            format!("memory:app/{name}"),
+            MechSourceCode::String(source.to_owned()),
+        )
+        .with_kind(SourceKind::Mech)
+        .retain_source_document(Revision(0), ParseConfig::default())
+        .unwrap()
+        .with_nominal_origin(origin.clone())
+        .with_nominal_package_id(owner)
+    };
+    let resolver = InMemorySourceResolver::new()
+        .with_string(
+            "app/main.mec",
+            "+> ./a.mec\n+> ./b.mec\nvalue := 1\nvalue\n",
+        )
+        .with_source("app/a.mec", dependency("a.mec", "package-a"))
+        .with_source("app/b.mec", dependency("b.mec", "package-b"));
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let error = compiler
+        .compile_canonical_root(SourceRequest::new("app/main.mec"))
+        .expect_err("distinct packages cannot own one nominal enum path");
+    assert!(format!("{error:?}").contains("ambiguous-nominal-declaration-v1"));
 }
 
 fn rejected(source: &str, catalog: Arc<FunctionCatalog>) -> SourceSemanticError {

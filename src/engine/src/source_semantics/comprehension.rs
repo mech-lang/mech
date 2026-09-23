@@ -738,7 +738,15 @@ impl SemanticBuilder {
                             }
                         }
                     } else {
-                        let value = self.expression(&expression)?.0;
+                        let value = if matches!(expected.body, SchemaBody::Enum { .. }) {
+                            self.expression_with_expected(
+                                &expression,
+                                Some(ExpectedSchema::Value(expected)),
+                            )?
+                            .0
+                        } else {
+                            self.expression(&expression)?.0
+                        };
                         if !is_dynamic_schema_draft(expected) {
                             self.conform_dynamic_to_schema(value, expected, pattern.syntax())?;
                             if self.schema_draft_of(value)? != *expected {
@@ -748,7 +756,24 @@ impl SemanticBuilder {
                                 ));
                             }
                         }
-                        CollectionPattern::Equal(value)
+                        if let PendingValue::Constant(index) = value
+                            && matches!(expected.body, SchemaBody::Enum { .. })
+                        {
+                            if let ValueDataDraft::Enum(EnumDraft {
+                                ordinal,
+                                payload: None,
+                            }) = &self.constants[index].data
+                            {
+                                CollectionPattern::Enum {
+                                    ordinal: *ordinal,
+                                    payload: None,
+                                }
+                            } else {
+                                CollectionPattern::Equal(value)
+                            }
+                        } else {
+                            CollectionPattern::Equal(value)
+                        }
                     }
                 }
                 PatternValueSyntax::Tuple(tuple) => self.collection_tuple_pattern(

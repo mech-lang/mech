@@ -639,6 +639,7 @@ struct CanonicalGraphCompilation<'a> {
     exports: HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
     source_dependencies: BTreeMap<String, u64>,
     module_versions: HashMap<String, crate::ModuleVersionId>,
+    nominal_owners: BTreeMap<Vec<String>, Option<String>>,
 }
 
 impl<'a> CanonicalGraphCompilation<'a> {
@@ -649,6 +650,7 @@ impl<'a> CanonicalGraphCompilation<'a> {
             exports: HashMap::new(),
             source_dependencies: BTreeMap::new(),
             module_versions: HashMap::new(),
+            nominal_owners: BTreeMap::new(),
         }
     }
 }
@@ -1285,6 +1287,31 @@ impl<'a> ProgramCompilerView<'a> {
         let document = resolved.source_document().ok_or_else(|| {
             canonical_compilation_error("canonical root has no retained document")
         })?;
+        let frontend = canonical_frontend(document);
+        if let Some(origin) = document.nominal_origin() {
+            for name in frontend
+                .declared_enum_names(&document.document())
+                .map_err(|error| canonical_compilation_error(error.to_string()))?
+            {
+                let path = origin
+                    .segments()
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(name))
+                    .collect::<Vec<_>>();
+                let owner = document.nominal_package_id().map(str::to_owned);
+                if let Some(previous) = context.nominal_owners.get(&path) {
+                    if previous.is_none() || owner.is_none() || previous != &owner {
+                        return Err(canonical_compilation_error(format!(
+                            "source-semantics/ambiguous-nominal-declaration-v1: {} has distinct defining packages",
+                            path.join("/")
+                        )));
+                    }
+                } else {
+                    context.nominal_owners.insert(path, owner);
+                }
+            }
+        }
         if context.active.iter().any(|entry| entry == uri) {
             return Err(canonical_compilation_error(format!(
                 "canonical source dependency cycle at {uri}"
@@ -1310,7 +1337,6 @@ impl<'a> ProgramCompilerView<'a> {
         } else {
             CanonicalSourceFrontend::compile_document_with_planning_contract
         };
-        let frontend = canonical_frontend(document);
         let program = compile(
             &frontend,
             &document.document(),

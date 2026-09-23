@@ -491,11 +491,20 @@ fn enum_payload_draft(
         ) {
             return Err(ResidentKernelError::InvalidShape);
         }
+        let context =
+            mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
+        let rebound = value
+            .rebind_with_context(plan.payload.source.schema_id, value.shape(), &context)
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
         (
-            value
+            rebound
                 .canonical_data_draft()
                 .map_err(|_| ResidentKernelError::InvalidInput)?,
-            value.shape().parameter_values().to_vec().into_boxed_slice(),
+            rebound
+                .shape()
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
         )
     } else {
         let data =
@@ -1288,6 +1297,66 @@ mod tests {
             activation_fixed_shape: true,
             resolved_selector: None,
         }
+    }
+
+    #[test]
+    fn enum_payload_rebinds_foreign_dynamic_schema_ids() {
+        let mut foreign_builder = mech_core::SchemaTableBuilder::new();
+        let foreign_index = foreign_builder.insert(schema(SchemaBody::Index)).unwrap();
+        let foreign_dynamic = foreign_builder.insert(schema(SchemaBody::Dynamic)).unwrap();
+        let foreign_build = foreign_builder.finish().unwrap();
+        let foreign_index = foreign_build.resolve(foreign_index).unwrap();
+        let foreign_dynamic = foreign_build.resolve(foreign_dynamic).unwrap();
+        let foreign = mech_core::ValueDraft {
+            schema: foreign_dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(Some(Box::new(mech_core::ValueDraft {
+                schema: foreign_index,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Index(7),
+            }))),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            &foreign_build.table,
+        ))
+        .unwrap();
+
+        let mut local_builder = mech_core::SchemaTableBuilder::new();
+        for body in [
+            SchemaBody::Bool,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::String,
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8),
+        ] {
+            local_builder.insert(schema(body)).unwrap();
+        }
+        let local_index = local_builder.insert(schema(SchemaBody::Index)).unwrap();
+        let local_dynamic = local_builder.insert(schema(SchemaBody::Dynamic)).unwrap();
+        let local_build = local_builder.finish().unwrap();
+        let local_index = local_build.resolve(local_index).unwrap();
+        let local_dynamic = local_build.resolve(local_dynamic).unwrap();
+        assert_ne!(foreign_index, local_index);
+        let local = Arc::new(local_build.table);
+        let source = layout(&local, local_dynamic, ResidentValueKind::Snapshot);
+        let plan = EnumPackPlan {
+            payload: CompositeChildPlan {
+                matrix_dimensions: None,
+                input_is_matrix: false,
+                snapshot_backed_matrix: false,
+                shape: ResidentShape::SCALAR,
+                dynamic: false,
+                source: source.clone(),
+            },
+            accepted_ordinals: Box::new([]),
+            output: source,
+            schemas: local,
+        };
+        let input = [Some(foreign)];
+        let payload = enum_payload_draft(ResidentValueRef::Snapshot(&input), &plan, false).unwrap();
+        let ValueDataDraft::Dynamic(Some(inner)) = payload else {
+            panic!("enum payload retains its Dynamic envelope")
+        };
+        assert_eq!(inner.schema, local_index);
     }
 
     #[test]

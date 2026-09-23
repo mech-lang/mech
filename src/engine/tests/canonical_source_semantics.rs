@@ -352,6 +352,20 @@ fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
 }
 
 #[test]
+fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
+    let source = "<first> := :idle | :busy\n\
+                  <second> := :idle | :done\n\
+                  values := [:first/idle :first/busy]\n\
+                  result := [true | :idle <- values]\n\
+                  result\n";
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .expect("the generator element selects the first enum's idle variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn declared_annotations_in_comprehension_binding_prepasses_use_the_document_environment() {
     CanonicalSourceFrontend
         .compile_document(&document(
