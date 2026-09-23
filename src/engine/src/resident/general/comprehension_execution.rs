@@ -2491,29 +2491,28 @@ impl ReactiveInstance {
                 .ok_or(ResidentKernelError::InvalidShape)?;
         }
         meter.charge_comparison_work(scan_work)?;
-        let (previous_arena_bytes, previous_arena_nodes) =
-            if let Some(previous_owner) = &previous_owner {
-                if owners
-                    .iter()
-                    .any(|owner| Arc::ptr_eq(&owner.owner, previous_owner))
-                {
-                    (0, 0)
-                } else {
-                    distinct_schema_owner_footprint(
-                        previous_owner,
-                        &self.plan.schemas,
-                        shared_owner_bytes,
-                    )?
-                }
-            } else {
-                (0, 0)
-            };
-        let peak = allocation_bound
+        let (previous_arena_bytes, previous_arena_nodes) = previous_owner
+            .as_ref()
+            .map(|owner| {
+                distinct_schema_owner_footprint(owner, &self.plan.schemas, shared_owner_bytes)
+            })
+            .transpose()?
+            .unwrap_or((0, 0));
+        let closure_construction_peak = allocation_bound
             .checked_mul(2)
             .and_then(|bytes| bytes.checked_add(closure_peak))
             .and_then(|bytes| bytes.checked_add(previous_arena_bytes))
             .and_then(|bytes| bytes.checked_add(owner_index_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?;
+        // The pre-sized merge has no canonical-byte index or vector growth.
+        // Bound the prior arena, replacement vector, possible boxed-slice
+        // shrink, rooted closure, and the previously published arena.
+        let merge_peak = allocation_bound
+            .checked_mul(4)
+            .and_then(|bytes| bytes.checked_add(previous_arena_bytes))
+            .and_then(|bytes| bytes.checked_add(owner_index_bytes))
+            .ok_or(ResidentKernelError::InvalidShape)?;
+        let peak = closure_construction_peak.max(merge_peak);
         // Each extend_preserving_ids call clones the arena accumulated so
         // far. Bound every rebuild by the final arena, not just the first.
         meter.charge_compute_work(
@@ -2562,7 +2561,7 @@ impl ReactiveInstance {
                 )
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
             merged = merged
-                .extend_preserving_ids(&closed)
+                .extend_preserving_ids_preallocated(&closed)
                 .map_err(|_| ResidentKernelError::InvalidInput)?;
         }
         let retained = merged
@@ -2854,7 +2853,8 @@ impl ReactiveInstance {
         let value = self
             .read_location(source, working)
             .ok_or(ResidentKernelError::InvalidInput)?;
-        let footprint = collection_item_footprint(value, region(source), element, ordinal, meter)?;
+        let mut footprint =
+            collection_item_footprint(value, region(source), element, ordinal, meter)?;
         let metadata_bytes = element
             .clone_allocation_bound_bytes()
             .and_then(|bytes| bytes.checked_add(core::mem::size_of::<SchemaBody>() as u64))
@@ -2895,6 +2895,35 @@ impl ReactiveInstance {
         )
         .ok_or(ResidentKernelError::InvalidInput)?;
         meter.charge_comparison_work(canonical_budget.consumed())?;
+        if let (
+            ResidentValueRef::String(_),
+            PatternItem::Component {
+                data: ValueDataDraft::String(cloned),
+                ..
+            },
+        ) = (value, &item)
+        {
+            footprint.retained_bytes = footprint
+                .retained_bytes
+                .checked_add(budget::checked_u64(
+                    cloned.capacity().saturating_sub(cloned.len()),
+                )?)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            // The allocator can give String::clone more capacity than len.
+            // Re-admit that actual capacity before projection or retention.
+            admit_item_clone(
+                footprint,
+                metadata_bytes,
+                retained_count,
+                retained_capacity,
+                retained_footprint,
+                retained_shape_parameter_count,
+                schema_arena_bytes,
+                live_locals,
+                published_output_bytes,
+                *meter,
+            )?;
+        }
         let descent_workspace = item.dynamic_descent_workspace(path, schemas)?;
         if descent_workspace > 0 {
             let (live_bytes, live_nodes) = item_clone_live_demand(

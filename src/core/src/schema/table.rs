@@ -228,6 +228,37 @@ mod tests {
     }
 
     #[test]
+    fn preallocated_merge_preserves_ids_and_checks_collisions() {
+        let mut base = SchemaTableBuilder::new();
+        base.insert(schema(SchemaBody::Bool)).unwrap();
+        let base = base.finish().unwrap().table;
+        let mut extension = SchemaTableBuilder::new();
+        extension.insert(schema(SchemaBody::Bool)).unwrap();
+        extension.insert(schema(SchemaBody::String)).unwrap();
+        let extension = extension.finish().unwrap().table;
+
+        let expected = base.extend_preserving_ids(&extension).unwrap();
+        let merged = base.extend_preserving_ids_preallocated(&extension).unwrap();
+        assert_eq!(merged.len(), expected.len());
+        for (actual, expected) in merged.entries().zip(expected.entries()) {
+            assert_eq!(actual.key(), expected.key());
+            assert_eq!(actual.canonical_bytes(), expected.canonical_bytes());
+        }
+        assert_eq!(
+            merged.entry(SchemaId::new(0)).unwrap().key(),
+            base.entry(SchemaId::new(0)).unwrap().key()
+        );
+
+        let mut collision = extension.clone();
+        collision.entries[0].key = base.entries[0].key;
+        collision.entries[0].canonical_bytes = Box::new([1]);
+        assert!(matches!(
+            base.extend_preserving_ids_preallocated(&collision),
+            Err(SemanticModelError::SchemaKeyCollision { .. })
+        ));
+    }
+
+    #[test]
     fn component_closure_preserves_ids_and_bounds_its_runtime_construction() {
         let tuple_schema = schema(SchemaBody::Tuple(
             vec![SchemaBody::String, SchemaBody::Bool, SchemaBody::String].into_boxed_slice(),
@@ -582,6 +613,56 @@ impl SchemaTable {
             u32::try_from(entries.len()).map_err(|_| SemanticModelError::SchemaIdExhausted)?;
             by_key.insert(entry.key, entry.canonical_bytes.clone());
             entries.push(entry.clone());
+        }
+        Ok(Self {
+            entries: entries.into_boxed_slice(),
+        })
+    }
+
+    /// Merge a rooted closure into a pre-sized entry allocation, without a
+    /// second index of cloned canonical bytes or vector growth on insertion.
+    #[doc(hidden)]
+    pub fn extend_preserving_ids_preallocated(
+        &self,
+        additional: &SchemaTable,
+    ) -> Result<Self, SemanticModelError> {
+        let mut new_entries = 0_usize;
+        for entry in additional.entries.iter() {
+            if let Some(existing) = self
+                .entries
+                .iter()
+                .find(|existing| existing.key == entry.key)
+            {
+                if existing.canonical_bytes != entry.canonical_bytes {
+                    return Err(SemanticModelError::SchemaKeyCollision { key: entry.key });
+                }
+            } else {
+                new_entries = new_entries
+                    .checked_add(1)
+                    .ok_or(SemanticModelError::SchemaIdExhausted)?;
+            }
+        }
+        let final_count = self
+            .entries
+            .len()
+            .checked_add(new_entries)
+            .ok_or(SemanticModelError::SchemaIdExhausted)?;
+        if final_count > 0 {
+            u32::try_from(final_count - 1).map_err(|_| SemanticModelError::SchemaIdExhausted)?;
+        }
+        let mut entries = Vec::new();
+        entries
+            .try_reserve_exact(final_count)
+            .map_err(|_| SemanticModelError::SchemaIdExhausted)?;
+        entries.extend_from_slice(&self.entries);
+        for entry in additional.entries.iter() {
+            if !self
+                .entries
+                .iter()
+                .any(|existing| existing.key == entry.key)
+            {
+                entries.push(entry.clone());
+            }
         }
         Ok(Self {
             entries: entries.into_boxed_slice(),
