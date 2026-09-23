@@ -131,6 +131,35 @@ for profile in ("browser", "browser-compute", "browser-compute-canary"):
     if f'"{profile}"' not in build_wasm:
         fail(f"unified WASM builder is missing the `{profile}` profile")
 
+def one_manifest_version(path: str, pattern: str) -> int:
+    versions = re.findall(pattern, text(path))
+    if len(versions) != 1:
+        fail(f"expected one source manifest version in {path}, found {versions}")
+    return int(versions[0])
+
+
+bundle_versions = {
+    "producer": one_manifest_version(
+        "src/bundle_web.rs", r'let manifest = serde_json::to_vec\(&serde_json::json!\(\{\s*"version":\s*(\d+)'
+    ),
+    "browser": one_manifest_version("include/static-project.js", r'manifest\?\.version !== (\d+)'),
+    "smoke": one_manifest_version("scripts/smoke-bundle-web.sh", r'manifest\.get\("version"\) != (\d+)'),
+}
+if len(set(bundle_versions.values())) != 1:
+    fail(f"static bundle source manifest versions disagree: {bundle_versions}")
+
+served_versions = {
+    "producer": one_manifest_version(
+        "src/serve.rs", r'let manifest = serde_json::to_vec\(&serde_json::json!\(\{\s*"version":\s*(\d+)'
+    ),
+    "smoke": one_manifest_version(
+        "scripts/smoke-served-analog-clock-browser.sh",
+        r'manifest\.get\("version"\) != (\d+)',
+    ),
+}
+if len(set(served_versions.values())) != 1:
+    fail(f"served project source manifest versions disagree: {served_versions}")
+
 ci = text(".github/workflows/ci.yml")
 windows_job = re.search(
     r"(?ms)^  standard-windows:\n(?P<body>.*?)(?=^  [a-z][a-z0-9-]*:\n)",
