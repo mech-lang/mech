@@ -2655,21 +2655,6 @@ struct SourceMatchArm {
     syntax: SyntaxNode,
 }
 
-fn structurally_irrefutable<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
-    match pattern {
-        crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
-        crate::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
-        crate::CollectionPattern::Array {
-            prefix,
-            rest: Some(rest),
-            suffix,
-        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
-        crate::CollectionPattern::Equal(_)
-        | crate::CollectionPattern::Enum { .. }
-        | crate::CollectionPattern::Array { .. } => false,
-    }
-}
-
 #[derive(Clone, Copy)]
 enum PendingControlValue {
     Constant(usize),
