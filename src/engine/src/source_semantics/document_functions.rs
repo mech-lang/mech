@@ -215,17 +215,19 @@ impl SemanticBuilder {
                 let SchemaBody::Set { cardinality, .. } = &actual.body else {
                     unreachable!("set lifting retains its source schema")
                 };
-                if !actual.dimension_parameters.is_empty() {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/incompatible-function-argument",
-                        message: "set-lifted function input requires a closed element kind"
-                            .to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(call),
-                    });
-                }
                 let upper_bound = match cardinality {
                     CardinalitySpec::Exact(value) => Some(value.clone()),
                     CardinalitySpec::Dynamic { upper_bound } => upper_bound.clone(),
+                };
+                let upper_bound = if actual.dimension_parameters.is_empty() {
+                    upper_bound
+                } else {
+                    match upper_bound {
+                        Some(DimensionExpr::Constant(value)) => {
+                            Some(DimensionExpr::Constant(value))
+                        }
+                        _ => None,
+                    }
                 };
                 let (lift, value) = self.begin_pattern_lift(
                     input,
@@ -351,6 +353,18 @@ impl SemanticBuilder {
         }
         if matches!(lift.output, PatternLiftOutput::Set { .. }) {
             require_keyable_set_element(&output_element.body, &[], call)?;
+            if !matches!(
+                &output_element.body,
+                SchemaBody::Bool
+                    | SchemaBody::Index
+                    | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            ) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-lifted-set-result-kind",
+                    message: "lifted set results require Bool, Index, or f64 elements".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(call),
+                });
+            }
         }
 
         let mut inputs = Vec::new();
