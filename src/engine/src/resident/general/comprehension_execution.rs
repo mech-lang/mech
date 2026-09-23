@@ -4330,7 +4330,11 @@ impl ReactiveInstance {
                 working,
                 live_bytes,
                 live_nodes,
-                |this| this.execute_collection_planned(index, &control, before, working, probe),
+                |this| {
+                    this.execute_collection_planned(
+                        index, &control, before, working, probe, live_bytes, live_nodes,
+                    )
+                },
             )
         });
         // Lexical payloads have no consumers after this control invocation.
@@ -4348,6 +4352,8 @@ impl ReactiveInstance {
         before: InstanceEpoch,
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
+        inherited_live_bytes: u64,
+        inherited_live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel {
             node: control.artifact_node,
@@ -4395,6 +4401,8 @@ impl ReactiveInstance {
             before,
             working,
             probe,
+            inherited_live_bytes,
+            inherited_live_nodes,
         )?;
         let live_locals = self
             .comprehension_live_local_footprint(&control.locals, None, &schemas, &mut meter)
@@ -5479,6 +5487,8 @@ impl ReactiveInstance {
         before: InstanceEpoch,
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
+        inherited_live_bytes: u64,
+        inherited_live_nodes: u64,
     ) -> Result<(), ResidentExecutionError> {
         let fail = |error| ResidentExecutionError::Kernel {
             node: control.artifact_node,
@@ -5518,6 +5528,15 @@ impl ReactiveInstance {
                         *meter,
                     )
                     .map_err(fail)?;
+                    // A child installs its own turn plan. Carry the demand
+                    // received from enclosing controls as well as this
+                    // comprehension's draft and live locals.
+                    let live_bytes = live_bytes
+                        .checked_add(inherited_live_bytes)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    let live_nodes = live_nodes
+                        .checked_add(inherited_live_nodes)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
                     self.execute_step_with_live_demand(
                         *node, before, working, probe, live_bytes, live_nodes,
                     )?;
@@ -5610,6 +5629,8 @@ impl ReactiveInstance {
                                 before,
                                 working,
                                 probe,
+                                inherited_live_bytes,
+                                inherited_live_nodes,
                             )?;
                         }
                     }
