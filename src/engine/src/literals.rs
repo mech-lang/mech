@@ -2392,7 +2392,11 @@ mod canonical_conversion_tests {
         .unwrap();
         let output = convert_schema_identity(source.clone()).unwrap();
         assert_ne!(source.reactive_cell_id(), output.reactive_cell_id());
-        assert_eq!(source.snapshot().unwrap(), output.snapshot().unwrap());
+        assert_eq!(source.schema_key(), output.schema_key());
+        assert_eq!(
+            source.snapshot().unwrap().canonical_data_draft().unwrap(),
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+        );
     }
 
     #[test]
