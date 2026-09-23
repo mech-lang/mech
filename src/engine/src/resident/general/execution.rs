@@ -2354,8 +2354,8 @@ impl ReactiveInstance {
                     &mut self.workspace.scratch
                 };
                 let unchanged = resident_values_equal(target.read(write.region), captured.as_ref());
-                super::copy_owned_activation_value(captured, target.write(write.region))
-                    .map_err(|_| fail())?;
+                copy_input(target, write.region, captured.as_ref())
+                    .map_err(|error| error.at(fail()))?;
                 let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
                 set_bit(&mut self.workspace.initialized_output_bits, index);
                 return Ok(!initialized || !unchanged);
@@ -2923,8 +2923,8 @@ impl ReactiveInstance {
 
         if self.workspace.continuation_candidates[call.target.get() as usize].is_some() {
             for (region, value) in &frame {
-                super::copy_owned_activation_value(value, self.workspace.scratch.write(*region))
-                    .map_err(|_| fail(ResidentKernelError::InvalidOutput))?;
+                copy_input(&mut self.workspace.scratch, *region, value.as_ref())
+                    .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
             }
             invoked?;
             return Ok(bit_is_set(
