@@ -1,5 +1,28 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R26 published; C next
+
+**Candidate:** the single accumulated deleted-parser C remains draft #830,
+unqualified on the current owner stack. The protected target is
+`integration/v0.4`.
+
+**Completed:** R26 #885 was rebased onto exact R06 and published at
+`6b43274a8`. It had no open review threads or rebase conflicts. The shipped
+EKF source and decoded bytecode lowered to the same compute layout and CPU
+state, including retained integrity checks. Formatting and patch checks pass.
+The remote head matches and the PR is mergeable. No repeat review was
+requested.
+
+**In progress:** rebase the single accumulated C candidate onto exact R26,
+resolve its five open review notes and any conflicts, then seal the owner
+stack and qualify the exact C head.
+
+**Remaining:** revisit deferred R16 findings, complete exact-head full
+qualification and review, merge through the protected path, and verify the
+landed `integration/v0.4` result. Checkpoints are not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R06 published; R26 next
 
 **Candidate:** the accumulated deleted-parser C remains draft #830 and is not
