@@ -7,7 +7,10 @@ use mech_core::{
     FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueDataDraft as Data,
 };
 use mech_engine::__resident::{ActivationFacts, CapturedSignalInput, activate};
-use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
+use mech_engine::{
+    ArtifactBuildError, CanonicalSourceFrontend, CanonicalSourceProgram, ControlOperationBody,
+    ControlParameterSource, ExecutableNodeBody, MatchPattern, ProgramArtifactDraft,
+};
 use mech_syntax::document::parser::canonical::parse_canonical_phase_2i_rule_for_test;
 use mech_syntax::document::parser::rules;
 use mech_syntax::document::{
@@ -177,6 +180,79 @@ fn recursion_inside_a_nested_match_keeps_the_outer_function_target() {
 }
 
 #[test]
+fn recursive_calls_inside_comprehensions_fail_at_the_source_boundary() {
+    let source = "walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => [((n > 0) ? | true => walk(n - 1) | * => 0) | x <- [1]].\nwalk(2)\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x556), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let error = CanonicalSourceFrontend
+        .compile_document(&document)
+        .err()
+        .expect("recursive calls inside comprehensions must fail before artifact creation");
+    assert_eq!(error.code, "source-semantics/recursive-comprehension");
+}
+
+#[test]
+fn artifact_rejects_direct_bind_as_a_recursive_target() {
+    let artifact = compile_document(
+        "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\ncountdown(2)\n",
+    )
+    .compile_artifact()
+    .unwrap();
+    let mut draft = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().into(),
+        slots: artifact.slots().into(),
+        nodes: artifact.nodes().into(),
+        bindings: artifact.bindings().into(),
+        outputs: artifact.outputs().into(),
+        constraints: artifact.constraints().into(),
+        compute_regions: artifact.compute_regions().into(),
+    };
+    let control = draft
+        .nodes
+        .iter_mut()
+        .find_map(|node| match &mut node.body {
+            ExecutableNodeBody::Match(control) => Some(control),
+            _ => None,
+        })
+        .unwrap();
+    let recursive_arm = control
+        .arms
+        .iter_mut()
+        .find(|arm| {
+            arm.body
+                .operations
+                .iter()
+                .any(|operation| matches!(&operation.body, ControlOperationBody::Recur(_)))
+        })
+        .unwrap();
+    assert!(matches!(
+        &recursive_arm.pattern,
+        MatchPattern::Structural(_)
+    ));
+    recursive_arm.pattern = MatchPattern::Bind;
+    for parameter in recursive_arm.body.parameters.iter_mut() {
+        if matches!(parameter.source, ControlParameterSource::PatternBinding(_)) {
+            parameter.source = ControlParameterSource::Scrutinee;
+        }
+    }
+    let error = draft.finalize().err().unwrap();
+    assert!(matches!(
+        error,
+        ArtifactBuildError::InvalidControl {
+            reason: "recursive target cannot use a direct bind pattern",
+            ..
+        }
+    ));
+}
+
+#[test]
 fn direct_recursion_at_the_eighth_lexical_function_level_is_admitted() {
     execute_document(
         "f1(n<f64>) => <f64> | n => f2(n).\n\
@@ -231,6 +307,38 @@ fn recursive_match_initialization_schedules_downstream_output() {
             .unwrap(),
         f(1.0)
     );
+}
+
+#[test]
+fn recursive_identity_result_updates_downstream_on_the_next_turn() {
+    let source = "countdown(n<f64>, answer<f64>) => <f64>\n  | (0, answer) => answer\n  | (n, answer) => countdown(n - 1, answer).\nresult := countdown(3, signal<f64>) + 1\nresult\n";
+    let artifact = compile_document(source).compile_artifact().unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x556, 3),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let slot = instance.plan.inputs[0].slot;
+    for (answer, expected) in [(2.0, 3.0), (5.0, 6.0)] {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[answer]),
+            }])
+            .unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            f(expected)
+        );
+    }
 }
 
 #[test]
