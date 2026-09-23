@@ -1203,6 +1203,26 @@ fn pattern_function_lifts_conform_each_collection_element() {
 }
 
 #[test]
+fn pattern_function_lifts_annotation_compatible_tuple_elements() {
+    let source = "classify(x<(*,*)>) => <f64>\n\
+                    | (a, b) => 1.\n\
+                  classify(signal<[(f64,bool)]>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let schema = compiled
+        .schemas()
+        .get(compiled.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(
+        schema.body(),
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(_))
+    ));
+    compiled.compile_artifact().unwrap();
+}
+
+#[test]
 fn pattern_function_matrix_parameter_consumes_the_whole_matrix() {
     execute_document(
         "identity(n<[f64]>) => <[f64]>\n\

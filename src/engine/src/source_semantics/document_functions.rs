@@ -33,6 +33,9 @@ fn lift_element_conforms(element: &SchemaBody, parameter: &SchemaDraft) -> bool 
     ) {
         return false;
     }
+    if schema_annotation_accepts(element, &parameter.body) {
+        return true;
+    }
     let Ok(source) = ResolvedType::from_schema_body(element, &[]) else {
         return false;
     };
