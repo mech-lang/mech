@@ -1,5 +1,35 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, accumulated C published; sealing next
+
+**Candidate:** the single accumulated deleted-parser C is draft #830 at exact
+head `62c68faafd5f22b7ace78ebd8ccd421a93576a03`, based on exact R26
+`6b43274a8`. It is mergeable but has not been fully qualified or landed in the
+protected `integration/v0.4` branch.
+
+**Completed:** all seven C commits were rebased onto R26 and the conflicts
+resolved. The five remaining C review notes were fixed or confirmed in the
+combined code, answered, and resolved: replacement documents retain their
+result across later REPL overlays; configured pointer hosts are registered in
+planning and live browser runtimes with ingress; standalone formatted HTML
+embeds a decodable document payload; explicit serve targets override configured
+run roots; and non-root served pages render statically without a controller.
+Focused browser pointer, document boundary, and output identity tests pass,
+along with the configured server root, explicit target, standalone payload,
+and five formatter shim checks. Formatting and patch checks pass. The remote
+C head matches the local head; zero C review threads remain open. No repeat
+review was requested.
+
+**In progress:** seal the owner stack, starting with the deferred R16 findings,
+then qualify the exact C head against the full required product gates.
+
+**Remaining:** obtain the required accepted owner reviews within the one-review
+per slice procedure, complete exact-head qualification, merge through the
+protected path, and verify post-merge `integration/v0.4`. Checkpoints are not
+completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R26 published; C next
 
 **Candidate:** the single accumulated deleted-parser C remains draft #830,
