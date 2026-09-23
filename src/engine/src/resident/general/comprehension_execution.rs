@@ -162,16 +162,29 @@ fn projected_schema(parent: &Schema, body: SchemaBody) -> Result<Schema, Semanti
 fn projected_schema_shape(
     schema: SchemaId,
     closed_body: &SchemaBody,
+    inherited_shape_values: &[u64],
     schemas: &SchemaTable,
 ) -> Option<(SchemaId, Box<[u64]>)> {
     let projected = schemas.get(schema)?;
-    let shape = mech_core::shape_for_schema_components(
+    let inferred = mech_core::shape_for_schema_components(
         projected,
         &[(projected.body(), closed_body.clone())],
         None,
     )
     .ok()?;
-    Some((schema, shape.parameter_values().to_vec().into_boxed_slice()))
+    let mut values = inferred.parameter_values().to_vec();
+    if let Some(prefix) = values.get_mut(..inherited_shape_values.len()) {
+        prefix.copy_from_slice(inherited_shape_values);
+        if let Ok(shape) = projected.instantiate_shape(values.into_boxed_slice())
+            && projected.closed_body(&shape).ok().as_ref() == Some(closed_body)
+        {
+            return Some((schema, shape.parameter_values().to_vec().into_boxed_slice()));
+        }
+    }
+    Some((
+        schema,
+        inferred.parameter_values().to_vec().into_boxed_slice(),
+    ))
 }
 
 fn projected_rest_schema(
@@ -467,10 +480,9 @@ fn source_schema_contexts(
             projected
                 .iter()
                 .enumerate()
-                .filter_map(|(index, (_, schemas, _))| (index != root_index).then_some(schemas)),
+                .filter_map(|(index, (_, schemas, _))| (index != root_index).then_some(schemas))
+                .chain(core::iter::once(plan_schemas)),
         )
-        .ok()?
-        .extend_preserving_ids(plan_schemas)
         .ok()?;
     let binding_schema_index = source_schema_index(&binding_schemas).ok()?;
     let binding_schemas = Arc::new(binding_schemas);
@@ -893,6 +905,7 @@ fn adapt_resolved_pattern_item(
                 projected_schema_shape(
                     projection_table.matrix_element(schema)?,
                     source.as_ref(),
+                    &item.shape_values,
                     projection_schemas,
                 )
             });
@@ -958,6 +971,7 @@ fn adapt_resolved_pattern_item(
                         projected_schema_shape(
                             projection_table.tuple_child(parent, index)?,
                             &source,
+                            &item.shape_values,
                             projection_schemas,
                         )
                     });
@@ -1367,7 +1381,7 @@ impl PatternItem {
                     }
                     _ => return None,
                 };
-                projected_schema_shape(projected, &body, projection_schemas)
+                projected_schema_shape(projected, &body, fallback_shape_values, projection_schemas)
             });
             let projection_schema = projection.as_ref().map(|(schema, _)| *schema);
             let shape_values = projection.map_or_else(
@@ -1469,6 +1483,7 @@ impl PatternItem {
                 projected_schema_shape(
                     projection_table.matrix_rest(schema)?,
                     &body,
+                    fallback_shape_values,
                     projection_schemas,
                 )
             });
@@ -1685,14 +1700,34 @@ impl PatternItem {
             let Some(observation) = binding_shape_observation(binding.body(), &item.body) else {
                 return Ok(None);
             };
-            let Ok(shape) = mech_core::shape_for_schema_components(
-                binding,
-                &[(binding.body(), observation)],
-                None,
-            ) else {
-                return Ok(None);
-            };
-            shape
+            let selected_rest_shape = matches!(
+                (binding.body(), &item.body),
+                (
+                    SchemaBody::Matrix { dimensions, .. },
+                    SchemaBody::Matrix { .. },
+                ) if dimensions.len() == 2
+                    && matches!(&dimensions[0], DimensionExpr::Constant(1))
+                    && matches!(&dimensions[1], DimensionExpr::Parameter(parameter)
+                        if parameter.get() as usize + 1 == item.shape_values.len())
+                    && binding.dimension_parameters().len() == item.shape_values.len()
+                    && item.projection_schema.is_some()
+            );
+            if let Some(shape) = selected_rest_shape
+                .then(|| binding.instantiate_shape(item.shape_values.clone()).ok())
+                .flatten()
+                .filter(|shape| binding.closed_body(shape).ok().as_ref() == Some(&observation))
+            {
+                shape
+            } else {
+                let Ok(shape) = mech_core::shape_for_schema_components(
+                    binding,
+                    &[(binding.body(), observation)],
+                    None,
+                ) else {
+                    return Ok(None);
+                };
+                shape
+            }
         };
         let target = binding
             .closed_body(&binding_shape)
@@ -2307,6 +2342,22 @@ fn generator_shape_values(
     let target_schema = schemas
         .get(schema)
         .ok_or(ResidentKernelError::InvalidInput)?;
+    if schemas
+        .entry(schema)
+        .is_some_and(|entry| entry.key() == value.schema_key())
+    {
+        let values = value.shape().parameter_values().to_vec().into_boxed_slice();
+        let shape = target_schema
+            .instantiate_shape(values)
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        if target_schema
+            .closed_body(&shape)
+            .map_err(|_| ResidentKernelError::InvalidInput)?
+            == source_body
+        {
+            return Ok(shape.parameter_values().to_vec().into_boxed_slice());
+        }
+    }
     let shape = mech_core::shape_for_schema_components(
         target_schema,
         &[(target_schema.body(), source_body.clone())],
@@ -2342,23 +2393,10 @@ fn generator_element(
         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => *element,
         _ => return Err(ResidentKernelError::InvalidInput),
     };
-    let component = schemas
-        .get(element_schema)
-        .ok_or(ResidentKernelError::InvalidInput)?;
-    let shape = mech_core::shape_for_schema_components(
-        component,
-        &[(component.body(), actual.clone())],
-        None,
-    )
-    .map_err(|_| ResidentKernelError::InvalidShape)?;
-    if component
-        .closed_body(&shape)
-        .map_err(|_| ResidentKernelError::InvalidShape)?
-        != actual
-    {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    Ok((actual, shape.parameter_values().to_vec().into_boxed_slice()))
+    let (_, shape_values) =
+        projected_schema_shape(element_schema, &actual, source_shape_values, schemas)
+            .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok((actual, shape_values))
 }
 
 fn retained_item_in(
@@ -6246,6 +6284,89 @@ mod tests {
             .unwrap();
         assert_eq!(binding.shape_values.as_ref(), [2]);
         assert!(matches!(binding.data, ValueDataDraft::Matrix(values) if values.len() == 2));
+    }
+
+    #[test]
+    fn snapshot_array_rest_keeps_unreferenced_source_parameter() {
+        let parent = SchemaDraft {
+            body: SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                    .into_boxed_slice(),
+            },
+            dimension_parameters: vec![DimensionParameterDeclaration {
+                id: DimensionParameterId::new(0),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Constant(8)),
+            }]
+            .into_boxed_slice(),
+        }
+        .finalize()
+        .unwrap();
+        let mut builder = SchemaTableBuilder::new();
+        let parent_id = builder.insert(parent.clone()).unwrap();
+        let rest_id = builder
+            .insert(
+                projected_rest_schema(&parent, SchemaBody::FloatingPoint(FloatWidth::W64)).unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let parent_id = build.resolve(parent_id).unwrap();
+        let rest_id = build.resolve(rest_id).unwrap();
+        let source_schemas = Arc::new(build.table);
+        let value = ValueDraft {
+            schema: parent_id,
+            shape_values: vec![5].into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                [1.0, 2.0, 3.0]
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .into(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(
+            &source_schemas,
+        ))
+        .unwrap();
+        let (schemas, projections) = structural_projection_schema_context(&source_schemas).unwrap();
+        let values = [Some(value)];
+        assert_eq!(
+            generator_shape_values(
+                ResidentValueRef::Snapshot(&values),
+                parent_id,
+                &[0],
+                &schemas,
+            )
+            .unwrap()
+            .as_ref(),
+            [5],
+        );
+        let region = ResidentRegion {
+            kind: ResidentValueKind::Snapshot,
+            offset: 0,
+            len: 1,
+            shape: mech_core::ResidentShape::SCALAR,
+        };
+        let item = resident_pattern_item(
+            ResidentValueRef::Snapshot(&values),
+            region,
+            parent_id,
+            &[5],
+            &schemas,
+            false,
+        )
+        .unwrap();
+        let rest = item.middle(1, 0, &schemas, &projections).unwrap();
+        let binding = rest
+            .into_binding(rest_id, &[5], &schemas, &projections)
+            .unwrap()
+            .unwrap();
+        assert_eq!(binding.shape_values.as_ref(), [5, 2]);
+        let bound = pattern_binding_draft(rest_id, &binding.shape_values, binding.data)
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+        assert_eq!(bound.shape().parameter_values(), [5, 2]);
     }
 
     #[test]
