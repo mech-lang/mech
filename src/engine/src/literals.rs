@@ -1360,7 +1360,7 @@ fn reified_parameter_bounds(
 fn unbound_reified_parameter(
     dimension: &DimensionExpr,
     bindings: &[Option<DimensionExpr>],
-    selected: &mut Option<DimensionParameterId>,
+    selected: &mut Vec<DimensionParameterId>,
 ) -> MResult<()> {
     match dimension {
         DimensionExpr::Parameter(id) if bindings.get(id.get() as usize).is_none() => {
@@ -1369,12 +1369,9 @@ fn unbound_reified_parameter(
             ));
         }
         DimensionExpr::Parameter(id) if bindings[id.get() as usize].is_none() => {
-            if selected.is_some_and(|previous| previous != *id) {
-                return Err(invalid_reified_conversion_target(
-                    "target dimension has multiple unbound parameters",
-                ));
+            if !selected.contains(id) {
+                selected.push(*id);
             }
-            *selected = Some(*id);
         }
         DimensionExpr::Add(children)
         | DimensionExpr::Multiply(children)
@@ -1396,9 +1393,14 @@ fn bind_reified_dimension(
     declarations: &[DimensionParameterDeclaration],
     bindings: &mut [Option<DimensionExpr>],
 ) -> MResult<()> {
-    let mut selected = None;
+    let mut selected = Vec::new();
     unbound_reified_parameter(target, bindings, &mut selected)?;
-    let Some(id) = selected else {
+    if selected.len() > 1 {
+        // Other occurrences may bind these parameters independently. The
+        // final pass checks this compound equation once they are known.
+        return Ok(());
+    }
+    let Some(id) = selected.first().copied() else {
         if let Ok(resolved) = substitute_reified_dimension(target, bindings)
             && let (Some(actual), Some(expected)) = (
                 reified_dimension_value(source),
@@ -3265,6 +3267,46 @@ mod canonical_conversion_tests {
             assert_eq!(bindings, vec![Some(DimensionExpr::Constant(7))]);
             validate_reified_parameter_bindings(&[declaration.clone()], &bindings).unwrap();
         }
+    }
+
+    #[test]
+    fn shared_compound_reified_axis_waits_for_multiple_later_witnesses() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let declarations = [p, q].map(|id| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(20)),
+        });
+        let source = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [
+                DimensionExpr::Constant(12),
+                DimensionExpr::Constant(5),
+                DimensionExpr::Constant(7),
+            ]
+            .into(),
+        };
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [
+                DimensionExpr::Add(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Parameter(q)].into(),
+                ),
+                DimensionExpr::Parameter(p),
+                DimensionExpr::Parameter(q),
+            ]
+            .into(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(&source, &target, &declarations).unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(5)),
+                Some(DimensionExpr::Constant(7)),
+            ]
+        );
     }
 
     #[test]
