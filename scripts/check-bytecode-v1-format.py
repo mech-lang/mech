@@ -936,6 +936,10 @@ def validate_fixture(entry: dict[str, object]) -> None:
         # Canonical artifact-only fixtures need no compatibility instruction
         # stream; their executable graph lives in the revisioned artifact
         # sections validated by the Rust contract suite.
+        require(
+            not section_payloads[4],
+            f"{name}: zero-count instruction section has payload bytes",
+        )
         decoded_runtime_ids = set()
     else:
         decoded_runtime_ids, _ = decode_instructions(
