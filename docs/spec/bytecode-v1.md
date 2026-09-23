@@ -476,8 +476,11 @@ wire arrays are allocated. Literal comparison still requires a scalar scrutinee.
 Existing section and aggregate byte
 limits also apply. Every control field participates in the artifact revision.
 
-A collection body is `{"Comprehension":{"id":block_id,"kind":0_or_1,"steps":[...],"yield_value":value}}`.
-Kind 0 constructs a row matrix; kind 1 constructs a canonical set. Values are
+A collection body is `{"Comprehension":{"id":block_id,"kind":0_or_1_or_2,"steps":[...],"yield_value":value}}`.
+Kind 0 constructs a row matrix; kind 1 constructs a canonical set; kind 2
+constructs a matrix with the live dimensions of its source generator. The
+kind 2 result must contain exactly one yielded element per source element.
+Values are
 `Constant(id)`, `Input(ordinal)`, or `Local(id)`. Steps are tagged `Generator`
 (`source`, `pattern`), `Operation` (`local`, `body`, `inputs`, `schema`), or
 `Filter(value)`. An operation body uses the same recursive `Operation`, `Match`,
