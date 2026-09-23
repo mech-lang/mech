@@ -1167,28 +1167,7 @@ impl SourceSchemas {
         for node in nodes {
             if let PendingNodeBody::Comprehension(control) = &node.body {
                 let mut failure = None;
-                for step in &control.steps {
-                    match step {
-                        crate::ComprehensionStep::Generator { pattern, .. } => {
-                            pattern.bindings(&mut |_, schema| {
-                                if let Err(error) = insert(schema) {
-                                    failure = Some(error);
-                                }
-                            })
-                        }
-                        crate::ComprehensionStep::Operation(operation) => {
-                            insert(&operation.schema)?;
-                        }
-                        crate::ComprehensionStep::Filter(_) => {}
-                    }
-                }
-                if let Some(error) = failure {
-                    return Err(error);
-                }
-            }
-            if let PendingNodeBody::Match(control) = &node.body {
-                let mut failure = None;
-                control.visit_pattern_binding_schemas(&mut |schema| {
+                control.visit_schemas(&mut |schema| {
                     if failure.is_none()
                         && let Err(error) = insert(schema)
                     {
@@ -1198,13 +1177,18 @@ impl SourceSchemas {
                 if let Some(error) = failure {
                     return Err(error);
                 }
-                for block in control.blocks() {
-                    for (_, schema) in &block.parameters {
-                        insert(schema)?;
+            }
+            if let PendingNodeBody::Match(control) = &node.body {
+                let mut failure = None;
+                control.visit_schemas(&mut |schema| {
+                    if failure.is_none()
+                        && let Err(error) = insert(schema)
+                    {
+                        failure = Some(error);
                     }
-                    for operation in &block.operations {
-                        insert(&operation.schema)?;
-                    }
+                });
+                if let Some(error) = failure {
+                    return Err(error);
                 }
             }
         }
@@ -2170,42 +2154,27 @@ struct PendingMatch {
 }
 
 impl PendingMatch {
-    fn blocks(&self) -> Vec<&PendingControlBlock> {
-        fn append<'a>(control: &'a PendingMatch, output: &mut Vec<&'a PendingControlBlock>) {
-            for block in control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            {
-                output.push(block);
+    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for arm in &self.arms {
+            if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
+                pattern.bindings(&mut |_, schema| visit(schema));
+            }
+            for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                for (_, schema) in &block.parameters {
+                    visit(schema);
+                }
                 for operation in &block.operations {
-                    if let PendingControlOperationBody::Match(nested) = &operation.body {
-                        append(nested, output);
-                    }
-                }
-            }
-        }
-        let mut output = Vec::new();
-        append(self, &mut output);
-        output
-    }
-
-    fn visit_pattern_binding_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
-        fn append(control: &PendingMatch, visit: &mut impl FnMut(&SchemaDraft)) {
-            for arm in &control.arms {
-                if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
-                    pattern.bindings(&mut |_, schema| visit(schema));
-                }
-                for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
-                    for operation in &block.operations {
-                        if let PendingControlOperationBody::Match(nested) = &operation.body {
-                            append(nested, visit);
+                    visit(&operation.schema);
+                    match &operation.body {
+                        PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            nested.visit_schemas(visit)
                         }
+                        PendingControlOperationBody::Operation { .. } => {}
                     }
                 }
             }
         }
-        append(self, visit);
     }
 }
 
@@ -2234,6 +2203,7 @@ enum PendingControlOperationBody {
         contract: OperationContractDeclaration,
     },
     Match(PendingMatch),
+    Comprehension(PendingComprehension),
 }
 
 struct PendingControlBlock {
@@ -7749,6 +7719,78 @@ mod tests {
     use super::*;
 
     #[test]
+    fn mixed_control_schema_walk_visits_each_nested_declaration_once() {
+        let schema = |body| SchemaDraft {
+            body,
+            dimension_parameters: Box::new([]),
+        };
+        let nested = PendingMatch {
+            captures: Vec::new(),
+            arms: vec![PendingMatchArm {
+                pattern: crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
+                    local: 0,
+                    schema: schema(SchemaBody::Bool),
+                }),
+                guard: None,
+                body: PendingControlBlock {
+                    id: crate::ControlBlockId(2),
+                    parameters: vec![(
+                        crate::ControlParameterSource::PatternBinding(0),
+                        schema(SchemaBody::Index),
+                    )],
+                    operations: Vec::new(),
+                    yield_value: PendingControlValue::Parameter(0),
+                },
+            }],
+        };
+        let comprehension = PendingComprehension {
+            id: crate::ControlBlockId(1),
+            kind: crate::ComprehensionKind::Matrix,
+            steps: vec![comprehension::PendingComprehensionStep::Operation(
+                comprehension::PendingComprehensionOperation {
+                    local: 0,
+                    body: PendingControlOperationBody::Match(nested),
+                    inputs: Box::new([]),
+                    schema: schema(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                },
+            )]
+            .into_boxed_slice(),
+            yield_value: comprehension::PendingCollectionValue::Local(0),
+        };
+        let root = PendingMatch {
+            captures: Vec::new(),
+            arms: vec![PendingMatchArm {
+                pattern: crate::MatchPattern::Wildcard,
+                guard: None,
+                body: PendingControlBlock {
+                    id: crate::ControlBlockId(0),
+                    parameters: Vec::new(),
+                    operations: vec![PendingControlOperation {
+                        body: PendingControlOperationBody::Comprehension(comprehension),
+                        inputs: Vec::new(),
+                        schema: schema(SchemaBody::String),
+                    }],
+                    yield_value: PendingControlValue::Local(0),
+                },
+            }],
+        };
+        let mut visited = Vec::new();
+        root.visit_schemas(&mut |schema| visited.push(schema.body.clone()));
+        assert_eq!(visited.len(), 4);
+        for body in [
+            SchemaBody::Bool,
+            SchemaBody::Index,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::String,
+        ] {
+            assert_eq!(
+                visited.iter().filter(|visited| **visited == body).count(),
+                1
+            );
+        }
+    }
+
+    #[test]
     fn retained_components_follow_the_finalized_parent_parameter_order() {
         let anchor = SourceSemanticAnchor {
             document: DocumentId(0x549),
@@ -8202,8 +8244,9 @@ impl SemanticBuilder {
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
-            message: "match blocks require pure maintained operations and closed value schemas"
-                .to_owned(),
+            message:
+                "match blocks require pure maintained operations and closed final value schemas"
+                    .to_owned(),
             anchor: SourceSemanticAnchor::for_node(expression.syntax()),
         };
         let id = self.next_control_block;
@@ -8224,6 +8267,12 @@ impl SemanticBuilder {
                 .clone()
                 .finalize()
                 .is_ok_and(|schema| crate::is_control_value_schema(&schema))
+        };
+        let intermediate_value = |schema: &SchemaDraft| {
+            schema
+                .clone()
+                .finalize()
+                .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
         if !closed_value(&schema) {
             return Err(unsupported());
@@ -8296,7 +8345,13 @@ impl SemanticBuilder {
             };
         let mut operations = Vec::new();
         for node in nodes {
-            if node.state.is_some() || !closed_value(&node.schema) {
+            // Intermediate results may carry per-turn dimensions through
+            // pure operations. Only the selected block's final yield must be
+            // a closed match value.
+            if node.state.is_some()
+                || (!intermediate_value(&node.schema)
+                    && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
+            {
                 return Err(unsupported());
             }
             let body = match node.body {
@@ -8311,6 +8366,9 @@ impl SemanticBuilder {
                     }
                 }
                 PendingNodeBody::Match(control) => PendingControlOperationBody::Match(control),
+                PendingNodeBody::Comprehension(control) => {
+                    PendingControlOperationBody::Comprehension(control)
+                }
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -8390,6 +8448,11 @@ fn resolve_pending_match(
                         },
                         PendingControlOperationBody::Match(nested) => {
                             crate::ControlOperationBody::Match(resolve_pending_match(
+                                nested, schemas, constants,
+                            ))
+                        }
+                        PendingControlOperationBody::Comprehension(nested) => {
+                            crate::ControlOperationBody::Comprehension(resolve_comprehension(
                                 nested, schemas, constants,
                             ))
                         }

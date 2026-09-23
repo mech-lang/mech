@@ -25,6 +25,7 @@ use crate::resident::budget;
 use core::ops::Range;
 use core::sync::atomic::Ordering;
 
+use mech_core::snapshot::ValueFootprint;
 use mech_core::{
     ApplicationRequirementId, CellSlotId, ChangeDetectionPolicy, ExternalInteraction,
     InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, NodeId,
@@ -44,6 +45,12 @@ use super::{
 pub struct CapturedSignalInput<'a> {
     pub slot: SlotIndex,
     pub value: ResidentValueRef<'a>,
+}
+
+#[derive(Default)]
+struct ControlBlockLiveFootprint {
+    retained_prefix: usize,
+    footprint: ValueFootprint,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1586,28 +1593,57 @@ impl ReactiveInstance {
         Ok(())
     }
 
-    fn execute_step(
+    pub(super) fn execute_step(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
+        self.execute_step_with_live_demand(node_index, before_epoch, working_epoch, probe, 0, 0)
+    }
+
+    pub(super) fn execute_step_with_live_demand(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Comprehension(_)
         ) {
-            return self.execute_comprehension(node_index, before_epoch, working_epoch, probe);
+            if live_bytes == 0 && live_nodes == 0 {
+                return self.execute_comprehension(node_index, before_epoch, working_epoch, probe);
+            }
+            return self.execute_comprehension_with_live_demand(
+                node_index,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
         }
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::Match(_)
         ) {
-            let node = self.plan.steps[node_index.get() as usize].artifact_node();
+            let ActivatedTurnStep::Match(matched) = &self.plan.steps[node_index.get() as usize]
+            else {
+                unreachable!()
+            };
+            let node = matched.artifact_node;
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = live_bytes;
+            facts.additional_demand.retained_nodes = live_nodes;
             let turn_plan = crate::memory_planner::plan_current_resident_turn(
                 &self.plan.memory_plan,
-                node,
-                &crate::memory_planner::TurnMemoryFacts::default(),
+                matched.budget_node,
+                &facts,
             )
             .map_err(|_| ResidentExecutionError::Kernel {
                 node,
@@ -1621,7 +1657,14 @@ impl ReactiveInstance {
             }
             return budget::with_resident_turn_plan(turn_plan, || {
                 let result = budget::with_control_work_budget(|| {
-                    self.execute_match_expression(node_index, before_epoch, working_epoch, probe)
+                    self.execute_match_expression(
+                        node_index,
+                        before_epoch,
+                        working_epoch,
+                        probe,
+                        live_bytes,
+                        live_nodes,
+                    )
                 });
                 let ActivatedTurnStep::Match(control) = &self.plan.steps[node_index.get() as usize]
                 else {
@@ -1642,7 +1685,14 @@ impl ReactiveInstance {
             self.stage_external(node_index, working_epoch)?;
             return Ok(false);
         }
-        self.execute_kernel(node_index, before_epoch, working_epoch, probe)
+        self.execute_kernel_with_live_demand(
+            node_index,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
     }
 
     fn execute_match_expression(
@@ -1651,12 +1701,15 @@ impl ReactiveInstance {
         before_epoch: InstanceEpoch,
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
     ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
         let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
             unreachable!()
         };
         let node = matched.artifact_node;
+        let budget_node = matched.budget_node;
         let write = matched.write;
         let arm_count = matched.arms.len();
         let fail = || ResidentExecutionError::Kernel {
@@ -1717,6 +1770,9 @@ impl ReactiveInstance {
                 total.checked_add(*snapshot_finalization_count)
             });
         let mut structural_scrutinee = None;
+        // This scope outlives every selected guard and body step. Repeated
+        // measurements of managed locals must consume cumulative control work.
+        let mut local_meter = budget::ResidentBudgetMeter::default();
         for arm_index in 0..arm_count {
             let ActivatedTurnStep::Match(matched) = &self.plan.steps[index] else {
                 unreachable!()
@@ -1845,8 +1901,18 @@ impl ReactiveInstance {
                 continue;
             }
             if let Some(guard) = guard {
-                for step in guard.steps.iter().copied() {
-                    self.execute_step(step, before_epoch, working_epoch, probe)?;
+                let mut guard_live = ControlBlockLiveFootprint::default();
+                for step in guard.steps.iter() {
+                    self.execute_control_step_with_live_demand(
+                        node,
+                        &guard,
+                        step,
+                        &mut guard_live,
+                        &mut local_meter,
+                        (before_epoch, working_epoch),
+                        probe,
+                        (live_bytes, live_nodes),
+                    )?;
                 }
                 let guard_matches = match self.read_location(guard.yield_value, working_epoch) {
                     Some(ResidentValueRef::Bool([1])) => true,
@@ -1863,87 +1929,141 @@ impl ReactiveInstance {
                     continue;
                 }
             }
-            for step in body.steps.iter().copied() {
+            let mut body_live = ControlBlockLiveFootprint::default();
+            for step in body.steps.iter() {
                 // Branch switches always initialize their selected locals; no
                 // sibling output participates in scheduling or initialization.
-                self.execute_step(step, before_epoch, working_epoch, probe)?;
+                self.execute_control_step_with_live_demand(
+                    node,
+                    &body,
+                    step,
+                    &mut body_live,
+                    &mut local_meter,
+                    (before_epoch, working_epoch),
+                    probe,
+                    (live_bytes, live_nodes),
+                )?;
             }
-            let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
-                && body.yield_value.region().kind != ResidentValueKind::Snapshot;
-            let converted = if converts_to_snapshot {
-                let target = if write.storage == ResidentStorageClass::Constant {
-                    &self.activation
-                } else {
-                    &self.workspace.scratch
-                };
-                let prior = match target.read(write.region) {
-                    ResidentValueRef::Snapshot([Some(value)]) => Some(value),
-                    ResidentValueRef::Snapshot([None]) => None,
-                    _ => return Err(fail()),
-                };
-                let (prior_snapshot_nodes, prior_footprint_work) =
-                    match_conversion_prior_footprint(prior, &self.plan.schemas)
-                        .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
-                let scope = target
-                    .prepare_payload_write(write.region)
-                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                let source = self
-                    .read_location(body.yield_value, working_epoch)
-                    .ok_or_else(fail)?;
-                let cost = crate::resident::numeric::resident_value_snapshot_materialization_cost(
+            // The selected body's bindings and earlier results remain live
+            // through publication, including locals the final yield does not
+            // use. Replan the wrapper with those payloads before cloning the
+            // yield into its output.
+            let publication_locals = self
+                .resident_local_footprint(
+                    body.locals.iter().copied(),
                     &self.plan.schemas,
-                    body.yield_layout.schema_id,
-                    &body.yield_layout.shape_instance,
-                    source,
+                    &mut local_meter,
                 )
-                .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
-                (|| -> Result<(), ResidentKernelError> {
-                    budget::PreparedKernel::new(
-                        (),
-                        budget::resident_cost! {
-                            comparison_work: cost.comparison_work
-                                .checked_add(prior_footprint_work.comparison_work())
-                                .ok_or(ResidentKernelError::InvalidShape)?,
-                            compute_work: cost.compute_work
-                                .checked_add(prior_footprint_work.compute_work())
-                                .ok_or(ResidentKernelError::InvalidShape)?,
-                            output_elements: cost.output_elements,
-                            output_bytes: cost.persistent_bytes,
-                            temporary_bytes: cost.temporary_bytes,
-                            cloned_bytes: cost.cloned_bytes,
-                            retained_nodes: match_conversion_peak_retained_nodes(
-                                prior_snapshot_nodes,
-                                cost.retained_nodes,
-                            )?,
-                            ..budget::KernelCostEstimate::default()
-                        },
-                    )
-                    .admit_control()?
-                    .into_plan();
-                    Ok(())
-                })()
-                .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
-                if let Some(scope) = &scope {
-                    scope
-                        .admit_snapshot_materialization(cost.persistent_bytes, cost.temporary_bytes)
+                .map_err(kernel_fail)?;
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = live_bytes
+                .checked_add(publication_locals.retained_bytes)
+                .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+            facts.additional_demand.retained_nodes = live_nodes
+                .checked_add(publication_locals.node_count)
+                .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+            let publication_plan = crate::memory_planner::plan_current_resident_turn(
+                &self.plan.memory_plan,
+                budget_node,
+                &facts,
+            )
+            .map_err(|_| kernel_fail(ResidentKernelError::InvalidShape))?;
+            if !publication_plan.budget_violations.is_empty() {
+                return Err(kernel_fail(ResidentKernelError::InvalidShape));
+            }
+            return budget::with_resident_turn_plan(publication_plan, || {
+                let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
+                    && body.yield_value.region().kind != ResidentValueKind::Snapshot;
+                let converted = if converts_to_snapshot {
+                    let target = if write.storage == ResidentStorageClass::Constant {
+                        &self.activation
+                    } else {
+                        &self.workspace.scratch
+                    };
+                    let prior = match target.read(write.region) {
+                        ResidentValueRef::Snapshot([Some(value)]) => Some(value),
+                        ResidentValueRef::Snapshot([None]) => None,
+                        _ => return Err(fail()),
+                    };
+                    let (prior_snapshot_nodes, prior_footprint_work) =
+                        match_conversion_prior_footprint(prior, &self.plan.schemas)
+                            .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
+                    let scope = target
+                        .prepare_payload_write(write.region)
                         .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                    scope.start();
-                }
-                let converted = budget::with_payload_admission(
-                    scope.as_ref().map(|scope| scope.admission()),
-                    || {
-                        crate::resident::numeric::resident_value_to_snapshot(
+                    let source = self
+                        .read_location(body.yield_value, working_epoch)
+                        .ok_or_else(fail)?;
+                    let cost =
+                        crate::resident::numeric::resident_value_snapshot_materialization_cost(
                             &self.plan.schemas,
                             body.yield_layout.schema_id,
                             &body.yield_layout.shape_instance,
-                            body.yield_layout.shape,
                             source,
                         )
-                    },
-                );
-                let value = match converted {
-                    Ok(value) => value,
-                    Err(error) => {
+                        .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
+                    (|| -> Result<(), ResidentKernelError> {
+                        budget::PreparedKernel::new(
+                            (),
+                            budget::resident_cost! {
+                                comparison_work: cost.comparison_work
+                                    .checked_add(prior_footprint_work.comparison_work())
+                                    .ok_or(ResidentKernelError::InvalidShape)?,
+                                compute_work: cost.compute_work
+                                    .checked_add(prior_footprint_work.compute_work())
+                                    .ok_or(ResidentKernelError::InvalidShape)?,
+                                output_elements: cost.output_elements,
+                                output_bytes: cost.persistent_bytes,
+                                temporary_bytes: cost.temporary_bytes,
+                                cloned_bytes: cost.cloned_bytes,
+                                retained_nodes: match_conversion_peak_retained_nodes(
+                                    prior_snapshot_nodes,
+                                    cost.retained_nodes,
+                                )?,
+                                ..budget::KernelCostEstimate::default()
+                            },
+                        )
+                        .admit_control()?
+                        .into_plan();
+                        Ok(())
+                    })()
+                    .map_err(|error| ResidentExecutionError::Kernel { node, error })?;
+                    if let Some(scope) = &scope {
+                        scope
+                            .admit_snapshot_materialization(
+                                cost.persistent_bytes,
+                                cost.temporary_bytes,
+                            )
+                            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                        scope.start();
+                    }
+                    let converted = budget::with_payload_admission(
+                        scope.as_ref().map(|scope| scope.admission()),
+                        || {
+                            crate::resident::numeric::resident_value_to_snapshot(
+                                &self.plan.schemas,
+                                body.yield_layout.schema_id,
+                                &body.yield_layout.shape_instance,
+                                body.yield_layout.shape,
+                                source,
+                            )
+                        },
+                    );
+                    let value = match converted {
+                        Ok(value) => value,
+                        Err(error) => {
+                            let target = if write.storage == ResidentStorageClass::Constant {
+                                &mut self.activation
+                            } else {
+                                &mut self.workspace.scratch
+                            };
+                            target
+                                .abort_payload_write(write.region, scope)
+                                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                            return Err(ResidentExecutionError::Kernel { node, error });
+                        }
+                    };
+                    if value.schema() != self.plan.slots[write.slot.get() as usize].schema {
                         let target = if write.storage == ResidentStorageClass::Constant {
                             &mut self.activation
                         } else {
@@ -1952,152 +2072,244 @@ impl ReactiveInstance {
                         target
                             .abort_payload_write(write.region, scope)
                             .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                        return Err(ResidentExecutionError::Kernel { node, error });
-                    }
-                };
-                if value.schema() != self.plan.slots[write.slot.get() as usize].schema {
-                    let target = if write.storage == ResidentStorageClass::Constant {
-                        &mut self.activation
-                    } else {
-                        &mut self.workspace.scratch
-                    };
-                    target
-                        .abort_payload_write(write.region, scope)
-                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                    return Err(ResidentExecutionError::Kernel {
-                        node,
-                        error: ResidentKernelError::InvalidOutput,
-                    });
-                }
-                Some((value, scope))
-            } else {
-                None
-            };
-            let (unchanged, copied) = if let Some((next, scope)) = converted {
-                let target = if write.storage == ResidentStorageClass::Constant {
-                    &mut self.activation
-                } else {
-                    &mut self.workspace.scratch
-                };
-                let ResidentValueRef::Snapshot([current]) = target.read(write.region) else {
-                    unreachable!("snapshot conversion target was checked")
-                };
-                let unchanged = current.as_ref().map_or(Ok(false), |current| {
-                    current.snapshot_eq(&self.plan.schemas, &next, &self.plan.schemas)
-                });
-                let unchanged = match unchanged {
-                    Ok(unchanged) => unchanged,
-                    Err(_) => {
-                        target
-                            .abort_payload_write(write.region, scope)
-                            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
                         return Err(ResidentExecutionError::Kernel {
                             node,
                             error: ResidentKernelError::InvalidOutput,
                         });
                     }
+                    Some((value, scope))
+                } else {
+                    None
                 };
-                if let Some(prepared) = scope.as_ref() {
-                    if let Err(error) = prepared.admit_value(&next) {
-                        target
-                            .abort_payload_write(write.region, scope)
-                            .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                        return Err(ResidentExecutionError::MemoryRuntime { error });
+                let (unchanged, copied) = if let Some((next, scope)) = converted {
+                    let target = if write.storage == ResidentStorageClass::Constant {
+                        &mut self.activation
+                    } else {
+                        &mut self.workspace.scratch
+                    };
+                    let ResidentValueRef::Snapshot([current]) = target.read(write.region) else {
+                        unreachable!("snapshot conversion target was checked")
+                    };
+                    let unchanged = current.as_ref().map_or(Ok(false), |current| {
+                        current.snapshot_eq(&self.plan.schemas, &next, &self.plan.schemas)
+                    });
+                    let unchanged = match unchanged {
+                        Ok(unchanged) => unchanged,
+                        Err(_) => {
+                            target
+                                .abort_payload_write(write.region, scope)
+                                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                            return Err(ResidentExecutionError::Kernel {
+                                node,
+                                error: ResidentKernelError::InvalidOutput,
+                            });
+                        }
+                    };
+                    if let Some(prepared) = scope.as_ref() {
+                        if let Err(error) = prepared.admit_value(&next) {
+                            target
+                                .abort_payload_write(write.region, scope)
+                                .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                            return Err(ResidentExecutionError::MemoryRuntime { error });
+                        }
                     }
-                }
-                let ResidentValueMut::Snapshot([target_value]) = target.write(write.region) else {
-                    unreachable!("snapshot conversion target was checked")
-                };
-                *target_value = Some(next);
-                target
-                    .finish_payload_write(write.region, scope)
-                    .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-                (unchanged, Ok(()))
-            } else if write.storage == ResidentStorageClass::Constant {
-                match body.yield_value {
-                    ResidentReadLocation::Constant(region) => (
-                        regions_equal(&self.activation, write.region, &self.activation, region),
-                        self.activation.copy_region_within(write.region, region),
-                    ),
-                    ResidentReadLocation::Scratch(region) => (
-                        regions_equal(
+                    let ResidentValueMut::Snapshot([target_value]) = target.write(write.region)
+                    else {
+                        unreachable!("snapshot conversion target was checked")
+                    };
+                    *target_value = Some(next);
+                    target
+                        .finish_payload_write(write.region, scope)
+                        .map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                    (unchanged, Ok(()))
+                } else if write.storage == ResidentStorageClass::Constant {
+                    match body.yield_value {
+                        ResidentReadLocation::Constant(region) => (
+                            regions_equal(&self.activation, write.region, &self.activation, region),
+                            self.activation.copy_region_within(write.region, region),
+                        ),
+                        ResidentReadLocation::Scratch(region) => (
+                            regions_equal(
+                                &self.activation,
+                                write.region,
+                                &self.workspace.scratch,
+                                region,
+                            ),
+                            self.activation.copy_region_from(
+                                write.region,
+                                &self.workspace.scratch,
+                                region,
+                            ),
+                        ),
+                        _ => return Err(fail()),
+                    }
+                } else {
+                    let unchanged = match body.yield_value {
+                        ResidentReadLocation::Constant(region) => regions_equal(
+                            &self.workspace.scratch,
+                            write.region,
                             &self.activation,
+                            region,
+                        ),
+                        ResidentReadLocation::Input(region) => regions_equal(
+                            &self.workspace.scratch,
+                            write.region,
+                            &self.workspace.input,
+                            region,
+                        ),
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            regions_equal(
+                                &self.workspace.scratch,
+                                write.region,
+                                &self.state.buffers[buffer],
+                                region,
+                            )
+                        }
+                        ResidentReadLocation::Scratch(region) => regions_equal(
+                            &self.workspace.scratch,
                             write.region,
                             &self.workspace.scratch,
                             region,
                         ),
-                        self.activation.copy_region_from(
-                            write.region,
-                            &self.workspace.scratch,
-                            region,
-                        ),
-                    ),
-                    _ => return Err(fail()),
-                }
-            } else {
-                let unchanged = match body.yield_value {
-                    ResidentReadLocation::Constant(region) => regions_equal(
-                        &self.workspace.scratch,
-                        write.region,
-                        &self.activation,
-                        region,
-                    ),
-                    ResidentReadLocation::Input(region) => regions_equal(
-                        &self.workspace.scratch,
-                        write.region,
-                        &self.workspace.input,
-                        region,
-                    ),
-                    ResidentReadLocation::State { slot, region } => {
-                        let buffer = self.state.select_buffer(slot, working_epoch);
-                        regions_equal(
-                            &self.workspace.scratch,
-                            write.region,
-                            &self.state.buffers[buffer],
-                            region,
-                        )
-                    }
-                    ResidentReadLocation::Scratch(region) => regions_equal(
-                        &self.workspace.scratch,
-                        write.region,
-                        &self.workspace.scratch,
-                        region,
-                    ),
+                    };
+                    // Publish the selected value through the same managed copy path used
+                    // for ordinary resident state. Composite construction remains in its
+                    // existing bound kernel; no sibling branch is evaluated here.
+                    let copied = match body.yield_value {
+                        ResidentReadLocation::Constant(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_from(write.region, &self.activation, region),
+                        ResidentReadLocation::Input(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_from(write.region, &self.workspace.input, region),
+                        ResidentReadLocation::State { slot, region } => {
+                            let buffer = self.state.select_buffer(slot, working_epoch);
+                            self.workspace.scratch.copy_region_from(
+                                write.region,
+                                &self.state.buffers[buffer],
+                                region,
+                            )
+                        }
+                        ResidentReadLocation::Scratch(region) => self
+                            .workspace
+                            .scratch
+                            .copy_region_within(write.region, region),
+                    };
+                    (unchanged, copied)
                 };
-                // Publish the selected value through the same managed copy path used
-                // for ordinary resident state. Composite construction remains in its
-                // existing bound kernel; no sibling branch is evaluated here.
-                let copied = match body.yield_value {
-                    ResidentReadLocation::Constant(region) => self
-                        .workspace
-                        .scratch
-                        .copy_region_from(write.region, &self.activation, region),
-                    ResidentReadLocation::Input(region) => self.workspace.scratch.copy_region_from(
-                        write.region,
-                        &self.workspace.input,
-                        region,
-                    ),
-                    ResidentReadLocation::State { slot, region } => {
-                        let buffer = self.state.select_buffer(slot, working_epoch);
-                        self.workspace.scratch.copy_region_from(
-                            write.region,
-                            &self.state.buffers[buffer],
-                            region,
-                        )
-                    }
-                    ResidentReadLocation::Scratch(region) => self
-                        .workspace
-                        .scratch
-                        .copy_region_within(write.region, region),
-                };
-                (unchanged, copied)
-            };
-            copied.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
-            let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
-            set_bit(&mut self.workspace.initialized_output_bits, index);
-            return Ok(!initialized || !unchanged);
+                copied.map_err(|error| ResidentExecutionError::MemoryRuntime { error })?;
+                let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+                set_bit(&mut self.workspace.initialized_output_bits, index);
+                Ok(!initialized || !unchanged)
+            });
         }
         Err(fail())
+    }
+
+    fn execute_control_step_with_live_demand(
+        &mut self,
+        owner: NodeId,
+        block: &super::ActivatedControlBlock,
+        step: &super::ActivatedControlStep,
+        block_live: &mut ControlBlockLiveFootprint,
+        meter: &mut budget::ResidentBudgetMeter,
+        epochs: (InstanceEpoch, InstanceEpoch),
+        probe: &mut ResidentStructuralProbe,
+        live: (u64, u64),
+    ) -> Result<bool, ResidentExecutionError> {
+        let (before_epoch, working_epoch) = epochs;
+        let (live_bytes, live_nodes) = live;
+        let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
+        let retained = usize::try_from(step.retained_local_count)
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        let nested_match = matches!(
+            self.plan.steps[step.node.get() as usize],
+            ActivatedTurnStep::Match(_)
+        );
+        // Nested matches count their prior output while executing, but may
+        // replace it. Keep that slot out of the persistent prefix and measure
+        // its new value only when the following step needs it.
+        let stable_end = if nested_match {
+            retained
+                .checked_sub(1)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?
+        } else {
+            retained
+        };
+        let added = block
+            .locals
+            .get(block_live.retained_prefix..stable_end)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        block_live.footprint = block_live
+            .footprint
+            .checked_add(
+                self.resident_local_footprint(added.iter().copied(), &self.plan.schemas, meter)
+                    .map_err(fail)?,
+            )
+            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        block_live.retained_prefix = stable_end;
+        let mut locals = block_live.footprint;
+        if nested_match {
+            let prior_output = *block
+                .locals
+                .get(stable_end)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            locals = locals
+                .checked_add(
+                    self.resident_local_footprint([prior_output], &self.plan.schemas, meter)
+                        .map_err(fail)?,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        }
+        let mut excluded = ValueFootprint::zero();
+        for index in step.excluded_locals.iter().copied() {
+            let index =
+                usize::try_from(index).map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+            if index >= retained {
+                return Err(fail(ResidentKernelError::InvalidShape));
+            }
+            let region = *block
+                .locals
+                .get(index)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            excluded = excluded
+                .checked_add(
+                    self.resident_local_footprint([region], &self.plan.schemas, meter)
+                        .map_err(fail)?,
+                )
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        }
+        locals = ValueFootprint {
+            encoded_bytes: locals
+                .encoded_bytes
+                .checked_sub(excluded.encoded_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            retained_bytes: locals
+                .retained_bytes
+                .checked_sub(excluded.retained_bytes)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+            node_count: locals
+                .node_count
+                .checked_sub(excluded.node_count)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+        };
+        let live_bytes = live_bytes
+            .checked_add(locals.retained_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let live_nodes = live_nodes
+            .checked_add(locals.node_count)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        self.execute_step_with_live_demand(
+            step.node,
+            before_epoch,
+            working_epoch,
+            probe,
+            live_bytes,
+            live_nodes,
+        )
     }
 
     fn match_structural_pattern_item(
@@ -3938,6 +4150,7 @@ fn hash_string(value: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::resident::general::comprehension::ActivatedCollectionStep;
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
 
@@ -4039,6 +4252,351 @@ mod tests {
                 mech_core::RESIDENT_MAX_BYTES,
                 1,
                 |_| Ok(()),
+            ),
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_parameterized_operation_locals_use_turn_shaped_snapshot_storage() {
+        let instance =
+            source_instance("[[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        assert!(instance.plan.steps.iter().any(|step| {
+            matches!(
+                step,
+                ActivatedTurnStep::Kernel(kernel)
+                    if kernel.write.region.kind == ResidentValueKind::Snapshot
+            )
+        }));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_steps_retain_unconsumed_managed_local_demand() {
+        let instance = source_instance(
+            "[number + 1 | [head | rest] <- signal<[[f64]:1,3]:1,2>, number <- [1]]",
+        );
+        let retained = instance.plan.steps.iter().find_map(|step| {
+            let ActivatedTurnStep::Comprehension(control) = step else {
+                return None;
+            };
+            control.steps.iter().find_map(|step| {
+                let ActivatedCollectionStep::Operation {
+                    retained_local_count,
+                    excluded_locals,
+                    ..
+                } = step
+                else {
+                    return None;
+                };
+                Some((
+                    control
+                        .locals
+                        .get(..*retained_local_count as usize)
+                        .expect("validated retained-local prefix"),
+                    excluded_locals.as_ref(),
+                ))
+            })
+        });
+        let (retained, excluded) = retained.expect("ordinary operation inside the comprehension");
+        assert!(
+            retained
+                .iter()
+                .enumerate()
+                .any(|(index, local)| local.kind == ResidentValueKind::Snapshot
+                    && !excluded.contains(&(index as u32))),
+            "the unconsumed rest binding remains live across the arithmetic step"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_child_omits_live_captured_rest_input() {
+        let instance =
+            source_instance("[[z + 1 | z <- rest] | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        let (capture, child_reads) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Comprehension(control) = step else {
+                    return None;
+                };
+                let capture = instance.plan.reads
+                    [control.reads.start as usize..control.reads.end as usize]
+                    .iter()
+                    .copied()
+                    .find(|location| {
+                        matches!(location, ResidentReadLocation::Scratch(region)
+                            if region.kind == ResidentValueKind::Snapshot)
+                    })?;
+                let child = control.steps.iter().find_map(|step| {
+                    let ActivatedCollectionStep::Operation { node, .. } = step else {
+                        return None;
+                    };
+                    instance.plan.steps[node.get() as usize].memory_site()
+                })?;
+                Some((capture, child.reads))
+            })
+            .expect("nested comprehension captures the outer rest binding");
+        assert!(
+            !instance.plan.reads[child_reads.start as usize..child_reads.end as usize]
+                .contains(&capture),
+            "the child call plan cannot account for its wrapper's live capture"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn selected_structural_arm_steps_retain_unconsumed_binding_demand() {
+        let instance = source_instance("[1 2 3] ? | [head | rest] => head + 1 | * => 0");
+        let control = instance.plan.steps.iter().find_map(|step| {
+            let ActivatedTurnStep::Match(control) = step else {
+                return None;
+            };
+            control
+                .arms
+                .iter()
+                .find(|arm| !arm.binding_regions.is_empty())
+                .map(|arm| (control, arm))
+        });
+        let (_, arm) = control.expect("structural match arm");
+        let (binding_index, binding) = arm
+            .binding_regions
+            .iter()
+            .copied()
+            .enumerate()
+            .find(|(_, binding)| binding.kind == ResidentValueKind::Snapshot)
+            .expect("managed rest binding");
+        assert_eq!(binding.kind, ResidentValueKind::Snapshot);
+        assert_eq!(arm.body.locals[binding_index], binding);
+        assert!(arm.body.steps.iter().all(|step| {
+            step.retained_local_count > binding_index as u32
+                && !step.excluded_locals.contains(&(binding_index as u32))
+        }));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn match_publication_counts_unused_managed_binding() {
+        let mut instance =
+            source_instance("(\"retained\", true) ? | (unused, true) => \"yield\" | * => \"\"");
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("match operation");
+        let ActivatedTurnStep::Match(control) = &instance.plan.steps[operation.get() as usize]
+        else {
+            unreachable!()
+        };
+        let budget_node = control.budget_node;
+        assert!(control.arms[0].body.steps.is_empty());
+        assert!(
+            control.arms[0]
+                .body
+                .locals
+                .iter()
+                .any(|local| local.kind == ResidentValueKind::String)
+        );
+        // Find the largest enclosing demand admitted by the original wrapper.
+        // The selected binding pushes final publication beyond that limit.
+        let admitted = |bytes| {
+            let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+            facts.additional_demand.turn_peak_bytes = bytes;
+            crate::memory_planner::plan_current_resident_turn(
+                &instance.plan.memory_plan,
+                budget_node,
+                &facts,
+            )
+            .is_ok_and(|plan| plan.budget_violations.is_empty())
+        };
+        assert!(admitted(0));
+        let mut low = 0;
+        let mut high = mech_core::RESIDENT_MAX_BYTES;
+        while low < high {
+            let middle = low + (high - low + 1) / 2;
+            if admitted(middle) {
+                low = middle;
+            } else {
+                high = middle - 1;
+            }
+        }
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_match_expression(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            low,
+            0,
+        );
+        assert!(matches!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_match_operations_retain_managed_inputs_and_prior_output() {
+        let instance = source_instance("[(item ? | * => item) | item <- signal<[string]:1,1>]");
+        let (control, operation) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Comprehension(control) = step else {
+                    return None;
+                };
+                control.steps.iter().find_map(|operation| {
+                    let ActivatedCollectionStep::Operation { node, .. } = operation else {
+                        return None;
+                    };
+                    matches!(
+                        instance.plan.steps[node.get() as usize],
+                        ActivatedTurnStep::Match(_)
+                    )
+                    .then_some((control.as_ref(), operation))
+                })
+            })
+            .expect("nested match operation");
+        let ActivatedCollectionStep::Operation {
+            retained_local_count,
+            excluded_locals,
+            ..
+        } = operation
+        else {
+            unreachable!()
+        };
+        assert_eq!(*retained_local_count as usize, control.locals.len());
+        assert!(excluded_locals.is_empty());
+        assert!(
+            control.locals.iter().all(|local| matches!(
+                local.kind,
+                ResidentValueKind::String | ResidentValueKind::Snapshot
+            )),
+            "the match scrutinee and previous output are both managed locals"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_match_plan_counts_live_enclosing_arena() {
+        let mut instance =
+            source_instance("[(item ? | 1 => 10 | * => 20) | item <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the comprehension contains one nested match operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_step_with_live_demand(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            mech_core::RESIDENT_MAX_BYTES + 1,
+            0,
+        );
+        assert!(
+            matches!(
+                result,
+                Err(ResidentExecutionError::Kernel {
+                    error: ResidentKernelError::InvalidShape,
+                    ..
+                })
+            ),
+            "{result:?}"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_selected_match_steps_count_live_enclosing_arena() {
+        let mut instance = source_instance("true ? | true => signal<f64> + 1 | false => signal");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Match(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("match operation");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        let result = instance.execute_match_expression(
+            operation,
+            before,
+            working,
+            &mut ResidentStructuralProbe::default(),
+            mech_core::RESIDENT_MAX_BYTES,
+            0,
+        );
+        assert!(matches!(
+            result,
+            Err(ResidentExecutionError::Kernel {
+                error: ResidentKernelError::InvalidShape,
+                ..
+            })
+        ));
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn nested_comprehension_plan_counts_live_enclosing_arena() {
+        let mut instance =
+            source_instance("[[z | z <- [1 2], z <= item] | item <- signal<[f64]:1,1>]");
+        let slot = instance.plan.inputs[0].slot;
+        instance
+            .turn(&[CapturedSignalInput {
+                slot,
+                value: ResidentValueRef::F64(&[1.0]),
+            }])
+            .unwrap();
+        let operation = instance
+            .plan
+            .steps
+            .iter()
+            .position(|step| matches!(step, ActivatedTurnStep::Comprehension(_)))
+            .map(|index| ActivatedNodeIndex(index as u32))
+            .expect("the outer comprehension contains one nested comprehension");
+        let before = instance.published_epoch();
+        let working = before.checked_next().unwrap();
+        assert!(matches!(
+            instance.execute_step_with_live_demand(
+                operation,
+                before,
+                working,
+                &mut ResidentStructuralProbe::default(),
+                mech_core::RESIDENT_MAX_BYTES,
+                1,
             ),
             Err(ResidentExecutionError::Kernel {
                 error: ResidentKernelError::InvalidShape,
@@ -4206,6 +4764,8 @@ mod tests {
                 before,
                 working,
                 &mut ResidentStructuralProbe::default(),
+                0,
+                0,
             )
             .unwrap();
 

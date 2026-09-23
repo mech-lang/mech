@@ -465,7 +465,8 @@ fn compile_source_program_with_metadata(
                     requirement: *requirement,
                 }),
                 SourceNodeBody::Comprehension(control) => {
-                    crate::ExecutableNodeBody::Comprehension(control.map_contracts(|_| {
+                    control.validate_depth(node)?;
+                    crate::ExecutableNodeBody::Comprehension(control.map_contracts(|_, _| {
                         Ok::<_, ArtifactBuildError>(OperationContractId::new(0))
                     })?)
                 }

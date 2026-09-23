@@ -422,6 +422,121 @@ fn comprehension_executes_generator_filter_and_yield() {
 }
 
 #[test]
+fn comprehensions_execute_nested_canonical_control() {
+    execute(
+        "x := [(item ? | 1 => 10 | * => 20) | item <- [1 2]]",
+        [(vec![], matrix(&[10.0, 20.0]))],
+    );
+    execute(
+        "x := [[item + z | z <- [1 2]] | item <- [1 2]]",
+        [(
+            vec![],
+            Data::Matrix(vec![matrix(&[2.0, 3.0]), matrix(&[3.0, 4.0])].into_boxed_slice()),
+        )],
+    );
+    execute(
+        "x := [[item + z | z <- [2 3]] | item <- [2 3]]",
+        [(
+            vec![],
+            Data::Matrix(vec![matrix(&[4.0, 5.0]), matrix(&[5.0, 6.0])].into_boxed_slice()),
+        )],
+    );
+    execute(
+        "x := [[item + z | z <- [1 2]] | item <- [1 2], false]",
+        [(vec![], Data::Matrix(Box::new([])))],
+    );
+}
+
+#[test]
+fn parameterized_operation_over_nested_comprehension_activates() {
+    let source = "out := [[z | z <- rest] + rest | [head | rest] <- signal<[[f64]:1,3]:1,2>]";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    activate(
+        ReactiveInstanceId::new(0x557, 0),
+        &decoded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap_or_else(|error| {
+        panic!("turn-shaped ordinary-operation local must activate: {error:?}")
+    });
+}
+
+#[test]
+fn parameterized_match_intermediate_operation_activates() {
+    let source = "out := signal<[f64]:1,3> ? | [head | rest] => stats/sum/column(stats/sum/row([z | z <- rest] + rest)) | * => [0.0]";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let matched = artifact
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Match(matched) => Some(matched),
+            _ => None,
+        })
+        .expect("match node");
+    assert!(matched.arms[0].body.operations.iter().any(|operation| {
+        matches!(
+            operation.body,
+            mech_engine::ControlOperationBody::Operation { .. }
+        ) && !artifact
+            .schemas()
+            .get(operation.schema)
+            .unwrap()
+            .dimension_parameters()
+            .is_empty()
+    }));
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x558, 0),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap_or_else(|error| panic!("turn-shaped match intermediate must activate: {error:?}"));
+    let slot = instance.plan.inputs[0].slot;
+    instance
+        .turn(&[CapturedSignalInput {
+            slot,
+            value: ResidentValueRef::F64(&[1.0, 2.0, 3.0]),
+        }])
+        .expect("turn-shaped match intermediates must execute");
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        matrix(&[10.0])
+    );
+}
+
+#[test]
+fn nested_comprehension_rejects_inconsistent_element_shapes_before_publish() {
+    let source = "x := [[z | z <- [1 2], z <= item] | item <- [1 2]]";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let error = activate(
+        ReactiveInstanceId::new(0x556, 0),
+        &decoded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .expect_err("different yielded element shapes cannot publish one outer matrix");
+    assert!(matches!(
+        error,
+        mech_engine::__resident::ResidentActivationError::ActivationKernel { .. }
+    ));
+}
+
+#[test]
 fn mutable_definition_publishes_its_resolved_initial_state() {
     execute(
         "~state<u8> := 1",

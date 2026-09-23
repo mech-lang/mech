@@ -255,7 +255,7 @@ fn semantic_completion_record_keeps_artifact_evidence_from_opening_s6() {
         rows.iter()
             .filter(|fields| fields[5] == "true" && fields[2] != "behavior-demonstrated")
             .count(),
-        4
+        2
     );
     assert!(!contains_named_test(
         "// #[test] fn stale() {}\nconst TEXT: &str = \"#[test] fn stale() {}\";",
