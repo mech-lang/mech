@@ -2006,6 +2006,62 @@ fn narrow_joint_reified_domains(
 }
 
 #[cfg(feature = "convert")]
+fn reified_dimension_range(
+    dimension: &DimensionExpr,
+    bindings: &[Option<DimensionExpr>],
+    unknown: &[usize],
+    domains: &[(u64, u64)],
+) -> Option<(u64, u64)> {
+    match dimension {
+        DimensionExpr::Constant(value) => Some((*value, *value)),
+        DimensionExpr::Parameter(id) => {
+            let index = id.get() as usize;
+            if let Some(bound) = bindings.get(index)?.as_ref() {
+                return reified_dimension_value(bound).map(|value| (value, value));
+            }
+            domains.get(unknown.binary_search(&index).ok()?).copied()
+        }
+        DimensionExpr::Add(children) => children.iter().try_fold((0_u64, 0_u64), |total, child| {
+            let range = reified_dimension_range(child, bindings, unknown, domains)?;
+            Some((
+                total.0.saturating_add(range.0),
+                total.1.saturating_add(range.1),
+            ))
+        }),
+        DimensionExpr::Multiply(children) => {
+            children.iter().try_fold((1_u64, 1_u64), |total, child| {
+                let range = reified_dimension_range(child, bindings, unknown, domains)?;
+                Some((
+                    total.0.saturating_mul(range.0),
+                    total.1.saturating_mul(range.1),
+                ))
+            })
+        }
+        DimensionExpr::Min(children) => {
+            let mut ranges = children
+                .iter()
+                .map(|child| reified_dimension_range(child, bindings, unknown, domains));
+            let first = ranges.next()??;
+            ranges.try_fold(first, |total, range| {
+                let range = range?;
+                Some((total.0.min(range.0), total.1.min(range.1)))
+            })
+        }
+        DimensionExpr::Max(children) => {
+            let mut ranges = children
+                .iter()
+                .map(|child| reified_dimension_range(child, bindings, unknown, domains));
+            let first = ranges.next()??;
+            ranges.try_fold(first, |total, range| {
+                let range = range?;
+                Some((total.0.max(range.0), total.1.max(range.1)))
+            })
+        }
+        DimensionExpr::Hole => None,
+    }
+}
+
+#[cfg(feature = "convert")]
 fn solve_bounded_joint_reified_dimensions(
     equations: &[(Vec<i128>, i128)],
     concrete_equations: &[(&DimensionExpr, &DimensionExpr)],
@@ -2014,7 +2070,7 @@ fn solve_bounded_joint_reified_dimensions(
     unknown: &[usize],
 ) -> MResult<Option<Vec<u64>>> {
     const MAX_RANGE_SEARCH_STATES: usize = 65_536;
-    let mut domains = unknown
+    let domains = unknown
         .iter()
         .map(|index| {
             let declaration = declarations
@@ -2041,8 +2097,6 @@ fn solve_bounded_joint_reified_dimensions(
             Ok((lower, upper))
         })
         .collect::<MResult<Vec<_>>>()?;
-    narrow_joint_reified_domains(equations, &mut domains)?;
-
     fn search(
         equations: &[(Vec<i128>, i128)],
         concrete_equations: &[(&DimensionExpr, &DimensionExpr)],
@@ -2063,8 +2117,37 @@ fn solve_bounded_joint_reified_dimensions(
             ));
         }
         let mut domains = domains;
-        if narrow_joint_reified_domains(equations, &mut domains).is_err() {
-            return Ok(());
+        for _ in 0..=unknown.len().saturating_mul(2) {
+            let previous = domains.clone();
+            if narrow_joint_reified_domains(equations, &mut domains).is_err() {
+                return Ok(());
+            }
+            for (position, index) in unknown.iter().copied().enumerate() {
+                let declaration = declarations
+                    .get(index)
+                    .filter(|declaration| declaration.id.get() as usize == index)
+                    .ok_or_else(|| {
+                        invalid_reified_conversion_target("unknown target dimension parameter")
+                    })?;
+                if let Some((lower, _)) =
+                    reified_dimension_range(&declaration.lower_bound, bindings, unknown, &domains)
+                {
+                    domains[position].0 = domains[position].0.max(lower);
+                }
+                if let Some((_, upper)) = declaration
+                    .upper_bound
+                    .as_ref()
+                    .and_then(|bound| reified_dimension_range(bound, bindings, unknown, &domains))
+                {
+                    domains[position].1 = domains[position].1.min(upper);
+                }
+                if domains[position].0 > domains[position].1 {
+                    return Ok(());
+                }
+            }
+            if domains == previous {
+                break;
+            }
         }
         if domains.iter().all(|(lower, upper)| lower == upper) {
             let values = domains.iter().map(|domain| domain.0).collect::<Vec<_>>();
@@ -4430,6 +4513,77 @@ mod canonical_conversion_tests {
                 Some(DimensionExpr::Constant(2)),
                 Some(DimensionExpr::Constant(3))
             ]
+        );
+    }
+
+    #[test]
+    fn bounded_search_recomputes_dependent_parameter_ranges() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let r = DimensionParameterId::new(2);
+        let declaration = |id, lower_bound, upper_bound| DimensionParameterDeclaration {
+            id,
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Activation,
+            lower_bound,
+            upper_bound: Some(upper_bound),
+        };
+        let declarations = [
+            declaration(p, DimensionExpr::Constant(0), DimensionExpr::Constant(1)),
+            declaration(
+                q,
+                DimensionExpr::Parameter(p),
+                DimensionExpr::Add(
+                    [DimensionExpr::Parameter(p), DimensionExpr::Constant(1)].into(),
+                ),
+            ),
+            declaration(
+                r,
+                DimensionExpr::Parameter(q),
+                DimensionExpr::Add(
+                    [DimensionExpr::Parameter(q), DimensionExpr::Constant(1)].into(),
+                ),
+            ),
+        ];
+        let source = |extent| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Constant(extent)].into(),
+        };
+        let target = |parameters: Vec<DimensionExpr>| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [DimensionExpr::Max(parameters.into_boxed_slice())].into(),
+        };
+        assert_eq!(
+            solve_reified_target_bindings(
+                &source(2),
+                &target(vec![
+                    DimensionExpr::Parameter(p),
+                    DimensionExpr::Parameter(q)
+                ]),
+                &declarations[..2],
+            )
+            .unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(1)),
+                Some(DimensionExpr::Constant(2))
+            ],
+        );
+        assert_eq!(
+            solve_reified_target_bindings(
+                &source(3),
+                &target(vec![
+                    DimensionExpr::Parameter(p),
+                    DimensionExpr::Parameter(q),
+                    DimensionExpr::Parameter(r),
+                ]),
+                &declarations,
+            )
+            .unwrap(),
+            vec![
+                Some(DimensionExpr::Constant(1)),
+                Some(DimensionExpr::Constant(2)),
+                Some(DimensionExpr::Constant(3)),
+            ],
         );
     }
 
