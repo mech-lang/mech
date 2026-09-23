@@ -1,5 +1,43 @@
 use super::*;
 
+#[test]
+fn default_document_shim_embeds_decodable_standalone_payload() {
+    let source = "answer := 41\nanswer\n";
+    let document = canonical_document(source).unwrap();
+    let encoded = mech_runtime::BrowserDocumentPayload::new("document.mec", source)
+        .unwrap()
+        .encode()
+        .unwrap();
+    let slots = document_controller_slots(
+        include_str!("../../../../include/index.html"),
+        Some("controller"),
+        "",
+        "pkg/mech_wasm.js",
+        "",
+        &encoded,
+    )
+    .unwrap();
+    let html = crate::canonical_presentation::render_canonical_html(
+        &document.document(),
+        "".into(),
+        include_str!("../../../../include/index.html").to_string(),
+        &slots,
+    )
+    .unwrap()
+    .html;
+    let embedded = html
+        .split_once("data-mech-document-code>")
+        .unwrap()
+        .1
+        .split_once("</script>")
+        .unwrap()
+        .0
+        .trim();
+    let payload = mech_runtime::BrowserDocumentPayload::decode(embedded).unwrap();
+    assert_eq!(payload.source(), source);
+    assert!(!html.contains("{{CODE}}"));
+}
+
 fn temp_root(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "mech-format-collection-{label}-{}",
