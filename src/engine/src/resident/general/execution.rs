@@ -2397,7 +2397,7 @@ impl ReactiveInstance {
                 // the preceding turn must survive the inner invocation.
                 regions.push(root.write.region);
             }
-            regions.sort_by_key(|region| (region.kind as u8, region.offset, region.len));
+            regions.sort_unstable_by_key(|region| (region.kind as u8, region.offset, region.len));
             regions.dedup();
             (regions, root.write, region_inventory_bytes)
         };
@@ -2432,6 +2432,9 @@ impl ReactiveInstance {
         let frame_nodes = value_nodes
             .checked_add(2)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let frame_copy_work = frame_bytes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         (|| -> Result<(), ResidentKernelError> {
             let peak_bytes = live_bytes
                 .checked_add(frame_bytes)
@@ -2443,10 +2446,10 @@ impl ReactiveInstance {
                 (),
                 budget::resident_cost! {
                     compute_work: measured_frame_work
-                        .checked_add(frame_bytes)
+                        .checked_add(frame_copy_work)
                         .ok_or(ResidentKernelError::InvalidShape)?,
                     temporary_bytes: peak_bytes,
-                    cloned_bytes: frame_bytes,
+                    cloned_bytes: frame_copy_work,
                     retained_nodes: peak_nodes,
                     ..budget::KernelCostEstimate::default()
                 },
@@ -2515,6 +2518,17 @@ impl ReactiveInstance {
         }
 
         let result = invoked.and_then(|changed| {
+            let mut child_meter = budget::ResidentBudgetMeter::default();
+            let child_locals = match &self.plan.steps[call.target.get() as usize] {
+                ActivatedTurnStep::Match(target) => self
+                    .resident_local_footprint(
+                        target.locals.iter().copied(),
+                        &self.plan.schemas,
+                        &mut child_meter,
+                    )
+                    .map_err(fail)?,
+                _ => unreachable!("recursive target was checked above"),
+            };
             let location = match returned.storage {
                 ResidentStorageClass::Constant => ResidentReadLocation::Constant(returned.region),
                 ResidentStorageClass::Input => ResidentReadLocation::Input(returned.region),
@@ -2532,23 +2546,35 @@ impl ReactiveInstance {
                 resident_frame_value_footprint(value, &self.plan.schemas, &mut result_meter)
                     .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             let measured_result_work = result_meter.estimate().compute_work();
+            let result_copy_work = result_bytes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             let peak_bytes = live_bytes
-                .checked_add(frame_bytes)
-                .and_then(|bytes| bytes.checked_add(result_bytes))
+                .checked_add(frame_copy_work)
+                .and_then(|bytes| bytes.checked_add(child_locals.retained_bytes))
+                .and_then(|bytes| bytes.checked_add(result_copy_work))
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             let peak_nodes = live_nodes
-                .checked_add(frame_nodes)
-                .and_then(|nodes| nodes.checked_add(result_nodes))
+                .checked_add(
+                    frame_nodes
+                        .checked_mul(2)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                )
+                .and_then(|nodes| nodes.checked_add(child_locals.node_count))
+                .and_then(|nodes| nodes.checked_add(result_nodes.checked_mul(2)?))
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             (|| -> Result<(), ResidentKernelError> {
                 budget::PreparedKernel::new(
                     (),
                     budget::resident_cost! {
-                        compute_work: measured_result_work
-                            .checked_add(result_bytes)
+                        compute_work: child_meter
+                            .estimate()
+                            .compute_work()
+                            .checked_add(measured_result_work)
+                            .and_then(|work| work.checked_add(result_copy_work))
                             .ok_or(ResidentKernelError::InvalidShape)?,
                         temporary_bytes: peak_bytes,
-                        cloned_bytes: result_bytes,
+                        cloned_bytes: result_copy_work,
                         retained_nodes: peak_nodes,
                         ..budget::KernelCostEstimate::default()
                     },
