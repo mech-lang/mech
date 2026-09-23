@@ -541,6 +541,93 @@ fn structural_match_falls_through_for_foreign_dynamic_payloads() {
 
 #[cfg(feature = "resident-artifact")]
 #[test]
+fn nested_dynamic_rest_binding_retains_inherited_shape_after_roundtrip() {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft};
+    use mech_core::{
+        DimensionExpr, FloatWidth, FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef,
+        SchemaDraft, SchemaTableBuilder, ValueData,
+    };
+    use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
+
+    let artifact = compile("signal<[*]:1,3> ? | [* | [x, *]] => 1 | * => 0")
+        .compile_artifact()
+        .unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    let mut foreign = SchemaTableBuilder::new();
+    let scalar = foreign
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let matrix = foreign
+        .insert(
+            SchemaDraft {
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Dynamic),
+                    dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
+                        .into_boxed_slice(),
+                },
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let foreign = foreign.finish().unwrap();
+    let scalar = foreign.resolve(scalar).unwrap();
+    let matrix = foreign.resolve(matrix).unwrap();
+    let (foreign, _) = foreign.into_parts();
+    let input = ValueDraft {
+        schema: matrix,
+        shape_values: Box::new([]),
+        data: ValueDataDraft::Matrix(
+            [7.0, 8.0, 9.0]
+                .map(|value| {
+                    ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+                        schema: scalar,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::F64(F64Bits::from_f64(value)),
+                    })))
+                })
+                .into(),
+        ),
+    }
+    .finalize(&SnapshotValidationContext::new(&foreign))
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for artifact in [&artifact, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x4d, 4),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for _ in 0..2 {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::Snapshot(&[Some(input.clone())]),
+                }])
+                .expect("the nested Dynamic binding inherits the selected rest shape");
+            let output = instance.copied_output(0).unwrap();
+            assert!(matches!(output.data(), ValueData::F64(value) if value.to_f64() == 1.0));
+        }
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
 fn canonical_match_blocks_roundtrip_and_execute_captures_binding_and_guards() {
     use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, ValueData};
     use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};

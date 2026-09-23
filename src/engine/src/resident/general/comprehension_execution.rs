@@ -202,6 +202,25 @@ fn projected_schema_shape(
     ))
 }
 
+fn dynamic_binding_shape(
+    binding: &Schema,
+    selected_shape_values: Option<&[u64]>,
+    source_shape_values: &[u64],
+) -> Result<mech_core::ShapeInstance, ResidentKernelError> {
+    let parameters = binding.dimension_parameters().len();
+    let values = if parameters == 0 {
+        &[][..]
+    } else {
+        selected_shape_values
+            .filter(|values| values.len() == parameters)
+            .or_else(|| (source_shape_values.len() == parameters).then_some(source_shape_values))
+            .ok_or(ResidentKernelError::InvalidInput)?
+    };
+    binding
+        .instantiate_shape(values.to_vec().into_boxed_slice())
+        .map_err(|_| ResidentKernelError::InvalidInput)
+}
+
 fn projected_rest_schema(
     parent: &Schema,
     element: SchemaBody,
@@ -1619,11 +1638,9 @@ impl PatternItem {
             .get(binding_schema)
             .ok_or(ResidentKernelError::InvalidInput)?;
         if matches!(binding.body(), SchemaBody::Dynamic) {
-            let binding_shape = binding
-                .instantiate_shape(Box::new([]))
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
             match &self {
                 Self::Dynamic(value) => {
+                    let binding_shape = dynamic_binding_shape(binding, None, source_shape_values)?;
                     return Ok(Some(PatternBindingItem {
                         shape_values: binding_shape.parameter_values().to_vec().into_boxed_slice(),
                         data: ValueDataDraft::Dynamic(value.clone()),
@@ -1637,8 +1654,11 @@ impl PatternItem {
                     data,
                     source_data,
                     context,
+                    shape_values,
                     ..
                 } => {
+                    let binding_shape =
+                        dynamic_binding_shape(binding, Some(shape_values), source_shape_values)?;
                     let data = if let Some(source_data) = source_data {
                         let validation = SnapshotValidationContext::with_shared_schemas(
                             &context.binding_schemas,
@@ -1708,9 +1728,7 @@ impl PatternItem {
             return Ok(None);
         };
         let binding_shape = if matches!(binding.body(), SchemaBody::Dynamic) {
-            binding
-                .instantiate_shape(Box::new([]))
-                .map_err(|_| ResidentKernelError::InvalidInput)?
+            dynamic_binding_shape(binding, Some(&item.shape_values), source_shape_values)?
         } else {
             let Some(observation) = binding_shape_observation(binding.body(), &item.body) else {
                 return Ok(None);
