@@ -88,9 +88,31 @@ pub(crate) fn render_canonical_html(
     shim: String,
     extra_slots: &HtmlShimExtraSlots,
 ) -> MResult<HtmlShimRender> {
-    let mut presentation = CanonicalDocumentRenderer
-        .format_browser_html_slots(document)
-        .map_err(|error| presentation_error(error.to_string()))?;
+    render_canonical_html_mode(document, styles, shim, extra_slots, true)
+}
+
+pub(crate) fn render_canonical_static_html(
+    document: &DocumentSyntax,
+    styles: HtmlStyleSheets,
+    shim: String,
+    extra_slots: &HtmlShimExtraSlots,
+) -> MResult<HtmlShimRender> {
+    render_canonical_html_mode(document, styles, shim, extra_slots, false)
+}
+
+fn render_canonical_html_mode(
+    document: &DocumentSyntax,
+    styles: HtmlStyleSheets,
+    shim: String,
+    extra_slots: &HtmlShimExtraSlots,
+    live: bool,
+) -> MResult<HtmlShimRender> {
+    let mut presentation = if live {
+        CanonicalDocumentRenderer.format_browser_html_slots(document)
+    } else {
+        CanonicalDocumentRenderer.format_static_html_slots(document)
+    }
+    .map_err(|error| presentation_error(error.to_string()))?;
     // A custom shell may only expose CONTENT. Preserve unplaced regions there,
     // while shipped shells own their dedicated metadata and intro regions.
     let mut metadata = String::new();
@@ -167,9 +189,37 @@ pub(crate) fn render_canonical_html(
         ("REPL".to_owned(), repl.to_owned()),
         ("PRESENTATION".to_owned(), "document".to_owned()),
     ]);
-    slots.extend(presentation);
+    for (name, value) in presentation {
+        if matches!(
+            name.as_str(),
+            "STYLESHEET"
+                | "PALETTE_STYLESHEET"
+                | "MECH_SOURCE_STYLESHEET"
+                | "MECHDOWN_STYLESHEET"
+                | "PAGE_STYLESHEET"
+                | "MECH_REPL_STYLESHEET"
+                | "TITLE"
+                | "VERSION"
+                | "CODE"
+                | "REPL"
+                | "PRESENTATION"
+        ) {
+            continue;
+        }
+        slots.insert(name, value);
+    }
     slots.extend(extra_slots.slots.clone());
-    Ok(render_html_shim(&shim, &slots))
+    let mut rendered = render_html_shim(&shim, &slots);
+    if !live {
+        rendered.html = rendered
+            .html
+            .replace(
+                "data-mech-document-status=\"loading\"",
+                "data-mech-document-status=\"ready\"",
+            )
+            .replace("data-mech-document-controller", "");
+    }
+    Ok(rendered)
 }
 
 fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRender {
@@ -298,5 +348,29 @@ mod tests {
             assert!(html.contains("Ada"), "{html}");
             assert!(html.contains("Examples"), "{html}");
         }
+    }
+
+    #[test]
+    fn front_matter_cannot_replace_host_owned_shim_slots() {
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "bundle:///reserved.mec",
+            mech_syntax::document::Revision(0),
+            "Actual Title\n===============\ntitle: Forged Title\nversion: Forged Version\nstylesheet: Forged Style\n===============\nanswer := 42\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let shim = "<title>{{TITLE}}</title><style>{{STYLESHEET}}</style><p>{{VERSION}}</p>";
+        let html = render_canonical_html(
+            &document.document(),
+            "Safe Style".into(),
+            shim.to_owned(),
+            &HtmlShimExtraSlots::default(),
+        )
+        .unwrap()
+        .html;
+        assert!(html.contains("<title>Actual Title</title>"), "{html}");
+        assert!(html.contains("<style>Safe Style</style>"), "{html}");
+        assert!(html.contains(env!("CARGO_PKG_VERSION")), "{html}");
+        assert!(!html.contains("Forged"), "{html}");
     }
 }

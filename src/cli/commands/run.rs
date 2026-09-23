@@ -86,7 +86,6 @@ const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
 const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
-#[cfg(test)]
 pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
     let mut ids = mech_runtime::DefaultIdGenerator::new();
     let mut authority = mech_runtime::HostFilesystemAuthority::new(
