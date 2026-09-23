@@ -2838,7 +2838,9 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(syntax),
                     });
                 }
-                None => (name, None),
+                // Outside an enum context, an undeclared qualifier belongs
+                // to the nominal atom path handled by the caller.
+                None => return Ok(None),
             },
             None => (name, None),
         };

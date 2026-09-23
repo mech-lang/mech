@@ -413,6 +413,24 @@ fn contextual_and_qualified_enum_atoms_resolve_exact_nominal_kinds() {
 
 #[cfg(feature = "resident-artifact")]
 #[test]
+fn qualified_nominal_atoms_without_enum_context_retain_their_paths() {
+    for source in [":foo/bar", ":foo/bar(1)"] {
+        let compiled = CanonicalSourceFrontend
+            .compile_expression(&expression(source))
+            .unwrap_or_else(|error| panic!("{source}: {error}"));
+        compiled.compile_artifact().unwrap();
+        let schema = compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap();
+        match source {
+            ":foo/bar" => assert!(matches!(schema.body(), SchemaBody::Atom(_))),
+            _ => assert!(matches!(schema.body(), SchemaBody::Tuple(_))),
+        }
+    }
+}
+
+#[test]
 fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
     execute_document(
         "<event> := :idle | :timeout\n\
