@@ -207,6 +207,7 @@ pub(super) fn bind(
                     schema_id: value.schema(),
                     schema_key: value.schema_key(),
                     shape_instance: value.shape().clone(),
+                    activation_fixed_shape: true,
                     resolved_selector: ArtifactStaticSelectorResolver::new(artifact)
                         .resolve(artifact, source)?,
                 })

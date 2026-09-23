@@ -10,8 +10,7 @@ struct Plan {
     mode: u8,
     arithmetic: SemanticArithmetic,
     rational_power: bool,
-    rows: usize,
-    columns: usize,
+    target_dimensions: Option<(usize, usize)>,
     source_dimensions: Option<(usize, usize)>,
     logical_selector: bool,
     source: SnapshotAccessSelectorLayout,
@@ -101,18 +100,21 @@ pub(super) fn bind(
         if !positional_selector_layout(request, selector) {
             return Err(ResidentKernelBindError::UnsupportedLayout);
         }
+        declared_selector_cardinality(request, selector)?;
         logical_selector |= request
             .schemas
             .get(selector.schema_id)
             .is_some_and(|schema| is_logical_selector_schema(schema.body()));
     }
+    let target_dimensions = (base.kind != ResidentValueKind::Snapshot
+        || base.activation_fixed_shape)
+        .then_some((rows, columns));
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             mode,
             arithmetic,
             rational_power,
-            rows,
-            columns,
+            target_dimensions,
             source_dimensions,
             logical_selector,
             source: layout(source),
@@ -139,15 +141,37 @@ fn execute(
     if inputs.len() != plan.selectors.len() + 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let count = plan
-        .rows
-        .checked_mul(plan.columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
     let current_ref = match &output {
         ResidentValueMut::F64(values) => ResidentValueRef::F64(values),
         ResidentValueMut::Snapshot(values) => ResidentValueRef::Snapshot(values),
         _ => return Err(ResidentKernelError::InvalidOutput),
     };
+    let target_schema = schemas
+        .get(plan.target.schema)
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let (rows, columns) = match (target_schema.body(), current_ref) {
+        (body @ SchemaBody::Matrix { .. }, ResidentValueRef::Snapshot([Some(value)])) => {
+            value
+                .validate_against(schemas)
+                .map_err(|_| ResidentKernelError::InvalidInput)?;
+            snapshot_matrix_dimensions(value, body)?
+        }
+        (SchemaBody::Matrix { .. }, ResidentValueRef::Snapshot(_)) => {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        (SchemaBody::Matrix { .. }, _) => plan
+            .target_dimensions
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    if let Some(expected) = plan.target_dimensions
+        && expected != (rows, columns)
+    {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
     let source_ref = input(inputs, 0)?;
     let source_schema = schemas
         .get(plan.source.schema)
@@ -199,9 +223,10 @@ fn execute(
     // select a subset. Use the live validated cardinalities before admission.
     let max_writes = match plan.mode {
         0 => Some(live_selector_capacities[0]),
-        1 => live_selector_capacities[0].checked_mul(plan.columns),
-        2 => live_selector_capacities[0].checked_mul(plan.rows),
-        _ => live_selector_capacities[0].checked_mul(live_selector_capacities[1]),
+        1 => live_selector_capacities[0].checked_mul(columns),
+        2 => live_selector_capacities[0].checked_mul(rows),
+        3 => live_selector_capacities[0].checked_mul(live_selector_capacities[1]),
+        _ => None,
     }
     .ok_or(ResidentKernelError::InvalidShape)?;
     // Numeric snapshots have fixed scalar payloads. Admit the complete draft,
@@ -290,7 +315,7 @@ fn execute(
         // those before selector_value normalizes matrix data to row-major.
         // Numeric selectors retain their authored occurrence order.
         let selector = input(inputs, 1)?;
-        let physical = if matches!(selector, ResidentValueRef::Bool(_)) {
+        let positions = if matches!(selector, ResidentValueRef::Bool(_)) {
             let selected = ValidatedPositions::new(selector, count)?;
             let mut positions = Vec::with_capacity(selected.len());
             selected.try_for_each(|_, position| {
@@ -298,42 +323,39 @@ fn execute(
                 Ok(())
             })?;
             positions
+                .into_iter()
+                .map(|position| (position % rows) * columns + position / rows)
+                .collect()
         } else {
             access_indices(&selectors[0], count)?
         };
-        let length = physical.len();
-        (
-            physical
-                .into_iter()
-                .map(|p| (p % plan.rows) * plan.columns + p / plan.rows)
-                .collect::<Vec<_>>(),
-            length,
-            1,
-        )
+        let length = positions.len();
+        (positions, length, 1)
     } else {
-        let rows = if plan.mode == 2 {
-            (0..plan.rows).collect()
+        let selected_rows = if plan.mode == 2 {
+            (0..rows).collect()
         } else {
-            access_indices(&selectors[0], plan.rows)?
+            access_indices(&selectors[0], rows)?
         };
-        let columns = if plan.mode == 1 {
-            (0..plan.columns).collect()
+        let selected_columns = if plan.mode == 1 {
+            (0..columns).collect()
         } else {
-            access_indices(&selectors[usize::from(plan.mode == 3)], plan.columns)?
+            access_indices(&selectors[usize::from(plan.mode == 3)], columns)?
         };
         (
-            rows.iter()
-                .flat_map(|r| columns.iter().map(move |c| r * plan.columns + c))
+            selected_rows
+                .iter()
+                .flat_map(|r| selected_columns.iter().map(move |c| r * columns + c))
                 .collect::<Vec<_>>(),
-            rows.len(),
-            columns.len(),
+            selected_rows.len(),
+            selected_columns.len(),
         )
     };
     let source_index = |ordinal: usize, destination: usize| -> Result<usize, ResidentKernelError> {
         if source.len() == 1 {
             return Ok(0);
         }
-        if plan.logical_selector && source_rows == plan.rows && source_columns == plan.columns {
+        if plan.logical_selector && source_rows == rows && source_columns == columns {
             return Ok(destination);
         }
         if plan.mode == 0 {
@@ -370,7 +392,12 @@ fn execute(
         next[destination] = execute_conversion_draft(value, &plan.assign.step)
             .map_err(|_| ResidentKernelError::Arithmetic)?;
     }
-    let next = finalize_snapshot_data_with_work_budget(kernel, ValueDataDraft::Matrix(next), None)?;
+    let next = finalize_snapshot_data_for_shape_with_work_budget(
+        kernel,
+        current.shape(),
+        ValueDataDraft::Matrix(next),
+        None,
+    )?;
     let changed = match output {
         ResidentValueMut::Snapshot([target]) => {
             let changed = !current
@@ -390,10 +417,10 @@ fn execute(
                 return Err(ResidentKernelError::InvalidShape);
             }
             let mut changed = false;
-            for row in 0..plan.rows {
-                for column in 0..plan.columns {
-                    let destination = &mut target[column * plan.rows + row];
-                    let value = values[row * plan.columns + column].to_f64();
+            for row in 0..rows {
+                for column in 0..columns {
+                    let destination = &mut target[column * rows + row];
+                    let value = values[row * columns + column].to_f64();
                     changed |= destination.to_bits() != value.to_bits();
                     *destination = value;
                 }
