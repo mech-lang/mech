@@ -8217,7 +8217,7 @@ impl SemanticBuilder {
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
-            message: "match blocks require pure maintained operations and closed value schemas"
+            message: "match blocks require pure maintained operations and closed final value schemas"
                 .to_owned(),
             anchor: SourceSemanticAnchor::for_node(expression.syntax()),
         };
@@ -8311,7 +8311,10 @@ impl SemanticBuilder {
             };
         let mut operations = Vec::new();
         for node in nodes {
-            if node.state.is_some() || !closed_value(&node.schema) {
+            if node.state.is_some()
+                || (!closed_value(&node.schema)
+                    && !matches!(&node.body, PendingNodeBody::Comprehension(_)))
+            {
                 return Err(unsupported());
             }
             let body = match node.body {

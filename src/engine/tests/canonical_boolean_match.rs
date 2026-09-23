@@ -1721,6 +1721,17 @@ fn nested_matches_compose_captures_guards_and_compound_results() {
     }
 }
 
+#[test]
+fn match_block_accepts_turn_shaped_comprehension_local_with_closed_yield() {
+    let compiled = compile("signal<bool> ? | true => ([item | item <- [1]][0]) | false => 0");
+    let artifact = compiled.compile_artifact().unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(decoded.nodes().len(), artifact.nodes().len());
+}
+
 #[cfg(feature = "resident-artifact")]
 #[test]
 fn nested_capability_witnesses_preserve_constant_and_local_selector_provenance() {

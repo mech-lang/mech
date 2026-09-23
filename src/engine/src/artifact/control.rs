@@ -372,7 +372,10 @@ pub(super) fn validate_match_inner(
                 }
             };
             for (index, operation) in block.operations.iter().enumerate() {
-                if operation.node as usize != index || !closed_value(operation.schema) {
+                if operation.node as usize != index
+                    || (!closed_value(operation.schema)
+                        && !matches!(&operation.body, ControlOperationBody::Comprehension(_)))
+                {
                     return Err(invalid(
                         "invalid local identity or non-closed operation result",
                     ));
@@ -438,10 +441,20 @@ pub(super) fn validate_match_inner(
                                     )
                                 })
                     );
+                    let live_comprehension_local = matches!(
+                        input,
+                        ControlValue::Local { block: owner, node: local }
+                            if *owner == block.id
+                                && block.operations.get(*local as usize).is_some_and(|producer| {
+                                    matches!(&producer.body, ControlOperationBody::Comprehension(_))
+                                })
+                    );
                     if port.access != AccessMode::Read
                         || port.delivery != DeliveryMode::Signal
                         || value_schema(*input, index)? != port.schema
-                        || (!closed_value(port.schema) && !live_pattern_parameter)
+                        || (!closed_value(port.schema)
+                            && !live_pattern_parameter
+                            && !live_comprehension_local)
                     {
                         return Err(invalid("block operation input contract mismatch"));
                     }
