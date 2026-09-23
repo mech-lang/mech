@@ -539,18 +539,26 @@ fn execute_conversion_plan(
             ConversionExecutionError::ConversionPlanSourceMismatch,
         ));
     }
-    if matches!(plan.step, ConversionStep::Identity) {
-        return Ok(value.clone());
-    }
     let draft = value.snapshot()?.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
     let converted =
         execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
-    let current_extents = if plan.target.dimension_parameters().is_empty() {
-        Box::new([])
-    } else {
-        value.current_top_level_extents()?
+    let current_extents = match target {
+        SchemaBody::Matrix { .. }
+        | SchemaBody::Set {
+            cardinality: CardinalitySpec::Exact(_),
+            ..
+        }
+        | SchemaBody::Map {
+            cardinality: CardinalitySpec::Exact(_),
+            ..
+        }
+        | SchemaBody::Table {
+            rows: CardinalitySpec::Exact(_),
+            ..
+        } => value.current_top_level_extents()?,
+        _ => Box::new([]),
     };
     let descriptor = materialize_resolved_output(
         &plan.target,
