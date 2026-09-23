@@ -1,5 +1,31 @@
 # Recovery continuation after audit acceptance
 
+## Live landing checkpoint — 2026-09-22, R23 published; R24 next
+
+**Candidate:** the accumulated deleted-parser C remains draft #830 and is not
+qualified on the current owner stack. The protected target remains
+`integration/v0.4`.
+
+**Completed:** R23 #881 was rebased onto exact R22 and published at
+`0f4dda358`. Its five existing review notes were fixed, answered, and
+resolved. Browser mounts now appear only for compiled root outputs; configured
+run directories expand to executable roots; raw formatting applies canonical
+source spacing; front matter cannot overwrite host-owned shim fields; and
+non-root served pages render statically without starting the document
+controller. Focused root and renderer checks, the browser compile check, and
+the 61/61 browser unit suite pass. The remote R23 head matches the local head,
+with zero unresolved review threads. No repeat review was requested.
+
+**In progress:** move R24 onto exact R23, resolve any conflicts, and continue
+one owner at a time toward C. R24 currently has no open review threads.
+
+**Remaining:** complete owner fixes and focused checks through R26, revisit
+deferred R16 findings during sealing, fully qualify the exact C head, merge
+through the protected path, and verify the landed `integration/v0.4` result.
+Checkpoints are not completion.
+
+**Status:** Checkpoint—not complete.
+
 ## Live landing checkpoint — 2026-09-22, R22 published; R23 next
 
 **Candidate:** the single accumulated deleted-parser C remains draft #830,
