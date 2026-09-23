@@ -4,7 +4,10 @@ use super::comprehension::{
     PendingCollectionValue, PendingComprehensionOperation, PendingComprehensionStep,
 };
 use super::*;
-use mech_syntax::document::FunctionCallSyntax;
+use mech_syntax::document::{
+    ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax, FunctionCallSyntax,
+    MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
+};
 
 enum DocumentFunctionBody {
     Statements(SyntaxNode),
@@ -40,14 +43,144 @@ fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticE
 }
 
 fn references_variable(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
+    references_free_variable(node, name, false)
+}
+
+fn references_pattern_variable(
+    pattern: &PatternSyntax,
+    name: &str,
+    shadowed: bool,
+) -> Result<bool, SourceSemanticError> {
+    let value = pattern
+        .value()
+        .ok_or_else(|| missing_kind_child(pattern.syntax(), "pattern body"))?;
+    let children = match value {
+        PatternValueSyntax::Expression(expression) => {
+            return if standalone_pattern_variable(&expression).is_some() {
+                Ok(false)
+            } else {
+                references_free_variable(expression.syntax(), name, shadowed)
+            };
+        }
+        PatternValueSyntax::Array(array) => array
+            .elements()
+            .iter()
+            .filter_map(|element| element.pattern())
+            .collect::<Vec<_>>(),
+        PatternValueSyntax::Tuple(tuple) => tuple.items(),
+        PatternValueSyntax::AtomStruct(tuple) => tuple.items(),
+        PatternValueSyntax::TupleStruct(tuple) => tuple.items(),
+        PatternValueSyntax::Wildcard(_) => Vec::new(),
+    };
+    for child in children {
+        if references_pattern_variable(&child, name, shadowed)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn references_comprehension_variable(
+    value: Option<ExpressionSyntax>,
+    qualifiers: Vec<ComprehensionQualifierSyntax>,
+    name: &str,
+    mut shadowed: bool,
+) -> Result<bool, SourceSemanticError> {
+    for qualifier in qualifiers {
+        match qualifier.value() {
+            Some(ComprehensionQualifierValueSyntax::Generator(generator)) => {
+                if let Some(source) = generator.source()
+                    && references_free_variable(source.syntax(), name, shadowed)?
+                {
+                    return Ok(true);
+                }
+                if let Some(pattern) = generator.pattern() {
+                    if references_pattern_variable(&pattern, name, shadowed)? {
+                        return Ok(true);
+                    }
+                    let mut bindings = Vec::new();
+                    collect_pattern_bindings(&pattern, &mut bindings)?;
+                    shadowed |= bindings.iter().any(|binding| binding.name == name);
+                }
+            }
+            Some(ComprehensionQualifierValueSyntax::Definition(definition)) => {
+                let variable = definition.variable();
+                for child in definition.syntax().children() {
+                    if variable.as_ref().is_some_and(|variable| {
+                        child.kind() == SyntaxKind::Variable
+                            && child.range() == variable.syntax().range()
+                    }) {
+                        continue;
+                    }
+                    if references_free_variable(&child, name, shadowed)? {
+                        return Ok(true);
+                    }
+                }
+                if let Some(variable) = variable
+                    && let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+                {
+                    shadowed |= node_text(identifier.syntax())? == name;
+                }
+            }
+            Some(ComprehensionQualifierValueSyntax::Filter(filter)) => {
+                if references_free_variable(filter.syntax(), name, shadowed)? {
+                    return Ok(true);
+                }
+            }
+            None => {}
+        }
+    }
+    match value {
+        Some(value) => references_free_variable(value.syntax(), name, shadowed),
+        None => Ok(false),
+    }
+}
+
+fn references_free_variable(
+    node: &SyntaxNode,
+    name: &str,
+    shadowed: bool,
+) -> Result<bool, SourceSemanticError> {
+    if let Some(arm) = MatchArmSyntax::cast(node.clone()) {
+        let mut arm_shadowed = shadowed;
+        if let Some(pattern) = arm.pattern() {
+            if references_pattern_variable(&pattern, name, shadowed)? {
+                return Ok(true);
+            }
+            let mut bindings = Vec::new();
+            collect_pattern_bindings(&pattern, &mut bindings)?;
+            arm_shadowed |= bindings.iter().any(|binding| binding.name == name);
+        }
+        for expression in [arm.guard(), arm.value()].into_iter().flatten() {
+            if references_free_variable(expression.syntax(), name, arm_shadowed)? {
+                return Ok(true);
+            }
+        }
+        return Ok(false);
+    }
+    if let Some(comprehension) = SetComprehensionSyntax::cast(node.clone()) {
+        return references_comprehension_variable(
+            comprehension.value(),
+            comprehension.qualifiers(),
+            name,
+            shadowed,
+        );
+    }
+    if let Some(comprehension) = MatrixComprehensionSyntax::cast(node.clone()) {
+        return references_comprehension_variable(
+            comprehension.value(),
+            comprehension.qualifiers(),
+            name,
+            shadowed,
+        );
+    }
     if let Some(variable) = VariableSyntax::cast(node.clone())
         && let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
-        && node_text(identifier.syntax())? == name
     {
-        return Ok(true);
+        return Ok(!shadowed && node_text(identifier.syntax())? == name);
     }
     for child in node.children() {
-        if references_variable(&child, name)? {
+        if references_free_variable(&child, name, shadowed)? {
             return Ok(true);
         }
     }
@@ -887,5 +1020,43 @@ impl SemanticBuilder {
             "source-semantics/incompatible-function-output",
             "function output does not satisfy its declared kind",
         )
+    }
+}
+
+#[cfg(test)]
+mod recursive_capture_tests {
+    use super::*;
+    use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+    use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
+
+    fn expression(source: &str) -> ExpressionSyntax {
+        fn find(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
+        }
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(0x557), Revision(1), source).unwrap(),
+            rules::EXPRESSION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean(), "{source}");
+        find(parsed.syntax()).unwrap()
+    }
+
+    #[test]
+    fn nested_binders_only_shadow_their_own_scopes() {
+        for (source, captures_n) in [
+            ("(1 ? | n => n)", false),
+            ("(n ? | x => x)", true),
+            ("[n | n <- [1]]", false),
+            ("[n | x <- [1]]", true),
+            ("[x | x <- n]", true),
+        ] {
+            assert_eq!(
+                references_variable(expression(source).syntax(), "n").unwrap(),
+                captures_n,
+                "{source}"
+            );
+        }
     }
 }

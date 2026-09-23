@@ -2378,6 +2378,9 @@ impl ReactiveInstance {
                 budget::PreparedKernel::new(
                     (),
                     budget::resident_cost! {
+                        // Covers inventory copying, sorting, and deduplication
+                        // before the value-footprint traversal begins.
+                        compute_work: region_inventory_bytes,
                         temporary_bytes: region_inventory_bytes,
                         ..budget::KernelCostEstimate::default()
                     },
@@ -2387,7 +2390,8 @@ impl ReactiveInstance {
                 Ok(())
             })()
             .map_err(fail)?;
-            let mut regions = root.locals.to_vec();
+            let mut regions = Vec::with_capacity(count);
+            regions.extend_from_slice(&root.locals);
             if root.write.storage == ResidentStorageClass::Scratch {
                 // Recursive arms share the target output slot. Its value from
                 // the preceding turn must survive the inner invocation.
@@ -2398,12 +2402,14 @@ impl ReactiveInstance {
             (regions, root.write, region_inventory_bytes)
         };
 
+        let mut frame_meter = budget::ResidentBudgetMeter::default();
         let (value_bytes, value_nodes) = regions
             .iter()
             .try_fold((0u64, 0u64), |(bytes, nodes), region| {
                 let value = resident_frame_value_footprint(
                     self.workspace.scratch.read(*region),
                     &self.plan.schemas,
+                    &mut frame_meter,
                 )
                 .ok_or(ResidentKernelError::InvalidShape)?;
                 Ok::<_, ResidentKernelError>((
@@ -2416,6 +2422,7 @@ impl ReactiveInstance {
                 ))
             })
             .map_err(fail)?;
+        let measured_frame_work = frame_meter.estimate().compute_work();
         let frame_bytes = region_inventory_bytes
             .checked_add(value_bytes)
             .and_then(|bytes| {
@@ -2435,7 +2442,9 @@ impl ReactiveInstance {
             budget::PreparedKernel::new(
                 (),
                 budget::resident_cost! {
-                    compute_work: 1,
+                    compute_work: measured_frame_work
+                        .checked_add(frame_bytes)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
                     temporary_bytes: peak_bytes,
                     cloned_bytes: frame_bytes,
                     retained_nodes: peak_nodes,
@@ -2518,9 +2527,11 @@ impl ReactiveInstance {
             let value = self
                 .read_location(location, working_epoch)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+            let mut result_meter = budget::ResidentBudgetMeter::default();
             let (result_bytes, result_nodes) =
-                resident_frame_value_footprint(value, &self.plan.schemas)
+                resident_frame_value_footprint(value, &self.plan.schemas, &mut result_meter)
                     .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let measured_result_work = result_meter.estimate().compute_work();
             let peak_bytes = live_bytes
                 .checked_add(frame_bytes)
                 .and_then(|bytes| bytes.checked_add(result_bytes))
@@ -2533,6 +2544,9 @@ impl ReactiveInstance {
                 budget::PreparedKernel::new(
                     (),
                     budget::resident_cost! {
+                        compute_work: measured_result_work
+                            .checked_add(result_bytes)
+                            .ok_or(ResidentKernelError::InvalidShape)?,
                         temporary_bytes: peak_bytes,
                         cloned_bytes: result_bytes,
                         retained_nodes: peak_nodes,
@@ -4222,6 +4236,7 @@ fn owned_resident_value(value: ResidentValueRef<'_>) -> super::OwnedResidentValu
 fn resident_frame_value_footprint(
     value: ResidentValueRef<'_>,
     schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
 ) -> Option<(u64, u64)> {
     // The frame Vec owns one entry and one boxed slice per local. Include an
     // allocator allowance per box so many small scalar locals cannot evade
@@ -4242,33 +4257,44 @@ fn resident_frame_value_footprint(
         ResidentValueRef::Bool(values) => (fixed(values.len(), core::mem::size_of::<u8>())?, 0),
         ResidentValueRef::Index(values) => (fixed(values.len(), core::mem::size_of::<u64>())?, 0),
         ResidentValueRef::F64(values) => (fixed(values.len(), core::mem::size_of::<f64>())?, 0),
-        ResidentValueRef::String(values) => values.iter().try_fold(
-            (fixed(values.len(), core::mem::size_of::<String>())?, 0u64),
-            |(bytes, nodes), value| {
-                Some((
-                    bytes
-                        .checked_add(u64::try_from(value.len()).ok()?)?
-                        .checked_add(ALLOCATION_OVERHEAD)?,
-                    nodes.checked_add(1)?,
-                ))
-            },
-        )?,
-        ResidentValueRef::Snapshot(values) => values.iter().try_fold(
-            (
-                fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
-                0u64,
-            ),
-            |(bytes, nodes), value| {
-                let Some(value) = value else {
-                    return Some((bytes, nodes));
-                };
-                let footprint = value.retained_footprint(schemas).ok()?;
-                Some((
-                    bytes.checked_add(footprint.retained_bytes)?,
-                    nodes.checked_add(footprint.node_count)?,
-                ))
-            },
-        )?,
+        ResidentValueRef::String(values) => {
+            meter
+                .charge_compute_work(u64::try_from(values.len()).ok()?)
+                .ok()?;
+            values.iter().try_fold(
+                (fixed(values.len(), core::mem::size_of::<String>())?, 0u64),
+                |(bytes, nodes), value| {
+                    Some((
+                        bytes
+                            .checked_add(u64::try_from(value.len()).ok()?)?
+                            .checked_add(ALLOCATION_OVERHEAD)?,
+                        nodes.checked_add(1)?,
+                    ))
+                },
+            )?
+        }
+        ResidentValueRef::Snapshot(values) => {
+            meter
+                .charge_compute_work(u64::try_from(values.len()).ok()?)
+                .ok()?;
+            values.iter().try_fold(
+                (
+                    fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
+                    0u64,
+                ),
+                |(bytes, nodes), value| {
+                    let Some(value) = value else {
+                        return Some((bytes, nodes));
+                    };
+                    let footprint =
+                        budget::measure_canonical_value_footprint(meter, value, schemas).ok()?;
+                    Some((
+                        bytes.checked_add(footprint.retained_bytes)?,
+                        nodes.checked_add(footprint.node_count)?,
+                    ))
+                },
+            )?
+        }
     };
     Some((
         entry.checked_add(payload_bytes)?,
@@ -4517,8 +4543,10 @@ mod tests {
             .snapshot()
             .unwrap();
         let schemas = snapshot.schemas().unwrap();
+        let mut meter = budget::ResidentBudgetMeter::default();
         let (scalar_bytes, scalar_nodes) =
-            resident_frame_value_footprint(ResidentValueRef::Bool(&[1]), &schemas).unwrap();
+            resident_frame_value_footprint(ResidentValueRef::Bool(&[1]), &schemas, &mut meter)
+                .unwrap();
         assert!(
             scalar_bytes
                 > core::mem::size_of::<(ResidentRegion, super::super::OwnedResidentValue)>() as u64
@@ -4527,11 +4555,13 @@ mod tests {
         let (snapshot_bytes, snapshot_nodes) = resident_frame_value_footprint(
             ResidentValueRef::Snapshot(&[Some(snapshot.clone())]),
             &schemas,
+            &mut meter,
         )
         .unwrap();
         let footprint = snapshot.retained_footprint(&schemas).unwrap();
         assert!(snapshot_bytes > footprint.retained_bytes);
         assert_eq!(snapshot_nodes, footprint.node_count + 1);
+        assert!(meter.estimate().compute_work() > 0);
     }
 
     #[cfg(feature = "source")]
