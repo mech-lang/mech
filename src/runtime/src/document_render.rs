@@ -256,7 +256,23 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, &[], RenderMode::Browser)?;
+        self.format_html_slots_mode(document, RenderMode::Browser)
+    }
+
+    /// Format a served source page without executable browser mounts.
+    pub fn format_static_html_slots(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        self.format_html_slots_mode(document, RenderMode::Source)
+    }
+
+    fn format_html_slots_mode(
+        &self,
+        document: &DocumentSyntax,
+        mode: RenderMode,
+    ) -> Result<BTreeMap<String, String>, CanonicalDocumentRenderError> {
+        let lookup = ResultLookup::new(document, &[], mode)?;
         let owner = document.scope_id();
         let mut slots = BTreeMap::new();
         if let Some(front) = document.title().and_then(|title| title.front_matter()) {
@@ -426,6 +442,64 @@ impl CanonicalDocumentRenderer {
         self.render_text_mode(document, &[], RenderMode::Source)
     }
 
+    /// Pretty-print executable canonical items while retaining document prose,
+    /// comments, strings, and source directives in their original regions.
+    pub fn format_pretty_text(
+        &self,
+        document: &DocumentSyntax,
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        let source = document
+            .syntax()
+            .source()
+            .text(document.syntax().range())
+            .map_err(|_| range_error(document.syntax().range()))?;
+        let mut code_nodes = Vec::new();
+        collect_nodes(document.syntax(), SyntaxKind::MechCode, &mut code_nodes);
+        let mut edits = Vec::new();
+        for code in code_nodes {
+            let Some(code) = MechCodeSyntax::cast(code) else {
+                continue;
+            };
+            for item in code.items() {
+                let Some(value) = item.value() else {
+                    continue;
+                };
+                if matches!(value.kind(), SyntaxKind::Comment | SyntaxKind::BlankLine) {
+                    continue;
+                }
+                let formatted = format_canonical_item(&value)?;
+                if formatted != node_text(&value)? {
+                    edits.push((
+                        value.range().start.0 as usize,
+                        value.range().end.0 as usize,
+                        formatted,
+                    ));
+                }
+            }
+        }
+        edits.sort_by_key(|(start, end, _)| (*start, usize::MAX - *end));
+        let mut formatted = String::with_capacity(source.len());
+        let mut cursor = 0;
+        for (start, end, replacement) in edits {
+            if start < cursor {
+                continue;
+            }
+            formatted.push_str(
+                source
+                    .get(cursor..start)
+                    .ok_or_else(|| range_error(document.syntax().range()))?,
+            );
+            formatted.push_str(&replacement);
+            cursor = end;
+        }
+        formatted.push_str(
+            source
+                .get(cursor..)
+                .ok_or_else(|| range_error(document.syntax().range()))?,
+        );
+        Ok(formatted)
+    }
+
     pub fn render_text(
         &self,
         document: &DocumentSyntax,
@@ -547,6 +621,7 @@ enum RenderMode {
 
 struct ResultLookup<'a> {
     mode: RenderMode,
+    root_owner: DocumentScopeId,
     values: HashMap<ResultKey, &'a RuntimeValueSnapshot>,
     output_addresses: HashMap<TextRange, u64>,
     citation_numbers: HashMap<String, usize>,
@@ -700,6 +775,7 @@ impl<'a> ResultLookup<'a> {
         }
         Ok(Self {
             mode,
+            root_owner: document.scope_id(),
             values,
             output_addresses: HashMap::new(),
             citation_numbers,
@@ -1616,13 +1692,26 @@ fn render_inline_html(
                 return Ok(());
             }
             if lookup.mode == RenderMode::Browser {
-                append_browser_mount(
-                    output,
-                    "span",
-                    "mech-inline-mech-code",
-                    SourceDocumentOutputKind::Inline,
-                    node.range(),
-                );
+                if lookup
+                    .coordinates
+                    .get(&node.range())
+                    .is_some_and(|coordinates| {
+                        coordinates.owner == lookup.root_owner
+                            && coordinates.scope.as_ref() == Some(&CanonicalRenderScope::Root)
+                    })
+                {
+                    append_browser_mount(
+                        output,
+                        "span",
+                        "mech-inline-mech-code",
+                        SourceDocumentOutputKind::Inline,
+                        node.range(),
+                    );
+                } else {
+                    output.push_str("<code class='mech-inline'>");
+                    output.push_str(&escape_html(&node_text(node)?));
+                    output.push_str("</code>");
+                }
                 return Ok(());
             }
             if lookup.mode == RenderMode::Source {
@@ -2321,7 +2410,8 @@ fn render_fence_html(
     if lookup.mode == RenderMode::Browser
         && presentation.show_output
         && !info.hidden
-        && scope.is_some()
+        && owner == lookup.root_owner
+        && scope.as_ref() == Some(&CanonicalRenderScope::Root)
     {
         append_browser_mount(
             output,
@@ -2634,7 +2724,10 @@ fn append_program_html(
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
     if lookup.mode == RenderMode::Browser {
-        if let Some(range) = required {
+        if owner == lookup.root_owner
+            && *scope == CanonicalRenderScope::Root
+            && let Some(range) = required
+        {
             append_browser_mount(
                 output,
                 "output",
@@ -2732,6 +2825,67 @@ fn push_source(
 
 fn node_text(node: &SyntaxNode) -> Result<String, CanonicalDocumentRenderError> {
     node.text().map_err(|_| range_error(node.range()))
+}
+
+fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentRenderError> {
+    let mut protected = Vec::new();
+    for kind in [
+        SyntaxKind::Comment,
+        SyntaxKind::StringLiteral,
+        SyntaxKind::Utf8String,
+        SyntaxKind::RawString,
+    ] {
+        collect_nodes(node, kind, &mut protected);
+    }
+    let protected = protected
+        .into_iter()
+        .map(|node| node.range())
+        .collect::<Vec<_>>();
+    let mut output = String::new();
+    let mut gap = String::new();
+    let mut previous = None;
+    for token in node.tokens() {
+        let kind = token.kind();
+        let text = token.text().map_err(|_| range_error(token.range()))?;
+        let literal = protected
+            .iter()
+            .any(|range| token.range().start >= range.start && token.range().end <= range.end);
+        if !literal
+            && matches!(
+                kind,
+                SyntaxKind::Whitespace
+                    | SyntaxKind::Tab
+                    | SyntaxKind::Newline
+                    | SyntaxKind::CarriageReturn
+            )
+        {
+            gap.push_str(&text);
+            continue;
+        }
+        if gap.contains(['\r', '\n']) {
+            output.push_str(&gap);
+        } else if previous.is_some() {
+            if !gap.is_empty()
+                || matches!(
+                    kind,
+                    SyntaxKind::DefineOperatorToken | SyntaxKind::AssignOperator
+                )
+                || matches!(
+                    previous,
+                    Some(SyntaxKind::DefineOperatorToken | SyntaxKind::AssignOperator)
+                )
+            {
+                output.push(' ');
+            }
+        } else {
+            output.push_str(&gap);
+        }
+        gap.clear();
+        output.push_str(&text);
+        previous = Some(kind);
+    }
+    output.push_str(&gap);
+    Ok(output)
 }
 
 fn range_error(range: TextRange) -> CanonicalDocumentRenderError {

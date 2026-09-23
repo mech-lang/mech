@@ -916,6 +916,21 @@ fn browser_source_mounts_match_compiled_canonical_output_anchors() {
 }
 
 #[test]
+fn browser_source_omits_mounts_for_named_and_mika_scopes() {
+    let document =
+        document("Root {1}.\n\n~~~mech:worker\n2\n~~~\n\n~∘~⸢Child {3}.\n\n~~~mech\n4\n~~~\n⸥\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    assert_eq!(
+        html.matches("class='mech-inline-mech-code'").count(),
+        1,
+        "{html}"
+    );
+    assert!(!html.contains("class='mech-block-output'"), "{html}");
+}
+
+#[test]
 fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
     let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
     let slots = CanonicalDocumentRenderer

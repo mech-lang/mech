@@ -27,7 +27,8 @@ use mech_syntax::document::{ParseConfig, Revision};
 use warp::Filter;
 
 use crate::canonical_presentation::{
-    HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html, validate_shipped_shim_render,
+    HtmlShimExtraSlots, HtmlStyleSheets, render_canonical_html, render_canonical_static_html,
+    validate_shipped_shim_render,
 };
 use crate::{
     HostAuthorityInjection, inject_browser_host_config_script,
@@ -590,8 +591,10 @@ impl ServerSourceRegistry {
                 "PRESENTATION",
                 self.document_presentation.as_str().to_string(),
             );
+            let is_root = root_uris.contains(&source.canonical_uri);
             if shim.contains("{{DOCUMENT_SCRIPT}}") {
-                let document_controller = self.document_controller.as_deref().ok_or_else(|| {
+                if is_root {
+                    let document_controller = self.document_controller.as_deref().ok_or_else(|| {
       MechError::new(
         GenericError {
           msg: "selected HTML shim requests {{DOCUMENT_SCRIPT}}, but the embedded document controller is unavailable".to_string(),
@@ -600,19 +603,32 @@ impl ServerSourceRegistry {
       )
       .with_compiler_loc()
     })?;
-                extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
-                extra_slots.insert("WASM_MODULE_URL", "/_mech/pkg/mech_wasm.js");
+                    extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
+                    extra_slots.insert("WASM_MODULE_URL", "/_mech/pkg/mech_wasm.js");
+                } else {
+                    extra_slots.insert("DOCUMENT_SCRIPT", "");
+                    extra_slots.insert("WASM_MODULE_URL", "");
+                }
                 // Served documents load their complete source map from the
                 // project manifest. Static formatter output supplies this slot
                 // with an embedded source bundle instead.
                 extra_slots.insert("DOCUMENT_SOURCES", "");
             }
-            let render = render_canonical_html(
-                &document.document(),
-                stylesheets.clone(),
-                shim.to_string(),
-                &extra_slots,
-            )?;
+            let render = if is_root {
+                render_canonical_html(
+                    &document.document(),
+                    stylesheets.clone(),
+                    shim.to_string(),
+                    &extra_slots,
+                )?
+            } else {
+                render_canonical_static_html(
+                    &document.document(),
+                    stylesheets.clone(),
+                    shim.to_string(),
+                    &extra_slots,
+                )?
+            };
             if let Some(shim_name) = self.shipped_document_shim.as_deref() {
                 validate_shipped_shim_render(shim_name, &render)?;
             }
@@ -628,7 +644,7 @@ impl ServerSourceRegistry {
                     backing_paths: dedupe_paths(backing_paths),
                 },
             );
-            if root_uris.contains(&source.canonical_uri) {
+            if is_root {
                 let code = crate::browser_planning::compile_browser_document_bundle(
                     &mut compiler,
                     uri,
@@ -2563,8 +2579,18 @@ mod tests {
             }],
             ..ServerSourceRegistry::default()
         };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
         registry
-            .sync_workspace_snapshot(&root, &retained, "", "", &[])
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
             .unwrap();
         let encoded =
             String::from_utf8(registry.get_route("/code/main.mec").unwrap().bytes).unwrap();
@@ -2583,6 +2609,18 @@ mod tests {
             "{:?}",
             retained.diagnostics
         );
+        for path in ["/dep.mec", "/notes.mec"] {
+            let html = String::from_utf8(registry.get_route(path).unwrap().bytes).unwrap();
+            assert!(
+                html.contains("data-mech-document-status=\"ready\""),
+                "{path}: {html}"
+            );
+            assert!(
+                !html.contains("data-mech-document-controller"),
+                "{path}: {html}"
+            );
+            assert!(!html.contains("data-mech-output-address"), "{path}: {html}");
+        }
         assert!(registry.get_route("/code/notes.mec").is_none());
         assert_eq!(registry.source_roots, ["main.mec"]);
         assert!(
@@ -2596,7 +2634,13 @@ mod tests {
         // Serving a retained revision must not read ahead to unrelated disk edits.
         std::fs::write(root.join("dep.mec"), "value := 43.0\n<+ value\n").unwrap();
         registry
-            .sync_workspace_snapshot(&root, &retained, "", "", &[])
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
             .unwrap();
         assert_eq!(
             registry.get_route("/code/main.mec").unwrap().bytes,
@@ -2604,7 +2648,13 @@ mod tests {
         );
         let updated = snapshot(&root, "main.mec");
         registry
-            .sync_workspace_snapshot(&root, &updated, "", "", &[])
+            .sync_workspace_snapshot(
+                &root,
+                &updated,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
             .unwrap();
         let current = registry.get_route("/source/dep.mec").unwrap();
         let text = std::str::from_utf8(&current.bytes).unwrap();
