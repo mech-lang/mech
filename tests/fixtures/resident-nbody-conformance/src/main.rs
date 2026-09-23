@@ -208,7 +208,30 @@ fn main() {
         source_instance.plan.program_revision,
         decoded_instance.plan.program_revision
     );
-    assert_eq!(source_instance.plan.slots, decoded_instance.plan.slots);
+    assert_eq!(
+        source_instance.plan.slots.len(),
+        decoded_instance.plan.slots.len()
+    );
+    for (source, decoded) in source_instance
+        .plan
+        .slots
+        .iter()
+        .zip(&decoded_instance.plan.slots)
+    {
+        // Compiler-proven shape hints are planning sidecars, not wire data.
+        // A decoded activation may therefore lack this provenance flag even
+        // when the resolved shape and region are identical. The trajectory
+        // comparison below still verifies source/decoded behavior per turn.
+        if source.activation_fixed_shape != decoded.activation_fixed_shape {
+            assert!(artifact.slot_shape_hint(source.artifact_id).is_some());
+            assert!(source.activation_fixed_shape && !decoded.activation_fixed_shape);
+        }
+        let mut source = source.clone();
+        let mut decoded = decoded.clone();
+        source.activation_fixed_shape = false;
+        decoded.activation_fixed_shape = false;
+        assert_eq!(source, decoded);
+    }
     assert_eq!(
         source_instance.plan.activation_nodes,
         decoded_instance.plan.activation_nodes
