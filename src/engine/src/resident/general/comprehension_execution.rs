@@ -1006,7 +1006,6 @@ fn admit_generator_schema_workspace(
 
 fn schema_shape_resolution_workspace(
     schema: &mech_core::Schema,
-    schemas: &mech_core::SchemaTable,
     observed_shape_values: usize,
 ) -> Result<u64, ResidentKernelError> {
     let body_bytes = schema
@@ -1021,11 +1020,11 @@ fn schema_shape_resolution_workspace(
     )?
     .checked_mul(core::mem::size_of::<u64>() as u64)
     .ok_or(ResidentKernelError::InvalidShape)?;
-    // The schema-context clone bound includes parameter declarations and
-    // their lower/upper expression trees. The remaining terms cover the open
+    // The selected schema bound includes parameter declarations and their
+    // lower/upper expression trees. The remaining terms cover the open
     // and closed body copies plus lower bounds, witnesses, ShapeInstance
     // storage, and the retained parameter-value box.
-    schemas
+    schema
         .clone_allocation_bound_bytes()
         .and_then(|bytes| bytes.checked_add(body_bytes.checked_mul(3)?))
         .and_then(|bytes| bytes.checked_add(shape_bytes.checked_mul(6)?))
@@ -1494,7 +1493,10 @@ fn retained_value_footprint(
         }
         ResidentValueRef::Bool([_]) => scalar_footprint(1)?,
         ResidentValueRef::Index([_]) | ResidentValueRef::F64([_]) => scalar_footprint(8)?,
-        ResidentValueRef::String([value]) => scalar_footprint(value.len())?,
+        ResidentValueRef::String([value]) => {
+            meter.charge_compute_work(budget::checked_u64(value.len())?)?;
+            scalar_footprint(value.len())?
+        }
         _ => return Err(ResidentKernelError::InvalidInput),
     };
     // Native scalar yields need no recursive traversal beyond the control
@@ -2366,7 +2368,13 @@ impl ReactiveInstance {
             .and_then(|bytes| bytes.checked_add(previous_arena_bytes))
             .and_then(|bytes| bytes.checked_add(owner_index_bytes))
             .ok_or(ResidentKernelError::InvalidShape)?;
-        meter.charge_compute_work(allocation_bound)?;
+        // Each extend_preserving_ids call clones the arena accumulated so
+        // far. Bound every rebuild by the final arena, not just the first.
+        meter.charge_compute_work(
+            allocation_bound
+                .checked_mul(budget::checked_u64(owners.len())?)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        )?;
         meter.charge_comparison_work(
             retained_nodes
                 .checked_mul(retained_nodes)
@@ -2502,12 +2510,9 @@ impl ReactiveInstance {
         let schema = schemas
             .get(control.output_schema)
             .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
-        let shape_workspace = schema_shape_resolution_workspace(
-            schema,
-            &schemas,
-            schema.dimension_parameters().len(),
-        )
-        .map_err(fail)?;
+        let shape_workspace =
+            schema_shape_resolution_workspace(schema, schema.dimension_parameters().len())
+                .map_err(fail)?;
         let (live_bytes, live_nodes) = comprehension_nested_live_demand(
             draft_count,
             draft_capacity,
@@ -3460,6 +3465,31 @@ impl ReactiveInstance {
         values
             .try_reserve_exact(1)
             .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        // The allocator may grant more than the requested slot. Re-admit its
+        // actual live capacity before retaining the new result item.
+        match control.kind {
+            crate::ComprehensionKind::Matrix => admit_output(
+                next,
+                values.capacity(),
+                next_footprint,
+                retained_shape_parameter_count,
+                schema_arena_bytes,
+                live_locals,
+                published_output_bytes,
+                *meter,
+            ),
+            crate::ComprehensionKind::Set => admit_set_draft(
+                next,
+                values.capacity(),
+                next_footprint,
+                retained_shape_parameter_count,
+                schema_arena_bytes,
+                live_locals,
+                published_output_bytes,
+                *meter,
+            ),
+        }
+        .map_err(fail)?;
         values.push(item);
         *footprint = next_footprint;
         *nested_finalization_work = next_finalization_work;
@@ -3910,13 +3940,30 @@ mod tests {
                 .unwrap(),
             )
             .unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(vec![SchemaBody::String; 256].into_boxed_slice()),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
         let build = builder.finish().unwrap();
         let schema = build.resolve(schema).unwrap();
         let (schemas, _) = build.into_parts();
-        let workspace =
-            schema_shape_resolution_workspace(schemas.get(schema).unwrap(), &schemas, 1).unwrap();
-        assert!(workspace > schemas.clone_allocation_bound_bytes().unwrap());
+        let workspace = schema_shape_resolution_workspace(schemas.get(schema).unwrap(), 1).unwrap();
+        assert!(
+            workspace
+                > schemas
+                    .get(schema)
+                    .unwrap()
+                    .clone_allocation_bound_bytes()
+                    .unwrap()
+        );
         assert!(workspace >= 6 * core::mem::size_of::<u64>() as u64);
+        assert!(workspace < schemas.clone_allocation_bound_bytes().unwrap());
     }
 
     #[test]
@@ -4572,6 +4619,23 @@ mod tests {
             region,
             &SchemaBody::String,
             0,
+            &mut meter,
+        )
+        .unwrap();
+        assert_eq!(footprint.retained_bytes, payload.len() as u64);
+        assert_eq!(meter.estimate().compute_work(), payload.len() as u64);
+    }
+
+    #[test]
+    fn native_string_yield_clones_charge_every_copied_byte() {
+        let payload = "yield-byte".repeat(128);
+        let values = [payload.clone()];
+        let schemas = SchemaTableBuilder::new().finish().unwrap().table;
+        let mut meter = ResidentBudgetMeter::default();
+        let (footprint, _) = retained_value_footprint(
+            ResidentValueRef::String(&values),
+            SchemaId::new(0),
+            &schemas,
             &mut meter,
         )
         .unwrap();

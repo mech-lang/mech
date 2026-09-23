@@ -4,9 +4,9 @@ use crate::{FloatWidth, IntegerWidth, SchemaBody, SchemaTable};
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, vec::Vec};
+use std::{boxed::Box, vec, vec::Vec};
 
 pub(super) trait SnapshotByteSink {
     fn write(&mut self, bytes: &[u8]);
@@ -29,6 +29,19 @@ impl VecSnapshotSink {
 impl SnapshotByteSink for VecSnapshotSink {
     fn write(&mut self, bytes: &[u8]) {
         self.bytes.extend_from_slice(bytes);
+    }
+}
+
+struct FixedSnapshotSink<'a> {
+    bytes: &'a mut [u8],
+    offset: usize,
+}
+
+impl SnapshotByteSink for FixedSnapshotSink<'_> {
+    fn write(&mut self, bytes: &[u8]) {
+        let end = self.offset + bytes.len();
+        self.bytes[self.offset..end].copy_from_slice(bytes);
+        self.offset = end;
     }
 }
 
@@ -314,9 +327,26 @@ impl Value {
 }
 
 pub(super) fn canonical_material(schema: &SchemaBody, data: &ValueData) -> Box<[u8]> {
-    let mut sink = VecSnapshotSink::new();
+    let length = canonical_data_payload_len(schema, data);
+    canonical_material_with_len(schema, data, length)
+}
+
+pub(super) fn canonical_material_with_len(
+    schema: &SchemaBody,
+    data: &ValueData,
+    length: usize,
+) -> Box<[u8]> {
+    let mut bytes = vec![0; length].into_boxed_slice();
+    let mut sink = FixedSnapshotSink {
+        bytes: &mut bytes,
+        offset: 0,
+    };
     encode_data(schema, data, &mut sink);
-    sink.finish()
+    assert_eq!(
+        sink.offset, length,
+        "canonical payload length changed during encoding"
+    );
+    bytes
 }
 
 /// Returns the canonical payload length for already validated schema-directed

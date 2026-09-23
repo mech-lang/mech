@@ -2310,13 +2310,20 @@ fn finalized_value_with_construction(
     })
 }
 
-fn dynamic_canonical(value: Option<&Value>, schema: Option<&SchemaBody>) -> Box<[u8]> {
+fn dynamic_canonical(
+    value: Option<&Value>,
+    schema: Option<&SchemaBody>,
+    encoded_payload_len: Option<usize>,
+) -> Box<[u8]> {
     let Some(value) = value else {
         return Vec::from([0]).into_boxed_slice();
     };
     let schema = schema.expect("materialized dynamic values carry their concrete schema");
     let shape = value.shape().canonical_bytes();
-    let payload = super::encoding::canonical_material(schema, value.data());
+    let payload = match encoded_payload_len {
+        Some(length) => super::encoding::canonical_material_with_len(schema, value.data(), length),
+        None => super::encoding::canonical_material(schema, value.data()),
+    };
     let mut bytes = Vec::with_capacity(
         1 + value.schema_key().as_bytes().len() + 8 + shape.len() + 8 + payload.len(),
     );
@@ -2419,7 +2426,17 @@ fn dynamic_canonical_with_construction(
         }
         authority.admit_snapshot_allocation(bytes, 1)?;
     }
-    Ok(dynamic_canonical(value, schema))
+    let encoded_payload_len = usize::try_from(temporary_payload_bytes).map_err(|_| {
+        crate::MemoryRuntimeError::InvalidLayout {
+            object: context
+                .construction_authority
+                .and_then(SnapshotConstructionAuthority::allocation_object),
+            size: temporary_payload_bytes,
+            alignment: 1,
+            reason: "dynamic canonical payload exceeds addressable length",
+        }
+    })?;
+    Ok(dynamic_canonical(value, schema, Some(encoded_payload_len)))
 }
 
 /// Wraps canonical resident data in a self-describing dynamic snapshot cell.
@@ -2440,7 +2457,7 @@ pub fn wrap_resident_dynamic_data(
         "resident dynamic values retain their authoritative schema arena"
     );
     let value = finalized_value(schema, schema_key, shape, data, Some(schemas));
-    let canonical = dynamic_canonical(Some(&value), Some(body));
+    let canonical = dynamic_canonical(Some(&value), Some(body), None);
     ValueData::Dynamic(DynamicValue {
         value: Some(Box::new(value)),
         canonical,

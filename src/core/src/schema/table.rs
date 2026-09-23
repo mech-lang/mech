@@ -763,6 +763,12 @@ fn retain_component_children(
 }
 
 impl Schema {
+    /// Heap allocation bound for cloning this schema's parameters and body.
+    #[doc(hidden)]
+    pub fn clone_allocation_bound_bytes(&self) -> Option<u64> {
+        schema_clone_heap_bytes(self)
+    }
+
     /// Canonical standalone schema for one component body under this schema's
     /// dimension environment.
     #[doc(hidden)]
