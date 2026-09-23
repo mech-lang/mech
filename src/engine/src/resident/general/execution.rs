@@ -4280,6 +4280,43 @@ mod tests {
 
     #[cfg(feature = "source")]
     #[test]
+    fn nested_comprehension_child_omits_live_captured_rest_input() {
+        let instance =
+            source_instance("[[z + 1 | z <- rest] | [head | rest] <- signal<[[f64]:1,3]:1,2>]");
+        let (capture, child_reads) = instance
+            .plan
+            .steps
+            .iter()
+            .find_map(|step| {
+                let ActivatedTurnStep::Comprehension(control) = step else {
+                    return None;
+                };
+                let capture = instance.plan.reads
+                    [control.reads.start as usize..control.reads.end as usize]
+                    .iter()
+                    .copied()
+                    .find(|location| {
+                        matches!(location, ResidentReadLocation::Scratch(region)
+                            if region.kind == ResidentValueKind::Snapshot)
+                    })?;
+                let child = control.steps.iter().find_map(|step| {
+                    let ActivatedCollectionStep::Operation { node, .. } = step else {
+                        return None;
+                    };
+                    instance.plan.steps[node.get() as usize].memory_site()
+                })?;
+                Some((capture, child.reads))
+            })
+            .expect("nested comprehension captures the outer rest binding");
+        assert!(
+            !instance.plan.reads[child_reads.start as usize..child_reads.end as usize]
+                .contains(&capture),
+            "the child call plan cannot account for its wrapper's live capture"
+        );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
     fn selected_structural_arm_steps_retain_unconsumed_binding_demand() {
         let instance = source_instance("[1 2 3] ? | [head | rest] => head + 1 | * => 0");
         let control = instance.plan.steps.iter().find_map(|step| {

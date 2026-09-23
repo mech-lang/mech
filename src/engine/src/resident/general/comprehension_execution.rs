@@ -3804,6 +3804,44 @@ fn collection_canonicalization_work(
 }
 
 impl ReactiveInstance {
+    fn resident_value_footprint(
+        value: ResidentValueRef<'_>,
+        schemas: &mech_core::SchemaTable,
+        meter: &mut ResidentBudgetMeter,
+    ) -> Result<ValueFootprint, ResidentKernelError> {
+        let mut footprint = ValueFootprint::zero();
+        match value {
+            ResidentValueRef::String(values) => {
+                for value in values {
+                    meter.charge_compute_work(1)?;
+                    footprint = footprint
+                        .checked_add(ValueFootprint {
+                            encoded_bytes: 0,
+                            retained_bytes: budget::checked_u64(value.capacity())?,
+                            node_count: u64::from(!value.is_empty()),
+                        })
+                        .map_err(|_| ResidentKernelError::InvalidShape)?;
+                }
+            }
+            ResidentValueRef::Snapshot(values) => {
+                for value in values.iter().flatten() {
+                    let mut local_meter = ResidentBudgetMeter::default();
+                    let local = budget::measure_canonical_value_footprint(
+                        &mut local_meter,
+                        value,
+                        schemas,
+                    )?;
+                    meter.charge_comparison_work(local_meter.estimate().comparison_work())?;
+                    footprint = footprint
+                        .checked_add(local)
+                        .map_err(|_| ResidentKernelError::InvalidShape)?;
+                }
+            }
+            ResidentValueRef::Bool(_) | ResidentValueRef::Index(_) | ResidentValueRef::F64(_) => {}
+        }
+        Ok(footprint)
+    }
+
     pub(super) fn resident_local_footprint(
         &self,
         locals: impl IntoIterator<Item = ResidentRegion>,
@@ -3812,37 +3850,13 @@ impl ReactiveInstance {
     ) -> Result<ValueFootprint, ResidentKernelError> {
         let mut footprint = ValueFootprint::zero();
         for local in locals {
-            match self.workspace.scratch.read(local) {
-                ResidentValueRef::String(values) => {
-                    for value in values {
-                        meter.charge_compute_work(1)?;
-                        footprint = footprint
-                            .checked_add(ValueFootprint {
-                                encoded_bytes: 0,
-                                retained_bytes: budget::checked_u64(value.capacity())?,
-                                node_count: u64::from(!value.is_empty()),
-                            })
-                            .map_err(|_| ResidentKernelError::InvalidShape)?;
-                    }
-                }
-                ResidentValueRef::Snapshot(values) => {
-                    for value in values.iter().flatten() {
-                        let mut local_meter = ResidentBudgetMeter::default();
-                        let local = budget::measure_canonical_value_footprint(
-                            &mut local_meter,
-                            value,
-                            schemas,
-                        )?;
-                        meter.charge_comparison_work(local_meter.estimate().comparison_work())?;
-                        footprint = footprint
-                            .checked_add(local)
-                            .map_err(|_| ResidentKernelError::InvalidShape)?;
-                    }
-                }
-                ResidentValueRef::Bool(_)
-                | ResidentValueRef::Index(_)
-                | ResidentValueRef::F64(_) => {}
-            }
+            footprint = footprint
+                .checked_add(Self::resident_value_footprint(
+                    self.workspace.scratch.read(local),
+                    schemas,
+                    meter,
+                )?)
+                .map_err(|_| ResidentKernelError::InvalidShape)?;
         }
         Ok(footprint)
     }
@@ -4417,6 +4431,30 @@ impl ReactiveInstance {
         let schema_arena_bytes = schema_arena_bytes
             .checked_add(published_output_footprint.retained_bytes)
             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        // The wrapper call owns its captured inputs. Child calls only account
+        // for captures that they consume themselves, so measure each distinct
+        // location once before iterating the comprehension body.
+        let mut captured_inputs = Vec::new();
+        for location in self.plan.reads[control.reads.start as usize..control.reads.end as usize]
+            .iter()
+            .copied()
+        {
+            if captured_inputs
+                .iter()
+                .any(|(captured, _)| *captured == location)
+            {
+                continue;
+            }
+            let value = self
+                .read_location(location, working)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
+            let input =
+                Self::resident_value_footprint(value, &schemas, &mut meter).map_err(fail)?;
+            captured_inputs.push((location, input));
+        }
+        let inherited_live_nodes = inherited_live_nodes
+            .checked_add(published_output_footprint.node_count)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
         let mut values = Vec::new();
         let mut footprint = ValueFootprint::zero();
         let mut nested_finalization_work = 0_u64;
@@ -4435,6 +4473,7 @@ impl ReactiveInstance {
             &schemas,
             &projections,
             schema_arena_bytes,
+            &captured_inputs,
             before,
             working,
             probe,
@@ -5523,6 +5562,7 @@ impl ReactiveInstance {
         schemas: &Arc<mech_core::SchemaTable>,
         projections: &StructuralProjectionTable,
         schema_arena_bytes: u64,
+        captured_inputs: &[(ResidentReadLocation, ValueFootprint)],
         before: InstanceEpoch,
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
@@ -5578,14 +5618,49 @@ impl ReactiveInstance {
                         *meter,
                     )
                     .map_err(fail)?;
+                    let child = self.plan.steps[node.get() as usize].memory_site();
+                    let child_reads = child.as_ref().map(|site| {
+                        &self.plan.reads[site.reads.start as usize..site.reads.end as usize]
+                    });
+                    let child_output = child.as_ref().map(|site| match site.write.storage {
+                        ResidentStorageClass::Constant => {
+                            ResidentReadLocation::Constant(site.write.region)
+                        }
+                        ResidentStorageClass::Input => {
+                            ResidentReadLocation::Input(site.write.region)
+                        }
+                        ResidentStorageClass::State => ResidentReadLocation::State {
+                            slot: site.write.slot,
+                            region: site.write.region,
+                        },
+                        ResidentStorageClass::Scratch => {
+                            ResidentReadLocation::Scratch(site.write.region)
+                        }
+                    });
+                    let mut unowned_captures = ValueFootprint::zero();
+                    for (location, input) in captured_inputs {
+                        if child_reads.is_some_and(|reads| reads.contains(location))
+                            || child
+                                .as_ref()
+                                .is_some_and(|site| site.rmw_base == Some(*location))
+                            || child_output == Some(*location)
+                        {
+                            continue;
+                        }
+                        unowned_captures = unowned_captures
+                            .checked_add(*input)
+                            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+                    }
                     // A child installs its own turn plan. Carry the demand
-                    // received from enclosing controls as well as this
-                    // comprehension's draft and live locals.
+                    // received from enclosing controls, this comprehension's
+                    // draft and locals, and captures absent from the child call.
                     let live_bytes = live_bytes
                         .checked_add(inherited_live_bytes)
+                        .and_then(|bytes| bytes.checked_add(unowned_captures.retained_bytes))
                         .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
                     let live_nodes = live_nodes
                         .checked_add(inherited_live_nodes)
+                        .and_then(|nodes| nodes.checked_add(unowned_captures.node_count))
                         .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
                     self.execute_step_with_live_demand(
                         *node, before, working, probe, live_bytes, live_nodes,
@@ -5682,6 +5757,7 @@ impl ReactiveInstance {
                                 schemas,
                                 projections,
                                 schema_arena_bytes,
+                                captured_inputs,
                                 before,
                                 working,
                                 probe,
