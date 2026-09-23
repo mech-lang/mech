@@ -191,31 +191,46 @@ impl SemanticBuilder {
             let matrix_lift = parameters.len() == 1
                 && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
-                && matches!(
-                    &actual.body,
-                    SchemaBody::Matrix { element, .. } if element.as_ref() == &schema.body
-                );
+                && matches!(&actual.body, SchemaBody::Matrix { .. });
             let set_lift = parameters.len() == 1
                 && matches!(&body, DocumentFunctionBody::Patterns(_))
                 && schema.dimension_parameters.is_empty()
-                && matches!(
-                        &actual.body,
-                        SchemaBody::Set { element, .. } if element.as_ref() == &schema.body
-                );
+                && matches!(&actual.body, SchemaBody::Set { .. });
             let value = if matrix_lift {
+                let SchemaBody::Matrix { element, .. } = &actual.body else {
+                    unreachable!("matrix lifting retains its source schema")
+                };
+                let source_element = SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: element.as_ref().clone(),
+                };
                 let (lift, value) = self.begin_pattern_lift(
                     input,
-                    schema,
+                    &source_element,
                     PatternLiftOutput::Matrix {
                         source_schema: actual,
                     },
                     call,
                 )?;
                 lifted_collection = Some(lift);
-                value
+                self.conform_schema_draft(
+                    value,
+                    schema,
+                    call,
+                    "source-semantics/incompatible-function-argument",
+                    "function argument does not satisfy its declared kind",
+                )?
             } else if set_lift {
-                let SchemaBody::Set { cardinality, .. } = &actual.body else {
+                let SchemaBody::Set {
+                    element,
+                    cardinality,
+                } = &actual.body
+                else {
                     unreachable!("set lifting retains its source schema")
+                };
+                let source_element = SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: element.as_ref().clone(),
                 };
                 let upper_bound = match cardinality {
                     CardinalitySpec::Exact(value) => Some(value.clone()),
@@ -233,12 +248,18 @@ impl SemanticBuilder {
                 };
                 let (lift, value) = self.begin_pattern_lift(
                     input,
-                    schema,
+                    &source_element,
                     PatternLiftOutput::Set { upper_bound },
                     call,
                 )?;
                 lifted_collection = Some(lift);
-                value
+                self.conform_schema_draft(
+                    value,
+                    schema,
+                    call,
+                    "source-semantics/incompatible-function-argument",
+                    "function argument does not satisfy its declared kind",
+                )?
             } else {
                 self.conform_schema_draft(
                     input,

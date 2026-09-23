@@ -1172,6 +1172,36 @@ fn pattern_functions_apply_per_matrix_element_and_preserve_source_shape() {
 }
 
 #[test]
+fn pattern_function_lifts_conform_each_collection_element() {
+    let function = "twice(n<f64>) => <f64>\n\
+                    | n => n * 2.\n";
+    execute_document(
+        &format!("{function}twice([1<u8> 2<u8>])\n"),
+        [(
+            Vec::new(),
+            ValueDataDraft::Matrix(
+                [2.0, 4.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+    execute_document(
+        &format!("{function}twice({{1<u8>, 2<u8>}})\n"),
+        [(
+            Vec::new(),
+            ValueDataDraft::Set(
+                [2.0, 4.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+}
+
+#[test]
 fn pattern_function_lifts_keep_dynamic_collection_shape_ownership() {
     for source in [
         "twice(n<f64>) => <f64>\n  | n => n * 2.\ntwice(signal<[f64]>)\n",

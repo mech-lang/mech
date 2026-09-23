@@ -924,6 +924,18 @@ pub(super) fn bind_inner(
                     0
                 } else if fixed_scalar {
                     256
+                } else if name == "convert/kind"
+                    && input_layouts.len() == 1
+                    && crate::is_control_scalar_schema(
+                        artifact.schemas().get(input_layouts[0].schema_id).unwrap(),
+                    )
+                    && crate::is_control_scalar_schema(
+                        artifact.schemas().get(output.schema).unwrap(),
+                    )
+                {
+                    // Scalar conversion takes fixed work even when the source
+                    // uses a canonical snapshot lane (for example, u8).
+                    256
                 } else if matches!(name.as_str(), "stats/sum/column" | "stats/sum/row") {
                     // Reduction kernels admit their complete scan before execution.
                     0
