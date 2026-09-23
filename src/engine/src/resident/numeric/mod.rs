@@ -13364,6 +13364,7 @@ enum SnapshotRangeNumber {
 
 fn snapshot_range_number(data: &ValueData) -> Option<SnapshotRangeNumber> {
     Some(match data {
+        ValueData::Index(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
         ValueData::U8(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
         ValueData::U16(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
         ValueData::U32(value) => SnapshotRangeNumber::Unsigned(u128::from(*value)),
@@ -19022,6 +19023,111 @@ mod tests {
             panic!("promoted rows must retain the destination element type")
         };
         assert_eq!(values, &[11, 13, 23, 25]);
+    }
+
+    #[test]
+    fn promoted_linear_snapshot_mask_keeps_canonical_positions() {
+        let matrix = |element| SchemaBody::Matrix {
+            element: Box::new(element),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(2),
+                mech_core::DimensionExpr::Constant(3),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([
+            matrix(SchemaBody::SignedInteger(mech_core::IntegerWidth::W32)),
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            matrix(SchemaBody::Bool),
+        ]);
+        let [target, source, mask] = ids.as_slice() else {
+            unreachable!()
+        };
+        let contract = test_contract(
+            &[*target, *source, *mask],
+            *target,
+            OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            AccessMode::ReadWrite,
+            AliasPolicy::MayAlias { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        );
+        let snapshot_layout = |schema| {
+            test_layout(
+                &schemas,
+                schema,
+                ResidentValueKind::Snapshot,
+                ResidentShape::SCALAR,
+            )
+        };
+        let kernel = bind_compound_selection::<0, 0>(&ResidentKernelBindRequest {
+            contract: &contract,
+            schemas: &schemas,
+            inputs: &[
+                snapshot_layout(*target),
+                test_layout(
+                    &schemas,
+                    *source,
+                    ResidentValueKind::F64,
+                    ResidentShape::SCALAR,
+                ),
+                snapshot_layout(*mask),
+            ],
+            output: snapshot_layout(*target),
+        })
+        .unwrap();
+        let mask_value = [Some(test_value(
+            &schemas,
+            *mask,
+            ValueDataDraft::Matrix(
+                [false, true, false, false, false, false]
+                    .into_iter()
+                    .map(ValueDataDraft::Bool)
+                    .collect(),
+            ),
+        ))];
+        let source_value = [2.5];
+        let inputs = [
+            ResidentValueRef::F64(&source_value),
+            ResidentValueRef::Snapshot(&mask_value),
+        ];
+        let mut output = [Some(test_value(
+            &schemas,
+            *target,
+            ValueDataDraft::Matrix(
+                [10, 20, 30, 40, 50, 60]
+                    .into_iter()
+                    .map(ValueDataDraft::I32)
+                    .collect(),
+            ),
+        ))];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Snapshot(&mut output)),
+            Ok(true),
+        );
+        let ValueData::Matrix(matrix) = output[0].as_ref().unwrap().data() else {
+            panic!("expected complete promoted matrix")
+        };
+        let SequenceView::I32(values) = matrix.elements() else {
+            panic!("expected promoted i32 matrix")
+        };
+        assert_eq!(values, &[10, 22, 30, 40, 50, 60]);
+    }
+
+    #[test]
+    fn constant_index_endpoints_supply_canonical_range_cardinality() {
+        let (schemas, ids) = test_schema_table([SchemaBody::Index]);
+        let [index] = ids.as_slice() else {
+            unreachable!()
+        };
+        let start = test_value(&schemas, *index, ValueDataDraft::Index(1));
+        let end = test_value(&schemas, *index, ValueDataDraft::Index(3));
+        assert_eq!(
+            canonical_range_cardinality(&[&start, &end], true, false),
+            Some(3)
+        );
     }
 
     #[test]

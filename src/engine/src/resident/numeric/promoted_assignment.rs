@@ -315,7 +315,7 @@ fn execute(
         // those before selector_value normalizes matrix data to row-major.
         // Numeric selectors retain their authored occurrence order.
         let selector = input(inputs, 1)?;
-        let physical = if matches!(selector, ResidentValueRef::Bool(_)) {
+        let positions = if matches!(selector, ResidentValueRef::Bool(_)) {
             let selected = ValidatedPositions::new(selector, count)?;
             let mut positions = Vec::with_capacity(selected.len());
             selected.try_for_each(|_, position| {
@@ -323,18 +323,14 @@ fn execute(
                 Ok(())
             })?;
             positions
+                .into_iter()
+                .map(|position| (position % rows) * columns + position / rows)
+                .collect()
         } else {
             access_indices(&selectors[0], count)?
         };
-        let length = physical.len();
-        (
-            physical
-                .into_iter()
-                .map(|p| (p % rows) * columns + p / rows)
-                .collect::<Vec<_>>(),
-            length,
-            1,
-        )
+        let length = positions.len();
+        (positions, length, 1)
     } else {
         let selected_rows = if plan.mode == 2 {
             (0..rows).collect()
