@@ -4421,10 +4421,12 @@ impl ReactiveInstance {
         let mut footprint = ValueFootprint::zero();
         let mut nested_finalization_work = 0_u64;
         let mut element_body = None;
+        let mut touched_local_end = 0;
         self.collection_from(
             control,
             0,
             ComprehensionLiveLocalFootprint::default(),
+            &mut touched_local_end,
             &mut values,
             &mut footprint,
             &mut nested_finalization_work,
@@ -5512,6 +5514,7 @@ impl ReactiveInstance {
         control: &ActivatedComprehensionNode,
         start: usize,
         mut live_local: ComprehensionLiveLocalFootprint,
+        touched_local_end: &mut usize,
         values: &mut Vec<ValueDataDraft>,
         footprint: &mut ValueFootprint,
         nested_finalization_work: &mut u64,
@@ -5544,6 +5547,11 @@ impl ReactiveInstance {
                         self.plan.steps[node.get() as usize],
                         ActivatedTurnStep::Match(_)
                     );
+                    let output_end = usize::try_from(*retained_local_count)
+                        .ok()
+                        .and_then(|retained| retained.checked_add(usize::from(!nested_match)))
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                    *touched_local_end = (*touched_local_end).max(output_end);
                     let live_locals = self
                         .incremental_comprehension_live_local_footprint(
                             &control.locals,
@@ -5594,6 +5602,7 @@ impl ReactiveInstance {
                     source,
                     source_schema,
                     discard_from,
+                    binding_end,
                     element_schema,
                     shape_values: activation_shape_values,
                     pattern,
@@ -5630,6 +5639,8 @@ impl ReactiveInstance {
                         .len();
                     for ordinal in 0..count {
                         meter.charge_compute_work(1).map_err(fail)?;
+                        let mut iteration_end = usize::try_from(*binding_end)
+                            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
                         let matched = if let Some((element_schema, element, element_shape_values)) =
                             &element
                         {
@@ -5662,6 +5673,7 @@ impl ReactiveInstance {
                                 control,
                                 position + 1,
                                 live_local,
+                                &mut iteration_end,
                                 values,
                                 footprint,
                                 nested_finalization_work,
@@ -5681,9 +5693,11 @@ impl ReactiveInstance {
                         // previous iteration's payload. Release the whole
                         // lexical suffix before the next element; only the
                         // preceding locals may remain live across iterations.
+                        let discard_from = usize::try_from(*discard_from)
+                            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
                         let suffix = control
                             .locals
-                            .get(*discard_from as usize..)
+                            .get(discard_from..iteration_end)
                             .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
                         for region in suffix {
                             self.workspace.scratch.discard_payload_write(*region);
