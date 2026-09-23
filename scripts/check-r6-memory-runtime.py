@@ -492,15 +492,26 @@ def failures(root: Path) -> list[str]:
     ):
         found.append("scalar matrix or table finalization bypasses packed construction")
     rebinds = list(function_bodies(snapshot, "rebind"))
+    contextual_rebinds = list(function_bodies(snapshot, "rebind_with_context"))
+    rebind_ownership = (
+        contextual_rebinds[0]
+        if contextual_rebinds
+        else (rebinds[0] if rebinds else "")
+    )
+    admitted_schema_owner = (
+        "schemas: Some(context.try_clone_schemas()?)"
+        if contextual_rebinds
+        else "schemas: Some(Arc::new(schemas.clone()))"
+    )
     frozen_data = balanced_body(snapshot, "FrozenSnapshotData")
     frozen_storage = balanced_body(snapshot, "FrozenSnapshotStorage")
     if (
         "FrozenSnapshotData" not in snapshot
         or not rebinds
-        or "return Ok(self.clone())" not in rebinds[0]
+        or "return Ok(self.clone())" not in rebind_ownership
         or "root: self.root.clone()" not in snapshot
-        or "schema_body_contains_dynamic" not in rebinds[0]
-        or "schemas: Some(Arc::new(schemas.clone()))" not in rebinds[0]
+        or "schema_body_contains_dynamic" not in rebind_ownership
+        or admitted_schema_owner not in rebind_ownership
     ):
         found.append("canonical snapshots do not preserve shared frozen ownership")
     if (

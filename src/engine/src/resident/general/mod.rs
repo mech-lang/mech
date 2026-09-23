@@ -2,7 +2,9 @@
 
 mod comprehension;
 mod execution;
-pub use comprehension::{ActivatedCollectionStep, ActivatedComprehensionNode};
+pub use comprehension::{
+    ActivatedCollectionStep, ActivatedComprehensionNode, ActivatedPatternBinding,
+};
 mod live;
 
 pub use execution::*;
@@ -353,7 +355,7 @@ pub struct ActivatedPlan {
     pub constraints: Box<[ActivatedConstraint]>,
     pub activation_nodes: Box<[NodeId]>,
     activation_steps: Box<[ActivatedOnceNode]>,
-    pub(crate) schemas: mech_core::SchemaTable,
+    pub(crate) schemas: std::sync::Arc<mech_core::SchemaTable>,
     pub(crate) constant_regions: Box<[ResidentRegion]>,
     pub(crate) state_slots: Box<[CellSlotId]>,
     pub(crate) rmw_state_slots: Box<[CellSlotId]>,
@@ -4272,7 +4274,9 @@ fn build_plan(
                     output_schema: output.schema,
                     steps: Box::new([]),
                     locals: Box::new([]),
+                    schema_reads: Box::new([]),
                     yield_value: ResidentReadLocation::Scratch(output.region),
+                    yield_schema: output.schema,
                 },
             )));
             continue;
@@ -4468,23 +4472,26 @@ fn build_plan(
             let index = artifact_to_activated[node.node.get() as usize]
                 .unwrap()
                 .get() as usize;
-            let (instructions, local_regions, yielded, call) = comprehension::bind(
-                artifact,
-                catalog,
-                node.node,
-                control,
-                &layout,
-                &mut steps,
-                &mut reads,
-                &mut control_calls,
-            )?;
+            let (instructions, local_regions, schema_reads, yielded, yield_schema, call) =
+                comprehension::bind(
+                    artifact,
+                    catalog,
+                    node.node,
+                    control,
+                    &layout,
+                    &mut steps,
+                    &mut reads,
+                    &mut control_calls,
+                )?;
             let ActivatedTurnStep::Comprehension(prepared) = &mut steps[index] else {
                 unreachable!()
             };
             let prepared = std::sync::Arc::get_mut(prepared).expect("unpublished collection plan");
             prepared.steps = instructions;
             prepared.locals = local_regions;
+            prepared.schema_reads = schema_reads;
             prepared.yield_value = yielded;
+            prepared.yield_schema = yield_schema;
             control_calls.push((
                 node.node,
                 crate::memory_planner::CallSiteMemoryTemplate {
@@ -4736,7 +4743,7 @@ fn build_plan(
         constraints,
         activation_nodes,
         activation_steps,
-        schemas: artifact.schemas().clone(),
+        schemas: std::sync::Arc::new(artifact.schemas().clone()),
         constant_regions: layout.constant_regions,
         state_slots,
         rmw_state_slots,
