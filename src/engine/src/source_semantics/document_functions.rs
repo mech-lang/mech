@@ -191,6 +191,12 @@ impl SemanticBuilder {
                 )
             })?;
         if self.active_functions.iter().any(|active| active == name) {
+            if self.comprehension_depth != 0 {
+                return Err(error(
+                    "source-semantics/recursive-comprehension",
+                    format!("recursive function {name} cannot be called inside a comprehension"),
+                ));
+            }
             if self
                 .active_functions
                 .last()

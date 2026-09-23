@@ -2261,7 +2261,7 @@ enum PendingNodeBody {
     Comprehension(PendingComprehension),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
-    RecursiveCall,
+    RecursiveCall(u8),
 }
 
 struct PendingMatch {
@@ -2288,7 +2288,7 @@ impl PendingMatch {
                             nested.visit_schemas(visit)
                         }
                         PendingControlOperationBody::Operation { .. }
-                        | PendingControlOperationBody::Recur => {}
+                        | PendingControlOperationBody::Recur(_) => {}
                     }
                 }
             }
@@ -2677,7 +2677,7 @@ enum PendingControlOperationBody {
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
-    Recur,
+    Recur(u8),
 }
 
 struct PendingControlBlock {
@@ -2755,6 +2755,8 @@ struct SemanticBuilder {
     function_environment: Option<crate::FunctionEnvironment>,
     input_schema_overrides: BTreeMap<String, SchemaDraft>,
     control_depth: usize,
+    match_depth: usize,
+    comprehension_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
@@ -2932,6 +2934,8 @@ impl SemanticBuilder {
             function_environment: None,
             input_schema_overrides: BTreeMap::new(),
             control_depth: 0,
+            match_depth: 0,
+            comprehension_depth: 0,
             next_control_block: 0,
             anchor,
             constants: Vec::new(),
@@ -7303,7 +7307,7 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall => {
+                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall(_) => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
@@ -8634,6 +8638,7 @@ mod tests {
             dimension_parameters: Box::new([]),
         };
         let nested = PendingMatch {
+            partial: false,
             captures: Vec::new(),
             arms: vec![PendingMatchArm {
                 pattern: crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
@@ -8667,6 +8672,7 @@ mod tests {
             yield_value: comprehension::PendingCollectionValue::Local(0),
         };
         let root = PendingMatch {
+            partial: false,
             captures: Vec::new(),
             arms: vec![PendingMatchArm {
                 pattern: crate::MatchPattern::Wildcard,
@@ -8942,6 +8948,26 @@ impl SemanticBuilder {
     }
 
     fn lower_match_expression(
+        &mut self,
+        scrutinee: PendingValue,
+        arms: &[SourceMatchArm],
+        syntax: &SyntaxNode,
+        partial: bool,
+        expected_result: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        self.match_depth += 1;
+        let result = self.lower_match_expression_inner(
+            scrutinee,
+            arms,
+            syntax,
+            partial,
+            expected_result,
+        );
+        self.match_depth -= 1;
+        result
+    }
+
+    fn lower_match_expression_inner(
         &mut self,
         scrutinee: PendingValue,
         arms: &[SourceMatchArm],
@@ -9385,7 +9411,9 @@ impl SemanticBuilder {
                 PendingNodeBody::Comprehension(control) => {
                     PendingControlOperationBody::Comprehension(control)
                 }
-                PendingNodeBody::RecursiveCall => PendingControlOperationBody::Recur,
+                PendingNodeBody::RecursiveCall(ancestor) => {
+                    PendingControlOperationBody::Recur(ancestor)
+                }
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -9473,7 +9501,9 @@ fn resolve_pending_match(
                                 nested, schemas, constants,
                             ))
                         }
-                        PendingControlOperationBody::Recur => crate::ControlOperationBody::Recur,
+                        PendingControlOperationBody::Recur(ancestor) => {
+                            crate::ControlOperationBody::Recur(*ancestor)
+                        }
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
                     schema: schema(&operation.schema),

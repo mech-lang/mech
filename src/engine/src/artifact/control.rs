@@ -555,7 +555,7 @@ pub(super) fn validate_match(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
-    validate_match_inner(draft, node, declaration, inputs, output, &mut 0)
+    validate_match_inner(draft, node, declaration, inputs, output, &mut 0, &[])
 }
 
 pub(super) fn validate_match_inner(
@@ -565,6 +565,7 @@ pub(super) fn validate_match_inner(
     inputs: &[SchemaId],
     output: SchemaId,
     next_block: &mut u32,
+    enclosing_matches: &[(SchemaId, SchemaId, bool)],
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -592,6 +593,15 @@ pub(super) fn validate_match_inner(
     let scrutinee = *inputs
         .get(declaration.scrutinee as usize)
         .ok_or_else(|| invalid("unknown scrutinee input"))?;
+    let mut match_schemas = enclosing_matches.to_vec();
+    match_schemas.push((
+        scrutinee,
+        output,
+        declaration
+            .arms
+            .iter()
+            .any(|arm| matches!(&arm.pattern, MatchPattern::Bind)),
+    ));
     if !closed_value(output)
         || (!scalar(scrutinee)
             && declaration
@@ -750,6 +760,7 @@ pub(super) fn validate_match_inner(
                             &inputs,
                             operation.schema,
                             next_block,
+                            &match_schemas,
                         )?,
                         ControlOperationBody::Comprehension(nested) => {
                             super::comprehension::validate_comprehension_inner(
@@ -761,10 +772,20 @@ pub(super) fn validate_match_inner(
                                 next_block,
                             )?
                         }
-                        ControlOperationBody::Recur => {
-                            if inputs.as_slice() != [scrutinee] || operation.schema != output {
+                        ControlOperationBody::Recur(ancestor) => {
+                            let target = match_schemas
+                                .len()
+                                .checked_sub(usize::from(*ancestor) + 1)
+                                .and_then(|index| match_schemas.get(index))
+                                .ok_or_else(|| invalid("unknown recursive lexical target"))?;
+                            if inputs.as_slice() != [target.0] || operation.schema != target.1 {
                                 return Err(invalid(
-                                    "recursive call must preserve the enclosing input and output schemas",
+                                    "recursive call must preserve its lexical target input and output schemas",
+                                ));
+                            }
+                            if target.2 {
+                                return Err(invalid(
+                                    "recursive target cannot use a direct bind pattern",
                                 ));
                             }
                         }
@@ -931,7 +952,7 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     depth.checked_add(1)?,
                                 )),
                                 ControlOperationBody::Operation { .. }
-                                | ControlOperationBody::Recur => {}
+                                | ControlOperationBody::Recur(_) => {}
                             }
                         }
                     }
@@ -960,7 +981,7 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     depth.checked_add(1)?,
                                 )),
                                 ControlOperationBody::Operation { .. }
-                                | ControlOperationBody::Recur => {}
+                                | ControlOperationBody::Recur(_) => {}
                             }
                         }
                     }
@@ -1143,7 +1164,9 @@ impl<C> MatchDeclaration<C> {
                                         )?,
                                     )
                                 }
-                                ControlOperationBody::Recur => ControlOperationBody::Recur,
+                                ControlOperationBody::Recur(ancestor) => {
+                                    ControlOperationBody::Recur(*ancestor)
+                                }
                             },
                             inputs: operation.inputs.clone(),
                             schema: operation.schema,
