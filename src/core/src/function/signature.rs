@@ -929,6 +929,9 @@ pub fn native_features_for_schema_body(
     features: &mut BTreeSet<NativeValueFeature>,
 ) {
     match schema {
+        SchemaBody::IntegerInterval(interval) => {
+            native_features_for_schema_body(&interval.base_body(), features);
+        }
         SchemaBody::Dynamic => features.extend(ALL_NATIVE_VALUE_FEATURES.iter().copied()),
         SchemaBody::Bool => {
             features.insert(NativeValueFeature::Bool);

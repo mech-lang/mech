@@ -56,6 +56,8 @@ const state = {
   computeAdapter: undefined,
   scenePointerSession: null,
   scenePointerTimestamp: null,
+  pointerHostPressed: false,
+  pointerHostTimestamp: null,
   runtimeGeneration: 0,
   runtimeLifecycle: "new",
   // Component controls remain available for stopped/failed programs so users
@@ -804,6 +806,8 @@ function stopRuntime(nextLifecycle = "stopped") {
   state.outputFullscreenController = null;
   if (ownsNativeFullscreen) exitRetiredNativeFullscreen();
   state.scenePointerSession = null;
+  state.pointerHostPressed = false;
+  state.pointerHostTimestamp = null;
   state.consolePointerSession?.cancel();
   state.consolePointerSession = null;
   if (state.pagePositionSaveTimer !== null) {
@@ -4120,6 +4124,41 @@ function initializeScenePointerInput() {
   });
 }
 
+function initializePointerHostInput() {
+  if (state.root?.dataset.mechPointerHostBound === "true") return;
+  state.root.dataset.mechPointerHostBound = "true";
+  const submit = event => {
+    if (state.runtimeLifecycle !== "ready" ||
+        !servedPointerHostConfig() || typeof state.document?.pointerInput !== "function") return;
+    const bounds = state.root.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return;
+    const x = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1));
+    const y = Math.max(-1, Math.min(1, 1 - ((event.clientY - bounds.top) / bounds.height) * 2));
+    const previous = state.pointerHostTimestamp;
+    const deltaSeconds = previous === null
+      ? 0
+      : Math.max(0, Math.min(1, (event.timeStamp - previous) / 1000));
+    state.pointerHostTimestamp = event.timeStamp;
+    state.document.pointerInput(x, y, state.pointerHostPressed, deltaSeconds);
+  };
+  addRuntimeMutationEventListener(state.root, "pointerdown", event => {
+    if (event.button !== 0) return;
+    state.pointerHostPressed = true;
+    submit(event);
+  });
+  addRuntimeMutationEventListener(state.root, "pointermove", submit);
+  addRuntimeMutationEventListener(window, "pointerup", event => {
+    if (!state.pointerHostPressed) return;
+    state.pointerHostPressed = false;
+    submit(event);
+  });
+  addRuntimeMutationEventListener(window, "pointercancel", event => {
+    if (!state.pointerHostPressed) return;
+    state.pointerHostPressed = false;
+    submit(event);
+  });
+}
+
 function initializeLayout() {
   addRuntimeMutationEventListener(window, "mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
@@ -4166,6 +4205,7 @@ function initializeLayout() {
   initializeFullscreen();
   initializeOutputFullscreen();
   initializeScenePointerInput();
+  initializePointerHostInput();
   initializeBreadcrumb();
   addRuntimeEventListener(window, "mech:document-layout-refresh", initializeToc);
   initializeToc();
@@ -4177,6 +4217,12 @@ function servedComputeHostConfig() {
   const authority = window.__MECH_HOST_CONFIG;
   const hosts = authority?.hosts || authority?.payload?.hosts || [];
   return hosts.find(host => host?.provider === "compute") || null;
+}
+
+function servedPointerHostConfig() {
+  const authority = window.__MECH_HOST_CONFIG;
+  const hosts = authority?.hosts || authority?.payload?.hosts || [];
+  return hosts.find(host => host?.provider === "pointer") || null;
 }
 
 function documentComputeIdentity(controller, bridge = null) {

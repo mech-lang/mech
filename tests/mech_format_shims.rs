@@ -197,6 +197,19 @@ fn mech_format_default_shim_restores_rich_shell() {
         html.contains("mechdown-paragraph"),
         "formatted prose lost its Mechdown presentation hook",
     );
+    let embedded = html
+        .split_once("<script type=\"application/x-mech-code\" id=\"mech-document-code\" data-mech-document-code>")
+        .expect("default shim must embed the document payload")
+        .1
+        .split_once("</script>")
+        .expect("embedded document payload must be terminated")
+        .0
+        .trim();
+    let payload = mech_runtime::BrowserDocumentPayload::decode(embedded).unwrap();
+    assert_eq!(
+        payload.source(),
+        std::fs::read_to_string(fixture_path("all-slots.mec")).unwrap()
+    );
 }
 
 #[cfg(has_file_wasm)]

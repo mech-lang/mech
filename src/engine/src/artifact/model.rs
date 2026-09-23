@@ -440,7 +440,7 @@ fn control_body_operation_references(
         super::ControlOperationBody::Comprehension(control) => {
             comprehension_operation_references(control, references);
         }
-        super::ControlOperationBody::Recur
+        super::ControlOperationBody::Recur(_)
         | super::ControlOperationBody::Suspend
         | super::ControlOperationBody::Publish => {}
     }
