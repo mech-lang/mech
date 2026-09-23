@@ -184,6 +184,21 @@ fn recursive_target_cannot_capture_its_own_scrutinee() {
 }
 
 #[test]
+fn recursive_capture_check_respects_nested_bindings() {
+    let source =
+        "shadow(n<f64>) => <f64>\n  | 0 => (1 ? | n => n)\n  | n => shadow(n - 1).\nshadow(0)\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x556), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap_or_else(|error| panic!("{source}: {error}"));
+    compiled.compile_artifact().unwrap();
+}
+
+#[test]
 fn nested_recursive_helper_calls_its_own_pattern_match() {
     execute_document(
         "outer(n<f64>) => <f64>\n  | 0 => 0\n  | n => helper(n).\nhelper(n<f64>) => <f64>\n  | 0 => 1\n  | n => helper(n - 1).\nouter(3)\n",
