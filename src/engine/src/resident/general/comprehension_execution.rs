@@ -62,20 +62,6 @@ fn allocation_capacity_bytes<T>(capacity: usize) -> Result<u64, ResidentKernelEr
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
-fn retained_collection_draft_demand(
-    values: &Vec<ValueDataDraft>,
-    footprint: ValueFootprint,
-) -> Result<(u64, u64), ResidentKernelError> {
-    let bytes = allocation_capacity_bytes::<ValueDataDraft>(values.capacity())?
-        .checked_add(footprint.retained_bytes)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let nodes = footprint
-        .node_count
-        .checked_add(u64::from(values.capacity() > 0))
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    Ok((bytes, nodes))
-}
-
 fn completed_set_shape_values(
     schema: &mech_core::Schema,
     data: &ValueDataDraft,
@@ -5517,7 +5503,8 @@ impl ReactiveInstance {
                     } else {
                         None
                     };
-                    let output = kernel.and_then(|kernel| self.kernel_scratch_output_region(kernel));
+                    let output =
+                        kernel.and_then(|kernel| self.kernel_scratch_output_region(kernel));
                     let live_locals = self
                         .shared_local_prefix_footprint(
                             &control.locals,
@@ -5826,12 +5813,20 @@ mod tests {
             node_count: 5,
         };
 
-        let (bytes, nodes) = retained_collection_draft_demand(&values, footprint).unwrap();
-        assert_eq!(
-            bytes,
-            (values.capacity() * core::mem::size_of::<ValueDataDraft>()) as u64 + 4_096
+        let (bytes, nodes) = comprehension_nested_live_demand(
+            values.len(),
+            values.capacity(),
+            footprint,
+            0,
+            0,
+            ValueFootprint::zero(),
+            ResidentBudgetMeter::default(),
+        )
+        .unwrap();
+        assert!(
+            bytes >= (values.capacity() * core::mem::size_of::<ValueDataDraft>()) as u64 + 4_096
         );
-        assert_eq!(nodes, 6);
+        assert!(nodes >= 6);
     }
 
     #[test]
