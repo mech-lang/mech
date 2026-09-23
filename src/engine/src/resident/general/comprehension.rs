@@ -10,7 +10,7 @@ pub enum ActivatedCollectionStep {
         /// retained schema-table entry.
         element_schema: Option<SchemaId>,
         shape_values: Box<[u64]>,
-        pattern: crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
+        pattern: crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
     },
     Operation {
         node: ActivatedNodeIndex,
@@ -43,21 +43,32 @@ pub struct ActivatedComprehensionNode {
     pub yield_schema: SchemaId,
 }
 
-pub(super) fn locals(control: &crate::ComprehensionDeclaration) -> Vec<SchemaId> {
+pub(super) fn local_definitions(
+    control: &crate::ComprehensionDeclaration,
+) -> Vec<(bool, SchemaId)> {
     let mut locals = Vec::new();
     for step in &control.steps {
         match step {
             crate::ComprehensionStep::Generator { pattern, .. } => {
                 pattern.bindings(&mut |local, schema| {
                     assert_eq!(local as usize, locals.len(), "validated collection locals");
-                    locals.push(*schema);
+                    locals.push((true, *schema));
                 })
             }
-            crate::ComprehensionStep::Operation(operation) => locals.push(operation.schema),
+            crate::ComprehensionStep::Operation(operation) => {
+                locals.push((false, operation.schema));
+            }
             crate::ComprehensionStep::Filter(_) => {}
         }
     }
     locals
+}
+
+pub(super) fn locals(control: &crate::ComprehensionDeclaration) -> Vec<SchemaId> {
+    local_definitions(control)
+        .into_iter()
+        .map(|(_, schema)| schema)
+        .collect()
 }
 
 pub(super) fn owns_output(artifact: &ProgramArtifact, mut slot: CellSlotId) -> bool {
@@ -87,22 +98,6 @@ fn primitive(body: &SchemaBody) -> bool {
         SchemaBody::Bool
             | SchemaBody::Index
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
-    )
-}
-
-fn equality_scalar(body: &SchemaBody) -> bool {
-    matches!(
-        body,
-        SchemaBody::Bool
-            | SchemaBody::UnsignedInteger(_)
-            | SchemaBody::SignedInteger(_)
-            | SchemaBody::FloatingPoint(_)
-            | SchemaBody::Complex(_)
-            | SchemaBody::Rational64
-            | SchemaBody::String
-            | SchemaBody::Id
-            | SchemaBody::Index
-            | SchemaBody::Atom(_)
     )
 }
 
@@ -165,7 +160,6 @@ fn pattern_components_addressable(
         }
     }
 }
-
 fn supported_pattern_inner(
     pattern: &crate::CollectionPattern,
     schemas: &mech_core::SchemaTable,
@@ -187,7 +181,7 @@ fn supported_pattern_inner(
                 .all(|item| supported_pattern_inner(item, schemas))
                 && rest
                     .as_deref()
-                    .is_none_or(|rest| matches!(rest, crate::CollectionPattern::Wildcard))
+                    .is_none_or(|rest| supported_pattern_inner(rest, schemas))
         }
     }
 }
@@ -215,6 +209,39 @@ fn generator_element_schema(
     }
     let element_schema = canonical_component_schema_id(source, element, schemas)?;
     supported_pattern(pattern, element_schema, schemas).then_some(Some(element_schema))
+}
+
+fn schema_adapting_pattern(
+    pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    let composite = |schema| {
+        schemas.get(schema).is_some_and(|schema| {
+            matches!(
+                schema.body(),
+                SchemaBody::Tuple(_) | SchemaBody::Matrix { .. }
+            )
+        })
+    };
+    match pattern {
+        crate::CollectionPattern::Tuple(_) | crate::CollectionPattern::Array { .. } => true,
+        crate::CollectionPattern::Bind { schema, .. } => composite(schema.schema),
+        crate::CollectionPattern::Equal(value) => composite(value.schema),
+        crate::CollectionPattern::Wildcard => false,
+    }
+}
+
+pub(super) fn uses_structural_patterns(
+    control: &ActivatedComprehensionNode,
+    schemas: &mech_core::SchemaTable,
+) -> bool {
+    control.steps.iter().any(|step| {
+        matches!(
+            step,
+            ActivatedCollectionStep::Generator { pattern, .. }
+                if schema_adapting_pattern(pattern, schemas)
+        )
+    })
 }
 
 fn visit_pattern_values(
@@ -275,9 +302,9 @@ fn comprehension_constant_ids(
 fn activate_pattern(
     pattern: &crate::CollectionPattern,
     binding: &impl Fn(u32, SchemaId) -> ActivatedPatternBinding,
-    value: &impl Fn(crate::ComprehensionValue) -> Result<ResidentReadLocation, ResidentActivationError>,
+    value: &impl Fn(crate::ComprehensionValue) -> Result<ActivatedPatternValue, ResidentActivationError>,
 ) -> Result<
-    crate::CollectionPattern<ActivatedPatternBinding, ResidentReadLocation>,
+    crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
     ResidentActivationError,
 > {
     Ok(match pattern {
@@ -410,11 +437,10 @@ pub(super) fn bind(
                     &|value| {
                         let source = source_for_value(value, &captures, owner, layout);
                         let peer = port(source)?;
-                        let schema = artifact.schemas().get(peer.schema_id).unwrap();
-                        if !equality_scalar(schema.body()) {
-                            return Err(unsupported());
-                        }
-                        resolve_read(layout, source)
+                        Ok(ActivatedPatternValue {
+                            location: resolve_read(layout, source)?,
+                            schema: peer.schema_id,
+                        })
                     },
                 )?;
                 instructions.push(ActivatedCollectionStep::Generator {
@@ -537,6 +563,15 @@ pub(super) fn bind(
                     256
                 } else if matches!(name.as_str(), "stats/sum/column" | "stats/sum/row") {
                     // Reduction kernels admit their complete scan before execution.
+                    0
+                } else if name == "access/scalar"
+                    && input_layouts
+                        .first()
+                        .is_some_and(|port| port.kind == ResidentValueKind::Snapshot)
+                {
+                    // Turn-shaped pattern bindings live in canonical snapshot
+                    // storage. The managed access kernel and its bound call
+                    // plan own selection materialization and admission.
                     0
                 } else if matches!(
                     name.as_str(),
@@ -714,11 +749,55 @@ mod tests {
     }
 
     #[test]
+    fn root_composite_bindings_and_equalities_request_projection_planning() {
+        let mut builder = SchemaTableBuilder::new();
+        let tuple = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::Dynamic, SchemaBody::Dynamic].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let scalar = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let region = ResidentRegion {
+            kind: ResidentValueKind::Snapshot,
+            offset: 0,
+            len: 1,
+            shape: mech_core::ResidentShape::SCALAR,
+        };
+        let binding = |schema| crate::CollectionPattern::Bind {
+            local: 0,
+            schema: ActivatedPatternBinding { region, schema },
+        };
+        let equal = crate::CollectionPattern::Equal(ActivatedPatternValue {
+            location: ResidentReadLocation::Constant(region),
+            schema: tuple,
+        });
+
+        assert!(schema_adapting_pattern(&binding(tuple), &build.table));
+        assert!(schema_adapting_pattern(&equal, &build.table));
+        assert!(!schema_adapting_pattern(&binding(scalar), &build.table));
+    }
+
+    #[test]
     fn component_addressability_uses_canonical_parameter_numbering() {
-        assert!(equality_scalar(&SchemaBody::String));
-        assert!(equality_scalar(&SchemaBody::SignedInteger(
-            mech_core::IntegerWidth::W32,
-        )));
         let component = |parameter| SchemaBody::Matrix {
             element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
             dimensions: vec![
@@ -772,6 +851,15 @@ mod tests {
             .into_boxed_slice(),
         );
 
+        let tuple = schemas.get(root).unwrap();
+        let SchemaBody::Tuple(components) = tuple.body() else {
+            panic!("first schema is the tuple witness")
+        };
+        assert!(
+            components
+                .iter()
+                .all(|body| canonical_component_schema_id(tuple, body, &schemas).is_some())
+        );
         assert!(pattern_components_addressable(&pattern, root, &schemas));
     }
 

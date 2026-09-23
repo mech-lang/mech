@@ -41,7 +41,13 @@ pub(super) fn node_bodies_semantically_equal(
                             },
                         ) => {
                             comparison.collection_value(*left, *right)
-                                && comparison.collection_pattern(left_pattern, right_pattern)
+                                && comparison.collection_pattern(
+                                    left_pattern,
+                                    right_pattern,
+                                    |comparison, left, right| {
+                                        comparison.collection_value(*left, *right)
+                                    },
+                                )
                         }
                         (ComprehensionStep::Filter(left), ComprehensionStep::Filter(right)) => {
                             comparison.collection_value(*left, *right)
@@ -114,14 +120,35 @@ impl Comparison<'_> {
                 })
     }
 
-    fn pattern(&self, left: mech_engine::MatchPattern, right: mech_engine::MatchPattern) -> bool {
+    fn pattern(&self, left: &mech_engine::MatchPattern, right: &mech_engine::MatchPattern) -> bool {
         match (left, right) {
             (
                 mech_engine::MatchPattern::Literal(left),
                 mech_engine::MatchPattern::Literal(right),
-            ) => self.value(ControlValue::Constant(left), ControlValue::Constant(right)),
+            ) => self.value(
+                ControlValue::Constant(*left),
+                ControlValue::Constant(*right),
+            ),
             (mech_engine::MatchPattern::Wildcard, mech_engine::MatchPattern::Wildcard)
             | (mech_engine::MatchPattern::Bind, mech_engine::MatchPattern::Bind) => true,
+            (
+                mech_engine::MatchPattern::Structural(left),
+                mech_engine::MatchPattern::Structural(right),
+            ) => self.collection_pattern(left, right, |comparison, left, right| {
+                use mech_engine::MatchPatternValue;
+                match (left, right) {
+                    (MatchPatternValue::Literal(left), MatchPatternValue::Literal(right)) => {
+                        comparison.value(
+                            ControlValue::Constant(*left),
+                            ControlValue::Constant(*right),
+                        )
+                    }
+                    (MatchPatternValue::Binding(left), MatchPatternValue::Binding(right)) => {
+                        left == right
+                    }
+                    _ => false,
+                }
+            }),
             _ => false,
         }
     }
@@ -165,18 +192,23 @@ impl Comparison<'_> {
         }
     }
 
-    fn collection_pattern(
+    fn collection_pattern<V, F>(
         &self,
-        left: &mech_engine::CollectionPattern,
-        right: &mech_engine::CollectionPattern,
-    ) -> bool {
+        left: &mech_engine::CollectionPattern<SchemaId, V>,
+        right: &mech_engine::CollectionPattern<SchemaId, V>,
+        values_equal: F,
+    ) -> bool
+    where
+        F: Fn(&Self, &V, &V) -> bool + Copy,
+    {
         use mech_engine::CollectionPattern;
-        let fields = |left: &[CollectionPattern], right: &[CollectionPattern]| {
+        let fields = |left: &[CollectionPattern<SchemaId, V>],
+                      right: &[CollectionPattern<SchemaId, V>]| {
             left.len() == right.len()
                 && left
                     .iter()
                     .zip(right)
-                    .all(|(left, right)| self.collection_pattern(left, right))
+                    .all(|(left, right)| self.collection_pattern(left, right, values_equal))
         };
         match (left, right) {
             (CollectionPattern::Wildcard, CollectionPattern::Wildcard) => true,
@@ -191,7 +223,7 @@ impl Comparison<'_> {
                 },
             ) => left == right && self.schema(*left_schema, *right_schema),
             (CollectionPattern::Equal(left), CollectionPattern::Equal(right)) => {
-                self.collection_value(*left, *right)
+                values_equal(self, left, right)
             }
             (CollectionPattern::Tuple(left), CollectionPattern::Tuple(right)) => {
                 fields(left, right)
@@ -211,7 +243,9 @@ impl Comparison<'_> {
                 fields(left_prefix, right_prefix)
                     && fields(left_suffix, right_suffix)
                     && match (left_rest, right_rest) {
-                        (Some(left), Some(right)) => self.collection_pattern(left, right),
+                        (Some(left), Some(right)) => {
+                            self.collection_pattern(left, right, values_equal)
+                        }
                         (None, None) => true,
                         _ => false,
                     }
@@ -236,7 +270,7 @@ impl Comparison<'_> {
                 })
             && left.arms.len() == right.arms.len()
             && left.arms.iter().zip(&right.arms).all(|(left, right)| {
-                self.pattern(left.pattern, right.pattern)
+                self.pattern(&left.pattern, &right.pattern)
                     && match (&left.guard, &right.guard) {
                         (Some(left), Some(right)) => self.block(left, right),
                         (None, None) => true,
@@ -356,6 +390,44 @@ mod tests {
         }
         assert!(moved);
         let changed = compile("signal<f64> ? | 1 => 10 | * => 20");
+        assert!(!node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &changed,
+            control(&changed)
+        ));
+    }
+
+    #[test]
+    fn structural_match_reuse_compares_the_complete_canonical_pattern() {
+        let source = "signal<(f64,f64)> ? | (left, right) => left + right | * => 0";
+        let original = compile(source);
+        let shifted = compile(&format!("(7u8, ({source}))"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &shifted,
+            control(&shifted)
+        ));
+
+        let changed = compile("signal<(f64,f64)> ? | (same, same) => same + same | * => 0");
+        assert!(!node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &changed,
+            control(&changed)
+        ));
+
+        let source = "[1 2 3] ? | [head | [2, 3]] => head | * => 0";
+        let original = compile(source);
+        let shifted = compile(&format!("(7u8, ({source}))"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            control(&original),
+            &shifted,
+            control(&shifted)
+        ));
+        let changed = compile("[1 2 3] ? | [head | [2, 4]] => head | * => 0");
         assert!(!node_bodies_semantically_equal(
             &original,
             control(&original),
