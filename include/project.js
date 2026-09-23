@@ -169,7 +169,7 @@ export function requiredWgpuLimits(manifest, adapterLimits) {
 }
 
 class BrowserComputeProject {
-  static async fromSources(config, sourceEntries, sources) {
+  static async fromSources(config, sourceEntries, sources, provenance) {
     if (typeof mech.WasmMixedComputeProject?.fromSource !== 'function') {
       const relatedExports = Object.keys(mech)
         .filter((name) => name.includes('Gpu') || name.includes('Project'))
@@ -198,6 +198,7 @@ class BrowserComputeProject {
       source,
       requestedBackend,
       Boolean(adapter),
+      provenance?.[sourceEntries[0].specifier] ?? null,
     );
     reportComputeSmokePhase('source-compilation-finished');
     const manifest = controller.computeManifest();
@@ -850,7 +851,9 @@ async function main() {
   const gpuCanvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
   if (gpuCanvas) {
     reportComputeSmokePhase('project-preparation-started');
-    project = await BrowserComputeProject.fromSources(config, sourceEntries, sources);
+    project = await BrowserComputeProject.fromSources(
+      config, sourceEntries, sources, manifest?.provenance,
+    );
     reportComputeSmokePhase('project-preparation-finished');
     await project.start();
     reportComputeSmokePhase('project-started');
@@ -875,6 +878,7 @@ async function main() {
           config,
           sources,
           manifest.resolutions,
+          manifest.provenance || {},
         )
       : WasmProject.fromServedSources(config, sources);
   } else {
@@ -885,7 +889,9 @@ async function main() {
       throw new Error('WASM build-profile mismatch: source resolution graph support is unavailable');
     }
     project = manifest?.version === 2
-      ? WasmProject.fromSourcesWithResolutions(config, sources, manifest.resolutions)
+      ? WasmProject.fromSourcesWithResolutions(
+          config, sources, manifest.resolutions, manifest.provenance || {},
+        )
       : WasmProject.fromSources(config, sources);
   }
   project.start();

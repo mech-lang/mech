@@ -379,7 +379,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let document = crate::SourceDocument::from_finished_stream(stream).map_err(|error| {
             interactive_error(format!("interactive source is not final: {error:?}"))
         })?;
-        self.replace_document(document)
+        self.replace_document(self.preserve_document_provenance(document))
     }
 
     /// Inspect an already resident value without recompiling the active
@@ -1748,6 +1748,20 @@ mod tests {
             Some("test-package")
         );
         session.clear_variables(&["next".to_owned()]).unwrap();
+        assert_eq!(
+            session.source_document.as_ref().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_eq!(
+            session
+                .source_document
+                .as_ref()
+                .unwrap()
+                .nominal_package_id(),
+            Some("test-package")
+        );
+        let mut replacement = finished_stream(904, "<event> := :idle | :busy\nvalue := :busy\n");
+        session.replace_finished_stream(&mut replacement).unwrap();
         assert_eq!(
             session.source_document.as_ref().unwrap().nominal_origin(),
             Some(&origin)

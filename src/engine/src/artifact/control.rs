@@ -225,6 +225,21 @@ fn validate_structural_pattern(
     Some(())
 }
 
+fn structurally_irrefutable<S, V>(pattern: &super::CollectionPattern<S, V>) -> bool {
+    match pattern {
+        super::CollectionPattern::Wildcard | super::CollectionPattern::Bind { .. } => true,
+        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        super::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        super::CollectionPattern::Equal(_)
+        | super::CollectionPattern::Enum { .. }
+        | super::CollectionPattern::Array { .. } => false,
+    }
+}
+
 pub(super) fn validate_match(
     draft: &super::ProgramArtifactDraft,
     node: mech_core::NodeId,
@@ -307,6 +322,10 @@ pub(super) fn validate_match_inner(
         ));
     }
     let mut coverage = [false; 2];
+    let mut enum_coverage = match draft.schemas.get(scrutinee).map(|schema| schema.body()) {
+        Some(SchemaBody::Enum { variants, .. }) => Some(vec![false; variants.len()]),
+        _ => None,
+    };
     for arm in &declaration.arms {
         let mut pattern_bindings = Vec::new();
         if let MatchPattern::Literal(constant) = &arm.pattern {
@@ -515,12 +534,30 @@ pub(super) fn validate_match_inner(
                         coverage[*value as usize] = true;
                     }
                 }
-                MatchPattern::Wildcard | MatchPattern::Bind => coverage = [true; 2],
+                MatchPattern::Wildcard | MatchPattern::Bind => {
+                    coverage = [true; 2];
+                    if let Some(variants) = &mut enum_coverage {
+                        variants.fill(true);
+                    }
+                }
+                MatchPattern::Structural(super::CollectionPattern::Enum { ordinal, payload }) => {
+                    if payload.as_deref().is_none_or(structurally_irrefutable)
+                        && let Some(variants) = &mut enum_coverage
+                        && let Some(covered) = variants.get_mut(*ordinal as usize)
+                    {
+                        *covered = true;
+                    }
+                }
                 MatchPattern::Structural(_) => {}
             }
         }
     }
-    if coverage != [true; 2] {
+    let exhaustive = enum_coverage
+        .as_ref()
+        .map_or(coverage == [true; 2], |variants| {
+            variants.iter().all(|covered| *covered)
+        });
+    if !exhaustive {
         return Err(invalid("non-exhaustive match"));
     }
     Ok(())
