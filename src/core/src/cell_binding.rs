@@ -2678,6 +2678,16 @@ impl ValueCell {
         Self::from_snapshot_in(&MemoryDomain::new().map_err(MechError::from)?, value)
     }
 
+    /// Reconstruct a detached snapshot with its complete schema table while
+    /// selecting the runtime backing required for reactive aggregate outputs.
+    pub fn from_runtime_snapshot(value: Value) -> MResult<Self> {
+        let schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        value.validate_against(&schemas).map_err(snapshot_failure)?;
+        Self::from_runtime_value(value, Rc::new((*schemas).clone()))
+    }
+
     pub fn from_snapshot_in(owner: &MemoryDomain, value: Value) -> MResult<Self> {
         let schemas = value.schemas().ok_or_else(|| {
             MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()

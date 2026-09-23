@@ -543,7 +543,7 @@ fn execute_conversion_plan(
     if matches!(plan.step, ConversionStep::Identity) {
         // The snapshot retains nested dynamic payload IDs and their complete
         // schema table. Reconstructing from a data draft loses that context.
-        return ValueCell::from_snapshot(snapshot);
+        return ValueCell::from_runtime_snapshot(snapshot);
     }
     let draft = snapshot.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
