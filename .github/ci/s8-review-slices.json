@@ -1233,6 +1233,8 @@
           "--test",
           "canonical_boolean_match",
           "--test",
+          "canonical_document_state",
+          "--test",
           "canonical_source_completion",
           "--test",
           "canonical_source_semantics"
