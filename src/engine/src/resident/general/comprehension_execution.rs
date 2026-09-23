@@ -5494,17 +5494,6 @@ impl ReactiveInstance {
                     excluded_locals,
                 } => {
                     meter.charge_compute_work(*work).map_err(fail)?;
-                    let kernel = if self.plan.pure_kernel_steps.is_some()
-                        || matches!(
-                            self.plan.steps.get(node.get() as usize),
-                            Some(ActivatedTurnStep::Kernel(_))
-                        ) {
-                        Some(*node)
-                    } else {
-                        None
-                    };
-                    let output =
-                        kernel.and_then(|kernel| self.kernel_scratch_output_region(kernel));
                     let live_locals = self
                         .shared_local_prefix_footprint(
                             &control.locals,
