@@ -58,11 +58,7 @@ impl Value {
         if self.shape() != other.shape() {
             return Ok(false);
         }
-        Ok(language_data_eq(
-            self_schema.body(),
-            self.data(),
-            other.data(),
-        ))
+        language_data_eq_checked(self_schema.body(), self.data(), other.data())
     }
 
     pub fn key_cmp(
@@ -1015,7 +1011,7 @@ fn lexicographic(
 /// Applies the canonical language equality rules to two already-validated
 /// payloads under one shared schema.
 pub fn schema_data_language_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
-    language_data_eq(schema, left, right)
+    language_data_eq_checked(schema, left, right).unwrap_or(false)
 }
 
 /// Compares the complete canonical representation of two already-validated
@@ -1091,20 +1087,28 @@ pub fn schema_data_partial_cmp(
     }
 }
 
+#[cfg(test)]
 fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
-    match (schema, left, right) {
+    language_data_eq_checked(schema, left, right).unwrap_or(false)
+}
+
+fn language_data_eq_checked(
+    schema: &SchemaBody,
+    left: &ValueData,
+    right: &ValueData,
+) -> Result<bool, SnapshotValueError> {
+    let equal = match (schema, left, right) {
         (SchemaBody::Dynamic, ValueData::Dynamic(left), ValueData::Dynamic(right)) => {
             match (left.value(), right.value()) {
                 (None, None) => true,
                 (Some(left), Some(right)) => {
                     let Some(left_schemas) = left.schemas() else {
-                        return false;
+                        return Ok(false);
                     };
                     let Some(right_schemas) = right.schemas() else {
-                        return false;
+                        return Ok(false);
                     };
-                    left.language_eq(&left_schemas, right, &right_schemas)
-                        .unwrap_or(false)
+                    return left.language_eq(&left_schemas, right, &right_schemas);
                 }
                 _ => false,
             }
@@ -1138,42 +1142,65 @@ fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) ->
         (SchemaBody::Option(element), ValueData::Option(left), ValueData::Option(right)) => {
             match (left, right) {
                 (None, None) => true,
-                (Some(left), Some(right)) => language_data_eq(element, left, right),
+                (Some(left), Some(right)) => return language_data_eq_checked(element, left, right),
                 _ => false,
             }
         }
         (SchemaBody::Enum { variants, .. }, ValueData::Enum(left), ValueData::Enum(right)) => {
-            left.ordinal == right.ordinal
-                && match (
-                    variants[left.ordinal as usize].payload.as_ref(),
-                    left.payload.as_deref(),
-                    right.payload.as_deref(),
-                ) {
-                    (None, None, None) => true,
-                    (Some(schema), Some(left), Some(right)) => {
-                        language_data_eq(schema, left, right)
-                    }
-                    _ => false,
+            if left.ordinal != right.ordinal {
+                return Ok(false);
+            }
+            match (
+                variants[left.ordinal as usize].payload.as_ref(),
+                left.payload.as_deref(),
+                right.payload.as_deref(),
+            ) {
+                (None, None, None) => true,
+                (Some(schema), Some(left), Some(right)) => {
+                    return language_data_eq_checked(schema, left, right);
                 }
+                _ => false,
+            }
         }
-        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => elements
-            .iter()
-            .zip(left)
-            .zip(right)
-            .all(|((schema, left), right)| language_data_eq(schema, left, right)),
-        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => fields
-            .iter()
-            .zip(left.fields())
-            .zip(right.fields())
-            .all(|((field, left), right)| language_data_eq(&field.schema, left, right)),
+        (SchemaBody::Tuple(elements), ValueData::Tuple(left), ValueData::Tuple(right)) => {
+            return elements.iter().zip(left).zip(right).try_fold(
+                true,
+                |equal, ((schema, left), right)| {
+                    if equal {
+                        language_data_eq_checked(schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                },
+            );
+        }
+        (SchemaBody::Record(fields), ValueData::Record(left), ValueData::Record(right)) => {
+            return fields
+                .iter()
+                .zip(left.fields())
+                .zip(right.fields())
+                .try_fold(true, |equal, ((field, left), right)| {
+                    if equal {
+                        language_data_eq_checked(&field.schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                });
+        }
         (SchemaBody::Matrix { element, .. }, ValueData::Matrix(left), ValueData::Matrix(right)) => {
-            language_sequence_eq(element, &left.elements, &right.elements)
+            return language_sequence_eq_checked(element, &left.elements, &right.elements);
         }
         (SchemaBody::Table { columns, .. }, ValueData::Table(left), ValueData::Table(right)) => {
-            columns
+            return columns
                 .iter()
                 .zip(left.columns.iter().zip(right.columns.iter()))
-                .all(|(column, (left, right))| language_sequence_eq(&column.schema, left, right))
+                .try_fold(true, |equal, (column, (left, right))| {
+                    if equal {
+                        language_sequence_eq_checked(&column.schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                });
         }
         (SchemaBody::Set { element, .. }, ValueData::Set(left), ValueData::Set(right)) => {
             left.elements.len() == right.elements.len()
@@ -1189,20 +1216,28 @@ fn language_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) ->
                     })
         }
         (SchemaBody::Map { key, value, .. }, ValueData::Map(left), ValueData::Map(right)) => {
-            left.entries.len() == right.entries.len()
-                && left
-                    .entries
-                    .iter()
-                    .zip(right.entries.iter())
-                    .all(|(left, right)| {
-                        matches!(
+            if left.entries.len() != right.entries.len() {
+                return Ok(false);
+            }
+            return left.entries.iter().zip(right.entries.iter()).try_fold(
+                true,
+                |equal, (left, right)| {
+                    if !equal
+                        || !matches!(
                             compare_key_data(key, left.key().data(), right.key().data()),
                             Ok(Ordering::Equal)
-                        ) && language_data_eq(value, left.value(), right.value())
-                    })
+                        )
+                    {
+                        Ok(false)
+                    } else {
+                        language_data_eq_checked(value, left.value(), right.value())
+                    }
+                },
+            );
         }
         _ => exact_leaf_eq(left, right),
-    }
+    };
+    Ok(equal)
 }
 
 fn exact_data_eq(schema: &SchemaBody, left: &ValueData, right: &ValueData) -> bool {
@@ -1346,12 +1381,12 @@ fn exact_leaf_eq(left: &ValueData, right: &ValueData) -> bool {
     }
 }
 
-fn language_sequence_eq(
+fn language_sequence_eq_checked(
     schema: &SchemaBody,
     left: &SequenceStorage,
     right: &SequenceStorage,
-) -> bool {
-    match (left, right) {
+) -> Result<bool, SnapshotValueError> {
+    let equal = match (left, right) {
         (SequenceStorage::F32(left), SequenceStorage::F32(right)) => left
             .iter()
             .zip(right.iter())
@@ -1372,12 +1407,21 @@ fn language_sequence_eq(
                     && left.imaginary().to_f64() == right.imaginary().to_f64()
             })
         }
-        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => left
-            .iter()
-            .zip(right.iter())
-            .all(|(left, right)| language_data_eq(schema, left, right)),
+        (SequenceStorage::Values(left), SequenceStorage::Values(right)) => {
+            return left
+                .iter()
+                .zip(right.iter())
+                .try_fold(true, |equal, (left, right)| {
+                    if equal {
+                        language_data_eq_checked(schema, left, right)
+                    } else {
+                        Ok(false)
+                    }
+                });
+        }
         _ => sequence_exact_eq(left, right),
-    }
+    };
+    Ok(equal)
 }
 
 fn sequence_exact_eq(left: &SequenceStorage, right: &SequenceStorage) -> bool {

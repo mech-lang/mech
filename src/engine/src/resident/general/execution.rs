@@ -1669,6 +1669,21 @@ impl ReactiveInstance {
             };
             total.checked_add(*clone_depth)
         });
+        let structural_dynamic_target_depth = matched
+            .arms
+            .iter()
+            .try_fold(0u64, |depth, arm| -> Result<u64, ResidentKernelError> {
+                let super::ActivatedMatchPattern::Structural { pattern, .. } = &arm.pattern else {
+                    return Ok(depth);
+                };
+                Ok(
+                    depth.max(comprehension_execution::pattern_dynamic_target_depth(
+                        pattern,
+                        &self.plan.schemas,
+                    )?),
+                )
+            })
+            .map_err(kernel_fail)?;
         let structural_binding_count = matched.arms.iter().try_fold(0u64, |total, arm| {
             let super::ActivatedMatchPattern::Structural { binding_count, .. } = &arm.pattern
             else {
@@ -1753,6 +1768,7 @@ impl ReactiveInstance {
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
                         let clone_multiplicity = structural_clone_multiplicity
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
+                        let dynamic_target_depth = structural_dynamic_target_depth;
                         let equality_count = structural_equality_count
                             .ok_or_else(|| kernel_fail(ResidentKernelError::InvalidShape))?;
                         let binding_count = structural_binding_count
@@ -1787,6 +1803,7 @@ impl ReactiveInstance {
                                 equality_count,
                                 snapshot_finalization_count,
                                 clone_multiplicity,
+                                dynamic_target_depth,
                                 &self.plan.schemas,
                             )
                             .map_err(kernel_fail)?;

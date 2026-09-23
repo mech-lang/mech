@@ -583,7 +583,8 @@ impl Value {
     /// Concrete shared-owner allocations retained by one finalized root.
     /// Shape elements and cloned schema contents are supplied separately by
     /// the checked footprint; only their owner headers appear here.
-    pub(crate) const fn canonical_owner_allocation_bytes() -> u64 {
+    #[doc(hidden)]
+    pub const fn canonical_owner_allocation_bytes() -> u64 {
         Self::shared_owner_allocation_bytes(
             core::mem::size_of::<FrozenSnapshotStorage>(),
             core::mem::align_of::<FrozenSnapshotStorage>(),
@@ -2523,7 +2524,7 @@ pub fn wrap_resident_dynamic_value(
                 .map(|schema| schema.body().clone())
         })
         .transpose()?;
-    let canonical = dynamic_canonical(value.as_ref(), concrete.as_ref());
+    let canonical = dynamic_canonical(value.as_ref(), concrete.as_ref(), None);
     let shape = entry.schema().instantiate_shape(shape_values)?;
     Ok(finalized_value(
         schema,
