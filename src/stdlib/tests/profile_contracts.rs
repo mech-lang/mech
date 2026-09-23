@@ -10,10 +10,10 @@ use sha2::{Digest, Sha256};
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_716;
 #[cfg(feature = "full_source")]
-const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_717;
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_718;
 #[cfg(feature = "full_source")]
 const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
-    "7350ad9aa1623cea1c45b323d9be82f1f31dc7d9da818023a5072e0326ded4ab";
+    "ab6547f38932ef29a675a3aef0e6c11a6db59e7fc712adc2f4a51bb85b961793";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_415;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
@@ -25,7 +25,7 @@ const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
 const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_695;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
-    "eaa1ce4cbfb9b493a5df7f52729157faf7382be957c738e8611dd9cddfc978ca";
+    "c5c2bae913e4482925289b54e58559b7676bb9ad66aede1e2ce6caf9501f2745";
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_699;
 #[cfg(feature = "full_compiler")]
