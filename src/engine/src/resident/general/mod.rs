@@ -49,7 +49,7 @@ pub enum ResidentStorageClass {
     Scratch,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ResidentRegion {
     pub kind: ResidentValueKind,
     pub offset: usize,
@@ -70,7 +70,7 @@ pub struct ResolvedSlot {
     pub region: ResidentRegion,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ResidentReadLocation {
     Constant(ResidentRegion),
     Input(ResidentRegion),

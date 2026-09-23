@@ -14,7 +14,7 @@ use mech_core::{
     SchemaKey, SchemaTable, SchemaTableBuilder, SemanticModelError, Value, ValueData,
     ValueDataDraft, ValueDraft,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Clone, Copy, Default)]
 struct ComprehensionLiveLocalFootprint {
@@ -3100,6 +3100,45 @@ fn comprehension_nested_live_demand(
     Ok((bytes, nodes))
 }
 
+fn unowned_comprehension_capture_footprint(
+    captures: &HashMap<ResidentReadLocation, (usize, ValueFootprint)>,
+    total: ValueFootprint,
+    owned_locations: impl IntoIterator<Item = ResidentReadLocation>,
+    seen: &mut [u64],
+    generation: &mut u64,
+    meter: &mut ResidentBudgetMeter,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    *generation = generation
+        .checked_add(1)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let mut owned = ValueFootprint::zero();
+    for location in owned_locations {
+        meter.charge_compute_work(1)?;
+        if let Some(&(index, footprint)) = captures.get(&location)
+            && seen[index] != *generation
+        {
+            seen[index] = *generation;
+            owned = owned
+                .checked_add(footprint)
+                .map_err(|_| ResidentKernelError::InvalidShape)?;
+        }
+    }
+    Ok(ValueFootprint {
+        encoded_bytes: total
+            .encoded_bytes
+            .checked_sub(owned.encoded_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_bytes: total
+            .retained_bytes
+            .checked_sub(owned.retained_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        node_count: total
+            .node_count
+            .checked_sub(owned.node_count)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+    })
+}
+
 fn admit_output(
     count: usize,
     current_capacity: usize,
@@ -4434,23 +4473,45 @@ impl ReactiveInstance {
         // The wrapper call owns its captured inputs. Child calls only account
         // for captures that they consume themselves, so measure each distinct
         // location once before iterating the comprehension body.
-        let mut captured_inputs = Vec::new();
+        let mut captured_inputs = HashMap::new();
+        let mut captured_total = ValueFootprint::zero();
+        let mut seen_captures = Vec::new();
+        let mut capture_generation = 0_u64;
         for location in self.plan.reads[control.reads.start as usize..control.reads.end as usize]
             .iter()
             .copied()
         {
-            if captured_inputs
-                .iter()
-                .any(|(captured, _)| *captured == location)
-            {
+            meter.charge_compute_work(1).map_err(fail)?;
+            if captured_inputs.contains_key(&location) {
                 continue;
             }
+            // Charge a conservative bound for the hash bucket and generation
+            // slot before either can allocate. Each unique capture is stored
+            // once, regardless of how often the wrapper reads it.
+            let entry_bytes =
+                core::mem::size_of::<(ResidentReadLocation, (usize, ValueFootprint))>()
+                    .checked_mul(4)
+                    .and_then(|bytes| bytes.checked_add(2 * core::mem::size_of::<u64>()))
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            meter
+                .charge_temporary_bytes(budget::checked_u64(entry_bytes).map_err(fail)?)
+                .map_err(fail)?;
+            captured_inputs
+                .try_reserve(1)
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+            seen_captures
+                .try_reserve(1)
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
             let value = self
                 .read_location(location, working)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidInput))?;
             let input =
                 Self::resident_value_footprint(value, &schemas, &mut meter).map_err(fail)?;
-            captured_inputs.push((location, input));
+            captured_total = captured_total
+                .checked_add(input)
+                .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+            captured_inputs.insert(location, (seen_captures.len(), input));
+            seen_captures.push(0);
         }
         let inherited_live_nodes = inherited_live_nodes
             .checked_add(published_output_footprint.node_count)
@@ -4474,6 +4535,9 @@ impl ReactiveInstance {
             &projections,
             schema_arena_bytes,
             &captured_inputs,
+            captured_total,
+            &mut seen_captures,
+            &mut capture_generation,
             before,
             working,
             probe,
@@ -5562,7 +5626,10 @@ impl ReactiveInstance {
         schemas: &Arc<mech_core::SchemaTable>,
         projections: &StructuralProjectionTable,
         schema_arena_bytes: u64,
-        captured_inputs: &[(ResidentReadLocation, ValueFootprint)],
+        captured_inputs: &HashMap<ResidentReadLocation, (usize, ValueFootprint)>,
+        captured_total: ValueFootprint,
+        seen_captures: &mut [u64],
+        capture_generation: &mut u64,
         before: InstanceEpoch,
         working: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
@@ -5637,20 +5704,21 @@ impl ReactiveInstance {
                             ResidentReadLocation::Scratch(site.write.region)
                         }
                     });
-                    let mut unowned_captures = ValueFootprint::zero();
-                    for (location, input) in captured_inputs {
-                        if child_reads.is_some_and(|reads| reads.contains(location))
-                            || child
-                                .as_ref()
-                                .is_some_and(|site| site.rmw_base == Some(*location))
-                            || child_output == Some(*location)
-                        {
-                            continue;
-                        }
-                        unowned_captures = unowned_captures
-                            .checked_add(*input)
-                            .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
-                    }
+                    let owned_locations = child_reads
+                        .into_iter()
+                        .flatten()
+                        .copied()
+                        .chain(child.as_ref().and_then(|site| site.rmw_base))
+                        .chain(child_output);
+                    let unowned_captures = unowned_comprehension_capture_footprint(
+                        captured_inputs,
+                        captured_total,
+                        owned_locations,
+                        seen_captures,
+                        capture_generation,
+                        meter,
+                    )
+                    .map_err(fail)?;
                     // A child installs its own turn plan. Carry the demand
                     // received from enclosing controls, this comprehension's
                     // draft and locals, and captures absent from the child call.
@@ -5758,6 +5826,9 @@ impl ReactiveInstance {
                                 projections,
                                 schema_arena_bytes,
                                 captured_inputs,
+                                captured_total,
+                                seen_captures,
+                                capture_generation,
                                 before,
                                 working,
                                 probe,
@@ -5898,7 +5969,7 @@ mod tests {
     use mech_core::{
         CanonicalNominalPath, CardinalitySpec, DimensionExpr, DimensionLifetime,
         DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, FloatWidth,
-        IntegerWidth, NominalKey, NominalKind, SchemaDraft, SchemaTableBuilder,
+        IntegerWidth, NominalKey, NominalKind, ResidentShape, SchemaDraft, SchemaTableBuilder,
     };
 
     fn atom(name: &str) -> SchemaBody {
@@ -5906,6 +5977,52 @@ mod tests {
             NominalKind::Atom,
             &CanonicalNominalPath::new(vec![name.to_owned()]).unwrap(),
         ))
+    }
+
+    #[test]
+    fn capture_accounting_deduplicates_child_inputs_without_scanning_all_captures() {
+        const COUNT: usize = 16_384;
+        let location = |offset| {
+            ResidentReadLocation::Scratch(ResidentRegion {
+                kind: ResidentValueKind::Snapshot,
+                offset,
+                len: 1,
+                shape: ResidentShape {
+                    rows: 1,
+                    columns: 1,
+                },
+            })
+        };
+        let one = ValueFootprint {
+            encoded_bytes: 0,
+            retained_bytes: 1,
+            node_count: 1,
+        };
+        let captures = (0..COUNT)
+            .map(|index| (location(index), (index, one)))
+            .collect::<HashMap<_, _>>();
+        let total = ValueFootprint {
+            encoded_bytes: 0,
+            retained_bytes: COUNT as u64,
+            node_count: COUNT as u64,
+        };
+        let mut seen = vec![0; COUNT];
+        let mut generation = 0;
+        let mut meter = ResidentBudgetMeter::default();
+        for index in 0..COUNT {
+            let unowned = unowned_comprehension_capture_footprint(
+                &captures,
+                total,
+                [location(index), location(index)],
+                &mut seen,
+                &mut generation,
+                &mut meter,
+            )
+            .unwrap();
+            assert_eq!(unowned.retained_bytes, COUNT as u64 - 1);
+            assert_eq!(unowned.node_count, COUNT as u64 - 1);
+        }
+        assert_eq!(meter.estimate().compute_work(), 2 * COUNT as u64);
     }
 
     #[test]
