@@ -2302,6 +2302,42 @@ fn declared_fsm_continuation_retains_lexical_captures() {
 }
 
 #[test]
+fn declared_fsm_resume_keeps_arguments_and_reads_external_inputs_live() {
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value + signal.\n#Captured(signal<f64>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 81),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for value in [10.0, 99.0] {
+        let input = [value];
+        let inputs = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(&input),
+        }];
+        instance.turn(&inputs).unwrap();
+    }
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(109.0))
+    );
+}
+
+#[test]
 fn declared_fsm_continuation_owns_managed_composite_captures() {
     let source = "#CapturedTuple(value<(f64,f64)>) => <(f64,f64)>\n  | :Start\n  | :Later.\n#CapturedTuple(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#CapturedTuple((10, 20))\n";
     let compiled = CanonicalSourceFrontend

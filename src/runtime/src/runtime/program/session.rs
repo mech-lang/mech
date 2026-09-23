@@ -231,15 +231,119 @@ impl MechRuntime {
                     .program_execution_info
                     .resident_accepted_turns
                     .saturating_add(1);
-                Ok(())
+                self.drain_resident_continuations()
+            }
+            ActiveProgramExecution::ResidentExternal(execution)
+                if execution
+                    .coordinator
+                    .instance()
+                    .continuation_wakeup()
+                    .is_some() =>
+            {
+                self.drain_resident_continuations()
             }
             ActiveProgramExecution::ResidentExternal(_) => Err(invalid_active_program(
-                "external resident programs advance only from admitted host input",
+                "external resident programs advance only from admitted host input or continuation",
             )),
             ActiveProgramExecution::None => Err(invalid_active_program(
                 "program stepping requires an active resident program",
             )),
         }
+    }
+
+    pub(crate) fn drain_resident_continuations(&mut self) -> MResult<()> {
+        let max_work = self.config.limits.max_steps_per_turn_as_usize()?;
+        let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+        let mut scheduler = mech_engine::resident::ResidentContinuationScheduler::new();
+        for _ in 0..max_work {
+            let wakeup = match &self.active_program {
+                ActiveProgramExecution::ResidentPure(execution) => scheduler
+                    .collect_ready(&[&execution.instance], 1)
+                    .first()
+                    .copied(),
+                ActiveProgramExecution::ResidentExternal(execution) => scheduler
+                    .collect_ready(&[execution.coordinator.instance()], 1)
+                    .first()
+                    .copied(),
+                ActiveProgramExecution::None => None,
+            };
+            let Some(wakeup) = wakeup else { return Ok(()) };
+            match &mut self.active_program {
+                ActiveProgramExecution::ResidentPure(execution) => {
+                    if !execution.instance.accepts_continuation_wakeup(wakeup) {
+                        continue;
+                    }
+                    let turn_started = Instant::now();
+                    let prepared = execution.instance.prepare_turn(&[]).map_err(|error| {
+                        route_failure(
+                            ResidentRouteFailureClass::ActivationFailure,
+                            format!("resident continuation failed: {error:?}"),
+                        )
+                    })?;
+                    if let Err(error) = super::super::limits::enforce_turn_duration_limit(
+                        max_turn_duration_ms,
+                        turn_started,
+                    ) {
+                        prepared.abort();
+                        return Err(error);
+                    }
+                    prepared.publish().map_err(|error| {
+                        route_failure(
+                            ResidentRouteFailureClass::ActivationFailure,
+                            format!("resident continuation publication failed: {error:?}"),
+                        )
+                    })?;
+                }
+                ActiveProgramExecution::ResidentExternal(execution) => {
+                    if !execution
+                        .coordinator
+                        .instance()
+                        .accepts_continuation_wakeup(wakeup)
+                    {
+                        continue;
+                    }
+                    let turn_started = Instant::now();
+                    let admission = execution.coordinator.admit_turn()?;
+                    let outcome = execution
+                        .coordinator
+                        .execute_admitted_turn(admission, |_| {
+                            super::super::limits::enforce_turn_duration_limit(
+                                max_turn_duration_ms,
+                                turn_started,
+                            )
+                        })?;
+                    if let Some(error) = super::resident_host_turn_error(&outcome) {
+                        return Err(route_failure(
+                            ResidentRouteFailureClass::ActivationFailure,
+                            format!("resident continuation did not complete cleanly: {error:?}"),
+                        ));
+                    }
+                }
+                ActiveProgramExecution::None => unreachable!(),
+            }
+            self.program_execution_info.resident_accepted_turns = self
+                .program_execution_info
+                .resident_accepted_turns
+                .saturating_add(1);
+        }
+        let still_ready = match &self.active_program {
+            ActiveProgramExecution::ResidentPure(execution) => {
+                execution.instance.continuation_wakeup().is_some()
+            }
+            ActiveProgramExecution::ResidentExternal(execution) => execution
+                .coordinator
+                .instance()
+                .continuation_wakeup()
+                .is_some(),
+            ActiveProgramExecution::None => false,
+        };
+        if still_ready {
+            return Err(route_failure(
+                ResidentRouteFailureClass::ActivationFailure,
+                "resident continuation wakeup limit exhausted".to_owned(),
+            ));
+        }
+        Ok(())
     }
 
     pub(crate) fn ensure_resident_environment_mutable(

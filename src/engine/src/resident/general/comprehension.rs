@@ -748,6 +748,7 @@ pub(super) fn bind_inner(
                             memory_node,
                             nested,
                             &input_sources,
+                            &input_reads,
                             output_slot,
                             layout,
                         )?;
@@ -758,6 +759,7 @@ pub(super) fn bind_inner(
                             owner,
                             nested,
                             &input_sources,
+                            &input_reads,
                             layout,
                             steps,
                             reads,

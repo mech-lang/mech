@@ -74,6 +74,9 @@ pub struct ResolvedSlot {
 pub enum ResidentReadLocation {
     Constant(ResidentRegion),
     Input(ResidentRegion),
+    /// A bound invocation argument backed by an input before suspension and
+    /// by its retained capture frame after suspension.
+    LexicalInput(ResidentRegion),
     State {
         slot: CellSlotId,
         region: ResidentRegion,
@@ -84,7 +87,10 @@ pub enum ResidentReadLocation {
 impl ResidentReadLocation {
     pub const fn region(self) -> ResidentRegion {
         match self {
-            Self::Constant(region) | Self::Input(region) | Self::Scratch(region) => region,
+            Self::Constant(region)
+            | Self::Input(region)
+            | Self::LexicalInput(region)
+            | Self::Scratch(region) => region,
             Self::State { region, .. } => region,
         }
     }
@@ -375,7 +381,16 @@ fn output_materialization_depends_on_match(
     match_index: usize,
     match_region: ResidentRegion,
 ) -> bool {
-    if materialization.source == ResidentReadLocation::Scratch(match_region) {
+    read_location_depends_on_match(plan, materialization.source, match_index, match_region)
+}
+
+fn read_location_depends_on_match(
+    plan: &ActivatedPlan,
+    location: ResidentReadLocation,
+    match_index: usize,
+    match_region: ResidentRegion,
+) -> bool {
+    if location == ResidentReadLocation::Scratch(match_region) {
         return true;
     }
     let producer = plan.steps.iter().position(|step| {
@@ -388,7 +403,7 @@ fn output_materialization_depends_on_match(
             | ActivatedTurnStep::Suspend(_)
             | ActivatedTurnStep::Publish(_) => None,
         };
-        region.is_some_and(|region| materialization.source == ResidentReadLocation::Scratch(region))
+        region.is_some_and(|region| location == ResidentReadLocation::Scratch(region))
     });
     producer.is_some_and(|producer| {
         plan.topology.same_turn_downstream_masks[match_index]
@@ -1250,6 +1265,7 @@ pub struct TurnWorkspace {
     continuation_publications: Box<[u64]>,
     candidate_output_ready: Box<[bool]>,
     continuation_capture_frames: Vec<Box<[(ResidentReadLocation, OwnedResidentValue)]>>,
+    active_resume_state: Option<OwnedResidentValue>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1307,6 +1323,7 @@ impl TurnWorkspace {
             continuation_publications: vec![0; plan.steps.len().div_ceil(64)].into_boxed_slice(),
             candidate_output_ready: vec![false; plan.outputs.len()].into_boxed_slice(),
             continuation_capture_frames: Vec::new(),
+            active_resume_state: None,
         })
     }
 }
@@ -1646,6 +1663,20 @@ impl ReactiveInstance {
             let mut epochs = [None, None];
             epochs[candidate] = Some(target_epoch);
             self.state.version_mut(mapping.target).epochs = epochs;
+            let target_slot = self.plan.slots[mapping.target.get() as usize].physical_index;
+            let source_slot = source.plan.slots[mapping.source.get() as usize].physical_index;
+            if let Some(source_output) = source
+                .plan
+                .outputs
+                .iter()
+                .position(|output| output.slot == source_slot)
+            {
+                for (target_output, output) in self.plan.outputs.iter().enumerate() {
+                    if output.slot == target_slot {
+                        self.output_ready[target_output] = source.output_ready[source_output];
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -4629,6 +4660,11 @@ fn build_plan(
                 unreachable!()
             };
             let input_sources = node_inputs(artifact, node.node)?;
+            let input_reads = input_sources
+                .iter()
+                .copied()
+                .map(|source| resolve_read(&layout, source))
+                .collect::<Result<Vec<_>, _>>()?;
             let output_slot = node_output_slot(artifact, node.node)?;
             steps.push(ActivatedTurnStep::Match(prepare_match_node(
                 artifact,
@@ -4636,6 +4672,7 @@ fn build_plan(
                 node.node,
                 control,
                 &input_sources,
+                &input_reads,
                 output_slot,
                 &layout,
             )?));
@@ -4851,6 +4888,11 @@ fn build_plan(
             continue;
         };
         let input_sources = node_inputs(artifact, node.node)?;
+        let input_reads = input_sources
+            .iter()
+            .copied()
+            .map(|source| resolve_read(&layout, source))
+            .collect::<Result<Vec<_>, _>>()?;
         let root = artifact_to_activated[node.node.get() as usize].unwrap();
         let arms = bind_match_arms(
             artifact,
@@ -4858,6 +4900,7 @@ fn build_plan(
             node.node,
             control,
             &input_sources,
+            &input_reads,
             &layout,
             &mut steps,
             &mut reads,
@@ -5248,6 +5291,7 @@ fn build_f64_read_tape(reads: &[ResidentReadLocation]) -> Option<Box<[F64ReadTap
             let (selector, region) = match *read {
                 ResidentReadLocation::Constant(region) => (F64_ACTIVATION_ARENA, region),
                 ResidentReadLocation::Input(region) => (F64_INPUT_ARENA, region),
+                ResidentReadLocation::LexicalInput(_) => return None,
                 ResidentReadLocation::Scratch(region) => (F64_SCRATCH_ARENA, region),
                 ResidentReadLocation::State { slot, region } if slot.get() < F64_STATE_SLOT_BIT => {
                     (F64_STATE_SLOT_BIT | slot.get(), region)
@@ -6640,11 +6684,12 @@ fn prepare_match_node(
     budget_node: NodeId,
     control: &crate::MatchDeclaration,
     inputs: &[ArtifactSource],
+    input_reads: &[ResidentReadLocation],
     output_slot: CellSlotId,
     layout: &LayoutBuild,
 ) -> Result<ActivatedMatchNode, ResidentActivationError> {
     let scrutinee_source = inputs[control.scrutinee as usize];
-    let scrutinee = resolve_read(layout, scrutinee_source)?;
+    let scrutinee = input_reads[control.scrutinee as usize];
     let (scrutinee_schema, scrutinee_shape_values) = match scrutinee_source {
         ArtifactSource::Constant(constant) => {
             let value = artifact
@@ -6719,8 +6764,16 @@ fn prepare_match_node(
         capture_sources: control
             .captures
             .iter()
-            .map(|capture| resolve_read(layout, inputs[capture.input as usize]))
-            .collect::<Result<Box<[_]>, _>>()?,
+            .map(|capture| {
+                let source = input_reads[capture.input as usize];
+                match (capture.freeze_on_suspend, source) {
+                    (true, ResidentReadLocation::Input(region)) => {
+                        ResidentReadLocation::LexicalInput(region)
+                    }
+                    _ => source,
+                }
+            })
+            .collect(),
     })
 }
 
@@ -6881,6 +6934,7 @@ fn bind_match_arms(
     owner: NodeId,
     control: &crate::MatchDeclaration,
     captures: &[ArtifactSource],
+    capture_reads: &[ResidentReadLocation],
     layout: &LayoutBuild,
     steps: &mut Vec<ActivatedTurnStep>,
     reads: &mut Vec<ResidentReadLocation>,
@@ -6960,6 +7014,7 @@ fn bind_match_arms(
                     control,
                     block,
                     captures,
+                    capture_reads,
                     &binding_regions,
                     &binding_local_indices,
                     layout,
@@ -7004,6 +7059,7 @@ fn bind_control_block(
     control: &crate::MatchDeclaration,
     block: &crate::ControlBlock,
     captures: &[ArtifactSource],
+    capture_reads: &[ResidentReadLocation],
     binding_regions: &[ResidentRegion],
     binding_local_indices: &std::collections::BTreeMap<u32, u32>,
     layout: &LayoutBuild,
@@ -7038,6 +7094,31 @@ fn bind_control_block(
             }
         }
     };
+    let read =
+        |value: crate::ControlValue| -> Result<ResidentReadLocation, ResidentActivationError> {
+            let crate::ControlValue::Parameter { ordinal, .. } = value else {
+                return resolve_read(layout, source(value));
+            };
+            let selected = match block.parameters[ordinal as usize].source {
+                crate::ControlParameterSource::Scrutinee => {
+                    capture_reads[control.scrutinee as usize]
+                }
+                crate::ControlParameterSource::Capture(index) => {
+                    let capture = &control.captures[index as usize];
+                    let selected = capture_reads[capture.input as usize];
+                    match (capture.freeze_on_suspend, selected) {
+                        (true, ResidentReadLocation::Input(region)) => {
+                            ResidentReadLocation::LexicalInput(region)
+                        }
+                        _ => selected,
+                    }
+                }
+                crate::ControlParameterSource::PatternBinding(_) => {
+                    resolve_read(layout, source(value))?
+                }
+            };
+            Ok(selected)
+        };
     let port = |source: ArtifactSource| -> Result<ResidentPortLayout, ResidentActivationError> {
         match source {
             ArtifactSource::Slot(slot) => Ok(slot_port_layout(&layout.slots[slot.get() as usize])),
@@ -7071,6 +7152,12 @@ fn bind_control_block(
             .copied()
             .map(source)
             .collect::<Vec<_>>();
+        let input_reads = operation
+            .inputs
+            .iter()
+            .copied()
+            .map(read)
+            .collect::<Result<Vec<_>, _>>()?;
         let index =
             u32::try_from(steps.len()).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
         let nested_match = matches!(operation.body, crate::ControlOperationBody::Match(_));
@@ -7125,6 +7212,7 @@ fn bind_control_block(
                         physical_node,
                         nested,
                         &inputs,
+                        &input_reads,
                         output_slot,
                         layout,
                     )?;
@@ -7137,6 +7225,7 @@ fn bind_control_block(
                         owner,
                         nested,
                         &inputs,
+                        &input_reads,
                         layout,
                         steps,
                         reads,
@@ -7150,9 +7239,7 @@ fn bind_control_block(
                 }
                 crate::ControlOperationBody::Comprehension(nested) => {
                     let start = reads.len() as u32;
-                    for input in &inputs {
-                        reads.push(resolve_read(layout, *input)?);
-                    }
+                    reads.extend(input_reads.iter().copied());
                     steps.push(ActivatedTurnStep::Comprehension(std::sync::Arc::new(
                         ActivatedComprehensionNode {
                             artifact_node: owner,
@@ -7219,7 +7306,7 @@ fn bind_control_block(
                         .and_then(|index| recursive_roots.get(index))
                         .copied()
                         .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
-                    let [argument] = inputs.as_slice() else {
+                    let [_argument] = inputs.as_slice() else {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
                             node: owner,
                         });
@@ -7227,7 +7314,7 @@ fn bind_control_block(
                     steps.push(ActivatedTurnStep::Recur(ActivatedRecursiveCall {
                         artifact_node: owner,
                         target,
-                        argument: resolve_read(layout, *argument)?,
+                        argument: input_reads[0],
                         write: ResidentWriteLocation {
                             slot: output_slot,
                             storage: output.storage,
@@ -7240,7 +7327,7 @@ fn bind_control_block(
                         .last()
                         .copied()
                         .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
-                    let [argument] = inputs.as_slice() else {
+                    let [_argument] = inputs.as_slice() else {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
                             node: owner,
                         });
@@ -7248,7 +7335,7 @@ fn bind_control_block(
                     steps.push(ActivatedTurnStep::Suspend(ActivatedSuspension {
                         artifact_node: owner,
                         target,
-                        argument: resolve_read(layout, *argument)?,
+                        argument: input_reads[0],
                     }));
                 }
                 crate::ControlOperationBody::Publish => {
@@ -7256,7 +7343,7 @@ fn bind_control_block(
                         .last()
                         .copied()
                         .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
-                    let [value] = inputs.as_slice() else {
+                    let [_value] = inputs.as_slice() else {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
                             node: owner,
                         });
@@ -7264,7 +7351,7 @@ fn bind_control_block(
                     steps.push(ActivatedTurnStep::Publish(ActivatedPublication {
                         artifact_node: owner,
                         target,
-                        value: resolve_read(layout, *value)?,
+                        value: input_reads[0],
                     }));
                 }
                 crate::ControlOperationBody::Operation { .. } => unreachable!(),
@@ -7295,9 +7382,7 @@ fn bind_control_block(
             memory_plan,
         ));
         let read_start = reads.len() as u32;
-        for input in inputs {
-            reads.push(resolve_read(layout, input)?);
-        }
+        reads.extend(input_reads);
         let mech_core::ResolvedOperationContract::Declared(contract) =
             artifact.contracts().get(*contract_id).unwrap()
         else {
@@ -7331,7 +7416,7 @@ fn bind_control_block(
     Ok(ActivatedControlBlock {
         steps: direct_steps.into(),
         locals: local_regions.into(),
-        yield_value: resolve_read(layout, yielded)?,
+        yield_value: read(block.yield_value)?,
         yield_layout: port(yielded)?,
     })
 }

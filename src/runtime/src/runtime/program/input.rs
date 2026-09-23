@@ -338,6 +338,14 @@ impl crate::runtime::MechRuntime {
             .coalesced_host_packets
             .saturating_add(coalesced_packets as u64);
 
+        if matches!(
+            turn,
+            Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+                | Some(crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. })
+        ) {
+            self.drain_resident_continuations()?;
+        }
+
         Ok(ResidentHostDrainOutcome {
             dequeued_packets: packets.len(),
             matched_packets,

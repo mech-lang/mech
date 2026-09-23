@@ -1593,6 +1593,7 @@ pub(super) fn compile_ordered_documents(
         );
         builder.function_imports.clear();
         builder.local_functions.clear();
+        builder.local_fsms.clear();
         builder.declared_kinds.clear();
         builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
@@ -1685,6 +1686,7 @@ pub(super) fn compile_ordered_documents(
             }
         }
         builder.register_document_types(&units, root.nominal_origin.as_ref())?;
+        builder.register_document_fsms(&units)?;
         builder.register_document_functions(&units)?;
         builder.register_document_imports(&units, &root.resolved_modules)?;
         let mut bindings = builder.bindings.keys().cloned().collect();

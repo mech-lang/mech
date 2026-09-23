@@ -422,6 +422,12 @@ impl SemanticBuilder {
             })?;
         let saved_bindings = self.bindings.clone();
         for (parameter, value) in machine.implementation_parameters.iter().zip(selected) {
+            // Invocation arguments are lexical values. A direct read of the
+            // same external input inside the FSM remains live on resume.
+            let value = match value {
+                PendingValue::Input(index) => PendingValue::LexicalInput(index),
+                value => value,
+            };
             self.bindings
                 .insert(parameter.clone(), PendingBinding::Value(value));
         }

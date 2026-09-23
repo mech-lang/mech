@@ -33,6 +33,9 @@ pub struct ControlCapture {
     /// Ordinal in the enclosing node's input bindings.
     pub input: u16,
     pub schema: SchemaId,
+    /// Retain lexical arguments and derived captures across suspension.
+    /// Direct external inputs remain live when the FSM resumes.
+    pub freeze_on_suspend: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -810,6 +813,18 @@ pub(super) fn validate_match_inner(
                             if inputs.as_slice() != [scrutinee] || operation.schema != output {
                                 return Err(invalid(
                                     "suspended control must preserve the enclosing input and output schemas",
+                                ));
+                            }
+                            if is_guard
+                                || index + 1 != block.operations.len()
+                                || block.yield_value
+                                    != (ControlValue::Local {
+                                        block: block.id,
+                                        node: index as u32,
+                                    })
+                            {
+                                return Err(invalid(
+                                    "suspension must be the terminal FSM body yield",
                                 ));
                             }
                         }
