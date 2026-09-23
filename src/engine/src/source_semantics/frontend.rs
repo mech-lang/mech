@@ -8217,8 +8217,9 @@ impl SemanticBuilder {
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
-            message: "match blocks require pure maintained operations and closed final value schemas"
-                .to_owned(),
+            message:
+                "match blocks require pure maintained operations and closed final value schemas"
+                    .to_owned(),
             anchor: SourceSemanticAnchor::for_node(expression.syntax()),
         };
         let id = self.next_control_block;
