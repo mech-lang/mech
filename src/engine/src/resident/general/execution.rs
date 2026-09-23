@@ -1895,11 +1895,9 @@ impl ReactiveInstance {
                         node,
                         &guard,
                         step,
-                        before_epoch,
-                        working_epoch,
+                        (before_epoch, working_epoch),
                         probe,
-                        live_bytes,
-                        live_nodes,
+                        (live_bytes, live_nodes),
                     )?;
                 }
                 let guard_matches = match self.read_location(guard.yield_value, working_epoch) {
@@ -1924,11 +1922,9 @@ impl ReactiveInstance {
                     node,
                     &body,
                     step,
-                    before_epoch,
-                    working_epoch,
+                    (before_epoch, working_epoch),
                     probe,
-                    live_bytes,
-                    live_nodes,
+                    (live_bytes, live_nodes),
                 )?;
             }
             let converts_to_snapshot = write.region.kind == ResidentValueKind::Snapshot
@@ -2163,18 +2159,17 @@ impl ReactiveInstance {
         Err(fail())
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn execute_control_step_with_live_demand(
         &mut self,
         owner: NodeId,
         block: &super::ActivatedControlBlock,
         step: &super::ActivatedControlStep,
-        before_epoch: InstanceEpoch,
-        working_epoch: InstanceEpoch,
+        epochs: (InstanceEpoch, InstanceEpoch),
         probe: &mut ResidentStructuralProbe,
-        live_bytes: u64,
-        live_nodes: u64,
+        live: (u64, u64),
     ) -> Result<bool, ResidentExecutionError> {
+        let (before_epoch, working_epoch) = epochs;
+        let (live_bytes, live_nodes) = live;
         let fail = |error| ResidentExecutionError::Kernel { node: owner, error };
         let mut meter = budget::ResidentBudgetMeter::default();
         let locals = self
