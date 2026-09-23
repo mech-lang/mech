@@ -5101,6 +5101,29 @@ impl ValueCell {
         )
     }
 
+    pub(crate) fn rebuild_data_draft_with_shape_with_construction(
+        &self,
+        data: ValueDataDraft,
+        shape: &ShapeInstance,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let shape = schema
+            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+            .map_err(MechError::from)?;
+        finalize_draft_with_construction(
+            self.binding.schema,
+            &shape,
+            self.binding.schemas.as_ref(),
+            data,
+            construction,
+        )
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn try_ref<T: 'static>(&self) -> MResult<Ref<T>> {
         let storage = self.binding.storage()?;

@@ -317,7 +317,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
             },
         ) => SchemaBody::Set {
             element: Box::new(materialize_declared_conversion_shape(source, target)),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
                 source_cardinality.clone()
             } else {
                 cardinality.clone()
@@ -337,7 +337,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
         ) => SchemaBody::Map {
             key: Box::new(materialize_declared_conversion_shape(source_key, key)),
             value: Box::new(materialize_declared_conversion_shape(source_value, value)),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
                 source_cardinality.clone()
             } else {
                 cardinality.clone()
@@ -370,7 +370,7 @@ fn materialize_declared_conversion_shape(source: &SchemaBody, target: &SchemaBod
                         ),
                     })
                     .collect(),
-                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
+                rows: if matches!(rows, CardinalitySpec::Dynamic { .. }) {
                     source_rows.clone()
                 } else {
                     rows.clone()
@@ -458,7 +458,7 @@ fn materialize_declared_conversion_semantic_shape(
             element: Box::new(materialize_declared_conversion_semantic_shape(
                 source, target,
             )),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -483,7 +483,7 @@ fn materialize_declared_conversion_semantic_shape(
                 source_value,
                 value,
             )),
-            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None }) {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { .. }) {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -516,7 +516,7 @@ fn materialize_declared_conversion_semantic_shape(
                         ),
                     })
                     .collect(),
-                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None }) {
+                rows: if matches!(rows, CardinalitySpec::Dynamic { .. }) {
                     CardinalitySpec::Exact(source_rows.clone())
                 } else {
                     rows.clone()
@@ -540,27 +540,16 @@ fn execute_conversion_plan(
         ));
     }
     let snapshot = value.snapshot()?;
+    if matches!(plan.step, ConversionStep::Identity) {
+        // The snapshot retains nested dynamic payload IDs and their complete
+        // schema table. Reconstructing from a data draft loses that context.
+        return ValueCell::from_snapshot(snapshot);
+    }
     let draft = snapshot.canonical_data_draft().map_err(|error| {
         MechError::new(ValueCellSnapshotFailure { error }, None).with_compiler_loc()
     })?;
     let converted =
         execute_conversion_draft(draft, &plan.step).map_err(conversion_execution_error)?;
-    if matches!(plan.step, ConversionStep::Identity) {
-        // Preserve nested shape witnesses while finalizing a fresh output.
-        let schema = snapshot
-            .schemas()
-            .and_then(|schemas| schemas.get(snapshot.schema()).cloned())
-            .ok_or_else(|| {
-                conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
-            })?;
-        let descriptor = mech_core::ResolvedValueDescriptor::new(
-            plan.target.clone(),
-            schema,
-            snapshot.shape().clone(),
-        )
-        .map_err(MechError::from)?;
-        return ValueCell::from_resolved_descriptor_data(&descriptor, converted);
-    }
     let current_extents = match target {
         SchemaBody::Matrix { .. }
         | SchemaBody::Set {
@@ -577,13 +566,34 @@ fn execute_conversion_plan(
         } => value.current_top_level_extents()?,
         _ => Box::new([]),
     };
-    let descriptor = materialize_resolved_output(
+    let mut descriptor = materialize_resolved_output(
         &plan.target,
         &ResolvedOutputSchemaRule::Declared(target.clone()),
         &[],
         current_extents,
     )
     .map_err(MechError::from)?;
+    if plan.source.dimension_parameters() == plan.target.dimension_parameters()
+        && descriptor.schema().dimension_parameters().len()
+            == snapshot.shape().parameter_values().len()
+    {
+        let shape = descriptor
+            .schema()
+            .instantiate_shape(
+                snapshot
+                    .shape()
+                    .parameter_values()
+                    .to_vec()
+                    .into_boxed_slice(),
+            )
+            .map_err(MechError::from)?;
+        descriptor = mech_core::ResolvedValueDescriptor::new(
+            plan.target.clone(),
+            descriptor.schema().clone(),
+            shape,
+        )
+        .map_err(MechError::from)?;
+    }
     ValueCell::from_resolved_descriptor_data(&descriptor, converted)
 }
 
@@ -762,7 +772,18 @@ fn stage_conversion_output(
                 let snapshot =
                     frame.snapshot_input_cell_with_construction(source, 0, construction)?;
                 let converted = execute_conversion_draft_from_snapshot(source, &snapshot, plan)?;
-                construction.try_rebuild_data_draft(output, converted)
+                if plan.source.dimension_parameters() == plan.target.dimension_parameters()
+                    && output.shape().parameter_values().len()
+                        == snapshot.shape().parameter_values().len()
+                {
+                    construction.try_rebuild_data_draft_with_shape(
+                        output,
+                        converted,
+                        snapshot.shape(),
+                    )
+                } else {
+                    construction.try_rebuild_data_draft(output, converted)
+                }
             })?;
             Ok(((), next))
         })
@@ -1557,6 +1578,66 @@ fn has_dynamic_cardinality(body: &SchemaBody) -> bool {
 }
 
 #[cfg(feature = "convert")]
+fn has_semantic_dimension_parameter(body: &SchemaBody) -> bool {
+    fn expression_has_parameter(expression: &DimensionExpr) -> bool {
+        match expression {
+            DimensionExpr::Parameter(_) => true,
+            DimensionExpr::Add(children)
+            | DimensionExpr::Multiply(children)
+            | DimensionExpr::Min(children)
+            | DimensionExpr::Max(children) => children.iter().any(expression_has_parameter),
+            DimensionExpr::Constant(_) | DimensionExpr::Hole => false,
+        }
+    }
+    fn cardinality_has_parameter(cardinality: &CardinalitySpec) -> bool {
+        match cardinality {
+            CardinalitySpec::Exact(expression) => expression_has_parameter(expression),
+            CardinalitySpec::Dynamic { upper_bound } => {
+                upper_bound.as_ref().is_some_and(expression_has_parameter)
+            }
+        }
+    }
+    match body {
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            dimensions.iter().any(expression_has_parameter)
+                || has_semantic_dimension_parameter(element)
+        }
+        SchemaBody::Set {
+            element,
+            cardinality,
+        } => cardinality_has_parameter(cardinality) || has_semantic_dimension_parameter(element),
+        SchemaBody::Map {
+            key,
+            value,
+            cardinality,
+        } => {
+            cardinality_has_parameter(cardinality)
+                || has_semantic_dimension_parameter(key)
+                || has_semantic_dimension_parameter(value)
+        }
+        SchemaBody::Table { columns, rows } => {
+            cardinality_has_parameter(rows)
+                || columns
+                    .iter()
+                    .any(|column| has_semantic_dimension_parameter(&column.schema))
+        }
+        SchemaBody::Option(element) => has_semantic_dimension_parameter(element),
+        SchemaBody::Tuple(elements) => elements.iter().any(has_semantic_dimension_parameter),
+        SchemaBody::Record(fields) => fields
+            .iter()
+            .any(|field| has_semantic_dimension_parameter(&field.schema)),
+        SchemaBody::Enum { variants, .. } => variants
+            .iter()
+            .filter_map(|variant| variant.payload.as_ref())
+            .any(has_semantic_dimension_parameter),
+        _ => false,
+    }
+}
+
+#[cfg(feature = "convert")]
 fn bind_reified_target_dimensions(
     source: &SchemaBody,
     target: &SchemaBody,
@@ -1889,21 +1970,44 @@ impl CanonicalFunctionSpecializer for ConvertKind {
         };
         let source_type = source.resolved_type()?;
         let is_reified_target = reified_dimensions.is_some();
-        let target = if let Some(declarations) = reified_dimensions {
+        let (target, semantic_reified_target) = if let Some(declarations) = reified_dimensions {
             let source_body = source.closed_schema_body()?;
             let mut target = target;
             inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
+            let source_snapshot = source.snapshot()?;
+            let source_schema = source_snapshot
+                .schemas()
+                .and_then(|schemas| schemas.get(source_snapshot.schema()).cloned())
+                .ok_or_else(|| {
+                    invalid_reified_conversion_target("source schema context is unavailable")
+                })?;
+            let mut semantic_bindings = vec![None; declarations.len()];
+            bind_reified_target_dimensions(
+                source_schema.body(),
+                &target,
+                &declarations,
+                &mut semantic_bindings,
+            )?;
+            let semantic_target = substitute_reified_target(&target, &semantic_bindings)?;
             let mut bindings = vec![None; declarations.len()];
             bind_reified_target_dimensions(&source_body, &target, &declarations, &mut bindings)?;
             validate_reified_parameter_bindings(&declarations, &bindings)?;
-            substitute_reified_target(&target, &bindings)?
+            (
+                substitute_reified_target(&target, &bindings)?,
+                Some(semantic_target),
+            )
         } else {
-            target
+            (target, None)
         };
-        let semantic_target =
-            materialize_declared_conversion_semantic_shape(source_type.kind(), &target);
+        let semantic_target = materialize_declared_conversion_semantic_shape(
+            source_type.kind(),
+            semantic_reified_target.as_ref().unwrap_or(&target),
+        );
         let target = materialize_declared_conversion_shape(&source.closed_schema_body()?, &target);
-        let target_dimensions = if is_reified_target && !has_dynamic_cardinality(&target) {
+        let target_dimensions = if is_reified_target
+            && !has_dynamic_cardinality(&semantic_target)
+            && !has_semantic_dimension_parameter(&semantic_target)
+        {
             &[][..]
         } else {
             source_type.dimension_parameters()
@@ -2271,6 +2375,27 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn identity_conversion_retains_nested_dynamic_schema_ids() {
+        let text = ValueCell::from_exact("hello".to_owned()).unwrap();
+        let number = ValueCell::from_exact(4.0_f64).unwrap();
+        let source = ValueCell::table_from_cell_columns(
+            [(
+                SchemaField {
+                    name: "value".to_owned(),
+                    schema: SchemaBody::Dynamic,
+                },
+                [text, number].into(),
+            )]
+            .into(),
+            CardinalitySpec::Exact(DimensionExpr::Constant(2)),
+        )
+        .unwrap();
+        let output = convert_schema_identity(source.clone()).unwrap();
+        assert_ne!(source.reactive_cell_id(), output.reactive_cell_id());
+        assert_eq!(source.snapshot().unwrap(), output.snapshot().unwrap());
+    }
+
+    #[test]
     fn reactive_identity_conversion_tracks_new_matrix_extents() {
         let matrix = |rows, columns, values: &[f64]| {
             ValueCell::dynamic_matrix_from_cells(
@@ -2302,6 +2427,69 @@ mod canonical_conversion_tests {
             &[DimensionExpr::Constant(2), DimensionExpr::Constant(2)]
         );
         assert_ne!(source.reactive_cell_id(), output.reactive_cell_id());
+    }
+
+    #[test]
+    fn nested_option_matrix_conversion_tracks_turn_shape() {
+        let id = DimensionParameterId::new(0);
+        let source_schema = SchemaDraft {
+            body: SchemaBody::Option(Box::new(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(2)].into(),
+            })),
+            dimension_parameters: [DimensionParameterDeclaration {
+                id,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            }]
+            .into(),
+        }
+        .finalize()
+        .unwrap();
+        let source_for_rows = |rows: u64| {
+            let shape = source_schema.instantiate_shape([rows].into()).unwrap();
+            let descriptor =
+                mech_core::ResolvedValueDescriptor::from_schema(source_schema.clone(), shape)
+                    .unwrap();
+            let values = (0..rows * 2)
+                .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value as f64)))
+                .collect();
+            ValueCell::from_resolved_descriptor_data(
+                &descriptor,
+                ValueDataDraft::Option(OptionDraft {
+                    present: true,
+                    value: Some(Box::new(ValueDataDraft::Matrix(values))),
+                }),
+            )
+            .unwrap()
+        };
+        let source = source_for_rows(1);
+        let target = SchemaBody::Option(Box::new(SchemaBody::Matrix {
+            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+            dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(2)].into(),
+        }));
+        let source_type = source.resolved_type().unwrap();
+        let target_type =
+            ResolvedType::from_schema_body(&target, source_type.dimension_parameters()).unwrap();
+        let plan = plan_explicit_cast(&source_type, &target_type).unwrap();
+        let output = execute_conversion_plan(&source, &target, &plan).unwrap();
+        assert_eq!(output.shape().parameter_values(), &[1]);
+        let conversion =
+            planned_type_conversion_specialized(source.clone(), output.clone(), plan).unwrap();
+        source
+            .replace(&source_for_rows(2).snapshot().unwrap())
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert_eq!(output.shape().parameter_values(), &[2]);
+        assert_eq!(
+            output.closed_schema_body().unwrap(),
+            SchemaBody::Option(Box::new(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: [DimensionExpr::Constant(2), DimensionExpr::Constant(2)].into(),
+            }))
+        );
     }
 
     #[test]
@@ -2439,6 +2627,49 @@ mod canonical_conversion_tests {
                     == [ValueDataDraft::U8(1), ValueDataDraft::U8(2),
                         ValueDataDraft::U8(3), ValueDataDraft::U8(4)]
         ));
+    }
+
+    #[test]
+    fn open_reified_matrix_specializes_from_semantic_turn_axes() {
+        let (id, path) = builtin_scalar_named_kind(mech_core::hash_str("u8")).unwrap();
+        let named = NamedKinds(BTreeMap::from([(id, path)]));
+        let dimensions = [0, 1].map(|id| DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        });
+        let kind = ReifiedKind::from_closed_kind(
+            &KindExpr::Matrix {
+                element: Box::new(KindExpr::Named(id)),
+                dimensions: [
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    DimensionExpr::Parameter(DimensionParameterId::new(1)),
+                ]
+                .into(),
+            },
+            &dimensions,
+            &named,
+        )
+        .unwrap();
+        let source = ValueCell::dynamic_matrix_from_cells(
+            1,
+            2,
+            &[
+                ValueCell::from_exact(1.0_f64).unwrap(),
+                ValueCell::from_exact(2.0_f64).unwrap(),
+            ],
+        )
+        .unwrap();
+        let converted = convert_reified(source, kind).unwrap();
+        assert_eq!(
+            converted.closed_schema_body().unwrap(),
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                dimensions: [DimensionExpr::Constant(1), DimensionExpr::Constant(2)].into(),
+            }
+        );
     }
 
     #[test]
@@ -2789,17 +3020,19 @@ mod canonical_conversion_tests {
             &named,
         )
         .unwrap();
-        let schema = SchemaBody::Set {
-            element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
-            cardinality: CardinalitySpec::Dynamic { upper_bound: None },
-        };
-        let source = ValueCell::from_schema_data(
-            schema.clone(),
-            ValueDataDraft::Set([ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into()),
-        )
-        .unwrap();
-        let converted = convert_reified(source, kind).unwrap();
-        assert_eq!(converted.closed_schema_body().unwrap(), schema);
+        for upper_bound in [None, Some(DimensionExpr::Constant(4))] {
+            let schema = SchemaBody::Set {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+                cardinality: CardinalitySpec::Dynamic { upper_bound },
+            };
+            let source = ValueCell::from_schema_data(
+                schema.clone(),
+                ValueDataDraft::Set([ValueDataDraft::U8(1), ValueDataDraft::U8(2)].into()),
+            )
+            .unwrap();
+            let converted = convert_reified(source, kind.clone()).unwrap();
+            assert_eq!(converted.closed_schema_body().unwrap(), schema);
+        }
     }
 
     #[test]
