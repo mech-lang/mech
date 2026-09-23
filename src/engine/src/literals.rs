@@ -1635,6 +1635,7 @@ fn schema_body_from_reified_kind(
             }
             KindExpr::Id => SchemaBody::Id,
             KindExpr::Index => SchemaBody::Index,
+            KindExpr::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
             KindExpr::Atom(key) => SchemaBody::Atom(*key),
             KindExpr::Enum(key) => {
                 let variants = enums.get(key).ok_or_else(aggregate_error)?.to_vec().into();

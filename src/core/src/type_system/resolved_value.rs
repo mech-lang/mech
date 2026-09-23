@@ -425,6 +425,7 @@ fn schema_body_from_resolved(
     declarations: &[DimensionParameterDeclaration],
 ) -> Result<SchemaBody, TypeResolutionError> {
     Ok(match kind {
+        KindExpr::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
         KindExpr::Wildcard => SchemaBody::Dynamic,
         KindExpr::Named(id) => BuiltinScalarKind::from_kind_id(*id)
             .map(BuiltinScalarKind::schema_body)

@@ -297,6 +297,7 @@ pub fn semantic_kind_name(kind: &KindExpr) -> String {
                 KindExpr::Named(id) => format!("kind#{}", id.get()),
                 _ => unreachable!(),
             }),
+        KindExpr::IntegerInterval(interval) => format!("{interval:?}"),
         KindExpr::Id => "id".into(),
         KindExpr::Index => "index".into(),
         KindExpr::Atom(key) => format!("atom({key:?})"),
@@ -356,6 +357,7 @@ pub fn semantic_schema_body_name(body: &SchemaBody) -> String {
         return kind.canonical_name().into();
     }
     match body {
+        SchemaBody::IntegerInterval(interval) => format!("{interval:?}"),
         SchemaBody::Dynamic => "dynamic".into(),
         SchemaBody::Id => "id".into(),
         SchemaBody::Index => "index".into(),
