@@ -549,8 +549,7 @@ fn execute_conversion_plan(
         // Preserve nested shape witnesses while finalizing a fresh output.
         let schema = snapshot
             .schemas()
-            .and_then(|schemas| schemas.get(snapshot.schema()))
-            .cloned()
+            .and_then(|schemas| schemas.get(snapshot.schema()).cloned())
             .ok_or_else(|| {
                 conversion_execution_error(ConversionExecutionError::ConversionPlanSourceMismatch)
             })?;
