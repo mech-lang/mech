@@ -3070,7 +3070,7 @@ fn substitute_reified_dimension(
     dimension: &DimensionExpr,
     bindings: &[Option<DimensionExpr>],
 ) -> MResult<DimensionExpr> {
-    Ok(match dimension {
+    let resolved = match dimension {
         DimensionExpr::Hole => DimensionExpr::Hole,
         DimensionExpr::Constant(value) => DimensionExpr::Constant(*value),
         DimensionExpr::Parameter(id) => bindings
@@ -3108,7 +3108,12 @@ fn substitute_reified_dimension(
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
         ),
-    })
+    };
+    // The output schema is finalized to concrete extents. Keep the same
+    // canonical representation after substituting a compound target.
+    Ok(reified_dimension_value(&resolved)
+        .map(DimensionExpr::Constant)
+        .unwrap_or(resolved))
 }
 
 #[cfg(feature = "convert")]
@@ -5595,6 +5600,36 @@ mod canonical_conversion_tests {
             ValueDataDraft::Matrix((0..16).map(ValueDataDraft::U8).collect()),
         )
         .unwrap();
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(
+                kind.canonical_bytes().to_vec().into_boxed_slice(),
+            )),
+        )
+        .unwrap();
+        let invocation = SpecializationInvocation::from_cells(
+            vec![source.clone(), target.clone()].into_boxed_slice(),
+        );
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
+        let conversion = ConvertKind
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert!(
+            RuntimeReifiedKindConversion::new_invocation(FunctionInvocation::binary(
+                conversion.output().clone(),
+                source.clone(),
+                target,
+            ))
+            .is_ok()
+        );
         let converted = convert_reified(source, kind).unwrap();
         assert_eq!(converted.closed_schema_body().unwrap(), schema);
     }
