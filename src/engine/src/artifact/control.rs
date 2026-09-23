@@ -726,12 +726,19 @@ impl<C> MatchDeclaration<C> {
         &self,
         mut map: impl FnMut(&ControlBlock<C>, &ControlOperation<C>, &C) -> Result<D, E>,
     ) -> Result<MatchDeclaration<D>, E> {
-        self.map_contracts_inner(&mut map)
+        self.map_contracts_inner(&mut |block, operation, _, contract| {
+            map(block, operation, contract)
+        })
     }
 
     pub(super) fn map_contracts_inner<D, E>(
         &self,
-        map: &mut dyn FnMut(&ControlBlock<C>, &ControlOperation<C>, &C) -> Result<D, E>,
+        map: &mut dyn FnMut(
+            &ControlBlock<C>,
+            &ControlOperation<C>,
+            &super::OperationReference,
+            &C,
+        ) -> Result<D, E>,
     ) -> Result<MatchDeclaration<D>, E> {
         let mut block = |block: &ControlBlock<C>| -> Result<ControlBlock<D>, E> {
             Ok(ControlBlock {
@@ -750,16 +757,18 @@ impl<C> MatchDeclaration<C> {
                                     contract,
                                 } => ControlOperationBody::Operation {
                                     operation: reference.clone(),
-                                    contract: map(block, operation, contract)?,
+                                    contract: map(block, operation, reference, contract)?,
                                 },
                                 ControlOperationBody::Match(nested) => {
                                     ControlOperationBody::Match(nested.map_contracts_inner(map)?)
                                 }
                                 ControlOperationBody::Comprehension(nested) => {
                                     ControlOperationBody::Comprehension(
-                                        nested.map_contracts_inner(&mut |_, contract| {
-                                            map(block, operation, contract)
-                                        })?,
+                                        nested.map_contracts_inner(
+                                            &mut |reference, contract| {
+                                                map(block, operation, reference, contract)
+                                            },
+                                        )?,
                                     )
                                 }
                             },

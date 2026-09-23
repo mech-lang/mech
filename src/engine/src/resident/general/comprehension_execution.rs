@@ -5551,6 +5551,7 @@ impl ReactiveInstance {
                 ActivatedCollectionStep::Generator {
                     source,
                     source_schema,
+                    discard_from,
                     element_schema,
                     shape_values: activation_shape_values,
                     pattern,
@@ -5632,6 +5633,17 @@ impl ReactiveInstance {
                                 inherited_live_bytes,
                                 inherited_live_nodes,
                             )?;
+                        }
+                        // A later operation or generator can still own its
+                        // previous iteration's payload. Release the whole
+                        // lexical suffix before the next element; only the
+                        // preceding locals may remain live across iterations.
+                        let suffix = control
+                            .locals
+                            .get(*discard_from as usize..)
+                            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+                        for region in suffix {
+                            self.workspace.scratch.discard_payload_write(*region);
                         }
                     }
                     return Ok(());

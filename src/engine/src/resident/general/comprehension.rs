@@ -5,6 +5,9 @@ pub enum ActivatedCollectionStep {
     Generator {
         source: ResidentReadLocation,
         source_schema: SchemaId,
+        /// First local owned by this generator or a following step. Discard
+        /// these payloads before advancing to the next source element.
+        discard_from: u32,
         /// Wildcard generators never materialize or descend into an element,
         /// so they do not require the element component to have its own
         /// retained schema-table entry.
@@ -595,12 +598,18 @@ pub(super) fn bind_inner(
         })
         .collect::<Box<[_]>>();
     let mut instructions = Vec::new();
+    let mut next_local = 0usize;
     for step in &control.steps {
         match step {
             crate::ComprehensionStep::Generator {
                 source: value,
                 pattern,
             } => {
+                let discard_from = u32::try_from(next_local).map_err(|_| unsupported())?;
+                pattern.bindings(&mut |local, _| {
+                    debug_assert_eq!(local as usize, next_local);
+                    next_local += 1;
+                });
                 let source = source(*value);
                 let input = port(source)?;
                 let Some(source_schema) = artifact.schemas().get(input.schema_id) else {
@@ -631,6 +640,7 @@ pub(super) fn bind_inner(
                 instructions.push(ActivatedCollectionStep::Generator {
                     source: resolve_read(layout, source)?,
                     source_schema: input.schema_id,
+                    discard_from,
                     element_schema,
                     shape_values: input
                         .shape_instance
@@ -644,6 +654,8 @@ pub(super) fn bind_inner(
                 ActivatedCollectionStep::Filter(resolve_read(layout, source(*value))?),
             ),
             crate::ComprehensionStep::Operation(operation) => {
+                debug_assert_eq!(operation.local as usize, next_local);
+                next_local += 1;
                 let (output_slot, memory_node) =
                     layout.control_locals[&(owner, control.id.0, operation.local)];
                 let output = &layout.slots[output_slot.get() as usize];

@@ -1733,6 +1733,17 @@ fn match_block_accepts_turn_shaped_comprehension_local_with_closed_yield() {
     assert_eq!(decoded.nodes().len(), artifact.nodes().len());
 }
 
+#[test]
+fn comprehension_match_comprehension_maps_inner_operation_contract() {
+    let source = "[(item ? | * => ([x + 1 | x <- [1]] ? | * => 1)) | item <- [1]]";
+    let artifact = compile(source).compile_artifact().unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(decoded.nodes().len(), artifact.nodes().len());
+}
+
 #[cfg(feature = "resident-artifact")]
 #[test]
 fn nested_capability_witnesses_preserve_constant_and_local_selector_provenance() {

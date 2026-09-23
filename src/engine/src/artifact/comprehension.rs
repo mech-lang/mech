@@ -113,16 +113,11 @@ impl<C> ComprehensionDeclaration<C> {
                                     },
                                     super::ControlOperationBody::Match(nested) => {
                                         super::ControlOperationBody::Match(
-                                            nested.map_contracts_inner(&mut |_, nested, contract| {
-                                                let super::ControlOperationBody::Operation {
-                                                    operation: reference,
-                                                    ..
-                                                } = &nested.body
-                                                else {
-                                                    unreachable!("contract callback visits ordinary operations")
-                                                };
-                                                map(reference, contract)
-                                            })?,
+                                            nested.map_contracts_inner(
+                                                &mut |_, _, reference, contract| {
+                                                    map(reference, contract)
+                                                },
+                                            )?,
                                         )
                                     }
                                     super::ControlOperationBody::Comprehension(nested) => {
