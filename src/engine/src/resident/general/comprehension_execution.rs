@@ -6291,8 +6291,11 @@ mod tests {
         let parent = SchemaDraft {
             body: SchemaBody::Matrix {
                 element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(3)]
-                    .into_boxed_slice(),
+                dimensions: vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                ]
+                .into_boxed_slice(),
             },
             dimension_parameters: vec![DimensionParameterDeclaration {
                 id: DimensionParameterId::new(0),
@@ -6318,7 +6321,7 @@ mod tests {
         let source_schemas = Arc::new(build.table);
         let value = ValueDraft {
             schema: parent_id,
-            shape_values: vec![5].into_boxed_slice(),
+            shape_values: vec![3].into_boxed_slice(),
             data: ValueDataDraft::Matrix(
                 [1.0, 2.0, 3.0]
                     .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
@@ -6340,7 +6343,7 @@ mod tests {
             )
             .unwrap()
             .as_ref(),
-            [5],
+            [3],
         );
         let region = ResidentRegion {
             kind: ResidentValueKind::Snapshot,
@@ -6352,21 +6355,21 @@ mod tests {
             ResidentValueRef::Snapshot(&values),
             region,
             parent_id,
-            &[5],
+            &[3],
             &schemas,
             false,
         )
         .unwrap();
         let rest = item.middle(1, 0, &schemas, &projections).unwrap();
         let binding = rest
-            .into_binding(rest_id, &[5], &schemas, &projections)
+            .into_binding(rest_id, &[3], &schemas, &projections)
             .unwrap()
             .unwrap();
-        assert_eq!(binding.shape_values.as_ref(), [5, 2]);
+        assert_eq!(binding.shape_values.as_ref(), [3, 2]);
         let bound = pattern_binding_draft(rest_id, &binding.shape_values, binding.data)
             .finalize(&SnapshotValidationContext::new(&schemas))
             .unwrap();
-        assert_eq!(bound.shape().parameter_values(), [5, 2]);
+        assert_eq!(bound.shape().parameter_values(), [3, 2]);
     }
 
     #[test]
