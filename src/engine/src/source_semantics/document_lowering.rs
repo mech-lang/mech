@@ -1369,6 +1369,24 @@ impl SemanticBuilder {
         self.assignment_state(&target).map(Some)
     }
 
+    fn claim_activation_states(
+        &mut self,
+        states: &[u32],
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        for state in states {
+            if !self.activation_owned_states.insert(*state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/multiple-activation-state-owners",
+                    message: "mutable state can be assigned by only one activation scope"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+        }
+        Ok(())
+    }
+
     fn document_activation(
         &mut self,
         activation: &ActivationScopeSyntax,
@@ -1458,6 +1476,7 @@ impl SemanticBuilder {
                     arm.syntax().clone(),
                 ));
             }
+            self.claim_activation_states(&states, activation.syntax())?;
             let source_arms = source_arms
                 .into_iter()
                 .map(|(pattern, guard, items, syntax)| SourceMatchArm {
@@ -1534,6 +1553,8 @@ impl SemanticBuilder {
                 }
             }
         }
+
+        self.claim_activation_states(&states, activation.syntax())?;
 
         if self.control_depth == 0 {
             self.next_control_block = 0;
@@ -1953,6 +1974,7 @@ pub(super) fn compile_ordered_documents(
         builder.function_imports.clear();
         builder.local_functions.clear();
         builder.local_fsms.clear();
+        builder.activation_owned_states.clear();
         builder.declared_kinds.clear();
         builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();

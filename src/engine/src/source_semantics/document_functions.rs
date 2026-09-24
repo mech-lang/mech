@@ -979,7 +979,7 @@ impl SemanticBuilder {
             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
         if arms
             .iter()
-            .map(|arm| calls_function(arm.value.syntax(), name))
+            .map(|arm| calls_function(arm.body.syntax(), name))
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .any(|recursive| recursive)
@@ -991,7 +991,7 @@ impl SemanticBuilder {
                 }
                 for parameter in &self.scope_definitions {
                     if !bindings.iter().any(|binding| &binding.name == parameter)
-                        && references_variable(arm.value.syntax(), parameter)?
+                        && references_variable(arm.body.syntax(), parameter)?
                     {
                         return Err(SourceSemanticError {
                             code: "source-semantics/recursive-function-capture",
