@@ -544,8 +544,20 @@ fn execute(
             )
         })
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let power_work = if plan.arithmetic == SemanticArithmetic::Power {
+        let output_schema = schemas
+            .get(plan.target.schema)
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        snapshot_power_compute_work(plan.arithmetic, output_schema.body(), selected_count)?
+    } else {
+        0
+    };
+    let compute_work = elements
+        .checked_mul(8)
+        .and_then(|work| work.checked_add(power_work))
+        .ok_or(ResidentKernelError::InvalidShape)?;
     super::super::budget::PreparedKernel::new((), super::super::budget::resident_cost! {
-        compute_work: super::super::budget::checked_u64(elements.checked_mul(if plan.rational_power { 128 } else { 8 }).ok_or(ResidentKernelError::InvalidShape)?)?,
+        compute_work: super::super::budget::checked_u64(compute_work)?,
         comparison_work: super::super::budget::checked_u64(if plan.dense_f64 { selected_count } else { count })?,
         temporary_bytes: super::super::budget::checked_u64(bytes)?,
         cloned_bytes: super::super::budget::checked_u64(bytes)?,

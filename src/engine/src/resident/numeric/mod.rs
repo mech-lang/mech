@@ -17646,7 +17646,7 @@ fn complex64_from_parts(real: f64, imaginary: f64) -> ValueDataDraft {
 #[cfg(feature = "c64")]
 fn scaled_f64_product(left: f64, right: f64) -> Option<(f64, i32)> {
     if left == 0.0 || right == 0.0 {
-        return None;
+        return Some((left * right, 0));
     }
     let (left, left_exponent) = libm::frexp(left);
     let (right, right_exponent) = libm::frexp(right);
@@ -17677,9 +17677,6 @@ fn scaled_f64_product_sum(
             )
         }
     };
-    if mantissa == 0.0 {
-        return None;
-    }
     let (mantissa, adjustment) = libm::frexp(mantissa);
     Some((mantissa, exponent + adjustment))
 }
@@ -17985,6 +17982,9 @@ fn numeric_power(
 }
 
 fn complex32_integer_power(mut base: (f32, f32), exponent: f32) -> (f32, f32) {
+    if exponent == 1.0 {
+        return base;
+    }
     if exponent < 0.0 {
         base = complex32_divide((1.0, 0.0), base);
     }
@@ -18024,6 +18024,9 @@ fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
 
 #[cfg(feature = "c64")]
 fn complex64_integer_power(mut base: (f64, f64), exponent: f64) -> (f64, f64) {
+    if exponent == 1.0 {
+        return base;
+    }
     if exponent < 0.0 {
         base = complex64_divide((1.0, 0.0), base);
     }
@@ -22476,6 +22479,10 @@ mod tests {
             complex32_power((-1.0, 0.0), (2_147_483_648.0, 0.0)),
             (1.0, 0.0)
         );
+        assert_eq!(
+            complex32_power((f32::INFINITY, 0.0), (1.0, 0.0)),
+            (f32::INFINITY, 0.0)
+        );
 
         #[cfg(feature = "c64")]
         {
@@ -22512,6 +22519,9 @@ mod tests {
             let c64_subnormal_product =
                 complex64_multiply((2.0e-200, 2.0e-200), (1.0e-124, 1.0e-124));
             assert_eq!(c64_subnormal_product, (0.0, f64::from_bits(1)));
+            let signed_zero_product = complex64_multiply((-0.0, 0.0), (1.0, 0.0));
+            assert_eq!(signed_zero_product.0.to_bits(), (-0.0_f64).to_bits());
+            assert_eq!(signed_zero_product.1.to_bits(), 0.0_f64.to_bits());
             let c64_minor_quotient = complex64_divide((0.0, 1.0e118), (1.0e100, 1.0e-240));
             assert!(c64_minor_quotient.0 > 0.0);
             assert!(c64_minor_quotient.0 <= 2.0e-322);
@@ -22519,6 +22529,10 @@ mod tests {
             assert_eq!(
                 complex64_power((-1.0, 0.0), (9_007_199_254_740_992.0, 0.0)),
                 (1.0, 0.0)
+            );
+            assert_eq!(
+                complex64_power((f64::INFINITY, 0.0), (1.0, 0.0)),
+                (f64::INFINITY, 0.0)
             );
         }
     }
