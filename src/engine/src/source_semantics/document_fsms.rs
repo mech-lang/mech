@@ -85,6 +85,7 @@ impl SemanticBuilder {
     pub(super) fn register_document_fsms(
         &mut self,
         units: &[DocumentUnit],
+        nominal_namespace: &[String],
     ) -> Result<(), SourceSemanticError> {
         let mut specifications = BTreeMap::new();
         let mut implementations = BTreeMap::new();
@@ -211,14 +212,19 @@ impl SemanticBuilder {
                 anchor: SourceSemanticAnchor::for_node(specification.syntax()),
             })?;
             let output = self.annotation_schema_draft(&output)?;
-            let path = CanonicalNominalPath::new(vec!["fsm".to_owned(), name.clone()]).map_err(
-                |error| {
-                    internal(
-                        SourceSemanticAnchor::for_node(specification.syntax()),
-                        format!("invalid FSM nominal path: {error:?}"),
-                    )
-                },
-            )?;
+            let path = CanonicalNominalPath::new(
+                nominal_namespace
+                    .iter()
+                    .cloned()
+                    .chain(["fsm".to_owned(), name.clone()])
+                    .collect(),
+            )
+            .map_err(|error| {
+                internal(
+                    SourceSemanticAnchor::for_node(specification.syntax()),
+                    format!("invalid FSM nominal path: {error:?}"),
+                )
+            })?;
             let mut states = BTreeMap::new();
             let mut variants = Vec::new();
             for (ordinal, state) in specification.states().into_iter().enumerate() {
@@ -330,6 +336,13 @@ impl SemanticBuilder {
             }
             return Ok(None);
         };
+        if self.active_fsms.iter().any(|active| active == &name) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/recursive-fsm-invocation",
+                message: format!("FSM {name} recursively invokes an active FSM declaration"),
+                anchor: SourceSemanticAnchor::for_node(pipe.syntax()),
+            });
+        }
         if !pipe.stages().is_empty() {
             return Err(SourceSemanticError {
                 code: "source-semantics/declared-fsm-pipe-stages",
@@ -431,6 +444,7 @@ impl SemanticBuilder {
             self.bindings
                 .insert(parameter.clone(), PendingBinding::Value(value));
         }
+        self.active_fsms.push(name);
         let result = (|| {
             let start = machine.implementation.start().ok_or_else(|| {
                 internal(
@@ -441,6 +455,7 @@ impl SemanticBuilder {
             let start = self.fsm_declared_state_value(&machine, &start)?;
             self.lower_declared_fsm_match(&machine, start, pipe.syntax())
         })();
+        self.active_fsms.pop();
         self.bindings = saved_bindings;
         result.map(Some)
     }

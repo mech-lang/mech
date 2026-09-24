@@ -2047,6 +2047,14 @@ fn declared_fsm_diagnostics_reject_invalid_declarations_calls_and_transitions() 
         "#PartialPair() => <u64>\n  | :Pair(left<u64>, right<u64>)\n  | :Done(value<u64>).\n#PartialPair() -> :Pair(1u64, 0u64)\n  :Pair(x, y)\n    | x == 0u64 -> :Done(y)\n  :Pair(y, x)\n    | x > 0u64 -> :Done(y)\n  :Done(value) => value.\n#PartialPair()\n",
         "source-semantics/non-exhaustive-fsm",
     );
+    assert_code(
+        "#Loop() => <u64>\n  | :Start.\n#Loop() -> :Start\n  :Start => #Loop().\n#Loop()\n",
+        "source-semantics/recursive-fsm-invocation",
+    );
+    assert_code(
+        "#First() => <u64>\n  | :Start.\n#Second() => <u64>\n  | :Start.\n#First() -> :Start\n  :Start => #Second().\n#Second() -> :Start\n  :Start => #First().\n#First()\n",
+        "source-semantics/recursive-fsm-invocation",
+    );
 }
 
 #[test]
@@ -2686,6 +2694,52 @@ fn downstream_fsm_output_stays_unavailable_until_resume() {
     assert_eq!(
         instance
             .copied_output(plus)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(42)
+    );
+}
+
+#[test]
+fn fresh_fsm_waits_for_an_unpublished_upstream_continuation() {
+    let source = "#Inner() => <u64>\n  | :Start\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\n#Outer(value<u64>, live<u64>) => <u64>\n  | :Start(value<u64>, live<u64>)\n  | :Done(value<u64>).\n#Outer(value, live) -> :Start(value, live)\n  :Start(value, live) ~> :Done(value + live)\n  :Done(value) => value.\n#Outer(#Inner(), signal<u64>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 75),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: u64| {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::U64(&[value]),
+            }])
+            .unwrap();
+    };
+
+    turn(&mut instance, 1);
+    assert_eq!(instance.ready_continuation_count(), 1);
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, 1);
+    assert_eq!(instance.ready_continuation_count(), 1);
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, 99);
+    assert_eq!(
+        instance
+            .copied_output(0)
             .unwrap()
             .canonical_data_draft()
             .unwrap(),

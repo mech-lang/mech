@@ -2787,7 +2787,8 @@ struct SemanticBuilder {
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
-    active_recursive_outputs: Vec<(String, SchemaDraft)>,
+    active_fsms: Vec<String>,
+    active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -2967,6 +2968,7 @@ impl SemanticBuilder {
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
+            active_fsms: Vec::new(),
             active_recursive_outputs: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
