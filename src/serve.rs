@@ -417,11 +417,31 @@ impl ServerSourceRegistry {
                         })
                 })
                 .collect::<MResult<BTreeSet<_>>>()?,
-            None => snapshot
-                .targets
-                .values()
-                .map(|target| target.canonical_uri.clone())
-                .collect(),
+            None => {
+                let targeted = snapshot
+                    .targets
+                    .values()
+                    .map(|target| target.canonical_uri.clone())
+                    .collect::<BTreeSet<_>>();
+                if targeted.is_empty() {
+                    snapshot
+                        .sources
+                        .values()
+                        .filter(|source| {
+                            source.path.as_deref().is_some_and(|path| {
+                                is_renderable_mech_text_source(path)
+                                    && source.source_document.as_ref().is_some_and(|document| {
+                                        document.is_strictly_clean()
+                                            && document.document().contains_executable_source()
+                                    })
+                            })
+                        })
+                        .map(|source| source.canonical_uri.clone())
+                        .collect()
+                } else {
+                    targeted
+                }
+            }
         };
         let mut module_specifiers = BTreeMap::new();
         // The workspace snapshot is the source authority, including expanded
@@ -614,7 +634,7 @@ impl ServerSourceRegistry {
                 // with an embedded source bundle instead.
                 extra_slots.insert("DOCUMENT_SOURCES", "");
             }
-            let render = if is_root {
+            let render = if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
                 render_canonical_html(
                     &document.document(),
                     stylesheets.clone(),

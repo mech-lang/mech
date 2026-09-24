@@ -103,10 +103,18 @@ pub(crate) fn render_canonical_static_html(
 fn render_canonical_html_mode(
     document: &DocumentSyntax,
     styles: HtmlStyleSheets,
-    shim: String,
+    mut shim: String,
     extra_slots: &HtmlShimExtraSlots,
     live: bool,
 ) -> MResult<HtmlShimRender> {
+    if !live {
+        shim = shim.replacen(
+            "data-mech-document-status=\"loading\"",
+            "data-mech-document-status=\"ready\"",
+            1,
+        );
+        shim = shim.replacen(" data-mech-document-controller", "", 1);
+    }
     let mut presentation = if live {
         CanonicalDocumentRenderer.format_browser_html_slots(document)
     } else {
@@ -209,17 +217,7 @@ fn render_canonical_html_mode(
         slots.insert(name, value);
     }
     slots.extend(extra_slots.slots.clone());
-    let mut rendered = render_html_shim(&shim, &slots);
-    if !live {
-        rendered.html = rendered
-            .html
-            .replace(
-                "data-mech-document-status=\"loading\"",
-                "data-mech-document-status=\"ready\"",
-            )
-            .replace("data-mech-document-controller", "");
-    }
-    Ok(rendered)
+    Ok(render_html_shim(&shim, &slots))
 }
 
 fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRender {
