@@ -344,6 +344,13 @@ macro_rules! print_plan {
     feature = "resident-artifact",
     feature = "semantic-compiler"
 ))]
+mod structural_coverage;
+
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "semantic-compiler"
+))]
 pub mod artifact;
 #[cfg(any(
     feature = "artifact-codec",

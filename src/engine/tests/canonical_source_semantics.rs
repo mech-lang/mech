@@ -275,6 +275,35 @@ fn literal_owned_enum_annotation_conforms_to_optional_kind() {
 }
 
 #[test]
+fn contextual_enum_atom_match_pattern_conforms_to_optional_scrutinee() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :idle | :busy\n\
+                 value<event?> := :idle\n\
+                 result := value? | :idle => 1 | * => 0.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the contextual enum atom is wrapped to match the optional scrutinee")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn contextual_enum_atom_match_pattern_executes_after_artifact_roundtrip() {
+    execute_document(
+        "<event> := :idle | :busy\n\
+         value<event?> := :idle\n\
+         result := value? | :idle => true | * => false.\n\
+         result\n",
+        [(vec![], ValueDataDraft::Bool(true))],
+    );
+}
+
+#[test]
 fn unused_invalid_kind_declaration_fails_at_declaration() {
     let error = CanonicalSourceFrontend
         .compile_document(&document("<bad> := <{a<u8>,a<bool>}>\nvalue := 1\nvalue\n"))
@@ -579,6 +608,44 @@ fn boolean_payload_coverage_combines_across_match_arms() {
         .expect("both Boolean literals collectively cover the outer payload")
         .compile_artifact()
         .unwrap();
+}
+
+#[test]
+fn tuple_payload_coverage_combines_as_a_finite_product() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<(bool,bool)>\n\
+                 value<outer> := :wrap((true,false))\n\
+                 result := value?\n\
+                   | :wrap((true,*)) => 1\n\
+                   | :wrap((false,*)) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the tuple arms collectively cover the Boolean product")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn tuple_payload_coverage_preserves_field_correlations() {
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<(bool,bool)>\n\
+                 value<outer> := :wrap((true,false))\n\
+                 result := value?\n\
+                   | :wrap((true,true)) => 1\n\
+                   | :wrap((false,false)) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .err()
+        .expect("diagonal tuple cases leave two Boolean combinations uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
 }
 
 #[test]

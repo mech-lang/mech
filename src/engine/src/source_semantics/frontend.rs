@@ -42,6 +42,9 @@ use mech_syntax::document::{
     VariableDefineSyntax, VariableStemSyntax, VariableSyntax,
 };
 
+use crate::structural_coverage::{
+    StructuralCoveragePattern, StructuralCoverageSpace, StructuralPatternCoverage,
+};
 use crate::{
     ArtifactBuildContext, ArtifactBuildError, ComputeRegionDeclaration, OperationReference,
     ProgramArtifact, SourceInput, SourceNode, SourceNodeOutput, SourceOutput, SourceProgram,
@@ -2457,52 +2460,95 @@ fn structurally_irrefutable<V>(
     }
 }
 
-enum StructuralPatternCoverage {
-    Incomplete,
-    Complete,
-    Bool([bool; 2]),
-    Enum(Box<[StructuralPatternCoverage]>),
+fn structural_coverage_space(expected: &SchemaDraft) -> StructuralCoverageSpace {
+    match &expected.body {
+        SchemaBody::Bool => StructuralCoverageSpace::Bool,
+        SchemaBody::Enum { variants, .. } => StructuralCoverageSpace::Enum(
+            variants
+                .iter()
+                .map(|variant| {
+                    variant.payload.as_ref().map(|payload| {
+                        structural_component_schema_draft(expected, payload)
+                            .map_or(StructuralCoverageSpace::Opaque, |payload| {
+                                structural_coverage_space(&payload)
+                            })
+                    })
+                })
+                .collect(),
+        ),
+        SchemaBody::Tuple(fields) => StructuralCoverageSpace::Tuple(
+            fields
+                .iter()
+                .map(|field| {
+                    structural_component_schema_draft(expected, field)
+                        .map_or(StructuralCoverageSpace::Opaque, |field| {
+                            structural_coverage_space(&field)
+                        })
+                })
+                .collect(),
+        ),
+        _ => StructuralCoverageSpace::Opaque,
+    }
 }
 
-impl StructuralPatternCoverage {
-    fn for_schema(expected: &SchemaDraft) -> Self {
-        match &expected.body {
-            SchemaBody::Bool => Self::Bool([false; 2]),
-            SchemaBody::Enum { variants, .. } => Self::Enum(
-                variants
-                    .iter()
-                    .map(|variant| {
-                        variant
-                            .payload
-                            .as_ref()
-                            .and_then(|payload| {
-                                structural_component_schema_draft(expected, payload)
-                            })
-                            .map_or(Self::Incomplete, |payload| Self::for_schema(&payload))
-                    })
-                    .collect(),
-            ),
-            _ => Self::Incomplete,
-        }
+fn structural_coverage_pattern<V>(
+    pattern: &crate::CollectionPattern<SchemaDraft, V>,
+    expected: &SchemaDraft,
+    literal_bool: &impl Fn(&V) -> Option<bool>,
+) -> StructuralCoveragePattern {
+    if structurally_irrefutable(pattern, expected) {
+        return StructuralCoveragePattern::Wildcard;
     }
-
-    fn cover_all(&mut self) {
-        *self = Self::Complete;
-    }
-
-    fn cover_bool(&mut self, value: bool) {
-        if let Self::Bool(covered) = self {
-            covered[value as usize] = true;
+    match (pattern, &expected.body) {
+        (crate::CollectionPattern::Equal(value), SchemaBody::Bool) => literal_bool(value).map_or(
+            StructuralCoveragePattern::Never,
+            StructuralCoveragePattern::Bool,
+        ),
+        (crate::CollectionPattern::Tuple(items), SchemaBody::Tuple(fields))
+            if items.len() == fields.len() =>
+        {
+            let Some(items) = items
+                .iter()
+                .zip(fields)
+                .map(|(item, field)| {
+                    let expected = structural_component_schema_draft(expected, field)?;
+                    Some(structural_coverage_pattern(item, &expected, literal_bool))
+                })
+                .collect::<Option<Vec<_>>>()
+            else {
+                return StructuralCoveragePattern::Never;
+            };
+            StructuralCoveragePattern::Tuple(items.into_boxed_slice())
         }
-    }
-
-    fn is_complete(&self) -> bool {
-        match self {
-            Self::Incomplete => false,
-            Self::Complete => true,
-            Self::Bool(covered) => covered.iter().all(|covered| *covered),
-            Self::Enum(variants) => variants.iter().all(Self::is_complete),
+        (
+            crate::CollectionPattern::Enum { ordinal, payload },
+            SchemaBody::Enum { variants, .. },
+        ) => {
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let payload = match (&variant.payload, payload.as_deref()) {
+                (None, None) => None,
+                (Some(payload_schema), Some(pattern)) => {
+                    let Some(expected) =
+                        structural_component_schema_draft(expected, payload_schema)
+                    else {
+                        return StructuralCoveragePattern::Never;
+                    };
+                    Some(Box::new(structural_coverage_pattern(
+                        pattern,
+                        &expected,
+                        literal_bool,
+                    )))
+                }
+                _ => return StructuralCoveragePattern::Never,
+            };
+            StructuralCoveragePattern::Enum {
+                ordinal: *ordinal,
+                payload,
+            }
         }
+        _ => StructuralCoveragePattern::Never,
     }
 }
 
@@ -2512,45 +2558,7 @@ fn cover_structural_pattern<V>(
     expected: &SchemaDraft,
     literal_bool: &impl Fn(&V) -> Option<bool>,
 ) {
-    if structurally_irrefutable(pattern, expected) {
-        coverage.cover_all();
-        return;
-    }
-    match (coverage, pattern, &expected.body) {
-        (
-            StructuralPatternCoverage::Bool(covered),
-            crate::CollectionPattern::Equal(value),
-            SchemaBody::Bool,
-        ) => {
-            if let Some(value) = literal_bool(value) {
-                covered[value as usize] = true;
-            }
-        }
-        (
-            StructuralPatternCoverage::Enum(covered),
-            crate::CollectionPattern::Enum { ordinal, payload },
-            SchemaBody::Enum { variants, .. },
-        ) => {
-            let Some(covered) = covered.get_mut(*ordinal as usize) else {
-                return;
-            };
-            let Some(variant) = variants.get(*ordinal as usize) else {
-                return;
-            };
-            match (&variant.payload, payload.as_deref()) {
-                (None, None) => covered.cover_all(),
-                (Some(payload_schema), Some(pattern)) => {
-                    if let Some(expected) =
-                        structural_component_schema_draft(expected, payload_schema)
-                    {
-                        cover_structural_pattern(covered, pattern, &expected, literal_bool);
-                    }
-                }
-                _ => {}
-            }
-        }
-        _ => {}
-    }
+    coverage.cover(structural_coverage_pattern(pattern, expected, literal_bool));
 }
 
 #[derive(Clone, Copy)]
@@ -4509,13 +4517,13 @@ impl SemanticBuilder {
                         payload: None,
                     }),
                 );
-                return match annotation {
-                    Some(annotation) => self.conform_schema_draft(
+                return match annotation.as_ref().or(contextual) {
+                    Some(expected) => self.conform_schema_draft(
                         enumeration,
-                        &annotation,
+                        expected,
                         value.syntax(),
                         "source-semantics/incompatible-literal-kind",
-                        "enum variant does not satisfy its explicit kind annotation",
+                        "enum variant does not satisfy its contextual kind",
                     ),
                     None => Ok(enumeration),
                 };
@@ -8823,7 +8831,8 @@ impl SemanticBuilder {
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
-        let mut coverage = StructuralPatternCoverage::for_schema(&scrutinee_schema);
+        let mut coverage =
+            StructuralPatternCoverage::new(structural_coverage_space(&scrutinee_schema));
         let mut result_schema = None;
         if self.control_depth == 0 {
             self.next_control_block = 0;
@@ -9046,7 +9055,7 @@ impl SemanticBuilder {
         if !coverage.is_complete() {
             return Err(SourceSemanticError {
                 code: "source-semantics/non-exhaustive-match",
-                message: "match needs an unguarded wildcard/binding, both Boolean literal cases, or every enum variant".to_owned(),
+                message: "match needs an unguarded wildcard/binding or complete finite structural coverage".to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             });
         }

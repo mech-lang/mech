@@ -3,6 +3,9 @@
 use mech_core::{ConstantId, OperationContractId, SchemaId};
 
 use super::OperationReference;
+use crate::structural_coverage::{
+    StructuralCoveragePattern, StructuralCoverageSpace, StructuralPatternCoverage,
+};
 
 /// Dense preorder identity within one root control declaration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -320,50 +323,94 @@ fn structurally_irrefutable<V>(
     }
 }
 
-enum StructuralPatternCoverage {
-    Incomplete,
-    Complete,
-    Bool([bool; 2]),
-    Enum(Box<[StructuralPatternCoverage]>),
+fn structural_coverage_space(expected: &mech_core::Schema) -> StructuralCoverageSpace {
+    match expected.body() {
+        mech_core::SchemaBody::Bool => StructuralCoverageSpace::Bool,
+        mech_core::SchemaBody::Enum { variants, .. } => StructuralCoverageSpace::Enum(
+            variants
+                .iter()
+                .map(|variant| {
+                    variant.payload.as_ref().map(|payload| {
+                        component_schema(expected, payload)
+                            .map_or(StructuralCoverageSpace::Opaque, |payload| {
+                                structural_coverage_space(&payload)
+                            })
+                    })
+                })
+                .collect(),
+        ),
+        mech_core::SchemaBody::Tuple(fields) => StructuralCoverageSpace::Tuple(
+            fields
+                .iter()
+                .map(|field| {
+                    component_schema(expected, field)
+                        .map_or(StructuralCoverageSpace::Opaque, |field| {
+                            structural_coverage_space(&field)
+                        })
+                })
+                .collect(),
+        ),
+        _ => StructuralCoverageSpace::Opaque,
+    }
 }
 
-impl StructuralPatternCoverage {
-    fn for_schema(expected: &mech_core::Schema) -> Self {
-        match expected.body() {
-            mech_core::SchemaBody::Bool => Self::Bool([false; 2]),
-            mech_core::SchemaBody::Enum { variants, .. } => Self::Enum(
-                variants
-                    .iter()
-                    .map(|variant| {
-                        variant
-                            .payload
-                            .as_ref()
-                            .and_then(|payload| component_schema(expected, payload))
-                            .map_or(Self::Incomplete, |payload| Self::for_schema(&payload))
-                    })
-                    .collect(),
-            ),
-            _ => Self::Incomplete,
-        }
+fn structural_coverage_pattern(
+    pattern: &super::CollectionPattern<SchemaId, MatchPatternValue>,
+    expected: &mech_core::Schema,
+    draft: &super::ProgramArtifactDraft,
+) -> StructuralCoveragePattern {
+    if structurally_irrefutable(&draft.schemas, pattern, expected) {
+        return StructuralCoveragePattern::Wildcard;
     }
-
-    fn cover_all(&mut self) {
-        *self = Self::Complete;
-    }
-
-    fn cover_bool(&mut self, value: bool) {
-        if let Self::Bool(covered) = self {
-            covered[value as usize] = true;
+    match (pattern, expected.body()) {
+        (
+            super::CollectionPattern::Equal(MatchPatternValue::Literal(constant)),
+            mech_core::SchemaBody::Bool,
+        ) => match draft.constants.get(*constant).map(|value| value.data()) {
+            Some(mech_core::ValueData::Bool(value)) => StructuralCoveragePattern::Bool(*value),
+            _ => StructuralCoveragePattern::Never,
+        },
+        (super::CollectionPattern::Tuple(items), mech_core::SchemaBody::Tuple(fields))
+            if items.len() == fields.len() =>
+        {
+            let Some(items) = items
+                .iter()
+                .zip(fields)
+                .map(|(item, field)| {
+                    let expected = component_schema(expected, field)?;
+                    Some(structural_coverage_pattern(item, &expected, draft))
+                })
+                .collect::<Option<Vec<_>>>()
+            else {
+                return StructuralCoveragePattern::Never;
+            };
+            StructuralCoveragePattern::Tuple(items.into_boxed_slice())
         }
-    }
-
-    fn is_complete(&self) -> bool {
-        match self {
-            Self::Incomplete => false,
-            Self::Complete => true,
-            Self::Bool(covered) => covered.iter().all(|covered| *covered),
-            Self::Enum(variants) => variants.iter().all(Self::is_complete),
+        (
+            super::CollectionPattern::Enum { ordinal, payload },
+            mech_core::SchemaBody::Enum { variants, .. },
+        ) => {
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let payload = match (&variant.payload, payload.as_deref()) {
+                (None, None) => None,
+                (Some(payload_schema), Some(pattern)) => {
+                    let Some(expected) = component_schema(expected, payload_schema) else {
+                        return StructuralCoveragePattern::Never;
+                    };
+                    Some(Box::new(structural_coverage_pattern(
+                        pattern, &expected, draft,
+                    )))
+                }
+                _ => return StructuralCoveragePattern::Never,
+            };
+            StructuralCoveragePattern::Enum {
+                ordinal: *ordinal,
+                payload,
+            }
         }
+        _ => StructuralCoveragePattern::Never,
     }
 }
 
@@ -373,45 +420,7 @@ fn cover_structural_pattern(
     expected: &mech_core::Schema,
     draft: &super::ProgramArtifactDraft,
 ) {
-    if structurally_irrefutable(&draft.schemas, pattern, expected) {
-        coverage.cover_all();
-        return;
-    }
-    match (coverage, pattern, expected.body()) {
-        (
-            StructuralPatternCoverage::Bool(covered),
-            super::CollectionPattern::Equal(MatchPatternValue::Literal(constant)),
-            mech_core::SchemaBody::Bool,
-        ) => {
-            if let Some(mech_core::ValueData::Bool(value)) =
-                draft.constants.get(*constant).map(|value| value.data())
-            {
-                covered[*value as usize] = true;
-            }
-        }
-        (
-            StructuralPatternCoverage::Enum(covered),
-            super::CollectionPattern::Enum { ordinal, payload },
-            mech_core::SchemaBody::Enum { variants, .. },
-        ) => {
-            let Some(covered) = covered.get_mut(*ordinal as usize) else {
-                return;
-            };
-            let Some(variant) = variants.get(*ordinal as usize) else {
-                return;
-            };
-            match (&variant.payload, payload.as_deref()) {
-                (None, None) => covered.cover_all(),
-                (Some(payload_schema), Some(pattern)) => {
-                    if let Some(expected) = component_schema(expected, payload_schema) {
-                        cover_structural_pattern(covered, pattern, &expected, draft);
-                    }
-                }
-                _ => {}
-            }
-        }
-        _ => {}
-    }
+    coverage.cover(structural_coverage_pattern(pattern, expected, draft));
 }
 
 pub(super) fn validate_match(
@@ -499,7 +508,7 @@ pub(super) fn validate_match_inner(
         .schemas
         .get(scrutinee)
         .ok_or_else(|| invalid("unknown match scrutinee schema"))?;
-    let mut coverage = StructuralPatternCoverage::for_schema(scrutinee_schema);
+    let mut coverage = StructuralPatternCoverage::new(structural_coverage_space(scrutinee_schema));
     for arm in &declaration.arms {
         let mut pattern_bindings = Vec::new();
         if let MatchPattern::Literal(constant) = &arm.pattern {
@@ -1031,16 +1040,36 @@ impl<C> super::ComprehensionDeclaration<C> {
 pub(crate) fn is_control_scalar_schema(schema: &mech_core::Schema) -> bool {
     use mech_core::SchemaBody;
     schema.dimension_parameters().is_empty()
-        && matches!(
-            schema.body(),
-            SchemaBody::Bool
-                | SchemaBody::Index
-                | SchemaBody::SignedInteger(_)
-                | SchemaBody::UnsignedInteger(_)
-                | SchemaBody::FloatingPoint(_)
-                | SchemaBody::Complex(_)
-                | SchemaBody::Rational64
+        && (is_builtin_control_scalar_body(schema.body())
+            || matches!(schema.body(), SchemaBody::Option(payload) if is_optional_control_scalar_body(payload)))
+}
+
+fn is_builtin_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::SchemaBody;
+    matches!(
+        body,
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+    )
+}
+
+fn is_optional_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::SchemaBody;
+    is_builtin_control_scalar_body(body)
+        || matches!(body, SchemaBody::Atom(_))
+        || matches!(
+            body,
+            SchemaBody::Enum { variants, .. }
+                if variants.iter().all(|variant| variant.payload.as_ref().is_none_or(|payload| {
+                    is_optional_control_scalar_body(payload)
+                }))
         )
+        || matches!(body, SchemaBody::Option(payload) if is_optional_control_scalar_body(payload))
 }
 
 /// Control values share ordinary schema and construction authorities.
