@@ -888,9 +888,11 @@ fn declare_document_inputs(
             DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
-            | DocumentUnit::FsmImplementation(_)
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
+            DocumentUnit::FsmImplementation(implementation) => {
+                builder.declare_input_annotations(implementation.syntax(), bindings)?
+            }
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
