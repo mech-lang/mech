@@ -911,6 +911,24 @@ impl<'a> Compiler<'a> {
                 initializer: state.initializer.clone(),
             })
             .collect::<Vec<_>>();
+        let mut interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        for output in &mut interface.outputs {
+            if self.state_slots.contains_key(&output.slot)
+                || self.input_slots.contains_key(&output.slot)
+            {
+                continue;
+            }
+            if let Some(state) = states.iter().find(|state| {
+                state.source == ArtifactSource::Slot(output.slot)
+                    && state.elements == output.elements().unwrap_or_default() as u64
+            }) {
+                // Canonical tuple expansion gives the published value its own
+                // logical slot. When that value is exactly a recurrence update,
+                // publish the selected state-write generation directly.
+                output.slot = state.slot;
+            }
+        }
         let storage_states = self
             .state_slots
             .into_iter()
@@ -921,8 +939,6 @@ impl<'a> Compiler<'a> {
                 initializer: state.initializer.into(),
             })
             .collect::<Vec<_>>();
-        let interface =
-            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
         let kernel = ComputeKernel::Elementwise(ElementwiseIr {
             instructions: self.operations.into_boxed_slice(),
@@ -1450,6 +1466,23 @@ impl<'a> Compiler<'a> {
                         dimensions,
                     });
                     continue;
+                }
+                if !self.input_slots.contains_key(&source) {
+                    if let Some((state_slot, state)) = self.state_slots.iter().find(|(_, state)| {
+                        state.source == Some(ArtifactSource::Slot(source))
+                            && state.elements == elements
+                    }) {
+                        let Some(_) = state.write_binding else {
+                            continue;
+                        };
+                        self.outputs.push(KernelOutput {
+                            name,
+                            source: *state_slot,
+                            elements,
+                            dimensions,
+                        });
+                        continue;
+                    }
                 }
                 let binding = self.bindings.len() as u32;
                 self.bindings.push(GpuBinding {

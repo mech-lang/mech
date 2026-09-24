@@ -3114,7 +3114,6 @@ fn semantic_operation_reference(
     canonical_name: &str,
 ) -> Result<OperationReference, ArtifactBuildError> {
     let canonical_name = match canonical_name {
-        "matrix/matmul" => "matrix/multiply",
         "assign" => "core/assign",
         name => name,
     };

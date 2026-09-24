@@ -3,8 +3,8 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
 use mech_core::ReactiveInstanceId;
-use mech_engine::ProgramArtifact;
 use mech_engine::resident::{ActivationFacts, activate};
+use mech_engine::{ExecutableNodeBody, ProgramArtifact, ProgramArtifactDraft};
 use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot, SourceDocument};
 use mech_syntax::document::{ParseConfig, Revision};
 
@@ -123,6 +123,46 @@ fn canonical_complex_and_rational_matrix_ops_execute_source_and_decoded() {
             &["true", "true"],
         );
     }
+}
+
+#[test]
+fn legacy_matrix_multiply_bytecode_remains_resolvable() {
+    let artifact =
+        compile("a := [1.0 2.0; 3.0 4.0]\nanswer := matrix/matmul(a,a)\nanswer[2,2] == 22.0\n");
+    let mut nodes = artifact.nodes().to_vec();
+    let operation = nodes
+        .iter_mut()
+        .find_map(|node| match &mut node.body {
+            ExecutableNodeBody::Operation(operation)
+                if operation.operation.module_path.as_ref() == ["matrix"]
+                    && operation.operation.operation_name == "matmul" =>
+            {
+                Some(operation)
+            }
+            _ => None,
+        })
+        .expect("matrix product node must exist");
+    operation.operation.operation_name = "multiply".to_owned();
+    let legacy = ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().into(),
+        slots: artifact.slots().into(),
+        nodes: nodes.into_boxed_slice(),
+        bindings: artifact.bindings().into(),
+        outputs: artifact.outputs().into(),
+        constraints: artifact.constraints().into(),
+        compute_regions: artifact.compute_regions().into(),
+    }
+    .finalize()
+    .unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+        &mech_engine::encode_program_artifact_bytecode_v1(&legacy).unwrap(),
+    )
+    .unwrap();
+    exact_outputs(&decoded, &["true", "true"]);
 }
 
 #[test]

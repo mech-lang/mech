@@ -4,10 +4,7 @@ use mech_compute::{
     BackendRequest, ComputeDispatchRequest, ComputeElementType, ComputeInitializerSet,
     ComputeOutputSelection, ComputePlatform, ComputeValue, TensorLayout,
 };
-use mech_core::{
-    Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
-    SectionElement, ValueData,
-};
+use mech_core::{ComputePlacement, ResolvedOperationContract, ValueData};
 use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
     ComputeHostFactory, ComputeLowerer, ElementwiseKernel, ExecutionTarget, GpuBindingRole,
@@ -18,8 +15,9 @@ use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, ProgramCompiler, RuntimeBuilder,
     RuntimeCapabilityOperation, RuntimeEffectId, RuntimeHostFactory, RuntimeHostInputValue,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
-    TransactionId,
+    SourceDocument, TransactionId,
 };
+use mech_syntax::document::{AstNode, ParseConfig, Revision};
 use std::num::NonZeroU32;
 
 const PARTICLE_SOURCE: &str = r#"
@@ -58,17 +56,20 @@ fn compile_source(
     source: &str,
     inputs: impl IntoIterator<Item = (&'static str, RuntimeHostInputValue)>,
 ) -> mech_engine::ProgramArtifact {
-    let tree = mech_syntax::parse(source).expect("source must parse");
+    let document = source_document("test://particle-source", source);
     let inputs = inputs
         .into_iter()
         .map(|(name, value)| (name.to_owned(), value))
         .collect::<BTreeMap<_, _>>();
     let external_input_names = inputs
         .keys()
-        .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
+        .filter_map(|name| {
+            let exposed = name.strip_prefix("host-").unwrap_or(name);
+            (!source.contains(&format!("~{exposed} := {name}"))).then(|| exposed.to_owned())
+        })
         .collect();
     compiler()
-        .compile_tree_artifact_with_inputs(&tree, &inputs, &external_input_names)
+        .compile_document_artifact_with_inputs(&document, &inputs, &external_input_names)
         .expect("source must compile")
         .into_artifact()
 }
@@ -80,60 +81,45 @@ fn compiler() -> ProgramCompiler {
         .expect("source compiler must build")
 }
 
-fn isolated_gpu_tree(source: &str) -> Program {
-    let tree = mech_syntax::parse(source).expect("complete mixed source must parse");
-    let imports = tree
-        .body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| {
-            let SectionElement::MechCode(code) = element else {
-                return None;
-            };
-            let imports = code
-                .iter()
-                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
-                .cloned()
-                .collect::<Vec<_>>();
-            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
-        })
-        .collect::<Vec<_>>();
-    let region = tree
-        .body
-        .sections
-        .iter()
-        .find(|section| !section.annotations.is_empty())
-        .expect("mixed source must contain a compute region")
-        .clone();
-    Program {
-        title: None,
-        body: Body {
-            sections: vec![
-                Section {
-                    subtitle: None,
-                    annotations: Vec::new(),
-                    elements: imports,
-                },
-                region,
-            ],
-        },
-    }
+fn source_document(uri: &str, source: impl Into<std::sync::Arc<str>>) -> SourceDocument {
+    let document = SourceDocument::parse_resolved(uri, Revision(0), source, ParseConfig::default())
+        .expect("source must parse as a retained document");
+    assert!(
+        document.is_strictly_clean(),
+        "{uri}: {:#?}",
+        document.snapshot().diagnostics
+    );
+    document
+}
+
+fn isolated_gpu_document(source: &str) -> SourceDocument {
+    let start = [
+        "particle-field @compute\n",
+        "particle-field @cpu\n",
+        "particle-field @gpu\n",
+    ]
+    .into_iter()
+    .find_map(|heading| source.find(heading))
+    .expect("mixed source must contain its compute region");
+    source_document(
+        "test://isolated-particle-compute",
+        format!(
+            "+> math\n@particles := compute://particles/kernel{{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}}\n\
+             @particles/input/force-point <- [0f32; 0f32]\n\
+             @particles/input/force-strength <- 0f32\n\
+             @particles/input/dt <- 0.016666667<f32>\n\
+             @particles/turn <- 1\n\n{}",
+            &source[start..]
+        ),
+    )
 }
 
 fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
-    let external_input_names = ["force-point", "force-strength", "dt"]
-        .into_iter()
-        .map(str::to_owned)
-        .collect();
     compiler()
-        .compile_tree_artifact_with_inputs(
-            &isolated_gpu_tree(source),
-            &Default::default(),
-            &external_input_names,
-        )
+        .compile_mixed_document(&isolated_gpu_document(source))
         .expect("isolated GPU source must compile")
-        .into_artifact()
+        .compute
+        .artifact
 }
 
 fn particle_inputs() -> Vec<(&'static str, RuntimeHostInputValue)> {
@@ -196,6 +182,37 @@ fn lowered_program_exposes_exact_typed_region_ports() {
     assert_eq!(left.dimensions.as_ref(), [2, 3]);
     assert_eq!(left.layout(), TensorLayout::RowMajor);
     assert_eq!(interface.outputs[0].dimensions.as_ref(), [2, 3]);
+}
+
+#[test]
+fn published_input_keeps_its_pre_dispatch_value_when_it_updates_state() {
+    let artifact = compile_source(
+        "~state := 1f32\nstate = host-x\nhost-x\n",
+        [("host-x", RuntimeHostInputValue::F32(7.0))],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("input-fed state must lower");
+    let inputs = BTreeMap::from([("x".to_owned(), vec![7.0])]);
+    let mut cpu = program.prepare_cpu(&inputs).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+}
+
+#[test]
+fn published_state_prefers_its_own_committed_generation() {
+    let artifact = compile_source(
+        "~first := 1f32\n~second := 9f32\nnext-first := first + 1f32\nfirst = next-first\nsecond = first\nfirst\n",
+        [],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("dependent state updates must lower");
+    let mut cpu = program.prepare_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![1.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![2.0]);
 }
 
 #[test]
@@ -351,28 +368,18 @@ fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
 #[test]
 fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "64f32", 1);
-    let complete = mech_syntax::parse(&source).expect("complete source must parse");
-    assert!(
-        complete
-            .body
-            .sections
-            .iter()
-            .any(|section| section.annotations.is_empty())
-    );
-    let product = compiler()
-        .compile_tree(&isolated_gpu_tree(&source))
-        .expect("named source must compile");
+    let artifact = compile_isolated_gpu_source(&source);
 
-    assert_eq!(product.artifact().compute_regions().len(), 1);
-    let region = &product.artifact().compute_regions()[0];
+    assert_eq!(artifact.compute_regions().len(), 1);
+    let region = &artifact.compute_regions()[0];
     assert_eq!(region.name.as_ref(), "particle-field");
     assert_eq!(region.placement, ComputePlacement::Compute);
     assert!(!region.nodes.is_empty());
-    let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let bytecode_artifact = decode_program_artifact_sections(&bytecode.artifact).unwrap();
+    let encoded = encode_program_artifact_sections(&artifact).unwrap();
+    let bytecode_artifact = decode_program_artifact_sections(&encoded).unwrap();
     assert_eq!(
         bytecode_artifact.compute_regions(),
-        product.artifact().compute_regions()
+        artifact.compute_regions()
     );
 
     let lowering_artifact = compile_isolated_gpu_source(&source);
@@ -643,11 +650,6 @@ fn standalone_particle_program_needs_no_host_inputs() {
     let mut cpu = program
         .prepare_cpu(&BTreeMap::new())
         .expect("standalone CPU executor must prepare");
-    let initial = cpu.outputs().expect("standalone initial outputs must read");
-    assert_eq!(initial["result.0"].len(), 20);
-    assert_eq!(initial["result.1"].len(), 20);
-    assert!(initial["result.0"].iter().any(|value| *value != 0.0));
-    assert!(initial["result.1"].iter().any(|value| *value != 0.0));
     let expected_x = (1..=10)
         .map(|index| (index as f32 / 10.0) * 2.0 - 1.0)
         .collect::<Vec<_>>();
@@ -656,7 +658,19 @@ fn standalone_particle_program_needs_no_host_inputs() {
         .copied()
         .chain(expected_x.iter().map(|x| x * x - 0.5))
         .collect::<Vec<_>>();
-    assert_close(&initial["result.0"], &expected_positions);
+    assert!(
+        program
+            .state_initializers()
+            .any(|(_, _, initializer)| initializer == expected_positions)
+    );
+
+    cpu.dispatch_turns(1)
+        .expect("standalone publication turn must advance");
+    let initial = cpu.outputs().expect("standalone outputs must publish");
+    assert_eq!(initial["result.0"].len(), 20);
+    assert_eq!(initial["result.1"].len(), 20);
+    assert!(initial["result.0"].iter().any(|value| *value != 0.0));
+    assert!(initial["result.1"].iter().any(|value| *value != 0.0));
 
     cpu.dispatch_turns(6)
         .expect("standalone CPU executor must advance");
@@ -686,21 +700,27 @@ result
 
 #[test]
 fn particle_example_is_one_mixed_mech_document() {
-    let tree = mech_syntax::parse(SERVED_PARTICLE_SOURCE).expect("complete source must parse");
-    let regions = tree
-        .body
-        .sections
-        .iter()
-        .filter(|section| !section.annotations.is_empty())
+    let document = source_document("test://served-particle-document", SERVED_PARTICLE_SOURCE);
+    let regions = document
+        .document()
+        .body()
+        .expect("served particle document must have a body")
+        .sections()
+        .into_iter()
+        .filter_map(|section| section.subtitle())
+        .filter_map(|subtitle| subtitle.syntax().text().ok())
+        .filter(|heading| {
+            heading
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .contains("@compute")
+        })
         .collect::<Vec<_>>();
     assert_eq!(regions.len(), 1);
     assert_eq!(
-        mech_engine::section_compute_placement(regions[0]).unwrap(),
-        Some(ComputePlacement::Compute)
-    );
-    assert_eq!(
-        regions[0].subtitle.as_ref().unwrap().to_string().trim(),
-        "particle-field"
+        regions[0].lines().next().unwrap().trim(),
+        "particle-field @compute"
     );
     assert!(SERVED_PARTICLE_SOURCE.contains("pointer://pointer/frame"));
     assert!(SERVED_PARTICLE_SOURCE.contains("compute://particles/kernel"));
@@ -1124,7 +1144,7 @@ result
         })
         .collect::<std::collections::BTreeSet<_>>();
 
-    assert!(operations.contains("matrix/multiply"));
+    assert!(operations.contains("matrix/matmul"));
     assert!(operations.contains("core/assign"));
     assert!(operations.iter().all(|name| !name.starts_with("runtime/")));
 }

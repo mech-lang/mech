@@ -223,7 +223,7 @@ Import the modules as namespaces:
 +> matrix
 
 math/multiply(1, [1 2 3])    -- i.e {{1 * [1 2 3]}}
-matrix/multiply(1, [1 2 3])  -- i.e. {{1 ** [1 2 3]}}
+matrix/matmul(1, [1 2 3])    -- i.e. {{1 ** [1 2 3]}}
 ```
 
 Qualified names make conflicts explicit and keep the program easier to read.

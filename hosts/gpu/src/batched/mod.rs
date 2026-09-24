@@ -1277,18 +1277,7 @@ fn infer_broadcast_instances(
     inputs: &BTreeMap<String, Vec<f32>>,
 ) -> Result<u32, GpuAdmissionError> {
     let resolved_dimensions = resolve_compute_slot_dimensions(artifact);
-    let required = turn_required_nodes(artifact);
-    let required_slots = required
-        .iter()
-        .flat_map(|node| artifact.nodes()[node.get() as usize].input_bindings.clone())
-        .filter_map(|binding| match artifact.bindings().get(binding as usize) {
-            Some(BindingDeclaration::Input {
-                source: ArtifactSource::Slot(slot),
-                ..
-            }) => Some(*slot),
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
+    let required_slots = required_fixed_shape_input_slots(artifact);
     let slots = artifact
         .slots()
         .iter()
@@ -1394,6 +1383,45 @@ fn infer_broadcast_instances(
             detail: format!("broadcast extent {instances} exceeds the u32 executor limit"),
         }],
     })
+}
+
+fn required_fixed_shape_input_slots(artifact: &ProgramArtifact) -> BTreeSet<CellSlotId> {
+    let required = turn_required_nodes(artifact);
+    let mut slots = required
+        .iter()
+        .flat_map(|node| artifact.nodes()[node.get() as usize].input_bindings.clone())
+        .filter_map(|binding| match artifact.bindings().get(binding as usize) {
+            Some(BindingDeclaration::Input {
+                source: ArtifactSource::Slot(slot),
+                ..
+            }) => Some(*slot),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let declared_inputs = artifact
+        .inputs()
+        .iter()
+        .map(|input| input.slot)
+        .collect::<BTreeSet<_>>();
+    slots.extend(artifact.outputs().iter().filter_map(|output| {
+        let slot = physical_publication_slot(artifact, output.source)?;
+        declared_inputs.contains(&slot).then_some(slot)
+    }));
+    slots
+}
+
+fn physical_publication_slot(artifact: &ProgramArtifact, slot: CellSlotId) -> Option<CellSlotId> {
+    match artifact.slots().get(slot.get() as usize)?.producer {
+        ProducerReference::Output {
+            source: ArtifactSource::Slot(source),
+            ..
+        } => physical_publication_slot(artifact, source),
+        ProducerReference::Output {
+            source: ArtifactSource::Constant(_),
+            ..
+        } => None,
+        ProducerReference::Input(_) | ProducerReference::NodeOutput { .. } => Some(slot),
+    }
 }
 
 struct PendingState {
@@ -1713,7 +1741,7 @@ impl<'a> BatchCompiler<'a> {
 
     fn collect_slots(&mut self) {
         let required_nodes = turn_required_nodes(self.artifact);
-        let required_slots = required_nodes
+        let mut required_slots = required_nodes
             .iter()
             .flat_map(|node| {
                 let node = &self.artifact.nodes()[node.get() as usize];
@@ -1736,6 +1764,7 @@ impl<'a> BatchCompiler<'a> {
                     }))
             })
             .collect::<BTreeSet<_>>();
+        required_slots.extend(required_fixed_shape_input_slots(self.artifact));
         for slot in self.artifact.slots() {
             // E3 gives public outputs dedicated publication slots. Batched
             // kernels operate on the underlying numeric graph and persistent
@@ -1802,24 +1831,7 @@ impl<'a> BatchCompiler<'a> {
     }
 
     fn collect_inputs(&mut self) {
-        let required = turn_required_nodes(self.artifact);
-        let required_slots = required
-            .iter()
-            .flat_map(|node| {
-                self.artifact.nodes()[node.get() as usize]
-                    .input_bindings
-                    .clone()
-            })
-            .filter_map(
-                |binding| match self.artifact.bindings().get(binding as usize) {
-                    Some(BindingDeclaration::Input {
-                        source: ArtifactSource::Slot(slot),
-                        ..
-                    }) => Some(*slot),
-                    _ => None,
-                },
-            )
-            .collect::<BTreeSet<_>>();
+        let required_slots = required_fixed_shape_input_slots(self.artifact);
         for input in self.artifact.inputs() {
             if required_slots.contains(&input.slot)
                 && let Some(shape) = self.shapes.get(&input.slot).copied()
@@ -1914,7 +1926,7 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_concatenate(output, &inputs, false)
             } else if operation == "matrix/transpose" {
                 self.lower_transpose(output, &inputs)
-            } else if operation == "matrix/multiply" {
+            } else if matches!(operation.as_str(), "matrix/matmul" | "matrix/multiply") {
                 self.lower_matmul(output, &inputs)
             } else if operation == "matrix/solve" {
                 self.lower_solve(output, &inputs)
@@ -1924,6 +1936,8 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_negate(output, &inputs)
             } else if operation == "math/abs" {
                 self.lower_absolute(output, &inputs)
+            } else if operation == "convert/kind" && inputs.len() == 1 {
+                self.lower_copy(output, inputs[0])
             } else if let Some(comparison) = comparison_operation(&operation) {
                 self.lower_compare(output, &inputs, comparison)
             } else if let Some(logic) = logic_operation(&operation) {
@@ -2085,6 +2099,12 @@ impl<'a> BatchCompiler<'a> {
                 inputs.len()
             ));
         }
+        if display_operation(operation) == "access/scalar"
+            && inputs.len() == 2
+            && let Some(member) = self.composite_member(inputs[0], inputs[1])?
+        {
+            return self.lower_copy(output, member);
+        }
         let source = self.source_shape(inputs[0])?;
         let result = self.shape(output)?;
         let operation_name = display_operation(operation);
@@ -2153,6 +2173,77 @@ impl<'a> BatchCompiler<'a> {
             }
         }
         Ok(())
+    }
+
+    fn lower_copy(&mut self, output: CellSlotId, source: ArtifactSource) -> Result<(), String> {
+        let result = self.shape(output)?;
+        let source_shape = self.source_shape(source)?;
+        if result != source_shape {
+            return Err(format!(
+                "copy input shape {source_shape:?} differs from output {result:?}"
+            ));
+        }
+        self.reserve_scalar_instructions(result.rows, result.columns, 1)?;
+        for component in 0..result.elements() {
+            let value = self.operand(source, component)?;
+            self.emit(output, component, ScalarComputation::Copy(value));
+        }
+        Ok(())
+    }
+
+    fn composite_member(
+        &self,
+        source: ArtifactSource,
+        selector: ArtifactSource,
+    ) -> Result<Option<ArtifactSource>, String> {
+        let ArtifactSource::Slot(slot) = source else {
+            return Ok(None);
+        };
+        let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
+            return Err(format!("composite slot {} does not exist", slot.get()));
+        };
+        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
+            return Ok(None);
+        };
+        let Some(producer) = self
+            .artifact
+            .nodes()
+            .get(node.get() as usize)
+            .and_then(mech_engine::NodeDeclaration::as_operation)
+        else {
+            return Ok(None);
+        };
+        if producer.operation.module_path.as_ref() != ["core"]
+            || producer.operation.operation_name != "composite-pack"
+        {
+            return Ok(None);
+        }
+        let mut members = producer
+            .input_bindings
+            .clone()
+            .filter_map(
+                |binding| match self.artifact.bindings().get(binding as usize) {
+                    Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                    _ => None,
+                },
+            )
+            .collect::<Vec<_>>();
+        let has_template = members.first().is_some_and(|source| match source {
+            ArtifactSource::Constant(constant) => self
+                .artifact
+                .constants()
+                .get(*constant)
+                .is_some_and(|value| value.schema() == declaration.schema),
+            ArtifactSource::Slot(_) => false,
+        });
+        if has_template {
+            members.remove(0);
+        }
+        let selected = self.constant_indices(selector, members.len(), "composite")?;
+        let [selected] = selected.as_slice() else {
+            return Err("composite scalar access requires exactly one member".to_owned());
+        };
+        Ok(Some(members[*selected]))
     }
 
     fn lower_negate(
@@ -2940,21 +3031,6 @@ impl<'a> BatchCompiler<'a> {
         {
             return false;
         }
-        let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
-            return false;
-        };
-        let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-            return false;
-        };
-        let Some(producer) = self.artifact.nodes().get(node.get() as usize) else {
-            return false;
-        };
-        let Some(producer) = producer.as_operation() else {
-            return false;
-        };
-        if display_operation(&producer.operation) == "access/index" {
-            return true;
-        }
         let consumers = self
             .artifact
             .bindings()
@@ -2962,19 +3038,26 @@ impl<'a> BatchCompiler<'a> {
             .filter_map(|binding| match binding {
                 BindingDeclaration::Input {
                     node,
+                    port_ordinal,
                     source: ArtifactSource::Slot(source),
                     ..
-                } if *source == slot => Some(*node),
+                } if *source == slot => Some((*node, *port_ordinal)),
                 _ => None,
             })
             .collect::<Vec<_>>();
         !consumers.is_empty()
-            && consumers.iter().all(|consumer| {
-                self.artifact
+            && consumers.iter().all(|(consumer, port)| {
+                let Some(operation) = self
+                    .artifact
                     .nodes()
                     .get(consumer.get() as usize)
                     .and_then(mech_engine::NodeDeclaration::as_operation)
-                    .is_some_and(|node| display_operation(&node.operation) == "access/index")
+                    .map(|node| display_operation(&node.operation))
+                else {
+                    return false;
+                };
+                (operation == "access/index" && *port == 0)
+                    || (operation.starts_with("access/") && *port > 0)
             })
     }
 
@@ -3336,6 +3419,17 @@ fn generate_wgsl(
 #[cfg(test)]
 mod axis_tests {
     use super::*;
+    use mech_engine::{ExecutableNodeBody, ProgramArtifactDraft};
+
+    fn compile_fixed_source(source: &str) -> ProgramArtifact {
+        mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_source_artifact(source)
+            .unwrap()
+            .into_artifact()
+    }
 
     fn typed_selector(kind: &str, value: u8) -> String {
         match kind {
@@ -3400,6 +3494,68 @@ mod axis_tests {
             ),
             Err(mech_core::MemoryPlanError::TargetLimitExceeded { .. })
         ));
+    }
+
+    #[test]
+    fn legacy_matrix_multiply_artifacts_remain_gpu_lowerable() {
+        let artifact = compile_fixed_source(
+            "matrix := [1f32 2f32; 3f32 4f32]\nproduct := matrix/matmul(matrix, matrix)\nproduct\n",
+        );
+        let mut nodes = artifact.nodes().to_vec();
+        let operation = nodes
+            .iter_mut()
+            .find_map(|node| match &mut node.body {
+                ExecutableNodeBody::Operation(operation)
+                    if operation.operation.module_path.as_ref() == ["matrix"]
+                        && operation.operation.operation_name == "matmul" =>
+                {
+                    Some(operation)
+                }
+                _ => None,
+            })
+            .expect("matrix product node must exist");
+        operation.operation.operation_name = "multiply".to_owned();
+        let legacy = ProgramArtifactDraft {
+            schemas: artifact.schemas().clone(),
+            constants: artifact.constants().clone(),
+            contracts: artifact.contracts().clone(),
+            requirements: artifact.requirements().clone(),
+            inputs: artifact.inputs().into(),
+            slots: artifact.slots().into(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: artifact.bindings().into(),
+            outputs: artifact.outputs().into(),
+            constraints: artifact.constraints().into(),
+            compute_regions: artifact.compute_regions().into(),
+        }
+        .finalize()
+        .unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&legacy).unwrap(),
+        )
+        .unwrap();
+
+        crate::ComputeLowerer.compile_batched(&decoded, 1).unwrap();
+    }
+
+    #[test]
+    fn directly_published_inputs_define_fixed_shape_batch_storage() {
+        let artifact = compile_fixed_source("value := signal<f32>\nvalue\n");
+        let inputs = BTreeMap::from([("signal".to_owned(), vec![1.0, 2.0, 3.0])]);
+        let kernel = crate::ComputeLowerer
+            .compile_broadcast(&artifact, &inputs)
+            .unwrap();
+
+        assert_eq!(kernel.instances(), 3);
+        assert_eq!(kernel.inputs().collect::<Vec<_>>(), vec![("signal", 1)]);
+        let mut session = kernel.prepare_cpu(&inputs).unwrap();
+        session.dispatch_turns(1).unwrap();
+        assert!(
+            session
+                .state()
+                .values()
+                .any(|values| values == &[1.0, 2.0, 3.0])
+        );
     }
 
     #[test]
@@ -3793,43 +3949,34 @@ mod axis_tests {
 
     #[test]
     fn gpu_matrix_solve_rejects_singular_inputs_without_publishing() {
-        let source = "portable singular solve @compute\n\
+        let source = "GPU matrix solve\n\
+                      ===============================================================================\n\n\
+                      @worker := compute://worker/kernel{:write(input/coefficients), :write(input/rhs), :write(turn)}\n\
+                      @worker/input/coefficients <- [4f32 1f32; 2f32 3f32]\n\
+                      @worker/input/rhs <- [1f32; 2f32]\n\
+                      @worker/turn <- 1\n\n\
+                      portable singular solve @compute\n\
                       -------------------------------------------------------------------------------\n\
-                      coefficients := source-coefficients\n\
-                      rhs := source-rhs\n\
+                      coefficients := [4f32 1f32; 2f32 3f32]\n\
+                      rhs := [1f32; 2f32]\n\
                       ~result := [7f32; 8f32]\n\
                       result = coefficients \\ rhs\n\
                       result\n";
-        let tree = mech_syntax::parse(source).unwrap();
-        let planning_inputs = BTreeMap::from([
-            (
-                "source-coefficients".to_owned(),
-                mech_runtime::RuntimeHostInputValue::F32Matrix {
-                    rows: 2,
-                    columns: 2,
-                    values: vec![4.0, 2.0, 1.0, 3.0],
-                },
-            ),
-            (
-                "source-rhs".to_owned(),
-                mech_runtime::RuntimeHostInputValue::F32Matrix {
-                    rows: 2,
-                    columns: 1,
-                    values: vec![1.0, 2.0],
-                },
-            ),
-        ]);
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "test://gpu-singular-matrix-solve",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
         let artifact = mech_runtime::RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_native_plan_catalog())
             .build_compiler()
             .unwrap()
-            .compile_tree_artifact_with_inputs(
-                &tree,
-                &planning_inputs,
-                &BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]),
-            )
+            .compile_mixed_document(&document)
             .unwrap()
-            .into_artifact();
+            .compute
+            .artifact;
         let activation_inputs = BTreeMap::from([
             ("coefficients".to_owned(), vec![1.0, 2.0, 2.0, 4.0]),
             ("rhs".to_owned(), vec![1.0, 2.0]),

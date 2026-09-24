@@ -9,7 +9,7 @@ Provides standard matrix functions.
 2. Provided Functions
 -------------------------------------------------------------------------------
 
-- `matrix/multiply`
+- `matrix/matmul`
 - `matrix/transpose`
 - `matrix/dot`
 
