@@ -482,6 +482,7 @@ pub(super) fn validate_comprehension_inner(
                             &[],
                             true,
                             enclosing_guard,
+                            true,
                         )?;
                     }
                     super::ControlOperationBody::Comprehension(nested) => {
