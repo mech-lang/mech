@@ -306,14 +306,15 @@ impl MechRuntime {
                     let turn_started = Instant::now();
                     let admission = execution.coordinator.admit_turn()?;
                     let before = execution.coordinator.structural_probe();
-                    let outcome = execution
-                        .coordinator
-                        .execute_admitted_turn(admission, |_| {
+                    let outcome = execution.coordinator.execute_admitted_continuation_turn(
+                        admission,
+                        |_| {
                             super::super::limits::enforce_turn_duration_limit(
                                 max_turn_duration_ms,
                                 turn_started,
                             )
-                        })?;
+                        },
+                    )?;
                     let after = execution.coordinator.structural_probe();
                     self.resident_production_probe
                         .observe_structural_delta(before, after);

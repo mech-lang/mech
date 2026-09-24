@@ -805,7 +805,7 @@ impl SemanticBuilder {
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
         let mut coverage = vec![false; machine.states.len()];
-        let mut zero_guard_partitions = BTreeMap::<(u32, String), u8>::new();
+        let mut zero_guard_partitions = BTreeMap::<(u32, usize), u8>::new();
         if self.control_depth == 0 {
             self.next_control_block = 0;
         }
@@ -917,7 +917,9 @@ impl SemanticBuilder {
                             .chars()
                             .filter(|ch| !ch.is_whitespace())
                             .collect::<String>();
-                        for (binder, field) in binders.into_iter().zip(&state.fields) {
+                        for (field_ordinal, (binder, field)) in
+                            binders.into_iter().zip(&state.fields).enumerate()
+                        {
                             if !matches!(field, SchemaBody::UnsignedInteger(IntegerWidth::W64))
                                 || binder.is_empty()
                                 || !binder
@@ -934,7 +936,7 @@ impl SemanticBuilder {
                                 0
                             };
                             *zero_guard_partitions
-                                .entry((*ordinal, binder.to_owned()))
+                                .entry((*ordinal, field_ordinal))
                                 .or_default() |= witness;
                         }
                     }

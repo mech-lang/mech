@@ -2043,6 +2043,10 @@ fn declared_fsm_diagnostics_reject_invalid_declarations_calls_and_transitions() 
         "#Partial(value<u64>) => <u64>\n  | :Start(value<u64>)\n  | :Done(value<u64>).\n#Partial(value) -> :Start(value)\n  :Start(0u64) -> :Done(0u64)\n  :Done(value) => value.\n#Partial(1u64)\n",
         "source-semantics/non-exhaustive-fsm",
     );
+    assert_code(
+        "#PartialPair() => <u64>\n  | :Pair(left<u64>, right<u64>)\n  | :Done(value<u64>).\n#PartialPair() -> :Pair(1u64, 0u64)\n  :Pair(x, y)\n    | x == 0u64 -> :Done(y)\n  :Pair(y, x)\n    | x > 0u64 -> :Done(y)\n  :Done(value) => value.\n#PartialPair()\n",
+        "source-semantics/non-exhaustive-fsm",
+    );
 }
 
 #[test]

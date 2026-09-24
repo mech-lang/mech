@@ -35,6 +35,29 @@ pub(super) struct PendingComprehensionOperation {
 }
 
 impl PendingComprehension {
+    pub(super) fn visit_pattern_binding_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for step in &self.steps {
+            match step {
+                PendingComprehensionStep::Generator { pattern, .. } => {
+                    pattern.bindings(&mut |_, schema| visit(schema));
+                }
+                PendingComprehensionStep::Filter(_) => {}
+                PendingComprehensionStep::Operation(operation) => match &operation.body {
+                    PendingControlOperationBody::Match(nested) => {
+                        nested.visit_pattern_binding_schemas(visit);
+                    }
+                    PendingControlOperationBody::Comprehension(nested) => {
+                        nested.visit_pattern_binding_schemas(visit);
+                    }
+                    PendingControlOperationBody::Operation { .. }
+                    | PendingControlOperationBody::Recur(_)
+                    | PendingControlOperationBody::Suspend
+                    | PendingControlOperationBody::Publish => {}
+                },
+            }
+        }
+    }
+
     pub(super) fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
         for step in &self.steps {
             match step {

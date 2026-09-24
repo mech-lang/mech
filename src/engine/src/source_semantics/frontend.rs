@@ -2321,7 +2321,7 @@ impl PendingMatch {
                         match &operation.body {
                             PendingControlOperationBody::Match(nested) => append(nested, visit),
                             PendingControlOperationBody::Comprehension(nested) => {
-                                nested.visit_schemas(visit)
+                                nested.visit_pattern_binding_schemas(visit)
                             }
                             PendingControlOperationBody::Operation { .. }
                             | PendingControlOperationBody::Recur(_)
