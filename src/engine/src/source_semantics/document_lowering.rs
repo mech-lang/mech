@@ -891,7 +891,7 @@ fn declare_document_inputs(
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
             DocumentUnit::FsmImplementation(implementation) => {
-                builder.declare_input_annotations(implementation.syntax(), bindings)?
+                builder.declare_document_fsm_input_annotations(implementation, bindings)?
             }
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?

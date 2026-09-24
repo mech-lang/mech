@@ -272,6 +272,28 @@ impl PreparedResidentTurn<'_> {
         instance.output_borrow_at(output, self.working_epoch)
     }
 
+    /// Reports whether publishing this candidate will leave an FSM wakeup
+    /// queued. Loaders use this to snapshot only the terminal initial value
+    /// before any externally visible publication.
+    #[doc(hidden)]
+    pub fn will_have_ready_continuation(&self) -> bool {
+        let instance = self
+            .instance
+            .as_deref()
+            .expect("live prepared resident turn");
+        instance
+            .workspace
+            .continuation_candidates
+            .iter()
+            .any(Option::is_some)
+            || instance.ready_continuations.iter().any(|continuation| {
+                !bit_is_set(
+                    &instance.workspace.completed_continuations,
+                    continuation.get() as usize,
+                )
+            })
+    }
+
     /// Publishes an ordinary pure resident turn.
     ///
     /// External plans fail closed: their state may be published only through
@@ -1445,7 +1467,8 @@ impl ReactiveInstance {
                 if control.continuation
                     && !bit_is_set(&self.workspace.continuation_publications, index)
                     && !bit_is_set(&self.published_continuations, index)
-                    && (self.workspace.continuation_candidates[index].is_some()
+                    && (!bit_is_set(&self.workspace.initialized_output_bits, index)
+                        || self.workspace.continuation_candidates[index].is_some()
                         || (self.continuations[index].is_some()
                             && !bit_is_set(&self.workspace.completed_continuations, index)))
         )

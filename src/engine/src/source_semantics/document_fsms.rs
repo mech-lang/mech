@@ -82,6 +82,105 @@ fn standalone_atom(expression: &ExpressionSyntax) -> Option<IdentifierSyntax> {
 }
 
 impl SemanticBuilder {
+    pub(super) fn declare_document_fsm_input_annotations(
+        &mut self,
+        implementation: &mech_syntax::document::FsmImplementationSyntax,
+        document_bindings: &BTreeSet<String>,
+    ) -> Result<(), SourceSemanticError> {
+        let name = self.required(
+            implementation.name(),
+            implementation.syntax(),
+            "an FSM implementation name",
+        )?;
+        let name = node_text(name.syntax())?;
+        let machine = self.local_fsms.get(&name).cloned().ok_or_else(|| {
+            internal(
+                SourceSemanticAnchor::for_node(implementation.syntax()),
+                format!("FSM {name} has no retained declaration"),
+            )
+        })?;
+        let mut implementation_bindings = document_bindings.clone();
+        implementation_bindings.extend(machine.implementation_parameters.iter().cloned());
+
+        for arm in self.fsm_control_arms(&machine)? {
+            self.declare_pattern_input_annotations(&arm.pattern, &implementation_bindings)?;
+            let mut arm_bindings = implementation_bindings.clone();
+            let mut pattern_bindings = Vec::new();
+            collect_pattern_bindings(&arm.pattern, &mut pattern_bindings)?;
+            arm_bindings.extend(pattern_bindings.into_iter().map(|binding| binding.name));
+            if let Some(guard) = &arm.guard {
+                self.declare_input_annotations(guard.syntax(), &arm_bindings)?;
+            }
+            for transition in &arm.transitions {
+                match transition {
+                    FsmBodyTransitionSyntax::Statement(transition) => {
+                        let statement = self.required(
+                            transition.statement(),
+                            transition.syntax(),
+                            "an FSM transition statement",
+                        )?;
+                        let item = self.required(
+                            statement.syntax().children().next(),
+                            statement.syntax(),
+                            "an FSM transition statement body",
+                        )?;
+                        self.declare_unit_input_annotations(&item, &mut arm_bindings)?;
+                    }
+                    FsmBodyTransitionSyntax::Block(transition) => {
+                        for item in transition.items() {
+                            let value = self.required(
+                                item.value(),
+                                item.syntax(),
+                                "an FSM transition block item",
+                            )?;
+                            self.declare_unit_input_annotations(&value, &mut arm_bindings)?;
+                        }
+                    }
+                    FsmBodyTransitionSyntax::State(transition) => {
+                        let value = self.required(
+                            transition.value(),
+                            transition.syntax(),
+                            "an FSM transition value",
+                        )?;
+                        let pattern = self.required(
+                            value.pattern(),
+                            value.syntax(),
+                            "an FSM transition value pattern",
+                        )?;
+                        self.declare_fsm_value_input_annotations(&pattern, &arm_bindings)?;
+                    }
+                    FsmBodyTransitionSyntax::Async(transition) => {
+                        let value = self.required(
+                            transition.value(),
+                            transition.syntax(),
+                            "an FSM transition value",
+                        )?;
+                        let pattern = self.required(
+                            value.pattern(),
+                            value.syntax(),
+                            "an FSM transition value pattern",
+                        )?;
+                        self.declare_fsm_value_input_annotations(&pattern, &arm_bindings)?;
+                    }
+                    FsmBodyTransitionSyntax::Output(transition) => {
+                        let value = self.required(
+                            transition.value(),
+                            transition.syntax(),
+                            "an FSM transition value",
+                        )?;
+                        let pattern = self.required(
+                            value.pattern(),
+                            value.syntax(),
+                            "an FSM transition value pattern",
+                        )?;
+                        self.declare_fsm_value_input_annotations(&pattern, &arm_bindings)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub(super) fn register_document_fsms(
         &mut self,
         units: &[DocumentUnit],

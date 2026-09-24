@@ -4209,6 +4209,56 @@ fn compatible_replacement_migrates_the_accepted_host_snapshot() {
 }
 
 #[test]
+fn compatible_replacement_does_not_project_an_unstarted_fsm_default() {
+    let (previous, _) = independent_external_runtime_with_source(
+        r#"
+@fast := test://clock/fast{:read(delta-seconds)}
+fast := @fast/delta-seconds
+~state := -1.0
+output := state + fast
+"#,
+    );
+    let (mut candidate, _) = independent_external_runtime_with_source(
+        r#"
+@fast := test://clock/fast{:read(delta-seconds)}
+fast := @fast/delta-seconds
+~state := -1.0
+#Deferred(value<f64>) => <f64>
+  | :Start(value<f64>)
+  | :Done(value<f64>).
+#Deferred(value) -> :Start(value)
+  :Start(value) ~> :Done(value)
+  :Done(value) => value.
+deferred := #Deferred(fast)
+combined := deferred + state
+safe! := combined > 0.0
+combined
+"#,
+    );
+
+    candidate
+        .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+        .expect("projection refresh must skip an FSM that has never published");
+
+    candidate
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/fast", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    let outcome = candidate.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        outcome.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(
+        canonical_f64(candidate.root_symbol_value("combined").unwrap().value()),
+        1.0
+    );
+}
+
+#[test]
 fn compatible_replacement_expands_one_snapshot_to_new_duplicate_consumers() {
     let (mut previous, previous_reads) = independent_external_runtime();
     previous
