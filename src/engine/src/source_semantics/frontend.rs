@@ -2808,6 +2808,13 @@ impl SemanticBuilder {
             _ => None,
         });
         let qualified_enum = name.contains('/');
+        if qualified_enum && expected_enum.is_none() {
+            // A qualified atom is an enum selector only when its surrounding
+            // value position establishes an enum schema. Otherwise the full
+            // path is nominal data, even if its first segment happens to name
+            // a declared non-enum kind in this document.
+            return Ok(None);
+        }
         let (name, qualified) = match name.rsplit_once('/') {
             Some((qualifier, variant)) => match self.declared_kinds.get(qualifier) {
                 Some(schema) if matches!(schema.body, SchemaBody::Enum { .. }) => {
@@ -2838,7 +2845,9 @@ impl SemanticBuilder {
                         anchor: SourceSemanticAnchor::for_node(syntax),
                     });
                 }
-                None => (name, None),
+                // Outside an enum context, an undeclared qualifier belongs
+                // to the nominal atom path handled by the caller.
+                None => return Ok(None),
             },
             None => (name, None),
         };
@@ -7633,17 +7642,14 @@ fn kind_expr(
             let element = matrix
                 .element()
                 .ok_or_else(|| missing_kind_child(matrix.syntax(), "matrix element kind"))?;
-            let extents = matrix
+            let mut extents = matrix
                 .dimensions()
                 .iter()
                 .map(|literal| kind_dimension(literal, declarations, &BTreeSet::new()))
                 .collect::<Result<Vec<_>, _>>()?;
             if extents.is_empty() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-value",
-                    message: "reified matrix kinds require explicit dimensions".to_owned(),
-                    anchor,
-                });
+                extents.push(inferred_kind_dimension(dimensions, anchor)?);
+                extents.push(inferred_kind_dimension(dimensions, anchor)?);
             }
             KindExpr::Matrix {
                 element: Box::new(kind_with_option_expr(&element, dimensions, declarations)?),

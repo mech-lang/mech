@@ -451,6 +451,8 @@ pub fn install_runtime(
     super::convert::scalar::install_runtime(builder)?;
     #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
     crate::literals::register_runtime_kind_conversion(builder)?;
+    #[cfg(all(feature = "convert", feature = "semantic-compiler"))]
+    crate::literals::register_runtime_reified_kind_conversion(builder)?;
     #[cfg(feature = "variable_define")]
     super::define::install_runtime(builder)?;
 

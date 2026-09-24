@@ -10,27 +10,27 @@ use sha2::{Digest, Sha256};
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_716;
 #[cfg(feature = "full_source")]
-const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_717;
+const EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES: usize = 9_718;
 #[cfg(feature = "full_source")]
 const EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST: &str =
-    "7350ad9aa1623cea1c45b323d9be82f1f31dc7d9da818023a5072e0326ded4ab";
+    "ab6547f38932ef29a675a3aef0e6c11a6db59e7fc712adc2f4a51bb85b961793";
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_414;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_415;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "39ec1ccca399c64bc33b10ec9eb1b4542131d10ce4e775c1e5e91f683f6a2fda";
+    "a5c6a86ad547f744aeb16abb17ccd4a2faa54509d58b69e7fc1715e165a49bde";
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
-const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_694;
+const EXPECTED_FULL_SOURCE_RUNTIME_FACTORIES: usize = 15_695;
 #[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 const EXPECTED_FULL_SOURCE_RUNTIME_SURFACE_DIGEST: &str =
-    "eaa1ce4cbfb9b493a5df7f52729157faf7382be957c738e8611dd9cddfc978ca";
+    "c5c2bae913e4482925289b54e58559b7676bb9ad66aede1e2ce6caf9501f2745";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_698;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 15_699;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "b003f902cf7ff4ba285cdf9a2ebb0310b8d97fef63c27f198aa8342b073acf99";
+    "3b4c4ee4f6c5978e8bc5bbe7800630a25664cd1ddaf69aa8a5b03b426ad89740";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 122_083;
 #[cfg(feature = "full_source")]
