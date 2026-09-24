@@ -2968,7 +2968,7 @@ fn run_source_roots<'a>(
         ));
     }
     let durability = runtime.config().resident_durability;
-    runtime.load_root_program(
+    runtime.load_interactive_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,

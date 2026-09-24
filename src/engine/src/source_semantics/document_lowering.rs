@@ -499,7 +499,6 @@ fn compile_collected_document(
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
-    bindings.insert("ans".to_owned());
     declare_document_inputs(&mut builder, &units, &mut bindings)?;
     declare_document_inline_inputs(&mut builder, &units, &bindings)?;
     let mut presentation = Vec::new();
@@ -1135,6 +1134,13 @@ fn defer_inline(
     comment: bool,
 ) -> Result<Option<DeferredInline>, SourceSemanticError> {
     let references = inline_local_references(builder, inline, local_bindings)?;
+    if references.contains("ans") && !builder.bindings.contains_key("ans") {
+        return Err(SourceSemanticError {
+            code: "source-semantics/missing-preceding-answer",
+            message: "ans requires a preceding interactive value".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(inline.syntax()),
+        });
+    }
     let waiting = references
         .iter()
         .filter(|name| !builder.bindings.contains_key(*name))
@@ -1293,7 +1299,7 @@ fn inline_local_references(
         if let Some(variable) = VariableSyntax::cast(node.clone()) {
             let stem = builder.required(variable.stem(), variable.syntax(), "a variable stem")?;
             let name = node_text(stem.syntax())?;
-            if local_bindings.contains(&name) {
+            if name == "ans" || local_bindings.contains(&name) {
                 references.insert(name);
             }
             continue;
@@ -1301,7 +1307,7 @@ fn inline_local_references(
         if let Some(slice) = SliceSyntax::cast(node.clone()) {
             let stem = builder.required(slice.stem(), slice.syntax(), "a slice stem")?;
             let name = node_text(stem.syntax())?;
-            if local_bindings.contains(&name) {
+            if name == "ans" || local_bindings.contains(&name) {
                 references.insert(name);
             }
             if let Some(subscripts) = slice.subscripts() {

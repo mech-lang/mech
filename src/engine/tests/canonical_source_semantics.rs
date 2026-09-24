@@ -180,6 +180,17 @@ fn typed_document_compiles_definition_and_expression_units_in_source_order() {
 }
 
 #[test]
+fn interactive_ans_requires_a_preceding_value() {
+    let error =
+        match CanonicalSourceFrontend.compile_document(&document("-- result: {ans}\n1 + 1\n")) {
+            Ok(_) => panic!("ans must not resolve from a later statement"),
+            Err(error) => error,
+        };
+    assert_eq!(error.code, "source-semantics/missing-preceding-answer");
+    assert!(error.message.contains("preceding interactive value"));
+}
+
+#[test]
 fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment() {
     let alias = CanonicalSourceFrontend
         .compile_document(&document("<count> := <u8>\nx<count> := 1\nx\n"))
