@@ -997,7 +997,7 @@ impl<'a> ProgramCompilerView<'a> {
                 "canonical resource planning activation failed: {error:?}"
             ))
         })?;
-        let prepared = instance.prepare_turn(&[]).map_err(|error| {
+        let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
             canonical_compilation_error(format!("canonical resource planning failed: {error:?}"))
         })?;
         preflight_canonical_effect_payloads(&prepared, &artifact, self.resources)?;
@@ -1606,7 +1606,7 @@ impl<'a> ProgramCompilerView<'a> {
                         "canonical dependency activation failed: {error:?}"
                     ))
                 })?;
-                let prepared = instance.prepare_turn(&[]).map_err(|error| {
+                let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
                     canonical_compilation_error(format!(
                         "canonical dependency execution failed: {error:?}"
                     ))
@@ -3011,7 +3011,7 @@ fn execute_named_canonical_outputs(
             "canonical initializer activation failed: {error:?}"
         ))
     })?;
-    let prepared = instance.prepare_turn(&[]).map_err(|error| {
+    let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
         canonical_compilation_error(format!("canonical initializer execution failed: {error:?}"))
     })?;
     let values = names
@@ -3065,7 +3065,7 @@ fn capture_canonical_compute_activation_inputs(
             "canonical compute coordinator activation failed: {error:?}"
         ))
     })?;
-    let prepared = instance.prepare_turn(&[]).map_err(|error| {
+    let prepared = instance.prepare_initial_turn(&[]).map_err(|error| {
         canonical_compilation_error(format!(
             "canonical compute coordinator planning failed: {error:?}"
         ))

@@ -605,6 +605,18 @@ impl ResidentExternalCoordinator {
     }
 
     #[cfg(feature = "resident-routing")]
+    pub(crate) fn execute_admitted_step_turn<F>(
+        &mut self,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
+    {
+        self.execute_live_turn(Some(&[]), admission, false, false, false, prepublication)
+    }
+
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn execute_admitted_continuation_turn<F>(
         &mut self,
         admission: ResidentExternalTurnAdmission,
@@ -1120,6 +1132,7 @@ impl ResidentExternalCoordinator {
                 || (!record.body.initial_publication
                     && !record.body.continuation_drain
                     && !eligible.is_empty()
+                    && !self.instance().plan.has_input_free_activation_roots()
                     && trigger_count == 0)
             {
                 return invalid_coordinator(
