@@ -185,6 +185,37 @@ fn lowered_program_exposes_exact_typed_region_ports() {
 }
 
 #[test]
+fn published_input_keeps_its_pre_dispatch_value_when_it_updates_state() {
+    let artifact = compile_source(
+        "~state := 1f32\nstate = host-x\nhost-x\n",
+        [("host-x", RuntimeHostInputValue::F32(7.0))],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("input-fed state must lower");
+    let inputs = BTreeMap::from([("x".to_owned(), vec![7.0])]);
+    let mut cpu = program.prepare_cpu(&inputs).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![7.0]);
+}
+
+#[test]
+fn published_state_prefers_its_own_committed_generation() {
+    let artifact = compile_source(
+        "~first := 1f32\n~second := 9f32\nnext-first := first + 1f32\nfirst = next-first\nsecond = first\nfirst\n",
+        [],
+    );
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("dependent state updates must lower");
+    let mut cpu = program.prepare_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![1.0]);
+    cpu.dispatch_turns(1).unwrap();
+    assert_eq!(cpu.outputs().unwrap()["result"], vec![2.0]);
+}
+
+#[test]
 fn compiler_product_runs_through_the_backend_neutral_cpu_session() {
     let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
     let lowered = ComputeLowerer

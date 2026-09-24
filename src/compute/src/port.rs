@@ -501,7 +501,9 @@ pub fn build_compute_region_interface(
     let outputs = output_sources
         .into_iter()
         .filter(|(_, slot)| {
-            state_slots.contains(slot) || slot_produced_by_nodes(artifact, *slot, &nodes)
+            input_slots.contains(slot)
+                || state_slots.contains(slot)
+                || slot_produced_by_nodes(artifact, *slot, &nodes)
         })
         .filter_map(|(name, slot)| {
             let schema = artifact.slots()[slot.get() as usize].schema;

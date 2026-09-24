@@ -533,6 +533,9 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "comprehension",
         bind_matrix_comprehension,
     )?;
+    // Bytecode-v1 artifacts emitted before matrix/matmul became the canonical
+    // identity persist matrix/multiply. Keep that stable operation loadable.
+    register_no_additional_scratch(builder, &["matrix"], "multiply", bind_matmul)?;
     register_no_additional_scratch(builder, &["matrix"], "matmul", bind_matmul)?;
     register_no_additional_scratch(builder, &["matrix"], "dot", bind_matrix_dot)?;
     register_with_memory_class(
