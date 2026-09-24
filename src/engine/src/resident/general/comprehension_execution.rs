@@ -3913,11 +3913,12 @@ impl ReactiveInstance {
             ResidentValueRef::Snapshot(values) => {
                 for value in values.iter().flatten() {
                     let mut local_meter = ResidentBudgetMeter::default();
-                    let local = budget::measure_canonical_value_footprint(
-                        &mut local_meter,
-                        value,
-                        schemas,
-                    )?;
+                    // Schema ids are arena-local, so a captured foreign value
+                    // must be measured against the arena that finalized it.
+                    let owner = value.schemas();
+                    let owner = owner.as_deref().unwrap_or(schemas);
+                    let local =
+                        budget::measure_canonical_value_footprint(&mut local_meter, value, owner)?;
                     meter.charge_comparison_work(local_meter.estimate().comparison_work())?;
                     footprint = footprint
                         .checked_add(local)
