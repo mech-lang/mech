@@ -4900,6 +4900,54 @@ phase"#;
 
     #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]
     #[test]
+    fn served_document_output_planning_uses_configured_resource_writes() {
+        let config_source = r##"config := {
+  hosts: [{
+    name: "view"
+    provider: "scene"
+    settings: { selector: "#view" renderer: "svg" }
+  }]
+  run: {
+    paths: ["main.mec"]
+    grants: [{ target: "view/frame" operations: ["write"] paths: ["replace"] }]
+  }
+}"##;
+        let source = r##"@view := scene://view/frame{:write(replace)}
+scene := {
+  width: 10
+  height: 10
+  background: "#000"
+  circles: ()
+  lines: ()
+}
+@view/replace <- scene
+
+Width {scene.width}.
+"##;
+        let config = parse_config_document(
+            "scene-output-planning/mech.mcfg",
+            config_source,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let authority = authority_config(
+            config.hosts.clone(),
+            config.run.as_ref().unwrap().grants.clone(),
+        );
+        let mut bootstrap = document_bootstrap("main.mec", source, HashMap::new(), Vec::new());
+        bootstrap.console_instance = internal_repl_console_instance(&config.hosts);
+        bootstrap.presentation_output_ids = vec![0x22];
+        bootstrap.served = Some(ServedDocumentBootstrap {
+            config_source: config_source.to_owned(),
+            authority,
+        });
+
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert!(ordinals.contains_key(&0x22));
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]
+    #[test]
     fn rejected_document_candidate_cannot_mutate_the_active_scene_registry() {
         let config_source = r##"config := {
   hosts: [{
