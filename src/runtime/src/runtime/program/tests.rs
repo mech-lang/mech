@@ -4395,9 +4395,9 @@ status
         )
         .unwrap();
 
-    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
-    assert_eq!(driverless_reads.load(Ordering::SeqCst), 1);
-    assert_eq!(driven_reads.load(Ordering::SeqCst), 1);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert_eq!(driverless_reads.load(Ordering::SeqCst), 2);
+    assert_eq!(driven_reads.load(Ordering::SeqCst), 2);
     assert_eq!(
         runtime
             .root_symbol_value("status")
