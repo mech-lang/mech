@@ -513,6 +513,40 @@ impl Formatter {
 
     fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
         match title {
+            Some(title) if !title.fields.is_empty() => {
+                let mut slots = TitleSlots::default();
+                // Format every authored occurrence so duplicate inline values
+                // advance the same identity namespace as canonical lowering.
+                // Repeated fields retain the last rendered value in their
+                // template slot, matching the legacy Title projection.
+                for field in &title.fields {
+                    match field {
+                        TitleField::Author(paragraph) => {
+                            slots.author = self.inline_para_el(paragraph, "mech-author")
+                        }
+                        TitleField::Date(paragraph) => {
+                            slots.date = self.inline_para_el(paragraph, "mech-date")
+                        }
+                        TitleField::Hero(hero) => slots.hero = self.hero_el(hero),
+                        TitleField::Kicker(paragraph) => {
+                            slots.kicker = self.inline_para_el(paragraph, "hero-kicker")
+                        }
+                        TitleField::Section(paragraph) => {
+                            slots.section = self.inline_para_el(paragraph, "mech-section")
+                        }
+                        TitleField::Summary(paragraph) => {
+                            slots.summary = self.synopsis_el(paragraph)
+                        }
+                        TitleField::Next(paragraph) => {
+                            slots.next = self.inline_para_el(paragraph, "mech-next")
+                        }
+                        TitleField::Previous(paragraph) => {
+                            slots.previous = self.inline_para_el(paragraph, "mech-previous")
+                        }
+                    }
+                }
+                slots
+            }
             Some(title) => TitleSlots {
                 author: title
                     .author
@@ -761,25 +795,49 @@ impl Formatter {
             format!("<h1 class=\"mech-program-title\">{}</h1>", title)
         } else {
             let mut front_matter = Vec::new();
-            for (name, value) in [
-                ("author", &node.author),
-                ("date", &node.date),
-                ("kicker", &node.kicker),
-                ("section", &node.section),
-                ("summary", &node.summary),
-                ("next", &node.next),
-                ("previous", &node.previous),
-            ] {
-                if let Some(value) = value {
-                    front_matter.push(format!("{name}: {}", value.to_string()));
+            if node.fields.is_empty() {
+                for (name, value) in [
+                    ("author", &node.author),
+                    ("date", &node.date),
+                    ("kicker", &node.kicker),
+                    ("section", &node.section),
+                    ("summary", &node.summary),
+                    ("next", &node.next),
+                    ("previous", &node.previous),
+                ] {
+                    if let Some(value) = value {
+                        front_matter.push(format!("{name}: {}", value.to_string()));
+                    }
                 }
-            }
-            if let Some(hero) = &node.hero {
-                let hero = match hero {
-                    SectionElement::FigureTable(table) => self.figure_table_source(table),
-                    _ => self.section_element(hero).trim().to_string(),
-                };
-                front_matter.push(format!("hero: {hero}"));
+                if let Some(hero) = &node.hero {
+                    let hero = match hero {
+                        SectionElement::FigureTable(table) => self.figure_table_source(table),
+                        _ => self.section_element(hero).trim().to_string(),
+                    };
+                    front_matter.push(format!("hero: {hero}"));
+                }
+            } else {
+                for field in &node.fields {
+                    let (name, value) = match field {
+                        TitleField::Author(value) => ("author", value.to_string()),
+                        TitleField::Date(value) => ("date", value.to_string()),
+                        TitleField::Kicker(value) => ("kicker", value.to_string()),
+                        TitleField::Section(value) => ("section", value.to_string()),
+                        TitleField::Summary(value) => ("summary", value.to_string()),
+                        TitleField::Next(value) => ("next", value.to_string()),
+                        TitleField::Previous(value) => ("previous", value.to_string()),
+                        TitleField::Hero(hero) => {
+                            let value = match hero {
+                                SectionElement::FigureTable(table) => {
+                                    self.figure_table_source(table)
+                                }
+                                _ => self.section_element(hero).trim().to_string(),
+                            };
+                            ("hero", value)
+                        }
+                    };
+                    front_matter.push(format!("{name}: {value}"));
+                }
             }
             if !node.imports.is_empty() {
                 let imports = node

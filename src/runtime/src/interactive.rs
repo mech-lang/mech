@@ -11,19 +11,13 @@ use mech_syntax::document::{
 };
 
 use crate::{
-    DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticOwner, DiagnosticPhase, MechEvent,
-    MechEventBus, MechEventEnvelope, MechRuntime, OutputArtifact, OutputContent, OutputSource,
-    ReplEvent, ReplResponse, ReplResponseKind, ReplResponseStatus, ResidentDurabilityPolicy,
-    RuntimeProgramLoadOutcome, RuntimeValueSnapshot, Severity, SourcePosition, SourceSpan,
-    ValueOutput,
+    DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticOwner, DiagnosticPhase,
+    MAX_RESIDENT_STEP_COUNT, MechEvent, MechEventBus, MechEventEnvelope, MechRuntime,
+    OutputArtifact, OutputContent, OutputSource, ReplEvent, ReplResponse, ReplResponseKind,
+    ReplResponseStatus, ResidentDurabilityPolicy, RuntimeProgramLoadOutcome, RuntimeValueSnapshot,
+    Severity, SourcePosition, SourceSpan, ValueOutput,
 };
 
-/// Shared upper bound for one synchronous resident-REPL step request.
-///
-/// Platform hosts may reject this earlier for a better interaction, but every
-/// call is checked here before the runtime loop so an adapter cannot block its
-/// event loop with an effectively unbounded request.
-pub const MAX_RESIDENT_STEP_COUNT: u64 = 1_000_000;
 static NEXT_SELECTION_TOKEN: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone)]

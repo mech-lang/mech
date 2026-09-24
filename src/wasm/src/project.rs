@@ -17,12 +17,14 @@ use mech_browser::BrowserRuntimeInjectionConfig;
 use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
-use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
+use mech_core::{
+    GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId, hash_str,
+};
 #[cfg(test)]
 use mech_engine::CanonicalSourceFrontend;
 use mech_engine::{
-    SourceDocumentOutputKind, root_document_has_program_value, root_document_output_ids,
-    root_document_program_output_id,
+    SourceDocumentOutputKind, root_document_has_program_value, root_document_output_identities,
+    root_document_output_ids, root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -1356,21 +1358,64 @@ fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
 mod document {
     use super::*;
 
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    struct DocumentOutputBinding {
+        output_id: u64,
+        semantic_id: u64,
+        kind: SourceDocumentOutputKind,
+        ordinal: u64,
+    }
+
+    #[derive(Default)]
+    struct DocumentOutputState {
+        bindings: Vec<DocumentOutputBinding>,
+        program_output: Option<u64>,
+    }
+
+    impl DocumentOutputState {
+        fn ordinals(&self) -> HashMap<u64, u64> {
+            let mut ordinals = self
+                .bindings
+                .iter()
+                .map(|binding| (binding.output_id, binding.ordinal))
+                .collect::<HashMap<_, _>>();
+            if let Some(output) = self.program_output {
+                ordinals.insert(root_document_program_output_id(), output);
+            }
+            ordinals
+        }
+    }
+
+    #[cfg(test)]
     pub(super) fn document_output_ordinals(
         bootstrap: &WasmDocumentBootstrap,
     ) -> MResult<HashMap<u64, u64>> {
-        document_output_ordinals_for_source(bootstrap, bootstrap.document.document(), true)
+        Ok(
+            document_output_state_for_source(bootstrap, bootstrap.document.document(), true)?
+                .ordinals(),
+        )
     }
 
+    #[cfg(test)]
     pub(super) fn document_output_ordinals_for_source(
         bootstrap: &WasmDocumentBootstrap,
         candidate: &SourceDocument,
         require_all: bool,
     ) -> MResult<HashMap<u64, u64>> {
+        Ok(document_output_state_for_source(bootstrap, candidate, require_all)?.ordinals())
+    }
+
+    fn document_output_state_for_source(
+        bootstrap: &WasmDocumentBootstrap,
+        candidate: &SourceDocument,
+        require_all: bool,
+    ) -> MResult<DocumentOutputState> {
         let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
         let program = match compile_browser_interactive_document(bootstrap, &runtime_source) {
             Ok(program) => program,
-            Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
+            Err(_) if bootstrap.presentation_output_ids.is_empty() => {
+                return Ok(DocumentOutputState::default());
+            }
             Err(error) => return Err(error),
         };
         let outputs = program
@@ -1382,32 +1427,168 @@ mod document {
                     && Some(output.output) != program_output.map(|id| id.get())
             })
             .collect::<Vec<_>>();
-        let output_ids = presentation_output_ids_for_document(candidate)?;
-        if output_ids.len() != outputs.len() {
+        let source = candidate.source().to_contiguous_string();
+        let presentation = mech_syntax::parser::parse(source.trim()).map_err(|error| {
+            document_runtime_error(format!(
+                "browser presentation identity parsing failed: {error:?}"
+            ))
+        })?;
+        let identities = root_document_output_identities(&presentation);
+        if identities.len() != outputs.len() {
             return Err(document_runtime_error(format!(
                 "browser presentation identity count {} does not match {} canonical outputs",
-                output_ids.len(),
+                identities.len(),
                 outputs.len(),
             )));
         }
-        let mut ordinals = output_ids
+        let bindings = identities
             .into_iter()
-            .zip(outputs.into_iter().map(|output| u64::from(output.output)))
-            .collect::<HashMap<_, _>>();
+            .zip(outputs)
+            .map(|(identity, output)| DocumentOutputBinding {
+                output_id: identity.output_id,
+                semantic_id: identity.semantic_id,
+                kind: output.kind,
+                ordinal: u64::from(output.output),
+            })
+            .collect::<Vec<_>>();
         if require_all
-            && bootstrap
-                .presentation_output_ids
-                .iter()
-                .any(|output_id| !ordinals.contains_key(output_id))
+            && bootstrap.presentation_output_ids.iter().any(|output_id| {
+                !bindings
+                    .iter()
+                    .any(|binding| binding.output_id == *output_id)
+            })
         {
             return Err(document_runtime_error(
                 "browser presentation payload contains an output absent from the canonical document",
             ));
         }
-        if let Some(output) = program_output {
-            ordinals.insert(root_document_program_output_id(), u64::from(output.0));
+        Ok(DocumentOutputState {
+            bindings,
+            program_output: program_output.map(|output| u64::from(output.0)),
+        })
+    }
+
+    fn occurrence_output_id(
+        kind: SourceDocumentOutputKind,
+        semantic_id: u64,
+        occurrence: u64,
+    ) -> u64 {
+        if occurrence == 0 {
+            return semantic_id;
         }
-        Ok(ordinals)
+        match kind {
+            SourceDocumentOutputKind::Inline => hash_str(&format!(
+                "mech/inline-document-output-occurrence/v1/{semantic_id}/{occurrence}"
+            )),
+            SourceDocumentOutputKind::Fence => hash_str(&format!(
+                "mech/fenced-document-output/{semantic_id}/{occurrence}"
+            )),
+            SourceDocumentOutputKind::Program => root_document_program_output_id(),
+        }
+    }
+
+    fn retain_output_identities(
+        previous: &[DocumentOutputBinding],
+        next: &mut [DocumentOutputBinding],
+    ) {
+        let mut groups = Vec::<(SourceDocumentOutputKind, u64)>::new();
+        for binding in previous.iter().chain(next.iter()) {
+            let key = (binding.kind, binding.semantic_id);
+            if !groups.contains(&key) {
+                groups.push(key);
+            }
+        }
+
+        let mut claimed = Vec::<u64>::new();
+        let mut assigned = vec![false; next.len()];
+        for (kind, semantic_id) in groups {
+            let old = previous
+                .iter()
+                .filter(|binding| binding.kind == kind && binding.semantic_id == semantic_id)
+                .collect::<Vec<_>>();
+            let new = next
+                .iter()
+                .enumerate()
+                .filter(|(_, binding)| binding.kind == kind && binding.semantic_id == semantic_id)
+                .map(|(index, _)| index)
+                .collect::<Vec<_>>();
+
+            // With indistinguishable duplicate source, a full-source replacement
+            // cannot reveal which occurrence was inserted. Match from the end
+            // when cardinality changes so prepending an identical stateful fence
+            // never renumbers the retained placeholders already in the DOM.
+            let preserve_from_end = old.len() != new.len();
+            let pairs = old.len().min(new.len());
+            for pair in 0..pairs {
+                let old_index = if preserve_from_end {
+                    old.len() - 1 - pair
+                } else {
+                    pair
+                };
+                let new_index = if preserve_from_end {
+                    new.len() - 1 - pair
+                } else {
+                    pair
+                };
+                let output_id = old[old_index].output_id;
+                next[new[new_index]].output_id = output_id;
+                assigned[new[new_index]] = true;
+                if !claimed.contains(&output_id) {
+                    claimed.push(output_id);
+                }
+            }
+
+            for index in new {
+                if assigned[index] {
+                    continue;
+                }
+                let mut occurrence = 0_u64;
+                loop {
+                    let output_id = occurrence_output_id(kind, semantic_id, occurrence);
+                    if !claimed.contains(&output_id) {
+                        next[index].output_id = output_id;
+                        assigned[index] = true;
+                        claimed.push(output_id);
+                        break;
+                    }
+                    occurrence = occurrence
+                        .checked_add(1)
+                        .expect("document output occurrence space is exhausted");
+                }
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod output_identity_tests {
+        use super::*;
+
+        fn fence(output_id: u64, ordinal: u64) -> DocumentOutputBinding {
+            DocumentOutputBinding {
+                output_id,
+                semantic_id: 17,
+                kind: SourceDocumentOutputKind::Fence,
+                ordinal,
+            }
+        }
+
+        #[test]
+        fn prepended_identical_fence_does_not_renumber_retained_outputs() {
+            let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
+            let previous = vec![fence(base, 4), fence(second, 5)];
+            let mut next = vec![fence(base, 4), fence(second, 5), fence(third, 6)];
+
+            retain_output_identities(&previous, &mut next);
+
+            assert_eq!(
+                next.iter()
+                    .map(|binding| binding.output_id)
+                    .collect::<Vec<_>>(),
+                vec![third, base, second]
+            );
+        }
     }
 
     fn selected_value_response(
@@ -1490,6 +1671,7 @@ mod document {
         pub(super) repl: crate::repl::WasmRepl,
         pub(super) bootstrap: WasmDocumentBootstrap,
         document_output_ordinals: HashMap<u64, u64>,
+        document_output_bindings: Vec<DocumentOutputBinding>,
         program_output: Option<DocumentProgramOutput>,
         started: bool,
         stopped: bool,
@@ -1595,13 +1777,16 @@ mod document {
         pub(super) fn try_from_bootstrap(
             bootstrap: WasmDocumentBootstrap,
         ) -> MResult<WasmDocument> {
-            let document_output_ordinals = document_output_ordinals(&bootstrap)?;
+            let document_output_state =
+                document_output_state_for_source(&bootstrap, bootstrap.document.document(), true)?;
+            let document_output_ordinals = document_output_state.ordinals();
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
             Ok(Self {
                 repl,
                 bootstrap,
                 document_output_ordinals,
+                document_output_bindings: document_output_state.bindings,
                 program_output,
                 started: false,
                 stopped: false,
@@ -1848,6 +2033,7 @@ mod document {
             self.repl = replacement.repl;
             self.bootstrap = replacement.bootstrap;
             self.document_output_ordinals = replacement.document_output_ordinals;
+            self.document_output_bindings = replacement.document_output_bindings;
             self.program_output = replacement.program_output;
             self.started = false;
             self.stopped = false;
@@ -2442,12 +2628,15 @@ mod document {
                 self.repl.session.source_document().ok_or_else(|| {
                     document_runtime_error("document session has no retained source")
                 })?;
-            let ordinals = document_output_ordinals_for_source(&self.bootstrap, current, false)?;
+            let mut state = document_output_state_for_source(&self.bootstrap, current, false)?;
+            retain_output_identities(&self.document_output_bindings, &mut state.bindings);
+            let ordinals = state.ordinals();
             let output_id = ordinals
                 .get(&root_document_program_output_id())
                 .and_then(|ordinal| u32::try_from(*ordinal).ok())
                 .map(OutputId::new);
             self.document_output_ordinals = ordinals;
+            self.document_output_bindings = state.bindings;
             if let (Some(program_output), Some(output_id)) =
                 (self.program_output.as_mut(), output_id)
             {
