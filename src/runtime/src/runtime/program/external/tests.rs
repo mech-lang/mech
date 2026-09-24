@@ -1936,6 +1936,17 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
+    let mut missing_input = records[0].clone();
+    missing_input.header.input_range = None;
+    missing_input.body.input_batch_hash = [0; 32];
+    let error = replay
+        .execute_replay_batch(None, &missing_input)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("input evidence does not match its failure phase")
+    );
     assert!(matches!(
         replay.execute_replay_batch(Some(&batches[0]), &records[0])?,
         ResidentExternalTurnOutcome::Rejected {

@@ -992,14 +992,13 @@ fn compile_document_units_inner(
             DocumentUnit::Activation(activation) => {
                 let value = builder.document_activation(&activation)?;
                 value.resolved()?;
-                retain_later_document_value(
-                    &mut last,
-                    CompiledDocumentValue {
+                if last.is_none() {
+                    last = Some(CompiledDocumentValue {
                         value,
                         syntax: activation.syntax().clone(),
                         program_visible: false,
-                    },
-                );
+                    });
+                }
                 refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
             }
             DocumentUnit::Statement(unit) => {
