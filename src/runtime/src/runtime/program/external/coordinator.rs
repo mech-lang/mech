@@ -475,18 +475,18 @@ impl ResidentExternalCoordinator {
         let mut retained_bytes = self.latest_live_input_retained_bytes;
         for (ordinal, _, replacement_bytes) in &replacements {
             let previous = *self.latest_live_input_bytes.get(*ordinal).ok_or_else(|| {
-                invalid_coordinator("live input snapshot ordinal is out of bounds")
+                invalid_value("live input snapshot ordinal is out of bounds".to_owned())
             })?;
             retained_bytes = retained_bytes
                 .checked_sub(previous)
                 .and_then(|bytes| bytes.checked_add(*replacement_bytes))
-                .ok_or_else(|| invalid_coordinator("live input snapshot byte accounting"))?;
+                .ok_or_else(|| invalid_value("live input snapshot byte accounting".to_owned()))?;
         }
         if retained_bytes > self.latest_live_input_byte_limit {
-            return invalid_coordinator(format!(
+            return Err(invalid_value(format!(
                 "live input snapshot requires {retained_bytes} retained bytes, maximum {}",
                 self.latest_live_input_byte_limit
-            ));
+            )));
         }
         for (ordinal, value, replacement_bytes) in replacements {
             self.latest_live_inputs[ordinal] = Some(value);
@@ -578,7 +578,7 @@ impl ResidentExternalCoordinator {
         // `Some(&[])` deliberately captures from the last accepted host
         // snapshot. A continuation belongs to that accepted input turn and
         // must not read a provider value whose packet is still queued.
-        self.execute_live_turn(Some(&[]), admission, prepublication)
+        self.execute_live_turn(Some(&[]), admission, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
