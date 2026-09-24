@@ -2381,13 +2381,24 @@ fn structurally_irrefutable<V>(
             prefix,
             rest: Some(rest),
             suffix,
-        } if prefix.is_empty() && suffix.is_empty() => {
+        } => {
             let SchemaBody::Matrix { element, .. } = &expected.body else {
                 return false;
             };
-            structural_component_schema_draft(expected, element)
-                .and_then(|element| structural_array_rest_schema(&element))
-                .is_some_and(|expected| structurally_irrefutable(rest, &expected))
+            let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
+                return false;
+            };
+            let length_is_irrefutable = fixed == 0
+                || fixed_matrix_element_count(expected).is_some_and(|count| count >= fixed);
+            length_is_irrefutable
+                && structural_component_schema_draft(expected, element).is_some_and(|element| {
+                    prefix
+                        .iter()
+                        .chain(suffix)
+                        .all(|item| structurally_irrefutable(item, &element))
+                        && structural_array_rest_schema(&element)
+                            .is_some_and(|expected| structurally_irrefutable(rest, &expected))
+                })
         }
         crate::CollectionPattern::Array {
             prefix,
@@ -2408,9 +2419,7 @@ fn structurally_irrefutable<V>(
                         .all(|item| structurally_irrefutable(item, &expected))
                 })
         }
-        crate::CollectionPattern::Equal(_)
-        | crate::CollectionPattern::Enum { .. }
-        | crate::CollectionPattern::Array { .. } => false,
+        crate::CollectionPattern::Equal(_) | crate::CollectionPattern::Enum { .. } => false,
     }
 }
 

@@ -474,6 +474,23 @@ fn exact_fixed_array_enum_payload_pattern_completes_variant_coverage() {
 }
 
 #[test]
+fn fixed_array_rest_enum_payload_pattern_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,2>\n\
+                 value<event> := :data([1 2])\n\
+                 result := value? | :data([*, ...]) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("an irrefutable rest payload pattern covers the fixed enum variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
     let source = "<first> := :idle | :busy\n\
                   <second> := :idle | :done\n\
