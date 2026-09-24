@@ -884,6 +884,19 @@ fn production_load_drains_fsm_continuations_before_returning_initial_value() {
 }
 
 #[test]
+fn pure_continuation_drains_keep_input_free_activations_dormant() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ndeferred + count\n";
+    let mut runtime = runtime();
+    let loaded = runtime
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(loaded.initial_value.format_canonical_inline(), "41");
+    assert_eq!(loaded.info.resident_accepted_turns, 2);
+}
+
+#[test]
 fn failed_initial_continuation_drain_releases_the_program_slot() {
     let deferred = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
     let compile = |source: &str| {
@@ -5413,6 +5426,62 @@ fn initial_publication_replays_with_activations_dormant() {
     ));
     assert_eq!(replay.receipts().next().unwrap().1, &record);
     assert_eq!(scene.lock().unwrap().deliveries, 1);
+}
+
+#[test]
+fn continuation_drain_replay_keeps_input_free_activations_dormant() {
+    let (mut runtime, _scene) = product_nbody_runtime();
+    runtime
+        .load_source_program(
+            "@scene := scene://orbit/frame{:write(points)}\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\npoints := [1.0 2.0]\n@scene/points <- points\ndeferred + count\n",
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("continuation fixture must use the external resident route")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let records = execution
+        .coordinator
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 2);
+    assert!(records[0].body.initial_publication);
+    assert!(!records[0].body.continuation_drain);
+    assert!(!records[1].body.initial_publication);
+    assert!(records[1].body.continuation_drain);
+
+    let catalog = mech_stdlib::source_catalog();
+    let instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        instance,
+        artifact,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    for record in &records {
+        assert!(matches!(
+            replay.execute_replay_batch(None, record).unwrap(),
+            crate::ResidentExternalTurnOutcome::Accepted { .. }
+        ));
+    }
+    assert_eq!(
+        replay
+            .receipts()
+            .map(|(_, record)| record.clone())
+            .collect::<Vec<_>>(),
+        records
+    );
 }
 
 #[test]
