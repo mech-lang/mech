@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 11;
+const WIRE_GRAPH_REVISION: u32 = 12;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -200,7 +200,7 @@ enum WireNodeBody {
 struct WireMatchDeclaration {
     scrutinee: u16,
     partial: bool,
-    captures: Box<[(u16, u32)]>,
+    captures: Box<[(u16, u32, bool)]>,
     arms: Box<[WireMatchArm]>,
 }
 
@@ -354,6 +354,9 @@ enum WireControlOperationBody {
     Match(WireMatchDeclaration),
     Comprehension(WireComprehensionDeclaration),
     Recur(u8),
+
+    Suspend,
+    Publish,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -1696,6 +1699,9 @@ fn wire_control_operation_body(
             WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
         }
         super::ControlOperationBody::Recur(ancestor) => WireControlOperationBody::Recur(*ancestor),
+
+        super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
+        super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
     }
 }
 
@@ -1963,7 +1969,13 @@ fn wire_match(
         captures: control
             .captures
             .iter()
-            .map(|capture| (capture.input, capture.schema.get()))
+            .map(|capture| {
+                (
+                    capture.input,
+                    capture.schema.get(),
+                    capture.freeze_on_suspend,
+                )
+            })
             .collect(),
         arms: control
             .arms
@@ -2090,6 +2102,9 @@ fn control_operation_body_from_wire(
             super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
         }
         WireControlOperationBody::Recur(ancestor) => super::ControlOperationBody::Recur(ancestor),
+
+        WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
+        WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
     })
 }
 
@@ -2213,9 +2228,10 @@ fn match_from_wire(
         partial,
         captures: captures
             .into_iter()
-            .map(|(input, schema)| super::ControlCapture {
+            .map(|(input, schema, freeze_on_suspend)| super::ControlCapture {
                 input,
                 schema: SchemaId::new(schema),
+                freeze_on_suspend,
             })
             .collect(),
         arms: arms
@@ -2263,7 +2279,9 @@ fn control_body_operation_references(
         super::ControlOperationBody::Comprehension(control) => {
             comprehension_operation_references(control)
         }
-        super::ControlOperationBody::Recur(_) => Vec::new(),
+        super::ControlOperationBody::Recur(_)
+        | super::ControlOperationBody::Suspend
+        | super::ControlOperationBody::Publish => Vec::new(),
     }
 }
 
@@ -2306,7 +2324,9 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Comprehension(control) => {
             wire_comprehension_operation_ids(control)
         }
-        WireControlOperationBody::Recur(_) => Vec::new(),
+        WireControlOperationBody::Recur(_)
+        | WireControlOperationBody::Suspend
+        | WireControlOperationBody::Publish => Vec::new(),
     }
 }
 

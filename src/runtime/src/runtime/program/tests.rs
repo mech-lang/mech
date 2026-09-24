@@ -799,6 +799,132 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
 }
 
 #[test]
+fn production_load_drains_fsm_continuations_before_returning_initial_value() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
+    let parsed = mech_syntax::document::parse_canonical_document(
+        mech_syntax::document::TextSnapshot::new(
+            mech_syntax::document::DocumentId(0x874),
+            mech_syntax::document::Revision(0),
+            source,
+        )
+        .unwrap(),
+        mech_syntax::document::ParseConfig::default(),
+    );
+    let document = <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
+        parsed.syntax(),
+    )
+    .unwrap();
+    let artifact = mech_engine::CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut runtime = runtime();
+    let loaded = runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(loaded.initial_value.format_canonical_inline(), "42");
+    let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+        panic!("FSM must use the pure resident route")
+    };
+    assert_eq!(loaded.info.resident_accepted_turns, 3);
+    assert!(!execution.instance.has_ready_continuation());
+}
+
+#[test]
+fn failed_initial_continuation_drain_releases_the_program_slot() {
+    let deferred = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
+    let compile = |source: &str| {
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(
+                mech_syntax::document::DocumentId(0x875),
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        let document =
+            <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
+                parsed.syntax(),
+            )
+            .unwrap();
+        mech_engine::CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap()
+    };
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(1);
+    let mut runtime = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_catalog())
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    let deferred = encode_program_artifact_bytecode_v1(&compile(deferred)).unwrap();
+    let error = runtime
+        .load_bytecode_program(&deferred, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert!(matches!(
+        runtime.active_program,
+        ActiveProgramExecution::None
+    ));
+
+    let replacement = encode_program_artifact_bytecode_v1(&compile("40u64 + 2u64\n")).unwrap();
+    let loaded = runtime
+        .load_bytecode_program(&replacement, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(loaded.initial_value.format_canonical_inline(), "42");
+}
+
+#[test]
+fn pending_continuations_are_drained_before_the_next_host_packet() {
+    let source = "@clock := test://clock/tick{:read(delta-seconds)}\ntick := @clock/delta-seconds\n#Deferred(value<f64>) => <f64>\n  | :Start(value<f64>)\n  | :One(value<f64>)\n  | :Two(value<f64>)\n  | :Three(value<f64>)\n  | :Done(value<f64>).\n#Deferred(value) -> :Start(value)\n  :Start(value) ~> :One(value)\n  :One(value) ~> :Two(value)\n  :Two(value) ~> :Three(value)\n  :Three(value) -> :Done(value)\n  :Done(value) => value.\n#Deferred(tick)\n";
+    let (mut runtime, _, _, _) = configured_external_runtime();
+    runtime
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    runtime.config.limits.max_steps_per_turn = Some(1);
+    let trigger = crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap();
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            trigger.clone(),
+            crate::RuntimeHostInputValue::F64(1.0),
+        ))
+        .unwrap();
+    let error = runtime.drain_resident_host_inputs(1).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            trigger,
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    let error = runtime.drain_resident_host_inputs(1).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+}
+
+#[test]
 fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
