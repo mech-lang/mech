@@ -2561,6 +2561,7 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
         if matches!(
             node.kind(),
             SyntaxKind::VariableDefine
+                | SyntaxKind::TupleDestructure
                 | SyntaxKind::Expression
                 | SyntaxKind::OpAssign
                 | SyntaxKind::VariableAssign
