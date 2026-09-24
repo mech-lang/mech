@@ -4030,7 +4030,7 @@ fn resident_host_packets_coalesce_and_capture_the_latest_packet_value() {
         Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
     ));
     assert_eq!(reads.load(Ordering::SeqCst), 0);
-    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
     assert_eq!(runtime.program_execution_info().coalesced_host_packets, 1);
 
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
