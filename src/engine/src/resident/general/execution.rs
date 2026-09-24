@@ -1434,6 +1434,7 @@ impl ReactiveInstance {
                     );
                 }
                 for update in updates.iter() {
+                    set_bit(&mut self.workspace.dirty_bits, update.get() as usize);
                     clear_bit(
                         &mut self.workspace.suppressed_activation_bits,
                         update.get() as usize,
@@ -1692,6 +1693,14 @@ impl ReactiveInstance {
     ) -> Result<(), ResidentExecutionError> {
         for index in 0..self.plan.output_materializations.len() {
             let materialization = self.plan.output_materializations[index];
+            if materialization.producer.is_some_and(|producer| {
+                bit_is_set(
+                    &self.workspace.suppressed_activation_bits,
+                    producer.get() as usize,
+                )
+            }) {
+                continue;
+            }
             let suspended = self.plan.steps.iter().enumerate().any(|(step, node)| {
                 self.unpublished_continuation(step)
                     && matches!(node, ActivatedTurnStep::Match(control)
