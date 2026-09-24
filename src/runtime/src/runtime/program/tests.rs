@@ -5419,10 +5419,15 @@ fn initial_publication_replays_with_activations_dormant() {
 
 #[test]
 fn continuation_drain_replay_keeps_input_free_activations_dormant() {
-    let (mut runtime, _scene) = product_nbody_runtime();
+    let (mut runtime, scene) = product_nbody_runtime();
     let source = "@scene := scene://orbit/frame{:write(points)}\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\npoints := [1.0 2.0]\n@scene/points <- points\n#Deferred()\n";
     let artifact = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
+        .resource_provider(Box::new(ProductSceneProvider {
+            trace: scene,
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
         .build_compiler()
         .unwrap()
         .compile_source_artifact(source)
