@@ -3809,6 +3809,13 @@ impl ValueCell {
         self.binding.schemas.clone()
     }
 
+    /// Retains this cell's schema context without copying its value payload.
+    /// Consumers resolving reified schema keys can use the shared table even
+    /// when the cell's payload has not been admitted for a snapshot.
+    pub fn retained_schema_table(&self) -> Rc<SchemaTable> {
+        self.schema_table()
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn schema_clone_allocation_bound_bytes(&self) -> MResult<u64> {
         self.binding
