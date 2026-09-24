@@ -8,7 +8,7 @@ use cranelift_codegen::ir::{
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
-use cranelift_module::{Linkage, Module, default_libcall_names};
+use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use mech_core::CellSlotId;
 
 use super::{
@@ -17,7 +17,7 @@ use super::{
     ScalarOperand, ScalarPredicate, UnaryOperation,
 };
 
-type NativeTurn = unsafe extern "C" fn(
+pub(super) type NativeTurn = unsafe extern "C" fn(
     input_pointers: *const *const f32,
     state_pointers: *const *const f32,
     next_state_pointers: *const *mut f32,
@@ -159,7 +159,7 @@ impl NativeKernel {
     fn compile(program: &FixedShapeKernel) -> Result<Self, BatchedExecutionError> {
         let mut jit_builder =
             JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
-                .map_err(native_error)?;
+                .map_err(cranelift_error)?;
         jit_builder
             .symbol("mech_jit_sinf", mech_jit_sinf as *const u8)
             .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
@@ -167,231 +167,260 @@ impl NativeKernel {
             .symbol("mech_jit_ceilf", mech_jit_ceilf as *const u8)
             .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
         let mut module = JITModule::new(jit_builder);
-
-        let unary_signature = {
-            let mut signature = module.make_signature();
-            signature.params.push(AbiParam::new(types::F32));
-            signature.returns.push(AbiParam::new(types::F32));
-            signature
-        };
-        let binary_signature = {
-            let mut signature = module.make_signature();
-            signature.params.push(AbiParam::new(types::F32));
-            signature.params.push(AbiParam::new(types::F32));
-            signature.returns.push(AbiParam::new(types::F32));
-            signature
-        };
-        let sin_id = module
-            .declare_function("mech_jit_sinf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let cos_id = module
-            .declare_function("mech_jit_cosf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let sqrt_id = module
-            .declare_function("mech_jit_sqrtf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let ceil_id = module
-            .declare_function("mech_jit_ceilf", Linkage::Import, &unary_signature)
-            .map_err(native_error)?;
-        let atan2_id = module
-            .declare_function("mech_jit_atan2f", Linkage::Import, &binary_signature)
-            .map_err(native_error)?;
-
-        let pointer_type = module.target_config().pointer_type();
-        let mut signature = module.make_signature();
-        for _ in 0..4 {
-            signature.params.push(AbiParam::new(pointer_type));
-        }
-        signature.returns.push(AbiParam::new(types::I64));
-        let function_id = module
-            .declare_function("mech_fixed_numeric_turn", Linkage::Local, &signature)
-            .map_err(native_error)?;
-        let mut context = module.make_context();
-        context.func.signature = signature;
-        context.func.name = UserFuncName::user(0, function_id.as_u32());
-        let mut function_context = FunctionBuilderContext::new();
-
-        {
-            let mut builder = FunctionBuilder::new(&mut context.func, &mut function_context);
-            let entry = builder.create_block();
-            let header = builder.create_block();
-            let body = builder.create_block();
-            let advance = builder.create_block();
-            let fault = builder.create_block();
-            let exit = builder.create_block();
-            builder.append_block_params_for_function_params(entry);
-            builder.append_block_param(header, pointer_type);
-            builder.append_block_param(fault, pointer_type);
-            builder.append_block_param(fault, types::I32);
-            builder.switch_to_block(entry);
-
-            let parameters = builder.block_params(entry).to_vec();
-            let input_table = parameters[0];
-            let state_table = parameters[1];
-            let next_state_table = parameters[2];
-            let instances = parameters[3];
-            let pointer_bytes = i32::try_from(pointer_type.bytes()).unwrap();
-            let flags = MemFlags::trusted();
-            let input_bases = (0..program.inputs.len())
-                .map(|index| {
-                    builder.ins().load(
-                        pointer_type,
-                        flags,
-                        input_table,
-                        i32::try_from(index).unwrap() * pointer_bytes,
-                    )
-                })
-                .collect::<Vec<_>>();
-            let state_bases = (0..program.states.len())
-                .map(|index| {
-                    builder.ins().load(
-                        pointer_type,
-                        flags,
-                        state_table,
-                        i32::try_from(index).unwrap() * pointer_bytes,
-                    )
-                })
-                .collect::<Vec<_>>();
-            let next_state_bases = (0..program.states.len())
-                .map(|index| {
-                    builder.ins().load(
-                        pointer_type,
-                        flags,
-                        next_state_table,
-                        i32::try_from(index).unwrap() * pointer_bytes,
-                    )
-                })
-                .collect::<Vec<_>>();
-            let zero = builder.ins().iconst(pointer_type, 0);
-            builder.ins().jump(header, &[zero.into()]);
-
-            builder.switch_to_block(header);
-            let instance = builder.block_params(header)[0];
-            let has_instance = builder
-                .ins()
-                .icmp(IntCC::UnsignedLessThan, instance, instances);
-            builder.ins().brif(has_instance, body, &[], exit, &[]);
-
-            builder.switch_to_block(body);
-            let sin_ref = module.declare_func_in_func(sin_id, builder.func);
-            let cos_ref = module.declare_func_in_func(cos_id, builder.func);
-            let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
-            let ceil_ref = module.declare_func_in_func(ceil_id, builder.func);
-            let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
-            let functions = MathFunctions {
-                sin: sin_ref,
-                cos: cos_ref,
-                sqrt: sqrt_ref,
-                ceil: ceil_ref,
-                atan2: atan2_ref,
-            };
-            let mut registers = vec![None; program.fixed_ir().register_count];
-            for (index, input) in program.inputs.iter().enumerate() {
-                let offset = program.register_offsets[&input.slot];
-                for component in 0..input.shape.elements() {
-                    registers[offset + component] = Some(NativeRegister::F32(load_component(
-                        &mut builder,
-                        input_bases[index],
-                        instance,
-                        input.shape.elements(),
-                        component,
-                        pointer_type,
-                    )));
-                }
-            }
-            for (index, state) in program.states.iter().enumerate() {
-                let offset = program.register_offsets[&state.slot];
-                for component in 0..state.shape.elements() {
-                    registers[offset + component] = Some(NativeRegister::F32(load_component(
-                        &mut builder,
-                        state_bases[index],
-                        instance,
-                        state.shape.elements(),
-                        component,
-                        pointer_type,
-                    )));
-                }
-            }
-            for instruction in &program.fixed_ir().instructions {
-                let value = lower_computation(
-                    &mut builder,
-                    &instruction.computation,
-                    &registers,
-                    functions,
-                )?;
-                registers[instruction.output] = Some(value);
-            }
-            let mut constraint_code = builder.ins().iconst(types::I32, 0);
-            for (index, constraint) in program.constraints.iter().enumerate() {
-                let condition = lower_predicate(&mut builder, &constraint.predicate, &registers)?;
-                let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
-                let failed = builder.ins().bnot(condition);
-                let record = builder.ins().band(code_is_empty, failed);
-                let code = builder.ins().iconst(types::I32, (index + 1) as i64);
-                constraint_code = builder.ins().select(record, code, constraint_code);
-            }
-            for (index, state) in program.states.iter().enumerate() {
-                for (component, source) in state.update.iter().enumerate() {
-                    let value = lower_numeric_operand(&mut builder, *source, &registers)?;
-                    store_component(
-                        &mut builder,
-                        next_state_bases[index],
-                        instance,
-                        state.shape.elements(),
-                        component,
-                        pointer_type,
-                        value,
-                    );
-                }
-            }
-
-            let has_fault = builder.ins().icmp_imm(IntCC::NotEqual, constraint_code, 0);
-            builder.ins().brif(
-                has_fault,
-                fault,
-                &[instance.into(), constraint_code.into()],
-                advance,
-                &[],
-            );
-
-            builder.switch_to_block(advance);
-            let next_instance = builder.ins().iadd_imm(instance, 1);
-            builder.ins().jump(header, &[next_instance.into()]);
-
-            builder.switch_to_block(fault);
-            let fault_instance = builder.block_params(fault)[0];
-            let fault_code = builder.block_params(fault)[1];
-            let fault_instance = if pointer_type == types::I64 {
-                fault_instance
-            } else {
-                builder.ins().uextend(types::I64, fault_instance)
-            };
-            let fault_code = builder.ins().uextend(types::I64, fault_code);
-            let packed = builder.ins().ishl_imm(fault_instance, 8);
-            let packed = builder.ins().bor(packed, fault_code);
-            builder.ins().return_(&[packed]);
-
-            builder.switch_to_block(exit);
-            let success = builder.ins().iconst(types::I64, 0);
-            builder.ins().return_(&[success]);
-            builder.seal_all_blocks();
-            builder.finalize();
-        }
-
-        module
-            .define_function(function_id, &mut context)
-            .map_err(native_error)?;
-        module.clear_context(&mut context);
-        module.finalize_definitions().map_err(native_error)?;
+        let function_id = define_native_turn(
+            &mut module,
+            program,
+            Linkage::Local,
+            NativeMathSymbols {
+                sin: "mech_jit_sinf",
+                cos: "mech_jit_cosf",
+                sqrt: "mech_jit_sqrtf",
+                ceil: "mech_jit_ceilf",
+                atan2: "mech_jit_atan2f",
+            },
+        )?;
+        module.finalize_definitions().map_err(cranelift_error)?;
         let code = module.get_finalized_function(function_id);
         // SAFETY: `code` is the finalized entry point for the four-argument
-        // signature constructed above. The module remains owned by the kernel.
+        // signature constructed below. The module remains owned by the kernel.
         let turn = unsafe { mem::transmute::<*const u8, NativeTurn>(code) };
         Ok(Self {
             _module: module,
             turn,
         })
     }
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct NativeMathSymbols<'a> {
+    pub sin: &'a str,
+    pub cos: &'a str,
+    pub sqrt: &'a str,
+    pub ceil: &'a str,
+    pub atan2: &'a str,
+}
+
+pub(super) fn define_native_turn<M: Module>(
+    module: &mut M,
+    program: &FixedShapeKernel,
+    linkage: Linkage,
+    symbols: NativeMathSymbols<'_>,
+) -> Result<FuncId, BatchedExecutionError> {
+    let unary_signature = {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(types::F32));
+        signature.returns.push(AbiParam::new(types::F32));
+        signature
+    };
+    let binary_signature = {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(types::F32));
+        signature.params.push(AbiParam::new(types::F32));
+        signature.returns.push(AbiParam::new(types::F32));
+        signature
+    };
+    let sin_id = module
+        .declare_function(symbols.sin, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let cos_id = module
+        .declare_function(symbols.cos, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let sqrt_id = module
+        .declare_function(symbols.sqrt, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let ceil_id = module
+        .declare_function(symbols.ceil, Linkage::Import, &unary_signature)
+        .map_err(cranelift_error)?;
+    let atan2_id = module
+        .declare_function(symbols.atan2, Linkage::Import, &binary_signature)
+        .map_err(cranelift_error)?;
+
+    let pointer_type = module.target_config().pointer_type();
+    let mut signature = module.make_signature();
+    for _ in 0..4 {
+        signature.params.push(AbiParam::new(pointer_type));
+    }
+    signature.returns.push(AbiParam::new(types::I64));
+    let function_id = module
+        .declare_function("mech_fixed_numeric_turn", linkage, &signature)
+        .map_err(cranelift_error)?;
+    let mut context = module.make_context();
+    context.func.signature = signature;
+    context.func.name = UserFuncName::user(0, function_id.as_u32());
+    let mut function_context = FunctionBuilderContext::new();
+
+    {
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut function_context);
+        let entry = builder.create_block();
+        let header = builder.create_block();
+        let body = builder.create_block();
+        let advance = builder.create_block();
+        let fault = builder.create_block();
+        let exit = builder.create_block();
+        builder.append_block_params_for_function_params(entry);
+        builder.append_block_param(header, pointer_type);
+        builder.append_block_param(fault, pointer_type);
+        builder.append_block_param(fault, types::I32);
+        builder.switch_to_block(entry);
+
+        let parameters = builder.block_params(entry).to_vec();
+        let input_table = parameters[0];
+        let state_table = parameters[1];
+        let next_state_table = parameters[2];
+        let instances = parameters[3];
+        let pointer_bytes = i32::try_from(pointer_type.bytes()).unwrap();
+        let flags = MemFlags::trusted();
+        let input_bases = (0..program.inputs.len())
+            .map(|index| {
+                builder.ins().load(
+                    pointer_type,
+                    flags,
+                    input_table,
+                    i32::try_from(index).unwrap() * pointer_bytes,
+                )
+            })
+            .collect::<Vec<_>>();
+        let state_bases = (0..program.states.len())
+            .map(|index| {
+                builder.ins().load(
+                    pointer_type,
+                    flags,
+                    state_table,
+                    i32::try_from(index).unwrap() * pointer_bytes,
+                )
+            })
+            .collect::<Vec<_>>();
+        let next_state_bases = (0..program.states.len())
+            .map(|index| {
+                builder.ins().load(
+                    pointer_type,
+                    flags,
+                    next_state_table,
+                    i32::try_from(index).unwrap() * pointer_bytes,
+                )
+            })
+            .collect::<Vec<_>>();
+        let zero = builder.ins().iconst(pointer_type, 0);
+        builder.ins().jump(header, &[zero.into()]);
+
+        builder.switch_to_block(header);
+        let instance = builder.block_params(header)[0];
+        let has_instance = builder
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, instance, instances);
+        builder.ins().brif(has_instance, body, &[], exit, &[]);
+
+        builder.switch_to_block(body);
+        let sin_ref = module.declare_func_in_func(sin_id, builder.func);
+        let cos_ref = module.declare_func_in_func(cos_id, builder.func);
+        let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
+        let ceil_ref = module.declare_func_in_func(ceil_id, builder.func);
+        let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
+        let functions = MathFunctions {
+            sin: sin_ref,
+            cos: cos_ref,
+            sqrt: sqrt_ref,
+            ceil: ceil_ref,
+            atan2: atan2_ref,
+        };
+        let mut registers = vec![None; program.fixed_ir().register_count];
+        for (index, input) in program.inputs.iter().enumerate() {
+            let offset = program.register_offsets[&input.slot];
+            for component in 0..input.shape.elements() {
+                registers[offset + component] = Some(NativeRegister::F32(load_component(
+                    &mut builder,
+                    input_bases[index],
+                    instance,
+                    input.shape.elements(),
+                    component,
+                    pointer_type,
+                )));
+            }
+        }
+        for (index, state) in program.states.iter().enumerate() {
+            let offset = program.register_offsets[&state.slot];
+            for component in 0..state.shape.elements() {
+                registers[offset + component] = Some(NativeRegister::F32(load_component(
+                    &mut builder,
+                    state_bases[index],
+                    instance,
+                    state.shape.elements(),
+                    component,
+                    pointer_type,
+                )));
+            }
+        }
+        for instruction in &program.fixed_ir().instructions {
+            let value = lower_computation(
+                &mut builder,
+                &instruction.computation,
+                &registers,
+                functions,
+            )?;
+            registers[instruction.output] = Some(value);
+        }
+        let mut constraint_code = builder.ins().iconst(types::I32, 0);
+        for (index, constraint) in program.constraints.iter().enumerate() {
+            let condition = lower_predicate(&mut builder, &constraint.predicate, &registers)?;
+            let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
+            let failed = builder.ins().bnot(condition);
+            let record = builder.ins().band(code_is_empty, failed);
+            let code = builder.ins().iconst(types::I32, (index + 1) as i64);
+            constraint_code = builder.ins().select(record, code, constraint_code);
+        }
+        for (index, state) in program.states.iter().enumerate() {
+            for (component, source) in state.update.iter().enumerate() {
+                let value = lower_numeric_operand(&mut builder, *source, &registers)?;
+                store_component(
+                    &mut builder,
+                    next_state_bases[index],
+                    instance,
+                    state.shape.elements(),
+                    component,
+                    pointer_type,
+                    value,
+                );
+            }
+        }
+
+        let has_fault = builder.ins().icmp_imm(IntCC::NotEqual, constraint_code, 0);
+        builder.ins().brif(
+            has_fault,
+            fault,
+            &[instance.into(), constraint_code.into()],
+            advance,
+            &[],
+        );
+
+        builder.switch_to_block(advance);
+        let next_instance = builder.ins().iadd_imm(instance, 1);
+        builder.ins().jump(header, &[next_instance.into()]);
+
+        builder.switch_to_block(fault);
+        let fault_instance = builder.block_params(fault)[0];
+        let fault_code = builder.block_params(fault)[1];
+        let fault_instance = if pointer_type == types::I64 {
+            fault_instance
+        } else {
+            builder.ins().uextend(types::I64, fault_instance)
+        };
+        let fault_code = builder.ins().uextend(types::I64, fault_code);
+        let packed = builder.ins().ishl_imm(fault_instance, 8);
+        let packed = builder.ins().bor(packed, fault_code);
+        builder.ins().return_(&[packed]);
+
+        builder.switch_to_block(exit);
+        let success = builder.ins().iconst(types::I64, 0);
+        builder.ins().return_(&[success]);
+        builder.seal_all_blocks();
+        builder.finalize();
+    }
+
+    module
+        .define_function(function_id, &mut context)
+        .map_err(cranelift_error)?;
+    module.clear_context(&mut context);
+    Ok(function_id)
 }
 
 #[derive(Clone, Copy)]
@@ -686,8 +715,8 @@ fn component_address(
     builder.ins().iadd(base, byte_offset)
 }
 
-fn native_error(error: impl std::fmt::Display) -> BatchedExecutionError {
-    BatchedExecutionError::Native(format!("Cranelift JIT: {error}"))
+fn cranelift_error(error: impl std::fmt::Display) -> BatchedExecutionError {
+    BatchedExecutionError::Native(format!("Cranelift native lowering: {error}"))
 }
 
 extern "C" fn mech_jit_sinf(value: f32) -> f32 {

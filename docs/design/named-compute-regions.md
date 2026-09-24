@@ -78,10 +78,17 @@ instead of fusing across explicit boundaries.
 
 The stable v0.4 product backends are `cpu-scalar` and `wgpu`. `auto`, `cpu`,
 `gpu`, `cpu-scalar`, and `wgpu` are stable application selectors. The backend
-library also contains `cpu-simd`, `cpu-jit`, and fixed-shape wgpu prototypes,
+library also contains `cpu-simd`, `cpu-jit`, `cpu-aot`, and fixed-shape wgpu prototypes,
 but the mixed-application compiler does not yet produce their fixed-shape
 kernel form. Those implementations are experimental library and benchmark
 paths, not generally selectable v0.4 application backends.
+
+`cpu-aot` uses the same Cranelift native lowering as `cpu-jit`, emits a host
+object, links it into a reusable native library, and reloads the exported turn
+function. Set `MECH_AOT_CACHE_DIR` to choose the artifact directory; otherwise
+the platform temporary directory is used. A host C linker is required the first
+time a program is emitted. The backend is explicit-only and does not change the
+`auto` or `cpu` preference order.
 
 ## Mixed runtime integration
 

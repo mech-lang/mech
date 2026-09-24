@@ -4,6 +4,8 @@ use std::{collections::BTreeMap, num::NonZeroU32, sync::Arc};
 
 use web_time::Instant;
 
+#[cfg(feature = "aot")]
+use mech_compute::CPU_AOT_BACKEND;
 #[cfg(feature = "jit")]
 use mech_compute::CPU_JIT_BACKEND;
 use mech_compute::{
@@ -17,6 +19,8 @@ use mech_compute::{
 #[cfg(feature = "native")]
 use mech_compute::{ComputeBackendRegistry, WGPU_BACKEND};
 
+#[cfg(feature = "aot")]
+use crate::BatchedAotCpuSession;
 #[cfg(feature = "jit")]
 use crate::BatchedJitCpuSession;
 #[cfg(feature = "native")]
@@ -41,6 +45,10 @@ pub fn native_compute_backend_registry() -> Arc<ComputeBackendRegistry> {
     registry
         .register(Arc::new(CpuJitBackendFactory::new()))
         .expect("static JIT backend ID is unique");
+    #[cfg(feature = "aot")]
+    registry
+        .register(Arc::new(CpuAotBackendFactory::new()))
+        .expect("static AOT backend ID is unique");
     registry
         .register(Arc::new(WgpuBackendFactory::new()))
         .expect("static wgpu backend ID is unique");
@@ -353,10 +361,62 @@ impl ComputeBackendFactory for CpuJitBackendFactory {
     }
 }
 
+#[cfg(feature = "aot")]
+#[derive(Debug)]
+pub struct CpuAotBackendFactory {
+    descriptor: ComputeBackendDescriptor,
+}
+
+#[cfg(feature = "aot")]
+impl CpuAotBackendFactory {
+    pub fn new() -> Self {
+        Self {
+            descriptor: fixed_cpu_descriptor(CPU_AOT_BACKEND, 290),
+        }
+    }
+}
+
+#[cfg(feature = "aot")]
+impl Default for CpuAotBackendFactory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "aot")]
+impl ComputeBackendFactory for CpuAotBackendFactory {
+    fn descriptor(&self) -> &ComputeBackendDescriptor {
+        &self.descriptor
+    }
+
+    fn supports(&self, program: &ComputeProgram) -> Result<(), ComputeBackendRejection> {
+        supports_fixed_shape(&self.descriptor.id, program)
+    }
+
+    fn compile(
+        &self,
+        program: &ComputeProgram,
+    ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError> {
+        Ok(Box::new(FixedExecutable {
+            backend: self.descriptor.id.clone(),
+            program: FixedShapeKernel::from_compute_program(program).map_err(|error| {
+                backend_error(
+                    &self.descriptor.id,
+                    "compile",
+                    format!("fixed-shape lowering failed: {error}"),
+                )
+            })?,
+            implementation: FixedCpuImplementation::Aot,
+        }))
+    }
+}
+
 enum FixedCpuImplementation {
     Simd,
     #[cfg(feature = "jit")]
     Jit,
+    #[cfg(feature = "aot")]
+    Aot,
 }
 
 struct FixedExecutable {
@@ -385,6 +445,14 @@ impl ComputeExecutable for FixedExecutable {
                 backend: self.backend.clone(),
                 program: self.program.clone(),
                 session: self.program.prepare_jit_cpu(&inputs).map_err(|error| {
+                    backend_error(&self.backend, "create session", error.to_string())
+                })?,
+            })),
+            #[cfg(feature = "aot")]
+            FixedCpuImplementation::Aot => Ok(Box::new(FixedAotSession {
+                backend: self.backend.clone(),
+                program: self.program.clone(),
+                session: self.program.prepare_aot_cpu(&inputs).map_err(|error| {
                     backend_error(&self.backend, "create session", error.to_string())
                 })?,
             })),
@@ -449,6 +517,56 @@ struct FixedJitSession {
 
 #[cfg(feature = "jit")]
 impl ComputeSession for FixedJitSession {
+    fn update_inputs(
+        &mut self,
+        updates: &[ComputeInputUpdate],
+    ) -> Result<(), ComputeExecutionError> {
+        let inputs =
+            normalized_update_inputs(&self.backend, self.program.compute_program(), updates)?;
+        self.session
+            .update_inputs(&inputs)
+            .map_err(|error| execution_error(&self.backend, "update inputs", error.to_string()))
+    }
+
+    fn dispatch(
+        &mut self,
+        request: &ComputeDispatchRequest,
+    ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
+        let started = Instant::now();
+        let attempted_before = self.session.attempted_turns();
+        let result = self.session.dispatch_turns(turns.get());
+        fixed_dispatch_report(
+            &self.backend,
+            turns,
+            started,
+            result,
+            self.session
+                .attempted_turns()
+                .saturating_sub(attempted_before),
+            self.session.fault_count(),
+            self.session.last_fault(),
+        )
+    }
+
+    fn read_outputs(
+        &mut self,
+        selection: &ComputeOutputSelection,
+    ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
+        fixed_output_snapshot(&self.program, selection, self.session.state())
+            .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
+    }
+}
+
+#[cfg(feature = "aot")]
+struct FixedAotSession {
+    backend: BackendId,
+    program: FixedShapeKernel,
+    session: BatchedAotCpuSession,
+}
+
+#[cfg(feature = "aot")]
+impl ComputeSession for FixedAotSession {
     fn update_inputs(
         &mut self,
         updates: &[ComputeInputUpdate],
@@ -1141,6 +1259,12 @@ mod tests {
             registry
                 .descriptors()
                 .any(|descriptor| descriptor.id.as_str() == WGPU_BACKEND)
+        );
+        #[cfg(feature = "aot")]
+        assert!(
+            registry
+                .descriptors()
+                .any(|descriptor| descriptor.id.as_str() == CPU_AOT_BACKEND)
         );
     }
 

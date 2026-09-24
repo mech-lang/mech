@@ -21,6 +21,7 @@ fn main() {
     let cpu_turns = argument(2, 3_u32).max(1);
     let single_gpu_turns = argument(3, 20_u32).max(1);
     let checked_gpu_turns = argument(4, 120_u32).max(1);
+    let cpu_only = env::args().nth(5).as_deref() == Some("cpu-only");
     let validation_turns = 4;
 
     let compile_started = Instant::now();
@@ -64,14 +65,21 @@ fn main() {
         jit_max_error <= 1.0e-4,
         "JIT result differs from scalar CPU lowering by {jit_max_error}"
     );
-    let mut gpu_validation = program.prepare_resident(&inputs).unwrap();
-    let actual = gpu_validation.run_turns(validation_turns).unwrap();
-    let max_error = maximum_error(&expected, &actual.state);
-    assert!(
-        max_error <= 1.0e-4,
-        "GPU result differs from generic CPU lowering by {max_error}"
-    );
-
+    #[cfg(feature = "aot")]
+    let (aot_artifact, aot_emit_load, aot_artifact_path, aot_max_error) = {
+        let started = Instant::now();
+        let artifact = program.compile_aot_cpu().unwrap();
+        let emit_load = started.elapsed();
+        let path = artifact.path().to_path_buf();
+        let mut validation = artifact.prepare(&inputs).unwrap();
+        validation.dispatch_turns(validation_turns).unwrap();
+        let maximum_error = maximum_error(&expected, validation.state());
+        assert!(
+            maximum_error <= 1.0e-4,
+            "AOT result differs from scalar CPU lowering by {maximum_error}"
+        );
+        (artifact, emit_load, path, maximum_error)
+    };
     let mut cpu_warmup = program.prepare_cpu(&inputs).unwrap();
     cpu_warmup.dispatch_turns(5).unwrap();
     let mut cpu = program.prepare_cpu(&inputs).unwrap();
@@ -97,6 +105,63 @@ fn main() {
     jit.dispatch_turns(cpu_turns).unwrap();
     let jit_per_turn = jit_started.elapsed() / cpu_turns;
     let jit_checksum = state_checksum(jit.state());
+
+    #[cfg(feature = "aot")]
+    let (aot_per_turn, aot_checksum) = {
+        let mut warmup = aot_artifact.prepare(&inputs).unwrap();
+        warmup.dispatch_turns(5).unwrap();
+        let mut aot = aot_artifact.prepare(&inputs).unwrap();
+        let started = Instant::now();
+        aot.dispatch_turns(cpu_turns).unwrap();
+        (started.elapsed() / cpu_turns, state_checksum(aot.state()))
+    };
+
+    if cpu_only {
+        println!("EKF instances: {instances}");
+        println!("CPU benchmark mode: scalar, SIMD, JIT, and AOT only");
+        println!("Cranelift JIT prepare: {:.3} ms", millis(jit_prepare));
+        #[cfg(feature = "aot")]
+        println!(
+            "Cranelift AOT emit/load: {:.3} ms ({})",
+            millis(aot_emit_load),
+            aot_artifact_path.display()
+        );
+        println!(
+            "Mech scalar throughput: {:.3} million EKF-turns/s",
+            throughput(instances, cpu_per_turn)
+        );
+        println!(
+            "Mech SIMD throughput: {:.3} million EKF-turns/s",
+            throughput(instances, simd_per_turn)
+        );
+        println!(
+            "Mech Cranelift JIT throughput: {:.3} million EKF-turns/s",
+            throughput(instances, jit_per_turn)
+        );
+        #[cfg(feature = "aot")]
+        println!(
+            "Mech Cranelift AOT throughput: {:.3} million EKF-turns/s",
+            throughput(instances, aot_per_turn)
+        );
+        println!("maximum scalar/SIMD absolute error: {simd_max_error:.3e}");
+        println!("maximum scalar/JIT absolute error: {jit_max_error:.3e}");
+        #[cfg(feature = "aot")]
+        println!("maximum scalar/AOT absolute error: {aot_max_error:.3e}");
+        println!("Mech scalar checksum: {cpu_checksum:.9}");
+        println!("Mech SIMD checksum: {simd_checksum:.9}");
+        println!("Mech Cranelift JIT checksum: {jit_checksum:.9}");
+        #[cfg(feature = "aot")]
+        println!("Mech Cranelift AOT checksum: {aot_checksum:.9}");
+        return;
+    }
+
+    let mut gpu_validation = program.prepare_resident(&inputs).unwrap();
+    let actual = gpu_validation.run_turns(validation_turns).unwrap();
+    let max_error = maximum_error(&expected, &actual.state);
+    assert!(
+        max_error <= 1.0e-4,
+        "GPU result differs from generic CPU lowering by {max_error}"
+    );
 
     let prepare_started = Instant::now();
     let mut gpu = program.prepare_resident(&inputs).unwrap();
@@ -131,6 +196,12 @@ fn main() {
     );
     println!("resident GPU prepare: {:.3} ms", millis(resident_prepare));
     println!("Cranelift JIT prepare: {:.3} ms", millis(jit_prepare));
+    #[cfg(feature = "aot")]
+    println!(
+        "Cranelift AOT emit/load: {:.3} ms ({})",
+        millis(aot_emit_load),
+        aot_artifact_path.display()
+    );
     println!(
         "Mech scalar CPU: {:.3} ms/turn ({cpu_turns} turns)",
         millis(cpu_per_turn)
@@ -142,6 +213,11 @@ fn main() {
     println!(
         "Mech Cranelift JIT CPU: {:.3} ms/turn ({cpu_turns} turns)",
         millis(jit_per_turn)
+    );
+    #[cfg(feature = "aot")]
+    println!(
+        "Mech Cranelift AOT CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(aot_per_turn)
     );
     println!(
         "resident GPU, one submission per turn: {:.3} ms/turn ({single_gpu_turns} turns)",
@@ -163,6 +239,11 @@ fn main() {
         "Mech Cranelift JIT throughput: {:.3} million EKF-turns/s",
         throughput(instances, jit_per_turn)
     );
+    #[cfg(feature = "aot")]
+    println!(
+        "Mech Cranelift AOT throughput: {:.3} million EKF-turns/s",
+        throughput(instances, aot_per_turn)
+    );
     println!(
         "GPU single-submit throughput: {:.3} million EKF-turns/s",
         throughput(instances, single_per_turn)
@@ -175,9 +256,13 @@ fn main() {
     println!("maximum CPU/GPU absolute error: {max_error:.3e}");
     println!("maximum scalar/SIMD absolute error: {simd_max_error:.3e}");
     println!("maximum scalar/JIT absolute error: {jit_max_error:.3e}");
+    #[cfg(feature = "aot")]
+    println!("maximum scalar/AOT absolute error: {aot_max_error:.3e}");
     println!("Mech scalar checksum: {cpu_checksum:.9}");
     println!("Mech SIMD checksum: {simd_checksum:.9}");
     println!("Mech Cranelift JIT checksum: {jit_checksum:.9}");
+    #[cfg(feature = "aot")]
+    println!("Mech Cranelift AOT checksum: {aot_checksum:.9}");
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {

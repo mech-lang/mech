@@ -29,6 +29,10 @@ use super::{
 mod jit;
 #[cfg(feature = "jit")]
 pub use jit::*;
+#[cfg(feature = "aot")]
+mod aot;
+#[cfg(feature = "aot")]
+pub use aot::*;
 
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;

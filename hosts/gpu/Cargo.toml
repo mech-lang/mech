@@ -21,6 +21,12 @@ jit = [
   "dep:cranelift-jit",
   "dep:cranelift-module",
 ]
+aot = [
+  "jit",
+  "dep:cranelift-native",
+  "dep:cranelift-object",
+  "dep:libloading",
+]
 
 [dependencies]
 mech-compute = { version = "0.3.5", path = "../../src/compute" }
@@ -39,6 +45,9 @@ cranelift-codegen = { version = "=0.131.3", optional = true }
 cranelift-frontend = { version = "=0.131.3", optional = true }
 cranelift-jit = { version = "=0.131.3", optional = true }
 cranelift-module = { version = "=0.131.3", optional = true }
+cranelift-native = { version = "=0.131.3", optional = true }
+cranelift-object = { version = "=0.131.3", optional = true }
+libloading = { version = "0.8.9", optional = true }
 
 [[example]]
 name = "particle_benchmark"

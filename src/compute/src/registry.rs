@@ -40,6 +40,7 @@ impl fmt::Display for BackendId {
 pub const CPU_SCALAR_BACKEND: &str = "cpu-scalar";
 pub const CPU_SIMD_BACKEND: &str = "cpu-simd";
 pub const CPU_JIT_BACKEND: &str = "cpu-jit";
+pub const CPU_AOT_BACKEND: &str = "cpu-aot";
 pub const WGPU_BACKEND: &str = "wgpu";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -94,7 +95,7 @@ impl BackendRequest {
             "auto" => Ok(Self::Auto),
             "cpu" => Ok(Self::Cpu),
             "gpu" => Ok(Self::Gpu),
-            "cpu-scalar" | "cpu-simd" | "cpu-jit" | "wgpu" => {
+            "cpu-scalar" | "cpu-simd" | "cpu-jit" | "cpu-aot" | "wgpu" => {
                 Ok(Self::Exact(BackendId::new(value)?))
             }
             _ => Err(BackendRegistryError::UnknownBackendRequest(
@@ -587,6 +588,14 @@ mod tests {
             .register(factory("wgpu", BackendClass::Gpu, true, true, None))
             .unwrap();
         registry
+    }
+
+    #[test]
+    fn aot_backend_can_be_requested_explicitly() {
+        assert_eq!(
+            BackendRequest::parse(CPU_AOT_BACKEND).unwrap(),
+            BackendRequest::Exact(backend_id(CPU_AOT_BACKEND))
+        );
     }
 
     #[test]

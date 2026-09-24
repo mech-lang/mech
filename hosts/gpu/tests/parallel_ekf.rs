@@ -309,6 +309,9 @@ result
     if cfg!(feature = "jit") {
         backends.push("cpu-jit");
     }
+    if cfg!(feature = "aot") {
+        backends.push("cpu-aot");
+    }
     backends.push("wgpu");
     for backend in backends {
         let request = BackendRequest::parse(backend).unwrap();
@@ -426,6 +429,9 @@ result
     let mut backends = vec!["cpu-scalar", "cpu-simd"];
     if cfg!(feature = "jit") {
         backends.push("cpu-jit");
+    }
+    if cfg!(feature = "aot") {
+        backends.push("cpu-aot");
     }
     backends.push("wgpu");
     for backend in backends {
@@ -617,6 +623,9 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
     let mut backends = vec!["cpu-scalar", "cpu-simd"];
     if cfg!(feature = "jit") {
         backends.push("cpu-jit");
+    }
+    if cfg!(feature = "aot") {
+        backends.push("cpu-aot");
     }
     backends.push("wgpu");
     for backend in backends {
@@ -864,6 +873,18 @@ fn mech_arrays_define_the_broadcast_extent() {
         jit.dispatch_turns(2).unwrap();
         for (slot, expected) in cpu.state() {
             assert_close(expected, &jit.state()[slot], 1.0e-4);
+        }
+    }
+    #[cfg(feature = "aot")]
+    {
+        let artifact = lowered.compile_aot_cpu().unwrap();
+        assert!(artifact.path().is_file());
+        let cached = lowered.compile_aot_cpu().unwrap();
+        assert_eq!(cached.path(), artifact.path());
+        let mut aot = artifact.prepare(&inputs).unwrap();
+        aot.dispatch_turns(2).unwrap();
+        for (slot, expected) in cpu.state() {
+            assert_close(expected, &aot.state()[slot], 1.0e-4);
         }
     }
     let state_sizes = lowered
@@ -1153,6 +1174,22 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
         assert_eq!(jit.fault_count(), 1);
         assert_eq!(
             jit.last_fault().unwrap().constraint_name.as_ref(),
+            "finite-candidate!"
+        );
+    }
+    #[cfg(feature = "aot")]
+    {
+        let artifact = program.compile_aot_cpu().unwrap();
+        let mut aot = artifact.prepare(&inputs).unwrap();
+        let aot_published = aot.state().clone();
+        assert!(matches!(
+            aot.dispatch_turns(1).unwrap_err(),
+            BatchedExecutionError::Integrity(_)
+        ));
+        assert_eq!(aot.state(), &aot_published);
+        assert_eq!(aot.fault_count(), 1);
+        assert_eq!(
+            aot.last_fault().unwrap().constraint_name.as_ref(),
             "finite-candidate!"
         );
     }
