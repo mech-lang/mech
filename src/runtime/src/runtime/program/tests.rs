@@ -4282,6 +4282,8 @@ output := observed + count
     let first_batch = first.input_facts().next().unwrap().1.clone();
     let first_record = first.receipts().next().unwrap().1.clone();
     assert!(first_batch.facts.iter().all(|fact| !fact.trigger));
+    let mut forged_ordinary = first_record.clone();
+    forged_ordinary.body.mode = external::ResidentExternalTurnMode::Ordinary;
 
     value_bits.store(2.0_f64.to_bits(), Ordering::SeqCst);
     let mut divergent = coordinator();
@@ -4306,11 +4308,15 @@ output := observed + count
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(artifact),
-        false,
+        external::ResidentExternalReplayBootstrap::default(),
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )
     .unwrap();
+    let error = replay
+        .execute_replay_batch(Some(&first_batch), &forged_ordinary)
+        .unwrap_err();
+    assert!(error.display_message().contains("activated turn scope"));
     replay
         .execute_replay_batch(Some(&first_batch), &first_record)
         .unwrap();
@@ -4415,14 +4421,71 @@ output := state
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         unreachable!()
     };
-    let batch = execution.coordinator.input_facts().next().unwrap().1;
+    let batch = execution
+        .coordinator
+        .input_facts()
+        .next()
+        .unwrap()
+        .1
+        .clone();
+    let record = execution.coordinator.receipts().next().unwrap().1.clone();
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let replay_bootstrap = execution.coordinator.replay_bootstrap();
     assert_eq!(batch.facts.len(), 2);
     for fact in &batch.facts {
+        assert!(fact.trigger);
         let ValueData::F64(value) = fact.value.data() else {
             panic!("duplicate timer observation must remain f64")
         };
         assert_eq!(value.bits(), 9.0_f64.to_bits());
     }
+    let forged_facts = batch
+        .facts
+        .iter()
+        .enumerate()
+        .map(|(ordinal, fact)| {
+            external::CapturedInputFact::new_with_trigger(
+                fact.sequence,
+                fact.requirement,
+                fact.node,
+                fact.slot,
+                fact.schema_key,
+                fact.shape.clone(),
+                fact.value.clone(),
+                ordinal == 0,
+                artifact.schemas(),
+            )
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let forged_batch = external::CapturedInputBatch::new(forged_facts).unwrap();
+    let mut forged_record = record.clone();
+    forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    let replay_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        artifact,
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    let error = replay
+        .execute_replay_batch(Some(&forged_batch), &forged_record)
+        .unwrap_err();
+    assert!(error.display_message().contains("activated turn scope"));
+    assert!(matches!(
+        replay.execute_replay_batch(Some(&batch), &record).unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
 }
 
 #[test]
@@ -4701,7 +4764,7 @@ snapshot-count
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
-        true,
+        external::ResidentExternalReplayBootstrap::new(true, Box::new([])),
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )
@@ -5955,7 +6018,7 @@ fn initial_publication_replays_with_activations_dormant() {
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         instance,
         Arc::clone(&artifact),
-        true,
+        external::ResidentExternalReplayBootstrap::new(true, Box::new([])),
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )

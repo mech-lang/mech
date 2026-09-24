@@ -11,7 +11,7 @@ use mech_runtime::runtime::program::external::test_provider::{
 };
 use mech_runtime::{
     CapturedInputBatch, ExactRequirementAuthority, ResidentDurabilityPolicy,
-    ResidentExternalCoordinator, ResidentExternalLimits, ResidentExternalTurnMode,
+    ResidentExternalCoordinator, ResidentExternalLimits, ResidentExternalReplayBootstrap,
     ResidentExternalTurnOutcome, ResidentTurnRecord, RuntimeBuilder, RuntimeResourceRegistry,
     resident_effect_ids_hash, resident_idempotency_keys_hash,
 };
@@ -429,9 +429,7 @@ fn run_replay(
     let mut coordinator = ResidentExternalCoordinator::new_replay(
         instance,
         Arc::new(artifact.clone()),
-        records
-            .first()
-            .is_some_and(|record| record.body.mode == ResidentExternalTurnMode::InitialPublication),
+        ResidentExternalReplayBootstrap::default(),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits {
             input_batches: TURNS + 32,
