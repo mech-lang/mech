@@ -2289,6 +2289,43 @@ fn fsm_publication_admission_counts_live_arm_bindings() {
 }
 
 #[test]
+fn fsm_publication_replacement_admission_counts_the_previous_value() {
+    let source = "#Publishing() => <string>\n  | :Start\n  | :Middle\n  | :Later.\n#Publishing() -> :Start\n  :Start\n    => signal<string>\n    ~> :Middle\n  :Middle\n    => signal\n    ~> :Later\n  :Later => signal.\n#Publishing()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 87),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let first = ["a".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let first_input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&first),
+    }];
+    instance.turn(&first_input).unwrap();
+    assert!(instance.has_ready_continuation());
+
+    let second = ["b".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let second_input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&second),
+    }];
+    let published_epoch = instance.published_epoch();
+    assert!(instance.turn(&second_input).is_err());
+    assert_eq!(instance.published_epoch(), published_epoch);
+    assert!(instance.has_ready_continuation());
+}
+
+#[test]
 fn declared_fsm_retains_its_last_publication_across_later_suspensions() {
     let source = "#Publishing() => <f64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9.\nvalue := #Publishing()\nvalue + signal<f64>\n";
     let compiled = CanonicalSourceFrontend
@@ -2557,6 +2594,38 @@ fn replacement_continuation_admission_counts_the_retained_frame() {
     let catalog = catalog.build().unwrap();
     let mut instance = activate(
         ReactiveInstanceId::new(0x540, 85),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let payload = ["x".repeat((mech_core::RESIDENT_MAX_BYTES / 2 + 1024) as usize)];
+    let input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&payload),
+    }];
+
+    instance.turn(&input).unwrap();
+    let suspended_epoch = instance.published_epoch();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.turn(&[]).is_err());
+    assert_eq!(instance.published_epoch(), suspended_epoch);
+    assert!(instance.has_ready_continuation());
+}
+
+#[test]
+fn resumed_fsm_body_admission_counts_the_active_frame() {
+    let source = "#Captured(value<string>) => <string>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Captured(signal<string>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 88),
         &artifact,
         &catalog,
         &ActivationFacts::default(),
@@ -3101,6 +3170,26 @@ fn fsm_values_predeclare_late_input_annotations() {
     compiled
         .compile_artifact()
         .expect("FSM value annotations must be occurrence-order independent");
+}
+
+#[test]
+fn declared_fsm_bodies_predeclare_late_input_annotations() {
+    let source = "#Reads() => <u8>\n  | :Start\n  | :Later.\n#Reads() -> :Start\n  :Start\n    => signal\n    ~> :Later\n  :Later => signal<u8>.\n#Reads()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .expect("declared FSM inputs must be occurrence-order independent");
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert!(matches!(
+        compiled
+            .schemas()
+            .get(compiled.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    compiled
+        .compile_artifact()
+        .expect("declared FSM input annotations must close the control block");
 }
 
 #[cfg(feature = "resident-artifact")]

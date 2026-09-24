@@ -8979,13 +8979,8 @@ impl SemanticBuilder {
         expected_result: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
         self.match_depth += 1;
-        let result = self.lower_match_expression_inner(
-            scrutinee,
-            arms,
-            syntax,
-            partial,
-            expected_result,
-        );
+        let result =
+            self.lower_match_expression_inner(scrutinee, arms, syntax, partial, expected_result);
         self.match_depth -= 1;
         result
     }
