@@ -1313,6 +1313,7 @@ impl ReactiveInstance {
             self.completed_continuation_roots.fill(0);
         }
         self.workspace.executed_bits.fill(0);
+        self.workspace.suppressed_activation_bits.fill(0);
         self.workspace.touched_slots.clear();
         self.workspace.changed_slots.clear();
         self.workspace.effect_intents.clear();
@@ -1372,6 +1373,10 @@ impl ReactiveInstance {
     fn select_activation_roots(&mut self, trigger_inputs: &[mech_core::CellSlotId]) {
         for (node, _, sampled) in &self.plan.activation_turn_inputs {
             clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            set_bit(
+                &mut self.workspace.suppressed_activation_bits,
+                node.get() as usize,
+            );
             for sampled_node in sampled.iter() {
                 clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
             }
@@ -1384,6 +1389,10 @@ impl ReactiveInstance {
                 inputs.is_empty() || inputs.iter().any(|input| trigger_inputs.contains(input));
             if active {
                 set_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+                clear_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    node.get() as usize,
+                );
                 for sampled_node in sampled.iter() {
                     set_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
                 }
@@ -1394,6 +1403,10 @@ impl ReactiveInstance {
     fn clear_activation_roots(&mut self) {
         for (node, _, sampled) in &self.plan.activation_turn_inputs {
             clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            set_bit(
+                &mut self.workspace.suppressed_activation_bits,
+                node.get() as usize,
+            );
             for sampled_node in sampled.iter() {
                 clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
             }
@@ -1465,6 +1478,7 @@ impl ReactiveInstance {
                 self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
+                    dirty &= !self.workspace.suppressed_activation_bits[0];
                 }
             }
             self.workspace.dirty_bits[0] = dirty;
@@ -1488,6 +1502,14 @@ impl ReactiveInstance {
                         &mut self.workspace.dirty_bits,
                         &self.plan.topology.same_turn_downstream_masks[index],
                     );
+                    for (dirty, suppressed) in self
+                        .workspace
+                        .dirty_bits
+                        .iter_mut()
+                        .zip(&self.workspace.suppressed_activation_bits)
+                    {
+                        *dirty &= !suppressed;
+                    }
                 }
             }
             if !self.workspace.all_outputs_initialized
