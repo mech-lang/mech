@@ -908,7 +908,12 @@ fn pure_continuation_drains_keep_input_free_activations_dormant() {
     else {
         panic!("count must use snapshot state storage")
     };
-    assert_eq!(values[0].as_ref().unwrap().format_canonical_inline(), "0");
+    assert_eq!(
+        crate::RuntimeValueSnapshot::from_value(values[0].as_ref().unwrap().clone())
+            .unwrap()
+            .format_canonical_inline(),
+        "0"
+    );
 }
 
 #[test]
