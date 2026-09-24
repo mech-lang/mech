@@ -3427,7 +3427,7 @@ mod tests {
         let cleared = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
-            retained,
+            retained.clone(),
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
