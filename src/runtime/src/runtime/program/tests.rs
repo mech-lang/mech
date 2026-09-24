@@ -883,28 +883,9 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
 #[test]
 fn production_load_drains_fsm_continuations_before_returning_initial_value() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
-    let parsed = mech_syntax::document::parse_canonical_document(
-        mech_syntax::document::TextSnapshot::new(
-            mech_syntax::document::DocumentId(0x874),
-            mech_syntax::document::Revision(0),
-            source,
-        )
-        .unwrap(),
-        mech_syntax::document::ParseConfig::default(),
-    );
-    let document = <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
-        parsed.syntax(),
-    )
-    .unwrap();
-    let artifact = mech_engine::CanonicalSourceFrontend
-        .compile_document(&document)
-        .unwrap()
-        .compile_artifact()
-        .unwrap();
-    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
     let mut runtime = runtime();
     let loaded = runtime
-        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
     assert_eq!(loaded.initial_value.format_canonical_inline(), "42");
