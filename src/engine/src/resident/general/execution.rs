@@ -1379,6 +1379,10 @@ impl ReactiveInstance {
             );
             for sampled_node in sampled.iter() {
                 clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    sampled_node.get() as usize,
+                );
             }
         }
         for (node, inputs, sampled) in &self.plan.activation_turn_inputs {
@@ -1395,6 +1399,10 @@ impl ReactiveInstance {
                 );
                 for sampled_node in sampled.iter() {
                     set_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        sampled_node.get() as usize,
+                    );
                 }
             }
         }
@@ -1409,6 +1417,10 @@ impl ReactiveInstance {
             );
             for sampled_node in sampled.iter() {
                 clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    sampled_node.get() as usize,
+                );
             }
         }
     }
