@@ -94,6 +94,38 @@ def line_number(source: str, offset: int) -> int:
     return source.count("\n", 0, offset) + 1
 
 
+def rust_function_body(source: str, name: str) -> str | None:
+    """Return the body of a named Rust function using balanced braces."""
+    signature = re.search(rf"\bfn\s+{re.escape(name)}(?:\s*<[^;{{}}]*>)?\s*\(", source)
+    if signature is None:
+        return None
+    brace = source.find("{", signature.end())
+    if brace < 0:
+        return None
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(brace, len(source)):
+        char = source[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace + 1 : index]
+    return None
+
+
 def check_product_references() -> list[str]:
     failures: list[str] = []
     for path, source in product_sources():
@@ -185,8 +217,6 @@ def check_required_product_seams() -> list[str]:
     required = {
         "src/cli/commands/run.rs": "load_source_program",
         "src/build/src/project/render.rs": "load_bytecode_program",
-        # Project symbol queries require the canonical interactive root product.
-        "src/wasm/src/project.rs": "load_interactive_root_program",
         "hosts/browser/src/config.rs": "resident_durability",
         "hosts/terminal/src/provider.rs": "CLI_OUTPUT_EFFECT_CONTRACT",
     }
@@ -196,6 +226,11 @@ def check_required_product_seams() -> list[str]:
         if needle not in source:
             failures.append(f"{relative}: missing resident production seam {needle}")
     wasm_source = (ROOT / "src/wasm/src/project.rs").read_text(encoding="utf-8")
+    run_source_roots = rust_function_body(wasm_source, "run_source_roots")
+    if run_source_roots is None or "load_interactive_root_program" not in run_source_roots:
+        failures.append(
+            "src/wasm/src/project.rs: run_source_roots must load the interactive resident root program"
+        )
     evaluate_boundary = re.compile(
         r'#\[cfg\(feature = "legacy-interpreter"\)\]\s*pub fn evaluate\s*\('
     )

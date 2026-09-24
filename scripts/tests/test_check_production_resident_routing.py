@@ -22,13 +22,19 @@ class BrowserProjectSeamTests(unittest.TestCase):
         def without_interactive_root(path, *args, **kwargs):
             source = read_text(path, *args, **kwargs)
             if path == CHECK.ROOT / "src/wasm/src/project.rs":
-                source = source.replace("load_interactive_root_program", "load_root_program")
+                body = CHECK.rust_function_body(source, "run_source_roots")
+                self.assertIsNotNone(body)
+                source = source.replace(
+                    body,
+                    body.replace("load_interactive_root_program", "load_root_program"),
+                    1,
+                )
             return source
 
         with patch.object(Path, "read_text", without_interactive_root):
             failures = CHECK.check_required_product_seams()
         self.assertIn(
-            "src/wasm/src/project.rs: missing resident production seam load_interactive_root_program",
+            "src/wasm/src/project.rs: run_source_roots must load the interactive resident root program",
             failures,
         )
 
