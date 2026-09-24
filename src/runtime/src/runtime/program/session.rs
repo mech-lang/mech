@@ -205,6 +205,18 @@ impl MechRuntime {
     /// Advances the active program through its owning execution route.
     pub fn step_active_program(&mut self) -> MResult<()> {
         let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+        if matches!(
+            &self.active_program,
+            ActiveProgramExecution::ResidentExternal(execution)
+                if execution.coordinator.instance().continuation_wakeup().is_some()
+                    || execution
+                        .coordinator
+                        .instance()
+                        .plan
+                        .has_input_free_activation_roots()
+        ) {
+            self.revalidate_active_resident_grants()?;
+        }
         match &mut self.active_program {
             ActiveProgramExecution::ResidentPure(execution) => {
                 let turn_started = Instant::now();
@@ -240,7 +252,6 @@ impl MechRuntime {
                     .continuation_wakeup()
                     .is_some() =>
             {
-                self.revalidate_active_resident_grants()?;
                 self.drain_resident_continuations()
             }
             ActiveProgramExecution::ResidentExternal(execution)
@@ -250,7 +261,6 @@ impl MechRuntime {
                     .plan
                     .has_input_free_activation_roots() =>
             {
-                self.revalidate_active_resident_grants()?;
                 let turn_started = Instant::now();
                 let admission = execution.coordinator.admit_turn()?;
                 let before = execution.coordinator.structural_probe();
