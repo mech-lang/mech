@@ -850,6 +850,28 @@ impl ReactiveInstance {
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
+    /// Resumes the continuation selected from an already accepted pure turn.
+    /// No activation scope receives a new trigger during this internal drain.
+    pub fn prepare_continuation_turn(
+        &mut self,
+        inputs: &[CapturedSignalInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
     pub fn prepare_turn_values(
         &mut self,
         inputs: &[CapturedValueInput<'_>],

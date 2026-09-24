@@ -13,6 +13,7 @@ pub struct ResidentTurnReceiptV1 {
     pub layout_generation: LayoutGeneration,
     pub input_batch_hash: [u8; 32],
     pub initial_publication: bool,
+    pub continuation_drain: bool,
     pub before_epoch: InstanceEpoch,
     pub after_epoch: Option<InstanceEpoch>,
     pub state_hash: u64,
