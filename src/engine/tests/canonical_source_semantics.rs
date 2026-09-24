@@ -2817,7 +2817,7 @@ fn downstream_fsm_output_stays_unavailable_until_resume() {
 
 #[test]
 fn state_writers_wait_for_unpublished_fsm_dependencies() {
-    let source = "#Deferred() => <f64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41.\n~total<f64> := 0.\ntotal += #Deferred() + signal<f64>\ntotal\n";
+    let source = "#Deferred() => <f64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41.\n~total<f64> := 0.0\ntotal += #Deferred() + signal<f64>\ntotal\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
