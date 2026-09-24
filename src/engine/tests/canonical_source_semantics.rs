@@ -2671,7 +2671,7 @@ fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
                         mech_engine::BindingDeclaration::Input {
                             source: mech_engine::ArtifactSource::Slot(slot),
                             ..
-                        } if slot == ordinary
+                        } if *slot == ordinary
                     )
                 })
         })
