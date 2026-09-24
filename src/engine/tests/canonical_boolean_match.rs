@@ -1872,6 +1872,50 @@ fn comprehension_rejects_suspend_hidden_in_a_nested_match() {
     );
 }
 
+#[test]
+fn artifact_rejects_suspend_hidden_in_a_nested_match() {
+    let program = compile(
+        "signal<bool> ? | true => (signal<bool> ? | true => true | false => false) | false => false",
+    );
+    let mut graph = program.program().clone();
+    let SourceNodeBody::Match(root) = &mut graph.nodes[0].body else {
+        panic!("expected outer match")
+    };
+    let ControlOperationBody::Match(nested) = &mut root.arms[0].body.operations[0].body else {
+        panic!("expected nested match")
+    };
+    let body = &mut nested.arms[0].body;
+    let schema = body.parameters[0].schema;
+    body.operations = vec![ControlOperation {
+        node: 0,
+        body: ControlOperationBody::Suspend,
+        inputs: vec![ControlValue::Parameter {
+            block: body.id,
+            ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        schema,
+    }]
+    .into_boxed_slice();
+    body.yield_value = ControlValue::Local {
+        block: body.id,
+        node: 0,
+    };
+
+    let result = compile_source_program_with_control_contracts(
+        &graph,
+        &mut ArtifactBuildContext::new(program.schemas(), program.constants()),
+        &[None],
+    );
+    assert!(matches!(
+        result,
+        Err(ArtifactBuildError::InvalidControl {
+            reason: "suspension must be the terminal FSM body yield",
+            ..
+        })
+    ));
+}
+
 #[cfg(feature = "resident-artifact")]
 #[test]
 fn nested_capability_witnesses_preserve_constant_and_local_selector_provenance() {

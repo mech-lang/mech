@@ -1245,9 +1245,8 @@ impl ReactiveInstance {
             }
             if let Some(value) = self.workspace.continuation_candidates[index].take() {
                 self.continuations[index] = Some(value);
-                if !self.ready_continuations.contains(&node) {
-                    self.ready_continuations.push_back(node);
-                }
+                self.ready_continuations.retain(|ready| *ready != node);
+                self.ready_continuations.push_back(node);
             }
         }
         self.output_ready

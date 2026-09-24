@@ -312,6 +312,21 @@ impl MechRuntime {
                                 turn_started,
                             )
                         })?;
+                    match &outcome {
+                        crate::ResidentExternalTurnOutcome::Rejected { .. } => {
+                            self.program_execution_info.resident_rejected_turns = self
+                                .program_execution_info
+                                .resident_rejected_turns
+                                .saturating_add(1);
+                        }
+                        crate::ResidentExternalTurnOutcome::Accepted { .. }
+                        | crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. } => {
+                            self.program_execution_info.resident_accepted_turns = self
+                                .program_execution_info
+                                .resident_accepted_turns
+                                .saturating_add(1);
+                        }
+                    }
                     if let Some(error) = super::resident_host_turn_error(&outcome) {
                         return Err(route_failure(
                             ResidentRouteFailureClass::ActivationFailure,
@@ -321,10 +336,12 @@ impl MechRuntime {
                 }
                 ActiveProgramExecution::None => unreachable!(),
             }
-            self.program_execution_info.resident_accepted_turns = self
-                .program_execution_info
-                .resident_accepted_turns
-                .saturating_add(1);
+            if matches!(self.active_program, ActiveProgramExecution::ResidentPure(_)) {
+                self.program_execution_info.resident_accepted_turns = self
+                    .program_execution_info
+                    .resident_accepted_turns
+                    .saturating_add(1);
+            }
         }
         let still_ready = match &self.active_program {
             ActiveProgramExecution::ResidentPure(execution) => {

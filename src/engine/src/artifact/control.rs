@@ -831,7 +831,8 @@ pub(super) fn validate_match_inner(
                                     "suspended control must preserve the enclosing input and output schemas",
                                 ));
                             }
-                            if guarded
+                            if !enclosing_matches.is_empty()
+                                || guarded
                                 || inside_comprehension
                                 || index + 1 != block.operations.len()
                                 || block.yield_value

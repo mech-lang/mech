@@ -2619,6 +2619,34 @@ fn one_turn_resumes_only_one_of_two_ready_fsm_nodes() {
 }
 
 #[test]
+fn repeated_fsm_yields_rotate_ready_roots_within_one_instance() {
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 73),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    let first = instance.continuation_wakeup().unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    assert_ne!(instance.continuation_wakeup().unwrap(), first);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.continuation_wakeup().unwrap(), first);
+}
+
+#[test]
 fn downstream_fsm_output_stays_unavailable_until_resume() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\nresult := #Deferred()\nplus := result + 1u64\n";
     let mut catalog = FunctionCatalogBuilder::new();
