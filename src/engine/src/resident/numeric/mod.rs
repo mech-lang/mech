@@ -1976,6 +1976,9 @@ fn snapshot_comparison_element_supported(
     element: &SchemaBody,
     comparison: SemanticComparison,
 ) -> bool {
+    if let SchemaBody::IntegerInterval(interval) = element {
+        return snapshot_comparison_element_supported(&interval.base_body(), comparison);
+    }
     if comparison.is_equality() {
         matches!(
             element,
@@ -3245,6 +3248,7 @@ fn is_transpose_snapshot_schema(body: &SchemaBody) -> bool {
             | SchemaBody::String
             | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
+            | SchemaBody::IntegerInterval(_)
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64
@@ -4612,6 +4616,7 @@ fn is_snapshot_index_assign_element(body: &SchemaBody) -> bool {
             | SchemaBody::String
             | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
+            | SchemaBody::IntegerInterval(_)
             | SchemaBody::FloatingPoint(mech_core::FloatWidth::W32 | mech_core::FloatWidth::W64)
             | SchemaBody::Complex(_)
             | SchemaBody::Rational64
