@@ -3217,6 +3217,32 @@ struct ConstantComparisonOperand<'a> {
     columns: usize,
 }
 
+fn scalar_comparison_supported(element: &SchemaBody, ordering: bool) -> bool {
+    if ordering {
+        matches!(
+            element,
+            SchemaBody::Index
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        )
+    } else {
+        matches!(
+            element,
+            SchemaBody::Bool
+                | SchemaBody::Index
+                | SchemaBody::String
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        )
+    }
+}
+
 fn constant_comparison_operand<'a>(
     artifact: &'a ProgramArtifact,
     node: NodeId,
@@ -3306,11 +3332,36 @@ fn closed_comparison_population(
         if left.schema != right.schema {
             return Ok(None);
         }
+        let language_equal = || schema_data_language_eq(left.schema, left.data, right.data);
+        let ordinary_equal = || {
+            if scalar_comparison_supported(left.schema, false) {
+                language_equal()
+            } else {
+                schema_data_snapshot_eq(left.schema, left.data, right.data)
+            }
+        };
+        let order = || schema_data_partial_cmp(left.schema, left.data, right.data);
         let matches = match name {
-            "eq" => schema_data_language_eq(left.schema, left.data, right.data),
-            "neq" => !schema_data_language_eq(left.schema, left.data, right.data),
-            "seq" => schema_data_snapshot_eq(left.schema, left.data, right.data),
-            "sneq" => !schema_data_snapshot_eq(left.schema, left.data, right.data),
+            "eq" => ordinary_equal(),
+            "neq" => !ordinary_equal(),
+            // Strict equality routes through strict_value_equal, whose dense
+            // and snapshot paths both use language equality.
+            "seq" => language_equal(),
+            "sneq" => !language_equal(),
+            "lt" if scalar_comparison_supported(left.schema, true) => {
+                order() == Some(std::cmp::Ordering::Less)
+            }
+            "lte" if scalar_comparison_supported(left.schema, true) => matches!(
+                order(),
+                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+            ),
+            "gt" if scalar_comparison_supported(left.schema, true) => {
+                order() == Some(std::cmp::Ordering::Greater)
+            }
+            "gte" if scalar_comparison_supported(left.schema, true) => matches!(
+                order(),
+                Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
+            ),
             _ => return Ok(None),
         };
         return Ok(Some(u64::from(matches)));
