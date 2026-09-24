@@ -19,7 +19,8 @@ use document_bundle::resolve_document_source_bundle;
 use publication::{PlannedOutput, publish_outputs_recoverably};
 
 use crate::canonical_presentation::{
-    HtmlShimExtraSlots, render_canonical_html, validate_shipped_shim_render,
+    HtmlShimExtraSlots, render_canonical_html, render_canonical_static_html,
+    validate_shipped_shim_render,
 };
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
@@ -186,9 +187,11 @@ fn canonical_document(source: &str) -> MResult<SourceDocument> {
         ParseConfig::default(),
     )
     .map_err(|error| format_error(format!("invalid retained source: {error:?}")))?;
-    document
-        .index()
-        .map_err(|error| MechError::new(error, None))?;
+    if !document.is_strictly_clean() {
+        return Err(format_error(
+            "invalid retained source: syntax diagnostics remain",
+        ));
+    }
     Ok(document)
 }
 
@@ -953,12 +956,21 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                         &document_sources,
                         &encoded_document,
                     )?;
-                    let render = render_canonical_html(
-                        &document.document(),
-                        html_style_sheets(stylesheet_str.clone()),
-                        shim_str.clone(),
-                        &document_slots,
-                    )?;
+                    let render = if uses_document_controller {
+                        render_canonical_html(
+                            &document.document(),
+                            html_style_sheets(stylesheet_str.clone()),
+                            shim_str.clone(),
+                            &document_slots,
+                        )?
+                    } else {
+                        render_canonical_static_html(
+                            &document.document(),
+                            html_style_sheets(stylesheet_str.clone()),
+                            shim_str.clone(),
+                            &document_slots,
+                        )?
+                    };
                     if let Some(shim_name) = shipped_shim {
                         validate_shipped_shim_render(shim_name, &render)?;
                     }

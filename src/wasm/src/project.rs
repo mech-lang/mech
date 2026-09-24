@@ -26,7 +26,8 @@ use mech_engine::{SourceDocumentOutputKind, root_document_program_output_id};
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
-    BrowserDocumentPayload, ConfigProfileOptions, ConfigValue, HostInstanceConfig,
+    BrowserDocumentPayload, CanonicalDependencySource, CanonicalProgramBundle,
+    ConfigProfileOptions, ConfigValue, HostInstanceConfig,
     InMemorySourceResolver, MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime,
     ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
     RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
@@ -35,9 +36,8 @@ use mech_runtime::{
     validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
-use mech_runtime::{CanonicalDependencySource, CanonicalProgramBundle};
-#[cfg(feature = "served_project_authority")]
 use mech_runtime::{
+    CanonicalDependencySource, CanonicalProgramBundle,
     HOST_DELEGATION_ALGORITHM_ED25519, HostDelegationKeyStore, HostDelegationPublicKey,
     HostDelegationVerificationRequest,
 };
@@ -502,6 +502,7 @@ pub(crate) struct WasmDocumentBootstrap {
     document_base: Rc<RefCell<Staged<SourceDocument>>>,
     presentation_state: Rc<RefCell<Staged<document::DocumentOutputState>>>,
     presentation_output_ids: Vec<u64>,
+    initial_bundle: Option<CanonicalProgramBundle>,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
     #[cfg(feature = "served_project_authority")]
@@ -801,21 +802,34 @@ fn activate_prepared_document_repl_runtime(
     }
     let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
-    #[cfg(feature = "browser_compute")]
-    let activation = match candidate.coordinator.take() {
-        Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
-        None => runtime.load_interactive_root_program(
-            SourceRequest::new(&bootstrap.source().root_specifier),
-            browser_module_options(),
-            durability,
-        ),
+    let activation = if let Some(bundle) = bootstrap
+        .source()
+        .initial_bundle
+        .as_ref()
+        .filter(|bundle| bundle.source == source)
+    {
+        runtime.load_bytecode_program(&bundle.bytecode, durability)
+    } else {
+        #[cfg(feature = "browser_compute")]
+        {
+            match candidate.coordinator.take() {
+                Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
+                None => runtime.load_interactive_root_program(
+                    SourceRequest::new(&bootstrap.source().root_specifier),
+                    browser_module_options(),
+                    durability,
+                ),
+            }
+        }
+        #[cfg(not(feature = "browser_compute"))]
+        {
+            runtime.load_interactive_root_program(
+                SourceRequest::new(&bootstrap.source().root_specifier),
+                browser_module_options(),
+                durability,
+            )
+        }
     };
-    #[cfg(not(feature = "browser_compute"))]
-    let activation = runtime.load_interactive_root_program(
-        SourceRequest::new(&bootstrap.source().root_specifier),
-        browser_module_options(),
-        durability,
-    );
     let outcome = match activation {
         Ok(outcome) => outcome,
         Err(error) => {
@@ -2662,15 +2676,17 @@ mod document {
             provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
             let source_map = source_map_from_js(sources)?;
-            let payload = decode_document_payload(encoded)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
+            let bundle = decode_document_bundle(encoded, root_specifier, &source_map, &provenance)?;
+            let payload = document_payload_from_bundle(root_specifier, &bundle)?;
             Self::from_payload_with_sources_and_provenance(
                 payload,
                 root_specifier,
                 source_map,
                 resolutions,
                 provenance,
+                Some(bundle),
             )
         }
 
@@ -2686,6 +2702,7 @@ mod document {
                 source_map,
                 resolutions,
                 HashMap::new(),
+                None,
             )
         }
 
@@ -2695,6 +2712,7 @@ mod document {
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
             provenance: HashMap<String, ServedSourceProvenance>,
+            initial_bundle: Option<CanonicalProgramBundle>,
         ) -> Result<WasmDocument, JsValue> {
             validate_document_payload(&payload, root_specifier, &source_map)?;
             let document = CanonicalWasmDocument::retain(
@@ -2716,6 +2734,7 @@ mod document {
                 document_base,
                 presentation_state: Rc::new(RefCell::new(Staged::default())),
                 presentation_output_ids: payload.presentation_output_ids().to_vec(),
+                initial_bundle,
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 #[cfg(feature = "served_project_authority")]
@@ -2782,6 +2801,7 @@ mod document {
                 Vec::new(),
                 HashMap::new(),
                 authority,
+                None,
             )
         }
 
@@ -2800,9 +2820,10 @@ mod document {
         ) -> Result<WasmDocument, JsValue> {
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
-            let payload = decode_document_payload(encoded)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
+            let bundle = decode_document_bundle(encoded, root_specifier, &source_map, &provenance)?;
+            let payload = document_payload_from_bundle(root_specifier, &bundle)?;
             let authority = served_browser_authority()?;
             Self::from_served_payload(
                 payload,
@@ -2813,6 +2834,7 @@ mod document {
                 resolutions,
                 provenance,
                 authority,
+                Some(bundle),
             )
         }
 
@@ -2826,6 +2848,7 @@ mod document {
             resolutions: Vec<SourceResolutionEntry>,
             provenance: HashMap<String, ServedSourceProvenance>,
             authority: BrowserRuntimeInjectionConfig,
+            initial_bundle: Option<CanonicalProgramBundle>,
         ) -> Result<WasmDocument, JsValue> {
             validate_served_authority(&document, &authority).map_err(to_js_error)?;
             validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
@@ -2849,6 +2872,7 @@ mod document {
                 document_base,
                 presentation_state: Rc::new(RefCell::new(Staged::default())),
                 presentation_output_ids: payload.presentation_output_ids().to_vec(),
+                initial_bundle,
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 served: Some(ServedDocumentBootstrap {
@@ -2972,6 +2996,7 @@ mod document {
                 payload.source(),
             )
             .map_err(to_js_error)?;
+            replacement_bootstrap.initial_bundle = None;
             replacement_bootstrap.document_base = Rc::new(RefCell::new(Staged {
                 active: replacement_bootstrap.document.document().clone(),
                 pending: None,
@@ -3844,6 +3869,64 @@ fn decode_document_payload(encoded: &str) -> Result<BrowserDocumentPayload, JsVa
             "browser execution requires a retained-source document payload; detached syntax-tree payloads are retired, regenerate the document: {error:?}"
         ))
     })
+}
+
+fn decode_document_bundle(
+    encoded: &str,
+    root_specifier: &str,
+    source_map: &HashMap<String, String>,
+    provenance: &HashMap<String, ServedSourceProvenance>,
+) -> Result<CanonicalProgramBundle, JsValue> {
+    let source = source_map.get(root_specifier).ok_or_else(|| {
+        js_error(format!(
+            "document root `{root_specifier}` is missing from the source map"
+        ))
+    })?;
+    let root_provenance = provenance.get(root_specifier);
+    let bundle = CanonicalProgramBundle::decode_with_root_provenance(
+        encoded,
+        Some(source),
+        root_provenance.map(|item| &item.nominal_origin),
+        root_provenance.and_then(|item| item.nominal_package_id.as_deref()),
+    )
+    .map_err(to_js_error)?;
+    bundle
+        .validate_dependency_sources_with_provenance(|uri| {
+            let specifier = uri.strip_prefix("bundle:///")?;
+            let source = source_map.get(specifier)?.as_str();
+            let retained = provenance.get(specifier);
+            Some(CanonicalDependencySource {
+                source,
+                nominal_origin: retained.map(|item| &item.nominal_origin),
+                nominal_package_id: retained.and_then(|item| item.nominal_package_id.as_deref()),
+            })
+        })
+        .map_err(to_js_error)?;
+    if bundle.canonical_uri != format!("bundle:///{root_specifier}") {
+        return Err(js_error(
+            "canonical bundle root identity does not match the requested document root",
+        ));
+    }
+    Ok(bundle)
+}
+
+fn document_payload_from_bundle(
+    root_specifier: &str,
+    bundle: &CanonicalProgramBundle,
+) -> Result<BrowserDocumentPayload, JsValue> {
+    let document = SourceDocument::parse_resolved(
+        &bundle.canonical_uri,
+        mech_syntax::document::Revision(bundle.source_revision),
+        bundle.source.as_str(),
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .map_err(|error| js_error(format!("invalid canonical bundle source: {error:?}")))?;
+    let presentation_output_ids =
+        mech_runtime::canonical_document_presentation_output_ids(&document.document())
+            .map_err(to_js_error)?;
+    BrowserDocumentPayload::new(root_specifier, &bundle.source)
+        .map(|payload| payload.with_presentation_output_ids(presentation_output_ids))
+        .map_err(to_js_error)
 }
 
 fn validate_document_payload(
@@ -5120,6 +5203,7 @@ mod tests {
             document_base,
             presentation_state: Rc::new(RefCell::new(Staged::default())),
             presentation_output_ids: payload.presentation_output_ids().to_vec(),
+            initial_bundle: None,
             console_instance: "repl".to_owned(),
             lifecycle: DocumentRuntimeLifecycle::default(),
             #[cfg(feature = "served_project_authority")]
