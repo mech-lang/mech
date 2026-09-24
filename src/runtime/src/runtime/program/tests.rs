@@ -6179,7 +6179,7 @@ fn continuation_drain_replay_keeps_input_free_activations_dormant() {
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         instance,
         Arc::clone(&artifact),
-        replay_bootstrap,
+        replay_bootstrap.clone(),
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )
@@ -6228,6 +6228,52 @@ fn continuation_drain_replay_keeps_input_free_activations_dormant() {
             .map(|(_, record)| record.clone())
             .collect::<Vec<_>>(),
         records
+    );
+
+    let mut rejected_continuation = records[1].clone();
+    rejected_continuation.header.status = crate::turn_record::TurnRecordStatus::Rejected;
+    rejected_continuation.header.failure = Some(crate::turn_record::TurnFailureRecord {
+        phase: crate::TurnFailurePhase::Execution,
+        kind: "InjectedContinuationFailure".to_owned(),
+        message: "injected loading continuation rejection".to_owned(),
+    });
+    rejected_continuation.body.after_epoch = None;
+    rejected_continuation.body.state_hash = records[0].body.state_hash;
+    rejected_continuation.body.touched_slots = 0;
+    rejected_continuation.body.changed_slots = 0;
+    rejected_continuation.body.executed_nodes = 0;
+    let instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut terminal_replay = external::ResidentExternalCoordinator::new_replay(
+        instance,
+        Arc::clone(&artifact),
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    terminal_replay
+        .execute_replay_batch(Some(&batches[0]), &records[0])
+        .unwrap();
+    assert!(matches!(
+        terminal_replay
+            .execute_replay_batch(Some(&batches[1]), &rejected_continuation)
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    let error = terminal_replay
+        .execute_replay_batch(Some(&batches[1]), &records[1])
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("cannot continue after a rejected loading turn")
     );
 
     let direct_id = mech_core::ReactiveInstanceId::new(90_002, 0);

@@ -1936,6 +1936,21 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
+    let mut premature_effects = records[0].clone();
+    premature_effects
+        .header
+        .failure
+        .as_mut()
+        .expect("rejected fixture")
+        .phase = TurnFailurePhase::EffectMaterialization;
+    let error = replay
+        .execute_replay_batch(Some(&batches[0]), &premature_effects)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("evidence does not match its failure phase")
+    );
     let mut missing_input = records[0].clone();
     missing_input.header.input_range = None;
     missing_input.body.input_batch_hash = [0; 32];
@@ -1945,7 +1960,7 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
     assert!(
         error
             .display_message()
-            .contains("input evidence does not match its failure phase")
+            .contains("evidence does not match its failure phase")
     );
     assert!(matches!(
         replay.execute_replay_batch(Some(&batches[0]), &records[0])?,
