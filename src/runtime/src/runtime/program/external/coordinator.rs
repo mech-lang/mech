@@ -831,6 +831,7 @@ impl ResidentExternalCoordinator {
                 receipt_permit,
                 outbox_permit,
                 initial_publication,
+                continuation_drain,
                 prepublication,
             )
         })();
@@ -962,6 +963,8 @@ impl ResidentExternalCoordinator {
         let result = (|| {
             let prepared_turn = if expected.body.initial_publication {
                 instance.prepare_initial_turn_values(&inputs)
+            } else if expected.body.continuation_drain {
+                instance.prepare_continuation_turn_values(&inputs)
             } else {
                 instance.prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers)
             }
@@ -990,6 +993,7 @@ impl ResidentExternalCoordinator {
                 effect_batch_hash(&materialized),
                 summary,
                 expected.body.initial_publication,
+                expected.body.continuation_drain,
                 &materialized,
             )?;
             if reproduced != expected {
@@ -1035,6 +1039,7 @@ impl ResidentExternalCoordinator {
             || record.body.layout_generation != self.layout_generation
             || record.body.before_epoch != self.instance().published_epoch()
             || (record.body.initial_publication && self.next_turn != 1)
+            || (record.body.initial_publication && record.body.continuation_drain)
         {
             return invalid_coordinator(
                 "recorded replay receipt does not match the next activated turn",
@@ -1090,6 +1095,7 @@ impl ResidentExternalCoordinator {
         receipt_permit: LedgerPermit,
         outbox_permit: Option<OutboxPermit>,
         initial_publication: bool,
+        continuation_drain: bool,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -1130,6 +1136,7 @@ impl ResidentExternalCoordinator {
             effect_batch_hash,
             summary,
             initial_publication,
+            continuation_drain,
             &materialized,
         )?;
         let mut journal = RuntimeEffectJournal::new();
@@ -1782,6 +1789,7 @@ impl ResidentExternalCoordinator {
         effect_batch_hash: [u8; 32],
         summary: ResidentTurnSummary,
         initial_publication: bool,
+        continuation_drain: bool,
         effects: &[MaterializedEffect],
     ) -> MResult<ResidentTurnRecord> {
         let effect_count = effects.len();
@@ -1814,6 +1822,7 @@ impl ResidentExternalCoordinator {
                 layout_generation: self.layout_generation,
                 input_batch_hash,
                 initial_publication,
+                continuation_drain,
                 before_epoch: summary.before_epoch,
                 after_epoch: Some(summary.after_epoch),
                 state_hash: summary.state_hash,
@@ -1846,6 +1855,7 @@ impl ResidentExternalCoordinator {
             [0; 32],
             [0; 32],
             summary,
+            false,
             false,
             &[],
         )
@@ -1883,6 +1893,7 @@ impl ResidentExternalCoordinator {
                 layout_generation: self.layout_generation,
                 input_batch_hash: evidence.input_batch_hash,
                 initial_publication: false,
+                continuation_drain: false,
                 before_epoch,
                 after_epoch: None,
                 state_hash: self.published_state_hash,

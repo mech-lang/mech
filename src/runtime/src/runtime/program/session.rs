@@ -275,12 +275,16 @@ impl MechRuntime {
                         continue;
                     }
                     let turn_started = Instant::now();
-                    let prepared = execution.instance.prepare_turn(&[]).map_err(|error| {
-                        route_failure(
-                            ResidentRouteFailureClass::ActivationFailure,
-                            format!("resident continuation failed: {error:?}"),
-                        )
-                    })?;
+                    let prepared =
+                        execution
+                            .instance
+                            .prepare_continuation_turn(&[])
+                            .map_err(|error| {
+                                route_failure(
+                                    ResidentRouteFailureClass::ActivationFailure,
+                                    format!("resident continuation failed: {error:?}"),
+                                )
+                            })?;
                     if let Err(error) = super::super::limits::enforce_turn_duration_limit(
                         max_turn_duration_ms,
                         turn_started,
