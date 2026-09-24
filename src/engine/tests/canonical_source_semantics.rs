@@ -2207,6 +2207,103 @@ fn patterned_activation_dispatches_first_successful_guard_and_samples_captures()
 }
 
 #[test]
+fn activation_reads_forwarded_output_from_the_current_input_turn() {
+    let base = CanonicalSourceFrontend
+        .compile_document(&document(
+            "event := event-source<f64>\n~selected := 0.0\n~> event\n  | value => { selected = value }\nselected\n",
+        ))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let event = base.inputs()[0].slot;
+    let activation = base
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Activation(control) => Some((
+                node.input_bindings.start as usize + control.scrutinee as usize,
+                node.node,
+            )),
+            _ => None,
+        })
+        .expect("activation control");
+    let output_slot = base.outputs()[0].source;
+    let mut slots = base.slots().to_vec();
+    let mech_engine::ProducerReference::Output { output, .. } =
+        slots[output_slot.get() as usize].producer
+    else {
+        panic!("published output slot")
+    };
+    slots[output_slot.get() as usize].producer = mech_engine::ProducerReference::Output {
+        output,
+        source: mech_engine::ArtifactSource::Slot(event),
+    };
+    let mut bindings = base.bindings().to_vec();
+    let mech_engine::BindingDeclaration::Input { source, .. } = &mut bindings[activation.0] else {
+        panic!("activation scrutinee binding")
+    };
+    *source = mech_engine::ArtifactSource::Slot(output_slot);
+    let artifact = mech_engine::ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: base.contracts().clone(),
+        requirements: base.requirements().clone(),
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: slots.into_boxed_slice(),
+        nodes: base.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: base.constraints().to_vec().into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 701),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    assert_eq!(instance.plan.turn_trigger_inputs.as_ref(), &[event]);
+
+    let initial = 1.0;
+    let initial_input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(core::slice::from_ref(&initial)),
+    }];
+    instance
+        .prepare_initial_turn(&initial_input)
+        .unwrap()
+        .publish()
+        .unwrap();
+    let current = 7.0;
+    let current_input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(core::slice::from_ref(&current)),
+    }];
+    instance.turn(&current_input).unwrap();
+
+    let selected = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+        instance.state_borrow(selected).unwrap()
+    else {
+        panic!("mutable activation state uses snapshot storage")
+    };
+    assert_eq!(
+        values[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(current))
+    );
+}
+
+#[test]
 fn computed_activation_pattern_dependencies_remain_sample_only() {
     let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
     let compiled = CanonicalSourceFrontend

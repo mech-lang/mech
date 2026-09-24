@@ -4650,8 +4650,12 @@ fn continuation_dependency_node(
     if declaration.role == SlotRole::State {
         return Ok(None);
     }
-    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-        return Ok(None);
+    let node = match declaration.producer {
+        ProducerReference::Output { source, .. } => {
+            return continuation_dependency_node(artifact, source, visiting);
+        }
+        ProducerReference::NodeOutput { node, .. } => node,
+        ProducerReference::Input(_) => return Ok(None),
     };
     if !visiting.insert(node) {
         return Ok(None);
@@ -4753,7 +4757,16 @@ fn build_plan(
                 | crate::ExecutableNodeBody::Activation(control) => control,
                 _ => unreachable!(),
             };
-            let input_sources = node_inputs(artifact, node.node)?;
+            let input_sources = node_inputs(artifact, node.node)?
+                .into_iter()
+                .map(|source| {
+                    if matches!(&node.body, crate::ExecutableNodeBody::Activation(_)) {
+                        forwarded_output_source(artifact, source)
+                    } else {
+                        Ok(source)
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
             let input_reads = input_sources
                 .iter()
                 .copied()
@@ -5218,6 +5231,11 @@ fn build_plan(
         if node_is_pure(node) || sampled_nodes.contains_key(&node.node) {
             continue;
         }
+        // Outputless effects are scheduling roots, not value producers. They
+        // cannot form a capture-only derived-value cone.
+        if node.output_bindings.is_empty() {
+            continue;
+        }
         let output = node_output_slot(artifact, node.node)?;
         if published.contains(&output)
             || artifact.slots()[output.get() as usize].role != SlotRole::Derived
@@ -5258,7 +5276,10 @@ fn build_plan(
         let crate::ExecutableNodeBody::Activation(control) = &node.body else {
             continue;
         };
-        let activation_inputs = node_inputs(artifact, node.node)?;
+        let activation_inputs = node_inputs(artifact, node.node)?
+            .into_iter()
+            .map(|source| forwarded_output_source(artifact, source))
+            .collect::<Result<Vec<_>, _>>()?;
         for source in activation_inputs.iter().copied() {
             if let Some(node) =
                 continuation_dependency_node(artifact, source, &mut BTreeSet::new())?
@@ -6623,6 +6644,31 @@ fn node_inputs(
         .collect()
 }
 
+fn forwarded_output_source(
+    artifact: &ProgramArtifact,
+    mut source: ArtifactSource,
+) -> Result<ArtifactSource, ResidentActivationError> {
+    let mut remaining = artifact.slots().len();
+    while let ArtifactSource::Slot(slot) = source {
+        let declaration = artifact.slots().get(slot.get() as usize).ok_or(
+            ResidentActivationError::InvalidDependency {
+                node: NodeId::new(slot.get()),
+            },
+        )?;
+        let ProducerReference::Output { source: next, .. } = declaration.producer else {
+            break;
+        };
+        let Some(next_remaining) = remaining.checked_sub(1) else {
+            return Err(ResidentActivationError::InvalidDependency {
+                node: NodeId::new(slot.get()),
+            });
+        };
+        remaining = next_remaining;
+        source = next;
+    }
+    Ok(source)
+}
+
 fn collect_resident_input_dependencies(
     artifact: &ProgramArtifact,
     source: ArtifactSource,
@@ -6647,8 +6693,18 @@ fn collect_resident_input_dependencies(
         // historical writer inputs do not trigger this activation.
         return Ok(());
     }
-    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
-        return Ok(());
+    let node = match declaration.producer {
+        ProducerReference::Output { source, .. } => {
+            return collect_resident_input_dependencies(
+                artifact,
+                source,
+                input_slots,
+                visited_nodes,
+                dependencies,
+            );
+        }
+        ProducerReference::NodeOutput { node, .. } => node,
+        ProducerReference::Input(_) => return Ok(()),
     };
     if !visited_nodes.insert(node) {
         return Ok(());
