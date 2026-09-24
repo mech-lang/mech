@@ -6930,7 +6930,7 @@ fn canonical_dependency_exports_keep_input_free_activations_dormant() {
     resolver
         .insert_canonical_string(
             "dep.mec",
-            "trigger := true\n~value := 0u64\n~> trigger { value = value + 1u64 }\n<+ value\nvalue\n",
+            "trigger := true\n~value := 0u64\n<+ value\n~> trigger { value = value + 1u64 }\nvalue\n",
         )
         .unwrap();
     resolver
