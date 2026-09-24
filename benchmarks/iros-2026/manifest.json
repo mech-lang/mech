@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "title": "IROS 2026 parallel EKF benchmark package",
+  "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
+  "evidence_revisions": {
+    "cross_language_controls": "d7c535bcccbde027db9dff3e6dc1bb77ed7be05b",
+    "mega_chart": "c217f2748fa8296940edf1d9122cb62bc9a9d69c",
+    "source_size_audit": "d4e82b6d49597bfab4bc2fce9e85558767173e74"
+  },
+  "machine": {
+    "model": "Mac mini Macmini9,1",
+    "cpu": "Apple M1, 8 cores (4 performance + 4 efficiency)",
+    "memory": "8 GB LPDDR4",
+    "gpu": "8-core integrated Apple M1 GPU",
+    "graphics_api": "Metal 3",
+    "operating_system": "macOS 15.6.1",
+    "architecture": "arm64"
+  },
+  "matched_checked_comparison": {
+    "workload": "500,000 filters x 40 turns",
+    "execution": "four-wide SIMD, eight workers, fused block",
+    "contract": "checked candidate publication with complete block-start rollback and fault metadata",
+    "mech_million_turns_per_second": 145.573,
+    "rust_million_turns_per_second": 146.508742,
+    "rust_throughput_advantage_percent": 0.6428,
+    "mech_normalized_source_characters": 1079,
+    "rust_normalized_source_characters": 5243,
+    "rust_to_mech_source_ratio": 4.8591,
+    "mech_source_reduction_percent": 79.4202,
+    "throughput_evidence": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json",
+    "source_evidence": "benchmarks/archive/compute/parallel-ekf/source-size-audit/counts.json"
+  },
+  "chart_assertions": {
+    "checked": {
+      "Mech direct Metal, generic IR / per-filter GPU dispatch (current)": 422.70,
+      "Mojo native Metal (current)": 244.49,
+      "Taichi GPU, native Metal": 176.71,
+      "Mech GPU, WGPU per-turn": 152.97,
+      "Rust packed SIMD, fused worker-local block strict checked (8 workers)": 146.51,
+      "Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers)": 145.57,
+      "Futhark multicore, 8 workers (10k x 20)": 48.39,
+      "PyPy optimized scalar (10k x 20)": 1.57,
+      "CPython textbook scalar (10k x 20)": 0.03
+    },
+    "unchecked": {
+      "Mech GPU, unchecked one-submit": 3729.67,
+      "Mech direct Metal, generic IR / per-filter GPU dispatch (current)": 421.65,
+      "Mojo native Metal (current)": 405.05,
+      "Rust packed SIMD, fused worker-local block (8 workers)": 163.87,
+      "Mech SIMD/JIT CPU, fused unchecked block (8 workers)": 165.83,
+      "PyPy optimized scalar (10k x 20)": 1.57,
+      "CPython textbook scalar (10k x 20)": 0.03
+    }
+  },
+  "representative_sources": [
+    {
+      "family": "Mech",
+      "strategy": "one high-level source for textbook and SIMD/eight-worker execution",
+      "path": "benchmarks/archive/compute/parallel-ekf/source-size-audit/selected/ekf.mec",
+      "sha256": "09afcf7b354345f33e6b1e5d9b10a275cbfd1eb5763b3d0e691329861ab64224"
+    },
+    {
+      "family": "Rust",
+      "strategy": "packed SIMD with eight-worker dispatch and rollback",
+      "path": "benchmarks/archive/compute/parallel-ekf/source-size-audit/selected/rust_simd.rs",
+      "sha256": "283b846040bbb65b6bfc679a51309677fc7761ec834198343f65f81c76e9d39f"
+    },
+    {
+      "family": "NumPy",
+      "strategy": "batched fixed-shape vectorized operations",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+      "sha256": "b0b8a94f519f5cf6020cdc00cd34fe3f5bf6e052bdfd299d7244971a4bec7fcd"
+    },
+    {
+      "family": "Julia",
+      "strategy": "SIMD with eight worker threads",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl",
+      "sha256": "02eea78d3a802241577fcf68bb16feef7b08f121125c71cbf01f56e6a513acba"
+    },
+    {
+      "family": "Taichi",
+      "strategy": "scalar structure-of-arrays kernel",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+      "sha256": "62f21e51665b29a5f2ef5b6dea428bb39ad8df09bc263b35675a048868d7ecd1"
+    },
+    {
+      "family": "Halide",
+      "strategy": "fixed-shape JIT pipeline with checked publication",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+      "sha256": "b4ab84bee736b3251e0f1e33b7c6b8bf3e5d915f10f6551f304c3f3687dcc0a1"
+    },
+    {
+      "family": "Futhark",
+      "strategy": "data-parallel multicore map",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+      "sha256": "8f662c6bc6c9534551d3c7a8de451931e8076c94b2953531133fcd26eac4a963"
+    },
+    {
+      "family": "LuaJIT",
+      "strategy": "flat fixed-shape scalar state",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "sha256": "2d9ee36d28e0210add2567afaf7d39329b830fbea835c8a9d01705602f71dc9f"
+    },
+    {
+      "family": "Python",
+      "strategy": "standard-library scalar control",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+      "sha256": "9b8f7e2746b170f27bcf66aa09b2bdef2353151571e4828ff408c63595cca322"
+    },
+    {
+      "family": "PyPy",
+      "strategy": "optimized pure-Python structure-of-arrays control",
+      "path": "benchmarks/archive/compute/parallel-ekf/pypy_optimized.py",
+      "sha256": "1b327ec585959f5fa1ac252f195a6d240c84b8bd1598af23b644b609f2144514"
+    },
+    {
+      "family": "Mojo",
+      "strategy": "textbook fixed-matrix CPU control",
+      "path": "benchmarks/archive/compute/parallel-ekf/mojo_textbook_fixed.mojo",
+      "sha256": "c6b7dfb6f104b0f060f32e5846edd27d9e9c68cf86fe931cc05843b68788a051"
+    },
+    {
+      "family": "Mojo",
+      "strategy": "native Metal control",
+      "path": "benchmarks/archive/compute/parallel-ekf/mojo_metal.mojo",
+      "sha256": "bbf462a6b71527d31212370bc0f7bc342c0147195fdddcc8be18b356ed309c98"
+    }
+  ]
+}
