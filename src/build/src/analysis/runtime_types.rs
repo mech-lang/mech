@@ -2,7 +2,10 @@ use std::collections::BTreeSet;
 
 #[cfg(test)]
 use mech_core::MatrixStorage;
-use mech_core::{MResult, NativeValueFeature, RuntimeType, native_features_for_runtime_type};
+use mech_core::{
+    MResult, NativeValueFeature, RuntimeType, SchemaBody, SchemaTable,
+    native_features_for_runtime_type,
+};
 
 /// The exact value and shape features selected by an official bytecode-v1 type
 /// table. The same sorted feature vector is applied to `mech-core`,
@@ -32,6 +35,110 @@ pub(crate) fn analyze_runtime_types(types: &[RuntimeType]) -> MResult<RuntimeTyp
         runtime_types: runtime_types.into_iter().collect(),
         cargo_features,
     })
+}
+
+pub(crate) fn artifact_schema_features(schemas: &SchemaTable) -> Vec<String> {
+    let mut native_features = BTreeSet::new();
+    for entry in schemas.entries() {
+        collect_schema_features(entry.schema().body(), &mut native_features);
+    }
+    native_features
+        .into_iter()
+        .map(NativeValueFeature::cargo_feature)
+        .map(str::to_owned)
+        .collect()
+}
+
+fn collect_schema_features(body: &SchemaBody, features: &mut BTreeSet<NativeValueFeature>) {
+    use NativeValueFeature as Feature;
+    match body {
+        SchemaBody::Dynamic | SchemaBody::Id | SchemaBody::Index => {}
+        SchemaBody::Bool => {
+            features.insert(Feature::Bool);
+        }
+        SchemaBody::UnsignedInteger(width) => {
+            features.insert(match width {
+                mech_core::IntegerWidth::W8 => Feature::U8,
+                mech_core::IntegerWidth::W16 => Feature::U16,
+                mech_core::IntegerWidth::W32 => Feature::U32,
+                mech_core::IntegerWidth::W64 => Feature::U64,
+                mech_core::IntegerWidth::W128 => Feature::U128,
+            });
+        }
+        SchemaBody::SignedInteger(width) => {
+            features.insert(match width {
+                mech_core::IntegerWidth::W8 => Feature::I8,
+                mech_core::IntegerWidth::W16 => Feature::I16,
+                mech_core::IntegerWidth::W32 => Feature::I32,
+                mech_core::IntegerWidth::W64 => Feature::I64,
+                mech_core::IntegerWidth::W128 => Feature::I128,
+            });
+        }
+        SchemaBody::FloatingPoint(width) => {
+            features.insert(match width {
+                mech_core::FloatWidth::W32 => Feature::F32,
+                mech_core::FloatWidth::W64 => Feature::F64,
+            });
+        }
+        SchemaBody::Complex(_) => {
+            features.insert(Feature::C64);
+        }
+        SchemaBody::Rational64 => {
+            features.insert(Feature::R64);
+        }
+        SchemaBody::String => {
+            features.insert(Feature::String);
+        }
+        SchemaBody::Atom(_) => {
+            features.insert(Feature::Atom);
+        }
+        SchemaBody::Enum { variants, .. } => {
+            features.insert(Feature::Enum);
+            for payload in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                collect_schema_features(payload, features);
+            }
+        }
+        SchemaBody::Option(inner) => collect_schema_features(inner, features),
+        SchemaBody::Tuple(elements) => {
+            if !elements.is_empty() {
+                features.insert(Feature::Tuple);
+            }
+            for element in elements {
+                collect_schema_features(element, features);
+            }
+        }
+        SchemaBody::Record(fields) => {
+            features.insert(Feature::Record);
+            for field in fields {
+                collect_schema_features(&field.schema, features);
+            }
+        }
+        SchemaBody::Matrix { element, .. } => {
+            features.insert(Feature::Matrix);
+            collect_schema_features(element, features);
+        }
+        SchemaBody::Table { columns, .. } => {
+            features.insert(Feature::Table);
+            for column in columns {
+                collect_schema_features(&column.schema, features);
+            }
+        }
+        SchemaBody::Set { element, .. } => {
+            features.insert(Feature::Set);
+            collect_schema_features(element, features);
+        }
+        SchemaBody::Map { key, value, .. } => {
+            features.insert(Feature::Map);
+            collect_schema_features(key, features);
+            collect_schema_features(value, features);
+        }
+        SchemaBody::ReifiedType => {
+            features.insert(Feature::KindAnnotation);
+        }
+    }
 }
 
 #[cfg(test)]

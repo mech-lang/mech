@@ -245,6 +245,28 @@ impl FileSourceResolver {
         Ok(None)
     }
 
+    fn attach_nominal_provenance(
+        &self,
+        path: &Path,
+        canonical_uri: &str,
+        mut resolved: ResolvedSource,
+    ) -> MResult<ResolvedSource> {
+        if resolved.kind != SourceKind::Mech {
+            return Ok(resolved);
+        }
+        if let Some((origin, package_id)) = self.nominal_origins.get(canonical_uri) {
+            resolved = resolved.with_nominal_origin(origin.clone());
+            if let Some(package_id) = package_id {
+                resolved = resolved.with_nominal_package_id(package_id.clone());
+            }
+        } else if let Some((origin, package_id)) = self.manifest_nominal_origin(path)? {
+            resolved = resolved
+                .with_nominal_origin(origin)
+                .with_nominal_package_id(package_id);
+        }
+        Ok(resolved)
+    }
+
     /// Resolve a source through the prepared canonical authority only. This
     /// path never invokes or consults the legacy parser and publishes no
     /// resolver facts unless strict document admission succeeds.
@@ -267,19 +289,8 @@ impl FileSourceResolver {
             .unwrap_or("source")
             .to_owned();
         let canonical_uri = path_to_file_uri(&path)?;
-        let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
-        if resolved.kind == SourceKind::Mech {
-            if let Some((origin, package_id)) = self.nominal_origins.get(&canonical_uri) {
-                resolved = resolved.with_nominal_origin(origin.clone());
-                if let Some(package_id) = package_id {
-                    resolved = resolved.with_nominal_package_id(package_id.clone());
-                }
-            } else if let Some((origin, package_id)) = self.manifest_nominal_origin(&path)? {
-                resolved = resolved
-                    .with_nominal_origin(origin)
-                    .with_nominal_package_id(package_id);
-            }
-        }
+        let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        let mut resolved = self.attach_nominal_provenance(&path, &canonical_uri, resolved)?;
         if resolved.kind == SourceKind::Mech
             && matches!(&resolved.source, MechSourceCode::String(_))
         {
@@ -470,9 +481,12 @@ impl SourceResolver for FileSourceResolver {
                 .to_string();
 
             let canonical_uri = path_to_file_uri(&path)?;
-            Ok(Some(
-                ResolvedSource::new(name, canonical_uri, source).with_kind(kind),
-            ))
+            let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+            Ok(Some(self.attach_nominal_provenance(
+                &path,
+                &canonical_uri,
+                resolved,
+            )?))
         }
     }
 }
