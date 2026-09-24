@@ -2423,6 +2423,9 @@ fn render_fence_html(
     }
     if lookup.mode == RenderMode::Completed
         && presentation.show_output
+        && fence
+            .mech_code()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()))
         && let Some(scope) = scope
     {
         let value = lookup
@@ -2701,6 +2704,11 @@ fn scope_has_compiled_value(node: &SyntaxNode) -> bool {
     }
     node.children()
         .any(|child| scope_has_compiled_value(&child))
+}
+
+/// Whether the canonical root scope can produce a runtime value.
+pub fn canonical_document_has_root_program(document: &DocumentSyntax) -> bool {
+    scope_has_compiled_value(document.syntax())
 }
 
 fn append_browser_mount(

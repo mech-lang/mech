@@ -764,6 +764,9 @@ pub(crate) fn activate_document_repl_runtime_document(
     events: MechEventBuffer,
     document: &SourceDocument,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+    let initial_bundle = bootstrap.source().initial_bundle.as_ref().filter(|_| {
+        document.source().revision() == bootstrap.source().document.document().source().revision()
+    });
     let mut candidate = build_document_repl_runtime_for_document(bootstrap, events, document)?;
     let source = document.source().to_contiguous_string();
     if source.trim().is_empty() {
@@ -785,12 +788,7 @@ pub(crate) fn activate_document_repl_runtime_document(
     }
     let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
-    let activation = if let Some(bundle) = bootstrap
-        .source()
-        .initial_bundle
-        .as_ref()
-        .filter(|bundle| bundle.source == source)
-    {
+    let activation = if let Some(bundle) = initial_bundle {
         runtime.load_bytecode_program(&bundle.bytecode, durability)
     } else {
         #[cfg(feature = "browser_compute")]
@@ -1423,7 +1421,15 @@ mod document {
         candidate: &SourceDocument,
         require_all: bool,
     ) -> MResult<DocumentOutputState> {
-        let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
+        let bundled_initial = bootstrap
+            .initial_bundle
+            .as_ref()
+            .is_some_and(|bundle| bundle.source == candidate.source().to_contiguous_string());
+        let (runtime_source, program_output) = if bundled_initial {
+            (candidate.clone(), None)
+        } else {
+            runtime_document(bootstrap, candidate)?
+        };
         let program = match compile_browser_interactive_document(bootstrap, &runtime_source) {
             Ok(program) => program,
             Err(_) if bootstrap.presentation_output_ids.is_empty() => {
@@ -1475,6 +1481,15 @@ mod document {
                 "browser presentation payload contains an output absent from the canonical document",
             ));
         }
+        let program_output = program_output.or_else(|| {
+            bundled_initial.then(|| {
+                program
+                    .document_outputs()
+                    .iter()
+                    .find(|output| output.kind == SourceDocumentOutputKind::Program)
+                    .map(|output| OutputId::new(output.output))
+            })?
+        });
         Ok(DocumentOutputState {
             bindings,
             program_output: program_output.map(|output| u64::from(output.0)),
@@ -1662,7 +1677,17 @@ mod document {
             let Some(runtime) = repl.session.runtime() else {
                 return Ok(None);
             };
-            let Some(output_id) = bootstrap.program_output_id()? else {
+            let bundle_output = bootstrap.initial_bundle.as_ref().is_some_and(|bundle| {
+                repl.session.source_document().is_some_and(|document| {
+                    document.source().to_contiguous_string() == bundle.source
+                })
+            });
+            let output_id = if bundle_output {
+                runtime.program_output_id()
+            } else {
+                bootstrap.program_output_id()?
+            };
+            let Some(output_id) = output_id else {
                 return Ok(None);
             };
             (output_id, runtime.output_value(output_id)?)
