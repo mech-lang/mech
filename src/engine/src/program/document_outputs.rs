@@ -1,6 +1,6 @@
 use mech_core::{
-    BlockConfig, Comment, FencedMechCode, MechCode, Paragraph, ParagraphElement, Program,
-    SectionAnnotation, SectionElement, Statement, hash_str,
+    BlockConfig, Comment, FencedMechCode, MDList, MechCode, Paragraph, ParagraphElement, Program,
+    SectionAnnotation, SectionElement, Statement, hash_str, inline_document_output_id,
 };
 
 /// Runtime-only namespace used by the browser document adapter to capture the
@@ -82,13 +82,15 @@ pub fn insert_root_document_program_output_capture(
 /// `mechdown::section_element` and the formatter's root presentation namespace.
 pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
     let mut output_ids = Vec::new();
-    let mut inline_index = 0_u64;
+    let mut inline_count = 0_u64;
+    let mut inline_occurrences = Vec::new();
     let mut fence_occurrences = Vec::new();
     for section in &program.body.sections {
         for element in &section.elements {
             collect_section_output_ids(
                 element,
-                &mut inline_index,
+                &mut inline_count,
+                &mut inline_occurrences,
                 &mut fence_occurrences,
                 &mut output_ids,
             );
@@ -109,54 +111,124 @@ pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
 /// formatted document fragments without restarting their address namespace.
 pub fn root_document_inline_eval_count(program: &Program) -> u64 {
     let mut output_ids = Vec::new();
-    let mut inline_index = 0_u64;
+    let mut inline_count = 0_u64;
+    let mut inline_occurrences = Vec::new();
     let mut fence_occurrences = Vec::new();
     for section in &program.body.sections {
         for element in &section.elements {
             collect_section_output_ids(
                 element,
-                &mut inline_index,
+                &mut inline_count,
+                &mut inline_occurrences,
                 &mut fence_occurrences,
                 &mut output_ids,
             );
         }
     }
-    inline_index
+    inline_count
 }
 
 fn collect_section_output_ids(
     element: &SectionElement,
-    inline_index: &mut u64,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
     fence_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
     match element {
-        SectionElement::Float((element, _)) => {
-            collect_section_output_ids(element, inline_index, fence_occurrences, output_ids);
+        SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
+            collect_section_output_ids(
+                element,
+                inline_count,
+                inline_occurrences,
+                fence_occurrences,
+                output_ids,
+            );
         }
         SectionElement::MechCode(code) => {
-            collect_code_comments(code, inline_index, output_ids);
+            collect_code_comments(code, inline_count, inline_occurrences, output_ids);
         }
         SectionElement::FencedMechCode(block) => {
-            collect_fenced_output_ids(block, inline_index, fence_occurrences, output_ids);
+            collect_fenced_output_ids(
+                block,
+                inline_count,
+                inline_occurrences,
+                fence_occurrences,
+                output_ids,
+            );
         }
         SectionElement::Comment(comment) => {
-            collect_comment_output_ids(comment, inline_index, output_ids);
+            collect_comment_output_ids(comment, inline_count, inline_occurrences, output_ids);
+        }
+        SectionElement::Abstract(paragraphs)
+        | SectionElement::QuoteBlock(paragraphs)
+        | SectionElement::InfoBlock(paragraphs)
+        | SectionElement::SuccessBlock(paragraphs)
+        | SectionElement::IdeaBlock(paragraphs)
+        | SectionElement::WarningBlock(paragraphs)
+        | SectionElement::ErrorBlock(paragraphs)
+        | SectionElement::QuestionBlock(paragraphs)
+        | SectionElement::Footnote((_, paragraphs)) => {
+            for paragraph in paragraphs {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+            }
+        }
+        SectionElement::Citation(citation) => {
+            collect_paragraph_output_ids(
+                &citation.text,
+                inline_count,
+                inline_occurrences,
+                output_ids,
+            );
         }
         SectionElement::Paragraph(paragraph) => {
-            collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+            collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
+        }
+        SectionElement::Subtitle(subtitle) => {
+            collect_paragraph_output_ids(
+                &subtitle.text,
+                inline_count,
+                inline_occurrences,
+                output_ids,
+            );
+        }
+        SectionElement::Image(image) => {
+            if let Some(caption) = &image.caption {
+                collect_paragraph_output_ids(caption, inline_count, inline_occurrences, output_ids);
+            }
+        }
+        SectionElement::List(list) => {
+            collect_list_output_ids(list, inline_count, inline_occurrences, output_ids);
         }
         SectionElement::Table(table) => {
+            for cell in &table.header {
+                collect_paragraph_output_ids(cell, inline_count, inline_occurrences, output_ids);
+            }
             for row in &table.rows {
                 for cell in row {
-                    collect_paragraph_output_ids(cell, inline_index, output_ids);
+                    collect_paragraph_output_ids(
+                        cell,
+                        inline_count,
+                        inline_occurrences,
+                        output_ids,
+                    );
                 }
             }
         }
         SectionElement::FigureTable(table) => {
             for row in &table.rows {
                 for figure in row {
-                    collect_paragraph_output_ids(&figure.caption, inline_index, output_ids);
+                    collect_paragraph_output_ids(
+                        &figure.caption,
+                        inline_count,
+                        inline_occurrences,
+                        output_ids,
+                    );
                 }
             }
         }
@@ -166,14 +238,15 @@ fn collect_section_output_ids(
 
 fn collect_fenced_output_ids(
     block: &FencedMechCode,
-    inline_index: &mut u64,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
     fence_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
     if block.config.disabled || block.config.hidden || block.config.namespace != 0 {
         return;
     }
-    collect_code_comments(&block.code, inline_index, output_ids);
+    collect_code_comments(&block.code, inline_count, inline_occurrences, output_ids);
     // The capture executes beside the source value so it snapshots the right
     // `ans`, but its public ordinal belongs to the original document boundary.
     // The boundary annotation below publishes it after all source-visible
@@ -311,37 +384,136 @@ fn split_element_at_last_program_value(
 
 fn collect_code_comments(
     code: &[(MechCode, Option<Comment>)],
-    inline_index: &mut u64,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
     for (code, trailing_comment) in code {
         if let MechCode::Comment(comment) = code {
-            collect_comment_output_ids(comment, inline_index, output_ids);
+            collect_comment_output_ids(comment, inline_count, inline_occurrences, output_ids);
         }
         if let Some(comment) = trailing_comment {
-            collect_comment_output_ids(comment, inline_index, output_ids);
+            collect_comment_output_ids(comment, inline_count, inline_occurrences, output_ids);
         }
     }
 }
 
 fn collect_comment_output_ids(
     comment: &Comment,
-    inline_index: &mut u64,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
-    collect_paragraph_output_ids(&comment.paragraph, inline_index, output_ids);
+    collect_paragraph_output_ids(
+        &comment.paragraph,
+        inline_count,
+        inline_occurrences,
+        output_ids,
+    );
 }
 
 fn collect_paragraph_output_ids(
     paragraph: &Paragraph,
-    inline_index: &mut u64,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
     for element in &paragraph.elements {
-        if matches!(element, ParagraphElement::EvalInlineMechCode(_)) {
-            let output_id = hash_str(&format!("inline-eval:0:{inline_index}"));
-            *inline_index += 1;
-            push_unique(output_ids, output_id);
+        collect_paragraph_element_output_ids(element, inline_count, inline_occurrences, output_ids);
+    }
+}
+
+fn collect_paragraph_element_output_ids(
+    element: &ParagraphElement,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<u64>,
+) {
+    match element {
+        ParagraphElement::EvalInlineMechCode(expression) => {
+            let base = inline_document_output_id(0, expression, 0);
+            let occurrence = match inline_occurrences
+                .iter_mut()
+                .find(|(candidate, _)| *candidate == base)
+            {
+                Some((_, count)) => {
+                    let occurrence = *count;
+                    *count = count.saturating_add(1);
+                    occurrence
+                }
+                None => {
+                    inline_occurrences.push((base, 1));
+                    0
+                }
+            };
+            *inline_count = inline_count.saturating_add(1);
+            push_unique(
+                output_ids,
+                inline_document_output_id(0, expression, occurrence),
+            );
+        }
+        ParagraphElement::Emphasis(element)
+        | ParagraphElement::Highlight(element)
+        | ParagraphElement::Strikethrough(element)
+        | ParagraphElement::Strong(element)
+        | ParagraphElement::Underline(element) => collect_paragraph_element_output_ids(
+            element,
+            inline_count,
+            inline_occurrences,
+            output_ids,
+        ),
+        ParagraphElement::Hyperlink((paragraph, _)) => {
+            collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids)
+        }
+        _ => {}
+    }
+}
+
+fn collect_list_output_ids(
+    list: &MDList,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<u64>,
+) {
+    match list {
+        MDList::Unordered(items) => {
+            for ((_, paragraph), nested) in items {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_count, inline_occurrences, output_ids);
+                }
+            }
+        }
+        MDList::Ordered(list) => {
+            for ((_, paragraph), nested) in &list.items {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_count, inline_occurrences, output_ids);
+                }
+            }
+        }
+        MDList::Check(items) => {
+            for ((_, paragraph), nested) in items {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_count, inline_occurrences, output_ids);
+                }
+            }
         }
     }
 }

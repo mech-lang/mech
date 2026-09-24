@@ -649,17 +649,50 @@ impl WasmDocumentBootstrap {
         self.document_base.borrow_mut().stage(document);
     }
 
-    fn rebase_document_boundary_if_needed(&self, accepted: &SourceDocument) {
-        if !accepted
-            .source()
-            .to_contiguous_string()
-            .starts_with(&self.initial_repl_source())
-        {
-            // Commands such as :clear replace source inside the former base.
-            // The accepted revision becomes the next stable document boundary.
-            self.stage_document_base(accepted.clone());
-            self.document_base.borrow_mut().commit();
+    fn rebase_document_boundary_if_needed(
+        &self,
+        accepted_before: &str,
+        accepted: &SourceDocument,
+    ) -> MResult<()> {
+        let previous_base = self.initial_repl_source();
+        let accepted_source = accepted.source().to_contiguous_string();
+        if accepted_source.starts_with(&previous_base) {
+            return Ok(());
         }
+        let console_suffix = accepted_before
+            .strip_prefix(&previous_base)
+            .ok_or_else(|| {
+                document_runtime_error(
+                    "accepted browser source no longer contains its retained document boundary",
+                )
+            })?;
+        let rebased_source = accepted_source
+            .strip_suffix(console_suffix)
+            .ok_or_else(|| {
+                document_runtime_error(
+                    "accepted browser source changed the retained console suffix while rebasing",
+                )
+            })?;
+        let mut rebased = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            accepted.source().revision(),
+            rebased_source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .map_err(|error| {
+            document_runtime_error(format!("invalid rebased browser document: {error:?}"))
+        })?;
+        if let Some(origin) = accepted.nominal_origin() {
+            rebased = rebased.with_nominal_origin(origin.clone());
+        }
+        if let Some(package_id) = accepted.nominal_package_id() {
+            rebased = rebased.with_nominal_package_id(package_id);
+        }
+        // Commands such as :clear replace source inside the former base. Keep
+        // already accepted console entries beyond that boundary as overlays.
+        self.stage_document_base(rebased);
+        self.document_base.borrow_mut().commit();
+        Ok(())
     }
 
     fn program_output_id(&self) -> MResult<Option<OutputId>> {
@@ -2074,7 +2107,9 @@ mod document {
                     .session
                     .source_document()
                     .ok_or_else(|| js_error("document session has no retained source"))?;
-                self.bootstrap.rebase_document_boundary_if_needed(accepted);
+                self.bootstrap
+                    .rebase_document_boundary_if_needed(&accepted_before, accepted)
+                    .map_err(to_js_error)?;
                 self.refresh_document_output_ordinals()
                     .map_err(to_js_error)?;
             }
@@ -3521,6 +3556,19 @@ mod tests {
         test_document_payload(root_specifier, source)
     }
 
+    #[test]
+    fn formatter_legacy_code_payload_remains_decodable() {
+        let tree = mech_syntax::parser::parse("value := 41\nResult {value + 1}.\n").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let payload = decode_document_payload(&encoded, "document.mec").unwrap();
+        assert_eq!(payload.root_specifier(), "document.mec");
+        assert_eq!(
+            payload.presentation_output_ids(),
+            root_document_output_ids(&tree)
+        );
+        assert!(payload.source().contains("value := 41"));
+    }
+
     fn document_bootstrap(
         root_specifier: &str,
         source: &str,
@@ -3627,6 +3675,26 @@ mod tests {
     }
 
     #[test]
+    fn accepted_inline_insertion_preserves_existing_presentation_identities() {
+        let original = "value := 1\nFirst {value + 1}.\nSecond {value + 2}.\n";
+        let replacement = "value := 1\nNew {value}.\nFirst {value + 1}.\nSecond {value + 2}.\n";
+        let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
+        let before = document::document_output_ordinals(&bootstrap).unwrap();
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            replacement,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let after =
+            document::document_output_ordinals_for_source(&bootstrap, &candidate, false).unwrap();
+        for output_id in &bootstrap.presentation_output_ids {
+            assert_eq!(after[output_id], before[output_id] + 1);
+        }
+    }
+
+    #[test]
     fn repeated_fences_map_to_distinct_runtime_outputs() {
         let source = "```mech\n42\n```\n\n```mech\n42\n```\n";
         let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
@@ -3692,7 +3760,9 @@ mod tests {
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
-        bootstrap.rebase_document_boundary_if_needed(&cleared);
+        bootstrap
+            .rebase_document_boundary_if_needed(original, &cleared)
+            .unwrap();
         assert_eq!(bootstrap.initial_repl_source(), retained);
         #[cfg(feature = "browser_compute")]
         assert_eq!(
@@ -3725,6 +3795,27 @@ mod tests {
             .start
             .0 as usize;
         assert!(capture_start < overlay_start);
+    }
+
+    #[test]
+    fn cleared_source_rebase_preserves_the_existing_console_suffix() {
+        let original = "first := 1\nsecond := 2\nsecond\n";
+        let retained = "second := 2\nsecond\n";
+        let console_suffix = "40 + 2\n";
+        let accepted_before = format!("{original}{console_suffix}");
+        let accepted_after = format!("{retained}{console_suffix}");
+        let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
+        let cleared = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            accepted_after,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        bootstrap
+            .rebase_document_boundary_if_needed(&accepted_before, &cleared)
+            .unwrap();
+        assert_eq!(bootstrap.initial_repl_source(), retained);
     }
 
     #[test]
@@ -6391,29 +6482,8 @@ mod browser_tests {
     }
 
     fn encoded_document_at(root_specifier: &str, source: &str) -> String {
-        let document = SourceDocument::parse_resolved(
-            "runtime:interactive",
-            mech_syntax::document::Revision(0),
-            source,
-            mech_syntax::document::ParseConfig::default(),
-        )
-        .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let presentation_output_ids = root_document_output_ids(&tree);
         BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)

@@ -476,18 +476,19 @@ fn eval_fenced_code_block(
     Ok(out)
 }
 
-fn inline_eval_id(p: &InterpreterExecution<'_>) -> u64 {
-    let next_ix = {
-        let mut counter = p.inline_eval_counter.borrow_mut();
-        let current = *counter;
-        *counter += 1;
-        current
-    };
-    hash_str(&format!(
-        "inline-eval:{}:{}",
-        p.presentation_namespace(),
-        next_ix
-    ))
+fn inline_eval_id(expression: &Expression, p: &InterpreterExecution<'_>) -> u64 {
+    let outputs = p.out_values.borrow();
+    let mut occurrence = 0_u64;
+    loop {
+        let output_id =
+            inline_document_output_id(p.presentation_namespace(), expression, occurrence);
+        if !outputs.contains_key(&output_id) {
+            return output_id;
+        }
+        occurrence = occurrence
+            .checked_add(1)
+            .expect("inline document output occurrence space is exhausted");
+    }
 }
 
 #[cfg(feature = "mika")]
@@ -501,7 +502,7 @@ pub fn paragraph_element(
 ) -> MResult<(u64, SpecializationInput)> {
     let result = match element {
         ParagraphElement::EvalInlineMechCode(expr) => {
-            let code_id = inline_eval_id(p);
+            let code_id = inline_eval_id(expr, p);
             match expression(&expr, None, p) {
                 Ok(val) => (code_id, val),
                 // Inline document expressions are opportunistic: unresolved
