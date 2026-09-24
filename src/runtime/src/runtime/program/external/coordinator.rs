@@ -1104,6 +1104,29 @@ impl ResidentExternalCoordinator {
                 );
             }
         }
+        if record.header.status == TurnRecordStatus::Accepted {
+            let eligible = &self.instance().plan.turn_trigger_inputs;
+            let trigger_count = batch
+                .iter()
+                .flat_map(|batch| &batch.facts)
+                .filter(|fact| fact.trigger)
+                .count();
+            if batch
+                .iter()
+                .flat_map(|batch| &batch.facts)
+                .any(|fact| fact.trigger && !eligible.contains(&fact.slot))
+                || ((record.body.initial_publication || record.body.continuation_drain)
+                    && trigger_count != 0)
+                || (!record.body.initial_publication
+                    && !record.body.continuation_drain
+                    && !eligible.is_empty()
+                    && trigger_count == 0)
+            {
+                return invalid_coordinator(
+                    "recorded replay triggers do not match the activated turn mode",
+                );
+            }
+        }
         match record.header.status {
             TurnRecordStatus::Accepted => {
                 let complete_inputs = if self.bound.observations().is_empty() {
