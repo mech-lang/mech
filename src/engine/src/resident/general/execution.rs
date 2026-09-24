@@ -1497,6 +1497,12 @@ impl ReactiveInstance {
             ready.get() as usize,
         );
         for (_, _, _, updates) in &self.plan.activation_turn_inputs {
+            // Reopen an activation-owned cone only when the selected
+            // continuation itself belongs to that activation. Mere downstream
+            // convergence with an ordinary continuation must stay suppressed.
+            if !updates.contains(&ready) {
+                continue;
+            }
             for update in updates.iter().copied().filter(|update| {
                 *update == ready
                     || bit_is_set(
