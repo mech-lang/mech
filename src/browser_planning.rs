@@ -40,10 +40,37 @@ pub(crate) fn compile_browser_document_bundle(
     compiler: &mut mech_runtime::ProgramCompiler,
     uri: &str,
     document: &mech_runtime::SourceDocument,
+    uses_compute: bool,
 ) -> MResult<mech_runtime::CanonicalProgramBundle> {
-    let product =
-        compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri))?;
-    mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product)
+    match compiler.compile_canonical_interactive_root(mech_runtime::SourceRequest::new(uri)) {
+        Ok(product) => mech_runtime::CanonicalProgramBundle::from_product(uri, document, &product),
+        Err(error) if uses_compute => {
+            #[cfg(feature = "compute_backends_native")]
+            {
+                let mixed = compiler.compile_canonical_mixed_root(
+                    mech_runtime::SourceRequest::new(uri),
+                    mech_runtime::ModuleBuildOptions::new(
+                        env!("CARGO_PKG_VERSION"),
+                        "v0.4",
+                        "browser",
+                        &["compute"],
+                        &[],
+                    ),
+                )?;
+                return mech_runtime::CanonicalProgramBundle::from_artifact_product(
+                    uri,
+                    document,
+                    &mixed.coordinator,
+                    mixed.source_dependencies,
+                );
+            }
+            #[cfg(not(feature = "compute_backends_native"))]
+            {
+                Err(error)
+            }
+        }
+        Err(error) => Err(error),
+    }
 }
 
 #[derive(Clone, Debug)]

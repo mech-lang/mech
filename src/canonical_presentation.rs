@@ -108,10 +108,9 @@ fn render_canonical_html_mode(
     live: bool,
 ) -> MResult<HtmlShimRender> {
     if !live {
-        shim = shim.replacen(
+        shim = shim.replace(
             "data-mech-document-status=\"loading\"",
             "data-mech-document-status=\"ready\"",
-            1,
         );
         shim = shim.replacen(" data-mech-document-controller", "", 1);
     }
@@ -370,5 +369,39 @@ mod tests {
         assert!(html.contains("<style>Safe Style</style>"), "{html}");
         assert!(html.contains(env!("CARGO_PKG_VERSION")), "{html}");
         assert!(!html.contains("Forged"), "{html}");
+    }
+
+    #[test]
+    fn static_shims_mark_every_document_status_target_ready() {
+        let document = mech_runtime::SourceDocument::parse_resolved(
+            "bundle:///static.mec",
+            mech_syntax::document::Revision(0),
+            "answer := 42\nanswer\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        for shim in [
+            include_str!("../include/index.html"),
+            include_str!("../include/docs.html"),
+            include_str!("../include/blog.html"),
+        ] {
+            let html = render_canonical_static_html(
+                &document.document(),
+                "".into(),
+                shim.to_owned(),
+                &HtmlShimExtraSlots::default(),
+            )
+            .unwrap()
+            .html;
+            assert!(
+                !html.contains("data-mech-document-status=\"loading\""),
+                "{html}"
+            );
+            assert_eq!(
+                html.matches("data-mech-document-status=\"ready\"").count(),
+                2,
+                "{html}"
+            );
+        }
     }
 }
