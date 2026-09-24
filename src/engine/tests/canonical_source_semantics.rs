@@ -2376,18 +2376,15 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
             .unwrap()
         })
     };
-    let prepare_inputs = |values: &[mech_core::Value; 2]| {
-        values
-            .iter()
-            .zip(&resident_input_slots)
-            .map(|(value, slot)| CapturedValueInput { slot: *slot, value })
-            .collect::<Vec<_>>()
-    };
-
     let first = values(1.0, 10.0);
+    let first_inputs = first
+        .iter()
+        .zip(&resident_input_slots)
+        .map(|(value, slot)| CapturedValueInput { slot: *slot, value })
+        .collect::<Vec<_>>();
     let event_slot = instance.plan.inputs[0].artifact_slot;
     instance
-        .prepare_turn_values_with_activation_triggers(&prepare_inputs(&first), &[event_slot])
+        .prepare_turn_values_with_activation_triggers(&first_inputs, &[event_slot])
         .unwrap()
         .publish()
         .unwrap();
@@ -2401,9 +2398,14 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
     );
 
     let second = values(1.0, 20.0);
+    let second_inputs = second
+        .iter()
+        .zip(&resident_input_slots)
+        .map(|(value, slot)| CapturedValueInput { slot: *slot, value })
+        .collect::<Vec<_>>();
     let ordinary_slot = instance.plan.inputs[1].artifact_slot;
     instance
-        .prepare_turn_values_with_activation_triggers(&prepare_inputs(&second), &[ordinary_slot])
+        .prepare_turn_values_with_activation_triggers(&second_inputs, &[ordinary_slot])
         .unwrap()
         .publish()
         .unwrap();
