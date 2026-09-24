@@ -88,6 +88,22 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(snapshot.syntax()).expect("canonical Document")
 }
 
+#[test]
+fn root_state_mutations_include_mutable_definitions_and_destructures() {
+    let names = CanonicalSourceFrontend
+        .root_state_mutation_names(&document(
+            "~counter := 0\nordinary := 1\n(left, right) := (2, 3)\ncounter += 1\n",
+        ))
+        .unwrap();
+    assert_eq!(
+        names,
+        ["counter", "left", "right"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect()
+    );
+}
+
 fn nominal_origin() -> CanonicalNominalPath {
     CanonicalNominalPath::new(vec!["mech-test".to_owned(), "canonical-source".to_owned()]).unwrap()
 }

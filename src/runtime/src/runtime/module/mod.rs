@@ -58,7 +58,9 @@ fn source_index_for_module_record_source(
 fn source_index_for_resolved_source(resolved: &mut ResolvedSource) -> MResult<Option<SourceIndex>> {
     #[cfg(feature = "source")]
     {
-        if matches!(resolved.kind, crate::SourceKind::Mech) && resolved.source_document().is_none()
+        if matches!(resolved.kind, crate::SourceKind::Mech)
+            && matches!(&resolved.source, MechSourceCode::String(_))
+            && resolved.source_document().is_none()
         {
             *resolved = resolved.clone().retain_source_document(
                 mech_syntax::document::Revision(0),
@@ -119,6 +121,20 @@ fn textual_custom_resolver_result_retains_canonical_module_edges() {
     index_unindexed_module_source(&mut resolved).unwrap();
     assert!(resolved.source_document().is_some());
     assert_eq!(resolved.imports.len(), 1);
+}
+
+#[cfg(all(test, feature = "source"))]
+#[test]
+fn nested_program_custom_resolver_result_remains_unindexed() {
+    let mut resolved = ResolvedSource::new(
+        "main.mec",
+        "main.mec",
+        MechSourceCode::Program(vec![MechSourceCode::String("value := 1\n".to_owned())]),
+    )
+    .with_kind(crate::SourceKind::Mech);
+    index_unindexed_module_source(&mut resolved).unwrap();
+    assert!(resolved.source_document().is_none());
+    assert!(resolved.scopes.is_empty());
 }
 
 impl MechRuntime {

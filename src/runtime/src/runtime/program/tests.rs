@@ -7086,6 +7086,31 @@ fn canonical_planning_values_remain_constants_and_live_defaults_are_detached() {
 }
 
 #[test]
+fn canonical_initializer_projection_obeys_the_planning_step_limit() {
+    let document = canonical_planning_test_document("port := 39f32 + 2f32 + 1f32\nport\n");
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(1);
+    let mut compiler = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let error = compiler
+        .compile_document_artifact_with_input_initializers(
+            &document,
+            &BTreeMap::new(),
+            &BTreeSet::from(["port".to_owned()]),
+        )
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("canonical planning exceeds the configured 1 step limit"),
+        "{error:?}"
+    );
+}
+
+#[test]
 fn canonical_static_symbols_filter_and_detach_matrix_values() {
     let document = canonical_planning_test_document(
         "matrix := [1f32 2f32; 3f32 4f32]\nanswer := supplied + 2f32\n",
