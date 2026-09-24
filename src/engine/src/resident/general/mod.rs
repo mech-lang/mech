@@ -3355,6 +3355,73 @@ fn constant_comparison_operand<'a>(
     }))
 }
 
+fn closed_aggregate_equality_admitted(
+    artifact: &ProgramArtifact,
+    left: &Value,
+    right: &Value,
+    materializes_canonical_bytes: bool,
+) -> bool {
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let Ok(left_footprint) =
+        super::budget::measure_canonical_value_footprint(&mut meter, left, artifact.schemas())
+    else {
+        return false;
+    };
+    let Ok(right_footprint) =
+        super::budget::measure_canonical_value_footprint(&mut meter, right, artifact.schemas())
+    else {
+        return false;
+    };
+    let schema_work = if left.schema_key() == right.schema_key() {
+        let Some(left_schema) = artifact.schemas().entry(left.schema()) else {
+            return false;
+        };
+        let Some(right_schema) = artifact.schemas().entry(right.schema()) else {
+            return false;
+        };
+        let Ok(work) = u64::try_from(
+            left_schema
+                .canonical_bytes()
+                .len()
+                .max(right_schema.canonical_bytes().len()),
+        ) else {
+            return false;
+        };
+        work
+    } else {
+        0
+    };
+    let Some(encoded_bytes) = left_footprint
+        .encoded_bytes
+        .checked_add(right_footprint.encoded_bytes)
+    else {
+        return false;
+    };
+    let data_equality_work = if materializes_canonical_bytes {
+        encoded_bytes.checked_add(
+            left_footprint
+                .encoded_bytes
+                .min(right_footprint.encoded_bytes),
+        )
+    } else {
+        left_footprint
+            .node_count
+            .checked_add(right_footprint.node_count)
+            .map(|nodes| encoded_bytes.max(nodes))
+    };
+    let Some(equality_work) = data_equality_work.and_then(|work| schema_work.checked_add(work))
+    else {
+        return false;
+    };
+    if materializes_canonical_bytes
+        && (meter.charge_temporary_bytes(encoded_bytes).is_err()
+            || meter.charge_cloned_bytes(encoded_bytes).is_err())
+    {
+        return false;
+    }
+    meter.charge_comparison_work(equality_work).is_ok()
+}
+
 fn closed_comparison_population(
     artifact: &ProgramArtifact,
     node: NodeId,
@@ -3395,9 +3462,25 @@ fn closed_comparison_population(
     };
     if scalar_output {
         if left.schema != right.schema {
-            return Ok(None);
+            return Ok(match name {
+                "seq" => Some(0),
+                "sneq" => Some(1),
+                _ => None,
+            });
         }
         let same_shape = left.value.shape() == right.value.shape();
+        let aggregate_equality = !scalar_comparison_supported(&left.schema, false);
+        if aggregate_equality
+            && matches!(name, "eq" | "neq" | "seq" | "sneq")
+            && !closed_aggregate_equality_admitted(
+                artifact,
+                &left.value,
+                &right.value,
+                matches!(name, "eq" | "neq"),
+            )
+        {
+            return Ok(None);
+        }
         let language_equal = || {
             same_shape
                 && schema_data_language_eq(&left.schema, left.value.data(), right.value.data())
