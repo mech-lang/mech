@@ -66,12 +66,29 @@ impl NativeApplicationBuilder {
             &self.environment.function_catalog,
             &mut native_resolver,
         )?;
-        let runtime_functions = analysis::analyze_runtime_functions(
+        let mut runtime_functions = analysis::analyze_runtime_functions(
             &program,
             &self.environment.function_catalog,
             request.instruction_type_bindings.as_deref(),
             request.instruction_type_binding_requirements.as_deref(),
         )?;
+        if !program.artifact.is_empty() {
+            let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
+                .map_err(|error| {
+                    error::native_build_error(
+                        error::NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
+                            reason: format!("canonical artifact admission failed: {error:?}"),
+                        },
+                        None,
+                    )
+                })?;
+            runtime_functions.extend(analysis::analyze_artifact_runtime_functions(
+                &artifact,
+                &self.environment.function_catalog,
+            )?);
+            runtime_functions.sort_by_key(|function| function.runtime_id);
+            runtime_functions.dedup_by_key(|function| function.runtime_id);
+        }
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;
         }

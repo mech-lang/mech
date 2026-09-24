@@ -139,6 +139,19 @@ fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
     .map_err(|error| canonical_compilation_error(format!("invalid retained source: {error:?}")))
 }
 
+fn admit_resolved_canonical_source(mut resolved: ResolvedSource) -> MResult<ResolvedSource> {
+    if matches!(resolved.kind, crate::SourceKind::Mech)
+        && resolved.source_document().is_none()
+        && matches!(&resolved.source, crate::MechSourceCode::String(_))
+    {
+        resolved = resolved.retain_source_document(
+            mech_syntax::document::Revision(0),
+            mech_syntax::document::ParseConfig::default(),
+        )?;
+    }
+    resolved.admit_canonical_document()
+}
+
 /// The sole owner of source-to-resident-artifact compilation.
 ///
 /// Deliberately absent: input drivers, a live runtime store, runtime
@@ -880,15 +893,14 @@ impl<'a> ProgramCompilerView<'a> {
             .iter()
             .map(|request| {
                 request.validate()?;
-                self.source_resolver
-                    .resolve(request)?
-                    .ok_or_else(|| {
+                admit_resolved_canonical_source(self.source_resolver.resolve(request)?.ok_or_else(
+                    || {
                         canonical_compilation_error(format!(
                             "missing canonical root {}",
                             request.specifier
                         ))
-                    })?
-                    .admit_canonical_document()
+                    },
+                )?)
             })
             .collect::<MResult<Vec<_>>>()?;
         let mut identities = BTreeMap::new();
@@ -927,7 +939,7 @@ impl<'a> ProgramCompilerView<'a> {
                 let Some(dependency) = self.source_resolver.resolve(&request)? else {
                     continue;
                 };
-                let dependency = dependency.admit_canonical_document()?;
+                let dependency = admit_resolved_canonical_source(dependency)?;
                 let dependency_id = if let Some(identity) =
                     identities.get(&dependency.canonical_uri).copied()
                 {
@@ -1164,7 +1176,7 @@ impl<'a> ProgramCompilerView<'a> {
         interactive: bool,
         options: Option<ModuleBuildOptions<'_>>,
     ) -> MResult<ProgramCompilationProduct> {
-        let resolved = resolved.admit_canonical_document()?;
+        let resolved = admit_resolved_canonical_source(resolved)?;
         let mut context = CanonicalGraphCompilation::new(options);
         let program =
             self.compile_canonical_graph_document(&resolved, &mut context, false, interactive)?;
@@ -1401,7 +1413,7 @@ impl<'a> ProgramCompilerView<'a> {
                 }
                 continue;
             };
-            let dependency = dependency.admit_canonical_document()?;
+            let dependency = admit_resolved_canonical_source(dependency)?;
             let dependency_document = dependency.source_document().ok_or_else(|| {
                 canonical_compilation_error("canonical dependency has no retained document")
             })?;
@@ -1643,7 +1655,7 @@ impl<'a> ProgramCompilerView<'a> {
         resolved: ResolvedSource,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<MixedProgramCompilation> {
-        let resolved = resolved.admit_canonical_document()?;
+        let resolved = admit_resolved_canonical_source(resolved)?;
         let document = resolved
             .source_document()
             .ok_or_else(|| canonical_compilation_error("mixed root has no retained document"))?;
