@@ -85,7 +85,10 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
     }
     exact_closed_mask("x := [1 2; 3 4]\nmask := x >= 3\nx[mask]\n", "[3; 4]");
     exact_closed_mask("x := [42]\nmask := 1 < 2\nx[mask]\n", "[42]");
-    exact_closed_mask("x := [1f32 2f32]\nmask := x > 1f64\nx[mask]\n", "[2f32]");
+    exact_closed_mask(
+        "x := [1<f32> 2<f32>]\nmask := x > 1<f64>\nx[mask]\n",
+        "[2<f32>]",
+    );
 }
 
 #[test]
