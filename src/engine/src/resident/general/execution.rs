@@ -890,6 +890,28 @@ impl ReactiveInstance {
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
+    /// Resumes the continuation selected from an already accepted host turn.
+    /// No activation scope receives a new trigger during this internal drain.
+    pub fn prepare_continuation_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
     /// Prepares a host-driven turn while scheduling only activation scopes
     /// whose retained artifact input appeared as a trigger in this batch.
     /// Ordinary resident roots retain their established turn behavior.
