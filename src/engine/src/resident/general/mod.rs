@@ -2899,6 +2899,7 @@ fn classify_nodes(
             // captures are closed. Loading may allocate their lexical control
             // but must never execute the scope body.
             if matches!(&node.body, crate::ExecutableNodeBody::Activation(_)) {
+                activation.insert(node.node);
                 continue;
             }
             if matches!(
