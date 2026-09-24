@@ -341,7 +341,6 @@ impl crate::runtime::MechRuntime {
         if matches!(
             turn,
             Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
-                | Some(crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. })
         ) {
             self.drain_resident_continuations()?;
         }
