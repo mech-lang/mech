@@ -34,7 +34,9 @@ mod artifact_tests;
 mod query_tests;
 
 #[cfg(all(feature = "resident-routing-source", feature = "serde"))]
-pub use bundle::{CANONICAL_PROGRAM_BUNDLE_VERSION, CanonicalProgramBundle};
+pub use bundle::{
+    CANONICAL_PROGRAM_BUNDLE_VERSION, CanonicalDependencySource, CanonicalProgramBundle,
+};
 #[cfg(feature = "resident-routing-source")]
 pub(crate) use compiler::ProgramCompilerView;
 #[cfg(feature = "resident-routing-source")]

@@ -74,6 +74,7 @@ struct ServerSourceRegistry {
     source_paths: HashMap<String, PathBuf>,
     source_roots: Vec<String>,
     source_resolutions: Vec<SourceResolutionEntry>,
+    source_provenance: BTreeMap<String, serde_json::Value>,
     workspace_keys: HashSet<String>,
     static_asset_paths: HashMap<String, PathBuf>,
     user_assets: HashSet<String>,
@@ -390,6 +391,7 @@ impl ServerSourceRegistry {
         self.index_source = None;
         self.source_roots.clear();
         self.source_resolutions.clear();
+        self.source_provenance.clear();
         let mut module_specifiers = BTreeMap::new();
 
         for source in snapshot.sources.values() {
@@ -410,6 +412,20 @@ impl ServerSourceRegistry {
                 continue;
             };
             let key = percent_encode_url_path(&logical_specifier);
+            if let Some(document) = source.source_document.as_ref()
+                && let Some(origin) = document.nominal_origin()
+            {
+                let package_id = document
+                    .nominal_package_id()
+                    .map(crate::nominal_provenance::transport_package_id);
+                self.source_provenance.insert(
+                    logical_specifier.clone(),
+                    serde_json::json!({
+                        "nominalOrigin": origin,
+                        "nominalPackageId": package_id,
+                    }),
+                );
+            }
             self.check(FS_READ, &path)?;
             let source_text =
                 match source.source.as_ref() {
@@ -606,6 +622,7 @@ impl ServerSourceRegistry {
           "roots": self.source_roots,
           "sources": source_entries,
           "resolutions": self.source_resolutions,
+          "provenance": self.source_provenance,
         }))
         .map_err(|error| {
             Error::new(
@@ -2185,6 +2202,11 @@ mod tests {
         .unwrap();
         std::fs::write(root.join("index.html"), "<!doctype html>\n").unwrap();
         std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"serve-manifest\"\nversion = \"0.1.0\"\n",
+        )
+        .unwrap();
+        std::fs::write(
             root.join("mech.mcfg"),
             r#"config := {
   hosts: []
@@ -2298,6 +2320,22 @@ mod tests {
         assert_eq!(manifest_asset.backing_paths.len(), 3);
         assert_eq!(manifest["roots"], serde_json::json!(["app/clock.mec"]));
         assert_eq!(manifest["resolutions"], serde_json::json!([]));
+        let provenance = &manifest["provenance"]["app/clock.mec"];
+        assert_eq!(
+            provenance["nominalOrigin"]["segments"],
+            serde_json::json!(["serve-manifest", "app", "clock"]),
+        );
+        assert!(
+            provenance["nominalPackageId"]
+                .as_str()
+                .unwrap()
+                .starts_with("sha256:")
+        );
+        assert!(
+            !String::from_utf8(manifest_asset.bytes)
+                .unwrap()
+                .contains("path+file:")
+        );
 
         drop(registry);
         drop(guard);

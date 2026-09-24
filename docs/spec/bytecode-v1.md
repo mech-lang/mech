@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:8,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:9,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 8)
+### Typed graph bodies (graph revision 9)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 8 and typed bodies; earlier graph representations
+The decoder requires revision 9 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -439,6 +439,7 @@ grammar:
 - `"Wildcard"`
 - `{"Bind":{"local":local_id,"schema":schema_id}}`
 - `{"Equal":{"Literal":constant_id}}` or `{"Equal":{"Binding":local_id}}`
+- `{"Enum":{"ordinal":variant_ordinal,"payload":structural_pattern_or_null}}`
 - `{"Tuple":[structural_pattern,...]}`
 - `{"Array":{"prefix":[structural_pattern,...],"rest":structural_pattern_or_null,"suffix":[structural_pattern,...]}}`
 
@@ -487,6 +488,7 @@ once per surviving binding. Repeated pattern names become equality against
 previously defined locals, including across generators.
 
 Collection patterns are `Wildcard`, `Bind {local,schema}`, `Equal(value)`,
+`Enum {ordinal,payload}`,
 `Tuple([...])`, or `Array {prefix,rest,suffix}`. An absent rest requires exact
 length; a wildcard rest ignores the middle elements. Local IDs are dense and
 single-writer across all steps. Finalization checks dominance, collection
@@ -502,7 +504,7 @@ Arguments retain their optional canonical name and input ordinal. Each ordered s
 retains a state, asynchronous, or output kind plus a recursively typed value made
 from input ordinals, tuples, arrays, atom structures, or tuple structures. Machine
 and structure names must be canonical source identifiers. The FSM variant introduced by
-graph revision 6 remains part of revision 8; earlier readers must reject the current graph
+graph revision 6 remains part of revision 9; earlier readers must reject the current graph
 instead of treating the changed grammar as their own representation. FSM value depth, stage count, and
 aggregate control populations are bounded during decoder admission.
 

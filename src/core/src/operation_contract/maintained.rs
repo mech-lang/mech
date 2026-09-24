@@ -253,6 +253,13 @@ pub fn maintained_operation_contract(
             },
             ChangeDetectionPolicy::KernelReported,
         )),
+        "core/enum-pack" if input_count == 2 => Some(declaration(
+            InputPortLayout::Fixed(vec![read(), read()].into_boxed_slice()),
+            OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            ChangeDetectionPolicy::KernelReported,
+        )),
         "matrix/horzcat"
         | "matrix/vertcat"
         | "matrix/comprehension"

@@ -407,6 +407,11 @@ impl BindingRelocation<'_> {
                 self.constant(id)
             }
             crate::CollectionPattern::Equal(crate::MatchPatternValue::Binding(_)) => {}
+            crate::CollectionPattern::Enum { payload, .. } => {
+                if let Some(payload) = payload {
+                    self.match_structural_pattern(payload);
+                }
+            }
             crate::CollectionPattern::Tuple(items) => {
                 for item in items {
                     self.match_structural_pattern(item);
@@ -439,6 +444,11 @@ impl BindingRelocation<'_> {
             crate::CollectionPattern::Wildcard => {}
             crate::CollectionPattern::Bind { schema, .. } => self.schema(schema),
             crate::CollectionPattern::Equal(value) => self.comprehension_value(value),
+            crate::CollectionPattern::Enum { payload, .. } => {
+                if let Some(payload) = payload {
+                    self.collection_pattern(payload);
+                }
+            }
             crate::CollectionPattern::Tuple(items) => {
                 for item in items {
                     self.collection_pattern(item);

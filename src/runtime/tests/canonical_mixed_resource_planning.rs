@@ -20,6 +20,32 @@ fn canonical_mixed_sample_read_is_planned_without_a_compute_provider() {
     assert!(mixed.compute.interface.outputs[0].dimensions.is_empty());
 }
 
+#[test]
+fn mixed_compute_projection_inherits_document_kind_declarations() {
+    let source = "<amount> := <f32>\n@compute := compute://worker/kernel{:write(turn), :read(sample/value)}\n@compute/turn <- 1\nanswer := @compute/sample/value\nanswer\n\ncalculation @compute\n-------------------\n~value<amount> := 0f32\nvalue += 1f32\nvalue\n";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let mixed = compiler
+        .compile_mixed_source(source)
+        .expect("the compute and initializer projections inherit the document alias");
+    assert_eq!(mixed.compute.interface.outputs.len(), 1);
+}
+
+#[test]
+fn mixed_coordinator_projection_inherits_compute_kind_declarations() {
+    let source = "@compute := compute://worker/kernel{:write(turn), :read(sample/value)}\n@compute/turn <- 1\nanswer<amount> := @compute/sample/value\nanswer\n\ncalculation @compute\n-------------------\n<amount> := <f32>\n~value<amount> := 0f32\nvalue += 1f32\nvalue\n";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+    let mixed = compiler
+        .compile_mixed_source(source)
+        .expect("the coordinator sees the kind declared in the compute section");
+    assert_eq!(mixed.compute.interface.outputs.len(), 1);
+}
+
 fn document(path: &str, compute: &str) -> String {
     format!(
         "@compute := compute://worker/kernel{{:write(turn), :read({path})}}\n@compute/turn <- 1\nanswer := @compute/{path}\nanswer\n\ncalculation @compute\n-------------------\n~counter := {compute}\ncounter += {compute}\ncounter\n"

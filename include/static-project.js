@@ -47,7 +47,7 @@ async function readProjectSourceManifest(moduleUrl) {
   }
 
   if (
-    manifest?.version !== 3 ||
+    manifest?.version !== 4 ||
     !Array.isArray(manifest.roots) ||
     manifest.roots.length === 0 ||
     manifest.roots.some(root => typeof root !== "string") ||
@@ -56,7 +56,12 @@ async function readProjectSourceManifest(moduleUrl) {
       source =>
         typeof source?.specifier !== "string" ||
         typeof source?.url !== "string" ||
-        (source.artifactUrl !== undefined && typeof source.artifactUrl !== "string"),
+        (source.artifactUrl !== undefined && typeof source.artifactUrl !== "string") ||
+        (source.nominalOrigin !== undefined &&
+          (!Array.isArray(source.nominalOrigin?.segments) ||
+            source.nominalOrigin.segments.some(segment => typeof segment !== "string"))) ||
+        (source.nominalPackageId !== undefined &&
+          source.nominalPackageId !== null && typeof source.nominalPackageId !== "string"),
     )
   ) {
     throw new Error("invalid project source manifest");
@@ -83,11 +88,18 @@ async function main() {
   const manifest = await readProjectSourceManifest(import.meta.url);
   const sources = {};
   const artifacts = {};
+  const provenance = {};
 
   for (const source of manifest.sources) {
     sources[source.specifier] = await fetchText(source.url);
     if (source.artifactUrl !== undefined) {
       artifacts[source.specifier] = await fetchText(source.artifactUrl);
+    }
+    if (source.nominalOrigin !== undefined) {
+      provenance[source.specifier] = {
+        nominalOrigin: source.nominalOrigin,
+        nominalPackageId: source.nominalPackageId ?? null,
+      };
     }
   }
 
@@ -95,7 +107,7 @@ async function main() {
     throw new Error("static bundle is missing injected browser host authority");
   }
 
-  project = WasmProject.fromServedBundle(config, sources, artifacts, manifest.roots);
+  project = WasmProject.fromServedBundle(config, sources, artifacts, manifest.roots, provenance);
   project.start();
   running = true;
   requestAnimationFrame(frame);

@@ -54,6 +54,7 @@ impl WasmMixedComputeProject {
         source: &str,
         backend_override: &str,
         gpu_available: bool,
+        provenance: JsValue,
     ) -> Result<WasmMixedComputeProject, JsValue> {
         let document = parse_config_document(
             "browser-project/mech.mcfg",
@@ -62,13 +63,25 @@ impl WasmMixedComputeProject {
         )
         .map_err(js_error)?;
         let parse_started = Instant::now();
-        let source_document = SourceDocument::parse_resolved(
+        let mut source_document = SourceDocument::parse_resolved(
             "browser:mixed-compute",
             Revision(0),
             Arc::<str>::from(source),
             ParseConfig::default(),
         )
         .map_err(|error| js_error(mixed_error(format!("invalid retained source: {error:?}"))))?;
+        if !provenance.is_undefined() && !provenance.is_null() {
+            let retained: crate::project::ServedSourceProvenance =
+                serde_wasm_bindgen::from_value(provenance).map_err(|decode_error| {
+                    JsValue::from_str(&format!(
+                        "invalid browser compute nominal provenance: {decode_error}"
+                    ))
+                })?;
+            source_document = source_document.with_nominal_origin(retained.nominal_origin);
+            if let Some(package_id) = retained.nominal_package_id {
+                source_document = source_document.with_nominal_package_id(package_id);
+            }
+        }
         source_document
             .index()
             .map_err(|error| js_error(MechError::new(error, None)))?;

@@ -379,7 +379,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let document = crate::SourceDocument::from_finished_stream(stream).map_err(|error| {
             interactive_error(format!("interactive source is not final: {error:?}"))
         })?;
-        self.replace_document(document)
+        self.replace_document(self.preserve_document_provenance(document))
     }
 
     /// Inspect an already resident value without recompiling the active
@@ -480,10 +480,11 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 .map_err(|error| {
                     interactive_error(format!("invalid interactive source: {error:?}"))
                 })
+                .map(|document| self.preserve_document_provenance(document))
             };
             let overlay = match finalized {
                 Some(document) if document.source().to_contiguous_string() == appended_source => {
-                    document
+                    self.preserve_document_provenance(document)
                 }
                 _ => parse(&appended_source)?,
             };
@@ -530,6 +531,21 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         document: crate::SourceDocument,
     ) -> MResult<RuntimeValueSnapshot> {
         self.replace_document_preserving(document, &std::collections::BTreeSet::new())
+    }
+
+    fn preserve_document_provenance(
+        &self,
+        mut document: crate::SourceDocument,
+    ) -> crate::SourceDocument {
+        if let Some(current) = self.source_document.as_ref() {
+            if let Some(origin) = current.nominal_origin() {
+                document = document.with_nominal_origin(origin.clone());
+            }
+            if let Some(package_id) = current.nominal_package_id() {
+                document = document.with_nominal_package_id(package_id);
+            }
+        }
+        document
     }
 
     fn replace_document_preserving(
@@ -732,7 +748,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                     ParseConfig::default(),
                 )
                 .map_err(|error| interactive_error(format!("invalid empty source: {error:?}")))?;
-                self.replace_document(document)?;
+                self.replace_document(self.preserve_document_provenance(document))?;
             } else if self.source_tree.is_some() {
                 self.replace_source_candidate(
                     String::new(),
@@ -790,7 +806,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 ParseConfig::default(),
             )
             .map_err(|error| interactive_error(format!("invalid cleared source: {error:?}")))?;
-            self.replace_document(candidate)?;
+            self.replace_document(self.preserve_document_provenance(candidate))?;
             if clear_ans {
                 self.cleared_synthetic_symbols.insert("ans".to_string());
                 removed.insert("ans".to_string());
@@ -1693,6 +1709,71 @@ mod tests {
         assert_eq!(session.clear_variables(&["x".to_owned()]).unwrap(), ["x"]);
         assert_eq!(session.source(), "y := 9\n");
         assert!(session.clear_variables(&["x".to_owned()]).is_err());
+    }
+
+    #[test]
+    fn canonical_interactive_edits_retain_nominal_provenance() {
+        let origin = mech_core::CanonicalNominalPath::new(vec![
+            "test-package".to_owned(),
+            "interactive".to_owned(),
+        ])
+        .unwrap();
+        let initial = crate::SourceDocument::parse_resolved(
+            "repl://nominal-origin",
+            Revision(0),
+            Arc::<str>::from("<event> := :idle | :busy\nvalue := :idle\n"),
+            ParseConfig::default(),
+        )
+        .unwrap()
+        .with_nominal_origin(origin.clone())
+        .with_nominal_package_id("test-package");
+        let mut session = ResidentReplSession::from_document(
+            CanonicalRuntimeFactory {
+                activations: std::rc::Rc::new(Cell::new(0)),
+            },
+            initial,
+        )
+        .unwrap();
+        session.submit("next := :busy").unwrap();
+        assert_eq!(
+            session.source_document.as_ref().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_eq!(
+            session
+                .source_document
+                .as_ref()
+                .unwrap()
+                .nominal_package_id(),
+            Some("test-package")
+        );
+        session.clear_variables(&["next".to_owned()]).unwrap();
+        assert_eq!(
+            session.source_document.as_ref().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_eq!(
+            session
+                .source_document
+                .as_ref()
+                .unwrap()
+                .nominal_package_id(),
+            Some("test-package")
+        );
+        let mut replacement = finished_stream(904, "<event> := :idle | :busy\nvalue := :busy\n");
+        session.replace_finished_stream(&mut replacement).unwrap();
+        assert_eq!(
+            session.source_document.as_ref().unwrap().nominal_origin(),
+            Some(&origin)
+        );
+        assert_eq!(
+            session
+                .source_document
+                .as_ref()
+                .unwrap()
+                .nominal_package_id(),
+            Some("test-package")
+        );
     }
 
     #[test]

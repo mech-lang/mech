@@ -24,10 +24,10 @@ use mech_engine::{
     insert_root_document_program_output_capture, root_document_inline_eval_count,
     root_document_output_ids, root_document_program_output_id,
 };
-#[cfg(feature = "served_project_authority")]
-use mech_runtime::CanonicalProgramBundle;
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
+#[cfg(feature = "served_project_authority")]
+use mech_runtime::{CanonicalDependencySource, CanonicalProgramBundle};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
     MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
@@ -47,8 +47,33 @@ use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
 use mech_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
 use mech_timer::BrowserTimerHostFactory;
-#[cfg(feature = "served_project_authority")]
 use serde::Deserialize;
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ServedSourceProvenance {
+    pub(crate) nominal_origin: mech_core::CanonicalNominalPath,
+    pub(crate) nominal_package_id: Option<String>,
+}
+
+fn served_provenance_from_js(
+    value: JsValue,
+    sources: &HashMap<String, String>,
+) -> Result<HashMap<String, ServedSourceProvenance>, JsValue> {
+    let provenance = if value.is_undefined() || value.is_null() {
+        HashMap::new()
+    } else {
+        serde_wasm_bindgen::from_value(value)
+            .map_err(|error| js_error(format!("invalid served nominal provenance: {error}")))?
+    };
+    if provenance
+        .keys()
+        .any(|specifier| !sources.contains_key(specifier))
+    {
+        return Err(js_error("served nominal provenance has an unknown source"));
+    }
+    Ok(provenance)
+}
 
 #[cfg(feature = "browser_host_dom")]
 use crate::host::WasmBrowserDomBackend;
@@ -89,7 +114,7 @@ impl WasmProject {
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_project_sources(document, source_map, Vec::new())
+        Self::from_project_sources(document, source_map, Vec::new(), HashMap::new())
     }
 
     #[wasm_bindgen(js_name = fromSourcesWithResolutions)]
@@ -97,23 +122,30 @@ impl WasmProject {
         config_source: &str,
         sources: JsValue,
         resolutions: JsValue,
+        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-        Self::from_project_sources(document, source_map, resolutions)
+        let provenance = served_provenance_from_js(provenance, &source_map)?;
+        Self::from_project_sources(document, source_map, resolutions, provenance)
     }
 
     fn from_project_sources(
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
         resolutions: Vec<SourceResolutionEntry>,
+        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_resolutions(&source_map, &resolutions)
-            .map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions_and_provenance(
+            &source_map,
+            &resolutions,
+            &provenance,
+        )
+        .map_err(to_js_error)?;
         let mut runtime = build_runtime(
             &document,
             source_resolver,
@@ -136,7 +168,7 @@ impl WasmProject {
     ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_served_project(document, source_map, Vec::new())
+        Self::from_served_project(document, source_map, Vec::new(), HashMap::new())
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -145,11 +177,13 @@ impl WasmProject {
         config_source: &str,
         sources: JsValue,
         resolutions: JsValue,
+        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-        Self::from_served_project(document, source_map, resolutions)
+        let provenance = served_provenance_from_js(provenance, &source_map)?;
+        Self::from_served_project(document, source_map, resolutions, provenance)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -159,13 +193,23 @@ impl WasmProject {
         sources: JsValue,
         artifacts: JsValue,
         roots: JsValue,
+        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let artifact_map = source_map_from_js(artifacts)?;
         let roots = bundle_roots_from_js(roots)?;
+        let provenance: HashMap<String, ServedSourceProvenance> =
+            serde_wasm_bindgen::from_value(provenance)
+                .map_err(|error| js_error(format!("invalid bundle nominal provenance: {error}")))?;
+        if provenance
+            .keys()
+            .any(|specifier| !source_map.contains_key(specifier))
+        {
+            return Err(js_error("bundle nominal provenance has an unknown source"));
+        }
         replace_bundle_run_paths(&mut document, roots.clone())?;
-        Self::from_served_project_bundle(document, source_map, artifact_map, roots)
+        Self::from_served_project_bundle(document, source_map, artifact_map, roots, provenance)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -174,14 +218,15 @@ impl WasmProject {
         source_map: HashMap<String, String>,
         artifact_map: HashMap<String, String>,
         roots: Vec<String>,
+        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver =
-            project_source_resolver_with_resolutions(&source_map, &[]).map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_provenance(&source_map, &provenance)
+            .map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(
             &document,
             &authority,
@@ -205,12 +250,25 @@ impl WasmProject {
                 "canonical bundle root artifact is missing: {root}"
             ))
         })?;
-        let bundle = CanonicalProgramBundle::decode(encoded, Some(source)).map_err(to_js_error)?;
+        let root_provenance = provenance.get(root);
+        let bundle = CanonicalProgramBundle::decode_with_root_provenance(
+            encoded,
+            Some(source),
+            root_provenance.map(|item| &item.nominal_origin),
+            root_provenance.and_then(|item| item.nominal_package_id.as_deref()),
+        )
+        .map_err(to_js_error)?;
         bundle
-            .validate_dependency_sources(|uri| {
-                uri.strip_prefix("bundle:///")
-                    .and_then(|specifier| source_map.get(specifier))
-                    .map(String::as_str)
+            .validate_dependency_sources_with_provenance(|uri| {
+                let specifier = uri.strip_prefix("bundle:///")?;
+                let source = source_map.get(specifier)?.as_str();
+                let retained = provenance.get(specifier);
+                Some(CanonicalDependencySource {
+                    source,
+                    nominal_origin: retained.map(|item| &item.nominal_origin),
+                    nominal_package_id: retained
+                        .and_then(|item| item.nominal_package_id.as_deref()),
+                })
             })
             .map_err(to_js_error)?;
         if bundle.canonical_uri != format!("bundle:///{root}") {
@@ -234,14 +292,19 @@ impl WasmProject {
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
         resolutions: Vec<SourceResolutionEntry>,
+        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_resolutions(&source_map, &resolutions)
-            .map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions_and_provenance(
+            &source_map,
+            &resolutions,
+            &provenance,
+        )
+        .map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(
             &document,
             &authority,
@@ -431,6 +494,7 @@ pub(crate) struct WasmDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
+    provenance: HashMap<String, ServedSourceProvenance>,
     tree: mech_core::nodes::Program,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
@@ -1058,6 +1122,7 @@ mod document {
                 root_specifier: "document.mec".to_string(),
                 source_map: HashMap::from([("document.mec".to_string(), String::new())]),
                 resolutions: Vec::new(),
+                provenance: HashMap::new(),
                 tree,
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
@@ -1086,11 +1151,19 @@ mod document {
             root_specifier: &str,
             sources: JsValue,
             resolutions: JsValue,
+            provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-            Self::from_tree_with_sources(tree, root_specifier, source_map, resolutions)
+            let provenance = served_provenance_from_js(provenance, &source_map)?;
+            Self::from_tree_with_sources_and_provenance(
+                tree,
+                root_specifier,
+                source_map,
+                resolutions,
+                provenance,
+            )
         }
 
         pub(super) fn from_tree_with_sources(
@@ -1099,10 +1172,27 @@ mod document {
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
         ) -> Result<WasmDocument, JsValue> {
+            Self::from_tree_with_sources_and_provenance(
+                tree,
+                root_specifier,
+                source_map,
+                resolutions,
+                HashMap::new(),
+            )
+        }
+
+        fn from_tree_with_sources_and_provenance(
+            tree: mech_core::nodes::Program,
+            root_specifier: &str,
+            source_map: HashMap<String, String>,
+            resolutions: Vec<SourceResolutionEntry>,
+            provenance: HashMap<String, ServedSourceProvenance>,
+        ) -> Result<WasmDocument, JsValue> {
             Self::from_bootstrap(WasmDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
+                provenance,
                 tree,
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
@@ -1147,6 +1237,7 @@ mod document {
                 config_source,
                 source_map,
                 Vec::new(),
+                HashMap::new(),
                 authority,
             )
         }
@@ -1162,11 +1253,13 @@ mod document {
             config_source: &str,
             sources: JsValue,
             resolutions: JsValue,
+            provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
+            let provenance = served_provenance_from_js(provenance, &source_map)?;
             let authority = served_browser_authority()?;
             Self::from_served_tree(
                 tree,
@@ -1175,6 +1268,7 @@ mod document {
                 config_source,
                 source_map,
                 resolutions,
+                provenance,
                 authority,
             )
         }
@@ -1187,6 +1281,7 @@ mod document {
             config_source: &str,
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
+            provenance: HashMap<String, ServedSourceProvenance>,
             authority: BrowserRuntimeInjectionConfig,
         ) -> Result<WasmDocument, JsValue> {
             validate_served_authority(&document, &authority).map_err(to_js_error)?;
@@ -1195,6 +1290,7 @@ mod document {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
+                provenance,
                 tree,
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
@@ -2453,12 +2549,61 @@ fn project_source_resolver(
     Ok(resolver)
 }
 
+fn project_source_resolver_with_provenance(
+    sources: &HashMap<String, String>,
+    provenance: &HashMap<String, ServedSourceProvenance>,
+) -> mech_core::MResult<InMemorySourceResolver> {
+    let mut resolver = InMemorySourceResolver::new();
+    for (specifier, source) in sources {
+        if let Some(retained) = provenance.get(specifier) {
+            let mut resolved = ResolvedSource::new(
+                specifier,
+                format!("memory:{specifier}"),
+                MechSourceCode::String(source.clone()),
+            )
+            .with_kind(SourceKind::Mech)
+            .with_nominal_origin(retained.nominal_origin.clone());
+            if let Some(package_id) = &retained.nominal_package_id {
+                resolved = resolved.with_nominal_package_id(package_id.clone());
+            }
+            resolver.insert_source(
+                specifier,
+                resolved
+                    .retain_source_document(
+                        mech_syntax::document::Revision(0),
+                        mech_syntax::document::ParseConfig::default(),
+                    )?
+                    .admit_canonical_document()?,
+            )?;
+        } else {
+            resolver.insert_string(specifier, source)?;
+        }
+    }
+    Ok(resolver)
+}
+
 fn project_source_resolver_with_resolutions(
     sources: &HashMap<String, String>,
     resolutions: &[SourceResolutionEntry],
 ) -> mech_core::MResult<InMemorySourceResolver> {
     validate_source_resolution_entries(sources.keys().map(String::as_str), resolutions)?;
     let mut resolver = project_source_resolver(sources)?;
+    for resolution in resolutions {
+        resolver.insert_resolution_entry(resolution)?;
+    }
+    Ok(resolver)
+}
+
+fn project_source_resolver_with_resolutions_and_provenance(
+    sources: &HashMap<String, String>,
+    resolutions: &[SourceResolutionEntry],
+    provenance: &HashMap<String, ServedSourceProvenance>,
+) -> mech_core::MResult<InMemorySourceResolver> {
+    if provenance.is_empty() {
+        return project_source_resolver_with_resolutions(sources, resolutions);
+    }
+    validate_source_resolution_entries(sources.keys().map(String::as_str), resolutions)?;
+    let mut resolver = project_source_resolver_with_provenance(sources, provenance)?;
     for resolution in resolutions {
         resolver.insert_resolution_entry(resolution)?;
     }
@@ -2481,26 +2626,31 @@ fn document_source_resolver(
         )));
     }
 
-    let mut resolver = project_source_resolver(&source.source_map)?;
-    for resolution in &source.resolutions {
-        resolver.insert_resolution_entry(resolution)?;
-    }
-    resolver.insert_source(
-        &source.root_specifier,
-        ResolvedSource::new(
-            &source.root_specifier,
-            format!("memory:{}", source.root_specifier),
-            MechSourceCode::String(
-                source
-                    .source_map
-                    .get(&source.root_specifier)
-                    .expect("document root presence is checked above")
-                    .clone(),
-            ),
-        )
-        .with_syntax_tree(tree)
-        .with_kind(SourceKind::Mech),
+    let mut resolver = project_source_resolver_with_resolutions_and_provenance(
+        &source.source_map,
+        &source.resolutions,
+        &source.provenance,
     )?;
+    let mut resolved = ResolvedSource::new(
+        &source.root_specifier,
+        format!("memory:{}", source.root_specifier),
+        MechSourceCode::String(
+            source
+                .source_map
+                .get(&source.root_specifier)
+                .expect("document root presence is checked above")
+                .clone(),
+        ),
+    )
+    .with_syntax_tree(tree)
+    .with_kind(SourceKind::Mech);
+    if let Some(retained) = source.provenance.get(&source.root_specifier) {
+        resolved = resolved.with_nominal_origin(retained.nominal_origin.clone());
+        if let Some(package_id) = &retained.nominal_package_id {
+            resolved = resolved.with_nominal_package_id(package_id.clone());
+        }
+    }
+    resolver.insert_source(&source.root_specifier, resolved)?;
     Ok(resolver)
 }
 
@@ -2545,7 +2695,7 @@ fn run_source_roots<'a>(
         ));
     }
     let durability = runtime.config().resident_durability;
-    runtime.load_root_program(
+    runtime.load_canonical_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,
@@ -2852,6 +3002,7 @@ mod tests {
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::from([("document.mec".to_string(), String::new())]),
             resolutions: Vec::new(),
+            provenance: HashMap::new(),
             tree: tree.clone(),
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
@@ -3179,7 +3330,10 @@ mod tests {
             .build_compiler()
             .unwrap();
         let bytecode = compiler
-            .compile_root(SourceRequest::new("demo.mec"), browser_module_options())
+            .compile_canonical_interactive_root_with_options(
+                SourceRequest::new("demo.mec"),
+                browser_module_options(),
+            )
             .unwrap()
             .into_parts()
             .1;
@@ -3323,6 +3477,7 @@ phase"#;
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::from([("document.mec".to_string(), String::new())]),
             resolutions: Vec::new(),
+            provenance: HashMap::new(),
             tree,
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
@@ -3586,6 +3741,104 @@ phase"#;
     }
 
     #[test]
+    fn project_and_document_resolvers_retain_nominal_provenance() {
+        let origin =
+            mech_core::CanonicalNominalPath::new(["test-package".to_string(), "main".to_string()])
+                .unwrap();
+        let sources = HashMap::from([(
+            "main.mec".to_string(),
+            "<event> := :idle | :busy\n".to_string(),
+        )]);
+        let provenance = HashMap::from([(
+            "main.mec".to_string(),
+            ServedSourceProvenance {
+                nominal_origin: origin.clone(),
+                nominal_package_id: Some("sha256:fixture".to_string()),
+            },
+        )]);
+        let resolver =
+            project_source_resolver_with_resolutions_and_provenance(&sources, &[], &provenance)
+                .unwrap();
+        let resolved =
+            mech_runtime::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+                .unwrap()
+                .unwrap();
+        assert_eq!(resolved.nominal_origin.as_ref(), Some(&origin));
+        assert_eq!(
+            resolved.nominal_package_id.as_deref(),
+            Some("sha256:fixture")
+        );
+
+        let bootstrap = WasmDocumentBootstrap {
+            root_specifier: "main.mec".to_string(),
+            source_map: sources,
+            resolutions: Vec::new(),
+            provenance,
+            tree: mech_syntax::parser::parse("<event> := :idle | :busy\n").unwrap(),
+            console_instance: "repl".to_string(),
+            lifecycle: DocumentRuntimeLifecycle::default(),
+            #[cfg(feature = "served_project_authority")]
+            served: None,
+        };
+        let resolver = document_source_resolver(bootstrap.tree.clone(), &bootstrap).unwrap();
+        let resolved =
+            mech_runtime::SourceResolver::resolve(&resolver, &SourceRequest::new("main.mec"))
+                .unwrap()
+                .unwrap();
+        assert_eq!(resolved.nominal_origin.as_ref(), Some(&origin));
+        assert_eq!(
+            resolved.nominal_package_id.as_deref(),
+            Some("sha256:fixture")
+        );
+    }
+
+    #[test]
+    fn live_project_sources_compile_nominals_with_retained_provenance() {
+        fn enum_key(package: &str) -> mech_core::NominalKey {
+            let document = project_document(&["main.mec"]);
+            let sources = HashMap::from([(
+                "main.mec".to_string(),
+                "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n".to_string(),
+            )]);
+            let provenance = HashMap::from([(
+                "main.mec".to_string(),
+                ServedSourceProvenance {
+                    nominal_origin: mech_core::CanonicalNominalPath::new([
+                        package.to_string(),
+                        "main".to_string(),
+                    ])
+                    .unwrap(),
+                    nominal_package_id: Some(format!("sha256:{package}")),
+                },
+            )]);
+            let resolver =
+                project_source_resolver_with_resolutions_and_provenance(&sources, &[], &provenance)
+                    .unwrap();
+            let mut runtime = browser_runtime_builder()
+                .source_resolver(resolver)
+                .build()
+                .unwrap();
+
+            run_project_sources(&mut runtime, &document).unwrap();
+            let (_, value) = runtime
+                .root_symbol_values_all()
+                .unwrap()
+                .into_iter()
+                .next()
+                .expect("project source publishes its final enum value");
+            let schemas = value.value().schemas().unwrap();
+            let mech_core::SchemaBody::Enum { key, .. } =
+                schemas.get(value.schema()).unwrap().body()
+            else {
+                panic!("project enum value did not retain its nominal schema")
+            };
+            *key
+        }
+
+        assert_ne!(enum_key("package-a"), enum_key("package-b"));
+    }
+
+    #[test]
     fn source_backed_document_keeps_the_decoded_tree_authoritative() {
         let decoded_source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
         let tree = mech_syntax::parser::parse(decoded_source).unwrap();
@@ -3769,6 +4022,7 @@ phase"#;
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::new(),
             resolutions: Vec::new(),
+            provenance: HashMap::new(),
             tree: baseline,
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
@@ -3798,6 +4052,7 @@ phase"#;
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::new(),
             resolutions: Vec::new(),
+            provenance: HashMap::new(),
             tree: tree.clone(),
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
@@ -4079,6 +4334,7 @@ scene := {
             config_source,
             HashMap::from([("main.mec".to_string(), source.to_string())]),
             Vec::new(),
+            HashMap::new(),
             authority,
         )
         .unwrap();

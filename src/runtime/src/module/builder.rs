@@ -126,12 +126,14 @@ impl ModuleBuilder {
 
 fn source_version_input(resolved: &ResolvedSource) -> String {
     let input = format!(
-        "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}\naddress_references={:?}",
+        "{:?}\nimports={:?}\nexports={:?}\ncontexts={:?}\naddress_references={:?}\nnominal_origin={:?}\nnominal_package_id={:?}",
         resolved.source,
         resolved.imports,
         resolved.exports,
         resolved.contexts,
         resolved.address_references,
+        resolved.nominal_origin,
+        resolved.nominal_package_id,
     );
     // Retained revisions own distinct node/result associations even when source
     // bytes repeat. A stored version must identify that revision as well as text.
@@ -227,6 +229,40 @@ mod tests {
 
         assert_eq!(first.module_id, second.module_id);
         assert_eq!(first.module_version, second.module_version);
+    }
+
+    #[test]
+    fn nominal_provenance_changes_module_version_identity() {
+        let source = || {
+            ResolvedSource::new(
+                "event.mec",
+                "memory://event.mec",
+                MechSourceCode::String("value := 1".to_owned()),
+            )
+            .with_kind(crate::SourceKind::Mech)
+        };
+        let origin =
+            |package: &str| mech_core::CanonicalNominalPath::new(vec![package.to_owned()]).unwrap();
+        let first = build(
+            source()
+                .with_nominal_origin(origin("first"))
+                .with_nominal_package_id("package-a"),
+        )
+        .unwrap();
+        let renamed = build(
+            source()
+                .with_nominal_origin(origin("second"))
+                .with_nominal_package_id("package-a"),
+        )
+        .unwrap();
+        let reassigned = build(
+            source()
+                .with_nominal_origin(origin("first"))
+                .with_nominal_package_id("package-b"),
+        )
+        .unwrap();
+        assert_ne!(first.module_version, renamed.module_version);
+        assert_ne!(first.module_version, reassigned.module_version);
     }
 
     #[test]

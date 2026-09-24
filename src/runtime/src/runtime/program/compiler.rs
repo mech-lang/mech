@@ -57,6 +57,63 @@ type ComputeRegionInterface = ();
 #[cfg(not(feature = "compute"))]
 type ComputeValue = ();
 
+fn canonical_frontend(document: &SourceDocument) -> CanonicalSourceFrontend {
+    document
+        .nominal_origin()
+        .cloned()
+        .map_or(CanonicalSourceFrontend, |origin| {
+            CanonicalSourceFrontend.with_nominal_origin(origin)
+        })
+}
+
+pub(super) fn canonical_dependency_identity_hash(
+    source: &str,
+    origin: Option<&mech_core::CanonicalNominalPath>,
+    package_id: Option<&str>,
+) -> u64 {
+    if origin.is_none() && package_id.is_none() {
+        return mech_core::hash_str(source);
+    }
+    let mut bytes = b"mech-source-dependency-provenance-v1\0".to_vec();
+    bytes.extend_from_slice(&(source.len() as u64).to_le_bytes());
+    bytes.extend_from_slice(source.as_bytes());
+    match origin {
+        Some(origin) => {
+            let path = origin.canonical_bytes();
+            bytes.push(1);
+            bytes.extend_from_slice(&(path.len() as u64).to_le_bytes());
+            bytes.extend_from_slice(&path);
+        }
+        None => bytes.push(0),
+    }
+    match package_id {
+        Some(package_id) => {
+            bytes.push(1);
+            bytes.extend_from_slice(&(package_id.len() as u64).to_le_bytes());
+            bytes.extend_from_slice(package_id.as_bytes());
+        }
+        None => bytes.push(0),
+    }
+    mech_core::hash_bytes(&bytes)
+}
+
+fn canonical_document_dependency_hash(document: &SourceDocument) -> MResult<u64> {
+    let source = document.source().to_contiguous_string();
+    let nominal = !canonical_frontend(document)
+        .declared_enum_names(&document.document())
+        .map_err(|error| canonical_compilation_error(error.to_string()))?
+        .is_empty();
+    Ok(if nominal {
+        canonical_dependency_identity_hash(
+            &source,
+            document.nominal_origin(),
+            document.nominal_package_id(),
+        )
+    } else {
+        mech_core::hash_str(&source)
+    })
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CanonicalProgramCompilationError {
     pub reason: String,
@@ -630,6 +687,7 @@ struct CanonicalGraphCompilation<'a> {
     exports: HashMap<String, BTreeMap<String, crate::RuntimeValueSnapshot>>,
     source_dependencies: BTreeMap<String, u64>,
     module_versions: HashMap<String, crate::ModuleVersionId>,
+    nominal_owners: BTreeMap<Vec<String>, (Option<String>, mech_syntax::document::DocumentId)>,
 }
 
 impl<'a> CanonicalGraphCompilation<'a> {
@@ -640,7 +698,28 @@ impl<'a> CanonicalGraphCompilation<'a> {
             exports: HashMap::new(),
             source_dependencies: BTreeMap::new(),
             module_versions: HashMap::new(),
+            nominal_owners: BTreeMap::new(),
         }
+    }
+
+    fn enum_qualifiers(&self) -> MResult<BTreeMap<mech_core::NominalKey, String>> {
+        self.nominal_owners
+            .keys()
+            .map(|path| {
+                let origin =
+                    mech_core::CanonicalNominalPath::new(path.clone()).map_err(|error| {
+                        canonical_compilation_error(format!(
+                            "invalid enum declaration path: {error:?}"
+                        ))
+                    })?;
+                Ok((
+                    mech_core::NominalKey::from_path(mech_core::NominalKind::Enum, &origin),
+                    path.last()
+                        .expect("registered enum paths have a name")
+                        .clone(),
+                ))
+            })
+            .collect()
     }
 }
 
@@ -749,7 +828,7 @@ impl<'a> ProgramCompilerView<'a> {
         published: &BTreeSet<String>,
         initialization: bool,
     ) -> MResult<CanonicalSourceProgram> {
-        let mut program = CanonicalSourceFrontend
+        let mut program = canonical_frontend(document)
             .compile_document_with_planning_contract(
                 &document.document(),
                 Arc::clone(&self.function_catalog),
@@ -950,8 +1029,9 @@ impl<'a> ProgramCompilerView<'a> {
         } else {
             CanonicalSourceFrontend::compile_document_with_catalog_and_resources
         };
+        let frontend = canonical_frontend(document);
         let mut program = compile(
-            &CanonicalSourceFrontend,
+            &frontend,
             &document.document(),
             Arc::clone(&self.function_catalog),
             input_schemas,
@@ -1088,6 +1168,15 @@ impl<'a> ProgramCompilerView<'a> {
             )?;
         }
         let mut context = CanonicalGraphCompilation::new(Some(options));
+        // Ordered roots and recursively compiled detached dependencies share
+        // one nominal namespace, even though their artifacts are built by
+        // different compiler entry points.
+        for root in &resolved {
+            self.register_nominal_declarations(
+                root.source_document().expect("validated retained root"),
+                &mut context,
+            )?;
+        }
         let mut documents = Vec::new();
         let mut import_uses = Vec::new();
         let mut reads = BTreeMap::new();
@@ -1147,13 +1236,7 @@ impl<'a> ProgramCompilerView<'a> {
                 });
                 context.source_dependencies.insert(
                     target.canonical_uri.clone(),
-                    mech_core::hash_str(
-                        &target
-                            .source_document()
-                            .unwrap()
-                            .source()
-                            .to_contiguous_string(),
-                    ),
+                    canonical_document_dependency_hash(target.source_document().unwrap())?,
                 );
             }
             let modules = imports
@@ -1179,6 +1262,8 @@ impl<'a> ProgramCompilerView<'a> {
             }
             documents.push(CanonicalOrderedDocument {
                 document: document.document(),
+                nominal_origin: document.nominal_origin().cloned(),
+                nominal_package_id: document.nominal_package_id().map(str::to_owned),
                 identity: ordinal,
                 input_schemas: schemas,
                 resource_writes: writes,
@@ -1188,6 +1273,7 @@ impl<'a> ProgramCompilerView<'a> {
             self.canonical_graph_module_identity(root, &detached, &mut context)?;
         }
         let mut program = CanonicalSourceFrontend
+            .with_imported_enum_qualifiers(context.enum_qualifiers()?)
             .compile_ordered_documents_with_catalog(&documents, Arc::clone(&self.function_catalog))
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         for (ordinal, imports) in import_uses {
@@ -1244,7 +1330,7 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_canonical_resolved_root(resolved, interactive, options)
     }
 
-    fn compile_canonical_resolved_root(
+    pub(crate) fn compile_canonical_resolved_root(
         &self,
         resolved: ResolvedSource,
         interactive: bool,
@@ -1273,6 +1359,8 @@ impl<'a> ProgramCompilerView<'a> {
         let document = resolved.source_document().ok_or_else(|| {
             canonical_compilation_error("canonical root has no retained document")
         })?;
+        let frontend = canonical_frontend(document);
+        self.register_nominal_declarations(document, context)?;
         if context.active.iter().any(|entry| entry == uri) {
             return Err(canonical_compilation_error(format!(
                 "canonical source dependency cycle at {uri}"
@@ -1283,6 +1371,7 @@ impl<'a> ProgramCompilerView<'a> {
             .index()
             .map_err(|error| MechError::new(error, None))?;
         let imports = self.canonical_graph_imports(&index.root, uri, context)?;
+        let frontend = frontend.with_imported_enum_qualifiers(context.enum_qualifiers()?);
         let imported = canonical_import_values(&index.root, &SourceScope::Program, &imports)
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
         let (mut schemas, reads, writes, planned_reads) =
@@ -1299,7 +1388,7 @@ impl<'a> ProgramCompilerView<'a> {
             CanonicalSourceFrontend::compile_document_with_planning_contract
         };
         let program = compile(
-            &CanonicalSourceFrontend,
+            &frontend,
             &document.document(),
             Arc::clone(&self.function_catalog),
             schemas,
@@ -1370,6 +1459,42 @@ impl<'a> ProgramCompilerView<'a> {
         Ok(program)
     }
 
+    fn register_nominal_declarations(
+        &self,
+        document: &SourceDocument,
+        context: &mut CanonicalGraphCompilation<'_>,
+    ) -> MResult<()> {
+        let Some(origin) = document.nominal_origin() else {
+            return Ok(());
+        };
+        for name in canonical_frontend(document)
+            .declared_enum_names(&document.document())
+            .map_err(|error| canonical_compilation_error(error.to_string()))?
+        {
+            let path = origin
+                .segments()
+                .iter()
+                .cloned()
+                .chain(std::iter::once(name))
+                .collect::<Vec<_>>();
+            let owner = document.nominal_package_id().map(str::to_owned);
+            let defining_document = document.source().document();
+            if let Some(previous) = context.nominal_owners.get(&path) {
+                if previous.0 != owner || previous.1 != defining_document {
+                    return Err(canonical_compilation_error(format!(
+                        "source-semantics/ambiguous-nominal-declaration-v1: {} has distinct defining sources",
+                        path.join("/")
+                    )));
+                }
+            } else {
+                context
+                    .nominal_owners
+                    .insert(path, (owner, defining_document));
+            }
+        }
+        Ok(())
+    }
+
     fn canonical_graph_module_identity(
         &self,
         resolved: &ResolvedSource,
@@ -1437,10 +1562,14 @@ impl<'a> ProgramCompilerView<'a> {
             let request = source_request_for_import(&declaration, Some(uri));
             let Some(dependency) = self.source_resolver.resolve(&request)? else {
                 if import_requires_source_dependency(&declaration) {
-                    return Err(canonical_compilation_error(format!(
-                        "missing canonical dependency {} from {uri}",
-                        request.specifier
-                    )));
+                    return Err(MechError::new(
+                        RuntimeModuleDependencyMissingError {
+                            module: uri.to_owned(),
+                            specifier: request.specifier,
+                            referrer: request.referrer,
+                        },
+                        None,
+                    ));
                 }
                 continue;
             };
@@ -1448,8 +1577,7 @@ impl<'a> ProgramCompilerView<'a> {
             let dependency_document = dependency.source_document().ok_or_else(|| {
                 canonical_compilation_error("canonical dependency has no retained document")
             })?;
-            let source_hash =
-                mech_core::hash_str(&dependency_document.source().to_contiguous_string());
+            let source_hash = canonical_document_dependency_hash(dependency_document)?;
             if context
                 .source_dependencies
                 .insert(dependency.canonical_uri.clone(), source_hash)
@@ -1854,11 +1982,16 @@ impl<'a> ProgramCompilerView<'a> {
             .index()
             .map_err(|error| MechError::new(error, None))?;
         let mut context = CanonicalGraphCompilation::new(Some(options));
+        self.register_nominal_declarations(document, &mut context)?;
         context.active.push(resolved.canonical_uri.clone());
         let imports =
             self.canonical_graph_imports(&index.root, &resolved.canonical_uri, &mut context)?;
         self.canonical_graph_module_identity(&resolved, &imports, &mut context)?;
-        let mut mixed = self.compile_mixed_document_with_imports(document, &imports)?;
+        let mut mixed = self.compile_mixed_document_with_imports(
+            document,
+            &imports,
+            context.enum_qualifiers()?,
+        )?;
         mixed.source_dependencies = context.source_dependencies;
         Ok(mixed)
     }
@@ -1868,7 +2001,7 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
     ) -> MResult<MixedProgramCompilation> {
-        self.compile_mixed_document_with_imports(document, &[])
+        self.compile_mixed_document_with_imports(document, &[], BTreeMap::new())
     }
 
     #[cfg(feature = "compute")]
@@ -1876,6 +2009,7 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         document: &SourceDocument,
         imports: &[crate::resolver::CanonicalResolvedImport],
+        imported_enum_qualifiers: BTreeMap<mech_core::NominalKey, String>,
     ) -> MResult<MixedProgramCompilation> {
         let index = document
             .index()
@@ -1924,7 +2058,8 @@ impl<'a> ProgramCompilerView<'a> {
                     .or_else(|| module_namespace_for_import(&import.declaration))
             })
             .collect();
-        let mut programs = CanonicalSourceFrontend
+        let mut programs = canonical_frontend(document)
+            .with_imported_enum_qualifiers(imported_enum_qualifiers)
             .prepare_mixed_document_with_planning_contract(
                 &document.document(),
                 Arc::clone(&self.function_catalog),

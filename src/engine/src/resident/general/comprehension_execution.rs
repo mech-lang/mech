@@ -1296,6 +1296,75 @@ impl PatternItem {
         }
     }
 
+    pub(super) fn enum_variant(
+        &self,
+        schemas: &SchemaTable,
+    ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
+        let Some(mut resolved) = resolve_pattern_item(self.clone(), schemas)? else {
+            return Ok(None);
+        };
+        let option_payload = match &resolved.body {
+            SchemaBody::Option(payload) => Some(payload.as_ref().clone()),
+            _ => None,
+        };
+        if let Some(body) = option_payload {
+            let ValueDataDraft::Option(value) = resolved.data else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if !value.present {
+                return Ok(None);
+            }
+            let Some(data) = value.value else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            let source_payload = resolved.source_data.take().and_then(|data| match data {
+                ValueData::Option(Some(value)) => Some(*value),
+                _ => None,
+            });
+            resolved.projection_schema = None;
+            resolved.value_schema = None;
+            resolved.body = body;
+            resolved.data = *data;
+            resolved.source_data = source_payload;
+        }
+        let SchemaBody::Enum { variants, .. } = &resolved.body else {
+            return Ok(None);
+        };
+        let ValueDataDraft::Enum(value) = resolved.data else {
+            return Ok(None);
+        };
+        let Some(variant) = variants.get(value.ordinal as usize) else {
+            return Err(ResidentKernelError::InvalidInput);
+        };
+        let source_payload = resolved.source_data.as_ref().and_then(|data| match data {
+            ValueData::Enum(value) => value.payload().cloned(),
+            _ => None,
+        });
+        let payload = match (variant.payload.as_ref(), value.payload) {
+            (None, None) => None,
+            (Some(body), Some(data)) => Some(
+                if let (Some(context), Some(contexts)) =
+                    (resolved.source_context, resolved.source_contexts)
+                {
+                    Self::source_component(
+                        None,
+                        None,
+                        body.clone(),
+                        resolved.shape_values,
+                        *data,
+                        source_payload,
+                        context,
+                        contexts,
+                    )
+                } else {
+                    Self::component(None, body.clone(), resolved.shape_values, *data)
+                },
+            ),
+            _ => return Err(ResidentKernelError::InvalidInput),
+        };
+        Ok(Some((value.ordinal, payload)))
+    }
+
     fn component(
         schema: Option<SchemaId>,
         body: SchemaBody,
@@ -2604,6 +2673,9 @@ pub(super) fn pattern_dynamic_target_depth(
         crate::CollectionPattern::Wildcard => Ok(0),
         crate::CollectionPattern::Bind { schema, .. } => target(schema.schema),
         crate::CollectionPattern::Equal(peer) => target(peer.schema),
+        crate::CollectionPattern::Enum { payload, .. } => payload
+            .as_deref()
+            .map_or(Ok(0), |item| pattern_dynamic_target_depth(item, schemas)),
         crate::CollectionPattern::Tuple(items) => items.iter().try_fold(0, |depth, item| {
             Ok(depth.max(pattern_dynamic_target_depth(item, schemas)?))
         }),
@@ -3842,6 +3914,22 @@ fn collection_canonicalization_work(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+fn measure_owned_canonical_value_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &mech_core::snapshot::Value,
+    fallback_schemas: &mech_core::SchemaTable,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    // Schema ids are arena-local. Snapshot-backed pattern bindings may retain
+    // the arena of an imported value, so measure them against their owner
+    // rather than the comprehension plan's arena.
+    let owner = value.schemas();
+    budget::measure_canonical_value_footprint(
+        meter,
+        value,
+        owner.as_deref().unwrap_or(fallback_schemas),
+    )
+}
+
 impl ReactiveInstance {
     fn resident_value_footprint(
         value: ResidentValueRef<'_>,
@@ -3865,11 +3953,8 @@ impl ReactiveInstance {
             ResidentValueRef::Snapshot(values) => {
                 for value in values.iter().flatten() {
                     let mut local_meter = ResidentBudgetMeter::default();
-                    let local = budget::measure_canonical_value_footprint(
-                        &mut local_meter,
-                        value,
-                        schemas,
-                    )?;
+                    let local =
+                        measure_owned_canonical_value_footprint(&mut local_meter, value, schemas)?;
                     meter.charge_comparison_work(local_meter.estimate().comparison_work())?;
                     footprint = footprint
                         .checked_add(local)
@@ -4980,7 +5065,7 @@ impl ReactiveInstance {
                 let previous_binding = match self.workspace.scratch.read(binding.region) {
                     ResidentValueRef::Snapshot([Some(previous)]) => {
                         let mut previous_meter = ResidentBudgetMeter::default();
-                        let footprint = budget::measure_canonical_value_footprint(
+                        let footprint = measure_owned_canonical_value_footprint(
                             &mut previous_meter,
                             previous,
                             schemas,
@@ -5161,6 +5246,35 @@ impl ReactiveInstance {
                     .charge_comparison_work(canonical_budget.consumed())
                     .map_err(fail)?;
                 Ok(matched)
+            }
+            crate::CollectionPattern::Enum { ordinal, payload } => {
+                let Some((actual, child)) = item.enum_variant(schemas).map_err(fail)? else {
+                    return Ok(false);
+                };
+                if actual != *ordinal {
+                    return Ok(false);
+                }
+                match (payload.as_deref(), child) {
+                    (None, None) => Ok(true),
+                    (Some(pattern), Some(child)) => self.match_collection_pattern_item(
+                        node,
+                        locals,
+                        pattern,
+                        &child,
+                        source_shape_values,
+                        item_footprint,
+                        depth + 1,
+                        retained_count,
+                        retained_footprint,
+                        retained_shape_parameter_count,
+                        schemas,
+                        projections,
+                        schema_arena_bytes,
+                        working,
+                        meter,
+                    ),
+                    _ => Ok(false),
+                }
             }
             crate::CollectionPattern::Tuple(items) => {
                 if item.structural_len(true) != Some(items.len()) {
@@ -5355,7 +5469,7 @@ impl ReactiveInstance {
                     meter,
                 )
             }
-            crate::CollectionPattern::Equal(_) => {
+            crate::CollectionPattern::Equal(_) | crate::CollectionPattern::Enum { .. } => {
                 let (item, item_footprint, _) = self
                     .collection_pattern_item(
                         source,
@@ -6023,6 +6137,158 @@ mod tests {
             assert_eq!(unowned.node_count, COUNT as u64 - 1);
         }
         assert_eq!(meter.estimate().compute_work(), 2 * COUNT as u64);
+    }
+
+    #[test]
+    fn enum_pattern_payload_preserves_resolved_shape_values() {
+        let parameter = DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: Some(DimensionExpr::Constant(8)),
+        };
+        let enum_body = SchemaBody::Enum {
+            key: NominalKey::from_bytes([0x13; 32]),
+            variants: vec![mech_core::EnumVariantSchema {
+                name: "values".to_owned(),
+                payload: Some(SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![
+                        DimensionExpr::Constant(1),
+                        DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                    ]
+                    .into_boxed_slice(),
+                }),
+            }]
+            .into_boxed_slice(),
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let enumeration = builder
+            .insert(
+                SchemaDraft {
+                    body: enum_body,
+                    dimension_parameters: vec![parameter].into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let enumeration = built.resolve(enumeration).unwrap();
+        let schemas = built.into_parts().0;
+        let body = schemas.get(enumeration).unwrap().body().clone();
+        let item = PatternItem::component(
+            Some(enumeration),
+            body,
+            vec![3].into_boxed_slice(),
+            ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Matrix(
+                    [1.0, 2.0, 3.0]
+                        .into_iter()
+                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .collect(),
+                ))),
+            }),
+        );
+
+        let (ordinal, Some(PatternItem::Component { shape_values, .. })) =
+            item.enum_variant(&schemas).unwrap().unwrap()
+        else {
+            panic!("enum payload must remain a shaped component")
+        };
+        assert_eq!(ordinal, 0);
+        assert_eq!(shape_values.as_ref(), [3]);
+    }
+
+    #[test]
+    fn enum_pattern_payload_retains_foreign_dynamic_schema_owner() {
+        let enum_body = SchemaBody::Enum {
+            key: NominalKey::from_bytes([0x31; 32]),
+            variants: vec![mech_core::EnumVariantSchema {
+                name: "wrapped".to_owned(),
+                payload: Some(SchemaBody::Dynamic),
+            }]
+            .into_boxed_slice(),
+        };
+        let schema = |body| {
+            SchemaDraft {
+                body,
+                dimension_parameters: Box::new([]),
+            }
+            .finalize()
+            .unwrap()
+        };
+        let mut foreign = SchemaTableBuilder::new();
+        let foreign_tuple = foreign
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::FloatingPoint(FloatWidth::W64), SchemaBody::Bool]
+                    .into_boxed_slice(),
+            )))
+            .unwrap();
+        let foreign_enum = foreign.insert(schema(enum_body.clone())).unwrap();
+        let foreign = foreign.finish().unwrap();
+        let foreign_tuple = foreign.resolve(foreign_tuple).unwrap();
+        let foreign_enum = foreign.resolve(foreign_enum).unwrap();
+        let foreign = Arc::new(foreign.table);
+
+        let mut plan = SchemaTableBuilder::new();
+        plan.insert(schema(SchemaBody::Bool)).unwrap();
+        let plan_enum = plan.insert(schema(enum_body)).unwrap();
+        let plan = plan.finish().unwrap();
+        let plan_enum = plan.resolve(plan_enum).unwrap();
+        let plan = Arc::new(plan.table);
+        assert!(
+            plan.find_by_key(foreign.entry(foreign_tuple).unwrap().key())
+                .is_none()
+        );
+
+        let source = ValueDraft {
+            schema: foreign_enum,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(ValueDataDraft::Dynamic(Some(Box::new(
+                    ValueDraft {
+                        schema: foreign_tuple,
+                        shape_values: Box::new([]),
+                        data: ValueDataDraft::Tuple(
+                            vec![
+                                ValueDataDraft::F64(F64Bits::from_f64(7.0)),
+                                ValueDataDraft::Bool(true),
+                            ]
+                            .into_boxed_slice(),
+                        ),
+                    },
+                ))))),
+            }),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&foreign))
+        .unwrap();
+        let lane = [Some(source)];
+        let item = resident_pattern_item(
+            ResidentValueRef::Snapshot(&lane),
+            ResidentRegion {
+                kind: ResidentValueKind::Snapshot,
+                offset: 0,
+                len: 1,
+                shape: mech_core::ResidentShape::SCALAR,
+            },
+            plan_enum,
+            &[],
+            &plan,
+            false,
+        )
+        .expect("matching nominal enum from a foreign schema arena");
+        let (ordinal, Some(payload)) = item.enum_variant(&plan).unwrap().unwrap() else {
+            panic!("enum payload remains available");
+        };
+        assert_eq!(ordinal, 0);
+        assert!(matches!(
+            payload.resolved_source_data().unwrap(),
+            Some(ValueDataDraft::Tuple(values)) if values.len() == 2
+        ));
     }
 
     #[test]
@@ -6743,8 +7009,18 @@ mod tests {
     }
 
     #[test]
-    fn projected_tuple_binding_keeps_unused_rest_extent() {
-        let body = SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+    fn projected_tuple_binding_keeps_referenced_rest_extent() {
+        let body = SchemaBody::Tuple(
+            vec![SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Index),
+                dimensions: vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                ]
+                .into_boxed_slice(),
+            }]
+            .into_boxed_slice(),
+        );
         let mut builder = SchemaTableBuilder::new();
         let binding = builder
             .insert(
@@ -6769,9 +7045,26 @@ mod tests {
         for extent in [2, 3] {
             let item = PatternItem::component(
                 Some(binding),
-                body.clone(),
+                SchemaBody::Tuple(
+                    vec![SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Index),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Constant(extent),
+                        ]
+                        .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
                 vec![extent].into_boxed_slice(),
-                ValueDataDraft::Tuple(vec![ValueDataDraft::Index(7)].into_boxed_slice()),
+                ValueDataDraft::Tuple(
+                    vec![ValueDataDraft::Matrix(
+                        (0..extent)
+                            .map(|value| ValueDataDraft::Index(value + 1))
+                            .collect(),
+                    )]
+                    .into_boxed_slice(),
+                ),
             );
             let bound = item
                 .into_binding(binding, &[], &schemas, &projections)
@@ -6783,6 +7076,47 @@ mod tests {
                 .unwrap();
             assert_eq!(value.shape().parameter_values(), [extent]);
         }
+    }
+
+    #[test]
+    fn projected_tuple_binding_prunes_an_unused_rest_extent() {
+        let body = SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+        let mut builder = SchemaTableBuilder::new();
+        let binding = builder
+            .insert(
+                SchemaDraft {
+                    body: body.clone(),
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let binding = build.resolve(binding).unwrap();
+        let (schemas, projections) = structural_projection_schema_context(&build.table).unwrap();
+        let item = PatternItem::component(
+            Some(binding),
+            body,
+            vec![2].into_boxed_slice(),
+            ValueDataDraft::Tuple(vec![ValueDataDraft::Index(7)].into_boxed_slice()),
+        );
+        let bound = item
+            .into_binding(binding, &[], &schemas, &projections)
+            .unwrap()
+            .unwrap();
+        assert!(bound.shape_values.is_empty());
+        let value = pattern_binding_draft(binding, &bound.shape_values, bound.data)
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+        assert!(value.shape().parameter_values().is_empty());
     }
 
     #[test]
@@ -9058,6 +9392,77 @@ mod tests {
                 .unwrap();
         let owner = value.schemas().expect("finalized binding retains schemas");
         assert!(std::sync::Arc::ptr_eq(&owner, &schemas));
+    }
+
+    #[test]
+    fn previous_pattern_binding_footprint_uses_the_snapshot_owner_arena() {
+        let mut foreign_builder = SchemaTableBuilder::new();
+        let foreign_tuple = foreign_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let foreign_build = foreign_builder.finish().unwrap();
+        let foreign_tuple = foreign_build.resolve(foreign_tuple).unwrap();
+        let foreign = Arc::new(foreign_build.table);
+        let previous = ValueDraft {
+            schema: foreign_tuple,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::String("foreign binding".repeat(64)),
+                    ValueDataDraft::Bool(true),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&foreign))
+        .unwrap();
+
+        let mut plan_builder = SchemaTableBuilder::new();
+        let plan_bool = plan_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let plan_build = plan_builder.finish().unwrap();
+        let plan_bool = plan_build.resolve(plan_bool).unwrap();
+        let plan = plan_build.table;
+        assert_eq!(
+            foreign_tuple, plan_bool,
+            "the witness reuses an arena-local id"
+        );
+        assert_ne!(
+            foreign.entry(foreign_tuple).unwrap().key(),
+            plan.entry(plan_bool).unwrap().key(),
+            "the reused id denotes different schemas in each arena",
+        );
+
+        let expected = budget::measure_canonical_value_footprint(
+            &mut ResidentBudgetMeter::default(),
+            &previous,
+            &foreign,
+        )
+        .unwrap();
+        let actual = measure_owned_canonical_value_footprint(
+            &mut ResidentBudgetMeter::default(),
+            &previous,
+            &plan,
+        )
+        .expect("a previous foreign binding is measured in its owner arena");
+        assert_eq!(actual, expected);
     }
 
     #[test]

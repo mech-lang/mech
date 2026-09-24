@@ -3,6 +3,9 @@
 use mech_core::{ConstantId, OperationContractId, SchemaId};
 
 use super::OperationReference;
+use crate::structural_coverage::{
+    StructuralCoveragePattern, StructuralCoverageSpace, StructuralPatternCoverage,
+};
 
 /// Dense preorder identity within one root control declaration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -150,6 +153,29 @@ fn validate_structural_pattern(
                 return None;
             }
         }
+        super::CollectionPattern::Enum { ordinal, payload } => {
+            let enum_expected = match expected.body() {
+                SchemaBody::Enum { .. } => expected.clone(),
+                SchemaBody::Option(body) if matches!(body.as_ref(), SchemaBody::Enum { .. }) => {
+                    component_schema(expected, body)?
+                }
+                _ => return None,
+            };
+            let SchemaBody::Enum { variants, .. } = enum_expected.body() else {
+                return None;
+            };
+            let payload_schema = variants.get(*ordinal as usize)?.payload.as_ref();
+            match (payload_schema, payload) {
+                (Some(schema), Some(pattern)) => validate_structural_pattern(
+                    draft,
+                    pattern,
+                    &component_schema(&enum_expected, schema)?,
+                    bindings,
+                )?,
+                (None, None) => {}
+                _ => return None,
+            }
+        }
         super::CollectionPattern::Tuple(items) => {
             let fields = match expected.body() {
                 SchemaBody::Tuple(fields) if fields.len() == items.len() => Some(fields),
@@ -190,7 +216,7 @@ fn validate_structural_pattern(
                 validate_structural_pattern(
                     draft,
                     rest,
-                    &super::comprehension::array_rest_schema(expected, element)?,
+                    &super::comprehension::array_rest_schema(expected, element, None)?,
                     bindings,
                 )?;
             }
@@ -205,6 +231,297 @@ fn validate_structural_pattern(
         }
     }
     Some(())
+}
+
+fn structurally_irrefutable<V>(
+    schemas: &mech_core::SchemaTable,
+    pattern: &super::CollectionPattern<SchemaId, V>,
+    expected: &mech_core::Schema,
+) -> bool {
+    match pattern {
+        super::CollectionPattern::Wildcard => true,
+        super::CollectionPattern::Bind { schema, .. } => schemas.get(*schema) == Some(expected),
+        super::CollectionPattern::Tuple(items) => {
+            let mech_core::SchemaBody::Tuple(fields) = expected.body() else {
+                return false;
+            };
+            fields.len() == items.len()
+                && items.iter().zip(fields).all(|(item, field)| {
+                    component_schema(expected, field)
+                        .is_some_and(|expected| structurally_irrefutable(schemas, item, &expected))
+                })
+        }
+        super::CollectionPattern::Array {
+            prefix,
+            rest: Some(rest),
+            suffix,
+        } => {
+            let mech_core::SchemaBody::Matrix { element, .. } = expected.body() else {
+                return false;
+            };
+            let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
+                return false;
+            };
+            let residual = super::comprehension::fixed_matrix_element_count(expected)
+                .and_then(|count| count.checked_sub(fixed));
+            let length_is_irrefutable = fixed == 0 || residual.is_some();
+            length_is_irrefutable
+                && component_schema(expected, element).is_some_and(|element| {
+                    prefix
+                        .iter()
+                        .chain(suffix)
+                        .all(|item| structurally_irrefutable(schemas, item, &element))
+                        && (super::comprehension::array_rest_schema(
+                            &element,
+                            element.body(),
+                            residual,
+                        )
+                        .is_some_and(|expected| structurally_irrefutable(schemas, rest, &expected))
+                            || matches!(
+                                rest.as_ref(),
+                                super::CollectionPattern::Bind { schema, .. }
+                                if super::comprehension::array_rest_schema(
+                                    &element,
+                                    element.body(),
+                                    None,
+                                )
+                                .as_ref()
+                                .is_some_and(|expected| schemas.get(*schema) == Some(expected))
+                            ))
+                })
+        }
+        super::CollectionPattern::Array {
+            prefix,
+            rest: None,
+            suffix,
+        } => {
+            let mech_core::SchemaBody::Matrix { element, .. } = expected.body() else {
+                return false;
+            };
+            prefix.len().checked_add(suffix.len()).is_some_and(|count| {
+                super::comprehension::fixed_matrix_element_count(expected) == Some(count)
+            }) && component_schema(expected, element).is_some_and(|expected| {
+                prefix
+                    .iter()
+                    .chain(suffix)
+                    .all(|item| structurally_irrefutable(schemas, item, &expected))
+            })
+        }
+        super::CollectionPattern::Enum { ordinal, payload } => {
+            let mech_core::SchemaBody::Enum { variants, .. } = expected.body() else {
+                return false;
+            };
+            if variants.len() != 1 {
+                return false;
+            }
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return false;
+            };
+            match (&variant.payload, payload) {
+                (None, None) => true,
+                (Some(payload_schema), Some(pattern)) => component_schema(expected, payload_schema)
+                    .is_some_and(|expected| structurally_irrefutable(schemas, pattern, &expected)),
+                _ => false,
+            }
+        }
+        super::CollectionPattern::Equal(_) => false,
+    }
+}
+
+fn structural_coverage_space(expected: &mech_core::Schema) -> StructuralCoverageSpace {
+    match expected.body() {
+        mech_core::SchemaBody::Bool => StructuralCoverageSpace::Bool,
+        mech_core::SchemaBody::Enum { variants, .. } => StructuralCoverageSpace::Enum(
+            variants
+                .iter()
+                .map(|variant| {
+                    variant.payload.as_ref().map(|payload| {
+                        component_schema(expected, payload)
+                            .map_or(StructuralCoverageSpace::Opaque, |payload| {
+                                structural_coverage_space(&payload)
+                            })
+                    })
+                })
+                .collect(),
+        ),
+        mech_core::SchemaBody::Tuple(fields) => StructuralCoverageSpace::Tuple(
+            fields
+                .iter()
+                .map(|field| {
+                    component_schema(expected, field)
+                        .map_or(StructuralCoverageSpace::Opaque, |field| {
+                            structural_coverage_space(&field)
+                        })
+                })
+                .collect(),
+        ),
+        mech_core::SchemaBody::Matrix { element, .. } => {
+            super::comprehension::fixed_matrix_element_count(expected)
+                .and_then(|count| {
+                    component_schema(expected, element).map(|element| {
+                        StructuralCoverageSpace::Repeated {
+                            element: Box::new(structural_coverage_space(&element)),
+                            count,
+                        }
+                    })
+                })
+                .unwrap_or(StructuralCoverageSpace::Opaque)
+        }
+        _ => StructuralCoverageSpace::Opaque,
+    }
+}
+
+fn structural_coverage_pattern(
+    pattern: &super::CollectionPattern<SchemaId, MatchPatternValue>,
+    expected: &mech_core::Schema,
+    draft: &super::ProgramArtifactDraft,
+) -> StructuralCoveragePattern {
+    if structurally_irrefutable(&draft.schemas, pattern, expected) {
+        return StructuralCoveragePattern::Wildcard;
+    }
+    match (pattern, expected.body()) {
+        (
+            super::CollectionPattern::Equal(MatchPatternValue::Literal(constant)),
+            mech_core::SchemaBody::Bool,
+        ) => match draft.constants.get(*constant).map(|value| value.data()) {
+            Some(mech_core::ValueData::Bool(value)) => StructuralCoveragePattern::Bool(*value),
+            _ => StructuralCoveragePattern::Never,
+        },
+        (super::CollectionPattern::Tuple(items), mech_core::SchemaBody::Tuple(fields))
+            if items.len() == fields.len() =>
+        {
+            let Some(items) = items
+                .iter()
+                .zip(fields)
+                .map(|(item, field)| {
+                    let expected = component_schema(expected, field)?;
+                    Some(structural_coverage_pattern(item, &expected, draft))
+                })
+                .collect::<Option<Vec<_>>>()
+            else {
+                return StructuralCoveragePattern::Never;
+            };
+            StructuralCoveragePattern::Tuple(items.into_boxed_slice())
+        }
+        (
+            super::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            },
+            mech_core::SchemaBody::Matrix { element, .. },
+        ) => {
+            let Some(count) = super::comprehension::fixed_matrix_element_count(expected) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let Some(residual) = count.checked_sub(fixed) else {
+                return StructuralCoveragePattern::Never;
+            };
+            if rest.is_none() && residual != 0 {
+                return StructuralCoveragePattern::Never;
+            }
+            let Some(element) = component_schema(expected, element) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let mut normalized_prefix = Vec::with_capacity(prefix.len());
+            normalized_prefix.extend(
+                prefix
+                    .iter()
+                    .map(|item| structural_coverage_pattern(item, &element, draft)),
+            );
+            let mut normalized_suffix = suffix
+                .iter()
+                .map(|item| structural_coverage_pattern(item, &element, draft))
+                .collect::<Vec<_>>();
+            let mut wildcard_count = 0;
+            if let Some(rest) = rest {
+                let Some(exact_rest) = super::comprehension::array_rest_schema(
+                    &element,
+                    element.body(),
+                    Some(residual),
+                ) else {
+                    return StructuralCoveragePattern::Never;
+                };
+                let rest = if matches!(
+                    rest.as_ref(),
+                    super::CollectionPattern::Bind { schema, .. }
+                        if super::comprehension::array_rest_schema(
+                            &element,
+                            element.body(),
+                            None,
+                        )
+                        .as_ref()
+                        .is_some_and(|expected| draft.schemas.get(*schema) == Some(expected))
+                ) {
+                    StructuralCoveragePattern::Wildcard
+                } else {
+                    structural_coverage_pattern(rest, &exact_rest, draft)
+                };
+                match rest {
+                    StructuralCoveragePattern::Wildcard => wildcard_count = residual,
+                    StructuralCoveragePattern::Sequence {
+                        prefix,
+                        wildcard_count: rest_wildcard_count,
+                        suffix,
+                    } if prefix
+                        .len()
+                        .checked_add(rest_wildcard_count)
+                        .and_then(|length| length.checked_add(suffix.len()))
+                        == Some(residual) =>
+                    {
+                        normalized_prefix.extend(prefix);
+                        wildcard_count = rest_wildcard_count;
+                        let mut combined_suffix = suffix.into_vec();
+                        combined_suffix.append(&mut normalized_suffix);
+                        normalized_suffix = combined_suffix;
+                    }
+                    _ => return StructuralCoveragePattern::Never,
+                }
+            }
+            StructuralCoveragePattern::Sequence {
+                prefix: normalized_prefix.into_boxed_slice(),
+                wildcard_count,
+                suffix: normalized_suffix.into_boxed_slice(),
+            }
+        }
+        (
+            super::CollectionPattern::Enum { ordinal, payload },
+            mech_core::SchemaBody::Enum { variants, .. },
+        ) => {
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let payload = match (&variant.payload, payload.as_deref()) {
+                (None, None) => None,
+                (Some(payload_schema), Some(pattern)) => {
+                    let Some(expected) = component_schema(expected, payload_schema) else {
+                        return StructuralCoveragePattern::Never;
+                    };
+                    Some(Box::new(structural_coverage_pattern(
+                        pattern, &expected, draft,
+                    )))
+                }
+                _ => return StructuralCoveragePattern::Never,
+            };
+            StructuralCoveragePattern::Enum {
+                ordinal: *ordinal,
+                payload,
+            }
+        }
+        _ => StructuralCoveragePattern::Never,
+    }
+}
+
+fn cover_structural_pattern(
+    coverage: &mut StructuralPatternCoverage,
+    pattern: &super::CollectionPattern<SchemaId, MatchPatternValue>,
+    expected: &mech_core::Schema,
+    draft: &super::ProgramArtifactDraft,
+) {
+    coverage.cover(structural_coverage_pattern(pattern, expected, draft));
 }
 
 pub(super) fn validate_match(
@@ -288,7 +605,11 @@ pub(super) fn validate_match_inner(
             "every enclosing input must have an explicit control role",
         ));
     }
-    let mut coverage = [false; 2];
+    let scrutinee_schema = draft
+        .schemas
+        .get(scrutinee)
+        .ok_or_else(|| invalid("unknown match scrutinee schema"))?;
+    let mut coverage = StructuralPatternCoverage::new(structural_coverage_space(scrutinee_schema));
     for arm in &declaration.arms {
         let mut pattern_bindings = Vec::new();
         if let MatchPattern::Literal(constant) = &arm.pattern {
@@ -494,15 +815,19 @@ pub(super) fn validate_match_inner(
                     if let mech_core::ValueData::Bool(value) =
                         draft.constants.get(*constant).unwrap().data()
                     {
-                        coverage[*value as usize] = true;
+                        coverage.cover_bool(*value);
                     }
                 }
-                MatchPattern::Wildcard | MatchPattern::Bind => coverage = [true; 2],
-                MatchPattern::Structural(_) => {}
+                MatchPattern::Wildcard | MatchPattern::Bind => {
+                    coverage.cover_all();
+                }
+                MatchPattern::Structural(pattern) => {
+                    cover_structural_pattern(&mut coverage, pattern, scrutinee_schema, draft);
+                }
             }
         }
     }
-    if coverage != [true; 2] {
+    if !coverage.is_complete() {
         return Err(invalid("non-exhaustive match"));
     }
     Ok(())
@@ -816,16 +1141,36 @@ impl<C> super::ComprehensionDeclaration<C> {
 pub(crate) fn is_control_scalar_schema(schema: &mech_core::Schema) -> bool {
     use mech_core::SchemaBody;
     schema.dimension_parameters().is_empty()
-        && matches!(
-            schema.body(),
-            SchemaBody::Bool
-                | SchemaBody::Index
-                | SchemaBody::SignedInteger(_)
-                | SchemaBody::UnsignedInteger(_)
-                | SchemaBody::FloatingPoint(_)
-                | SchemaBody::Complex(_)
-                | SchemaBody::Rational64
+        && (is_builtin_control_scalar_body(schema.body())
+            || matches!(schema.body(), SchemaBody::Option(payload) if is_optional_control_scalar_body(payload)))
+}
+
+fn is_builtin_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::SchemaBody;
+    matches!(
+        body,
+        SchemaBody::Bool
+            | SchemaBody::Index
+            | SchemaBody::SignedInteger(_)
+            | SchemaBody::UnsignedInteger(_)
+            | SchemaBody::FloatingPoint(_)
+            | SchemaBody::Complex(_)
+            | SchemaBody::Rational64
+    )
+}
+
+fn is_optional_control_scalar_body(body: &mech_core::SchemaBody) -> bool {
+    use mech_core::SchemaBody;
+    is_builtin_control_scalar_body(body)
+        || matches!(body, SchemaBody::Atom(_))
+        || matches!(
+            body,
+            SchemaBody::Enum { variants, .. }
+                if variants.iter().all(|variant| variant.payload.as_ref().is_none_or(|payload| {
+                    is_optional_control_scalar_body(payload)
+                }))
         )
+        || matches!(body, SchemaBody::Option(payload) if is_optional_control_scalar_body(payload))
 }
 
 /// Control values share ordinary schema and construction authorities.
@@ -838,6 +1183,111 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn fixed_array_patterns_are_irrefutable_only_when_their_lengths_fit() {
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                            .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let matrix = built.resolve(matrix).unwrap();
+        let schemas = built.table;
+        let expected = schemas.get(matrix).unwrap();
+        let wildcard = || super::super::CollectionPattern::Wildcard;
+
+        let exact: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Array {
+                prefix: vec![wildcard(), wildcard()].into_boxed_slice(),
+                rest: None,
+                suffix: Box::new([]),
+            };
+        assert!(structurally_irrefutable(&schemas, &exact, expected));
+
+        let short: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Array {
+                prefix: vec![wildcard()].into_boxed_slice(),
+                rest: None,
+                suffix: Box::new([]),
+            };
+        assert!(!structurally_irrefutable(&schemas, &short, expected));
+
+        let rest: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Array {
+                prefix: vec![wildcard()].into_boxed_slice(),
+                rest: Some(Box::new(wildcard())),
+                suffix: Box::new([]),
+            };
+        assert!(structurally_irrefutable(&schemas, &rest, expected));
+
+        let oversized_rest: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Array {
+                prefix: vec![wildcard(), wildcard(), wildcard()].into_boxed_slice(),
+                rest: Some(Box::new(wildcard())),
+                suffix: Box::new([]),
+            };
+        assert!(!structurally_irrefutable(
+            &schemas,
+            &oversized_rest,
+            expected
+        ));
+    }
+
+    #[test]
+    fn narrowed_dynamic_bindings_are_refutable_for_enum_coverage() {
+        let mut builder = SchemaTableBuilder::new();
+        let dynamic = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Dynamic,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let f64 = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let dynamic = built.resolve(dynamic).unwrap();
+        let f64 = built.resolve(f64).unwrap();
+        let schemas = built.table;
+        let expected = schemas.get(dynamic).unwrap();
+
+        let narrowed: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Bind {
+                local: 0,
+                schema: f64,
+            };
+        assert!(!structurally_irrefutable(&schemas, &narrowed, expected));
+
+        let exact: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Bind {
+                local: 0,
+                schema: dynamic,
+            };
+        assert!(structurally_irrefutable(&schemas, &exact, expected));
+    }
 
     #[test]
     fn combined_match_operations_and_bindings_share_the_u16_scratch_limit() {

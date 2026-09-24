@@ -3,8 +3,21 @@
 use std::fs;
 use std::path::PathBuf;
 
+#[cfg(feature = "resident-artifact")]
+use mech_core::snapshot::{ReifiedKind, ReifiedTypeDraft};
 use mech_core::{
-    ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody, ShapeRule, ValueData,
+    CanonicalNominalPath, ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody,
+    ShapeRule, ValueData,
+};
+#[cfg(feature = "resident-artifact")]
+use mech_core::{
+    FunctionCatalogBuilder, KindExpr, ManagedMemoryBudget, ReactiveInstanceId, ResidentValueRef,
+    ValueDataDraft,
+};
+#[cfg(feature = "resident-artifact")]
+use mech_engine::__resident::{
+    ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate,
+    activate_with_options,
 };
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
@@ -75,6 +88,63 @@ fn document(source: &str) -> DocumentSyntax {
     DocumentSyntax::cast(snapshot.syntax()).expect("canonical Document")
 }
 
+fn nominal_origin() -> CanonicalNominalPath {
+    CanonicalNominalPath::new(vec!["mech-test".to_owned(), "canonical-source".to_owned()]).unwrap()
+}
+
+#[cfg(feature = "resident-artifact")]
+fn execute_document<'a>(
+    source: &str,
+    turns: impl IntoIterator<Item = (Vec<ResidentValueRef<'a>>, ValueDataDraft)>,
+) {
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .unwrap_or_else(|error| panic!("canonical document did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut source_instance = activate(
+        ReactiveInstanceId::new(0x540, 1),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let mut decoded_instance = activate(
+        ReactiveInstanceId::new(0x540, 2),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for (values, expected) in turns {
+        for instance in [&mut source_instance, &mut decoded_instance] {
+            assert_eq!(values.len(), instance.plan.inputs.len());
+            let captured = values
+                .iter()
+                .copied()
+                .zip(instance.plan.inputs.iter())
+                .map(|(value, input)| CapturedSignalInput {
+                    slot: input.slot,
+                    value,
+                })
+                .collect::<Vec<_>>();
+            instance.turn(&captured).unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                expected
+            );
+        }
+    }
+}
+
 #[test]
 fn typed_document_compiles_definition_and_expression_units_in_source_order() {
     let document = document("answer := 40 + 2\nanswer\n");
@@ -91,6 +161,906 @@ fn typed_document_compiles_definition_and_expression_units_in_source_order() {
     compiled
         .compile_artifact()
         .expect("canonical document produces an artifact");
+}
+
+#[test]
+fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment() {
+    let alias = CanonicalSourceFrontend
+        .compile_document(&document("<count> := <u8>\nx<count> := 1\nx\n"))
+        .unwrap();
+    assert!(matches!(
+        alias
+            .schemas()
+            .get(alias.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    alias.compile_artifact().unwrap();
+
+    let shaped_alias = CanonicalSourceFrontend
+        .compile_document(&document("<row> := <[f64]>\nx<row> := [1 2]\nx\n"))
+        .expect("an open matrix alias specializes at each use");
+    shaped_alias.compile_artifact().unwrap();
+
+    for source in [
+        "<event> := :idle | :busy\nvalue<*> := :idle\nvalue\n",
+        "<event> := :idle | :busy\nvalue<event?> := :idle\nvalue\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+            .unwrap_or_else(|error| panic!("permissive enum context {source:?}: {error:?}"))
+            .compile_artifact()
+            .unwrap();
+    }
+
+    let enumeration = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document("<color> := Red | Green\nx := :Red\nx\n"),
+            &nominal_origin(),
+        )
+        .unwrap();
+    let schema = enumeration
+        .schemas()
+        .get(enumeration.program().outputs[0].schema)
+        .unwrap();
+    let SchemaBody::Enum { variants, .. } = schema.body() else {
+        panic!("declared enum output")
+    };
+    assert_eq!(
+        variants
+            .iter()
+            .map(|variant| variant.name.as_str())
+            .collect::<Vec<_>>(),
+        ["Red", "Green"]
+    );
+    let artifact = enumeration.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    assert_eq!(
+        mech_engine::decode_program_artifact_bytecode_v1(&bytes)
+            .unwrap()
+            .revision(),
+        artifact.revision()
+    );
+
+    let source = document("<color> := :red | :blue\nvalue := :red\nvalue\n");
+    let compile_in = |package: &str, module: &str| {
+        let origin =
+            CanonicalNominalPath::new(vec![package.to_owned(), module.to_owned()]).unwrap();
+        let compiled = CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&source, &origin)
+            .unwrap();
+        let schema = compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap();
+        let SchemaBody::Enum { key, .. } = schema.body() else {
+            panic!("declared enum output");
+        };
+        *key
+    };
+    assert_ne!(
+        compile_in("first-package", "colors"),
+        compile_in("second-package", "colors")
+    );
+    assert_ne!(
+        compile_in("first-package", "colors"),
+        compile_in("first-package", "other")
+    );
+    assert_eq!(
+        CanonicalSourceFrontend
+            .compile_document(&source)
+            .err()
+            .expect("enum declarations require defining provenance")
+            .code,
+        "source-semantics/nominal-origin-required"
+    );
+}
+
+#[test]
+fn literal_owned_enum_annotation_conforms_to_optional_kind() {
+    let source = "<event> := :idle | :busy\nvalue := :idle<event?>\nvalue\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .expect("annotated enum atom conforms to its optional kind");
+    assert!(matches!(
+        compiled
+            .schemas()
+            .get(compiled.program().outputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::Option(_)
+    ));
+    compiled.compile_artifact().unwrap();
+}
+
+#[test]
+fn contextual_enum_atom_match_pattern_conforms_to_optional_scrutinee() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :idle | :busy\n\
+                 value<event?> := :idle\n\
+                 result := value? | :idle => 1 | * => 0.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the contextual enum atom is wrapped to match the optional scrutinee")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn contextual_enum_atom_match_pattern_executes_after_artifact_roundtrip() {
+    execute_document(
+        "<event> := :idle | :busy\n\
+         value<event?> := :idle\n\
+         result := value? | :idle => true | * => false.\n\
+         result\n",
+        [(vec![], ValueDataDraft::Bool(true))],
+    );
+}
+
+#[test]
+fn unused_invalid_kind_declaration_fails_at_declaration() {
+    let error = CanonicalSourceFrontend
+        .compile_document(&document("<bad> := <{a<u8>,a<bool>}>\nvalue := 1\nvalue\n"))
+        .err()
+        .expect("duplicate record fields are invalid even when the alias is unused");
+    assert_eq!(error.code, "source-semantics/invalid-kind-declaration");
+}
+
+#[test]
+fn declared_scalar_aliases_type_literal_values_and_negation() {
+    for source in [
+        "<count> := <u8>\nx := 1<count>\nx\n",
+        "<flag> := <bool>\nx := true<flag>\nx\n",
+        "<word> := <string>\nx := \"hi\"<word>\nx\n",
+        "<signed> := <i8>\nx := -1<signed>\nx\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("declared literal alias {source:?}: {error:?}"))
+            .compile_artifact()
+            .unwrap();
+    }
+}
+
+#[test]
+fn declared_scalar_aliases_type_kind_extent_literals() {
+    let source = "<count> := <u8>\n<row> := <[f64]:1<count>,3>\n<group> := <{u8}:2<count>>\n<ledger> := <|value<u8>|:2<count>>\nvalue := 1\nvalue\n";
+    CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .expect("declared integer alias is valid in matrix, set, and table extents")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn declared_enum_kind_values_reify_the_nominal_kind() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document("<color> := :red | :blue\n<color>\n"),
+            &nominal_origin(),
+        )
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for program in [&artifact, &decoded] {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 3),
+            program,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        let ValueDataDraft::Type(ReifiedTypeDraft::CanonicalKind(bytes)) = instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap()
+        else {
+            panic!("declared enum kind must produce a canonical kind value");
+        };
+        let reified = ReifiedKind::from_canonical_bytes(bytes).unwrap();
+        let (kind, dimensions, _) = reified.decoded_closed_kind().unwrap();
+        assert!(matches!(kind, KindExpr::Enum(_)));
+        assert!(dimensions.is_empty());
+    }
+}
+
+#[test]
+fn contextual_and_qualified_enum_atoms_resolve_exact_nominal_kinds() {
+    let contextual = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<first> := :none | :some<f64>\n\
+             <second> := :none | :other<f64>\n\
+             value<first> := :none\n\
+             value\n",
+            ),
+            &nominal_origin(),
+        )
+        .unwrap();
+    let contextual_schema = contextual
+        .schemas()
+        .get(contextual.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(contextual_schema.body(), SchemaBody::Enum { .. }));
+    contextual.compile_artifact().unwrap();
+
+    let qualified = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document("<color> := :red | :green\nvalue<color> := :color/red\nvalue\n"),
+            &nominal_origin(),
+        )
+        .unwrap();
+    let qualified_schema = qualified
+        .schemas()
+        .get(qualified.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(qualified_schema.body(), SchemaBody::Enum { .. }));
+    qualified.compile_artifact().unwrap();
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
+    execute_document(
+        "<event> := :idle | :timeout\n\
+         value<event> := :timeout\n\
+         result := value?\n\
+           | :timeout => true\n\
+           | * => false.\n\
+         result\n",
+        [(vec![], ValueDataDraft::Bool(true))],
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn complete_enum_variant_arms_are_exhaustive_without_a_wildcard() {
+    execute_document(
+        "<event> := :idle | :timeout\n\
+         value<event> := :timeout\n\
+         result := value?\n\
+           | :idle => false\n\
+           | :timeout => true.\n\
+         result\n",
+        [(vec![], ValueDataDraft::Bool(true))],
+    );
+}
+
+#[test]
+fn refutable_enum_payload_arm_does_not_complete_variant_coverage() {
+    let source = "<choice> := :some<f64> | :none\n\
+                  value<choice> := :choice/none\n\
+                  result := value?\n\
+                    | :some(0) => 1\n\
+                    | :none => 0.\n\
+                  result\n";
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .err()
+        .expect("a payload literal leaves the variant partly uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
+fn narrowed_dynamic_enum_payload_binding_does_not_complete_variant_coverage() {
+    let source = "<event> := :data<*>\n\
+                  value<event> := :data(true)\n\
+                  result := value?\n\
+                    | :data(x<f64>) => x.\n\
+                  result\n";
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .err()
+        .expect("a typed binding cannot cover other Dynamic payload schemas");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
+fn exact_enum_payload_binding_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<f64>\n\
+                 value<event> := :data(1)\n\
+                 result := value? | :data(x) => x.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("an exact payload binding covers the enum variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn exact_fixed_array_enum_payload_pattern_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,2>\n\
+                 value<event> := :data([1 2])\n\
+                 result := value? | :data([*, *]) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("an exact fixed array payload pattern covers the enum variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_array_rest_enum_payload_pattern_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,2>\n\
+                 value<event> := :data([1 2])\n\
+                 result := value? | :data([*, ...]) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("an irrefutable rest payload pattern covers the fixed enum variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_array_named_rest_keeps_turn_shape_and_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,3>\n\
+                 value<event> := :data([1 2 3])\n\
+                 result := value? | :data([head | rest]) => head.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("a turn-shaped named rest binding covers the fixed enum payload")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_array_rest_preserves_its_residual_extent_for_nested_patterns() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,3>\n\
+                 value<event> := :data([1 2 3])\n\
+                 result := value? | :data([* | [*, *]]) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the fixed parent determines the nested rest pattern's exact extent")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn singleton_enum_payload_pattern_completes_outer_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<inner> := :only\n\
+                 <outer> := :wrap<inner>\n\
+                 value<outer> := :wrap(:only)\n\
+                 result := value? | :wrap(:only) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the sole nested enum variant is irrefutable")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn enum_payload_coverage_combines_across_match_arms() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<inner> := :left | :right\n\
+                 <outer> := :wrap<inner>\n\
+                 value<outer> := :wrap(:left)\n\
+                 result := value?\n\
+                   | :wrap(:left) => 1\n\
+                   | :wrap(:right) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("all nested enum variants collectively cover the outer payload")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn boolean_payload_coverage_combines_across_match_arms() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<bool>\n\
+                 value<outer> := :wrap(true)\n\
+                 result := value?\n\
+                   | :wrap(true) => 1\n\
+                   | :wrap(false) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("both Boolean literals collectively cover the outer payload")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn tuple_payload_coverage_combines_as_a_finite_product() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<(bool,bool)>\n\
+                 value<outer> := :wrap((true,false))\n\
+                 result := value?\n\
+                   | :wrap((true,*)) => 1\n\
+                   | :wrap((false,*)) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the tuple arms collectively cover the Boolean product")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn tuple_payload_coverage_preserves_field_correlations() {
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<(bool,bool)>\n\
+                 value<outer> := :wrap((true,false))\n\
+                 result := value?\n\
+                   | :wrap((true,true)) => 1\n\
+                   | :wrap((false,false)) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .err()
+        .expect("diagonal tuple cases leave two Boolean combinations uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
+fn fixed_matrix_payload_coverage_combines_as_a_finite_product() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<[bool]:1,1>\n\
+                 value<outer> := :wrap([true])\n\
+                 result := value?\n\
+                   | :wrap([true]) => 1\n\
+                   | :wrap([false]) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the fixed matrix arms collectively cover the Boolean product")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_matrix_rest_coverage_combines_without_enumerating_the_tail() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<[bool]:1,2>\n\
+                 value<outer> := :wrap([true false])\n\
+                 result := value?\n\
+                   | :wrap([true, ...]) => 1\n\
+                   | :wrap([false, ...]) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the fixed matrix prefix cases cover every finite tail")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_matrix_payload_coverage_preserves_element_correlations() {
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<[bool]:1,2>\n\
+                 value<outer> := :wrap([true false])\n\
+                 result := value?\n\
+                   | :wrap([true true]) => 1\n\
+                   | :wrap([false false]) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .err()
+        .expect("diagonal matrix cases leave two Boolean sequences uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn optional_enum_payload_pattern_binds_after_artifact_roundtrip() {
+    execute_document(
+        "<event> := :data<f64> | :idle\n\
+         value<event?> := :data(3)\n\
+         result := value? | :data(x) => x | * => 0.\n\
+         result\n",
+        [(
+            vec![],
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(3.0)),
+        )],
+    );
+    for value in [":idle", "_"] {
+        execute_document(
+            &format!(
+                "<event> := :data<f64> | :idle\n\
+                 value<event?> := {value}\n\
+                 result := value? | :data(x) => x | * => 0.\n\
+                 result\n"
+            ),
+            [(
+                vec![],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0)),
+            )],
+        );
+    }
+}
+
+#[test]
+fn partial_finite_payload_coverage_remains_non_exhaustive() {
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<inner> := :left | :right\n\
+                 <outer> := :wrap<inner>\n\
+                 value<outer> := :wrap(:left)\n\
+                 result := value? | :wrap(:left) => 1.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .err()
+        .expect("one nested enum variant leaves the outer payload uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
+fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
+    let source = "<first> := :idle | :busy\n\
+                  <second> := :idle | :done\n\
+                  values := [:first/idle :first/busy]\n\
+                  result := [true | :idle <- values]\n\
+                  result\n";
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .expect("the generator element selects the first enum's idle variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn declared_annotations_in_comprehension_binding_prepasses_use_the_document_environment() {
+    CanonicalSourceFrontend
+        .compile_document(&document(
+            "<count> := <u8>\n\
+             values := [1u8 2u8]\n\
+             result := [x | x<count> <- values]\n\
+             result\n",
+        ))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn enum_payload_patterns_retain_nominal_identity_through_bytecode() {
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<color> := :red<f64> | :green<f64>\n\
+             my-color<color> := :red(300)\n\
+             result := my-color?\n\
+               | :red(x), x > 100 => x\n\
+               | * => 0.\n\
+             result\n",
+            ),
+            &nominal_origin(),
+        )
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let match_node = artifact
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+            _ => None,
+        })
+        .expect("enum source retains canonical match control");
+    assert!(matches!(
+        &match_node.arms[0].pattern,
+        mech_engine::MatchPattern::Structural(mech_engine::CollectionPattern::Enum {
+            ordinal: 0,
+            payload: Some(_),
+        })
+    ));
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let decoded_match = decoded
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+            _ => None,
+        })
+        .expect("decoded enum match control");
+    assert_eq!(decoded_match, match_node);
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn qualified_enum_payload_pattern_matches_its_declared_variant() {
+    execute_document(
+        "<color> := :red<f64> | :green<f64>\n\
+         value<color> := :color/red(3)\n\
+         result := value?\n\
+           | :color/red(x) => x\n\
+           | * => 0.\n\
+         result\n",
+        [(
+            vec![],
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(3.0)),
+        )],
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn dynamic_enum_payloads_wrap_constant_and_live_values() {
+    let samples = [
+        (
+            "<event> := :data<*>\nvalue<event> := :data(1)\nvalue\n",
+            None,
+        ),
+        (
+            "<event> := :data<*>\nvalue<event> := :data(signal<f64>)\nvalue\n",
+            Some(7.0),
+        ),
+    ];
+    for (source, input) in samples {
+        let compiled = CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+            .unwrap_or_else(|error| panic!("dynamic enum {source:?}: {error:?}"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+        let mut catalog = FunctionCatalogBuilder::new();
+        mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+        let catalog = catalog.build().unwrap();
+        let sample = [input.unwrap_or_default()];
+        for artifact in [&artifact, &decoded] {
+            let mut instance = activate(
+                ReactiveInstanceId::new(0x540, 8),
+                artifact,
+                &catalog,
+                &ActivationFacts::default(),
+            )
+            .unwrap();
+            let captured = input
+                .map(|_| CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&sample),
+                })
+                .into_iter()
+                .collect::<Vec<_>>();
+            instance.turn(&captured).unwrap();
+            let output = instance.copied_output(0).unwrap();
+            let ValueData::Enum(enumeration) = output.data() else {
+                panic!("declared enum output");
+            };
+            assert_eq!(enumeration.ordinal(), 0);
+            let Some(ValueData::Dynamic(dynamic)) = enumeration.payload() else {
+                panic!("enum payload must carry a Dynamic envelope");
+            };
+            let Some(value) = dynamic.value() else {
+                panic!("dynamic payload must retain its concrete value");
+            };
+            assert!(
+                matches!(value.data(), ValueData::F64(number) if number.to_f64() == input.unwrap_or(1.0))
+            );
+        }
+    }
+}
+
+#[test]
+fn enum_payloads_materialize_nested_deferred_constants() {
+    for source in [
+        "<event> := :data<*?>\nvalue<event> := :data(1)\nvalue\n",
+        "<event> := :data<*>\nvalue<event> := :data(1<*?>)\nvalue\n",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+            .unwrap_or_else(|error| panic!("nested payload {source:?}: {error:?}"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn live_enum_payloads_execute_after_artifact_roundtrip() {
+    let first = [3.0];
+    let second = [9.0];
+    execute_document(
+        "<color> := :red<f64> | :green<f64>\n\
+         my-color<color> := :red(signal<f64>)\n\
+         result := my-color?\n\
+           | :red(x) => x + 1\n\
+           | * => 0.\n\
+         result\n",
+        [
+            (
+                vec![ResidentValueRef::F64(&first)],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(4.0)),
+            ),
+            (
+                vec![ResidentValueRef::F64(&second)],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(10.0)),
+            ),
+        ],
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn live_structural_enum_payload_retains_its_declared_variant() {
+    let first = [3.0];
+    let second = [9.0];
+    let expected = |value| {
+        ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
+            ordinal: 1,
+            payload: Some(Box::new(ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)),
+                    ValueDataDraft::Bool(true),
+                ]
+                .into_boxed_slice(),
+            ))),
+        })
+    };
+    execute_document(
+        "<event> := :idle | :point<(f64,bool)>\n\
+         value<event> := :point((signal<f64>,true))\n\
+         value\n",
+        [
+            (vec![ResidentValueRef::F64(&first)], expected(3.0)),
+            (vec![ResidentValueRef::F64(&second)], expected(9.0)),
+        ],
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn live_enum_publication_rolls_back_after_managed_allocation_failure() {
+    let source = "<event> := :idle | :point<(f64,bool)>\n\
+                  value<event> := :point((signal<f64>,true))\n\
+                  value\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let memory_budget = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 3),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(memory_budget.clone()),
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+        let inputs = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(value),
+        }];
+        instance.turn(&inputs)
+    };
+
+    turn(&mut instance, &[3.0]).unwrap();
+    let published = instance.copied_output(0).unwrap();
+    let published_epoch = instance.published_epoch();
+
+    memory_budget.inject_snapshot_import_failure_after(0);
+    assert!(turn(&mut instance, &[9.0]).is_err());
+    assert_eq!(instance.published_epoch(), published_epoch);
+    assert_eq!(
+        instance.copied_output(0).unwrap().canonical_data_draft(),
+        published.canonical_data_draft()
+    );
+
+    turn(&mut instance, &[9.0]).unwrap();
+    let ValueData::Enum(value) = instance.copied_output(0).unwrap().data().clone() else {
+        panic!("live constructor must publish its nominal enum")
+    };
+    assert_eq!(value.ordinal(), 1);
+    let ValueData::Tuple(payload) = value.payload().unwrap() else {
+        panic!("point payload must remain structural")
+    };
+    assert!(
+        matches!(payload.as_ref(), [ValueData::F64(value), ValueData::Bool(true)] if value.to_f64() == 9.0)
+    );
+}
+
+#[test]
+fn document_type_environment_rejects_duplicates_cycles_and_unknown_kinds() {
+    for (source, code) in [
+        (
+            "<count> := <u8>\n<count> := <u16>\nx := 1\nx\n",
+            "source-semantics/duplicate-kind-declaration",
+        ),
+        (
+            "<left> := <right>\n<right> := <left>\nx := 1\nx\n",
+            "source-semantics/cyclic-kind-declaration",
+        ),
+        (
+            "<outer> := <missing>\nx := 1\nx\n",
+            "source-semantics/unsupported-kind-annotation",
+        ),
+        (
+            "<color> := Red | Red\nx := 1\nx\n",
+            "source-semantics/duplicate-enum-variant",
+        ),
+        (
+            "<u8> := <string>\nx := 1\nx\n",
+            "source-semantics/builtin-kind-declaration",
+        ),
+        (
+            "<index> := <u8>\nx := 1\nx\n",
+            "source-semantics/builtin-kind-declaration",
+        ),
+    ] {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .unwrap();
+        assert_eq!(error.code, code, "{source}: {error:?}");
+    }
 }
 
 #[test]
@@ -508,11 +1478,11 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             });
         }
     }
-    let mut revision_seven = sections.clone();
-    revision_seven.nodes = graph
-        .replacen("\"revision\":8", "\"revision\":7", 1)
-        .into_bytes();
-    assert!(mech_engine::decode_program_artifact_sections(&revision_seven).is_err());
+    let mut unsupported_revision = sections.clone();
+    let mut unsupported_graph: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    unsupported_graph["revision"] = serde_json::Value::from(0);
+    unsupported_revision.nodes = serde_json::to_vec(&unsupported_graph).unwrap();
+    assert!(mech_engine::decode_program_artifact_sections(&unsupported_revision).is_err());
     // Artifact admission must enforce the complete canonical forbidden-emoji
     // terminal set in all three identifier roles, including a forbidden
     // grapheme after a valid prefix.

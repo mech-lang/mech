@@ -1,6 +1,4 @@
-#[cfg(feature = "source")]
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 #[cfg(windows)]
@@ -63,6 +61,7 @@ enum FilesystemSourceSpecifier {
 #[derive(Clone, Debug)]
 pub struct FileSourceResolver {
     roots: Vec<PathBuf>,
+    nominal_origins: HashMap<String, (mech_core::CanonicalNominalPath, Option<String>)>,
     capability_kernel: Option<SharedCapabilityKernel>,
     capability_subject: Option<String>,
     #[cfg(feature = "source")]
@@ -70,9 +69,38 @@ pub struct FileSourceResolver {
 }
 
 impl FileSourceResolver {
+    /// Register the manifest-derived defining package and module path for one
+    /// canonical source URI. The resolver will attach it before admission.
+    pub fn with_nominal_origin(
+        mut self,
+        canonical_uri: impl Into<String>,
+        origin: mech_core::CanonicalNominalPath,
+    ) -> Self {
+        self.nominal_origins
+            .insert(canonical_uri.into(), (origin, None));
+        self
+    }
+
+    /// Register package-aware provenance supplied by a package resolver.
+    /// `package_id` is a collision discriminator and does not enter NominalKey.
+    pub fn with_nominal_provenance(
+        mut self,
+        canonical_uri: impl Into<String>,
+        origin: mech_core::CanonicalNominalPath,
+        package_id: impl Into<String>,
+    ) -> Self {
+        let package_id = package_id.into();
+        self.nominal_origins.insert(
+            canonical_uri.into(),
+            (origin, (!package_id.is_empty()).then_some(package_id)),
+        );
+        self
+    }
+
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self {
             roots: vec![root.into()],
+            nominal_origins: HashMap::new(),
             capability_kernel: None,
             capability_subject: None,
             #[cfg(feature = "source")]
@@ -83,6 +111,7 @@ impl FileSourceResolver {
     pub fn empty() -> Self {
         Self {
             roots: Vec::new(),
+            nominal_origins: HashMap::new(),
             capability_kernel: None,
             capability_subject: None,
             #[cfg(feature = "source")]
@@ -120,6 +149,104 @@ impl FileSourceResolver {
         &self.roots
     }
 
+    /// Return the defining package and module before a caller remaps a file
+    /// to another transport URI, as static browser bundles do.
+    pub fn nominal_provenance_for_path(
+        &self,
+        path: &Path,
+    ) -> MResult<Option<(mech_core::CanonicalNominalPath, String)>> {
+        self.manifest_nominal_origin(path)
+    }
+
+    /// Resolve a file's defining package and module from its nearest Cargo
+    /// package manifest. A workspace-only manifest does not define a package.
+    fn manifest_nominal_origin(
+        &self,
+        path: &Path,
+    ) -> MResult<Option<(mech_core::CanonicalNominalPath, String)>> {
+        for directory in path.ancestors().skip(1) {
+            let manifest_path = directory.join("Cargo.toml");
+            if !manifest_path.is_file() {
+                continue;
+            }
+            // A source grant need not include its ancestor manifest. Origin
+            // discovery is optional; nominal declarations will require an
+            // explicit origin at compilation if one cannot be read here.
+            if self.check(FS_READ, &manifest_path).is_err() {
+                return Ok(None);
+            }
+            let manifest_source = std::fs::read_to_string(&manifest_path).map_err(|error| {
+                filesystem_specifier_error(
+                    manifest_path.to_string_lossy().as_ref(),
+                    &format!("cannot read package manifest: {error}"),
+                )
+            })?;
+            let manifest = manifest_source
+                .parse::<toml_edit::DocumentMut>()
+                .map_err(|error| {
+                    filesystem_specifier_error(
+                        manifest_path.to_string_lossy().as_ref(),
+                        &format!("invalid package manifest: {error}"),
+                    )
+                })?;
+            let Some(package_name) = manifest
+                .as_table()
+                .get("package")
+                .and_then(toml_edit::Item::as_table)
+                .and_then(|package| package.get("name"))
+                .and_then(toml_edit::Item::as_str)
+            else {
+                return Ok(None);
+            };
+            let relative = path.strip_prefix(directory).map_err(|error| {
+                filesystem_specifier_error(
+                    path.to_string_lossy().as_ref(),
+                    &format!("source is outside its package: {error}"),
+                )
+            })?;
+            let mut segments = vec![package_name.to_owned()];
+            let module = relative.with_extension("");
+            for component in module.components() {
+                let Component::Normal(segment) = component else {
+                    return Ok(None);
+                };
+                let Some(segment) = segment.to_str() else {
+                    return Ok(None);
+                };
+                segments.push(segment.to_owned());
+            }
+            // Directory imports resolve through `index.mec`; its defining
+            // module is the directory, not a child namespace named `index`.
+            if segments.last().is_some_and(|segment| segment == "index") {
+                segments.pop();
+            }
+            let origin = mech_core::CanonicalNominalPath::new(segments).map_err(|error| {
+                filesystem_specifier_error(
+                    path.to_string_lossy().as_ref(),
+                    &format!("invalid defining package or module: {error:?}"),
+                )
+            })?;
+            let package_id = if let Some(version) = manifest
+                .as_table()
+                .get("package")
+                .and_then(toml_edit::Item::as_table)
+                .and_then(|package| package.get("version"))
+                .and_then(toml_edit::Item::as_str)
+            {
+                format!(
+                    "path+{}#{package_name}@{version}",
+                    path_to_file_uri(directory)?
+                )
+            } else {
+                // An inherited version needs the package graph to supply its
+                // Cargo ID. The manifest remains a unique local discriminator.
+                format!("manifest:{}", path_to_file_uri(&manifest_path)?)
+            };
+            return Ok(Some((origin, package_id)));
+        }
+        Ok(None)
+    }
+
     /// Resolve a source through the prepared canonical authority only. This
     /// path never invokes or consults the legacy parser and publishes no
     /// resolver facts unless strict document admission succeeds.
@@ -143,6 +270,18 @@ impl FileSourceResolver {
             .to_owned();
         let canonical_uri = path_to_file_uri(&path)?;
         let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        if resolved.kind == SourceKind::Mech {
+            if let Some((origin, package_id)) = self.nominal_origins.get(&canonical_uri) {
+                resolved = resolved.with_nominal_origin(origin.clone());
+                if let Some(package_id) = package_id {
+                    resolved = resolved.with_nominal_package_id(package_id.clone());
+                }
+            } else if let Some((origin, package_id)) = self.manifest_nominal_origin(&path)? {
+                resolved = resolved
+                    .with_nominal_origin(origin)
+                    .with_nominal_package_id(package_id);
+            }
+        }
         if resolved.kind == SourceKind::Mech
             && matches!(&resolved.source, MechSourceCode::String(_))
         {
@@ -326,7 +465,19 @@ impl SourceResolver for FileSourceResolver {
             .to_string();
 
         let canonical_uri = path_to_file_uri(&path)?;
-        let resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        let mut resolved = ResolvedSource::new(name, canonical_uri.clone(), source).with_kind(kind);
+        if resolved.kind == SourceKind::Mech {
+            if let Some((origin, package_id)) = self.nominal_origins.get(&canonical_uri) {
+                resolved = resolved.with_nominal_origin(origin.clone());
+                if let Some(package_id) = package_id {
+                    resolved = resolved.with_nominal_package_id(package_id.clone());
+                }
+            } else if let Some((origin, package_id)) = self.manifest_nominal_origin(&path)? {
+                resolved = resolved
+                    .with_nominal_origin(origin)
+                    .with_nominal_package_id(package_id);
+            }
+        }
 
         #[cfg(feature = "source")]
         let resolved = {
@@ -1144,6 +1295,67 @@ mod tests {
     }
 
     #[test]
+    fn package_manifest_supplies_exact_nominal_source_origin() {
+        let root = temp_root("nominal-package-origin");
+        std::fs::create_dir_all(root.join("src/events")).unwrap();
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = 'sample-package'\nversion = '1.0.0'\n",
+        )
+        .unwrap();
+        let source = root.join("src/events/state.mec");
+        std::fs::write(
+            &source,
+            "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n",
+        )
+        .unwrap();
+        let resolved = FileSourceResolver::new(&root)
+            .resolve(&SourceRequest::new(source.to_string_lossy().to_string()))
+            .unwrap()
+            .unwrap();
+        assert!(
+            resolved
+                .nominal_package_id
+                .as_deref()
+                .is_some_and(|id| id.ends_with("#sample-package@1.0.0"))
+        );
+        assert_eq!(
+            resolved.nominal_origin.unwrap().segments(),
+            &["sample-package", "src", "events", "state"]
+        );
+        let explicit = mech_core::CanonicalNominalPath::new(vec![
+            "dependency".to_owned(),
+            "events".to_owned(),
+        ])
+        .unwrap();
+        let resolved = FileSourceResolver::new(&root)
+            .with_nominal_provenance(
+                path_to_file_uri(&source.canonicalize().unwrap()).unwrap(),
+                explicit.clone(),
+                "registry+source#dependency@1.0.0",
+            )
+            .resolve(&SourceRequest::new(source.to_string_lossy().to_string()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(resolved.nominal_origin.as_ref(), Some(&explicit));
+        assert_eq!(
+            resolved.nominal_package_id.as_deref(),
+            Some("registry+source#dependency@1.0.0")
+        );
+        let index = root.join("src/events/index.mec");
+        std::fs::write(&index, "value := 1\n").unwrap();
+        let resolved = FileSourceResolver::new(&root)
+            .resolve(&SourceRequest::new(index.to_string_lossy().to_string()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            resolved.nominal_origin.unwrap().segments(),
+            &["sample-package", "src", "events"]
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn file_resolver_resolves_mec_file() {
         let root = temp_root("mech-runtime-file-resolver-test");
         drop(std::fs::remove_dir_all(&root));
@@ -1713,6 +1925,25 @@ mod capability_tests {
                 .resolve(&SourceRequest::new("outside/secret.mec"))
                 .is_err()
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn source_grant_does_not_require_ancestor_manifest_access() {
+        let root = temp_root("manifest-outside-grant");
+        let allowed = root.join("allowed");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"sample\"\nversion = \"1.0.0\"\n",
+        )
+        .unwrap();
+        std::fs::write(allowed.join("main.mec"), "value := 1\n").unwrap();
+        let resolved = resolver(&root, &allowed)
+            .resolve(&SourceRequest::new("allowed/main.mec"))
+            .unwrap()
+            .unwrap();
+        assert!(resolved.nominal_origin.is_none());
         std::fs::remove_dir_all(root).unwrap();
     }
 

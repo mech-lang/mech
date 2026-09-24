@@ -5,12 +5,63 @@ use crate::document::red::{
     SyntaxToken,
 };
 use crate::document::{
-    BodySyntax, CodeBlockSyntax, CodeFenceInfo, ContextSendSyntax, EvalInlineMechCodeSyntax,
-    ExpressionSyntax, MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax,
-    OptionMapSyntax, ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
+    BodySyntax, CodeBlockSyntax, CodeFenceInfo, ContextSendSyntax, EnumDefineSyntax,
+    EnumVariantInlineKindSyntax, EnumVariantKindSyntax, EnumVariantSyntax,
+    EvalInlineMechCodeSyntax, ExpressionSyntax, KindAnnotationSyntax, KindDefineSyntax,
+    MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax,
+    ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
     SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax,
     TupleDestructureSyntax, UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
 };
+
+impl KindDefineSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+
+    pub fn annotation(&self) -> Option<KindAnnotationSyntax> {
+        self.syntax()
+            .children()
+            .find_map(KindAnnotationSyntax::cast)
+    }
+}
+
+impl EnumDefineSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+
+    pub fn variants(&self) -> Vec<EnumVariantSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(EnumVariantSyntax::cast)
+            .collect()
+    }
+}
+
+impl EnumVariantSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+
+    pub fn payload(&self) -> Option<KindAnnotationSyntax> {
+        self.syntax().children().find_map(|child| {
+            if let Some(inline) = EnumVariantInlineKindSyntax::cast(child.clone()) {
+                inline
+                    .syntax()
+                    .children()
+                    .find_map(KindAnnotationSyntax::cast)
+            } else {
+                EnumVariantKindSyntax::cast(child).and_then(|payload| {
+                    payload
+                        .syntax()
+                        .children()
+                        .find_map(KindAnnotationSyntax::cast)
+                })
+            }
+        })
+    }
+}
 
 impl DocumentSyntax {
     pub fn title(&self) -> Option<TitleSyntax> {

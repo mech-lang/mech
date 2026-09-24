@@ -148,7 +148,7 @@ project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = [
-      "project", "web_host", "formatter_core", "serde",
+      "project", "web_host", "formatter_core", "serde", "dep:sha2",
       "mech-engine/compiler", "mech-syntax/program", "mech-stdlib/standard_compiler",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/resident-routing-source",
       ]
@@ -158,7 +158,7 @@ bundle_web = ["cli_core", "bundle_web_core"]
 # standard source catalog on this product feature so reduced browser/Windows
 # builds cannot inherit them accidentally from a distribution default.
 serve = [
-      "cli_core", "project", "web_host", "formatter_core",
+      "cli_core", "project", "web_host", "formatter_core", "dep:sha2",
       "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
       "mech-syntax/program",
       "mech-stdlib/standard_compiler",
@@ -172,7 +172,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # authority, but it does not compile or execute them. Keep that runtime-kernel
 # closure explicit without pulling in the semantic compiler.
 formatter = [
-      "cli_core", "formatter_core",
+      "cli_core", "formatter_core", "dep:sha2",
       "mech-runtime", "mech-runtime/source", "mech-runtime/pretty_print", "mech-runtime/serde",
       ]
 async = []
@@ -441,6 +441,7 @@ mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false
 mech-robot-arm = { version = "0.3.5", path = "hosts/robot-arm", default-features = false, optional = true }
 mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
 mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
+sha2 = { version = "0.10", optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"

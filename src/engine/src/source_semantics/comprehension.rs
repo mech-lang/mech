@@ -129,6 +129,11 @@ fn remap_pattern_binding_locals(
                 )
             })?;
         }
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                remap_pattern_binding_locals(payload, start, local_ids, syntax)?;
+            }
+        }
         CollectionPattern::Tuple(items) => {
             for item in items {
                 remap_pattern_binding_locals(item, start, local_ids, syntax)?;
@@ -654,7 +659,7 @@ impl SemanticBuilder {
                         let name = node_text(identifier.syntax())?;
                         if let Some(value) = names.get(&name).copied() {
                             if let Some(annotation) = variable.annotation() {
-                                let mut annotation = annotation_schema_draft(&annotation)?;
+                                let mut annotation = self.annotation_schema_draft(&annotation)?;
                                 let actual = self.schema_draft_of(value)?;
                                 if !annotation.dimension_parameters.is_empty()
                                     && !is_dynamic_schema_draft(&actual)
@@ -691,7 +696,7 @@ impl SemanticBuilder {
                         } else {
                             let mut schema = variable
                                 .annotation()
-                                .map(|annotation| annotation_schema_draft(&annotation))
+                                .map(|annotation| self.annotation_schema_draft(&annotation))
                                 .transpose()?
                                 .unwrap_or_else(|| expected.clone());
                             if !schema.dimension_parameters.is_empty()
@@ -733,7 +738,15 @@ impl SemanticBuilder {
                             }
                         }
                     } else {
-                        let value = self.expression(&expression)?.0;
+                        let value = if matches!(expected.body, SchemaBody::Enum { .. }) {
+                            self.expression_with_expected(
+                                &expression,
+                                Some(ExpectedSchema::Value(expected)),
+                            )?
+                            .0
+                        } else {
+                            self.expression(&expression)?.0
+                        };
                         if !is_dynamic_schema_draft(expected) {
                             self.conform_dynamic_to_schema(value, expected, pattern.syntax())?;
                             if self.schema_draft_of(value)? != *expected {
@@ -743,7 +756,24 @@ impl SemanticBuilder {
                                 ));
                             }
                         }
-                        CollectionPattern::Equal(value)
+                        if let PendingValue::Constant(index) = value
+                            && matches!(expected.body, SchemaBody::Enum { .. })
+                        {
+                            if let ValueDataDraft::Enum(EnumDraft {
+                                ordinal,
+                                payload: None,
+                            }) = &self.constants[index].data
+                            {
+                                CollectionPattern::Enum {
+                                    ordinal: *ordinal,
+                                    payload: None,
+                                }
+                            } else {
+                                CollectionPattern::Equal(value)
+                            }
+                        } else {
+                            CollectionPattern::Equal(value)
+                        }
                     }
                 }
                 PatternValueSyntax::Tuple(tuple) => self.collection_tuple_pattern(
@@ -892,6 +922,66 @@ impl SemanticBuilder {
         start: usize,
         names: &mut BTreeMap<String, PendingValue>,
     ) -> Result<SourcePattern, SourceSemanticError> {
+        let enum_expected = match &expected.body {
+            SchemaBody::Enum { .. } => Some(expected.clone()),
+            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
+                Some(canonical_component_schema_draft(expected, payload, name)?)
+            }
+            _ => None,
+        };
+        if let Some(enum_expected) = enum_expected {
+            let SchemaBody::Enum { key, variants } = &enum_expected.body else {
+                unreachable!("optional enum pattern projection retains the enum body")
+            };
+            let name_text = node_text(name)?;
+            let variant_name = name_text.trim_start_matches(':');
+            let variant_name = if let Some((qualifier, variant)) = variant_name.rsplit_once('/') {
+                // Imported enum values carry their exact schema, although
+                // their defining declaration is not local to this document.
+                let local = self.declared_kinds.get(qualifier);
+                if !local.is_some_and(|schema| schema.body == enum_expected.body)
+                    && (local.is_some()
+                        || self.imported_enum_qualifiers.get(key).map(String::as_str)
+                            != Some(qualifier))
+                {
+                    return Err(unsupported(name, "unknown enum qualifier in pattern"));
+                }
+                variant
+            } else {
+                variant_name
+            };
+            let (ordinal, variant) = variants
+                .iter()
+                .enumerate()
+                .find(|(_, variant)| variant.name == variant_name)
+                .ok_or_else(|| unsupported(name, "unknown enum variant in pattern"))?;
+            let payload = match (&variant.payload, items.as_slice()) {
+                (None, []) => None,
+                (Some(payload), [pattern]) => Some(Box::new(self.collection_pattern(
+                    pattern,
+                    &canonical_component_schema_draft(&enum_expected, payload, name)?,
+                    start,
+                    names,
+                )?)),
+                (None, _) => {
+                    return Err(unsupported(
+                        name,
+                        "enum variant pattern has an unexpected payload",
+                    ));
+                }
+                (Some(_), _) => {
+                    return Err(unsupported(
+                        name,
+                        "enum variant pattern requires exactly one payload pattern",
+                    ));
+                }
+            };
+            return Ok(CollectionPattern::Enum {
+                ordinal: u32::try_from(ordinal)
+                    .map_err(|_| unsupported(name, "enum variant identity is exhausted"))?,
+                payload,
+            });
+        }
         let path = CanonicalNominalPath::new(
             node_text(name)?
                 .split('/')
@@ -922,6 +1012,11 @@ impl SemanticBuilder {
 fn collect_pattern_values(pattern: &SourcePattern, values: &mut Vec<PendingValue>) {
     match pattern {
         CollectionPattern::Equal(value) => values.push(*value),
+        CollectionPattern::Enum { payload, .. } => {
+            if let Some(payload) = payload {
+                collect_pattern_values(payload, values);
+            }
+        }
         CollectionPattern::Tuple(items) => {
             for item in items {
                 collect_pattern_values(item, values);

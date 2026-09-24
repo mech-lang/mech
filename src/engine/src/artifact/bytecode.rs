@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 8;
+const WIRE_GRAPH_REVISION: u32 = 9;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -242,6 +242,10 @@ enum WireCollectionPattern {
         schema: u32,
     },
     Equal(WireComprehensionValue),
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<WireCollectionPattern>>,
+    },
     Tuple(Box<[WireCollectionPattern]>),
     Array {
         prefix: Box<[WireCollectionPattern]>,
@@ -305,6 +309,10 @@ enum WireStructuralMatchPattern {
         schema: u32,
     },
     Equal(WireMatchPatternValue),
+    Enum {
+        ordinal: u32,
+        payload: Option<Box<WireStructuralMatchPattern>>,
+    },
     Tuple(Box<[WireStructuralMatchPattern]>),
     Array {
         prefix: Box<[WireStructuralMatchPattern]>,
@@ -1756,6 +1764,13 @@ fn wire_collection_pattern(pattern: &super::CollectionPattern) -> WireCollection
         super::CollectionPattern::Equal(value) => {
             WireCollectionPattern::Equal(wire_comprehension_value(*value))
         }
+        super::CollectionPattern::Enum { ordinal, payload } => WireCollectionPattern::Enum {
+            ordinal: *ordinal,
+            payload: payload
+                .as_deref()
+                .map(wire_collection_pattern)
+                .map(Box::new),
+        },
         super::CollectionPattern::Tuple(items) => {
             WireCollectionPattern::Tuple(items.iter().map(wire_collection_pattern).collect())
         }
@@ -1782,6 +1797,10 @@ fn collection_pattern_from_wire(pattern: WireCollectionPattern) -> super::Collec
         WireCollectionPattern::Equal(value) => {
             super::CollectionPattern::Equal(comprehension_value_from_wire(value))
         }
+        WireCollectionPattern::Enum { ordinal, payload } => super::CollectionPattern::Enum {
+            ordinal,
+            payload: payload.map(|payload| Box::new(collection_pattern_from_wire(*payload))),
+        },
         WireCollectionPattern::Tuple(items) => super::CollectionPattern::Tuple(
             items
                 .into_iter()
@@ -1821,6 +1840,13 @@ fn wire_structural_match_pattern(
         super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local)) => {
             WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(*local))
         }
+        super::CollectionPattern::Enum { ordinal, payload } => WireStructuralMatchPattern::Enum {
+            ordinal: *ordinal,
+            payload: payload
+                .as_deref()
+                .map(wire_structural_match_pattern)
+                .map(Box::new),
+        },
         super::CollectionPattern::Tuple(items) => WireStructuralMatchPattern::Tuple(
             items.iter().map(wire_structural_match_pattern).collect(),
         ),
@@ -1856,6 +1882,10 @@ fn structural_match_pattern_from_wire(
         WireStructuralMatchPattern::Equal(WireMatchPatternValue::Binding(local)) => {
             super::CollectionPattern::Equal(super::MatchPatternValue::Binding(local))
         }
+        WireStructuralMatchPattern::Enum { ordinal, payload } => super::CollectionPattern::Enum {
+            ordinal,
+            payload: payload.map(|payload| Box::new(structural_match_pattern_from_wire(*payload))),
+        },
         WireStructuralMatchPattern::Tuple(items) => super::CollectionPattern::Tuple(
             items
                 .into_iter()

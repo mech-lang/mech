@@ -1,8 +1,8 @@
 #![cfg(all(feature = "source_default", feature = "resident-artifact"))]
 
 use mech_core::{
-    FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, SchemaBody, Value, ValueData,
-    snapshot::SequenceView,
+    CanonicalNominalPath, FunctionCatalogBuilder, ReactiveInstanceId, ResidentValueRef, SchemaBody,
+    Value, ValueData, snapshot::SequenceView,
 };
 use mech_engine::resident::{ActivationFacts, CapturedSignalInput, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram, SourceNodeOutput};
@@ -2472,6 +2472,8 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
         CanonicalOrderedDocument {
             identity,
             document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: None,
+            nominal_package_id: None,
             input_schemas: BTreeMap::new(),
             resource_writes: BTreeMap::new(),
             imports: BTreeMap::new(),
@@ -2525,6 +2527,106 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
         &[2.0, 3.0, 4.0],
         mech_engine::SourceDocumentOutputKind::Program,
     );
+}
+
+#[test]
+fn ordered_roots_reject_same_nominal_path_from_distinct_sources() {
+    use mech_engine::CanonicalOrderedDocument;
+    use std::collections::{BTreeMap, BTreeSet};
+    let origin = CanonicalNominalPath::new(vec!["shared".to_owned(), "events".to_owned()]).unwrap();
+    let root = |identity, package_id: &str| {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(
+                DocumentId(0x5a0 + identity as u64),
+                Revision(1),
+                "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n",
+            )
+            .unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty());
+        CanonicalOrderedDocument {
+            identity,
+            document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: Some(origin.clone()),
+            nominal_package_id: Some(package_id.to_owned()),
+            input_schemas: BTreeMap::new(),
+            resource_writes: BTreeMap::new(),
+            imports: BTreeMap::new(),
+            resolved_modules: BTreeSet::new(),
+        }
+    };
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    for second_package in ["package-one", "package-two"] {
+        let error = CanonicalSourceFrontend
+            .compile_ordered_documents_with_catalog(
+                &[root(1, "package-one"), root(2, second_package)],
+                catalog.clone(),
+            )
+            .err()
+            .expect("distinct documents must not share a nominal declaration path");
+        assert_eq!(
+            error.code,
+            "source-semantics/ambiguous-nominal-declaration-v1"
+        );
+    }
+}
+
+#[test]
+fn ordered_imports_match_enum_arms_from_the_value_schema() {
+    use mech_engine::{CanonicalOrderedDocument, CanonicalOrderedImport};
+    use std::collections::{BTreeMap, BTreeSet};
+    let root = |identity, source: &str| {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x5b0 + identity as u64), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(
+            parsed.diagnostics.is_empty(),
+            "{source:?}: {:?}",
+            parsed.diagnostics
+        );
+        CanonicalOrderedDocument {
+            identity,
+            document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: Some(
+                CanonicalNominalPath::new(vec!["sample".to_owned(), format!("module{identity}")])
+                    .unwrap(),
+            ),
+            nominal_package_id: Some("sample-package".to_owned()),
+            input_schemas: BTreeMap::new(),
+            resource_writes: BTreeMap::new(),
+            imports: BTreeMap::new(),
+            resolved_modules: BTreeSet::new(),
+        }
+    };
+    let dependency = root(
+        1,
+        "<event> := :idle | :busy\nvalue<event> := :idle\n<+ value\nvalue\n",
+    );
+    let mut consumer = root(
+        2,
+        "result := dep/value?\n  | :idle => true\n  | * => false.\nresult\n",
+    );
+    consumer.imports.insert(
+        "dep/value".to_owned(),
+        CanonicalOrderedImport::RootExport {
+            root: 1,
+            name: "value".to_owned(),
+        },
+    );
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(
+            &[dependency, consumer],
+            std::sync::Arc::new(catalog.build().unwrap()),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
 }
 
 #[test]

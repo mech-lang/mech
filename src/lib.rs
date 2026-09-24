@@ -40,6 +40,8 @@ use rand::Rng;
 
 #[cfg(any(feature = "bundle_web_core", feature = "serve"))]
 mod browser_planning;
+#[cfg(any(feature = "bundle_web_core", feature = "serve", feature = "formatter"))]
+mod nominal_provenance;
 #[cfg(any(feature = "bundle_web_core", feature = "serve"))]
 pub use browser_planning::configured_browser_compiler_builder;
 #[cfg(feature = "bundle_web_core")]

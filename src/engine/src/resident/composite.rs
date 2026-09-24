@@ -1,11 +1,11 @@
-use mech_core::snapshot::{F64Bits, MatrixValue};
+use mech_core::snapshot::{EnumDraft, F64Bits, MatrixValue};
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, CardinalitySpec, ChangeDetectionPolicy,
     DeliveryMode, DimensionExpr, ExternalInteraction, FunctionCatalogBuilder,
     ImplementationMemoryClass, MResult, OutputConstruction, ResidentKernelBindError,
     ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
     ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract, SchemaBody,
-    ShapeInstance, ShapeRule, ValueData,
+    ShapeInstance, ShapeRule, ValueData, ValueDataDraft,
 };
 use std::sync::Arc;
 
@@ -50,6 +50,14 @@ struct CompositeTablePlan {
     row_count: usize,
 }
 
+#[derive(Clone, Debug)]
+struct EnumPackPlan {
+    payload: CompositeChildPlan,
+    accepted_ordinals: Box<[(u32, bool)]>,
+    output: mech_core::ResidentPortLayout,
+    schemas: Arc<mech_core::SchemaTable>,
+}
+
 fn cardinality_accepts(
     cardinality: &CardinalitySpec,
     row_count: usize,
@@ -76,6 +84,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         "composite-pack",
         ImplementationMemoryClass::CanonicalFinalize,
         bind_composite_pack,
+    )?;
+    builder.insert_resident_factory(
+        ["core"],
+        "enum-pack",
+        ImplementationMemoryClass::CanonicalFinalize,
+        bind_enum_pack,
     )?;
     Ok(())
 }
@@ -363,6 +377,303 @@ fn bind_composite_pack(
     }
     let plan = composite_pack_plan(request).ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     Ok(BoundResidentKernel::new(composite_pack, Box::new([])).with_retained_state(Arc::new(plan)))
+}
+
+fn bind_enum_pack(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [ordinal, payload] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let Some(ordinal_schema) = request.schemas.get(ordinal.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let Some(payload_schema) = request.schemas.get(payload.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let Some(output_schema) = request.schemas.get(request.output.schema_id) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let Ok(output_body) = output_schema.closed_body(&request.output.shape_instance) else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let SchemaBody::Enum { variants, .. } = output_body else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let accepted_ordinals = variants
+        .iter()
+        .enumerate()
+        .filter_map(|(index, variant)| {
+            let expected = variant.payload.as_ref()?;
+            port_matches_schema_body(request, payload, expected).then_some((
+                u32::try_from(index).ok()?,
+                matches!(expected, SchemaBody::Dynamic)
+                    && !matches!(payload_schema.body(), SchemaBody::Dynamic),
+            ))
+        })
+        .collect::<Vec<_>>();
+    let input_is_matrix = matches!(payload_schema.body(), SchemaBody::Matrix { .. });
+    let logical_matrix_shape = input_is_matrix
+        .then(|| resolved_matrix_shape(payload_schema.body(), &payload.shape_instance))
+        .flatten();
+    if accepted_ordinals.is_empty()
+        || (input_is_matrix && logical_matrix_shape.is_none())
+        || contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 2
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, input)| {
+                port.schema != input.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+        || ordinal_schema.body() != &SchemaBody::Index
+        || ordinal.kind != ResidentValueKind::Index
+        || ordinal.shape != ResidentShape::SCALAR
+        || !composite_child_layout_supported(request, payload)
+        || request.output.kind != ResidentValueKind::Snapshot
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let plan = EnumPackPlan {
+        payload: CompositeChildPlan {
+            matrix_dimensions: None,
+            input_is_matrix,
+            snapshot_backed_matrix: input_is_matrix && payload.kind == ResidentValueKind::Snapshot,
+            shape: logical_matrix_shape.unwrap_or(payload.shape),
+            dynamic: false,
+            source: payload.clone(),
+        },
+        accepted_ordinals: accepted_ordinals.into_boxed_slice(),
+        output: request.output.clone(),
+        schemas: Arc::new(request.schemas.clone()),
+    };
+    Ok(BoundResidentKernel::new(enum_pack, Box::new([])).with_retained_state(Arc::new(plan)))
+}
+
+fn enum_payload_draft(
+    input: ResidentValueRef<'_>,
+    plan: &EnumPackPlan,
+    dynamic: bool,
+) -> Result<ValueDataDraft, ResidentKernelError> {
+    let (data, shape_values) = if let ResidentValueRef::Snapshot([Some(value)]) = input {
+        if value.schema_key() != plan.payload.source.schema_key {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+        let schema = plan
+            .schemas
+            .get(plan.payload.source.schema_id)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        if !mech_core::shape_change_allowed(
+            schema,
+            &plan.payload.source.shape_instance,
+            value.shape(),
+        ) {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        let context =
+            mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
+        let rebound = value
+            .rebind_with_context(plan.payload.source.schema_id, value.shape(), &context)
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+        (
+            rebound
+                .canonical_data_draft()
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+            rebound
+                .shape()
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+    } else {
+        let data =
+            composite_child_data(input, &plan.payload).ok_or(ResidentKernelError::InvalidInput)?;
+        let schema = plan
+            .schemas
+            .get(plan.payload.source.schema_id)
+            .ok_or(ResidentKernelError::InvalidInput)?;
+        (
+            mech_core::snapshot::canonical_snapshot_data_draft(schema.body(), &data)
+                .map_err(|_| ResidentKernelError::InvalidInput)?,
+            plan.payload
+                .source
+                .shape_instance
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+        )
+    };
+    Ok(if dynamic {
+        ValueDataDraft::Dynamic(Some(Box::new(mech_core::ValueDraft {
+            schema: plan.payload.source.schema_id,
+            shape_values,
+            data,
+        })))
+    } else {
+        data
+    })
+}
+
+fn enum_pack(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let ResidentValueMut::Snapshot([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let plan = kernel
+        .retained_state::<EnumPackPlan>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let Some(ResidentValueRef::Index([ordinal])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ordinal = ordinal
+        .checked_sub(1)
+        .and_then(|ordinal| u32::try_from(ordinal).ok())
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let dynamic = plan
+        .accepted_ordinals
+        .iter()
+        .find_map(|(accepted, dynamic)| (*accepted == ordinal).then_some(*dynamic))
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let payload_input = inputs.get(1).ok_or(ResidentKernelError::InvalidInput)?;
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let mut payload_plan = plan.payload.clone();
+    payload_plan.dynamic = dynamic;
+    let (payload_bytes, payload_nodes, payload_encoded_bytes) =
+        resident_child_clone_cost(&mut meter, payload_input, &payload_plan)?;
+    let finalization_work = match payload_input {
+        ResidentValueRef::Snapshot([Some(value)]) => {
+            let schema = plan
+                .schemas
+                .get(plan.payload.source.schema_id)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            super::budget::preflight_canonical_data_finalization(
+                &mut meter,
+                schema.body(),
+                value.data(),
+            )?
+        }
+        ResidentValueRef::Snapshot(_) => return Err(ResidentKernelError::InvalidInput),
+        _ => 0,
+    };
+    let root_bytes = mech_core::snapshot::CompositeSnapshotConstructor::value_container_bytes(
+        plan.output.shape_instance.parameter_values().len(),
+    )
+    .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>()))
+    .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_bytes = root_bytes
+        .checked_add(payload_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_nodes = super::budget::checked_u64(payload_nodes)?
+        .checked_add(2)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let output_footprint = mech_core::snapshot::ValueFootprint {
+        encoded_bytes: payload_encoded_bytes
+            .checked_add(5)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_bytes: super::budget::checked_u64(output_bytes)?,
+        node_count: output_nodes,
+    };
+    if let Some(previous) = target.as_ref() {
+        let previous_footprint =
+            super::budget::published_canonical_footprint(&mut meter, previous, &plan.schemas)?;
+        let equality_work = super::budget::projected_language_equality_work(
+            &plan.schemas,
+            previous,
+            previous_footprint,
+            plan.output.schema_id,
+            plan.output.shape_instance.parameter_values().len(),
+            output_footprint,
+        )?;
+        meter.charge_comparison_work(equality_work)?;
+    }
+    meter.charge_compute_work(output_nodes)?;
+    let measured = meter.estimate();
+    let draft_bytes = core::mem::size_of::<ValueDataDraft>()
+        .checked_add(payload_bytes)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    super::budget::PreparedKernel::new(
+        (),
+        super::budget::resident_cost! {
+            comparison_work: measured.comparison_work(),
+            compute_work: measured.compute_work(),
+            output_elements: 1,
+            output_bytes,
+            temporary_bytes: output_bytes
+                .checked_add(draft_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            cloned_bytes: payload_bytes,
+            container_bytes: root_bytes
+                .checked_add(core::mem::size_of::<ValueDataDraft>())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            retained_nodes: measured.retained_nodes()
+                .checked_add(output_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?,
+            ..super::budget::KernelCostEstimate::default()
+        },
+    )
+    .admit()?
+    .into_plan();
+    let payload = enum_payload_draft(payload_input, plan, dynamic)?;
+    let canonicalization_budget =
+        mech_core::snapshot::SnapshotCanonicalizationBudget::new(finalization_work);
+    let context =
+        mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas)
+            .with_canonicalization_budget(&canonicalization_budget);
+    let next = mech_core::ValueDraft {
+        schema: plan.output.schema_id,
+        shape_values: plan
+            .output
+            .shape_instance
+            .parameter_values()
+            .to_vec()
+            .into_boxed_slice(),
+        data: ValueDataDraft::Enum(EnumDraft {
+            ordinal,
+            payload: Some(Box::new(payload)),
+        }),
+    }
+    .finalize(&context)
+    .map_err(|error| match error {
+        mech_core::snapshot::SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+            ResidentKernelError::InvalidShape
+        }
+        _ => ResidentKernelError::InvalidInput,
+    })?;
+    let changed = match target.as_ref() {
+        Some(previous) => !previous
+            .snapshot_eq(&plan.schemas, &next, &plan.schemas)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?,
+        None => true,
+    };
+    *target = Some(next);
+    Ok(changed)
 }
 
 fn construct_empty_matrix(
@@ -986,6 +1297,66 @@ mod tests {
             activation_fixed_shape: true,
             resolved_selector: None,
         }
+    }
+
+    #[test]
+    fn enum_payload_rebinds_foreign_dynamic_schema_ids() {
+        let mut foreign_builder = mech_core::SchemaTableBuilder::new();
+        let foreign_index = foreign_builder.insert(schema(SchemaBody::Index)).unwrap();
+        let foreign_dynamic = foreign_builder.insert(schema(SchemaBody::Dynamic)).unwrap();
+        let foreign_build = foreign_builder.finish().unwrap();
+        let foreign_index = foreign_build.resolve(foreign_index).unwrap();
+        let foreign_dynamic = foreign_build.resolve(foreign_dynamic).unwrap();
+        let foreign = mech_core::ValueDraft {
+            schema: foreign_dynamic,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Dynamic(Some(Box::new(mech_core::ValueDraft {
+                schema: foreign_index,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::Index(7),
+            }))),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            &foreign_build.table,
+        ))
+        .unwrap();
+
+        let mut local_builder = mech_core::SchemaTableBuilder::new();
+        for body in [
+            SchemaBody::Bool,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            SchemaBody::String,
+            SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8),
+        ] {
+            local_builder.insert(schema(body)).unwrap();
+        }
+        let local_index = local_builder.insert(schema(SchemaBody::Index)).unwrap();
+        let local_dynamic = local_builder.insert(schema(SchemaBody::Dynamic)).unwrap();
+        let local_build = local_builder.finish().unwrap();
+        let local_index = local_build.resolve(local_index).unwrap();
+        let local_dynamic = local_build.resolve(local_dynamic).unwrap();
+        assert_ne!(foreign_index, local_index);
+        let local = Arc::new(local_build.table);
+        let source = layout(&local, local_dynamic, ResidentValueKind::Snapshot);
+        let plan = EnumPackPlan {
+            payload: CompositeChildPlan {
+                matrix_dimensions: None,
+                input_is_matrix: false,
+                snapshot_backed_matrix: false,
+                shape: ResidentShape::SCALAR,
+                dynamic: false,
+                source: source.clone(),
+            },
+            accepted_ordinals: Box::new([]),
+            output: source,
+            schemas: local,
+        };
+        let input = [Some(foreign)];
+        let payload = enum_payload_draft(ResidentValueRef::Snapshot(&input), &plan, false).unwrap();
+        let ValueDataDraft::Dynamic(Some(inner)) = payload else {
+            panic!("enum payload retains its Dynamic envelope")
+        };
+        assert_eq!(inner.schema, local_index);
     }
 
     #[test]

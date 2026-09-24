@@ -1,6 +1,6 @@
 #![cfg(all(feature = "full_source", feature = "resident-routing-source"))]
 
-use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId};
+use mech_core::{CanonicalNominalPath, FunctionCatalogBuilder, ReactiveInstanceId};
 use mech_engine::resident::{ActivationFacts, activate};
 use mech_engine::{CanonicalSourceFrontend, CanonicalSourceProgram};
 use mech_runtime::{
@@ -166,6 +166,34 @@ fn retained_document_renders_root_named_and_mika_results_in_place() {
             "missing {value}: {text}"
         );
     }
+}
+
+#[test]
+fn isolated_document_scopes_reject_nominal_declarations_without_scope_provenance() {
+    let named =
+        document("```mech:worker\n<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n```\n");
+    let frontend = CanonicalSourceFrontend.with_nominal_origin(
+        CanonicalNominalPath::new(vec!["sample-package".to_owned(), "document".to_owned()])
+            .unwrap(),
+    );
+    let error = frontend
+        .compile_named_document_scope(&named, "worker")
+        .err()
+        .expect("a named scope needs its own durable nominal namespace");
+    assert_eq!(
+        error.code,
+        "source-semantics/isolated-nominal-origin-required"
+    );
+
+    let mika = document("~∘~⸢<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n⸥\n");
+    let error = frontend
+        .compile_mika_section(&mika.mika_scopes()[0].section)
+        .err()
+        .expect("a Mika scope needs its own durable nominal namespace");
+    assert_eq!(
+        error.code,
+        "source-semantics/isolated-nominal-origin-required"
+    );
 }
 
 #[test]

@@ -328,6 +328,23 @@ fn session_to_stream_identity_graph_cannot_alias_a_retained_revision() {
     }
 }
 
+#[test]
+fn resolved_source_rejects_conflicting_nominal_origins() {
+    use mech_core::{CanonicalNominalPath, MechSourceCode};
+    use mech_runtime::{ResolvedSource, SourceKind};
+
+    let uri = "memory:nominal.mec";
+    let source = "<event> := :open | :closed\n";
+    let origin = |package: &str| CanonicalNominalPath::new(vec![package.to_owned()]).unwrap();
+    let document = SourceDocument::parse_resolved(uri, Revision(0), source, ParseConfig::default())
+        .unwrap()
+        .with_nominal_origin(origin("defining-package"));
+    let resolved = ResolvedSource::new("nominal.mec", uri, MechSourceCode::String(source.into()))
+        .with_kind(SourceKind::Mech)
+        .with_nominal_origin(origin("other-package"));
+    assert!(resolved.with_source_document(document).is_err());
+}
+
 #[cfg(feature = "pretty_print")]
 #[test]
 fn repl_renderer_rejects_all_heading_owners_alongside_executable_code() {

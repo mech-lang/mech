@@ -139,6 +139,22 @@ impl CanonicalDocumentCompilation {
         Self::from_parts(index, SourceScope::Program, program)
     }
 
+    /// Compile a resolver-owned document using its defining nominal module.
+    /// A detached syntax document has no provenance, so enum owners should
+    /// enter through this constructor after resolution.
+    pub fn from_source_document(
+        document: &crate::SourceDocument,
+    ) -> Result<Self, CanonicalDocumentHandoffError> {
+        let syntax = document.document();
+        let index = SourceIndex::from_document(&syntax)?;
+        let program = if let Some(origin) = document.nominal_origin() {
+            CanonicalSourceFrontend.compile_document_with_nominal_origin(&syntax, origin)?
+        } else {
+            CanonicalSourceFrontend.compile_document(&syntax)?
+        };
+        Self::from_parts(index, SourceScope::Program, program)
+    }
+
     /// Compile one named root-document interpreter with its matching resolver scope.
     pub fn from_named_document_scope(
         document: &DocumentSyntax,

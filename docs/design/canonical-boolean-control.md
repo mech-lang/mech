@@ -12,9 +12,8 @@ The engine artifact owns control blocks, captures, scoped parameters, local
 ordinary operations, nested match declarations and yields. Source text and diagnostic strings are not
 execution operands. The artifact uses one tagged node body for ordinary
 operations, scalar matches, or lexical comprehensions. The bytecode-v1 graph payload now uses
-revision 8 after control-local operations gained one recursive body grammar for
-ordinary calls, matches, and comprehensions; revision 7 remains the closed
-structural-parameter grammar.
+revision 9 after nominal enum payload patterns entered the shared recursive
+structural grammar; revision 8 remains the composed-control grammar.
 All durable fixtures are regenerated with the current producer.
 
 Resident match literal comparisons admit Bool, Index and F64 scalar layouts.

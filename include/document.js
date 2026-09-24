@@ -1041,6 +1041,7 @@ async function loadDocumentSourceMap() {
     rootSpecifier: root.specifier,
     sources: Object.fromEntries(sourceEntries),
     resolutions,
+    provenance: manifest.provenance || {},
   };
 }
 
@@ -1125,6 +1126,7 @@ function loadEmbeddedDocumentSourceBundle() {
     rootSpecifier: bundle.rootSpecifier,
     sources,
     resolutions,
+    provenance: bundle.provenance || {},
   };
 }
 
@@ -4614,6 +4616,7 @@ function constructDocumentController(WasmDocument, documentSources) {
           documentSources.config,
           documentSources.sources,
           documentSources.resolutions,
+          documentSources.provenance || {},
         )
       : WasmDocument.fromServedEncoded(
           state.initialEncoded,
@@ -4645,6 +4648,7 @@ function constructDocumentController(WasmDocument, documentSources) {
           documentSources.rootSpecifier,
           documentSources.sources,
           documentSources.resolutions,
+          documentSources.provenance || {},
         )
       : WasmDocument.fromEncodedWithSources(
           state.initialEncoded,

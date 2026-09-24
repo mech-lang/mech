@@ -3,7 +3,30 @@ use crate::dimension::{
     canonicalize_dimension_environment, collect_dimension_references, normalize_dimension,
     rewrite_dimension_references,
 };
-use crate::{DimensionParameterId, SchemaNameCategory, SemanticModelError};
+use crate::{
+    DimensionEnvironmentBuilder, DimensionParameterId, SchemaNameCategory, SemanticModelError,
+};
+
+/// Clone a declared schema's dimension parameters into a consuming annotation.
+/// Each use receives fresh parameter IDs while preserving bounds and repeated
+/// references within that use.
+pub fn rebase_schema_draft_dimensions(
+    draft: &SchemaDraft,
+    into: &mut DimensionEnvironmentBuilder,
+) -> Result<SchemaBody, SemanticModelError> {
+    let mut old_to_new = Vec::with_capacity(draft.dimension_parameters.len());
+    for parameter in &draft.dimension_parameters {
+        let lower = rewrite_dimension_references(&parameter.lower_bound, &old_to_new)?;
+        let upper = parameter
+            .upper_bound
+            .as_ref()
+            .map(|bound| rewrite_dimension_references(bound, &old_to_new))
+            .transpose()?;
+        let id = into.declare(parameter.origin, parameter.lifetime, lower, upper)?;
+        old_to_new.push(Some(id));
+    }
+    rewrite_body_dimensions(&draft.body, &old_to_new)
+}
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};

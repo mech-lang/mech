@@ -2,14 +2,17 @@
 
 use std::collections::BTreeMap;
 
-use mech_core::{FunctionCatalogBuilder, MechSourceCode, ReactiveInstanceId, ResidentValueRef};
+use mech_core::{
+    CanonicalNominalPath, FunctionCatalogBuilder, MechSourceCode, ReactiveInstanceId,
+    ResidentValueRef,
+};
 use mech_engine::__resident::CapturedSignalInput;
 use mech_engine::resident::{ActivationFacts, activate};
-use mech_runtime::RuntimeValueSnapshot;
 use mech_runtime::resolver::{
     CanonicalDocumentCompilation, CanonicalDocumentHandoffError, CanonicalResolvedImport,
     InMemorySourceResolver, SourceResolver, source_request_for_import,
 };
+use mech_runtime::{RuntimeValueSnapshot, SourceDocument};
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
     parse_canonical_document,
@@ -28,6 +31,23 @@ fn catalog() -> mech_core::FunctionCatalog {
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
     catalog.build().unwrap()
+}
+
+#[test]
+fn resolver_owned_handoff_retains_nominal_origin() {
+    let source = "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n";
+    let retained = SourceDocument::parse_resolved(
+        "memory:events.mec",
+        Revision(0),
+        source,
+        ParseConfig::default(),
+    )
+    .unwrap()
+    .with_nominal_origin(CanonicalNominalPath::new(vec!["sample".to_owned()]).unwrap())
+    .with_nominal_package_id("sample@1");
+    assert!(CanonicalDocumentCompilation::from_document(&retained.document()).is_err());
+    CanonicalDocumentCompilation::from_source_document(&retained)
+        .expect("resolver-owned handoff compiles the enum with its origin");
 }
 
 #[test]

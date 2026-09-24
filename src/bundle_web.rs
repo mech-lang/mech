@@ -46,6 +46,8 @@ struct BundledSource {
     specifier: String,
     url: String,
     artifact_url: Option<String>,
+    nominal_origin: Option<CanonicalNominalPath>,
+    nominal_package_id: Option<String>,
 }
 
 pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult> {
@@ -169,6 +171,8 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             artifact_url: root_paths
                 .contains(&read_source_path)
                 .then(|| format!("code/{}", percent_encode_url_path(&specifier))),
+            nominal_origin: document.nominal_origin().cloned(),
+            nominal_package_id: document.nominal_package_id().map(str::to_owned),
         });
 
         write_bundle_file(&output_dir, "source", &relative, source_text.as_bytes())?;
@@ -225,11 +229,15 @@ pub fn bundle_web_project(options: BundleWebOptions) -> MResult<BundleWebResult>
             if let Some(url) = &source.artifact_url {
                 entry["artifactUrl"] = serde_json::json!(url);
             }
+            if let Some(origin) = &source.nominal_origin {
+                entry["nominalOrigin"] = serde_json::json!(origin);
+                entry["nominalPackageId"] = serde_json::json!(source.nominal_package_id);
+            }
             entry
         })
         .collect::<Vec<_>>();
     let manifest = serde_json::to_vec(&serde_json::json!({
-      "version": 3,
+      "version": 4,
       "roots": roots,
       "sources": source_entries,
     }))
@@ -1363,7 +1371,7 @@ export default async function init() {}
         assert!(index.contains("window.__MECH_HOST_CONFIG"));
         assert!(bootstrap.contains("WasmProject.fromServedBundle"));
         assert!(bootstrap.contains("../pkg/mech_wasm.js"));
-        assert_eq!(manifest["version"], 3);
+        assert_eq!(manifest["version"], 4);
         assert_eq!(manifest["roots"], serde_json::json!(["demo.mec"]));
         assert_eq!(manifest["sources"][0]["specifier"], "demo.mec");
         assert_eq!(manifest["sources"][0]["url"], "source/demo.mec");
@@ -1379,6 +1387,11 @@ export default async function init() {}
         fs::create_dir_all(app.join("src")).unwrap();
         fs::create_dir_all(app.join("pkg")).unwrap();
         fs::create_dir_all(&config).unwrap();
+        fs::write(
+            app.join("Cargo.toml"),
+            "[package]\nname = \"bundle-dependency\"\nversion = \"0.1.0\"\n",
+        )
+        .unwrap();
         fs::write(
             config.join("demo.mcfg"),
             r#"config := {
@@ -1399,7 +1412,8 @@ export default async function init() {}
             "+> ./dep.mec\nanswer := dep/value + 1\n",
         )
         .unwrap();
-        fs::write(app.join("src/dep.mec"), "value := 41\n<+ value\n").unwrap();
+        let dependency_source = "<event> := :idle | :busy\nvalue := 41\n<+ value\n";
+        fs::write(app.join("src/dep.mec"), dependency_source).unwrap();
         fs::write(app.join("pkg/mech_wasm.js"), STATIC_WASM_WRAPPER).unwrap();
         fs::write(app.join("pkg/mech_wasm_bg.wasm"), b"wasm").unwrap();
         let loaded =
@@ -1420,7 +1434,7 @@ export default async function init() {}
         let manifest: serde_json::Value =
             serde_json::from_slice(&fs::read(root.join("out/_mech/project-sources.json")).unwrap())
                 .unwrap();
-        assert_eq!(manifest["version"], 3);
+        assert_eq!(manifest["version"], 4);
         assert_eq!(manifest["roots"], serde_json::json!(["src/main.mec"]));
         assert!(
             manifest["sources"]
@@ -1436,6 +1450,35 @@ export default async function init() {}
                 .iter()
                 .any(|source| source["specifier"] == "src/dep.mec")
         );
+        let dependency = manifest["sources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|source| source["specifier"] == "src/dep.mec")
+            .unwrap();
+        let origin: CanonicalNominalPath =
+            serde_json::from_value(dependency["nominalOrigin"].clone()).unwrap();
+        let package_id = dependency["nominalPackageId"].as_str().unwrap();
+        assert!(package_id.starts_with("sha256:"));
+        assert!(
+            !manifest
+                .to_string()
+                .contains(&root.to_string_lossy().to_string())
+        );
+        let root_source = fs::read_to_string(app.join("src/main.mec")).unwrap();
+        let encoded = fs::read_to_string(root.join("out/code/src/main.mec")).unwrap();
+        let bundle = CanonicalProgramBundle::decode(&encoded, Some(&root_source)).unwrap();
+        bundle
+            .validate_dependency_sources_with_provenance(|uri| {
+                (uri == "bundle:///src/dep.mec").then_some(
+                    mech_runtime::CanonicalDependencySource {
+                        source: dependency_source,
+                        nominal_origin: Some(&origin),
+                        nominal_package_id: Some(package_id),
+                    },
+                )
+            })
+            .expect("browser bundle validates its nominal dependency provenance");
         assert!(!manifest.to_string().contains("../"));
         fs::remove_dir_all(root).unwrap();
     }
@@ -1454,6 +1497,47 @@ export default async function init() {}
         assert_eq!(decoded.source, source);
         assert_eq!(decoded.canonical_uri, "bundle:///demo.mec");
         assert!(!decoded.bytecode.is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn bundle_web_retains_enum_origin_for_browser_decode() {
+        let root = temp_root("nominal-origin");
+        let loaded = write_demo_project(&root);
+        fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"bundle-enum\"\nversion = \"0.1.0\"\n",
+        )
+        .unwrap();
+        let source = "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n";
+        fs::write(root.join("demo.mec"), source).unwrap();
+        let out = root.join("out");
+        bundle_web_project(options(&root, &out, loaded)).unwrap();
+
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(out.join("_mech/project-sources.json")).unwrap())
+                .unwrap();
+        let retained = &manifest["sources"][0];
+        let origin: CanonicalNominalPath =
+            serde_json::from_value(retained["nominalOrigin"].clone()).unwrap();
+        assert_eq!(origin.segments(), &["bundle-enum", "demo"]);
+        let package_id = retained["nominalPackageId"].as_str().unwrap();
+        assert!(package_id.starts_with("sha256:"));
+        assert!(
+            !manifest
+                .to_string()
+                .contains(&root.to_string_lossy().to_string())
+        );
+        let encoded = fs::read_to_string(out.join("code/demo.mec")).unwrap();
+        let bundle = CanonicalProgramBundle::decode_with_root_provenance(
+            &encoded,
+            Some(source),
+            Some(&origin),
+            Some(package_id),
+        )
+        .expect("browser bundle retains the defining enum origin");
+        assert_eq!(bundle.root_nominal_package_id.as_deref(), Some(package_id));
+        assert!(!encoded.contains(&root.to_string_lossy().to_string()));
         fs::remove_dir_all(root).unwrap();
     }
 

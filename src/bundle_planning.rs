@@ -1,4 +1,5 @@
 //! Retained source graph for static browser bundles.
+use crate::nominal_provenance::transport_package_id;
 use mech_core::{MResult, MechError};
 
 pub(super) fn retained_sources(
@@ -20,14 +21,28 @@ pub(super) fn retained_sources(
         let relative = super::relative_source_path(path, base, project)?;
         let uri = format!("bundle:///{}", super::bundle_source_specifier(&relative)?);
         let text = std::fs::read_to_string(path)?;
-        let document = mech_runtime::SourceDocument::parse_resolved(
+        let provenance = filesystem.nominal_provenance_for_path(&path.canonicalize()?)?;
+        let mut document = mech_runtime::SourceDocument::parse_resolved(
             &uri,
             mech_syntax::document::Revision(0),
             std::sync::Arc::<str>::from(text.as_str()),
             mech_syntax::document::ParseConfig::default(),
         )
         .map_err(|error| super::validation_error(format!("invalid bundle source: {error:?}")))?;
-        let source = ResolvedSource::new(&uri, &uri, mech_core::MechSourceCode::String(text))
+        let mut source = ResolvedSource::new(&uri, &uri, mech_core::MechSourceCode::String(text));
+        if let Some((origin, package_id)) = provenance {
+            // The retained graph is the public bundle's compilation boundary.
+            // Keep path-bearing filesystem IDs out of both its manifest and
+            // encoded program while retaining an exact collision discriminator.
+            let package_id = transport_package_id(&package_id);
+            document = document
+                .with_nominal_origin(origin.clone())
+                .with_nominal_package_id(package_id.clone());
+            source = source
+                .with_nominal_origin(origin)
+                .with_nominal_package_id(package_id);
+        }
+        let source = source
             .with_source_document(document.clone())?
             .admit_canonical_document()?;
         resolver.insert_source(uri.clone(), source)?;

@@ -7,6 +7,7 @@ mod validation;
 
 pub use self::shape::*;
 pub use self::table::*;
+pub use self::validation::rebase_schema_draft_dimensions;
 
 pub(crate) use self::validation::is_body_keyable as is_schema_body_keyable;
 

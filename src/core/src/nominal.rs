@@ -14,6 +14,22 @@ pub struct CanonicalNominalPath {
     segments: Box<[String]>,
 }
 
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for CanonicalNominalPath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Wire {
+            segments: Box<[String]>,
+        }
+
+        let wire = Wire::deserialize(deserializer)?;
+        Self::new(wire.segments).map_err(|error| serde::de::Error::custom(format!("{error:?}")))
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(u8)]
@@ -75,5 +91,23 @@ impl NominalKey {
         hash.update([kind as u8]);
         hash.update(path.canonical_bytes());
         Self::from_bytes(hash.finalize().into())
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod tests {
+    use super::CanonicalNominalPath;
+
+    #[test]
+    fn deserialized_nominal_origin_preserves_path_validation() {
+        let valid = serde_json::from_str::<CanonicalNominalPath>(
+            r#"{"segments":["sample-package","nested-module"]}"#,
+        )
+        .unwrap();
+        assert_eq!(valid.segments(), &["sample-package", "nested-module"]);
+        assert!(
+            serde_json::from_str::<CanonicalNominalPath>(r#"{"segments":["sample-package",".."]}"#)
+                .is_err()
+        );
     }
 }
