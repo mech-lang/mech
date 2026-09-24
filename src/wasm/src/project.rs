@@ -665,13 +665,17 @@ impl WasmDocumentBootstrap {
                     "accepted browser source no longer contains its retained document boundary",
                 )
             })?;
-        let rebased_source = accepted_source
-            .strip_suffix(console_suffix)
-            .ok_or_else(|| {
-                document_runtime_error(
-                    "accepted browser source changed the retained console suffix while rebasing",
-                )
-            })?;
+        let rebased_source = if accepted_source.is_empty() {
+            ""
+        } else {
+            accepted_source
+                .strip_suffix(console_suffix)
+                .ok_or_else(|| {
+                    document_runtime_error(
+                        "accepted browser source changed the retained console suffix while rebasing",
+                    )
+                })?
+        };
         let mut rebased = SourceDocument::parse_resolved(
             "runtime:interactive",
             accepted.source().revision(),

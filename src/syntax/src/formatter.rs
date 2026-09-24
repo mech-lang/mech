@@ -17,6 +17,42 @@ struct TitleSlots {
     previous: String,
 }
 
+fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
+    if !block.code.iter().any(|(code, _)| match code {
+        MechCode::ActivationScope(_) | MechCode::Expression(_) => true,
+        MechCode::Statement(statement) => matches!(
+            statement,
+            Statement::OpAssign(_)
+                | Statement::VariableAssign(_)
+                | Statement::VariableDefine(_)
+                | Statement::ContextSend(_)
+                | Statement::TupleDestructure(_)
+        ),
+        _ => false,
+    }) {
+        return None;
+    }
+    let mut identity = String::from("mech/fenced-document-output/v2");
+    for (code, _) in &block.code {
+        identity.push_str(match code {
+            MechCode::Comment(_) => "/comment",
+            MechCode::ActivationScope(_) => "/activation",
+            MechCode::Expression(_) => "/expression",
+            MechCode::FsmImplementation(_) => "/fsm-implementation",
+            MechCode::FsmSpecification(_) => "/fsm-specification",
+            MechCode::FunctionDefine(_) => "/function",
+            MechCode::Import(_) => "/import",
+            MechCode::Statement(_) => "/statement",
+            MechCode::Error(_, _) => "/error",
+        });
+        for token in code.tokens() {
+            identity.push('/');
+            identity.push_str(&format!("{:?}:{}", token.kind, token.to_string()));
+        }
+    }
+    Some(hash_str(&identity))
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct HtmlShimExtraSlots {
     slots: BTreeMap<String, String>,
@@ -1188,8 +1224,7 @@ impl Formatter {
             false => "".to_string(),
         };
         if self.html {
-            let (out_node, _) = block.code.last().unwrap();
-            let base_output_id = hash_str(&format!("{:?}", out_node));
+            let base_output_id = fenced_document_output_id(block);
             let style_attr = match &block.options {
                 Some(option_map) if !option_map.elements.is_empty() => {
                     let style_str = option_map
@@ -1230,7 +1265,8 @@ impl Formatter {
                         block_id, namespace_str
                     )
                 };
-                let output_node = if block.config.output {
+                let output_node = if block.config.output && base_output_id.is_some() {
+                    let base_output_id = base_output_id.expect("checked fenced output identity");
                     let occurrence = self
                         .fenced_output_counters
                         .entry((intrp_id, base_output_id))

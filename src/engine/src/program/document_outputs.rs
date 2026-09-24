@@ -412,7 +412,9 @@ fn element_contains_program_value(element: &SectionElement) -> bool {
                     .iter()
                     .any(|(code, _)| code_is_program_value(code))
         }
-        SectionElement::Float((element, _)) => element_contains_program_value(element),
+        SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
+            element_contains_program_value(element)
+        }
         _ => false,
     }
 }
