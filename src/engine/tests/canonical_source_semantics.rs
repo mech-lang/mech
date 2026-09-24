@@ -2440,7 +2440,7 @@ fn retained_state_stops_activation_continuation_dependency_checks() {
 
 #[test]
 fn continuation_turn_keeps_input_free_activations_dormant() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ndeferred + count\n";
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ncount\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
@@ -2448,10 +2448,17 @@ fn continuation_turn_keeps_input_free_activations_dormant() {
         .unwrap();
     let mut catalog = FunctionCatalogBuilder::new();
     mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let count_slot = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
     let mut instance = activate(
         ReactiveInstanceId::new(0x540, 763),
         &artifact,
-        &catalog.build().unwrap(),
+        &catalog,
         &ActivationFacts::default(),
     )
     .unwrap();
@@ -2463,13 +2470,42 @@ fn continuation_turn_keeps_input_free_activations_dormant() {
         .unwrap()
         .publish()
         .unwrap();
+    let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+        instance.state_borrow(count_slot).unwrap()
+    else {
+        panic!("count must use snapshot state storage")
+    };
     assert_eq!(
-        instance
-            .copied_output(0)
-            .unwrap()
-            .canonical_data_draft()
-            .unwrap(),
-        ValueDataDraft::U64(42)
+        values[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+        ValueDataDraft::U64(1)
+    );
+
+    let mut initial_instance = activate(
+        ReactiveInstanceId::new(0x540, 764),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    initial_instance
+        .prepare_initial_turn(&[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert!(initial_instance.has_ready_continuation());
+    initial_instance
+        .prepare_continuation_turn(&[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+        initial_instance.state_borrow(count_slot).unwrap()
+    else {
+        panic!("count must use snapshot state storage")
+    };
+    assert_eq!(
+        values[0].as_ref().unwrap().canonical_data_draft().unwrap(),
+        ValueDataDraft::U64(0)
     );
 }
 

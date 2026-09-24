@@ -885,15 +885,30 @@ fn production_load_drains_fsm_continuations_before_returning_initial_value() {
 
 #[test]
 fn pure_continuation_drains_keep_input_free_activations_dormant() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ndeferred + count\n";
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ncount\n";
     let mut runtime = runtime();
     let loaded = runtime
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
 
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
-    assert_eq!(loaded.initial_value.format_canonical_inline(), "41");
     assert_eq!(loaded.info.resident_accepted_turns, 2);
+    let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+        panic!("continuation fixture must remain resident pure")
+    };
+    let count_slot = execution
+        .artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+        execution.instance.state_borrow(count_slot).unwrap()
+    else {
+        panic!("count must use snapshot state storage")
+    };
+    assert_eq!(values[0].as_ref().unwrap().format_canonical_inline(), "0");
 }
 
 #[test]
