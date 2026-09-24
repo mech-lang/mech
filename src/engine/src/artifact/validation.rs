@@ -458,6 +458,17 @@ fn validate_nodes_and_bindings(draft: &ProgramArtifactDraft) -> Result<(), Artif
                 };
                 let output = require_slot(draft, *target)?;
                 if output.role != SlotRole::Derived {
+                    if let super::ExecutableNodeBody::Activation(control) = &node.body {
+                        if output.role == SlotRole::State
+                            && activation_trigger_states(draft, node, control.scrutinee)?
+                                .contains(target)
+                        {
+                            return Err(ArtifactBuildError::InvalidControl {
+                                node: node.node,
+                                reason: "activation cannot write its own trigger state",
+                            });
+                        }
+                    }
                     return Err(ArtifactBuildError::InvalidControl {
                         node: node.node,
                         reason: "control output must be an owned derived slot",
@@ -694,20 +705,7 @@ fn validate_activation_trigger_writes(
         let super::ExecutableNodeBody::Activation(control) = &activation.body else {
             continue;
         };
-        let inputs = checked_range(
-            &activation.input_bindings,
-            draft.bindings.len(),
-            activation.node,
-        )?;
-        let Some(BindingDeclaration::Input {
-            source: trigger, ..
-        }) = draft
-            .bindings
-            .get(inputs.start + usize::from(control.scrutinee))
-        else {
-            continue;
-        };
-        for trigger in source_state_dependencies(draft, *trigger)? {
+        for trigger in activation_trigger_states(draft, activation, control.scrutinee)? {
             activations_by_trigger
                 .entry(trigger)
                 .or_default()
@@ -716,6 +714,12 @@ fn validate_activation_trigger_writes(
     }
     for (trigger, activations) in activations_by_trigger {
         for (writer, _) in state_writers.get(&trigger).into_iter().flatten() {
+            if activations.contains(writer) {
+                return Err(ArtifactBuildError::InvalidControl {
+                    node: *writer,
+                    reason: "activation cannot write its own trigger state",
+                });
+            }
             let declaration = require_node(draft, *writer)?;
             let writer_inputs = checked_range(
                 &declaration.input_bindings,
@@ -738,6 +742,25 @@ fn validate_activation_trigger_writes(
         }
     }
     Ok(())
+}
+
+fn activation_trigger_states(
+    draft: &ProgramArtifactDraft,
+    activation: &super::NodeDeclaration,
+    scrutinee: u16,
+) -> Result<BTreeSet<CellSlotId>, ArtifactBuildError> {
+    let inputs = checked_range(
+        &activation.input_bindings,
+        draft.bindings.len(),
+        activation.node,
+    )?;
+    let Some(BindingDeclaration::Input {
+        source: trigger, ..
+    }) = draft.bindings.get(inputs.start + usize::from(scrutinee))
+    else {
+        return Ok(BTreeSet::new());
+    };
+    source_state_dependencies(draft, *trigger)
 }
 
 fn validate_node_requirement(
