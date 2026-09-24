@@ -191,12 +191,13 @@ pub fn section_element(
                 out = eval_fenced_code_block(&block.code, p, false)?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let base_id = crate::program::fenced_document_output_id(block)
-                    .expect("an executable fenced block has an output identity");
-                if (!block.config.hidden && block.config.output)
-                    || base_id == crate::program::root_document_program_output_id()
-                {
-                    let out_id = next_fenced_document_output_id(block, p);
+                let base_id = crate::program::fenced_document_output_id(block);
+                if base_id.is_some_and(|base_id| {
+                    (!block.config.hidden && block.config.output)
+                        || base_id == crate::program::root_document_program_output_id()
+                }) {
+                    let out_id = next_fenced_document_output_id(block, p)
+                        .expect("a checked fenced output identity remains available");
                     p.out_values.borrow_mut().insert(
                         out_id,
                         crate::interpreter::retained_source_cell(out.clone())?,
@@ -218,8 +219,10 @@ pub fn section_element(
                 })?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                if !block.config.hidden && block.config.output {
-                    let out_id = next_fenced_document_output_id(block, pp.as_ref());
+                if !block.config.hidden
+                    && block.config.output
+                    && let Some(out_id) = next_fenced_document_output_id(block, pp.as_ref())
+                {
                     pp.out_values.borrow_mut().insert(
                         out_id,
                         crate::interpreter::retained_source_cell(out.clone())?,
@@ -344,14 +347,16 @@ pub fn section_element(
         .map(SpecializationInput::Cell)
 }
 
-fn next_fenced_document_output_id(block: &FencedMechCode, interpreter: &Interpreter) -> u64 {
+fn next_fenced_document_output_id(
+    block: &FencedMechCode,
+    interpreter: &Interpreter,
+) -> Option<u64> {
     let outputs = interpreter.out_values.borrow();
     let mut occurrence = 0_u64;
     loop {
-        let output_id = crate::program::fenced_document_output_occurrence_id(block, occurrence)
-            .expect("an executable fenced block has an output identity");
+        let output_id = crate::program::fenced_document_output_occurrence_id(block, occurrence)?;
         if !outputs.contains_key(&output_id) {
-            return output_id;
+            return Some(output_id);
         }
         occurrence = occurrence
             .checked_add(1)
