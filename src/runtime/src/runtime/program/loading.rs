@@ -321,8 +321,7 @@ impl MechRuntime {
         let result = resident(self).and_then(|artifact| {
             self.install_resident_artifact(artifact, durability, initial_value_projection)
         });
-        if result.is_err() {
-            debug_assert!(matches!(self.active_program, ActiveProgramExecution::None));
+        if result.is_err() && matches!(self.active_program, ActiveProgramExecution::None) {
             self.program_execution_info = RuntimeProgramExecutionInfo::default();
         }
         result
@@ -585,8 +584,10 @@ impl MechRuntime {
         self.active_program = active;
         self.program_execution_info = info;
         if let Err(error) = self.drain_resident_continuations() {
-            self.active_program = ActiveProgramExecution::None;
-            self.program_execution_info = RuntimeProgramExecutionInfo::default();
+            if matches!(self.active_program, ActiveProgramExecution::ResidentPure(_)) {
+                self.active_program = ActiveProgramExecution::None;
+                self.program_execution_info = RuntimeProgramExecutionInfo::default();
+            }
             return Err(error);
         }
         let initial_snapshot = match &self.active_program {
@@ -601,8 +602,10 @@ impl MechRuntime {
         let initial_snapshot = match initial_snapshot {
             Ok(snapshot) => snapshot,
             Err(error) => {
-                self.active_program = ActiveProgramExecution::None;
-                self.program_execution_info = RuntimeProgramExecutionInfo::default();
+                if matches!(self.active_program, ActiveProgramExecution::ResidentPure(_)) {
+                    self.active_program = ActiveProgramExecution::None;
+                    self.program_execution_info = RuntimeProgramExecutionInfo::default();
+                }
                 return Err(error);
             }
         };

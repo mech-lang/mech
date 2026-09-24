@@ -3435,6 +3435,19 @@ impl ReactiveInstance {
         let ordinal = node.effect_ordinal;
         let source = node.payload;
         let captured = node.captured_payload;
+        let suspended = self.plan.steps.iter().enumerate().any(|(index, step)| {
+            self.unpublished_continuation(index)
+                && matches!(step, ActivatedTurnStep::Match(control)
+                if super::read_location_depends_on_match(
+                    &self.plan,
+                    source,
+                    index,
+                    control.write.region,
+                ))
+        });
+        if suspended {
+            return Ok(());
+        }
         if self.workspace.effect_intents.len() == self.workspace.effect_intents.capacity() {
             return Err(ResidentExecutionError::EffectIntentCapacity);
         }
