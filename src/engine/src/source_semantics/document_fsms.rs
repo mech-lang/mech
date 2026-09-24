@@ -217,7 +217,7 @@ impl SemanticBuilder {
                     .iter()
                     .cloned()
                     .chain(["fsm".to_owned(), name.clone()])
-                    .collect(),
+                    .collect::<Vec<_>>(),
             )
             .map_err(|error| {
                 internal(
