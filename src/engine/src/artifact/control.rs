@@ -749,7 +749,11 @@ pub(super) fn validate_match_inner(
                         block: owner,
                         node: local,
                     } if owner == block.id && (local as usize) < before => {
-                        Ok(block.operations[local as usize].schema)
+                        let producer = &block.operations[local as usize];
+                        if matches!(producer.body, ControlOperationBody::Publish) {
+                            return Err(invalid("publication locals cannot be referenced"));
+                        }
+                        Ok(producer.schema)
                     }
                     _ => Err(invalid("cross-block or non-dominating local reference")),
                 }

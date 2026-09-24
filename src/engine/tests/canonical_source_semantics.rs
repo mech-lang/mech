@@ -2307,6 +2307,55 @@ fn declared_fsm_bytecode_rejects_malformed_typed_continuation_operations() {
             "malformed {malformed} operation must fail typed artifact admission"
         );
     }
+
+    fn reference_terminal_publish_local(value: &mut serde_json::Value) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                let publish = object
+                    .get("operations")
+                    .and_then(serde_json::Value::as_array)
+                    .and_then(|operations| {
+                        operations
+                            .iter()
+                            .find(|operation| {
+                                operation.get("body").is_some_and(|body| body == "Publish")
+                            })
+                            .filter(|_| {
+                                !operations.iter().any(|operation| {
+                                    operation.get("body").is_some_and(|body| body == "Suspend")
+                                })
+                            })
+                            .and_then(|operation| operation.get("node"))
+                            .and_then(serde_json::Value::as_u64)
+                    });
+                if let (Some(block), Some(node)) = (
+                    object.get("id").and_then(serde_json::Value::as_u64),
+                    publish,
+                ) {
+                    object.insert(
+                        "yield_value".to_owned(),
+                        serde_json::json!({"Local": {"block": block, "node": node}}),
+                    );
+                    return true;
+                }
+                object.values_mut().any(reference_terminal_publish_local)
+            }
+            serde_json::Value::Array(values) => {
+                values.iter_mut().any(reference_terminal_publish_local)
+            }
+            _ => false,
+        }
+    }
+
+    let mut publish_local = sections.clone();
+    let mut graph: serde_json::Value = serde_json::from_slice(&publish_local.nodes).unwrap();
+    assert!(reference_terminal_publish_local(&mut graph));
+    publish_local.nodes = serde_json::to_vec(&graph).unwrap();
+    let error = mech_engine::decode_program_artifact_sections(&publish_local).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("publication locals cannot be referenced"),
+        "{error:?}"
+    );
 }
 
 #[test]
@@ -2352,6 +2401,42 @@ fn declared_fsm_continuation_retains_lexical_captures() {
             ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(10.0))
         );
     }
+}
+
+#[test]
+fn declared_fsm_continuation_freezes_derived_capture_locations() {
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value + 1.\nderived := signal<f64> + 1\n#Captured(derived)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 83),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for value in [10.0, 99.0] {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&[value]),
+            }])
+            .unwrap();
+    }
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(12.0))
+    );
 }
 
 #[test]
@@ -2631,6 +2716,32 @@ fn one_turn_resumes_only_one_of_two_ready_fsm_nodes() {
 }
 
 #[test]
+fn completed_fsm_roots_do_not_restart_during_the_same_continuation_drain() {
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 84),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 1);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 0);
+}
+
+#[test]
 fn repeated_fsm_yields_rotate_ready_roots_within_one_instance() {
     let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
     let artifact = CanonicalSourceFrontend
@@ -2694,6 +2805,42 @@ fn downstream_fsm_output_stays_unavailable_until_resume() {
     assert_eq!(
         instance
             .copied_output(plus)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(42)
+    );
+}
+
+#[test]
+fn state_writers_wait_for_unpublished_fsm_dependencies() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\n~total<u64> := 0u64\ntotal += #Deferred() + signal<u64>\ntotal\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 85),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for value in [1_u64, 1_u64] {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::U64(&[value]),
+            }])
+            .unwrap();
+    }
+    assert_eq!(
+        instance
+            .copied_output(0)
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
