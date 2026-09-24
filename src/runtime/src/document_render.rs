@@ -8,7 +8,7 @@ use mech_syntax::document::{
     EvalInlineMechCodeSyntax, IdentifierSyntax, InlineMechCodeSyntax, MechCodeSyntax,
     MikaSectionSyntax, NodeFlags, OperatorSyntax, OptionMapSyntax, ParagraphSyntax,
     SectionElementSyntax, SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange,
-    TitleSyntax, UlSubtitleSyntax,
+    TextSize, TitleSyntax, UlSubtitleSyntax,
 };
 
 use crate::RuntimeValueSnapshot;
@@ -1911,7 +1911,10 @@ fn render_inline_children_html_until(
     skipped_tokens: &[SyntaxKind],
 ) -> Result<(), CanonicalDocumentRenderError> {
     for element in node.children_with_tokens() {
-        let range = element.range();
+        let range = match &element {
+            SyntaxElement::Node(child) => child.range(),
+            SyntaxElement::Token(token) => token.range(),
+        };
         if range.start >= cutoff {
             continue;
         }
@@ -1933,8 +1936,8 @@ fn render_inline_children_html_until(
                     &token.text().map_err(|_| range_error(token.range()))?,
                 ));
             }
-            SyntaxElement::Token(token) => {
-                let source = token
+            SyntaxElement::Token(_token) => {
+                let source = node
                     .source()
                     .text(TextRange::new(range.start, cutoff))
                     .map_err(|_| range_error(range))?;
@@ -2455,7 +2458,8 @@ fn render_fence_html(
             range: Some(fence.syntax().range()),
         })?;
     if matches!(info.scope, CodeFenceScope::Inert)
-        && fence_language(fence).is_some_and(|language| matches!(language, "diagram" | "chart"))
+        && fence_language(fence)
+            .is_some_and(|language| matches!(language.as_str(), "diagram" | "chart"))
     {
         output.push_str("<div class='mech-diagram mermaid' data-mech-diagram>");
         output.push_str(&escape_html(&fence_body(fence)?));
