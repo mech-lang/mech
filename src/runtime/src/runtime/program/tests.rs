@@ -4201,6 +4201,127 @@ answer
 }
 
 #[test]
+fn replay_explicit_steps_preserve_the_latest_observation_snapshot() {
+    let plans = Arc::new(AtomicUsize::new(0));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let value_bits = Arc::new(AtomicU64::new(1.0_f64.to_bits()));
+    let provider = || PlanningObservationProvider {
+        plans: plans.clone(),
+        reads: reads.clone(),
+        value_bits: value_bits.clone(),
+    };
+    let source = r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+observed := @clock/delta-seconds
+trigger := true
+~count := 0.0
+~> trigger { count = count + 1.0 }
+output := observed + count
+"#;
+    let catalog = mech_stdlib::source_catalog();
+    let artifact = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap()
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_106),
+            subject,
+            "test://clock/tick/delta-seconds",
+            ["read"],
+        )))
+        .unwrap();
+    let id = mech_core::ReactiveInstanceId::new(90_003, 0);
+    let authority = external::ExactRequirementAuthority::new(
+        artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone()),
+    )
+    .unwrap();
+    let coordinator = || {
+        let instance = mech_engine::__resident::activate_external(
+            id,
+            &artifact,
+            &catalog,
+            &mech_engine::__resident::ActivationFacts::default(),
+            mech_engine::__resident::ResidentIntegrityMode::Checked,
+        )
+        .unwrap();
+        external::ResidentExternalCoordinator::new_live(
+            instance,
+            Arc::new(artifact.clone()),
+            &runtime.resources,
+            &authority,
+            crate::ResidentDurabilityPolicy::Retained,
+            external::ResidentExternalLimits::default(),
+        )
+        .unwrap()
+    };
+
+    let mut first = coordinator();
+    assert!(!first.initial_publication_required());
+    let admission = first.admit_turn().unwrap();
+    first
+        .execute_admitted_step_turn(admission, |_| Ok(()))
+        .unwrap();
+    let first_batch = first.input_facts().next().unwrap().1.clone();
+    let first_record = first.receipts().next().unwrap().1.clone();
+    assert!(first_batch.facts.iter().all(|fact| !fact.trigger));
+
+    value_bits.store(2.0_f64.to_bits(), Ordering::SeqCst);
+    let mut divergent = coordinator();
+    for _ in 0..2 {
+        let admission = divergent.admit_turn().unwrap();
+        divergent
+            .execute_admitted_step_turn(admission, |_| Ok(()))
+            .unwrap();
+    }
+    let divergent_batch = divergent.input_facts().nth(1).unwrap().1.clone();
+    let divergent_record = divergent.receipts().nth(1).unwrap().1.clone();
+    assert!(divergent_batch.facts.iter().all(|fact| !fact.trigger));
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(artifact),
+        false,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    replay
+        .execute_replay_batch(Some(&first_batch), &first_record)
+        .unwrap();
+    assert!(
+        replay
+            .execute_replay_batch(Some(&divergent_batch), &divergent_record)
+            .is_err()
+    );
+}
+
+#[test]
 fn resident_recurrence_advances_when_a_same_turn_parent_is_unchanged() {
     let (mut runtime, _, _, _) = configured_external_runtime();
     runtime
