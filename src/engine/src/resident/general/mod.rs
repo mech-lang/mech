@@ -5094,13 +5094,19 @@ fn build_plan(
     }));
     let output_materialization_source =
         |output_slot: CellSlotId| -> Result<ArtifactSource, ResidentActivationError> {
-            let declaration = &artifact.slots()[output_slot.get() as usize];
-            let source = match declaration.producer {
-                ProducerReference::Output { source, .. } => source,
-                ProducerReference::Input(_) | ProducerReference::NodeOutput { .. } => {
-                    ArtifactSource::Slot(output_slot)
+            let mut source = ArtifactSource::Slot(output_slot);
+            let mut remaining = artifact.slots().len();
+            while let ArtifactSource::Slot(slot) = source {
+                let declaration = &artifact.slots()[slot.get() as usize];
+                let ProducerReference::Output { source: next, .. } = declaration.producer else {
+                    break;
+                };
+                if remaining == 0 {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
                 }
-            };
+                remaining -= 1;
+                source = next;
+            }
             for state in artifact
                 .slots()
                 .iter()
@@ -5123,6 +5129,18 @@ fn build_plan(
             }
             Ok(source)
         };
+    published.extend(
+        artifact
+            .outputs()
+            .iter()
+            .map(|output| output_materialization_source(output.source))
+            .filter_map(|source| match source {
+                Ok(ArtifactSource::Slot(slot)) => Some(Ok(slot)),
+                Ok(ArtifactSource::Constant(_)) => None,
+                Err(error) => Some(Err(error)),
+            })
+            .collect::<Result<BTreeSet<_>, ResidentActivationError>>()?,
+    );
     let output_sources = artifact
         .outputs()
         .iter()
