@@ -2834,7 +2834,7 @@ fn state_writers_wait_for_unpublished_fsm_dependencies() {
         instance
             .turn(&[CapturedSignalInput {
                 slot: instance.plan.inputs[0].slot,
-                value: ResidentValueRef::U64(&[value]),
+                value: ResidentValueRef::Index(&[value]),
             }])
             .unwrap();
     }
@@ -2870,7 +2870,7 @@ fn fresh_fsm_waits_for_an_unpublished_upstream_continuation() {
         instance
             .turn(&[CapturedSignalInput {
                 slot: instance.plan.inputs[0].slot,
-                value: ResidentValueRef::U64(&[value]),
+                value: ResidentValueRef::Index(&[value]),
             }])
             .unwrap();
     };
