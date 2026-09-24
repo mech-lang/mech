@@ -2377,13 +2377,7 @@ impl ReactiveInstance {
             (|| -> Result<(), ResidentKernelError> {
                 budget::PreparedKernel::new(
                     (),
-                    budget::resident_cost! {
-                        // Covers inventory copying, sorting, and deduplication
-                        // before the value-footprint traversal begins.
-                        compute_work: region_inventory_bytes,
-                        temporary_bytes: region_inventory_bytes,
-                        ..budget::KernelCostEstimate::default()
-                    },
+                    recursive_inventory_cost(live_bytes, live_nodes, region_inventory_bytes)?,
                 )
                 .admit_control()?
                 .into_plan();
@@ -3399,6 +3393,23 @@ fn match_conversion_peak_retained_nodes(
     prior_snapshot_nodes
         .checked_add(candidate_nodes)
         .ok_or(ResidentKernelError::InvalidShape)
+}
+
+fn recursive_inventory_cost(
+    live_bytes: u64,
+    live_nodes: u64,
+    inventory_bytes: u64,
+) -> Result<budget::KernelCostEstimate, ResidentKernelError> {
+    Ok(budget::resident_cost! {
+        // Inventory copying, sorting, and deduplication run while the
+        // enclosing arm's dynamically measured locals remain resident.
+        compute_work: inventory_bytes,
+        temporary_bytes: live_bytes
+            .checked_add(inventory_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_nodes: live_nodes,
+        ..budget::KernelCostEstimate::default()
+    })
 }
 
 fn match_conversion_prior_footprint(
@@ -5474,6 +5485,18 @@ mod tests {
             Err(ResidentKernelError::InvalidShape)
         );
         Ok(())
+    }
+
+    #[test]
+    fn recursive_inventory_cost_includes_live_local_demand() {
+        let cost = recursive_inventory_cost(1_024, 17, 96).unwrap();
+        assert_eq!(cost.compute_work(), 96);
+        assert_eq!(cost.temporary_bytes(), 1_120);
+        assert_eq!(cost.retained_nodes(), 17);
+        assert_eq!(
+            recursive_inventory_cost(u64::MAX, 0, 1),
+            Err(ResidentKernelError::InvalidShape)
+        );
     }
 
     #[cfg(feature = "source")]
