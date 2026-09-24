@@ -487,6 +487,7 @@ pub struct ActivatedPlan {
             ActivatedNodeIndex,
             Box<[CellSlotId]>,
             Box<[ActivatedNodeIndex]>,
+            Box<[ActivatedNodeIndex]>,
         )],
     >,
     pub outputs: Box<[ActivatedOutput]>,
@@ -4626,6 +4627,36 @@ fn bind_resident_operation(
     Ok((kernel, memory_plan))
 }
 
+fn continuation_dependency_node(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    visiting: &mut BTreeSet<NodeId>,
+) -> Result<Option<NodeId>, ResidentActivationError> {
+    let ArtifactSource::Slot(slot) = source else {
+        return Ok(None);
+    };
+    let ProducerReference::NodeOutput { node, .. } = artifact.slots()[slot.get() as usize].producer
+    else {
+        return Ok(None);
+    };
+    if !visiting.insert(node) {
+        return Ok(None);
+    }
+    let declaration = &artifact.nodes()[node.get() as usize];
+    if matches!(&declaration.body, crate::ExecutableNodeBody::Fsm(_))
+        || matches!(&declaration.body, crate::ExecutableNodeBody::Match(control) if control.contains_suspend())
+        || matches!(&declaration.body, crate::ExecutableNodeBody::Comprehension(control) if control.contains_suspend())
+    {
+        return Ok(Some(node));
+    }
+    for input in node_inputs(artifact, node)? {
+        if let Some(node) = continuation_dependency_node(artifact, input, visiting)? {
+            return Ok(Some(node));
+        }
+    }
+    Ok(None)
+}
+
 fn build_plan(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -5123,7 +5154,16 @@ fn build_plan(
         let crate::ExecutableNodeBody::Activation(control) = &node.body else {
             continue;
         };
-        let source = *node_inputs(artifact, node.node)?
+        let activation_inputs = node_inputs(artifact, node.node)?;
+        for (ordinal, source) in activation_inputs.iter().copied().enumerate() {
+            if ordinal != control.scrutinee as usize
+                && let Some(node) =
+                    continuation_dependency_node(artifact, source, &mut BTreeSet::new())?
+            {
+                return Err(ResidentActivationError::InvalidDependency { node });
+            }
+        }
+        let source = *activation_inputs
             .get(control.scrutinee as usize)
             .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
         let mut dependencies = BTreeSet::new();
@@ -5136,6 +5176,21 @@ fn build_plan(
         )?;
         let activated = artifact_to_activated[node.node.get() as usize]
             .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+        let update_nodes = topology.same_turn_dependency_masks[activated.get() as usize]
+            .iter()
+            .enumerate()
+            .flat_map(|(word, bits)| {
+                let mut bits = *bits;
+                let mut nodes = Vec::new();
+                while bits != 0 {
+                    let bit = bits.trailing_zeros() as usize;
+                    nodes.push(ActivatedNodeIndex((word * 64 + bit) as u32));
+                    bits &= bits - 1;
+                }
+                nodes
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
         activation_turn_inputs.push((
             activated,
             dependencies
@@ -5148,6 +5203,7 @@ fn build_plan(
                 .filter_map(|(sampled, _)| artifact_to_activated[sampled.get() as usize])
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
+            update_nodes,
         ));
     }
     let outputs = artifact
