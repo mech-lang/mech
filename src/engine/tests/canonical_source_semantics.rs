@@ -6,8 +6,8 @@ use std::path::PathBuf;
 #[cfg(feature = "resident-artifact")]
 use mech_core::snapshot::{ReifiedKind, ReifiedTypeDraft};
 use mech_core::{
-    CanonicalNominalPath, ChangeDetectionPolicy, IntegerInterval, IntegerWidth,
-    OutputConstruction, SchemaBody, ShapeRule, ValueData,
+    CanonicalNominalPath, ChangeDetectionPolicy, IntegerInterval, IntegerWidth, OutputConstruction,
+    SchemaBody, ShapeRule, ValueData,
 };
 #[cfg(feature = "resident-artifact")]
 use mech_core::{
