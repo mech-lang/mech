@@ -4597,6 +4597,9 @@ fn bind_range_inclusive(
     {
         return bound(range_inclusive, Vec::<u64>::new().into_boxed_slice());
     }
+    if let Ok(kernel) = bind_index_range(request, true, false) {
+        return Ok(kernel);
+    }
     bind_snapshot_range(request, true, false)
 }
 
@@ -4613,6 +4616,9 @@ fn bind_range_exclusive(
     .is_ok()
     {
         return bound(range_exclusive, Vec::<u64>::new().into_boxed_slice());
+    }
+    if let Ok(kernel) = bind_index_range(request, false, false) {
+        return Ok(kernel);
     }
     bind_snapshot_range(request, false, false)
 }
@@ -4638,6 +4644,9 @@ fn bind_range_increment_inclusive(
             Vec::<u64>::new().into_boxed_slice(),
         );
     }
+    if let Ok(kernel) = bind_index_range(request, true, true) {
+        return Ok(kernel);
+    }
     bind_snapshot_range(request, true, true)
 }
 
@@ -4662,7 +4671,48 @@ fn bind_range_increment_exclusive(
             Vec::<u64>::new().into_boxed_slice(),
         );
     }
+    if let Ok(kernel) = bind_index_range(request, false, true) {
+        return Ok(kernel);
+    }
     bind_snapshot_range(request, false, true)
+}
+
+fn bind_index_range(
+    request: &ResidentKernelBindRequest<'_>,
+    inclusive: bool,
+    incremented: bool,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let expected_inputs = if incremented { 3 } else { 2 };
+    require_kind(
+        request,
+        &vec![ResidentValueKind::Index; expected_inputs],
+        ResidentValueKind::Index,
+    )?;
+    if request.inputs.iter().any(|input| {
+        input.shape != ResidentShape::SCALAR
+            || request
+                .schemas
+                .get(input.schema_id)
+                .is_none_or(|schema| schema.body() != &SchemaBody::Index)
+    }) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if !matches!(
+        output_schema.body(),
+        SchemaBody::Matrix { element, dimensions }
+            if dimensions.len() == 2 && element.as_ref() == &SchemaBody::Index
+    ) || request.output.shape.rows != 1
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        range_index,
+        vec![u64::from(inclusive), u64::from(incremented)].into_boxed_slice(),
+    )
 }
 
 fn is_range_snapshot_element(body: &SchemaBody) -> bool {
@@ -13338,6 +13388,63 @@ fn replace_f64_range(output: &mut [f64], start: f64, step: f64) -> bool {
         }
         value
     })
+}
+
+fn range_index(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let [inclusive, incremented] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let inclusive = match *inclusive {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let incremented = match *incremented {
+        0 => false,
+        1 => true,
+        _ => return Err(ResidentKernelError::InvalidInput),
+    };
+    let expected_inputs = if incremented { 3 } else { 2 };
+    if inputs.len() != expected_inputs {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let value = |ordinal| match input(inputs, ordinal)? {
+        ResidentValueRef::Index([value]) => Ok(*value),
+        _ => Err(ResidentKernelError::InvalidInput),
+    };
+    let start = value(0)?;
+    let step = if incremented { value(1)? } else { 1 };
+    let end = value(expected_inputs - 1)?;
+    if step == 0 || end < start {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let count = integer_snapshot_range_size(u128::from(end - start), u128::from(step), inclusive)
+        .filter(|count| *count != 0)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let ResidentValueMut::Index(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if output.len() != count {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    admit_dense_range(output.len())?;
+    let mut current = start;
+    let mut changed = false;
+    let last = output.len().saturating_sub(1);
+    for (ordinal, target) in output.iter_mut().enumerate() {
+        changed |= *target != current;
+        *target = current;
+        if ordinal < last {
+            current = current
+                .checked_add(step)
+                .ok_or(ResidentKernelError::Arithmetic)?;
+        }
+    }
+    Ok(changed)
 }
 
 fn exclusive_range_len(start: f64, step: f64, end: f64) -> Result<usize, ResidentKernelError> {
