@@ -1614,6 +1614,36 @@ fn capacity_is_reserved_before_observation_capture() -> MResult<()> {
 }
 
 #[test]
+fn sample_only_host_updates_obey_the_live_snapshot_byte_limit() -> MResult<()> {
+    let trace = Arc::new(Mutex::new(ProviderTrace::default()));
+    let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
+    let mut coordinator = coordinator(
+        instance,
+        &artifact,
+        &providers,
+        ResidentExternalLimits {
+            input_bytes: 1,
+            ..ResidentExternalLimits::default()
+        },
+    )?;
+    let update = crate::RuntimeHostInputUpdate {
+        source: crate::RuntimeHostInputSource::new("test-resource://ekf/frame", "sample")?,
+        value: RuntimeHostInputValue::F64Matrix {
+            rows: 4,
+            columns: 1,
+            values: vec![0.2, 0.01, 5.0, -2.0],
+        },
+    };
+    let error = coordinator.sample_host_updates(&[update]).unwrap_err();
+    assert!(
+        error
+            .simple_message()
+            .contains("live input snapshot requires")
+    );
+    Ok(())
+}
+
+#[test]
 fn coordinator_rejects_an_artifact_other_than_the_instance_artifact() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;

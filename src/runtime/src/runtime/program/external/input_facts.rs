@@ -68,13 +68,7 @@ impl CapturedInputFact {
         let payload_hash = value
             .value_hash(schemas)
             .map_err(|_| invalid_error("payload hash"))?;
-        let retained_bytes = value
-            .canonical_payload_bytes(schemas)
-            .map_err(|_| invalid_error("canonical payload"))?
-            .len()
-            .checked_add(shape.parameter_values().len() * size_of::<u64>())
-            .and_then(|bytes| bytes.checked_add(size_of::<Self>()))
-            .ok_or_else(|| invalid_error("retained byte accounting"))?;
+        let retained_bytes = retained_input_value_bytes(&value, &shape, schemas)?;
         Ok(Self {
             sequence,
             requirement,
@@ -92,6 +86,20 @@ impl CapturedInputFact {
     pub const fn retained_bytes(&self) -> usize {
         self.retained_bytes
     }
+}
+
+pub(crate) fn retained_input_value_bytes(
+    value: &Value,
+    shape: &ShapeInstance,
+    schemas: &SchemaTable,
+) -> MResult<usize> {
+    value
+        .canonical_payload_bytes(schemas)
+        .map_err(|_| invalid_error("canonical payload"))?
+        .len()
+        .checked_add(shape.parameter_values().len() * size_of::<u64>())
+        .and_then(|bytes| bytes.checked_add(size_of::<CapturedInputFact>()))
+        .ok_or_else(|| invalid_error("retained byte accounting"))
 }
 
 #[derive(Clone, Debug)]
