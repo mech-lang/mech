@@ -922,14 +922,24 @@ impl SemanticBuilder {
         start: usize,
         names: &mut BTreeMap<String, PendingValue>,
     ) -> Result<SourcePattern, SourceSemanticError> {
-        if let SchemaBody::Enum { key, variants } = &expected.body {
+        let enum_expected = match &expected.body {
+            SchemaBody::Enum { .. } => Some(expected.clone()),
+            SchemaBody::Option(payload) if matches!(payload.as_ref(), SchemaBody::Enum { .. }) => {
+                Some(canonical_component_schema_draft(expected, payload, name)?)
+            }
+            _ => None,
+        };
+        if let Some(enum_expected) = enum_expected {
+            let SchemaBody::Enum { key, variants } = &enum_expected.body else {
+                unreachable!("optional enum pattern projection retains the enum body")
+            };
             let name_text = node_text(name)?;
             let variant_name = name_text.trim_start_matches(':');
             let variant_name = if let Some((qualifier, variant)) = variant_name.rsplit_once('/') {
                 // Imported enum values carry their exact schema, although
                 // their defining declaration is not local to this document.
                 let local = self.declared_kinds.get(qualifier);
-                if !local.is_some_and(|schema| schema.body == expected.body)
+                if !local.is_some_and(|schema| schema.body == enum_expected.body)
                     && (local.is_some()
                         || self.imported_enum_qualifiers.get(key).map(String::as_str)
                             != Some(qualifier))
@@ -949,7 +959,7 @@ impl SemanticBuilder {
                 (None, []) => None,
                 (Some(payload), [pattern]) => Some(Box::new(self.collection_pattern(
                     pattern,
-                    &canonical_component_schema_draft(expected, payload, name)?,
+                    &canonical_component_schema_draft(&enum_expected, payload, name)?,
                     start,
                     names,
                 )?)),

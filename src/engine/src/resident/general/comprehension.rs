@@ -275,15 +275,28 @@ fn pattern_components_addressable(
         | crate::CollectionPattern::Bind { .. }
         | crate::CollectionPattern::Equal(_) => true,
         crate::CollectionPattern::Enum { ordinal, payload } => {
-            let SchemaBody::Enum { variants, .. } = parent.body() else {
+            let enum_parent = match parent.body() {
+                SchemaBody::Enum { .. } => parent.clone(),
+                SchemaBody::Option(body) if matches!(body.as_ref(), SchemaBody::Enum { .. }) => {
+                    let Some(schema) = canonical_component_schema(parent, body) else {
+                        return false;
+                    };
+                    schema
+                }
+                _ => return true,
+            };
+            let SchemaBody::Enum { variants, .. } = enum_parent.body() else {
                 return true;
             };
             let Some(variant) = variants.get(*ordinal as usize) else {
                 return true;
             };
             match (payload.as_deref(), variant.payload.as_ref()) {
-                (Some(pattern), Some(body)) => canonical_component_schema_id(parent, body, schemas)
-                    .is_some_and(|schema| pattern_components_addressable(pattern, schema, schemas)),
+                (Some(pattern), Some(body)) => {
+                    canonical_component_schema_id(&enum_parent, body, schemas).is_some_and(
+                        |schema| pattern_components_addressable(pattern, schema, schemas),
+                    )
+                }
                 _ => true,
             }
         }

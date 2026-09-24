@@ -1300,9 +1300,33 @@ impl PatternItem {
         &self,
         schemas: &SchemaTable,
     ) -> Result<Option<(u32, Option<Self>)>, ResidentKernelError> {
-        let Some(resolved) = resolve_pattern_item(self.clone(), schemas)? else {
+        let Some(mut resolved) = resolve_pattern_item(self.clone(), schemas)? else {
             return Ok(None);
         };
+        let option_payload = match &resolved.body {
+            SchemaBody::Option(payload) => Some(payload.as_ref().clone()),
+            _ => None,
+        };
+        if let Some(body) = option_payload {
+            let ValueDataDraft::Option(value) = resolved.data else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if !value.present {
+                return Ok(None);
+            }
+            let Some(data) = value.value else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            let source_payload = resolved.source_data.take().and_then(|data| match data {
+                ValueData::Option(Some(value)) => Some(*value),
+                _ => None,
+            });
+            resolved.projection_schema = None;
+            resolved.value_schema = None;
+            resolved.body = body;
+            resolved.data = *data;
+            resolved.source_data = source_payload;
+        }
         let SchemaBody::Enum { variants, .. } = &resolved.body else {
             return Ok(None);
         };

@@ -154,20 +154,25 @@ fn validate_structural_pattern(
             }
         }
         super::CollectionPattern::Enum { ordinal, payload } => {
-            let payload_schema = match expected.body() {
-                SchemaBody::Enum { variants, .. } => {
-                    variants.get(*ordinal as usize)?.payload.as_ref()
+            let enum_expected = match expected.body() {
+                SchemaBody::Enum { .. } => expected.clone(),
+                SchemaBody::Option(body) if matches!(body.as_ref(), SchemaBody::Enum { .. }) => {
+                    component_schema(expected, body)?
                 }
                 _ => return None,
             };
+            let SchemaBody::Enum { variants, .. } = enum_expected.body() else {
+                return None;
+            };
+            let payload_schema = variants.get(*ordinal as usize)?.payload.as_ref();
             match (payload_schema, payload) {
                 (Some(schema), Some(pattern)) => validate_structural_pattern(
                     draft,
                     pattern,
-                    &component_schema(expected, schema)?,
+                    &component_schema(&enum_expected, schema)?,
                     bindings,
                 )?,
-                (None, None) if matches!(expected.body(), SchemaBody::Enum { .. }) => {}
+                (None, None) => {}
                 _ => return None,
             }
         }
@@ -350,6 +355,18 @@ fn structural_coverage_space(expected: &mech_core::Schema) -> StructuralCoverage
                 })
                 .collect(),
         ),
+        mech_core::SchemaBody::Matrix { element, .. } => {
+            super::comprehension::fixed_matrix_element_count(expected)
+                .and_then(|count| {
+                    component_schema(expected, element).map(|element| {
+                        StructuralCoverageSpace::Repeated {
+                            element: Box::new(structural_coverage_space(&element)),
+                            count,
+                        }
+                    })
+                })
+                .unwrap_or(StructuralCoverageSpace::Opaque)
+        }
         _ => StructuralCoverageSpace::Opaque,
     }
 }
@@ -385,6 +402,90 @@ fn structural_coverage_pattern(
                 return StructuralCoveragePattern::Never;
             };
             StructuralCoveragePattern::Tuple(items.into_boxed_slice())
+        }
+        (
+            super::CollectionPattern::Array {
+                prefix,
+                rest,
+                suffix,
+            },
+            mech_core::SchemaBody::Matrix { element, .. },
+        ) => {
+            let Some(count) = super::comprehension::fixed_matrix_element_count(expected) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let Some(residual) = count.checked_sub(fixed) else {
+                return StructuralCoveragePattern::Never;
+            };
+            if rest.is_none() && residual != 0 {
+                return StructuralCoveragePattern::Never;
+            }
+            let Some(element) = component_schema(expected, element) else {
+                return StructuralCoveragePattern::Never;
+            };
+            let mut normalized_prefix = Vec::with_capacity(prefix.len());
+            normalized_prefix.extend(
+                prefix
+                    .iter()
+                    .map(|item| structural_coverage_pattern(item, &element, draft)),
+            );
+            let mut normalized_suffix = suffix
+                .iter()
+                .map(|item| structural_coverage_pattern(item, &element, draft))
+                .collect::<Vec<_>>();
+            let mut wildcard_count = 0;
+            if let Some(rest) = rest {
+                let Some(exact_rest) = super::comprehension::array_rest_schema(
+                    &element,
+                    element.body(),
+                    Some(residual),
+                ) else {
+                    return StructuralCoveragePattern::Never;
+                };
+                let rest = if matches!(
+                    rest.as_ref(),
+                    super::CollectionPattern::Bind { schema, .. }
+                        if super::comprehension::array_rest_schema(
+                            &element,
+                            element.body(),
+                            None,
+                        )
+                        .as_ref()
+                        .is_some_and(|expected| draft.schemas.get(*schema) == Some(expected))
+                ) {
+                    StructuralCoveragePattern::Wildcard
+                } else {
+                    structural_coverage_pattern(rest, &exact_rest, draft)
+                };
+                match rest {
+                    StructuralCoveragePattern::Wildcard => wildcard_count = residual,
+                    StructuralCoveragePattern::Sequence {
+                        prefix,
+                        wildcard_count: rest_wildcard_count,
+                        suffix,
+                    } if prefix
+                        .len()
+                        .checked_add(rest_wildcard_count)
+                        .and_then(|length| length.checked_add(suffix.len()))
+                        == Some(residual) =>
+                    {
+                        normalized_prefix.extend(prefix);
+                        wildcard_count = rest_wildcard_count;
+                        let mut combined_suffix = suffix.into_vec();
+                        combined_suffix.append(&mut normalized_suffix);
+                        normalized_suffix = combined_suffix;
+                    }
+                    _ => return StructuralCoveragePattern::Never,
+                }
+            }
+            StructuralCoveragePattern::Sequence {
+                prefix: normalized_prefix.into_boxed_slice(),
+                wildcard_count,
+                suffix: normalized_suffix.into_boxed_slice(),
+            }
         }
         (
             super::CollectionPattern::Enum { ordinal, payload },

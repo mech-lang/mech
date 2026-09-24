@@ -649,6 +649,92 @@ fn tuple_payload_coverage_preserves_field_correlations() {
 }
 
 #[test]
+fn fixed_matrix_payload_coverage_combines_as_a_finite_product() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<[bool]:1,1>\n\
+                 value<outer> := :wrap([true])\n\
+                 result := value?\n\
+                   | :wrap([true]) => 1\n\
+                   | :wrap([false]) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the fixed matrix arms collectively cover the Boolean product")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_matrix_rest_coverage_combines_without_enumerating_the_tail() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<[bool]:1,2>\n\
+                 value<outer> := :wrap([true false])\n\
+                 result := value?\n\
+                   | :wrap([true, ...]) => 1\n\
+                   | :wrap([false, ...]) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the fixed matrix prefix cases cover every finite tail")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn fixed_matrix_payload_coverage_preserves_element_correlations() {
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<[bool]:1,2>\n\
+                 value<outer> := :wrap([true false])\n\
+                 result := value?\n\
+                   | :wrap([true true]) => 1\n\
+                   | :wrap([false false]) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .err()
+        .expect("diagonal matrix cases leave two Boolean sequences uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn optional_enum_payload_pattern_binds_after_artifact_roundtrip() {
+    execute_document(
+        "<event> := :data<f64> | :idle\n\
+         value<event?> := :data(3)\n\
+         result := value? | :data(x) => x | * => 0.\n\
+         result\n",
+        [(
+            vec![],
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(3.0)),
+        )],
+    );
+    for value in [":idle", "_"] {
+        execute_document(
+            &format!(
+                "<event> := :data<f64> | :idle\n\
+                 value<event?> := {value}\n\
+                 result := value? | :data(x) => x | * => 0.\n\
+                 result\n"
+            ),
+            [(
+                vec![],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0)),
+            )],
+        );
+    }
+}
+
+#[test]
 fn partial_finite_payload_coverage_remains_non_exhaustive() {
     let error = CanonicalSourceFrontend
         .compile_document_with_nominal_origin(

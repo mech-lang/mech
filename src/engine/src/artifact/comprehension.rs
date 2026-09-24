@@ -612,7 +612,14 @@ fn validate_pattern(
             }
         }
         CollectionPattern::Enum { ordinal, payload } => {
-            let SchemaBody::Enum { variants, .. } = expected.body() else {
+            let enum_expected = match expected.body() {
+                SchemaBody::Enum { .. } => expected.clone(),
+                SchemaBody::Option(body) if matches!(body.as_ref(), SchemaBody::Enum { .. }) => {
+                    component_schema(expected, body)?
+                }
+                _ => return None,
+            };
+            let SchemaBody::Enum { variants, .. } = enum_expected.body() else {
                 return None;
             };
             let payload_schema = variants.get(*ordinal as usize)?.payload.as_ref();
@@ -620,7 +627,7 @@ fn validate_pattern(
                 (Some(schema), Some(pattern)) => validate_pattern(
                     draft,
                     pattern,
-                    &component_schema(expected, schema)?,
+                    &component_schema(&enum_expected, schema)?,
                     inputs,
                     locals,
                 )?,
