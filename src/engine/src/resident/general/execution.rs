@@ -1813,6 +1813,59 @@ impl ReactiveInstance {
         self.execute_step_with_live_demand(node_index, before_epoch, working_epoch, probe, 0, 0)
     }
 
+    fn live_continuation_footprint(
+        &self,
+        meter: &mut budget::ResidentBudgetMeter,
+    ) -> Option<(u64, u64)> {
+        fn account(
+            value: &super::OwnedResidentValue,
+            schemas: &mech_core::SchemaTable,
+            meter: &mut budget::ResidentBudgetMeter,
+            bytes: &mut u64,
+            nodes: &mut u64,
+        ) -> Option<()> {
+            let footprint = resident_frame_value_footprint(value.as_ref(), schemas, meter)?;
+            *bytes = bytes.checked_add(footprint.0)?;
+            *nodes = nodes.checked_add(footprint.1)?;
+            Some(())
+        }
+        let mut bytes = 0_u64;
+        let mut nodes = 0_u64;
+        for continuation in self.continuations.iter().flatten() {
+            account(
+                &continuation.state,
+                &self.plan.schemas,
+                meter,
+                &mut bytes,
+                &mut nodes,
+            )?;
+            for (_, value) in continuation.captures.iter() {
+                account(value, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
+            }
+        }
+        for continuation in self.workspace.continuation_candidates.iter().flatten() {
+            account(
+                &continuation.state,
+                &self.plan.schemas,
+                meter,
+                &mut bytes,
+                &mut nodes,
+            )?;
+            for (_, value) in continuation.captures.iter() {
+                account(value, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
+            }
+        }
+        if let Some(state) = self.workspace.active_resume_state.as_ref() {
+            account(state, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
+        }
+        for frame in &self.workspace.continuation_capture_frames {
+            for (_, value) in frame.iter() {
+                account(value, &self.plan.schemas, meter, &mut bytes, &mut nodes)?;
+            }
+        }
+        Some((bytes, nodes))
+    }
+
     pub(super) fn execute_step_with_live_demand(
         &mut self,
         node_index: ActivatedNodeIndex,
@@ -2005,6 +2058,17 @@ impl ReactiveInstance {
                     ))
                 })
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let (continuation_bytes, continuation_nodes) = self
+                .live_continuation_footprint(&mut capture_meter)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_bytes
+                .checked_add(continuation_bytes)
+                .and_then(|bytes| bytes.checked_add(capture_bytes))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let retained_nodes = live_nodes
+                .checked_add(continuation_nodes)
+                .and_then(|nodes| nodes.checked_add(capture_nodes))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             let capture_work = capture_meter
                 .estimate()
                 .compute_work()
@@ -2015,9 +2079,9 @@ impl ReactiveInstance {
                     (),
                     budget::resident_cost! {
                         compute_work: capture_work,
-                        temporary_bytes: capture_bytes,
+                        temporary_bytes: peak_bytes,
                         cloned_bytes: capture_bytes,
-                        retained_nodes: capture_nodes,
+                        retained_nodes,
                         ..budget::KernelCostEstimate::default()
                     },
                 )

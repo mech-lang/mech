@@ -117,15 +117,17 @@ pub struct MatchDeclaration<C = OperationContractId> {
     pub arms: Box<[ControlMatchArm<C>]>,
 }
 
-pub(super) fn structurally_irrefutable<S, V>(pattern: &super::CollectionPattern<S, V>) -> bool {
+pub(super) fn structurally_irrefutable_shape<S, V>(
+    pattern: &super::CollectionPattern<S, V>,
+) -> bool {
     match pattern {
         super::CollectionPattern::Wildcard | super::CollectionPattern::Bind { .. } => true,
-        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable_shape),
         super::CollectionPattern::Array {
             prefix,
             rest: Some(rest),
             suffix,
-        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable_shape(rest),
         super::CollectionPattern::Equal(_)
         | super::CollectionPattern::Enum { .. }
         | super::CollectionPattern::Array { .. } => false,

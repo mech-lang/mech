@@ -460,6 +460,250 @@ impl SemanticBuilder {
         result.map(Some)
     }
 
+    fn lower_declared_fsm_value(
+        &mut self,
+        pattern: &PatternSyntax,
+        expected: &SchemaDraft,
+        incompatible_code: &'static str,
+        incompatible_message: &'static str,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let invalid = |message: String| SourceSemanticError {
+            code: incompatible_code,
+            message,
+            anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
+        };
+        let body = self.required(pattern.value(), pattern.syntax(), "an FSM value")?;
+        match body {
+            PatternValueSyntax::Expression(expression) => {
+                let value = self.expression(&expression)?.0;
+                self.conform_schema_draft(
+                    value,
+                    expected,
+                    expression.syntax(),
+                    incompatible_code,
+                    incompatible_message,
+                )
+            }
+            PatternValueSyntax::Tuple(tuple) => {
+                let items = tuple.items();
+                if let [item] = items.as_slice() {
+                    return self.lower_declared_fsm_value(
+                        item,
+                        expected,
+                        incompatible_code,
+                        incompatible_message,
+                    );
+                }
+                let SchemaBody::Tuple(fields) = &expected.body else {
+                    return Err(invalid(
+                        "FSM tuple value does not satisfy its declared kind".to_owned(),
+                    ));
+                };
+                if fields.len() != items.len() {
+                    return Err(invalid(format!(
+                        "FSM tuple value requires {} items, received {}",
+                        fields.len(),
+                        items.len()
+                    )));
+                }
+                let values = items
+                    .iter()
+                    .zip(fields)
+                    .map(|(item, field)| {
+                        self.lower_declared_fsm_value(
+                            item,
+                            &schema_component(expected, field),
+                            incompatible_code,
+                            incompatible_message,
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(self.emit_with_schema_draft(
+                    "core/composite-pack",
+                    values,
+                    expected.clone(),
+                    pattern.syntax(),
+                    "fsm-structured-value",
+                    None,
+                ))
+            }
+            PatternValueSyntax::Array(array) => {
+                let SchemaBody::Matrix { element, .. } = &expected.body else {
+                    return Err(invalid(
+                        "FSM array value does not satisfy its declared kind".to_owned(),
+                    ));
+                };
+                let element = schema_component(expected, element);
+                let values = array
+                    .elements()
+                    .iter()
+                    .map(|item| {
+                        if item.spread().is_some() || item.rest().is_some() {
+                            return Err(invalid(
+                                "FSM array values cannot contain a spread or rest item".to_owned(),
+                            ));
+                        }
+                        let item =
+                            self.required(item.pattern(), item.syntax(), "an FSM array value")?;
+                        self.lower_declared_fsm_value(
+                            &item,
+                            &element,
+                            incompatible_code,
+                            incompatible_message,
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let Some((inputs, output)) =
+                    self.resolve_maintained_call("matrix/horzcat", values, pattern.syntax())?
+                else {
+                    return Err(invalid(
+                        "FSM array value has no maintained matrix construction".to_owned(),
+                    ));
+                };
+                let value = self.emit_with_schema_draft(
+                    "matrix/horzcat",
+                    inputs,
+                    output,
+                    pattern.syntax(),
+                    "fsm-array-value",
+                    None,
+                );
+                self.conform_schema_draft(
+                    value,
+                    expected,
+                    pattern.syntax(),
+                    incompatible_code,
+                    incompatible_message,
+                )
+            }
+            PatternValueSyntax::AtomStruct(value) => {
+                let name = self.required(value.name(), value.syntax(), "an FSM value name")?;
+                self.lower_declared_fsm_structured_value(
+                    node_text(name.syntax())?,
+                    value.items(),
+                    pattern.syntax(),
+                    expected,
+                    incompatible_code,
+                    incompatible_message,
+                )
+            }
+            PatternValueSyntax::TupleStruct(value) => {
+                let name = self.required(value.name(), value.syntax(), "an FSM value name")?;
+                self.lower_declared_fsm_structured_value(
+                    node_text(name.syntax())?,
+                    value.items(),
+                    pattern.syntax(),
+                    expected,
+                    incompatible_code,
+                    incompatible_message,
+                )
+            }
+            PatternValueSyntax::Wildcard(_) => {
+                Err(invalid("wildcards cannot construct FSM values".to_owned()))
+            }
+        }
+    }
+
+    fn lower_declared_fsm_structured_value(
+        &mut self,
+        name: String,
+        items: Vec<PatternSyntax>,
+        syntax: &SyntaxNode,
+        expected: &SchemaDraft,
+        incompatible_code: &'static str,
+        incompatible_message: &'static str,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let invalid = |message: String| SourceSemanticError {
+            code: incompatible_code,
+            message,
+            anchor: SourceSemanticAnchor::for_node(syntax),
+        };
+        let SchemaBody::Enum { variants, .. } = &expected.body else {
+            return Err(invalid(
+                "FSM structured value does not satisfy its declared kind".to_owned(),
+            ));
+        };
+        let (ordinal, variant) = variants
+            .iter()
+            .enumerate()
+            .find(|(_, variant)| variant.name == name)
+            .ok_or_else(|| invalid(format!("declared kind has no variant {name}")))?;
+        let payload = match (&variant.payload, items.as_slice()) {
+            (None, []) => None,
+            (Some(payload), [item]) => Some(self.lower_declared_fsm_value(
+                item,
+                &schema_component(expected, payload),
+                incompatible_code,
+                incompatible_message,
+            )?),
+            (Some(payload @ SchemaBody::Tuple(fields)), items) if fields.len() == items.len() => {
+                let payload_schema = schema_component(expected, payload);
+                let values = items
+                    .iter()
+                    .zip(fields)
+                    .map(|(item, field)| {
+                        self.lower_declared_fsm_value(
+                            item,
+                            &schema_component(&payload_schema, field),
+                            incompatible_code,
+                            incompatible_message,
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Some(self.emit_with_schema_draft(
+                    "core/composite-pack",
+                    values,
+                    payload_schema,
+                    syntax,
+                    "fsm-structured-payload",
+                    Some(name.clone()),
+                ))
+            }
+            (None, _) => {
+                return Err(invalid(format!(
+                    "FSM variant {name} does not accept a payload"
+                )));
+            }
+            (Some(_), _) => {
+                return Err(invalid(format!(
+                    "FSM variant {name} received an incompatible payload"
+                )));
+            }
+        };
+        let ordinal = u32::try_from(ordinal)
+            .map_err(|_| invalid("FSM variant identity is exhausted".to_owned()))?;
+        let Some(payload) = payload else {
+            return Ok(self.constant_draft(
+                expected.clone(),
+                ValueDataDraft::Enum(EnumDraft {
+                    ordinal,
+                    payload: None,
+                }),
+            ));
+        };
+        if let PendingValue::Constant(payload) = payload {
+            return Ok(self.constant_draft(
+                expected.clone(),
+                ValueDataDraft::Enum(EnumDraft {
+                    ordinal,
+                    payload: Some(Box::new(self.constants[payload].data.clone())),
+                }),
+            ));
+        }
+        let ordinal = self.constant(
+            BuiltinSchema::Index,
+            ValueDataDraft::Index(u64::from(ordinal) + 1),
+        );
+        Ok(self.emit_with_schema_draft(
+            "core/enum-pack",
+            vec![ordinal, payload],
+            expected.clone(),
+            syntax,
+            "fsm-structured-value",
+            Some(name),
+        ))
+    }
+
     fn fsm_declared_state_value(
         &mut self,
         machine: &DeclaredFsm,
@@ -508,23 +752,9 @@ impl SemanticBuilder {
                     body: field.clone(),
                     dimension_parameters: Box::new([]),
                 };
-                let expression =
-                    match self.required(item.value(), item.syntax(), "an FSM state payload")? {
-                        PatternValueSyntax::Expression(expression) => expression,
-                        _ => {
-                            return Err(SourceSemanticError {
-                                code: "source-semantics/invalid-fsm-state-payload",
-                                message: "FSM state payload construction requires expressions"
-                                    .to_owned(),
-                                anchor: SourceSemanticAnchor::for_node(item.syntax()),
-                            });
-                        }
-                    };
-                let value = self.expression(&expression)?.0;
-                Some(self.conform_schema_draft(
-                    value,
+                Some(self.lower_declared_fsm_value(
+                    item,
                     &expected,
-                    expression.syntax(),
                     "source-semantics/incompatible-fsm-state-payload",
                     "FSM state payload does not satisfy its declared kind",
                 )?)
@@ -545,29 +775,12 @@ impl SemanticBuilder {
                     .iter()
                     .zip(fields)
                     .map(|(item, field)| {
-                        let expression = match self.required(
-                            item.value(),
-                            item.syntax(),
-                            "an FSM state payload",
-                        )? {
-                            PatternValueSyntax::Expression(expression) => expression,
-                            _ => {
-                                return Err(SourceSemanticError {
-                                    code: "source-semantics/invalid-fsm-state-payload",
-                                    message: "FSM state payload construction requires expressions"
-                                        .to_owned(),
-                                    anchor: SourceSemanticAnchor::for_node(item.syntax()),
-                                });
-                            }
-                        };
-                        let value = self.expression(&expression)?.0;
-                        self.conform_schema_draft(
-                            value,
+                        self.lower_declared_fsm_value(
+                            item,
                             &SchemaDraft {
                                 body: field.clone(),
                                 dimension_parameters: Box::new([]),
                             },
-                            expression.syntax(),
                             "source-semantics/incompatible-fsm-state-payload",
                             "FSM state payload does not satisfy its declared kind",
                         )
@@ -636,22 +849,9 @@ impl SemanticBuilder {
         value: &FsmValueSyntax,
     ) -> Result<PendingValue, SourceSemanticError> {
         let pattern = self.required(value.pattern(), value.syntax(), "an FSM output value")?;
-        let expression =
-            match self.required(pattern.value(), pattern.syntax(), "an FSM output value")? {
-                PatternValueSyntax::Expression(expression) => expression,
-                _ => {
-                    return Err(SourceSemanticError {
-                        code: "source-semantics/invalid-fsm-output",
-                        message: "FSM output construction requires an expression".to_owned(),
-                        anchor: SourceSemanticAnchor::for_node(pattern.syntax()),
-                    });
-                }
-            };
-        let output = self.expression(&expression)?.0;
-        self.conform_schema_draft(
-            output,
+        self.lower_declared_fsm_value(
+            &pattern,
             &machine.output,
-            expression.syntax(),
             "source-semantics/incompatible-fsm-output",
             "FSM output does not satisfy its declared kind",
         )

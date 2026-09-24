@@ -6808,12 +6808,19 @@ fn prepare_match_node(
                 let source = input_reads[capture.input as usize];
                 match (capture.freeze_on_suspend, source) {
                     (true, ResidentReadLocation::Input(region)) => {
-                        ResidentReadLocation::LexicalInput(region)
+                        Ok(ResidentReadLocation::LexicalInput(region))
                     }
-                    _ => source,
+                    (false, ResidentReadLocation::Input(_)) | (true, _) => Ok(source),
+                    // A live capture has meaning only for an external input.
+                    // Scratch and state values are necessarily snapshots at
+                    // suspension, so accepting a false flag would silently
+                    // change the artifact's declared semantics.
+                    (false, _) => {
+                        Err(ResidentActivationError::UnsupportedControlLayout { node: owner })
+                    }
                 }
             })
-            .collect(),
+            .collect::<Result<Box<[_]>, _>>()?,
     })
 }
 

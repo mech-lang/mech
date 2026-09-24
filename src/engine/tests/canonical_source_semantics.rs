@@ -2067,6 +2067,18 @@ fn declared_fsm_guards_and_multi_value_states_use_one_control_owner() {
 }
 
 #[test]
+fn declared_fsm_lowers_structured_state_and_output_values_recursively() {
+    let source = "#Pair(left<u64>, right<u64>) => <(u64,u64)>\n  | :Start(left<u64>, right<u64>)\n  | :Later(pair<(u64,u64)>).\n#Pair(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Later((left, right))\n  :Later((left, right)) => (left, right).\n#Pair(20u64, 22u64)\n";
+    execute_document(
+        source,
+        [(
+            vec![],
+            ValueDataDraft::Tuple([ValueDataDraft::U64(20), ValueDataDraft::U64(22)].into()),
+        )],
+    );
+}
+
+#[test]
 fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
     let compiled = CanonicalSourceFrontend
@@ -2440,6 +2452,91 @@ fn declared_fsm_continuation_freezes_derived_capture_locations() {
             .unwrap(),
         ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(12.0))
     );
+}
+
+#[test]
+fn resident_activation_rejects_non_input_live_fsm_captures() {
+    use mech_engine::__resident::ResidentActivationError;
+
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\nderived := signal<f64> + 1\n#Captured(derived)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    fn mark_derived_capture_live(value: &mut serde_json::Value) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                if let Some(captures) = object
+                    .get_mut("Match")
+                    .and_then(|matched| matched.get_mut("captures"))
+                    .and_then(serde_json::Value::as_array_mut)
+                    && let Some(capture) = captures.iter_mut().find(|capture| {
+                        capture
+                            .as_array()
+                            .and_then(|fields| fields.get(2))
+                            .and_then(serde_json::Value::as_bool)
+                            == Some(true)
+                    })
+                {
+                    capture[2] = serde_json::Value::Bool(false);
+                    return true;
+                }
+                object.values_mut().any(mark_derived_capture_live)
+            }
+            serde_json::Value::Array(values) => values.iter_mut().any(mark_derived_capture_live),
+            _ => false,
+        }
+    }
+    assert!(mark_derived_capture_live(&mut graph));
+    sections.nodes = serde_json::to_vec(&graph).unwrap();
+    let artifact = mech_engine::decode_program_artifact_sections(&sections).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    assert!(matches!(
+        activate(
+            ReactiveInstanceId::new(0x540, 84),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        ),
+        Err(ResidentActivationError::UnsupportedControlLayout { .. })
+    ));
+}
+
+#[test]
+fn replacement_continuation_admission_counts_the_retained_frame() {
+    let source = "#Repeat(value<string>) => <string>\n  | :Start\n  | :Again.\n#Repeat(value) -> :Start\n  :Start ~> :Again\n  :Again ~> :Again.\n#Repeat(signal<string>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 85),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let payload = ["x".repeat((mech_core::RESIDENT_MAX_BYTES / 2 + 1024) as usize)];
+    let input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&payload),
+    }];
+
+    instance.turn(&input).unwrap();
+    let suspended_epoch = instance.published_epoch();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.turn(&[]).is_err());
+    assert_eq!(instance.published_epoch(), suspended_epoch);
+    assert!(instance.has_ready_continuation());
 }
 
 #[test]

@@ -196,6 +196,18 @@ impl crate::runtime::MechRuntime {
         max_inputs: usize,
     ) -> mech_core::MResult<ResidentHostDrainOutcome> {
         self.revalidate_active_resident_grants()?;
+        let continuation_ready = matches!(
+            &self.active_program,
+            super::ActiveProgramExecution::ResidentExternal(execution)
+                if execution.coordinator.instance().continuation_wakeup().is_some()
+        );
+        if continuation_ready {
+            // Continuations belong to the host turn that created them. Keep
+            // later packets queued until that turn has either drained or
+            // failed, so live input reads cannot observe a newer packet out
+            // of order.
+            self.drain_resident_continuations()?;
+        }
         let trigger_sources = if let super::ActiveProgramExecution::ResidentExternal(execution) =
             &self.active_program
         {
