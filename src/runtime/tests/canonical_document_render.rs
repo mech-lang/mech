@@ -1028,6 +1028,27 @@ fn canonical_pretty_text_spaces_formula_operators() {
 }
 
 #[test]
+fn canonical_pretty_text_spaces_record_and_map_separators() {
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document("record:={a:1,b:2}\nmap:={1:2,3:4}\n"))
+        .unwrap();
+    assert_eq!(formatted, "record := {a: 1, b: 2}\nmap := {1: 2, 3: 4}\n");
+}
+
+#[test]
+fn inert_diagram_fences_render_as_mermaid_containers() {
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document("```diagram\ngraph LR\n  A --> B\n```\n"))
+        .unwrap();
+    assert!(
+        html.contains("class='mech-diagram mermaid' data-mech-diagram"),
+        "{html}"
+    );
+    assert!(html.contains("graph LR"), "{html}");
+    assert!(!html.contains("data-language='diagram'"), "{html}");
+}
+
+#[test]
 fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
     let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
     let slots = CanonicalDocumentRenderer
@@ -1073,6 +1094,17 @@ fn served_particle_document_formats_its_annotated_compute_heading() {
         .unwrap();
     assert!(slots["TOC"].contains("particle-field"));
     assert!(slots["CONTENT"].contains("particle-field"));
+    assert!(!slots["TOC"].contains("@compute"), "{}", slots["TOC"]);
+    assert!(
+        slots["CONTENT"].contains("data-mech-annotations='@compute'"),
+        "{}",
+        slots["CONTENT"]
+    );
+    assert!(
+        slots["CONTENT"].contains("class='mech-section-annotations'>@compute</span>"),
+        "{}",
+        slots["CONTENT"]
+    );
 }
 
 #[test]
