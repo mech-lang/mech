@@ -5162,7 +5162,7 @@ fn build_plan(
         .collect::<Vec<_>>()
         .into_boxed_slice();
     let mut activation_turn_inputs = Vec::new();
-    let mut activation_update_owners = BTreeMap::<ActivatedNodeIndex, NodeId>::new();
+    let mut activation_update_owners = BTreeMap::<u32, NodeId>::new();
     for node in artifact.nodes() {
         let crate::ExecutableNodeBody::Activation(control) = &node.body else {
             continue;
@@ -5204,7 +5204,7 @@ fn build_plan(
             .collect::<Vec<_>>();
         for update in &update_nodes {
             if activation_update_owners
-                .insert(*update, node.node)
+                .insert(update.get(), node.node)
                 .is_some_and(|owner| owner != node.node)
             {
                 return Err(ResidentActivationError::InvalidDependency { node: node.node });
