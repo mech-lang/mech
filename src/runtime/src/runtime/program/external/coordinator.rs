@@ -732,7 +732,11 @@ impl ResidentExternalCoordinator {
         } = admission;
 
         let batch = if let Some(input_permit) = input_permit {
-            let batch = match self.capture_with_providers(host_updates, driverless_triggers_only) {
+            let batch = match self.capture_with_providers(
+                host_updates,
+                driverless_triggers_only,
+                initial_publication,
+            ) {
                 Ok(batch) => batch,
                 Err(failure) => {
                     let evidence = if let Some(prefix) = failure.captured_prefix {
@@ -1368,6 +1372,7 @@ impl ResidentExternalCoordinator {
         &self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
         driverless_triggers_only: bool,
+        initial_publication: bool,
     ) -> Result<CapturedInputBatch, CaptureFailure> {
         let mut facts: Vec<CapturedInputFact> = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
@@ -1458,7 +1463,8 @@ impl ResidentExternalCoordinator {
                 } else {
                     true
                 };
-                let trigger = eligible_provider_trigger
+                let trigger = !initial_publication
+                    && eligible_provider_trigger
                     && self
                         .instance()
                         .plan
