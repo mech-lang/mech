@@ -1,4 +1,4 @@
-// Generated from docs/design/grammar-audit/productions.tsv.
+// Generated from docs/design/grammar-audit/ports.tsv.
 // Do not edit by hand.
 
 use crate::document::RuleId;

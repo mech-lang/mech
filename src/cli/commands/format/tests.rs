@@ -225,9 +225,10 @@ fn raw_format_preserves_include_directives_without_expanding() {
     let source = read_format_source(&root.join("main.mec")).unwrap();
     let formatted = match source {
         MechSourceCode::String(text) => {
-            let tree = parser::parse(text.trim()).unwrap();
-            let mut formatter = Formatter::new();
-            formatter.format(&tree)
+            let document = canonical_document(&text).unwrap();
+            CanonicalDocumentRenderer
+                .format_pretty_text(&document.document())
+                .unwrap()
         }
         other => panic!("expected string source, got {other:?}"),
     };
@@ -244,6 +245,17 @@ fn raw_format_preserves_include_directives_without_expanding() {
         "formatted output was {formatted}"
     );
     std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn raw_format_normalizes_canonical_source_spacing() {
+    let document = canonical_document("answer  :=  40 +  2\nmessage:= \"a   b\"\n").unwrap();
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document.document())
+        .unwrap();
+    assert!(formatted.contains("answer := 40 + 2"), "{formatted}");
+    assert!(formatted.contains("message := \"a   b\""), "{formatted}");
+    assert_ne!(formatted, document.source().to_contiguous_string());
 }
 
 #[cfg(unix)]

@@ -24,27 +24,14 @@ fn canonical(input: &str) -> CanonicalRuleSnapshot {
         .expect("escaped-char has a canonical Phase 2A port")
 }
 
-fn legacy_accepts_whole(input: &str) -> bool {
-    let graphemes = mech_syntax::graphemes::init_tag(input);
-    mech_syntax::escaped_char(mech_syntax::ParseString::new(&graphemes)).is_ok_and(
-        |(remaining, _)| remaining.cursor == graphemes.len() && remaining.error_log.is_empty(),
-    )
-}
-
-fn assert_parity(input: &str, expected: bool, case: &str) {
+fn assert_acceptance(input: &str, expected: bool, case: &str) {
     let parsed = canonical(input);
     let canonical_accepts_whole = parsed.matched
         && parsed.diagnostics.is_empty()
         && parsed.consumed == parsed.source.full_range();
-    let legacy_accepts_whole = legacy_accepts_whole(input);
-
     assert_eq!(
-        legacy_accepts_whole, expected,
-        "legacy expectation for {case}: {input:?}"
-    );
-    assert_eq!(
-        canonical_accepts_whole, legacy_accepts_whole,
-        "canonical/legacy parity for {case}: {input:?}"
+        canonical_accepts_whole, expected,
+        "canonical escaped-character contract for {case}: {input:?}"
     );
     if !expected {
         assert_eq!(
@@ -56,23 +43,23 @@ fn assert_parity(input: &str, expected: bool, case: &str) {
 }
 
 #[test]
-fn every_nonalphabetic_escaped_value_matches_legacy_acceptance() {
+fn every_nonalphabetic_escaped_value_matches_the_canonical_contract() {
     for (family, values) in NONALPHABETIC_FAMILIES {
         for value in *values {
             let input = format!("\\{value}");
-            assert_parity(&input, true, family);
+            assert_acceptance(&input, true, family);
         }
     }
 }
 
 #[test]
-fn extended_nonalphabetic_graphemes_match_legacy_rejection() {
+fn extended_nonalphabetic_graphemes_are_rejected() {
     for (family, values) in NONALPHABETIC_FAMILIES {
         for value in *values {
             for (extension_name, extension) in GRAPHEME_EXTENSIONS {
                 let input = format!("\\{value}{extension}");
                 let case = format!("{family} with {extension_name}");
-                assert_parity(&input, false, &case);
+                assert_acceptance(&input, false, &case);
             }
         }
     }
@@ -80,5 +67,5 @@ fn extended_nonalphabetic_graphemes_match_legacy_rejection() {
 
 #[test]
 fn alphabetic_escaped_value_keeps_its_complete_grapheme() {
-    assert_parity("\\e\u{301}", true, "alphabetic combining grapheme");
+    assert_acceptance("\\e\u{301}", true, "alphabetic combining grapheme");
 }

@@ -43,7 +43,4 @@ pub use test_support::{
 };
 
 #[cfg(test)]
-pub(crate) use test_support::{PHASE_2G_RULES, PHASE_2H_RULES};
-
-#[cfg(test)]
 mod continuation_test_support;

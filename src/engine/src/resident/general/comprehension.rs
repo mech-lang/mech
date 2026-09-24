@@ -297,18 +297,18 @@ fn pattern_components_addressable(
             let SchemaBody::Enum { variants, .. } = enum_parent.body() else {
                 return true;
             };
-             let Some(variant) = variants.get(*ordinal as usize) else {
-                 return true;
-             };
-             match (payload.as_deref(), variant.payload.as_ref()) {
-                 (Some(crate::CollectionPattern::Wildcard), Some(_)) => true,
-                 (Some(pattern), Some(body)) => {
-                     canonical_component_schema_id(&enum_parent, body, schemas).is_some_and(
-                         |schema| pattern_components_addressable(pattern, schema, schemas),
-                     )
-                 }
-                 _ => true,
-             }
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return true;
+            };
+            match (payload.as_deref(), variant.payload.as_ref()) {
+                (Some(crate::CollectionPattern::Wildcard), Some(_)) => true,
+                (Some(pattern), Some(body)) => {
+                    canonical_component_schema_id(&enum_parent, body, schemas).is_some_and(
+                        |schema| pattern_components_addressable(pattern, schema, schemas),
+                    )
+                }
+                _ => true,
+            }
         }
         crate::CollectionPattern::Tuple(patterns) => {
             let SchemaBody::Tuple(items) = parent.body() else {

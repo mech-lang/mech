@@ -1,6 +1,7 @@
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use colored::*;
 use mech_core::*;
+use std::path::PathBuf;
 
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
@@ -57,6 +58,18 @@ fn render_config_event(badge: &str, event: &config::ConfigLoadEvent) {
         }
         config::ConfigLoadEvent::NotFound => {}
     }
+}
+
+fn expand_compilation_roots(paths: impl IntoIterator<Item = PathBuf>) -> MResult<Vec<PathBuf>> {
+    let mut roots = Vec::new();
+    for path in paths {
+        if path.is_dir() {
+            roots.extend(crate::cli::commands::run::collect_run_targets(&path)?);
+        } else {
+            roots.push(path);
+        }
+    }
+    Ok(roots)
 }
 
 fn render_resource_events(badge: &str, name: &str, events: &[ResourceEvent]) {
@@ -229,6 +242,7 @@ pub(crate) struct ServePlan {
     pub wasm_pkg: String,
     pub compute_backend: Option<String>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
+    pub uses_configured_paths: bool,
     pub runtime_config: mech_runtime::RuntimeConfig,
     pub host_config: Option<mech_browser::BrowserRuntimeInjectionConfig>,
     pub host_config_injection: Option<crate::HostAuthorityInjection>,
@@ -266,6 +280,7 @@ pub(crate) fn prepare(
         .with_compiler_loc());
     }
     let project_root = effective.project_root.clone();
+    let uses_configured_paths = effective.uses_configured_paths;
     let project_overlay = if effective.uses_configured_paths {
         let loaded = loaded_config.as_ref().ok_or_else(|| {
             MechError::new(
@@ -366,6 +381,7 @@ pub(crate) fn prepare(
         wasm_pkg: effective.wasm_pkg,
         compute_backend: effective.compute_backend,
         loaded_config,
+        uses_configured_paths,
         runtime_config,
         host_config,
         host_config_injection,
@@ -583,6 +599,17 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         options.config_shim_at_root,
     );
 
+    if options.uses_configured_paths
+        && let Some(loaded) = &options.loaded_config
+        && let Some(run) = &loaded.document.run
+    {
+        server.set_compilation_roots(expand_compilation_roots(
+            run.paths
+                .iter()
+                .map(|path| crate::resolve_config_path(&loaded.base_dir, path)),
+        )?)?;
+    }
+
     server.set_resource_backing_paths(
         html_shim_backing_paths,
         stylesheet_backing_paths,
@@ -699,6 +726,27 @@ mod tests {
             .grant_path(&mut ids, path, true, [FS_READ])
             .unwrap();
         authority
+    }
+
+    #[test]
+    fn configured_run_directory_expands_to_executable_source_roots() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("mech-serve-run-roots-{unique}"));
+        let sources = root.join("src");
+        std::fs::create_dir_all(sources.join("nested")).unwrap();
+        std::fs::write(sources.join("main.mec"), "answer := 1\n").unwrap();
+        std::fs::write(sources.join("nested/other.mec"), "answer := 2\n").unwrap();
+        std::fs::write(sources.join("notes.txt"), "not executable\n").unwrap();
+
+        let expanded = expand_compilation_roots([sources.clone()]).unwrap();
+        assert_eq!(
+            expanded,
+            [sources.join("main.mec"), sources.join("nested/other.mec")]
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     fn defaults(

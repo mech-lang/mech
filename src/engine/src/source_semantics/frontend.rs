@@ -4506,7 +4506,17 @@ impl SemanticBuilder {
             "a defined variable",
         )?;
         let stem = self.required(variable.stem(), variable.syntax(), "a variable stem")?;
-        let name = node_text(stem.syntax())?;
+        let name = match stem {
+            VariableStemSyntax::Identifier(identifier) => node_text(identifier.syntax())?,
+            VariableStemSyntax::Context(path) => {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/invalid-definition-target",
+                    message: "a variable definition cannot target a context-addressed resource"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(path.syntax()),
+                });
+            }
+        };
         if self.scope_definitions.contains(&name) {
             return Err(SourceSemanticError {
                 code: "source-semantics/variable-already-defined",
@@ -6887,12 +6897,10 @@ impl SemanticBuilder {
                 message: message.to_owned(),
                 anchor: SourceSemanticAnchor::for_node(syntax),
             })?;
+        // Once a cast plan exists, preserve a concrete conversion failure.
+        // Collapsing an out-of-range constant back into the generic annotation
+        // mismatch hides the checked-cast contract and its positioned cause.
         self.apply_resolved_conversion(value, &expected_type, &plan, syntax)
-            .map_err(|_| SourceSemanticError {
-                code,
-                message: message.to_owned(),
-                anchor: SourceSemanticAnchor::for_node(syntax),
-            })
     }
 
     #[cfg(test)]

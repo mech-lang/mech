@@ -6,14 +6,11 @@ mod document_outputs;
 #[cfg(feature = "semantic-compiler")]
 pub(crate) use document_outputs::{
     PROGRAM_OUTPUT_PUBLICATION_ANNOTATION, code_is_program_value, fenced_document_output_id,
-    fenced_document_output_occurrence_id,
 };
 #[cfg(feature = "semantic-compiler")]
 pub use document_outputs::{
-    RootDocumentOutputIdentity, configure_root_document_program_output_capture,
-    insert_root_document_program_output_capture, root_document_has_program_value,
-    root_document_inline_eval_count, root_document_output_identities, root_document_output_ids,
-    root_document_program_output_id,
+    configure_root_document_program_output_capture, insert_root_document_program_output_capture,
+    root_document_inline_eval_count, root_document_output_ids, root_document_program_output_id,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -25,6 +22,3 @@ pub use compiler_planning::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningLimits,
     CompilerPlanningProgram, ProgramArtifactCompilationProduct, ProgramCompilationProduct,
 };
-
-#[cfg(all(test, feature = "semantic-compiler"))]
-mod context_binding_tests;

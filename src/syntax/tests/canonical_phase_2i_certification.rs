@@ -80,22 +80,7 @@ fn certification_rows() -> Vec<CertificationRow> {
         .collect()
 }
 
-fn inventory_contracts() -> BTreeMap<String, (String, String, String, String)> {
-    let productions =
-        fs::read_to_string(repository_root().join("docs/design/grammar-audit/productions.tsv"))
-            .unwrap();
-    let productions = productions
-        .lines()
-        .skip(1)
-        .map(|line| {
-            let fields = line.split('\t').collect::<Vec<_>>();
-            assert_eq!(fields.len(), 17);
-            (
-                fields[1].to_owned(),
-                (fields[13].to_owned(), fields[14].to_owned()),
-            )
-        })
-        .collect::<BTreeMap<_, _>>();
+fn inventory_contracts() -> BTreeMap<String, (String, String)> {
     let schema = fs::read_to_string(
         repository_root().join("docs/design/grammar-audit/phase-2i-syntax-schema.tsv"),
     )
@@ -106,19 +91,22 @@ fn inventory_contracts() -> BTreeMap<String, (String, String, String, String)> {
         .map(|line| {
             let fields = line.split('\t').collect::<Vec<_>>();
             assert_eq!(fields.len(), 6);
-            let (spec, cases) = productions
-                .get(fields[0])
-                .unwrap_or_else(|| panic!("production inventory for {}", fields[0]));
             (
                 fields[0].to_owned(),
-                (
-                    fields[2].to_owned(),
-                    fields[3].to_owned(),
-                    spec.clone(),
-                    cases.clone(),
-                ),
+                (fields[2].to_owned(), fields[3].to_owned()),
             )
         })
+        .collect()
+}
+
+fn conformance_case_ids() -> BTreeSet<String> {
+    let cases =
+        fs::read_to_string(repository_root().join("src/syntax/tests/fixtures/grammar/cases.tsv"))
+            .expect("read canonical grammar cases");
+    cases
+        .lines()
+        .skip(1)
+        .map(|line| line.split('\t').next().unwrap().to_owned())
         .collect()
 }
 
@@ -862,7 +850,7 @@ fn recovery_evidence_uses_normalized_identity_and_preserves_structured_changes()
 
 fn assert_certified_inventory<'a>(
     names: impl IntoIterator<Item = &'a str>,
-    contracts: &BTreeMap<String, (String, String, String, String)>,
+    contracts: &BTreeMap<String, (String, String)>,
 ) {
     let names = names.into_iter().collect::<Vec<_>>();
     let unique = names.iter().copied().collect::<BTreeSet<_>>();
@@ -953,6 +941,7 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
     let contracts = inventory_contracts();
     assert_eq!(contracts.len(), 80);
     assert_certified_inventory(rows.iter().map(|row| row.name.as_str()), &contracts);
+    let case_ids = conformance_case_ids();
     let mut stale_hashes = Vec::new();
     for row in rows {
         let contract = contracts
@@ -960,8 +949,20 @@ fn certification_table_executes_every_direct_accept_reject_and_recovery_case() {
             .unwrap_or_else(|| panic!("Phase 2I schema row for {}", row.name));
         assert_eq!(&row.emission_policy, &contract.0, "{}", row.name);
         assert_eq!(&row.syntax_kind, &contract.1, "{}", row.name);
-        assert_eq!(&row.spec_location, &contract.2, "{}", row.name);
-        assert_eq!(&row.conformance_cases, &contract.3, "{}", row.name);
+        assert_eq!(
+            row.spec_location,
+            format!("docs/design/specification.mec::{}", row.name),
+            "{}",
+            row.name
+        );
+        assert_ne!(row.conformance_cases, "none", "{}", row.name);
+        for case in row.conformance_cases.split(',') {
+            assert!(
+                case_ids.contains(case),
+                "{} references unknown canonical conformance case {case}",
+                row.name
+            );
+        }
         let rule = canonical_rule_id(&row.name).expect("registered canonical rule");
         assert_eq!(canonical_rule_name(rule), Some(row.name.as_str()));
 

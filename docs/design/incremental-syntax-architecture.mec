@@ -16,8 +16,8 @@ canonical-grammar merge at
 `9511d4d0c9af7893d7230aa98c792f705d504565`.
 
 The authoritative canonical inventory is
-`docs/design/grammar-audit/productions.tsv`; it contains exactly 539 canonical
-rules. A deterministic developer script generates the checked-in
+`docs/design/grammar-audit/ports.tsv`; it contains exactly 539 canonical
+rules and their migration status. A deterministic developer script generates the checked-in
 `src/syntax/src/document/parser/canonical_rules.rs` registry. Production
 package builds read only that package-local registry; a repository test
 recomputes and verifies every ordered `(name, RuleId)` entry against the
@@ -33,9 +33,9 @@ The exact next executable implementation boundary is generated from the
 normative `ebnf:canonical` grammar graph in `docs/design/specification.mec` and
 recorded in `docs/design/grammar-audit/phase-2i-recursive-core.tsv`.
 `canonical-dependencies.tsv` records the generated canonical edges,
-`productions.tsv` retains inventory and implementation-derived call provenance,
-and `ports.tsv` defines migration status. The implementation call columns do
-not define the canonical grammar closure.
+and `ports.tsv` defines the rule inventory and migration status. The generated
+grammar edges, rather than implementation call structure, define the canonical
+grammar closure.
 
 Phase 2I-A adds only the generated dependency contract. Phase 2I-B freezes the
 representation of all 80 members in

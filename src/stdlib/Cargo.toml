@@ -99,7 +99,7 @@ standard_compiler = ["standard_source", "compiler"]
 
 full_runtime = ["runtime", "full_values", "full_operations"]
 full_source = ["full_runtime", "semantic-compiler"]
-full_compiler = ["full_source", "compiler"]
+full_compiler = ["full_source", "compiler", "mech-engine/resident-artifact"]
 
 standard_values = [
   "bool", "string", "f64",

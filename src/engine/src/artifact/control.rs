@@ -321,10 +321,9 @@ fn structurally_irrefutable_for_schema<V>(
             };
             fields.len() == items.len()
                 && items.iter().zip(fields).all(|(item, field)| {
-                    component_schema(expected, field)
-                        .is_some_and(|expected| {
-                            structurally_irrefutable_for_schema(schemas, item, &expected)
-                        })
+                    component_schema(expected, field).is_some_and(|expected| {
+                        structurally_irrefutable_for_schema(schemas, item, &expected)
+                    })
                 })
         }
         super::CollectionPattern::Array {
@@ -354,18 +353,17 @@ fn structurally_irrefutable_for_schema<V>(
                         )
                         .is_some_and(|expected| {
                             structurally_irrefutable_for_schema(schemas, rest, &expected)
-                        })
-                            || matches!(
-                                rest.as_ref(),
-                                super::CollectionPattern::Bind { schema, .. }
-                                if super::comprehension::array_rest_schema(
-                                    &element,
-                                    element.body(),
-                                    None,
-                                )
-                                .as_ref()
-                                .is_some_and(|expected| schemas.get(*schema) == Some(expected))
-                            ))
+                        }) || matches!(
+                            rest.as_ref(),
+                            super::CollectionPattern::Bind { schema, .. }
+                            if super::comprehension::array_rest_schema(
+                                &element,
+                                element.body(),
+                                None,
+                            )
+                            .as_ref()
+                            .is_some_and(|expected| schemas.get(*schema) == Some(expected))
+                        ))
                 })
         }
         super::CollectionPattern::Array {

@@ -1,7 +1,9 @@
 //! Resolver facts projected directly from the canonical retained document.
 
 use super::*;
-use crate::resolver::{SourceImportAlias, imports::classified_module_import};
+use crate::resolver::{
+    SourceImportAlias, classify_import_specifier, imports::classified_module_import,
+};
 use mech_syntax::document::{
     AstNode, CanonicalContextBaseSyntax, CanonicalContextCapabilityScopeSyntax,
     CanonicalModuleImportBodySyntax, CodeBlockSyntax, CodeFenceScope, ContextDeclarationSyntax,
