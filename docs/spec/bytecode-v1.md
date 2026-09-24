@@ -430,7 +430,9 @@ An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id
 A control body is `{"Match":{"scrutinee":input_ordinal,"partial":bool,"captures":[[input_ordinal,schema_id,freeze_on_suspend]],"arms":[...]}}`.
 The capture flag is Boolean. A true capture retains its lexical value across a
 suspension; a false capture reads the current external input when execution
-resumes. The flag participates in artifact identity.
+resumes. Resident activation rejects a false capture unless its resolved source
+is an external input; derived scratch and state captures must be frozen. The
+flag participates in artifact identity.
 The decoder requires revision 12 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.

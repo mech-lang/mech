@@ -886,6 +886,45 @@ fn failed_initial_continuation_drain_releases_the_program_slot() {
 }
 
 #[test]
+fn pending_continuations_are_drained_before_the_next_host_packet() {
+    let source = "@clock := test://clock/tick{:read(delta-seconds)}\ntick := @clock/delta-seconds\n#Deferred(value<f64>) => <f64>\n  | :Start(value<f64>)\n  | :One(value<f64>)\n  | :Two(value<f64>)\n  | :Three(value<f64>)\n  | :Done(value<f64>).\n#Deferred(value) -> :Start(value)\n  :Start(value) ~> :One(value)\n  :One(value) ~> :Two(value)\n  :Two(value) ~> :Three(value)\n  :Three(value) -> :Done(value)\n  :Done(value) => value.\n#Deferred(tick)\n";
+    let (mut runtime, _, _, _) = configured_external_runtime();
+    runtime
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    runtime.config.limits.max_steps_per_turn = Some(1);
+    let trigger = crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap();
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            trigger.clone(),
+            crate::RuntimeHostInputValue::F64(1.0),
+        ))
+        .unwrap();
+    let error = runtime.drain_resident_host_inputs(1).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            trigger,
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    let error = runtime.drain_resident_host_inputs(1).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+}
+
+#[test]
 fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())

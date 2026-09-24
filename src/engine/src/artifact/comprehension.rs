@@ -367,7 +367,7 @@ pub(super) fn validate_comprehension_inner(
                 "shape-preserving matrix collection must begin with its generator",
             ));
         };
-        if !super::control::structurally_irrefutable(pattern) {
+        if !super::control::structurally_irrefutable_shape(pattern) {
             return Err(invalid(
                 "shape-preserving matrix collection requires an irrefutable generator",
             ));
