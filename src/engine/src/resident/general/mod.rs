@@ -5071,6 +5071,20 @@ fn build_plan(
         .iter()
         .map(|output| output.source)
         .collect::<BTreeSet<_>>();
+    published.extend(artifact.outputs().iter().filter_map(|output| {
+        match artifact.slots()[output.source.get() as usize].producer {
+            ProducerReference::Output {
+                source: ArtifactSource::Slot(source),
+                ..
+            } => Some(source),
+            ProducerReference::Input(_)
+            | ProducerReference::NodeOutput { .. }
+            | ProducerReference::Output {
+                source: ArtifactSource::Constant(_),
+                ..
+            } => None,
+        }
+    }));
     published.extend(artifact.constraints().iter().flat_map(|constraint| {
         constraint.inputs.iter().filter_map(|source| match source {
             ArtifactSource::Slot(slot) => Some(*slot),
@@ -5094,6 +5108,14 @@ fn build_plan(
                 let ProducerReference::NodeOutput { node, .. } = state.producer else {
                     continue;
                 };
+                let Some(operation) = artifact.nodes()[node.get() as usize].as_operation() else {
+                    continue;
+                };
+                if operation.operation.module_path.as_ref() != ["core"]
+                    || operation.operation.operation_name != "assign"
+                {
+                    continue;
+                }
                 if node_inputs(artifact, node)?.first().copied() == Some(source) {
                     return Ok(ArtifactSource::Slot(state.slot));
                 }

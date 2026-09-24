@@ -681,7 +681,7 @@ fn validate_activation_trigger_writes(
 ) -> Result<(), ArtifactBuildError> {
     let mut activations_by_trigger = BTreeMap::<CellSlotId, BTreeSet<NodeId>>::new();
     for activation in &draft.nodes {
-        let super::ExecutableNodeBody::Activation(_) = &activation.body else {
+        let super::ExecutableNodeBody::Activation(control) = &activation.body else {
             continue;
         };
         let inputs = checked_range(
@@ -691,7 +691,9 @@ fn validate_activation_trigger_writes(
         )?;
         let Some(BindingDeclaration::Input {
             source: trigger, ..
-        }) = draft.bindings.get(inputs.start)
+        }) = draft
+            .bindings
+            .get(inputs.start + usize::from(control.scrutinee))
         else {
             continue;
         };
