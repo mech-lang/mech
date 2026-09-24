@@ -564,12 +564,18 @@ impl ServerSourceRegistry {
                 resolver.insert_resolution(referrer, &edge.specifier, target)?;
             }
         }
-        let mut compiler = crate::configured_browser_compiler_builder(
-            &self.compiler_hosts,
-            self.compiler_config.clone(),
-        )?
-        .source_resolver(resolver)
-        .build_compiler()?;
+        let mut compiler = if shim.contains("{{DOCUMENT_SCRIPT}}") && !root_uris.is_empty() {
+            Some(
+                crate::configured_browser_compiler_builder(
+                    &self.compiler_hosts,
+                    self.compiler_config.clone(),
+                )?
+                .source_resolver(resolver)
+                .build_compiler()?,
+            )
+        } else {
+            None
+        };
 
         for source in snapshot.sources.values() {
             let Some(path) = source.path.as_ref() else {
@@ -715,7 +721,9 @@ impl ServerSourceRegistry {
             );
             if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
                 let code = crate::browser_planning::compile_browser_document_bundle(
-                    &mut compiler,
+                    compiler
+                        .as_mut()
+                        .expect("live served roots construct a browser compiler"),
                     uri,
                     &document,
                     has_compute_host,
@@ -2657,6 +2665,36 @@ mod tests {
         assert!(registry.get_route("/particles.mec").is_some());
         assert!(registry.get_route("/source/particles.mec").is_some());
         assert!(registry.get_route("/code/particles.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn controller_free_shim_does_not_construct_browser_compiler() {
+        let root = temp_root("controller-free-unknown-provider");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let retained = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "arm".into(),
+                provider: "robot-arm".into(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            }],
+            ..ServerSourceRegistry::default()
+        };
+
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                "<html><body>{{CONTENT}}</body></html>",
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/main.mec").is_some());
+        assert!(registry.get_route("/source/main.mec").is_some());
+        assert!(registry.get_route("/code/main.mec").is_none());
         std::fs::remove_dir_all(root).unwrap();
     }
 
