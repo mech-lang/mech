@@ -394,16 +394,26 @@ fn read_location_depends_on_match(
         return true;
     }
     let producer = plan.steps.iter().position(|step| {
-        let region = match step {
-            ActivatedTurnStep::Kernel(node) => Some(node.write.region),
-            ActivatedTurnStep::Match(node) => Some(node.write.region),
-            ActivatedTurnStep::Recur(node) => Some(node.write.region),
-            ActivatedTurnStep::Comprehension(node) => Some(node.write.region),
+        let write = match step {
+            ActivatedTurnStep::Kernel(node) => Some(node.write),
+            ActivatedTurnStep::Match(node) => Some(node.write),
+            ActivatedTurnStep::Recur(node) => Some(node.write),
+            ActivatedTurnStep::Comprehension(node) => Some(node.write),
             ActivatedTurnStep::External(_)
             | ActivatedTurnStep::Suspend(_)
             | ActivatedTurnStep::Publish(_) => None,
         };
-        region.is_some_and(|region| location == ResidentReadLocation::Scratch(region))
+        write.is_some_and(|write| {
+            location
+                == match write.storage {
+                    ResidentStorageClass::Constant => ResidentReadLocation::Constant(write.region),
+                    ResidentStorageClass::State => ResidentReadLocation::State {
+                        slot: write.slot,
+                        region: write.region,
+                    },
+                    ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(write.region),
+                }
+        })
     });
     producer.is_some_and(|producer| {
         plan.topology.same_turn_downstream_masks[match_index]
