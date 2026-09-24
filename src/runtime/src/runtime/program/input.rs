@@ -153,6 +153,39 @@ pub struct ResidentProductionProbe {
     pub scene_effects_for_rejected_turns: u64,
 }
 
+impl ResidentProductionProbe {
+    pub(crate) fn observe_structural_delta(
+        &mut self,
+        before: super::external::ResidentExternalStructuralProbe,
+        after: super::external::ResidentExternalStructuralProbe,
+    ) {
+        self.scene_effects_before_publication =
+            self.scene_effects_before_publication.saturating_add(
+                after
+                    .effects_delivered_before_publication
+                    .saturating_sub(before.effects_delivered_before_publication)
+                    as u64,
+            );
+        self.scene_effects_for_rejected_turns =
+            self.scene_effects_for_rejected_turns.saturating_add(
+                after
+                    .effects_delivered_for_rejected_turns
+                    .saturating_sub(before.effects_delivered_for_rejected_turns)
+                    as u64,
+            );
+        self.scene_effects_prepared = self.scene_effects_prepared.saturating_add(
+            after
+                .scene_effects_prepared
+                .saturating_sub(before.scene_effects_prepared) as u64,
+        );
+        self.scene_effects_delivered = self.scene_effects_delivered.saturating_add(
+            after
+                .scene_effects_delivered
+                .saturating_sub(before.scene_effects_delivered) as u64,
+        );
+    }
+}
+
 impl crate::runtime::MechRuntime {
     pub fn resident_production_probe(&self) -> ResidentProductionProbe {
         self.resident_production_probe
@@ -259,41 +292,7 @@ impl crate::runtime::MechRuntime {
             )?;
             let after = execution.coordinator.structural_probe();
             self.resident_production_probe
-                .scene_effects_before_publication = self
-                .resident_production_probe
-                .scene_effects_before_publication
-                .saturating_add(
-                    after
-                        .effects_delivered_before_publication
-                        .saturating_sub(before.effects_delivered_before_publication)
-                        as u64,
-                );
-            self.resident_production_probe
-                .scene_effects_for_rejected_turns = self
-                .resident_production_probe
-                .scene_effects_for_rejected_turns
-                .saturating_add(
-                    after
-                        .effects_delivered_for_rejected_turns
-                        .saturating_sub(before.effects_delivered_for_rejected_turns)
-                        as u64,
-                );
-            self.resident_production_probe.scene_effects_prepared = self
-                .resident_production_probe
-                .scene_effects_prepared
-                .saturating_add(
-                    after
-                        .scene_effects_prepared
-                        .saturating_sub(before.scene_effects_prepared) as u64,
-                );
-            self.resident_production_probe.scene_effects_delivered = self
-                .resident_production_probe
-                .scene_effects_delivered
-                .saturating_add(
-                    after
-                        .scene_effects_delivered
-                        .saturating_sub(before.scene_effects_delivered) as u64,
-                );
+                .observe_structural_delta(before, after);
             match &turn {
                 crate::ResidentExternalTurnOutcome::Accepted { .. } => {
                     self.program_execution_info.resident_accepted_turns = self
