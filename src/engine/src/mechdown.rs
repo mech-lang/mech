@@ -344,10 +344,7 @@ pub fn section_element(
         .map(SpecializationInput::Cell)
 }
 
-fn next_fenced_document_output_id(
-    block: &FencedMechCode,
-    interpreter: &InterpreterExecution<'_>,
-) -> u64 {
+fn next_fenced_document_output_id(block: &FencedMechCode, interpreter: &Interpreter) -> u64 {
     let outputs = interpreter.out_values.borrow();
     let mut occurrence = 0_u64;
     loop {
