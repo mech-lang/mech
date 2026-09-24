@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24T16:48:00-04:00",
+  "purpose": "Same-machine toolchain provenance audit and independent-process variability reruns",
+  "platform": {
+    "model": "Mac mini Macmini9,1",
+    "chip": "Apple M1",
+    "cores": "8 (4 performance + 4 efficiency)",
+    "memory": "8 GB",
+    "operating_system": "macOS 15.6.1 (24G90)",
+    "architecture": "arm64"
+  },
+  "provenance_audit": {
+    "halide": {
+      "status": "installed",
+      "toolchain": "Homebrew halide 21.0.0_1",
+      "install_location": "/opt/homebrew/Cellar/halide/21.0.0_1",
+      "installed_at": "2026-08-31T18:15:47-04:00",
+      "note": "The formula supplies CMake metadata and libraries rather than a halide-config executable. Its install timestamp is the date of the retained Halide campaign."
+    },
+    "taichi": {
+      "status": "exact version reconstructed",
+      "toolchain": "Taichi 1.7.4, LLVM 15.0.7, Python 3.12.14",
+      "original_environment": "/tmp/mech-taichi-venv-20260831",
+      "cache_location": "~/.cache/taichi/ticache",
+      "cache_dates": [
+        "2026-08-30",
+        "2026-08-31",
+        "2026-09-01",
+        "2026-09-04"
+      ],
+      "note": "The original temporary virtual environment no longer exists, but the exact package version remains available and its compiled-kernel cache survives on this machine."
+    },
+    "mojo": {
+      "status": "release version reconstructed; benchmarked nightly retained as evidence",
+      "archived_toolchain": "Mojo 1.1.0.dev2026090305 (74367f86), MAX 26.6.0.dev2026090305",
+      "current_toolchain": "Mojo 1.1.0 (8189361e)",
+      "original_environment": "/tmp/mech-mojo-venv.AJOcql",
+      "cache_location": "~/.cache/modular/.mojo_cache/mojo/transform/1.1.0.dev20260903054c4c447f55553144a162e44dfc327b62-production",
+      "surviving_artifacts": [
+        "compiled native Metal benchmark binary",
+        "Mojo compiler cache",
+        "MAX and modular wheel downloads"
+      ],
+      "note": "The exact nightly compiler executable lived in a temporary environment and is gone. The cache, compiled binary, raw samples, build command, compiler commit, checksum, and same-machine metadata remain. The current release rerun is diagnostic and is not substituted for the nightly result."
+    }
+  },
+  "measurement_policy": {
+    "summary": "median",
+    "uncertainty": "observed minimum to maximum",
+    "unit": "million EKF turns per second",
+    "process_model": "independent process runs",
+    "inference": "descriptive only; no confidence interval or significance test is claimed"
+  },
+  "reruns": {
+    "halide_native_metal": {
+      "source": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+      "source_sha256": "b4ab84bee736b3251e0f1e33b7c6b8bf3e5d915f10f6551f304c3f3687dcc0a1",
+      "toolchain": "Homebrew halide 21.0.0_1",
+      "exact_archived_toolchain": true,
+      "workload": "500,000 filters x 40 turns; synchronized after every turn",
+      "discarded_warmup_processes_per_mode": 1,
+      "checked": {
+        "samples_million_turns_per_second": [
+          144.227258545,
+          144.652949295,
+          148.784430828,
+          149.030973413,
+          145.949757759,
+          145.388504180,
+          149.995219277
+        ],
+        "median_million_turns_per_second": 145.949757759,
+        "observed_range_million_turns_per_second": [144.227258545, 149.995219277],
+        "checksum": 133818339.74858701,
+        "fault_lanes": 0
+      },
+      "unchecked": {
+        "samples_million_turns_per_second": [
+          372.050052340,
+          374.365039457,
+          369.824475202,
+          382.487181803,
+          387.066498102,
+          369.878910892,
+          374.956350394
+        ],
+        "median_million_turns_per_second": 374.365039457,
+        "observed_range_million_turns_per_second": [369.824475202, 387.066498102],
+        "checksum": 133818339.74858701
+      }
+    },
+    "taichi_optimized_native_metal": {
+      "source": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+      "source_sha256": "62f21e51665b29a5f2ef5b6dea428bb39ad8df09bc263b35675a048868d7ecd1",
+      "toolchain": "Taichi 1.7.4, LLVM 15.0.7, Python 3.12.14",
+      "exact_archived_toolchain": true,
+      "workload": "500,000 filters x 40 turns; synchronized after every turn; Metal block size 32",
+      "warmup": "five turns inside each independent process before state reset and timing",
+      "checked": {
+        "samples_million_turns_per_second": [
+          262.924089708,
+          259.783977363,
+          262.203384650,
+          260.644761279,
+          261.846793342,
+          261.328737758,
+          263.267012006
+        ],
+        "median_million_turns_per_second": 261.846793342,
+        "observed_range_million_turns_per_second": [259.783977363, 263.267012006],
+        "checksum": 133818339.995951742,
+        "faults": 0
+      },
+      "unchecked": {
+        "samples_million_turns_per_second": [
+          417.028665128,
+          420.415368751,
+          417.604824604,
+          421.693684363,
+          414.760642732,
+          419.697811854,
+          426.895482532
+        ],
+        "median_million_turns_per_second": 419.697811854,
+        "observed_range_million_turns_per_second": [414.760642732, 426.895482532],
+        "checksum": 133818339.995951742
+      }
+    },
+    "mojo_scalar": {
+      "source": "benchmarks/archive/compute/parallel-ekf/mojo_scalar.mojo",
+      "source_sha256": "bb53d93e5cd8068bc36ec7957c0bb2db54161870b7c525dc664cf0666f85a8fb",
+      "toolchain": "Mojo 1.1.0 (8189361e)",
+      "exact_archived_toolchain": false,
+      "archived_toolchain": "Mojo 1.1.0.dev2026090305 (74367f86)",
+      "workload": "10,000 filters x 20 turns; one CPU worker",
+      "discarded_warmup_processes_per_mode": 1,
+      "checked": {
+        "samples_million_turns_per_second": [
+          18.667164458,
+          19.184652278,
+          19.314340898,
+          19.319938176,
+          19.314340898,
+          19.301293187,
+          19.305019305
+        ],
+        "median_million_turns_per_second": 19.305019305,
+        "observed_range_million_turns_per_second": [18.667164458, 19.319938176],
+        "checksum": 2682056.0740915183,
+        "faults": 0
+      },
+      "unchecked": {
+        "samples_million_turns_per_second": [
+          21.956306949,
+          24.207213750,
+          24.216006780,
+          24.216006780,
+          20.835503698,
+          24.213075061,
+          24.204284158
+        ],
+        "median_million_turns_per_second": 24.207213750,
+        "observed_range_million_turns_per_second": [20.835503698, 24.216006780],
+        "checksum": 2682056.0740915183
+      },
+      "note": "This current-release rerun demonstrates that the source still builds and produces the recorded checksum. It is not an exact performance reproduction of the archived nightly."
+    }
+  }
+}

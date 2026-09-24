@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-04",
+  "benchmark": "parallel-ekf",
+  "platform": {
+    "model": "Mac mini Macmini9,1",
+    "chip": "Apple M1",
+    "cores": "8 (4 performance + 4 efficiency)",
+    "memory": "8 GB",
+    "os": "macOS 15.6.1",
+    "architecture": "arm64",
+    "gpu": "integrated Apple M1 GPU, Metal 3"
+  },
+  "toolchain": {
+    "rust": "repository release toolchain",
+    "features": "native,jit,metal-native",
+    "backend": "direct Metal command encoder; no WGPU device or session"
+  },
+  "workload": {
+    "instances": 500000,
+    "turns": 40,
+    "state": "f32",
+    "atan2": "exact target Metal atan2",
+    "metal_threadgroup_size": 64,
+    "warmup": "five discarded turns; timed session is recreated from the initial state, then remains resident for 40 timed turns",
+    "timed_region": "one command buffer and host wait per resident turn",
+    "validation": "finite state/covariance, positive covariance diagonal, covariance symmetry; reject-before-store"
+  },
+  "rows": {
+    "Mech direct Metal generated from generic scalar IR": {
+      "checked": {
+        "samples_million_ekf_turns_per_second": [420.404, 401.943, 423.895, 422.702, 428.966],
+        "median_million_ekf_turns_per_second": 422.702
+      },
+      "unchecked": {
+        "samples_million_ekf_turns_per_second": [422.463, 365.737, 419.523, 422.187, 421.651],
+        "median_million_ekf_turns_per_second": 421.651
+      },
+      "maximum_scalar_absolute_error": 0.0001221,
+      "faults": 0,
+      "state_reset_after_warmup": true
+    },
+    "Mojo native Metal reference": {
+      "checked_million_ekf_turns_per_second": 244.493,
+      "unchecked_million_ekf_turns_per_second": 405.047,
+      "source": "../mojo_metal.mojo"
+    }
+  },
+  "notes": [
+    "The Mech kernel is the generic compiler artifact from hosts/gpu/fixtures/ekf-kernel.mec; no EKF-specific operation is used.",
+    "WGSL is used only as the backend-neutral interchange for Naga WGSL-to-MSL translation. No WGPU runtime or command path is created in MECH_METAL_ONLY mode.",
+    "The timed session is recreated after warmup, matching the Mojo control's fresh-state boundary. Source/artifact/scalarization, Metal pipeline creation, warmup, and final readback are outside the resident throughput timer.",
+    "The direct checked and unchecked outputs were compared with an independently executed scalar Mech reference after 40 turns; the maximum absolute error was 1.221e-4.",
+    "The default Mech scalar IR emits explicit fused multiply-add expressions. The opt-in MECH_AUDIT_DISABLE_FMA control measured 389.535 M/s checked and 390.424 M/s unchecked in one run; it is retained as an arithmetic-fairness audit, not as the default Mech lane.",
+    "The Mojo reference was built with --fp-mode contract=off. Its checked loop also enqueues a fault-buffer memset and maps the fault buffer after every turn, while this direct Metal session clears and reads a shared two-word status buffer directly. The 422.702 versus 244.493 checked result therefore is not an isolated language/kernel comparison until those compiler and status-path boundaries are matched.",
+    "The generic optimizer retains zero products so 0 * NaN and 0 * Inf remain observable to integrity predicates; this is covered by a unit test."
+  ],
+  "commands": [
+    "cargo build -p mech-gpu --release --features native,jit,metal-native --example parallel_ekf_benchmark",
+    "MECH_METAL_ONLY=1 ./target/release/examples/parallel_ekf_benchmark 500000 40 1 40"
+  ],
+  "audit_controls": {
+    "no_fma_command": "MECH_AUDIT_DISABLE_FMA=1 MECH_METAL_ONLY=1 ./target/release/examples/parallel_ekf_benchmark 500000 40 1 40",
+    "no_fma_sample_million_ekf_turns_per_second": {
+      "checked": 389.535,
+      "unchecked": 390.424
+    },
+    "purpose": "isolates arithmetic contraction from the checked/status transport path; not a replacement for the default lane"
+  }
+}

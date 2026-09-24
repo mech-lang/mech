@@ -35,10 +35,15 @@
       153.849260418
     ],
     "median_million_turns_per_second": 148.056115370,
+    "observed_range_million_turns_per_second": [
+      110.794985933,
+      154.772307764
+    ],
     "archived_median_million_turns_per_second": 146.508742,
     "difference_from_archived_percent": 1.0562,
     "checksum": 133818339.815538272,
     "faults": 0,
-    "notes": "The first two retained samples were slower than the last three; the five-sample median remains within 1.1% of the archived median and the checksum is identical in every sample."
+    "classification": "compatibility diagnostic; not performance corroboration",
+    "notes": "The first two retained samples were much slower than the last three. The checksum is identical in every sample, but the 29.7% observed range makes this unsuitable as a precise performance comparison."
   }
 }
