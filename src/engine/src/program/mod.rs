@@ -6,6 +6,7 @@ mod document_outputs;
 #[cfg(feature = "semantic-compiler")]
 pub(crate) use document_outputs::{
     PROGRAM_OUTPUT_PUBLICATION_ANNOTATION, code_is_program_value, fenced_document_output_id,
+    fenced_document_output_occurrence_id,
 };
 #[cfg(feature = "semantic-compiler")]
 pub use document_outputs::{
