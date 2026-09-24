@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "title": "IROS 2026 parallel EKF benchmark package",
   "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
   "evidence_revisions": {
@@ -65,22 +65,28 @@
   },
   "aot_rust_dylib_comparison": {
     "workload": "10,000 filters x 200 turns after 100 untimed warmup turns and reset",
-    "execution": "one checked scalar thread through the same native turn ABI and minimal loader",
+    "execution": "one checked host thread through one minimal loader; scalar Mech and Rust share AoS layout, while SIMD AOT uses pre-packed four-lane state",
     "summary_statistic": "median",
     "uncertainty_statistic": "observed minimum to maximum",
     "inference": "descriptive only; no confidence interval or significance test",
     "retained_process_runs_per_implementation": 7,
-    "mech_throughput_million_turns_per_second": 14.67233,
-    "mech_throughput_observed_range": [14.380519, 14.681777],
-    "rust_throughput_million_turns_per_second": 20.789444,
-    "rust_throughput_observed_range": [20.324007, 20.804619],
-    "rust_throughput_advantage_percent": 41.69,
-    "mech_library_bytes": 33544,
+    "scalar_aot_throughput_million_turns_per_second": 14.67142,
+    "scalar_aot_throughput_observed_range": [14.45794, 14.67902],
+    "simd_aot_throughput_million_turns_per_second": 34.863147,
+    "simd_aot_throughput_observed_range": [34.847126, 34.926643],
+    "rust_throughput_million_turns_per_second": 21.120718,
+    "rust_throughput_observed_range": [21.09738, 21.128974],
+    "rust_advantage_over_scalar_aot_percent": 43.96,
+    "simd_aot_advantage_over_rust_percent": 65.07,
+    "scalar_aot_library_bytes": 33544,
+    "simd_aot_library_bytes": 33864,
     "rust_library_bytes": 50016,
-    "mech_library_size_reduction_percent": 32.93,
-    "mech_median_peak_rss_bytes": 2834432,
-    "rust_median_peak_rss_bytes": 2834432,
-    "maximum_final_state_absolute_error": 0.0004043579102,
+    "simd_aot_library_size_reduction_vs_rust_percent": 32.29,
+    "scalar_aot_median_peak_rss_bytes": 2818048,
+    "simd_aot_median_peak_rss_bytes": 2818048,
+    "rust_median_peak_rss_bytes": 2818048,
+    "scalar_aot_maximum_final_state_absolute_error_vs_rust": 0.0004043579102,
+    "simd_aot_maximum_final_state_absolute_error_vs_rust": 0.0004081726074,
     "evidence": "benchmarks/iros-2026/results/apple-m1-aot-vs-rust-dylib-2026-09-24.json"
   },
   "post_charts": {
@@ -97,13 +103,14 @@
     },
     "mech_backends": {
       "file": "benchmarks/iros-2026/charts/post-mech-backend-stack.svg",
-      "selection": "same high-level Mech EKF with checked per-turn publication across retained scalar, JIT, SIMD, WGPU, and direct Metal backends",
+      "selection": "same high-level Mech EKF with checked per-turn publication across retained scalar, JIT, scalar AOT, SIMD AOT, SIMD/JIT, WGPU, and direct Metal backends",
       "error_bars": "observed minimum to maximum; every retained process sample is shown",
       "rows_median_million_turns_per_second": {
         "Direct Metal GPU": 422.702,
         "WGPU on Metal": 152.972,
         "SIMD/JIT CPU · 8 workers": 104.783,
         "SIMD/JIT CPU · 1 worker": 41.496,
+        "Cranelift SIMD AOT CPU": 34.863147,
         "Cranelift JIT CPU": 14.618,
         "Cranelift AOT CPU": 14.593,
         "Scalar artifact evaluator": 1.032
@@ -149,7 +156,7 @@
       "family": "Rust",
       "strategy": "hand-specialized scalar dynamic library using the Mech AOT turn ABI",
       "path": "benchmarks/iros-2026/rust-dylib/rust-ekf-dylib.rs",
-      "sha256": "02f185dcc5679c326b1561329937bb35f3471ded2857fbbc55888cb449cce22d"
+      "sha256": "5e32fcc5e2b17bf923718860756b233d4da145b20cff48a20d0c18ec51ccc9a7"
     },
     {
       "family": "NumPy/Numba",

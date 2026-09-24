@@ -45,6 +45,7 @@ def sample_offsets(count: int) -> list[int]:
         3: [-8, 0, 8],
         4: [-9, -3, 3, 9],
         5: [-10, -5, 0, 5, 10],
+        7: [-12, -8, -4, 0, 4, 8, 12],
     }
     return offsets[count]
 
@@ -159,6 +160,11 @@ def render_mech_backends() -> None:
     aot = json.loads(
         (HERE / "results/apple-m1-mech-aot-2026-09-24.json").read_text(encoding="utf-8")
     )
+    dylib = json.loads(
+        (HERE / "results/apple-m1-aot-vs-rust-dylib-2026-09-24.json").read_text(
+            encoding="utf-8"
+        )
+    )
     runtime_rows = {row["label"]: row for row in runtime["rows"]}
     rows = [
         Row(
@@ -187,6 +193,13 @@ def render_mech_backends() -> None:
             simd["rows"]["checked"]["throughput_millions"],
         ),
         Row(
+            "Cranelift SIMD AOT CPU",
+            "10k filters × 200 turns",
+            "#f4c430",
+            dylib["rows"]["Mech Cranelift SIMD AOT"]
+            ["throughput_million_ekf_turns_per_second"]["samples"],
+        ),
+        Row(
             "Cranelift JIT CPU",
             "10k filters × 20 turns",
             "#f4c430",
@@ -211,9 +224,9 @@ def render_mech_backends() -> None:
         ),
     ]
 
-    width, height = 1600, 910
+    width, height = 1600, 988
     left, right, top = 430, 165, 160
-    axis_y = 720
+    axis_y = 798
     chart_width = width - left - right
     minimum, maximum = 0.5, 650.0
     log_min = math.log10(minimum)
@@ -224,11 +237,11 @@ def render_mech_backends() -> None:
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="mech-title mech-desc">',
-        '<title id="mech-title">One Mech EKF across seven execution backends</title>',
-        '<desc id="mech-desc">Seven checked execution backends for the same high-level Mech EKF on one Apple M1. Every retained process sample is shown with its median and observed minimum-to-maximum range. A logarithmic scale keeps the scalar and GPU backends visible together.</desc>',
+        '<title id="mech-title">One Mech EKF across eight execution backends</title>',
+        '<desc id="mech-desc">Eight checked execution backends for the same high-level Mech EKF on one Apple M1. Every retained process sample is shown with its median and observed minimum-to-maximum range. A logarithmic scale keeps the scalar and GPU backends visible together.</desc>',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.minor-grid{stroke:#1a2538;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:18px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker{stroke:#e8edf5;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>',
-        '<text x="42" y="48" font-size="28" font-weight="700">One Mech EKF across seven execution backends</text>',
+        '<text x="42" y="48" font-size="28" font-weight="700">One Mech EKF across eight execution backends</text>',
         '<text x="42" y="80" class="muted" font-size="16">Checked publication after every turn · same Apple M1 · raw retained process samples · workload shown per row</text>',
         '<text x="42" y="112" class="muted" font-size="13">Circles are samples; diamonds are medians; whiskers are observed min–max ranges, not confidence intervals. Logarithmic throughput scale.</text>',
     ]
@@ -281,8 +294,8 @@ def render_mech_backends() -> None:
         [
             f'<line x1="{left}" y1="{axis_y}" x2="{width - right}" y2="{axis_y}" class="grid"/>',
             f'<text x="{left + chart_width / 2:.1f}" y="{axis_y + 58}" text-anchor="middle" class="muted" font-size="15">million EKF turns per second (log scale)</text>',
-            '<text x="42" y="831" class="footnote">Rows combine retained same-machine campaigns. Workload size changes where needed; all values are normalized throughput.</text>',
-            '<text x="42" y="857" class="footnote">Read this figure as backend reach, not a fine ranking. Small cross-row gaps are not performance claims.</text>',
+            '<text x="42" y="909" class="footnote">Rows combine retained same-machine campaigns. Workload size changes where needed; all values are normalized throughput.</text>',
+            '<text x="42" y="935" class="footnote">Read this figure as backend reach, not a fine ranking. Small cross-row gaps are not performance claims.</text>',
             '</svg>',
         ]
     )

@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generated_at": "2026-09-24",
-  "implementation_commit": "b10593b75ec8b9283ae33e4ac330c00dda9957d7",
+  "implementation_commit": "dab98af1deb65d53cb9f88ee057f34ceb2e74609",
   "platform": {
     "model": "Mac mini Macmini9,1",
     "chip": "Apple M1",
@@ -16,7 +16,7 @@
     "linker": "Apple clang 17.0.0 (clang-1700.3.19.1)",
     "rust_library_build": "rustc --edition=2024 --crate-type cdylib -C opt-level=3 -C target-cpu=native -C codegen-units=1",
     "runner_build": "rustc --edition=2024 -C opt-level=3 -C target-cpu=native -C codegen-units=1",
-    "measurement_command": "python3 benchmarks/iros-2026/measure_dylib_comparison.py target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib --samples 7 --instances 10000 --turns 200"
+    "measurement_command": "python3 benchmarks/iros-2026/measure_dylib_comparison.py target/mech-aot-final-v2/mech-0a9d1856e310433b75da7d519ccc856597d751f7af345a38c70d43d289ec24fd.dylib --mech-simd-dylib target/mech-aot-final-v2/mech-simd-633e21301b05367c3cadd6c59b1fdbdcf102cd909a23acd1655f897aeb3045db.dylib --samples 7 --instances 10000 --turns 200"
   },
   "configuration": {
     "instances": 10000,
@@ -24,66 +24,86 @@
     "untimed_warmup_turns": 100,
     "measured_processes_per_library": 7,
     "measurement_order": "Alternated by sample to reduce ordering bias.",
-    "abi": "Both libraries export mech_fixed_numeric_turn and receive identical five-input and two-state pointer tables from the same minimal loader.",
-    "execution_strategy": "One checked scalar thread with ping-pong publication after every turn.",
-    "timed_region": "Repeated checked turns through the identical four-argument native ABI; dlopen, allocation, input construction, warmup, reset, and reporting are excluded.",
+    "abi": "All rows use the same four-argument pointer-table ABI shape. Scalar Mech and Rust export mech_fixed_numeric_turn over AoS state; SIMD AOT exports mech_fixed_numeric_simd_turn over pre-packed four-lane state.",
+    "execution_strategy": "One host thread with checked ping-pong publication after every turn. SIMD AOT evaluates four filters per generated vector body; Rust relies on LLVM local SLP within one hand-specialized scalar filter loop.",
+    "timed_region": "Repeated checked turns; dlopen, allocation, input construction, SIMD packing, warmup, reset, and reporting are excluded.",
     "memory_metric": "Maximum resident set size reported by /usr/bin/time -l for a fresh minimal-loader process; this is whole-process peak RSS, not private library pages.",
     "sample_precision": "The common loader printed throughput to six decimal places."
   },
   "sources": {
     "mech": "benchmarks/archive/compute/parallel-ekf/source-size-audit/selected/ekf.mec",
     "rust_library": "benchmarks/iros-2026/rust-dylib/rust-ekf-dylib.rs",
-    "rust_library_sha256": "02f185dcc5679c326b1561329937bb35f3471ded2857fbbc55888cb449cce22d",
+    "rust_library_sha256": "5e32fcc5e2b17bf923718860756b233d4da145b20cff48a20d0c18ec51ccc9a7",
     "common_runner": "benchmarks/iros-2026/rust-dylib/dylib-runner.rs",
-    "common_runner_sha256": "2049f6fdcdffb876fc9618d2707f531d2bb6dc72baf981fd517e2dd75c244168"
+    "common_runner_sha256": "023707368fc205dc064c384d081f52caf2d2aec195e0863a528e0b23d61d8b3d",
+    "simd_math_helper": "hosts/gpu/src/batched/aot_math.c",
+    "simd_math_helper_sha256": "e2d418fbeb0d7d88590d764236a109ccf904bc634dbd2bae9c0358eba3dd9816"
   },
   "validation": {
-    "maximum_final_state_absolute_error": 0.0004043579102,
+    "scalar_aot_maximum_final_state_absolute_error_vs_rust": 0.0004043579102,
+    "simd_aot_maximum_final_state_absolute_error_vs_rust": 0.0004081726074,
     "faults": 0,
-    "note": "Both libraries implement the same checked EKF equations and ABI. The complete final states agree within 4.05e-4 after 200 turns; ordinary compiler reassociation accounts for the small f32 difference."
+    "note": "All libraries implement the same checked EKF equations. The complete final states agree within 4.09e-4 after 200 turns; ordinary compiler reassociation accounts for the small f32 differences."
   },
   "rows": {
     "Mech Cranelift AOT": {
       "throughput_million_ekf_turns_per_second": {
-        "samples": [14.67233, 14.664979, 14.675228, 14.680295, 14.681777, 14.380519, 14.647861],
-        "median": 14.67233,
-        "observed_range": [14.380519, 14.681777]
+        "samples": [14.678931, 14.660347, 14.67902, 14.676013, 14.67142, 14.67055, 14.45794],
+        "median": 14.67142,
+        "observed_range": [14.45794, 14.67902]
       },
       "maximum_resident_set_bytes": {
-        "samples": [2949120, 2834432, 2834432, 2834432, 2834432, 2949120, 2949120],
-        "median": 2834432,
-        "observed_range": [2834432, 2949120]
+        "samples": [3014656, 2818048, 2818048, 2818048, 2818048, 2818048, 2932736],
+        "median": 2818048,
+        "observed_range": [2818048, 3014656]
       },
       "checksums": [2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952],
       "faults": [0, 0, 0, 0, 0, 0, 0],
-      "library": "target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib",
+      "library": "target/mech-aot-final-v2/mech-0a9d1856e310433b75da7d519ccc856597d751f7af345a38c70d43d289ec24fd.dylib",
       "library_bytes": 33544,
-      "library_sha256": "e6cd0d2eebcf8e867e762c43b3b79c6e9859c48503c9eda9ee184c002ea1f8fb"
+      "library_sha256": "7e1edcc4769c6cdb27e6f53f913e887c1c9819ce4f1106018fd663d8a2cf22bc"
     },
     "Rust cdylib": {
       "throughput_million_ekf_turns_per_second": {
-        "samples": [20.324007, 20.779077, 20.795722, 20.794596, 20.804619, 20.789444, 20.788013],
-        "median": 20.789444,
-        "observed_range": [20.324007, 20.804619]
+        "samples": [21.09738, 21.110324, 21.11585, 21.122419, 21.128974, 21.120718, 21.123302],
+        "median": 21.120718,
+        "observed_range": [21.09738, 21.128974]
       },
       "maximum_resident_set_bytes": {
-        "samples": [2965504, 2834432, 2834432, 2834432, 2834432, 2834432, 2834432],
-        "median": 2834432,
-        "observed_range": [2834432, 2965504]
+        "samples": [2818048, 2818048, 2818048, 2818048, 2818048, 2818048, 2916352],
+        "median": 2818048,
+        "observed_range": [2818048, 2916352]
       },
       "checksums": [2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925],
       "faults": [0, 0, 0, 0, 0, 0, 0],
       "library": "target/iros-rust-dylib/librust_ekf.dylib",
       "library_bytes": 50016,
-      "library_sha256": "35bf1fcfe34921a4634490c0d928ffc7920b27500991745ef6c332fb70748aab"
+      "library_sha256": "797cd587914ea925f1b9c7283c3721772948962ffa714e32f4e191be4fb83e82"
+    },
+    "Mech Cranelift SIMD AOT": {
+      "throughput_million_ekf_turns_per_second": {
+        "samples": [34.852845, 34.858692, 34.87447, 34.871404, 34.847126, 34.863147, 34.926643],
+        "median": 34.863147,
+        "observed_range": [34.847126, 34.926643]
+      },
+      "maximum_resident_set_bytes": {
+        "samples": [2818048, 2818048, 2818048, 2818048, 2818048, 2818048, 2818048],
+        "median": 2818048,
+        "observed_range": [2818048, 2818048]
+      },
+      "checksums": [2653979.262719158, 2653979.262719158, 2653979.262719158, 2653979.262719158, 2653979.262719158, 2653979.262719158, 2653979.262719158],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "library": "target/mech-aot-final-v2/mech-simd-633e21301b05367c3cadd6c59b1fdbdcf102cd909a23acd1655f897aeb3045db.dylib",
+      "library_bytes": 33864,
+      "library_sha256": "fb14e7396252f934b5fbb86639bcb33f063193feae8fe86f83877a3c72437323"
     }
   },
   "comparison": {
-    "rust_throughput_advantage_percent": 41.69,
-    "mech_throughput_deficit_percent": 29.42,
-    "mech_library_size_reduction_percent": 32.93,
-    "rust_to_mech_library_size_ratio": 1.491,
-    "median_peak_rss_difference_bytes": 0,
-    "interpretation": "Rust is clearly faster in this hand-specialized scalar control, while the generated Mech library is smaller. Peak RSS medians are identical at the precision of /usr/bin/time and the observed ranges overlap, so the samples do not support a memory-use difference."
+    "rust_advantage_over_scalar_aot_percent": 43.96,
+    "simd_aot_advantage_over_rust_percent": 65.07,
+    "simd_aot_advantage_over_scalar_aot_percent": 137.63,
+    "simd_aot_library_size_reduction_vs_rust_percent": 32.29,
+    "simd_aot_median_peak_rss_difference_vs_rust_bytes": 0,
+    "interpretation": "The optimized Rust scalar control remains 43.96% faster than scalar AOT. Vectorized AOT is 65.07% faster than Rust and 137.63% faster than scalar AOT in this campaign. Both Mech libraries are about one-third smaller than Rust. Median whole-process peak RSS is identical and the observed ranges overlap, so seven runs do not establish a memory difference."
   }
 }

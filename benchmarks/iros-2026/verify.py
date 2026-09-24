@@ -125,11 +125,16 @@ def main() -> None:
     assert dylib["configuration"]["measured_processes_per_library"] == dylib_summary[
         "retained_process_runs_per_implementation"
     ]
-    for key in ("rust_library", "common_runner"):
+    for key in ("rust_library", "common_runner", "simd_math_helper"):
         path = ROOT / dylib["sources"][key]
         if sha256(path) != dylib["sources"][f"{key}_sha256"]:
             raise AssertionError(f"dynamic-library comparison source hash changed: {path}")
-    for label, prefix in (("Mech Cranelift AOT", "mech"), ("Rust cdylib", "rust")):
+    dylib_rows = (
+        ("Mech Cranelift AOT", "scalar_aot"),
+        ("Mech Cranelift SIMD AOT", "simd_aot"),
+        ("Rust cdylib", "rust"),
+    )
+    for label, prefix in dylib_rows:
         row = dylib["rows"][label]
         throughput = row["throughput_million_ekf_turns_per_second"]
         throughput_samples = throughput["samples"]
@@ -155,16 +160,17 @@ def main() -> None:
         assert memory["median"] == dylib_summary[f"{prefix}_median_peak_rss_bytes"]
         assert row["faults"] == [0] * len(throughput_samples)
     assert dylib["rows"]["Mech Cranelift AOT"]["library_bytes"] == dylib_summary[
-        "mech_library_bytes"
+        "scalar_aot_library_bytes"
+    ]
+    assert dylib["rows"]["Mech Cranelift SIMD AOT"]["library_bytes"] == dylib_summary[
+        "simd_aot_library_bytes"
     ]
     assert dylib["rows"]["Rust cdylib"]["library_bytes"] == dylib_summary[
         "rust_library_bytes"
     ]
-    close(
-        dylib["validation"]["maximum_final_state_absolute_error"],
-        dylib_summary["maximum_final_state_absolute_error"],
-        1.0e-12,
-    )
+    for prefix in ("scalar_aot", "simd_aot"):
+        key = f"{prefix}_maximum_final_state_absolute_error_vs_rust"
+        close(dylib["validation"][key], dylib_summary[key], 1.0e-12)
     assert dylib["validation"]["faults"] == 0
 
     direct_metal = load_json(ROOT / manifest["selected_evidence"]["mech_direct_metal"])
@@ -201,6 +207,8 @@ def main() -> None:
             "Mech SIMD/JIT CPU, checked (8 workers)"
         ]["samples"],
         "SIMD/JIT CPU · 1 worker": simd["rows"]["checked"]["throughput_millions"],
+        "Cranelift SIMD AOT CPU": dylib["rows"]["Mech Cranelift SIMD AOT"]
+        ["throughput_million_ekf_turns_per_second"]["samples"],
         "Cranelift JIT CPU": aot["rows"]["Mech Cranelift JIT CPU, same processes"]
         ["samples_million_ekf_turns_per_second"],
         "Cranelift AOT CPU": aot["rows"]["Mech Cranelift AOT CPU"]
@@ -282,8 +290,9 @@ def main() -> None:
     print("  same-machine Halide/Taichi/Mojo rerun samples: verified")
     print(
         "  AOT/Rust dylib: "
-        f"Mech {dylib_summary['mech_throughput_million_turns_per_second']:.3f} vs "
-        f"Rust {dylib_summary['rust_throughput_million_turns_per_second']:.3f} M turns/s; "
+        f"scalar Mech {dylib_summary['scalar_aot_throughput_million_turns_per_second']:.3f}, "
+        f"Rust {dylib_summary['rust_throughput_million_turns_per_second']:.3f}, "
+        f"SIMD Mech {dylib_summary['simd_aot_throughput_million_turns_per_second']:.3f} M turns/s; "
         "size and peak RSS verified"
     )
     print("  two post-facing charts: raw samples, medians, and observed ranges verified")

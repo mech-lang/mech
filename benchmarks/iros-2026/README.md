@@ -38,52 +38,68 @@ fine language ranking.
 
 ## The Mech result: one EKF across execution backends
 
-![One Mech EKF across seven execution backends](charts/post-mech-backend-stack.svg)
+![One Mech EKF across eight execution backends](charts/post-mech-backend-stack.svg)
 
-These seven rows use the same high-level Mech EKF and change the execution
-backend: the scalar artifact evaluator, Cranelift JIT, Cranelift AOT, one- and
-eight-worker SIMD/JIT, WGPU on Metal, and direct Metal. All rows are checked and
-publish after every turn. The 10,000-filter CPU rows and 500,000-filter
-parallel/GPU rows come from retained same-machine campaigns, so normalized
-throughput makes the backend span visible, but small cross-row gaps are not
-ranking claims.
+These eight rows use the same high-level Mech EKF and change the execution
+backend: the scalar artifact evaluator, Cranelift JIT, scalar and four-lane
+Cranelift AOT, one- and eight-worker SIMD/JIT, WGPU on Metal, and direct Metal.
+All rows are checked and publish after every turn. The 10,000-filter CPU rows
+and 500,000-filter parallel/GPU rows come from retained same-machine campaigns,
+so normalized throughput makes the backend span visible, but small cross-row
+gaps are not ranking claims.
 
-The AOT path shares the JIT's Cranelift lowering, emits a host object, links a
-reusable native library, and reloads its exported turn function. Five release
-processes produced a 14.593 M turns/s AOT median (14.089-14.644 observed range)
-and a 14.618 M turns/s JIT median (14.068-14.641) in the same processes. Both
-matched scalar state bit-for-bit. A cold emit/link/load took 202.029 ms; cached
-loads had a 3.283 ms median. These timings support equivalent steady-state
-execution, not a claim that either compiler mode is faster.
+The scalar AOT path shares the JIT's Cranelift lowering, emits a host object,
+links a reusable native library, and reloads its exported turn function. Five
+release processes produced a 14.593 M turns/s AOT median (14.089-14.644
+observed range) and a 14.618 M turns/s JIT median (14.068-14.641) in the same
+processes. Both matched scalar state bit-for-bit. A cold emit/link/load took
+202.029 ms; cached loads had a 3.283 ms median. These timings support equivalent
+steady-state execution, not a claim that either compiler mode is faster.
+
+The new `cpu-aot-simd` option saves a different AOT library with four-filter
+`f32x4` arithmetic, packed resident state, paired sine/cosine evaluation, and
+the same checked rollback contract. It is selected by the backend registry or
+directly through `compile_aot_simd_cpu`; the scalar `cpu-aot` option remains as
+the exact-ABI baseline.
 
 ### Mech AOT versus a Rust dynamic library
 
 The direct dynamic-library control uses a longer, steadier campaign than the
 backend overview: 10,000 filters × 200 checked turns, preceded by 100 untimed
-turns and a full state reset. A hand-specialized Rust `cdylib` exports the same
-`mech_fixed_numeric_turn` symbol as the generated Mech library. The same
-minimal loader supplies identical input and ping-pong state buffers to both,
-so the measurement excludes the Mech compiler and Rust build process.
+turns and a full state reset. The same minimal loader measures scalar Mech AOT,
+four-lane Mech AOT, and a hand-specialized Rust `cdylib`; compiler/build time,
+allocation, packing, warmup, and reset are outside the timed region. All rows
+use one host thread and checked publication after every turn.
 
-| Metric | Mech Cranelift AOT | Rust `cdylib` | Measured differential |
+| Implementation | Steady-state throughput, median (observed min-max), n=7 | Library size | Peak process RSS, median (observed min-max), n=7 |
 | --- | ---: | ---: | ---: |
-| Steady-state throughput, median (observed min-max), n=7 | 14.672 M/s (14.381-14.682) | 20.789 M/s (20.324-20.805) | Rust +41.69% |
-| Dynamic-library file size | 33,544 bytes | 50,016 bytes | Mech -32.93% |
-| Peak process RSS, median (observed min-max), n=7 | 2,834,432 B (2,834,432-2,949,120) | 2,834,432 B (2,834,432-2,965,504) | no measured median difference |
+| Mech scalar Cranelift AOT | 14.671 M/s (14.458-14.679) | 33,544 B | 2,818,048 B (2,818,048-3,014,656) |
+| Optimized Rust `cdylib` | 21.121 M/s (21.097-21.129) | 50,016 B | 2,818,048 B (2,818,048-2,916,352) |
+| Mech four-lane Cranelift AOT | 34.863 M/s (34.847-34.927) | 33,864 B | 2,818,048 B (2,818,048-2,818,048) |
 
-The complete final states agree within 4.05e-4 after 200 turns and every run
-reported zero faults. Rust is clearly faster in this hand-expanded scalar
-control; Mech's generated library is smaller. The peak-RSS medians are
-identical at `/usr/bin/time -l` precision and the ranges overlap, so this
-campaign does not support a memory-use difference. File size and peak process
-RSS are intentionally separate: one is the on-disk library, while the other
-includes the common loader and live EKF buffers.
+The exact scalar comparison still answers why Rust was faster: after hoisting
+the pointer-table loads, Rust is 43.96% ahead of scalar AOT. LLVM combines both
+adjacent sine/cosine pairs and SLP-vectorizes independent arithmetic inside a
+filter, while scalar Cranelift AOT emits separate math calls and scalar
+instructions. This is a code-generation and hand-specialization gap, not
+dynamic-library overhead.
 
-This is not the eight-worker SIMD source-size comparison below. It isolates
-the AOT artifact boundary on one scalar thread. The Rust control specializes
-the fixed 3×3 algebra by hand, while Mech reaches the same ABI from the generic
-matrix source. See the [raw seven-process record](results/apple-m1-aot-vs-rust-dylib-2026-09-24.json)
-and the [common-loader control](rust-dylib/README.md).
+Changing only the Mech backend reverses that result. Four-lane AOT is 65.07%
+faster than the Rust control and 137.63% faster than scalar AOT in this
+campaign. This second comparison is intentionally not called scalar-for-scalar:
+its packed state and four-filter vector body are a different physical strategy,
+selected without changing the Mech EKF source. The Rust control could likewise
+add explicit cross-filter SIMD or workers; the matched eight-worker comparison
+below shows that strategy.
+
+Both generated Mech libraries are about one-third smaller than the Rust
+library. All three median peak-RSS values are identical and their observed
+ranges overlap, so these seven processes do not establish a memory-use
+difference. Peak RSS includes the common loader and live buffers; it is not
+private library memory. All runs reported zero faults, and
+complete final states agreed within 4.09e-4 after 200 turns. See the [raw
+seven-process record](results/apple-m1-aot-vs-rust-dylib-2026-09-24.json) and
+the [common-loader control](rust-dylib/README.md).
 
 That span is the point. In these campaigns the medians range from 1.032 million
 EKF turns/s in the scalar evaluator to 422.702 million in direct Metal. Mech
@@ -210,7 +226,8 @@ producing the Mech AOT library:
 
 ```sh
 python3 benchmarks/iros-2026/measure_dylib_comparison.py \
-  target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib \
+  target/mech-aot-final-v2/mech-0a9d1856e310433b75da7d519ccc856597d751f7af345a38c70d43d289ec24fd.dylib \
+  --mech-simd-dylib target/mech-aot-final-v2/mech-simd-633e21301b05367c3cadd6c59b1fdbdcf102cd909a23acd1655f897aeb3045db.dylib \
   --samples 7 --instances 10000 --turns 200
 ```
 
@@ -257,7 +274,8 @@ A concise claim supported by this package is:
 
 The Mech backend chart supports a different claim:
 
-> A single high-level Mech EKF source can target scalar, SIMD, JIT, AOT, WGPU,
-> and native Metal execution. The retained rows span more than two orders of
-> magnitude in normalized throughput; because the workloads and campaigns
-> differ, that span demonstrates backend reach rather than a fine ranking.
+> A single high-level Mech EKF source can target scalar, SIMD, JIT, scalar AOT,
+> SIMD AOT, WGPU, and native Metal execution. The retained rows span more than
+> two orders of magnitude in normalized throughput; because the workloads and
+> campaigns differ, that span demonstrates backend reach rather than a fine
+> ranking.
