@@ -2278,6 +2278,12 @@ mod document {
                 let (accepted_fragment, fragment_start) =
                     retained_submission_fragment(&retained_source, accepted_before, source)
                         .map_err(to_js_error)?;
+                let accepted_document = CanonicalWasmDocument::retain(
+                    &format!("browser:documentation:{topic}:accepted"),
+                    mech_syntax::document::Revision(0),
+                    accepted_fragment.to_owned(),
+                )
+                .map_err(to_js_error)?;
                 let addresses = live_document_fragment_addresses(
                     &self.bootstrap,
                     current,
@@ -2287,7 +2293,7 @@ mod document {
                 .map_err(to_js_error)?;
                 Some(
                     mech_runtime::CanonicalDocumentRenderer
-                        .format_html_body_live(&document.document().document(), &addresses)
+                        .format_html_body_live(&accepted_document.document().document(), &addresses)
                         .map_err(|error| js_error(error.to_string()))?,
                 )
             } else {
@@ -4613,6 +4619,37 @@ phase"#;
             retained_submission_fragment(&retained, baseline.len(), submitted).unwrap();
         assert_eq!(fragment, "answer + 1 -- suppressed");
         assert_eq!(fragment_start, baseline.len() + 1);
+    }
+
+    #[test]
+    fn suppressed_documentation_renders_live_ranges_from_the_normalized_fragment() {
+        let baseline = "answer := 1\nanswer";
+        let submitted = "answer + 1; -- Result {answer}";
+        let retained = format!("{baseline}\nanswer + 1 -- Result {{answer}}\n");
+        let (fragment, fragment_start) =
+            retained_submission_fragment(&retained, baseline.len(), submitted).unwrap();
+        let bootstrap = document_bootstrap("document.mec", baseline, HashMap::new(), Vec::new());
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            retained,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let addresses =
+            live_document_fragment_addresses(&bootstrap, &candidate, fragment, fragment_start)
+                .unwrap();
+        let parsed = SourceDocument::parse_resolved(
+            "browser:documentation:test",
+            mech_syntax::document::Revision(0),
+            fragment,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let html = mech_runtime::CanonicalDocumentRenderer
+            .format_html_body_live(&parsed.document(), &addresses)
+            .unwrap();
+        assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
     }
 
     #[test]

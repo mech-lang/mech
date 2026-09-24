@@ -156,7 +156,7 @@ fn collect_fenced_output_ids(
     inline_index: &mut u64,
     output_ids: &mut Vec<u64>,
 ) {
-    if block.config.disabled || block.config.namespace != 0 {
+    if block.config.disabled || block.config.hidden || block.config.namespace != 0 {
         return;
     }
     collect_code_comments(&block.code, inline_index, output_ids);
@@ -333,5 +333,11 @@ mod tests {
             MechCode::Statement(Statement::ContextSend(_))
         ));
         assert!(!code_is_program_value(code));
+    }
+
+    #[test]
+    fn hidden_fences_have_no_presentation_addresses() {
+        let tree = mech_syntax::parse("```mech:hidden\n42 -- Result {1 + 1}\n```\n").unwrap();
+        assert!(root_document_output_ids(&tree).is_empty());
     }
 }
