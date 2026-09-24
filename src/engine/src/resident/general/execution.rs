@@ -2135,6 +2135,17 @@ impl ReactiveInstance {
             let retained_nodes = nodes
                 .checked_mul(2)
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let (continuation_bytes, continuation_nodes) = self
+                .live_continuation_footprint(&mut publication_meter)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_bytes
+                .checked_add(continuation_bytes)
+                .and_then(|bytes| bytes.checked_add(cloned_bytes))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let retained_nodes = live_nodes
+                .checked_add(continuation_nodes)
+                .and_then(|nodes| nodes.checked_add(retained_nodes))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             let publication_work = publication_meter
                 .estimate()
                 .compute_work()
@@ -2145,7 +2156,7 @@ impl ReactiveInstance {
                     (),
                     budget::resident_cost! {
                         compute_work: publication_work,
-                        temporary_bytes: cloned_bytes,
+                        temporary_bytes: peak_bytes,
                         cloned_bytes,
                         retained_nodes,
                         ..budget::KernelCostEstimate::default()
