@@ -2275,76 +2275,27 @@ struct PendingMatch {
 }
 
 impl PendingMatch {
-    fn blocks(&self) -> Vec<&PendingControlBlock> {
-        fn append<'a>(control: &'a PendingMatch, output: &mut Vec<&'a PendingControlBlock>) {
-            for block in control
-                .arms
-                .iter()
-                .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-            {
-                output.push(block);
+    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
+        for arm in &self.arms {
+            if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
+                pattern.bindings(&mut |_, schema| visit(schema));
+            }
+            for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
+                for (_, schema) in &block.parameters {
+                    visit(schema);
+                }
                 for operation in &block.operations {
+                    visit(&operation.schema);
                     match &operation.body {
-                        PendingControlOperationBody::Match(nested) => append(nested, output),
+                        PendingControlOperationBody::Match(nested) => nested.visit_schemas(visit),
                         PendingControlOperationBody::Comprehension(nested) => {
-                            for step in &nested.steps {
-                                if let comprehension::PendingComprehensionStep::Operation(operation) =
-                                    step
-                                    && let PendingControlOperationBody::Match(nested) =
-                                        &operation.body
-                                {
-                                    append(nested, output);
-                                }
-                            }
+                            nested.visit_schemas(visit)
                         }
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)
                         | PendingControlOperationBody::Suspend
                         | PendingControlOperationBody::Publish => {}
                     }
-                }
-            }
-        }
-        let mut output = Vec::new();
-        append(self, &mut output);
-        output
-    }
-
-    fn visit_pattern_binding_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
-        fn append(control: &PendingMatch, visit: &mut impl FnMut(&SchemaDraft)) {
-            for arm in &control.arms {
-                if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
-                    pattern.bindings(&mut |_, schema| visit(schema));
-                }
-                for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
-                    for operation in &block.operations {
-                        match &operation.body {
-                            PendingControlOperationBody::Match(nested) => append(nested, visit),
-                            PendingControlOperationBody::Comprehension(nested) => {
-                                nested.visit_pattern_binding_schemas(visit)
-                            }
-                            PendingControlOperationBody::Operation { .. }
-                            | PendingControlOperationBody::Recur(_)
-                            | PendingControlOperationBody::Suspend
-                            | PendingControlOperationBody::Publish => {}
-                        }
-                    }
-                }
-            }
-        }
-        append(self, visit);
-    }
-
-    fn visit_schemas(&self, visit: &mut impl FnMut(&SchemaDraft)) {
-        self.visit_pattern_binding_schemas(visit);
-        for block in self.blocks() {
-            for (_, schema) in &block.parameters {
-                visit(schema);
-            }
-            for operation in &block.operations {
-                visit(&operation.schema);
-                if let PendingControlOperationBody::Comprehension(nested) = &operation.body {
-                    nested.visit_schemas(visit);
                 }
             }
         }
