@@ -2421,7 +2421,7 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
 
 #[test]
 fn retained_state_stops_activation_continuation_dependency_checks() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 1u64.\nresult := #Deferred()\n~trigger := 0u64\ntrigger = result\n~count := 0u64\n~> trigger { count = count + 1u64 }\ncount\n";
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 1u64.\n~trigger := 0u64\n~count := 0u64\n~> trigger { count = count + 1u64 }\nresult := #Deferred()\ntrigger = result\ncount\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
