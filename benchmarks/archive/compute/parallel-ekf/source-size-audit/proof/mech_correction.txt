@@ -1,0 +1,3 @@
+corrected-state := predicted-state + gain * innovation
+correction := identity - gain ** observation-jacobian
+corrected-covariance := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise

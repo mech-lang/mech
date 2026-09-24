@@ -1,0 +1,233 @@
+{
+  "ekf.mec": {
+    "sha256": "09afcf7b354345f33e6b1e5d9b10a275cbfd1eb5763b3d0e691329861ab64224",
+    "total": {
+      "normalized_characters": 1079,
+      "width4_characters": 1628,
+      "original_name_characters": 2913,
+      "normalized_identifier_occurrences": 183
+    },
+    "parts": [
+      {
+        "category": "Setup, constants and declarations",
+        "line_ranges": [
+          [
+            1,
+            27
+          ]
+        ],
+        "normalized_characters": 340,
+        "original_name_characters": 566
+      },
+      {
+        "category": "EKF update and local candidate handling",
+        "line_ranges": [
+          [
+            28,
+            63
+          ],
+          [
+            84,
+            87
+          ]
+        ],
+        "normalized_characters": 356,
+        "original_name_characters": 1285
+      },
+      {
+        "category": "Validation and component extraction",
+        "line_ranges": [
+          [
+            64,
+            83
+          ]
+        ],
+        "normalized_characters": 383,
+        "original_name_characters": 1062
+      },
+      {
+        "category": "Matrix helpers",
+        "line_ranges": [],
+        "normalized_characters": 0,
+        "original_name_characters": 0
+      },
+      {
+        "category": "SIMD wrapper and adapters",
+        "line_ranges": [],
+        "normalized_characters": 0,
+        "original_name_characters": 0
+      },
+      {
+        "category": "Batch dispatch, workers and rollback",
+        "line_ranges": [],
+        "normalized_characters": 0,
+        "original_name_characters": 0
+      }
+    ]
+  },
+  "rust_textbook.rs": {
+    "sha256": "e55c6b8847e47c1da5b5094a18c5ac82cc0eb4835de90c45454501be86c8aa33",
+    "total": {
+      "normalized_characters": 2355,
+      "width4_characters": 3390,
+      "original_name_characters": 4142,
+      "normalized_identifier_occurrences": 345
+    },
+    "parts": [
+      {
+        "category": "Setup, constants and declarations",
+        "line_ranges": [
+          [
+            1,
+            29
+          ],
+          [
+            193,
+            196
+          ]
+        ],
+        "normalized_characters": 486,
+        "original_name_characters": 670
+      },
+      {
+        "category": "EKF update and local candidate handling",
+        "line_ranges": [
+          [
+            63,
+            156
+          ]
+        ],
+        "normalized_characters": 1024,
+        "original_name_characters": 2012
+      },
+      {
+        "category": "Validation and component extraction",
+        "line_ranges": [
+          [
+            157,
+            174
+          ]
+        ],
+        "normalized_characters": 263,
+        "original_name_characters": 400
+      },
+      {
+        "category": "Matrix helpers",
+        "line_ranges": [
+          [
+            175,
+            192
+          ]
+        ],
+        "normalized_characters": 251,
+        "original_name_characters": 397
+      },
+      {
+        "category": "SIMD wrapper and adapters",
+        "line_ranges": [],
+        "normalized_characters": 0,
+        "original_name_characters": 0
+      },
+      {
+        "category": "Batch dispatch, workers and rollback",
+        "line_ranges": [
+          [
+            30,
+            62
+          ]
+        ],
+        "normalized_characters": 331,
+        "original_name_characters": 663
+      }
+    ]
+  },
+  "rust_simd.rs": {
+    "sha256": "283b846040bbb65b6bfc679a51309677fc7761ec834198343f65f81c76e9d39f",
+    "total": {
+      "normalized_characters": 5243,
+      "width4_characters": 7196,
+      "original_name_characters": 8711,
+      "normalized_identifier_occurrences": 651
+    },
+    "parts": [
+      {
+        "category": "Setup, constants and declarations",
+        "line_ranges": [
+          [
+            1,
+            5
+          ],
+          [
+            92,
+            99
+          ],
+          [
+            246,
+            259
+          ],
+          [
+            395,
+            401
+          ]
+        ],
+        "normalized_characters": 561,
+        "original_name_characters": 771
+      },
+      {
+        "category": "EKF update and local candidate handling",
+        "line_ranges": [
+          [
+            159,
+            245
+          ]
+        ],
+        "normalized_characters": 1119,
+        "original_name_characters": 2360
+      },
+      {
+        "category": "Validation and component extraction",
+        "line_ranges": [
+          [
+            119,
+            158
+          ]
+        ],
+        "normalized_characters": 396,
+        "original_name_characters": 691
+      },
+      {
+        "category": "Matrix helpers",
+        "line_ranges": [
+          [
+            100,
+            118
+          ]
+        ],
+        "normalized_characters": 310,
+        "original_name_characters": 470
+      },
+      {
+        "category": "SIMD wrapper and adapters",
+        "line_ranges": [
+          [
+            6,
+            91
+          ]
+        ],
+        "normalized_characters": 1243,
+        "original_name_characters": 1498
+      },
+      {
+        "category": "Batch dispatch, workers and rollback",
+        "line_ranges": [
+          [
+            260,
+            394
+          ]
+        ],
+        "normalized_characters": 1614,
+        "original_name_characters": 2921
+      }
+    ]
+  }
+}

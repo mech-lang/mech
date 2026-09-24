@@ -1,0 +1,5 @@
+language,strategy,normalized_source_characters,source
+Mech,Textbook,1079,selected/ekf.mec
+Rust,Textbook (publication-normalized),2355,selected/rust_textbook.rs
+Mech,SIMD-4 / 8 workers,1079,selected/ekf.mec
+Rust,SIMD-4 / 8 workers,5243,selected/rust_simd.rs

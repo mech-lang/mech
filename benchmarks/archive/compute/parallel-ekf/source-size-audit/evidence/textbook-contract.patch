@@ -1,0 +1,104 @@
+--- archived-textbook-extract.rs
++++ block-atomic-textbook-extract.rs
+@@ -1,3 +1,9 @@
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++struct Fault {
++    turn: u32,
++    instance: usize,
++    constraint: u8,
++}
+ #[derive(Default)]
+ struct Scratch {
+     f: [f32; 9],
+@@ -29,23 +35,30 @@
+     bearing: &[f32],
+     turns: u32,
+     scratch: &mut Scratch,
+-) -> usize {
+-    let mut faults = 0;
+-    for _ in 0..turns {
++) -> Option<Fault> {
++    // The caller observes only the completed block. Rejecting any candidate
++    // restores the entire population to its state before the block began.
++    let checkpoint = CHECKED.then(|| (state.to_vec(), covariance.to_vec()));
++    for turn in 0..turns {
+         for lane in 0..velocity.len() {
+-            if !step::<CHECKED>(
++            let constraint = step::<CHECKED>(
+                 &mut state[lane * 3..lane * 3 + 3],
+                 &mut covariance[lane * 9..lane * 9 + 9],
+                 velocity[lane],
+                 angular_velocity[lane],
+                 bearing[lane],
+                 scratch,
+-            ) {
+-                faults += 1;
++            );
++            if constraint != 0 {
++                if let Some((checkpoint_state, checkpoint_covariance)) = checkpoint {
++                    state.copy_from_slice(&checkpoint_state);
++                    covariance.copy_from_slice(&checkpoint_covariance);
++                }
++                return Some(Fault { turn, instance: lane, constraint });
+             }
+         }
+     }
+-    faults
++    None
+ }
+ #[inline(always)]
+ fn step<const CHECKED: bool>(
+@@ -55,7 +68,7 @@
+     angular_velocity: f32,
+     bearing: f32,
+     s: &mut Scratch,
+-) -> bool {
++) -> u8 {
+     let dt = 0.1_f32;
+     let sin_theta = state[2].sin();
+     let cos_theta = state[2].cos();
+@@ -131,23 +144,33 @@
+                 s.corrected_p[row + column * 3] + gain[row] * gain[column] * 0.25;
+         }
+     }
+-    if CHECKED && !valid_candidate(&candidate_state, &s.corrected_p) {
+-        return false;
++    if CHECKED {
++        let constraint = candidate_fault(&candidate_state, &s.corrected_p);
++        if constraint != 0 {
++            return constraint;
++        }
+     }
+     state.copy_from_slice(&candidate_state);
+     covariance.copy_from_slice(&s.corrected_p);
+-    true
++    0
+ }
+ #[inline(always)]
+-fn valid_candidate(state: &[f32; 3], covariance: &[f32; 9]) -> bool {
+-    state.iter().all(|value| value.is_finite())
+-        && covariance.iter().all(|value| value.is_finite())
+-        && covariance[0] > 0.0
+-        && covariance[4] > 0.0
+-        && covariance[8] > 0.0
+-        && (covariance[1] - covariance[3]).abs() <= 1.0e-4
++fn candidate_fault(state: &[f32; 3], covariance: &[f32; 9]) -> u8 {
++    if !state.iter().all(|value| value.is_finite())
++        || !covariance.iter().all(|value| value.is_finite())
++    {
++        return 1;
++    }
++    if !(covariance[0] > 0.0 && covariance[4] > 0.0 && covariance[8] > 0.0) {
++        return 2;
++    }
++    if !((covariance[1] - covariance[3]).abs() <= 1.0e-4
+         && (covariance[2] - covariance[6]).abs() <= 1.0e-4
+-        && (covariance[5] - covariance[7]).abs() <= 1.0e-4
++        && (covariance[5] - covariance[7]).abs() <= 1.0e-4)
++    {
++        return 3;
++    }
++    0
+ }
+ #[inline(always)]
+ fn matmul(a: &[f32], rows: usize, inner: usize, b: &[f32], columns: usize, out: &mut [f32]) {
