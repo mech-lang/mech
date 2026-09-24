@@ -526,6 +526,63 @@ fn singleton_enum_payload_pattern_completes_outer_variant_coverage() {
 }
 
 #[test]
+fn enum_payload_coverage_combines_across_match_arms() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<inner> := :left | :right\n\
+                 <outer> := :wrap<inner>\n\
+                 value<outer> := :wrap(:left)\n\
+                 result := value?\n\
+                   | :wrap(:left) => 1\n\
+                   | :wrap(:right) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("all nested enum variants collectively cover the outer payload")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn boolean_payload_coverage_combines_across_match_arms() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<outer> := :wrap<bool>\n\
+                 value<outer> := :wrap(true)\n\
+                 result := value?\n\
+                   | :wrap(true) => 1\n\
+                   | :wrap(false) => 2.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("both Boolean literals collectively cover the outer payload")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn partial_finite_payload_coverage_remains_non_exhaustive() {
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<inner> := :left | :right\n\
+                 <outer> := :wrap<inner>\n\
+                 value<outer> := :wrap(:left)\n\
+                 result := value? | :wrap(:left) => 1.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .err()
+        .expect("one nested enum variant leaves the outer payload uncovered");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
 fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
     let source = "<first> := :idle | :busy\n\
                   <second> := :idle | :done\n\

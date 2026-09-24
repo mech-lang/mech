@@ -2451,6 +2451,102 @@ fn structurally_irrefutable<V>(
     }
 }
 
+enum StructuralPatternCoverage {
+    Incomplete,
+    Complete,
+    Bool([bool; 2]),
+    Enum(Box<[StructuralPatternCoverage]>),
+}
+
+impl StructuralPatternCoverage {
+    fn for_schema(expected: &SchemaDraft) -> Self {
+        match &expected.body {
+            SchemaBody::Bool => Self::Bool([false; 2]),
+            SchemaBody::Enum { variants, .. } => Self::Enum(
+                variants
+                    .iter()
+                    .map(|variant| {
+                        variant
+                            .payload
+                            .as_ref()
+                            .and_then(|payload| {
+                                structural_component_schema_draft(expected, payload)
+                            })
+                            .map_or(Self::Incomplete, |payload| Self::for_schema(&payload))
+                    })
+                    .collect(),
+            ),
+            _ => Self::Incomplete,
+        }
+    }
+
+    fn cover_all(&mut self) {
+        *self = Self::Complete;
+    }
+
+    fn cover_bool(&mut self, value: bool) {
+        if let Self::Bool(covered) = self {
+            covered[value as usize] = true;
+        }
+    }
+
+    fn is_complete(&self) -> bool {
+        match self {
+            Self::Incomplete => false,
+            Self::Complete => true,
+            Self::Bool(covered) => covered.iter().all(|covered| *covered),
+            Self::Enum(variants) => variants.iter().all(Self::is_complete),
+        }
+    }
+}
+
+fn cover_structural_pattern<V>(
+    coverage: &mut StructuralPatternCoverage,
+    pattern: &crate::CollectionPattern<SchemaDraft, V>,
+    expected: &SchemaDraft,
+    literal_bool: &impl Fn(&V) -> Option<bool>,
+) {
+    if structurally_irrefutable(pattern, expected) {
+        coverage.cover_all();
+        return;
+    }
+    match (coverage, pattern, &expected.body) {
+        (
+            StructuralPatternCoverage::Bool(covered),
+            crate::CollectionPattern::Equal(value),
+            SchemaBody::Bool,
+        ) => {
+            if let Some(value) = literal_bool(value) {
+                covered[value as usize] = true;
+            }
+        }
+        (
+            StructuralPatternCoverage::Enum(covered),
+            crate::CollectionPattern::Enum { ordinal, payload },
+            SchemaBody::Enum { variants, .. },
+        ) => {
+            let Some(covered) = covered.get_mut(*ordinal as usize) else {
+                return;
+            };
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return;
+            };
+            match (&variant.payload, payload.as_deref()) {
+                (None, None) => covered.cover_all(),
+                (Some(payload_schema), Some(pattern)) => {
+                    if let Some(expected) =
+                        structural_component_schema_draft(expected, payload_schema)
+                    {
+                        cover_structural_pattern(covered, pattern, &expected, literal_bool);
+                    }
+                }
+                _ => {}
+            }
+        }
+        _ => {}
+    }
+}
+
 #[derive(Clone, Copy)]
 enum PendingControlValue {
     Constant(usize),
@@ -8721,11 +8817,7 @@ impl SemanticBuilder {
         let mut inputs = vec![scrutinee];
         let mut captures = Vec::new();
         let mut lowered = Vec::new();
-        let mut coverage = [false; 2];
-        let mut enum_coverage = match &scrutinee_schema.body {
-            SchemaBody::Enum { variants, .. } => Some(vec![false; variants.len()]),
-            _ => None,
-        };
+        let mut coverage = StructuralPatternCoverage::for_schema(&scrutinee_schema);
         let mut result_schema = None;
         if self.control_depth == 0 {
             self.next_control_block = 0;
@@ -8919,52 +9011,33 @@ impl SemanticBuilder {
                 match &lowered_arm.pattern {
                     crate::MatchPattern::Literal(index) => {
                         if let ValueDataDraft::Bool(value) = self.constants[*index].data {
-                            coverage[value as usize] = true;
+                            coverage.cover_bool(value);
                         }
                     }
                     crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => {
-                        coverage = [true; 2];
-                        if let Some(variants) = &mut enum_coverage {
-                            variants.fill(true);
-                        }
+                        coverage.cover_all();
                     }
-                    crate::MatchPattern::Structural(crate::CollectionPattern::Enum {
-                        ordinal,
-                        payload,
-                    }) => {
-                        let irrefutable = match (&scrutinee_schema.body, payload.as_deref()) {
-                            (SchemaBody::Enum { variants, .. }, None) => variants
-                                .get(*ordinal as usize)
-                                .is_some_and(|variant| variant.payload.is_none()),
-                            (SchemaBody::Enum { variants, .. }, Some(pattern)) => variants
-                                .get(*ordinal as usize)
-                                .and_then(|variant| variant.payload.as_ref())
-                                .and_then(|payload| {
-                                    structural_component_schema_draft(&scrutinee_schema, payload)
-                                })
-                                .is_some_and(|expected| {
-                                    structurally_irrefutable(pattern, &expected)
-                                }),
-                            _ => false,
-                        };
-                        if irrefutable
-                            && let Some(variants) = &mut enum_coverage
-                            && let Some(covered) = variants.get_mut(*ordinal as usize)
-                        {
-                            *covered = true;
-                        }
+                    crate::MatchPattern::Structural(pattern) => {
+                        cover_structural_pattern(
+                            &mut coverage,
+                            pattern,
+                            &scrutinee_schema,
+                            &|value| match value {
+                                crate::MatchPatternValue::Literal(index) => {
+                                    match self.constants[*index].data {
+                                        ValueDataDraft::Bool(value) => Some(value),
+                                        _ => None,
+                                    }
+                                }
+                                crate::MatchPatternValue::Binding(_) => None,
+                            },
+                        );
                     }
-                    crate::MatchPattern::Structural(_) => {}
                 }
             }
             lowered.push(lowered_arm);
         }
-        let exhaustive = enum_coverage
-            .as_ref()
-            .map_or(coverage == [true; 2], |variants| {
-                variants.iter().all(|covered| *covered)
-            });
-        if !exhaustive {
+        if !coverage.is_complete() {
             return Err(SourceSemanticError {
                 code: "source-semantics/non-exhaustive-match",
                 message: "match needs an unguarded wildcard/binding, both Boolean literal cases, or every enum variant".to_owned(),

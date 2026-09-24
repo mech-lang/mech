@@ -6185,13 +6185,15 @@ fn canonical_interactive_root_keeps_resource_authority_and_dependency_errors() {
         mech_engine::decode_interactive_symbol_output_name(&output.name).as_deref()
             == Some("answer")
     }));
-    assert!(
-        compiler
-            .compile_canonical_interactive_root(SourceRequest::new("broken.mec"))
-            .unwrap_err()
-            .kind_message()
-            .contains("missing canonical dependency")
-    );
+    let error = compiler
+        .compile_canonical_interactive_root(SourceRequest::new("broken.mec"))
+        .unwrap_err();
+    let missing = error
+        .kind_as::<crate::RuntimeModuleDependencyMissingError>()
+        .expect("canonical imports retain the public typed missing-dependency error");
+    assert_eq!(missing.module, "memory:broken.mec");
+    assert_eq!(missing.specifier, "./absent.mec");
+    assert_eq!(missing.referrer.as_deref(), Some("memory:broken.mec"));
     // A rejected source graph must not poison the reusable compiler.
     assert!(
         compiler
