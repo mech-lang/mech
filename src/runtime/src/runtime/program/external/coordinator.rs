@@ -196,6 +196,9 @@ pub struct ResidentExternalCoordinator {
     latest_live_inputs: Vec<Option<Value>>,
     latest_live_input_bytes: Vec<usize>,
     latest_live_input_retained_bytes: usize,
+    pending_live_inputs: Vec<Option<Value>>,
+    pending_live_input_bytes: Vec<usize>,
+    pending_live_input_retained_bytes: usize,
     latest_live_input_byte_limit: usize,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
@@ -349,6 +352,8 @@ impl ResidentExternalCoordinator {
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
         let latest_live_inputs = vec![None; bound.observations().len()];
         let latest_live_input_bytes = vec![0; bound.observations().len()];
+        let pending_live_inputs = vec![None; bound.observations().len()];
+        let pending_live_input_bytes = vec![0; bound.observations().len()];
         Ok(Self {
             instance: Some(instance),
             publication_authority,
@@ -372,6 +377,9 @@ impl ResidentExternalCoordinator {
             latest_live_inputs,
             latest_live_input_bytes,
             latest_live_input_retained_bytes: 0,
+            pending_live_inputs,
+            pending_live_input_bytes,
+            pending_live_input_retained_bytes: 0,
             latest_live_input_byte_limit: limits.input_bytes,
             durability,
             health: ResidentExternalHealth::Healthy,
@@ -419,25 +427,47 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
-    /// Transfers the latest dequeued live-input snapshot across a compatible
-    /// resident replacement. Observation node/slot identities are artifact
-    /// local, so migration matches the stable resource request plus its schema
-    /// and shape, then re-materializes the value against the candidate schema
-    /// table. Every compatible candidate observation inherits that same
-    /// authoritative value, including duplicates introduced by the candidate.
-    /// Observations with a newly introduced source identity remain unseeded and
-    /// will read their provider on first use.
+    /// Transfers both the last retained live-input snapshot and any staged
+    /// capture-only replacements across a compatible resident replacement.
+    /// Observation node/slot identities are artifact local, so migration
+    /// matches the stable resource request plus its schema and shape, then
+    /// re-materializes the value against the candidate schema table. Every
+    /// compatible candidate observation inherits that same authoritative
+    /// value, including duplicates introduced by the candidate. Observations
+    /// with a newly introduced source identity remain unseeded and will read
+    /// their provider on first use.
     #[cfg(feature = "resident-routing-source")]
     pub(crate) fn preserve_compatible_live_inputs_from(
         &mut self,
         previous: &ResidentExternalCoordinator,
     ) -> MResult<()> {
+        let replacements = self.compatible_live_input_replacements_from(
+            previous,
+            &previous.latest_live_inputs,
+            "live input snapshot",
+        )?;
+        self.install_live_input_replacements(replacements)?;
+        let pending_replacements = self.compatible_live_input_replacements_from(
+            previous,
+            &previous.pending_live_inputs,
+            "pending live input snapshot",
+        )?;
+        self.install_pending_live_input_replacements(pending_replacements)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn compatible_live_input_replacements_from(
+        &self,
+        previous: &ResidentExternalCoordinator,
+        previous_inputs: &[Option<Value>],
+        snapshot_name: &str,
+    ) -> MResult<Vec<(usize, Value, usize)>> {
         let mut replacements = Vec::new();
         for (target_ordinal, target) in self.bound.observations().iter().enumerate() {
             let Some(value) = previous.bound.observations().iter().enumerate().find_map(
                 |(source_ordinal, source)| {
                     observations_share_snapshot(source, target)
-                        .then(|| previous.latest_live_inputs.get(source_ordinal)?.as_ref())
+                        .then(|| previous_inputs.get(source_ordinal)?.as_ref())
                         .flatten()
                 },
             ) else {
@@ -451,7 +481,7 @@ impl ResidentExternalCoordinator {
                 )
                 .map_err(|error| {
                     invalid_value(format!(
-                        "live input snapshot is incompatible with the replacement: {error:?}"
+                        "{snapshot_name} is incompatible with the replacement: {error:?}"
                     ))
                 })?;
             let retained_bytes = retained_input_value_bytes(
@@ -461,7 +491,7 @@ impl ResidentExternalCoordinator {
             )?;
             replacements.push((target_ordinal, migrated, retained_bytes));
         }
-        self.install_live_input_replacements(replacements)
+        Ok(replacements)
     }
 
     #[cfg(feature = "resident_external_test_support")]
@@ -616,7 +646,7 @@ impl ResidentExternalCoordinator {
             )?;
             replacements.push((ordinal, value, retained_bytes));
         }
-        self.install_live_input_replacements(replacements)
+        self.install_pending_live_input_replacements(replacements)
     }
 
     fn install_live_input_replacements(
@@ -639,6 +669,63 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
+    fn install_pending_live_input_replacements(
+        &mut self,
+        replacements: Vec<(usize, Value, usize)>,
+    ) -> MResult<()> {
+        let effective_bytes = self
+            .latest_live_input_bytes
+            .iter()
+            .zip(&self.pending_live_inputs)
+            .zip(&self.pending_live_input_bytes)
+            .map(|((latest, pending), pending_bytes)| {
+                if pending.is_some() {
+                    *pending_bytes
+                } else {
+                    *latest
+                }
+            })
+            .collect::<Vec<_>>();
+        let effective_retained_bytes =
+            effective_bytes.iter().try_fold(0usize, |total, bytes| {
+                total
+                    .checked_add(*bytes)
+                    .ok_or_else(|| invalid_value("live input snapshot byte accounting".to_owned()))
+            })?;
+        live_input_retained_bytes_after_replacements(
+            effective_retained_bytes,
+            &effective_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        let pending_retained_bytes = live_input_retained_bytes_after_replacements(
+            self.pending_live_input_retained_bytes,
+            &self.pending_live_input_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        for (ordinal, value, replacement_bytes) in replacements {
+            self.pending_live_inputs[ordinal] = Some(value);
+            self.pending_live_input_bytes[ordinal] = replacement_bytes;
+        }
+        self.pending_live_input_retained_bytes = pending_retained_bytes;
+        Ok(())
+    }
+
+    fn has_pending_live_inputs(&self) -> bool {
+        self.pending_live_inputs.iter().any(Option::is_some)
+    }
+
+    fn clear_pending_live_inputs(&mut self) {
+        self.pending_live_inputs.fill(None);
+        self.pending_live_input_bytes.fill(0);
+        self.pending_live_input_retained_bytes = 0;
+    }
+
     pub const fn structural_probe(&self) -> ResidentExternalStructuralProbe {
         self.structural_probe
     }
@@ -658,9 +745,13 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, ResidentExternalTurnMode::Ordinary, |_| {
-            Ok(())
-        })
+        self.execute_live_turn(
+            None,
+            admission,
+            ResidentExternalTurnMode::Ordinary,
+            false,
+            |_| Ok(()),
+        )
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -678,6 +769,7 @@ impl ResidentExternalCoordinator {
             Some(updates),
             admission,
             ResidentExternalTurnMode::Ordinary,
+            true,
             |_| Ok(()),
         )
     }
@@ -705,6 +797,7 @@ impl ResidentExternalCoordinator {
             Some(updates),
             admission,
             ResidentExternalTurnMode::Ordinary,
+            true,
             prepublication,
         )
     }
@@ -722,6 +815,7 @@ impl ResidentExternalCoordinator {
             None,
             admission,
             ResidentExternalTurnMode::InitialPublication,
+            false,
             prepublication,
         )
     }
@@ -739,6 +833,7 @@ impl ResidentExternalCoordinator {
             None,
             admission,
             ResidentExternalTurnMode::DriverlessBootstrap,
+            false,
             prepublication,
         )
     }
@@ -752,10 +847,17 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
+        let consumes_pending_inputs = self.has_pending_live_inputs();
+        let mode = if consumes_pending_inputs {
+            ResidentExternalTurnMode::ExplicitSnapshotStep
+        } else {
+            ResidentExternalTurnMode::ExplicitStep
+        };
         self.execute_live_turn(
             Some(&[]),
             admission,
-            ResidentExternalTurnMode::ExplicitStep,
+            mode,
+            consumes_pending_inputs,
             prepublication,
         )
     }
@@ -776,6 +878,7 @@ impl ResidentExternalCoordinator {
             Some(&[]),
             admission,
             ResidentExternalTurnMode::ContinuationDrain,
+            false,
             prepublication,
         )
     }
@@ -864,6 +967,7 @@ impl ResidentExternalCoordinator {
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
         admission: ResidentExternalTurnAdmission,
         mode: ResidentExternalTurnMode,
+        consumes_pending_inputs: bool,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -958,6 +1062,9 @@ impl ResidentExternalCoordinator {
             }
             self.advance_input_identity(&batch)?;
             self.remember_live_inputs(&batch);
+            if consumes_pending_inputs {
+                self.clear_pending_live_inputs();
+            }
             Some(batch)
         } else {
             if host_updates.is_some_and(|updates| !updates.is_empty()) {
@@ -1015,7 +1122,8 @@ impl ResidentExternalCoordinator {
                 }
                 ResidentExternalTurnMode::Ordinary
                 | ResidentExternalTurnMode::DriverlessBootstrap
-                | ResidentExternalTurnMode::ExplicitStep => instance
+                | ResidentExternalTurnMode::ExplicitStep
+                | ResidentExternalTurnMode::ExplicitSnapshotStep => instance
                     .prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers),
             };
             let prepared_turn = match prepared {
@@ -1197,7 +1305,8 @@ impl ResidentExternalCoordinator {
                 }
                 ResidentExternalTurnMode::Ordinary
                 | ResidentExternalTurnMode::DriverlessBootstrap
-                | ResidentExternalTurnMode::ExplicitStep => instance
+                | ResidentExternalTurnMode::ExplicitStep
+                | ResidentExternalTurnMode::ExplicitSnapshotStep => instance
                     .prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers),
             }
             .map_err(resident_execution_error)?;
@@ -1314,9 +1423,9 @@ impl ResidentExternalCoordinator {
                 mode == ResidentExternalTurnMode::DriverlessBootstrap && !continuation_ready
             }
             Loading::Complete => match mode {
-                ResidentExternalTurnMode::Ordinary | ResidentExternalTurnMode::ExplicitStep => {
-                    !continuation_ready
-                }
+                ResidentExternalTurnMode::Ordinary
+                | ResidentExternalTurnMode::ExplicitStep
+                | ResidentExternalTurnMode::ExplicitSnapshotStep => !continuation_ready,
                 ResidentExternalTurnMode::ContinuationDrain => continuation_ready,
                 ResidentExternalTurnMode::InitialPublication
                 | ResidentExternalTurnMode::DriverlessBootstrap => false,
@@ -1332,8 +1441,11 @@ impl ResidentExternalCoordinator {
             || record.body.layout_generation != self.layout_generation
             || record.body.before_epoch != self.instance().published_epoch()
             || !loading_mode_matches
-            || (mode == ResidentExternalTurnMode::ExplicitStep
-                && !self.instance().plan.has_input_free_activation_roots())
+            || (matches!(
+                mode,
+                ResidentExternalTurnMode::ExplicitStep
+                    | ResidentExternalTurnMode::ExplicitSnapshotStep
+            ) && !self.instance().plan.has_input_free_activation_roots())
         {
             return invalid_coordinator(
                 "recorded replay receipt does not match the next activated turn",
@@ -1365,16 +1477,27 @@ impl ResidentExternalCoordinator {
         }
         self.validate_replay_activation_scope(batch, record)?;
         let facts = batch.iter().flat_map(|batch| &batch.facts);
-        if mode.reuses_input_snapshot()
-            && facts.enumerate().any(|(ordinal, fact)| {
-                self.latest_live_inputs
+        if facts.enumerate().any(|(ordinal, fact)| {
+            let observation = &self.bound.observations()[ordinal];
+            let belongs_to_trigger_source = self.bound.observations().iter().any(|candidate| {
+                self.instance()
+                    .plan
+                    .turn_trigger_inputs
+                    .contains(&candidate.input.artifact_slot)
+                    && observations_share_host_source(candidate, observation)
+            });
+            let must_reuse_snapshot = mode.reuses_input_snapshot()
+                || (mode == ResidentExternalTurnMode::ExplicitSnapshotStep
+                    && belongs_to_trigger_source);
+            must_reuse_snapshot
+                && self
+                    .latest_live_inputs
                     .get(ordinal)
                     .and_then(|value| value.as_ref())
                     .is_some_and(|value| {
                         value.value_hash(self.artifact.schemas()).ok() != Some(fact.payload_hash)
                     })
-            })
-        {
+        }) {
             return invalid_coordinator("recorded replay turn changes its retained input snapshot");
         }
         let complete_inputs = if self.bound.observations().is_empty() {
@@ -1491,11 +1614,20 @@ impl ResidentExternalCoordinator {
         let trigger_free_ordinary = record.header.status == TurnRecordStatus::Accepted
             && mode == ResidentExternalTurnMode::Ordinary
             && trigger_count == 0;
+        let snapshot_step_without_capture_source = mode
+            == ResidentExternalTurnMode::ExplicitSnapshotStep
+            && self.bound.observations().iter().all(|observation| {
+                self.bound.observations().iter().any(|candidate| {
+                    eligible.contains(&candidate.input.artifact_slot)
+                        && observations_share_host_source(candidate, observation)
+                })
+            });
         if invalid_fact
             || (!mode.admits_trigger_facts() && trigger_count != 0)
             || split_source_group
             || invalid_driverless
             || trigger_free_ordinary
+            || snapshot_step_without_capture_source
         {
             return invalid_coordinator(
                 "recorded replay triggers do not match the activated turn scope",
@@ -1737,6 +1869,27 @@ impl ResidentExternalCoordinator {
                                 "host input does not match the observed schema: {error:?}"
                             ))
                         })?
+                } else if let Some(value) = matches!(
+                    mode,
+                    ResidentExternalTurnMode::Ordinary
+                        | ResidentExternalTurnMode::ExplicitSnapshotStep
+                )
+                .then(|| {
+                    self.bound.observations().iter().enumerate().find_map(
+                        |(candidate_ordinal, candidate)| {
+                            observations_share_snapshot(candidate, observation)
+                                .then(|| {
+                                    self.pending_live_inputs
+                                        .get(candidate_ordinal)
+                                        .and_then(|value| value.as_ref())
+                                })
+                                .flatten()
+                        },
+                    )
+                })
+                .flatten()
+                {
+                    value.clone()
                 } else if let Some(value) = host_updates.and_then(|_| {
                     self.bound.observations().iter().enumerate().find_map(
                         |(candidate_ordinal, candidate)| {

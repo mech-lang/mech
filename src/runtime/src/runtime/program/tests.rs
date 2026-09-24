@@ -4133,6 +4133,84 @@ selected
 }
 
 #[test]
+fn capture_only_update_is_retained_by_the_next_explicit_snapshot_step() {
+    let (mut runtime, _) = independent_canonical_external_runtime_with_source(
+        r#"
+@slow := test://clock/slow{:read(delta-seconds)}
+observed := @slow/delta-seconds
+trigger := true
+~selected := 0.0
+~> trigger { selected = observed }
+selected
+"#,
+    );
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(9.0),
+        ))
+        .unwrap();
+    let sampled = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(sampled.turn.is_none());
+    runtime.step_active_program().unwrap();
+
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("capture-only fixture must remain resident external")
+    };
+    assert_eq!(
+        canonical_f64(&execution.coordinator.instance().copied_output(0).unwrap()),
+        9.0
+    );
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let replay_bootstrap = execution.coordinator.replay_bootstrap();
+    let batches = execution
+        .coordinator
+        .input_facts()
+        .map(|(_, batch)| batch.clone())
+        .collect::<Vec<_>>();
+    let records = execution
+        .coordinator
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(batches.len(), 2);
+    assert_eq!(records.len(), 2);
+    assert_eq!(
+        records[1].body.mode,
+        external::ResidentExternalTurnMode::ExplicitSnapshotStep
+    );
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        artifact,
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    for (batch, record) in batches.iter().zip(&records) {
+        assert!(matches!(
+            replay.execute_replay_batch(Some(batch), record).unwrap(),
+            crate::ResidentExternalTurnOutcome::Accepted { .. }
+        ));
+    }
+    assert_eq!(
+        canonical_f64(&replay.instance().copied_output(0).unwrap()),
+        9.0
+    );
+}
+
+#[test]
 fn mixed_initial_publication_runs_ordinary_roots_and_defers_input_free_activation() {
     let source = r#"
 trigger := true
@@ -4564,7 +4642,7 @@ fn driverless_observation_gets_a_trigger_turn_after_dormant_publication() {
         )))
         .unwrap();
 
-    runtime
+    let loaded = runtime
         .load_source_program(
             r#"
 @clock := snapshot://clock/tick{:read(value)}
@@ -4578,6 +4656,10 @@ count
         .unwrap();
 
     assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert!(matches!(
+        loaded.initial_value.value().data(),
+        ValueData::U64(41)
+    ));
     assert_eq!(reads.load(Ordering::SeqCst), 2);
     let count = runtime.root_symbol_value("count").unwrap();
     assert_eq!(

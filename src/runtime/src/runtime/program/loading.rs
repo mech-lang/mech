@@ -578,6 +578,11 @@ impl MechRuntime {
                         ),
                     ));
                 }
+                // The provider turn publishes after any dormant initial turn,
+                // so a snapshot captured by that earlier turn is no longer
+                // authoritative even when the bootstrap has no continuation.
+                prepared_initial = None;
+                needs_post_drain_snapshot = true;
                 info.resident_accepted_turns += 1;
             }
             ActiveProgramExecution::ResidentExternal(ResidentExternalExecution {
