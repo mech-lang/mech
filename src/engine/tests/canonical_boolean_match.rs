@@ -394,13 +394,15 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
     }
     for key in ["revision", "pattern"] {
         let mut sections = sections.clone();
-        let text = String::from_utf8(sections.nodes.clone()).unwrap();
-        let text = if key == "revision" {
-            text.replace("\"revision\":9", "\"revision\":8")
+        sections.nodes = if key == "revision" {
+            let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+            let revision = graph["revision"].as_u64().unwrap();
+            graph["revision"] = serde_json::Value::from(revision - 1);
+            serde_json::to_vec(&graph).unwrap()
         } else {
-            text.replace("\"Literal\":", "\"Unknown\":")
+            let text = String::from_utf8(sections.nodes).unwrap();
+            text.replace("\"Literal\":", "\"Unknown\":").into_bytes()
         };
-        sections.nodes = text.into_bytes();
         assert!(
             decode_program_artifact_sections(&sections).is_err(),
             "{key}"
