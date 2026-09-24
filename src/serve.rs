@@ -445,6 +445,28 @@ impl ServerSourceRegistry {
                 }
             }
         };
+        let root_uris = root_uris
+            .into_iter()
+            .filter(|uri| {
+                snapshot.sources.values().any(|source| {
+                    source.canonical_uri == *uri
+                        && source
+                            .path
+                            .as_deref()
+                            .is_some_and(is_renderable_mech_text_source)
+                        && source.source_document.as_ref().is_some_and(|document| {
+                            document.is_strictly_clean()
+                                && mech_runtime::canonical_document_has_root_program(
+                                    &document.document(),
+                                )
+                        })
+                })
+            })
+            .collect::<BTreeSet<_>>();
+        let uses_mixed_compute_shim = self
+            .compiler_hosts
+            .iter()
+            .any(|host| host.provider == "compute");
         let mut module_specifiers = BTreeMap::new();
         // The workspace snapshot is the source authority, including expanded
         // includes and resolver-specific import edges. A browser transport owns
@@ -674,7 +696,7 @@ impl ServerSourceRegistry {
                     backing_paths: dedupe_paths(backing_paths),
                 },
             );
-            if is_root {
+            if is_root && !uses_mixed_compute_shim {
                 let code = crate::browser_planning::compile_browser_document_bundle(
                     &mut compiler,
                     uri,
@@ -2555,6 +2577,68 @@ mod tests {
         let bundle = CanonicalProgramBundle::decode(&encoded, Some(source)).unwrap();
         assert_eq!(bundle.canonical_uri, "bundle:///main.mec");
         assert_eq!(bundle.source, source);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn explicit_declaration_only_source_is_rendered_without_bundle_compilation() {
+        let root = temp_root("explicit-rootless-document");
+        let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n";
+        std::fs::write(root.join("prose.mec"), source).unwrap();
+        let retained = snapshot(&root, "prose.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                "<html><body>{{CONTENT}}</body></html>",
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/prose.mec").is_some());
+        assert!(registry.get_route("/source/prose.mec").is_some());
+        assert!(registry.get_route("/code/prose.mec").is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn mixed_compute_shim_serves_source_without_compiling_a_document_bundle() {
+        let root = temp_root("mixed-compute-custom-shim");
+        let source = include_str!("../examples/gpu-particles/particles.mec");
+        let path = root.join("particles.mec");
+        std::fs::write(&path, source).unwrap();
+        let retained = snapshot(&root, "particles.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_hosts: vec![
+                mech_runtime::HostInstanceConfig {
+                    name: "pointer".into(),
+                    provider: "pointer".into(),
+                    settings: mech_runtime::ConfigValue::Map(Default::default()),
+                },
+                mech_runtime::HostInstanceConfig {
+                    name: "particles".into(),
+                    provider: "compute".into(),
+                    settings: mech_runtime::ConfigValue::Map(Default::default()),
+                },
+            ],
+            compiler_roots: Some(BTreeSet::from([path.canonicalize().unwrap()])),
+            ..ServerSourceRegistry::default()
+        };
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                "<html><body>{{CONTENT}}</body></html>",
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/particles.mec").is_some());
+        assert!(registry.get_route("/source/particles.mec").is_some());
+        assert!(registry.get_route("/code/particles.mec").is_none());
         std::fs::remove_dir_all(root).unwrap();
     }
 

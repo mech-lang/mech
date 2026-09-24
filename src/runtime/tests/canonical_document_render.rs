@@ -936,6 +936,26 @@ fn browser_source_mounts_match_compiled_canonical_output_anchors() {
 }
 
 #[test]
+fn browser_source_mounts_tuple_destructure_root_results() {
+    let document = document("(x, y) := (1, 2)\n");
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let output = program
+        .document_outputs()
+        .iter()
+        .find(|output| output.kind == SourceDocumentOutputKind::Program && output.visible)
+        .expect("tuple destructuring publishes the root result");
+    let range = program.source_map().outputs[output.output as usize].range;
+    let id = mech_runtime::canonical_document_output_id(output.kind, range);
+    assert!(
+        html.contains(&format!("data-mech-output-address='{id}:0'")),
+        "{html}"
+    );
+}
+
+#[test]
 fn browser_source_omits_mounts_for_named_and_mika_scopes() {
     let document =
         document("Root {1}.\n\n~~~mech:worker\n2\n~~~\n\n~∘~⸢Child {3}.\n\n~~~mech\n4\n~~~\n⸥\n");
