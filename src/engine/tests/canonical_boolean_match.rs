@@ -323,7 +323,7 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
         let mut sections = sections.clone();
         let text = String::from_utf8(sections.nodes.clone()).unwrap();
         let text = if key == "revision" {
-            text.replace("\"revision\":8", "\"revision\":7")
+            text.replace("\"revision\":9", "\"revision\":8")
         } else {
             text.replace("\"Literal\":", "\"Unknown\":")
         };
