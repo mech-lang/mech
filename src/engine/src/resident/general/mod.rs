@@ -5158,6 +5158,15 @@ fn build_plan(
                 if ordinal != control.scrutinee as usize
         )
     };
+    let node_is_pure = |node: &crate::artifact::NodeDeclaration| match &node.body {
+        crate::ExecutableNodeBody::Operation(operation) => matches!(
+            artifact.contracts().get(operation.contract),
+            Some(mech_core::ResolvedOperationContract::Declared(contract))
+                if contract.interaction == ExternalInteraction::Pure
+        ),
+        crate::ExecutableNodeBody::Match(_) | crate::ExecutableNodeBody::Comprehension(_) => true,
+        crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => false,
+    };
     // Pure nodes used only to compute an activation capture belong to that
     // capture's sampled dependency cone. Host updates may refresh their input
     // snapshots, but only the activation scrutinee schedules their execution.
@@ -5168,19 +5177,7 @@ fn build_plan(
             if sampled_nodes.contains_key(&node.node) {
                 continue;
             }
-            let pure = match &node.body {
-                crate::ExecutableNodeBody::Operation(operation) => matches!(
-                    artifact.contracts().get(operation.contract),
-                    Some(mech_core::ResolvedOperationContract::Declared(contract))
-                        if contract.interaction == ExternalInteraction::Pure
-                ),
-                crate::ExecutableNodeBody::Match(_)
-                | crate::ExecutableNodeBody::Comprehension(_) => true,
-                crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => {
-                    false
-                }
-            };
-            if !pure {
+            if !node_is_pure(node) {
                 continue;
             }
             let output = node_output_slot(artifact, node.node)?;
@@ -5215,6 +5212,25 @@ fn build_plan(
         }
         if sampled_nodes.len() == before {
             break;
+        }
+    }
+    for node in artifact.nodes() {
+        if node_is_pure(node) || sampled_nodes.contains_key(&node.node) {
+            continue;
+        }
+        let output = node_output_slot(artifact, node.node)?;
+        if published.contains(&output)
+            || artifact.slots()[output.get() as usize].role != SlotRole::Derived
+        {
+            continue;
+        }
+        let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
+        if !uses.is_empty()
+            && uses.iter().all(|(consumer, ordinal)| {
+                activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains_key(consumer)
+            })
+        {
+            return Err(ResidentActivationError::InvalidDependency { node: node.node });
         }
     }
     let turn_trigger_inputs = inputs
@@ -5368,7 +5384,9 @@ fn build_plan(
         .filter_map(|slot| match slot.role {
             SlotRole::Output => Some(output_materialization_source(slot.slot).and_then(|source| {
                 let producer = match source {
-                    ArtifactSource::Slot(source) => {
+                    ArtifactSource::Slot(source)
+                        if artifact.slots()[source.get() as usize].role != SlotRole::State =>
+                    {
                         match artifact.slots()[source.get() as usize].producer {
                             ProducerReference::NodeOutput { node, .. } => {
                                 artifact_to_activated[node.get() as usize]
@@ -5376,7 +5394,7 @@ fn build_plan(
                             ProducerReference::Input(_) | ProducerReference::Output { .. } => None,
                         }
                     }
-                    ArtifactSource::Constant(_) => None,
+                    ArtifactSource::Slot(_) | ArtifactSource::Constant(_) => None,
                 };
                 resolve_read(&layout, source).map(|source| ActivatedOutputMaterialization {
                     target: slot.slot,
@@ -5425,7 +5443,9 @@ fn build_plan(
                 artifact_id: constraint.constraint,
                 predicate,
                 producer: match predicate_source {
-                    ArtifactSource::Slot(slot) => {
+                    ArtifactSource::Slot(slot)
+                        if artifact.slots()[slot.get() as usize].role != SlotRole::State =>
+                    {
                         match artifact.slots()[slot.get() as usize].producer {
                             ProducerReference::NodeOutput { node, .. } => {
                                 artifact_to_activated[node.get() as usize]
@@ -5433,7 +5453,7 @@ fn build_plan(
                             ProducerReference::Input(_) | ProducerReference::Output { .. } => None,
                         }
                     }
-                    ArtifactSource::Constant(_) => None,
+                    ArtifactSource::Slot(_) | ArtifactSource::Constant(_) => None,
                 },
             })
         })

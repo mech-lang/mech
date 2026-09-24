@@ -608,8 +608,13 @@ fn source_activation_dependency(
         if slot.role == SlotRole::State {
             continue;
         }
-        let ProducerReference::NodeOutput { node, .. } = slot.producer else {
-            continue;
+        let node = match slot.producer {
+            ProducerReference::Output { source, .. } => {
+                pending.push(source);
+                continue;
+            }
+            ProducerReference::NodeOutput { node, .. } => node,
+            ProducerReference::Input(_) => continue,
         };
         if activations.contains(&node) {
             return Ok(Some(node));
@@ -653,8 +658,13 @@ fn source_state_dependencies(
             states.insert(slot_id);
             continue;
         }
-        let ProducerReference::NodeOutput { node, .. } = slot.producer else {
-            continue;
+        let node = match slot.producer {
+            ProducerReference::Output { source, .. } => {
+                pending.push(source);
+                continue;
+            }
+            ProducerReference::NodeOutput { node, .. } => node,
+            ProducerReference::Input(_) => continue,
         };
         if !visited_nodes.insert(node) {
             continue;
