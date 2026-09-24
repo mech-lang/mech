@@ -2228,6 +2228,47 @@ fn declared_fsm_publishes_output_and_continuation_atomically() {
 }
 
 #[test]
+fn declared_fsm_retains_its_last_publication_across_later_suspensions() {
+    let source = "#Publishing() => <f64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9.\nvalue := #Publishing()\nvalue + signal<f64>\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical publishing FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 90 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for (input, expected) in [(1.0, 8.0), (2.0, 9.0)] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&[input]),
+                }])
+                .unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(expected))
+            );
+            assert!(instance.has_ready_continuation());
+        }
+    }
+}
+
+#[test]
 fn declared_fsm_bytecode_rejects_malformed_typed_continuation_operations() {
     let source = "#Publishing() => <u64>\n  | :Start\n  | :Later.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Later\n  :Later => 9u64.\n#Publishing()\n";
     let artifact = CanonicalSourceFrontend

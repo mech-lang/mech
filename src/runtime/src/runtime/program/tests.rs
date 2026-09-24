@@ -834,6 +834,58 @@ fn production_load_drains_fsm_continuations_before_returning_initial_value() {
 }
 
 #[test]
+fn failed_initial_continuation_drain_releases_the_program_slot() {
+    let deferred = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
+    let compile = |source: &str| {
+        let parsed = mech_syntax::document::parse_canonical_document(
+            mech_syntax::document::TextSnapshot::new(
+                mech_syntax::document::DocumentId(0x875),
+                mech_syntax::document::Revision(0),
+                source,
+            )
+            .unwrap(),
+            mech_syntax::document::ParseConfig::default(),
+        );
+        let document =
+            <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
+                parsed.syntax(),
+            )
+            .unwrap();
+        mech_engine::CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap()
+    };
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(1);
+    let mut runtime = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(mech_stdlib::source_catalog())
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    let deferred = encode_program_artifact_bytecode_v1(&compile(deferred)).unwrap();
+    let error = runtime
+        .load_bytecode_program(&deferred, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert!(matches!(
+        runtime.active_program,
+        ActiveProgramExecution::None
+    ));
+
+    let replacement = encode_program_artifact_bytecode_v1(&compile("40u64 + 2u64\n")).unwrap();
+    let loaded = runtime
+        .load_bytecode_program(&replacement, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(loaded.initial_value.format_canonical_inline(), "42");
+}
+
+#[test]
 fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())

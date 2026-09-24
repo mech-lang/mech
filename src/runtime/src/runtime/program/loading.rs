@@ -584,7 +584,11 @@ impl MechRuntime {
         };
         self.active_program = active;
         self.program_execution_info = info;
-        self.drain_resident_continuations()?;
+        if let Err(error) = self.drain_resident_continuations() {
+            self.active_program = ActiveProgramExecution::None;
+            self.program_execution_info = RuntimeProgramExecutionInfo::default();
+            return Err(error);
+        }
         let initial_snapshot = match &self.active_program {
             ActiveProgramExecution::ResidentPure(execution) => {
                 initial_value(&execution.instance, initial_output)?

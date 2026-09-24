@@ -1399,6 +1399,7 @@ pub struct ReactiveInstance {
     candidate_epoch: Option<InstanceEpoch>,
     continuations: Vec<Option<ResidentContinuation>>,
     ready_continuations: std::collections::VecDeque<ActivatedNodeIndex>,
+    published_continuations: Box<[u64]>,
     output_ready: Box<[bool]>,
     // Declared last so every typed lane projection is destroyed before the
     // realization releases its arena owners.
@@ -2416,6 +2417,7 @@ fn activate_internal(
                 })
         })
         .collect();
+    let continuation_words = plan.steps.len().div_ceil(64);
     let mut instance = ReactiveInstance {
         id,
         plan,
@@ -2429,6 +2431,7 @@ fn activate_internal(
         candidate_epoch: None,
         continuations,
         ready_continuations: std::collections::VecDeque::new(),
+        published_continuations: vec![0; continuation_words].into_boxed_slice(),
         output_ready,
         _managed_memory: managed_memory,
     };
