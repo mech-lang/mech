@@ -56,6 +56,8 @@ pub enum ComprehensionStep<C = OperationContractId, S = SchemaId, V = Comprehens
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComprehensionKind {
     Matrix,
+    /// Elementwise construction that retains the sole generator matrix shape.
+    MatrixPreserveShape,
     Set,
 }
 
@@ -333,6 +335,45 @@ pub(super) fn validate_comprehension_inner(
     {
         return Err(invalid("collection generator nesting limit"));
     }
+    let preserved_matrix_source = if declaration.kind == ComprehensionKind::MatrixPreserveShape {
+        if declaration
+            .steps
+            .iter()
+            .filter(|step| matches!(step, ComprehensionStep::Generator { .. }))
+            .count()
+            != 1
+            || declaration
+                .steps
+                .iter()
+                .any(|step| matches!(step, ComprehensionStep::Filter(_)))
+        {
+            return Err(invalid(
+                "shape-preserving matrix collection requires one unfiltered generator",
+            ));
+        }
+        let Some(ComprehensionStep::Generator { source, pattern }) = declaration.steps.first()
+        else {
+            return Err(invalid(
+                "shape-preserving matrix collection must begin with its generator",
+            ));
+        };
+        if !super::control::structurally_irrefutable(pattern) {
+            return Err(invalid(
+                "shape-preserving matrix collection requires an irrefutable generator",
+            ));
+        }
+        let source = value_schema(*source, &draft.constants, inputs, &[])
+            .and_then(|id| draft.schemas.get(id))
+            .ok_or_else(|| invalid("unknown shape-preserving matrix source"))?;
+        if !matches!(source.body(), SchemaBody::Matrix { .. }) {
+            return Err(invalid(
+                "shape-preserving matrix collection source is not a matrix",
+            ));
+        }
+        Some(source)
+    } else {
+        None
+    };
     for step in &declaration.steps {
         match step {
             ComprehensionStep::Generator { source, pattern } => {
@@ -450,6 +491,43 @@ pub(super) fn validate_comprehension_inner(
         .schemas
         .get(output)
         .ok_or_else(|| invalid("unknown collection output"))?;
+    if let Some(source) = preserved_matrix_source {
+        let (
+            SchemaBody::Matrix {
+                dimensions: source_dimensions,
+                ..
+            },
+            SchemaBody::Matrix {
+                element,
+                dimensions: output_dimensions,
+            },
+        ) = (source.body(), output.body())
+        else {
+            return Err(invalid(
+                "shape-preserving matrix collection requires a matrix result",
+            ));
+        };
+        if source_dimensions != output_dimensions
+            || source.dimension_parameters() != output.dimension_parameters()
+            || !yielded.dimension_parameters().is_empty()
+        {
+            return Err(invalid(
+                "shape-preserving matrix collection output does not track its source shape",
+            ));
+        }
+        let element = mech_core::SchemaDraft {
+            body: element.as_ref().clone(),
+            dimension_parameters: Box::new([]),
+        }
+        .finalize()
+        .map_err(|_| invalid("invalid shape-preserving matrix element schema"))?;
+        if element.key() != yielded.key() {
+            return Err(invalid(
+                "shape-preserving matrix collection yield does not match its element schema",
+            ));
+        }
+        return Ok(());
+    }
     let element = match output.body() {
         SchemaBody::Matrix {
             element,

@@ -77,6 +77,8 @@ pub(crate) fn activation_failure_for_artifact(
                         {
                             mech_engine::ComprehensionKind::Matrix =>
                                 "Matrix comprehension".to_owned(),
+                            mech_engine::ComprehensionKind::MatrixPreserveShape =>
+                                "Shape-preserving matrix comprehension".to_owned(),
                             mech_engine::ComprehensionKind::Set => "Set comprehension".to_owned(),
                         },
                         mech_engine::ExecutableNodeBody::Fsm(control) => {
