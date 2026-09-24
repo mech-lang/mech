@@ -432,7 +432,9 @@ impl ServerSourceRegistry {
                                 is_renderable_mech_text_source(path)
                                     && source.source_document.as_ref().is_some_and(|document| {
                                         document.is_strictly_clean()
-                                            && document.document().contains_executable_source()
+                                            && mech_runtime::canonical_document_has_root_program(
+                                                &document.document(),
+                                            )
                                     })
                             })
                         })
@@ -481,7 +483,7 @@ impl ServerSourceRegistry {
                 .as_ref()
                 .map(|document| document.source().revision())
                 .unwrap_or(Revision(0));
-            let document = SourceDocument::parse_resolved(
+            let mut document = SourceDocument::parse_resolved(
                 &uri,
                 revision,
                 Arc::<str>::from(text.as_str()),
@@ -495,6 +497,14 @@ impl ServerSourceRegistry {
                     None,
                 )
             })?;
+            if let Some(retained) = source.source_document.as_ref() {
+                if let Some(origin) = retained.nominal_origin() {
+                    document = document.with_nominal_origin(origin.clone());
+                }
+                if let Some(package_id) = retained.nominal_package_id() {
+                    document = document.with_nominal_package_id(package_id);
+                }
+            }
             resolver.insert_source(
                 &uri,
                 mech_runtime::ResolvedSource::new(&uri, &uri, MechSourceCode::String(text.clone()))

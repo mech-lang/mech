@@ -781,6 +781,9 @@ fn activate_prepared_document_repl_runtime(
     events: MechEventBuffer,
     document: &SourceDocument,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+    let initial_bundle = bootstrap.source().initial_bundle.as_ref().filter(|_| {
+        document.source().revision() == bootstrap.source().document.document().source().revision()
+    });
     let mut candidate = build_document_repl_runtime_for_document(bootstrap, events, document)?;
     let source = document.source().to_contiguous_string();
     if source.trim().is_empty() {
@@ -802,12 +805,7 @@ fn activate_prepared_document_repl_runtime(
     }
     let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
-    let activation = if let Some(bundle) = bootstrap
-        .source()
-        .initial_bundle
-        .as_ref()
-        .filter(|bundle| bundle.source == source)
-    {
+    let activation = if let Some(bundle) = initial_bundle {
         runtime.load_bytecode_program(&bundle.bytecode, durability)
     } else {
         #[cfg(feature = "browser_compute")]
@@ -1530,8 +1528,15 @@ mod document {
         candidate: &SourceDocument,
         require_all: bool,
     ) -> MResult<DocumentOutputState> {
-        let (runtime_source, program_output, capture_range) =
-            runtime_document_with_capture(bootstrap, candidate)?;
+        let bundled_initial = bootstrap
+            .initial_bundle
+            .as_ref()
+            .is_some_and(|bundle| bundle.source == candidate.source().to_contiguous_string());
+        let (runtime_source, program_output, capture_range) = if bundled_initial {
+            (candidate.clone(), None, None)
+        } else {
+            runtime_document_with_capture(bootstrap, candidate)?
+        };
         if runtime_source
             .source()
             .to_contiguous_string()
@@ -1672,6 +1677,15 @@ mod document {
                 "browser presentation payload contains an output absent from the canonical document",
             ));
         }
+        let program_output = program_output.or_else(|| {
+            bundled_initial.then(|| {
+                program
+                    .document_outputs()
+                    .iter()
+                    .find(|output| output.kind == SourceDocumentOutputKind::Program)
+                    .map(|output| OutputId::new(output.output))
+            })?
+        });
         Ok(DocumentOutputState {
             bindings,
             program_output: program_output.map(|output| u64::from(output.0)),
