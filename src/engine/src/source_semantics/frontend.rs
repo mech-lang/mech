@@ -2675,6 +2675,15 @@ enum SourceMatchBody {
     },
 }
 
+impl SourceMatchBody {
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Expression(expression) => expression.syntax(),
+            Self::Activation { syntax, .. } => syntax,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum PendingControlValue {
     Constant(usize),
@@ -2801,6 +2810,7 @@ struct SemanticBuilder {
     active_functions: Vec<String>,
     active_fsms: Vec<String>,
     active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
+    activation_owned_states: BTreeSet<u32>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -3066,6 +3076,7 @@ impl SemanticBuilder {
             active_functions: Vec::new(),
             active_fsms: Vec::new(),
             active_recursive_outputs: Vec::new(),
+            activation_owned_states: BTreeSet::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
         }
@@ -9035,7 +9046,7 @@ impl SemanticBuilder {
         binding_start: usize,
         activation: bool,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft)>,
+        captures: &mut Vec<(u16, SchemaDraft, bool)>,
     ) -> Result<
         crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
         SourceSemanticError,
@@ -9073,8 +9084,12 @@ impl SemanticBuilder {
                             }
                         };
                         let input = u16::try_from(input).map_err(|_| invalid())?;
-                        if !captures.iter().any(|(existing, _)| *existing == input) {
-                            captures.push((input, schema));
+                        if !captures.iter().any(|(existing, _, _)| *existing == input) {
+                            captures.push((
+                                input,
+                                schema,
+                                !matches!(value, PendingValue::Input(_)),
+                            ));
                         }
                         crate::MatchPatternValue::Input(input)
                     }

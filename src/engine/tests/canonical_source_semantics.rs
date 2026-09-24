@@ -2523,6 +2523,14 @@ fn activation_preflight_rejects_invalid_scope_contracts() {
         "event := 1\n~x := 0\n~> event {\n  @temporary := test://resource\n}\nx\n",
         "source-semantics/activation-definition-unsupported",
     );
+    assert_code(
+        "left := 0\nright := 0\n~x := 0\n~> left { x = x + 1 }\n~> right { x = x + 10 }\nx\n",
+        "source-semantics/multiple-activation-state-owners",
+    );
+    assert_code(
+        "left := 0\nright := 0\n~x := 0\n~> left\n  | * => { x = x + 1 }\n~> right { x = x + 10 }\nx\n",
+        "source-semantics/multiple-activation-state-owners",
+    );
 }
 
 #[test]
