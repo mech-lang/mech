@@ -321,6 +321,7 @@ pub struct DependencyTopology {
     pub same_turn_downstream_nodes: Box<[ActivatedNodeIndex]>,
     pub turn_root_nodes: Box<[ActivatedNodeIndex]>,
     pub same_turn_downstream_masks: Box<[Box<[u64]>]>,
+    pub same_turn_dependency_masks: Box<[Box<[u64]>]>,
     pub turn_root_mask: Box<[u64]>,
     pub mandatory_candidate_mask: Box<[u64]>,
 }
@@ -417,7 +418,7 @@ fn read_location_depends_on_match(
         })
     });
     producer.is_some_and(|producer| {
-        plan.topology.same_turn_downstream_masks[match_index]
+        plan.topology.same_turn_dependency_masks[match_index]
             .get(producer / 64)
             .is_some_and(|word| word & (1 << (producer % 64)) != 0)
     })
@@ -5897,6 +5898,23 @@ fn build_topology(
         }
         masks.push(mask);
     }
+    let mut dependency_masks = masks.clone();
+    for node in linear_node_order.iter().rev() {
+        let index = node.get() as usize;
+        for child in &downstream[index] {
+            let child = child.get() as usize;
+            let (target, source) = if index < child {
+                let (left, right) = dependency_masks.split_at_mut(child);
+                (&mut left[index], &right[0])
+            } else {
+                let (left, right) = dependency_masks.split_at_mut(index);
+                (&mut right[0], &left[child])
+            };
+            for (target, source) in target.iter_mut().zip(source.iter()) {
+                *target |= *source;
+            }
+        }
+    }
     let mut root_mask = vec![0_u64; words].into_boxed_slice();
     for root in &roots {
         set_bit(&mut root_mask, root.get() as usize);
@@ -5929,6 +5947,7 @@ fn build_topology(
         same_turn_downstream_nodes: values.into_boxed_slice(),
         turn_root_nodes: roots.into_boxed_slice(),
         same_turn_downstream_masks: masks.into_boxed_slice(),
+        same_turn_dependency_masks: dependency_masks.into_boxed_slice(),
         turn_root_mask: root_mask,
         mandatory_candidate_mask: mandatory,
     })

@@ -1481,7 +1481,7 @@ impl ReactiveInstance {
             index != current_index
                 && self.unpublished_continuation(index)
                 && bit_is_set(
-                    &self.plan.topology.same_turn_downstream_masks[index],
+                    &self.plan.topology.same_turn_dependency_masks[index],
                     current_index,
                 )
         })
