@@ -886,9 +886,28 @@ fn production_load_drains_fsm_continuations_before_returning_initial_value() {
 #[test]
 fn pure_continuation_drains_keep_input_free_activations_dormant() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\n#Deferred()\n";
+    let parsed = mech_syntax::document::parse_canonical_document(
+        mech_syntax::document::TextSnapshot::new(
+            mech_syntax::document::DocumentId(0x876),
+            mech_syntax::document::Revision(0),
+            source,
+        )
+        .unwrap(),
+        mech_syntax::document::ParseConfig::default(),
+    );
+    let document = <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
+        parsed.syntax(),
+    )
+    .unwrap();
+    let artifact = mech_engine::CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
     let mut runtime = runtime();
     let loaded = runtime
-        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
 
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
