@@ -22464,6 +22464,10 @@ mod tests {
             complex32_divide((f32::MIN_POSITIVE, 0.0), (f32::MIN_POSITIVE, 0.0)),
             (1.0, 0.0)
         );
+        let c32_minor = complex32_divide((0.0, 1.0e30), (1.0e20, 1.0e-30));
+        assert!(c32_minor.0 > 0.0);
+        assert!((c32_minor.0 / 1.0e-40 - 1.0).abs() < 1.0e-4);
+        assert!((c32_minor.1 / 1.0e10 - 1.0).abs() < f32::EPSILON);
         let wide = u64::from(u32::MAX) + 1;
         assert_eq!(
             numeric_power(ValueDataDraft::U64(1), ValueDataDraft::U64(wide)),
@@ -22514,6 +22518,13 @@ mod tests {
                 complex64_divide((f64::MIN_POSITIVE, 0.0), (f64::MIN_POSITIVE, 0.0)),
                 (1.0, 0.0)
             );
+            let c64_minor_product = complex64_multiply((1.0e308, 1.0e-100), (0.0, 1.0e-200));
+            assert!((c64_minor_product.0 / -1.0e-300 - 1.0).abs() < 2.0e-16);
+            assert!((c64_minor_product.1 / 1.0e108 - 1.0).abs() < 2.0e-16);
+            let c64_minor_quotient = complex64_divide((0.0, 1.0e118), (1.0e100, 1.0e-240));
+            assert!(c64_minor_quotient.0 > 0.0);
+            assert!(c64_minor_quotient.0 <= 2.0e-322);
+            assert!((c64_minor_quotient.1 / 1.0e18 - 1.0).abs() < 2.0e-16);
             assert_eq!(
                 complex64_power((-1.0, 0.0), (9_007_199_254_740_992.0, 0.0)),
                 (1.0, 0.0)
