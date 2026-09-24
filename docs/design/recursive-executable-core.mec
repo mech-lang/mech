@@ -34,15 +34,10 @@ normative grammar graph. The deterministic
 `docs/design/grammar-audit/canonical-dependencies.tsv` report is generated from
 that grammar and records its direct child and reverse parent edges.
 
-`docs/design/grammar-audit/productions.tsv` records the canonical rule
-inventory, retiring implementation provenance, and audit notes. Its current
-`parent-rules` and `child-rules` columns are implementation-derived call
-metadata. They are not normative EBNF dependency edges and do not define the
-canonical recursive closure.
-
-`docs/design/grammar-audit/ports.tsv` defines rule-level canonical syntax and
-source-semantic disposition evidence. It is audit metadata, not parser or
-runtime dispatch, and its `certified` semantic status is distinct from the
+`docs/design/grammar-audit/ports.tsv` records the canonical rule inventory and
+rule-level syntax, source-semantic, activation, node-policy, phase, and audit
+disposition evidence. It is audit metadata and the deterministic RuleId
+registry input, not parser or runtime dispatch. Its `certified` semantic status is distinct from the
 milestone-level behavior-demonstration gate. Its separate `activation-status`
 keeps all 80 Phase 2I rows at `candidate` until the completion record reports
 every required behavior as demonstrated. The recursive-core component is the
