@@ -407,6 +407,7 @@ fn read_location_depends_on_match(
             location
                 == match write.storage {
                     ResidentStorageClass::Constant => ResidentReadLocation::Constant(write.region),
+                    ResidentStorageClass::Input => ResidentReadLocation::Input(write.region),
                     ResidentStorageClass::State => ResidentReadLocation::State {
                         slot: write.slot,
                         region: write.region,
