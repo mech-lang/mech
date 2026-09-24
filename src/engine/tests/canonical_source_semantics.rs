@@ -2111,12 +2111,13 @@ fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
         let mut bindings = bindings.clone();
         if nonzero_scrutinee {
             let activation = &mut nodes[activation.node.get() as usize];
+            let activation_inputs = activation.input_bindings.clone();
+            assert!(activation_inputs.end - activation_inputs.start >= 2);
             let mech_engine::ExecutableNodeBody::Activation(control) = &mut activation.body else {
                 panic!("activation declaration")
             };
-            assert!(activation.input_bindings.end - activation.input_bindings.start >= 2);
             control.scrutinee = 1;
-            let first = activation.input_bindings.start as usize;
+            let first = activation_inputs.start as usize;
             let second = first + 1;
             let (before_second, from_second) = bindings.split_at_mut(second);
             let mech_engine::BindingDeclaration::Input {
