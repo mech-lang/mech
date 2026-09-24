@@ -2106,28 +2106,58 @@ fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
             *target = trigger;
         }
     }
-    let error = mech_engine::ProgramArtifactDraft {
-        schemas: state_artifact.schemas().clone(),
-        constants: state_artifact.constants().clone(),
-        contracts: state_artifact.contracts().clone(),
-        requirements: state_artifact.requirements().clone(),
-        inputs: state_artifact.inputs().to_vec().into_boxed_slice(),
-        slots: slots.into_boxed_slice(),
-        nodes: state_artifact.nodes().to_vec().into_boxed_slice(),
-        bindings: bindings.into_boxed_slice(),
-        outputs: state_artifact.outputs().to_vec().into_boxed_slice(),
-        constraints: state_artifact.constraints().to_vec().into_boxed_slice(),
-        compute_regions: state_artifact.compute_regions().to_vec().into_boxed_slice(),
-    }
-    .finalize()
-    .unwrap_err();
-    assert!(matches!(
-        error,
-        mech_engine::ArtifactBuildError::InvalidControl {
-            reason: "activation cannot write its own trigger state",
-            ..
+    for nonzero_scrutinee in [false, true] {
+        let mut nodes = state_artifact.nodes().to_vec();
+        let mut bindings = bindings.clone();
+        if nonzero_scrutinee {
+            let activation = &mut nodes[activation.node.get() as usize];
+            let mech_engine::ExecutableNodeBody::Activation(control) = &mut activation.body else {
+                panic!("activation declaration")
+            };
+            assert!(activation.input_bindings.end - activation.input_bindings.start >= 2);
+            control.scrutinee = 1;
+            let first = activation.input_bindings.start as usize;
+            let second = first + 1;
+            let (before_second, from_second) = bindings.split_at_mut(second);
+            let mech_engine::BindingDeclaration::Input {
+                source: first_source,
+                ..
+            } = &mut before_second[first]
+            else {
+                panic!("activation trigger binding")
+            };
+            let mech_engine::BindingDeclaration::Input {
+                source: second_source,
+                ..
+            } = &mut from_second[0]
+            else {
+                panic!("activation capture binding")
+            };
+            core::mem::swap(first_source, second_source);
         }
-    ));
+        let error = mech_engine::ProgramArtifactDraft {
+            schemas: state_artifact.schemas().clone(),
+            constants: state_artifact.constants().clone(),
+            contracts: state_artifact.contracts().clone(),
+            requirements: state_artifact.requirements().clone(),
+            inputs: state_artifact.inputs().to_vec().into_boxed_slice(),
+            slots: slots.clone().into_boxed_slice(),
+            nodes: nodes.into_boxed_slice(),
+            bindings: bindings.into_boxed_slice(),
+            outputs: state_artifact.outputs().to_vec().into_boxed_slice(),
+            constraints: state_artifact.constraints().to_vec().into_boxed_slice(),
+            compute_regions: state_artifact.compute_regions().to_vec().into_boxed_slice(),
+        }
+        .finalize()
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            mech_engine::ArtifactBuildError::InvalidControl {
+                reason: "activation cannot write its own trigger state",
+                ..
+            }
+        ));
+    }
     let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
     let mut catalog = FunctionCatalogBuilder::new();
@@ -2257,6 +2287,83 @@ fn computed_activation_pattern_dependencies_remain_sample_only() {
             ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0))
         );
     }
+}
+
+#[test]
+fn published_activation_capture_dependencies_remain_turn_triggers() {
+    let source = "event := event-source<f64>\nobserved := observed-source<f64>\npublished := observed + 1\n~count := 0\n~> event { count = count + published }\npublished\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 751),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    assert_eq!(instance.plan.inputs.len(), 2);
+    assert_eq!(
+        instance.plan.turn_trigger_inputs.as_ref(),
+        &[
+            instance.plan.inputs[0].artifact_slot,
+            instance.plan.inputs[1].artifact_slot,
+        ]
+    );
+    let first = [0.0, 10.0];
+    let first_inputs = instance
+        .plan
+        .inputs
+        .iter()
+        .zip(first.iter())
+        .map(|(input, value)| CapturedSignalInput {
+            slot: input.slot,
+            value: ResidentValueRef::F64(core::slice::from_ref(value)),
+        })
+        .collect::<Vec<_>>();
+    instance
+        .prepare_initial_turn(&first_inputs)
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(11.0))
+    );
+
+    let second = [0.0, 20.0];
+    let second_inputs = instance
+        .plan
+        .inputs
+        .iter()
+        .zip(second.iter())
+        .map(|(input, value)| CapturedSignalInput {
+            slot: input.slot,
+            value: ResidentValueRef::F64(core::slice::from_ref(value)),
+        })
+        .collect::<Vec<_>>();
+    let observed = instance.plan.inputs[1].artifact_slot;
+    instance
+        .prepare_turn_values_with_activation_triggers(&second_inputs, &[observed])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(21.0))
+    );
 }
 
 #[test]
