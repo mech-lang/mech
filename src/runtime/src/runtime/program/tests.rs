@@ -4370,7 +4370,7 @@ fn driverless_observation_gets_a_provider_turn_alongside_driven_triggers() {
         runtime
             .grant_capability(Arc::new(BasicCapability::from_keys(
                 id,
-                subject,
+                subject.clone(),
                 resource,
                 ["read"],
             )))
