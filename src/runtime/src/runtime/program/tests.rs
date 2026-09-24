@@ -3201,7 +3201,7 @@ fn canonical_roots_retain_textual_resolver_results_and_dependencies() {
             crate::ResolvedSource::new(
                 "dep.mec",
                 "memory:dep.mec",
-                crate::MechSourceCode::String("value := 41.0\n<+ value\n".into()),
+                mech_core::MechSourceCode::String("value := 41.0\n<+ value\n".into()),
             )
             .with_kind(crate::SourceKind::Mech),
         )
@@ -3212,7 +3212,7 @@ fn canonical_roots_retain_textual_resolver_results_and_dependencies() {
             crate::ResolvedSource::new(
                 "main.mec",
                 "memory:main.mec",
-                crate::MechSourceCode::String(
+                mech_core::MechSourceCode::String(
                     "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n".into(),
                 ),
             )
