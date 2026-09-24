@@ -1,7 +1,7 @@
 use std::cell::Cell;
 #[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
 use std::rc::Rc;
@@ -31,8 +31,8 @@ use mech_runtime::{
     ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
     RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
     RuntimeProgramRoute, SourceDocument, SourceKind, SourceRequest, SourceResolutionEntry,
-    import_may_resolve_source_dependency, parse_config_document, source_request_for_import,
-    validate_source_resolution_entries,
+    import_may_resolve_source_dependency, module_namespace_for_import, parse_config_document,
+    source_request_for_import, validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
 use mech_runtime::{CanonicalDependencySource, CanonicalProgramBundle};
@@ -791,6 +791,43 @@ struct DocumentRuntimeCandidate {
     scenes: BrowserSceneRegistry,
 }
 
+fn compile_browser_interactive_document(
+    bootstrap: &WasmDocumentBootstrap,
+    document: &SourceDocument,
+) -> MResult<mech_engine::CanonicalSourceProgram> {
+    let resolver = document_source_resolver(document, bootstrap)?;
+    let index = document
+        .index()
+        .map_err(|error| MechError::new(error, None))?;
+    let root_uri = format!("memory:{}", bootstrap.root_specifier);
+    let mut resolved_source_modules = BTreeSet::new();
+    for declaration in index.root.program_imports() {
+        if !import_may_resolve_source_dependency(&declaration) {
+            continue;
+        }
+        let request = source_request_for_import(&declaration, Some(&root_uri));
+        if mech_runtime::SourceResolver::resolve(&resolver, &request)?.is_some()
+            && let Some(module) = declaration
+                .module
+                .clone()
+                .or_else(|| module_namespace_for_import(&declaration))
+        {
+            resolved_source_modules.insert(module);
+        }
+    }
+    CanonicalSourceFrontend
+        .compile_interactive_document_with_planning_contract(
+            &document.document(),
+            mech_stdlib::source_catalog(),
+            BTreeMap::new(),
+            BTreeMap::new(),
+            &BTreeSet::new(),
+            &BTreeSet::new(),
+            &resolved_source_modules,
+        )
+        .map_err(|error| document_runtime_error(error.to_string()))
+}
+
 fn build_document_repl_runtime_for_document(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
@@ -987,10 +1024,7 @@ fn runtime_document(
         ParseConfig::default(),
     )
     .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
-    let original_program = match CanonicalSourceFrontend.compile_interactive_document_with_catalog(
-        &base_document.document(),
-        mech_stdlib::source_catalog(),
-    ) {
+    let original_program = match compile_browser_interactive_document(source, &base_document) {
         Ok(program) => program,
         Err(_) => return Ok((candidate.clone(), None)),
     };
@@ -1049,12 +1083,7 @@ fn runtime_document(
     .map_err(|error| {
         document_runtime_error(format!("invalid browser runtime source: {error:?}"))
     })?;
-    let program = CanonicalSourceFrontend
-        .compile_interactive_document_with_catalog(
-            &document.document(),
-            mech_stdlib::source_catalog(),
-        )
-        .map_err(|error| document_runtime_error(error.to_string()))?;
+    let program = compile_browser_interactive_document(source, &document)?;
     let output = program.document_outputs().iter().find_map(|output| {
         let anchor = program.source_map().outputs.get(output.output as usize)?;
         let start = anchor.range.start.0 as usize;
@@ -1074,13 +1103,19 @@ fn retained_submission_fragment<'a>(
     accepted_before: usize,
     submitted: &str,
 ) -> MResult<(&'a str, usize)> {
+    let mut normalized = submitted.to_owned();
+    if let Some(terminal) = mech_syntax::submission_terminal(submitted)
+        && terminal.suppresses_value
+    {
+        normalized.remove(terminal.byte_offset);
+    }
     let suffix = retained_source.get(accepted_before..).ok_or_else(|| {
         document_runtime_error("accepted documentation range is outside the retained source")
     })?;
     let relative_start = suffix
-        .rfind(submitted)
+        .rfind(&normalized)
         .ok_or_else(|| document_runtime_error("accepted documentation source was not retained"))?;
-    let relative_end = relative_start + submitted.len();
+    let relative_end = relative_start + normalized.len();
     if !suffix[relative_end..]
         .chars()
         .all(|character| matches!(character, '\r' | '\n'))
@@ -1090,7 +1125,7 @@ fn retained_submission_fragment<'a>(
         ));
     }
     let start = accepted_before + relative_start;
-    let end = start + submitted.len();
+    let end = start + normalized.len();
     Ok((&retained_source[start..end], start))
 }
 
@@ -1111,12 +1146,7 @@ fn live_document_fragment_addresses(
             document_runtime_error("accepted documentation fragment was not retained")
         })?;
     let fragment_end = fragment_start + fragment.len();
-    let program = CanonicalSourceFrontend
-        .compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        )
-        .map_err(|error| document_runtime_error(error.to_string()))?;
+    let program = compile_browser_interactive_document(bootstrap, &runtime_source)?;
     Ok(program
         .document_outputs()
         .iter()
@@ -1183,13 +1213,10 @@ mod document {
         require_all: bool,
     ) -> MResult<HashMap<u64, u64>> {
         let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
-        let program = match CanonicalSourceFrontend.compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        ) {
+        let program = match compile_browser_interactive_document(bootstrap, &runtime_source) {
             Ok(program) => program,
             Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
-            Err(error) => return Err(document_runtime_error(error.to_string())),
+            Err(error) => return Err(error),
         };
         let outputs = program
             .document_outputs()
@@ -4511,6 +4538,43 @@ phase"#;
             .format_html_body_live(&parsed.document(), &addresses)
             .unwrap();
         assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    }
+
+    #[test]
+    fn documentation_fragment_uses_the_retained_suppressed_source() {
+        let baseline = "answer := 1\nanswer";
+        let submitted = "answer + 1; -- suppressed";
+        let retained = format!("{baseline}\nanswer + 1 -- suppressed\n");
+        let (fragment, fragment_start) =
+            retained_submission_fragment(&retained, baseline.len(), submitted).unwrap();
+        assert_eq!(fragment, "answer + 1 -- suppressed");
+        assert_eq!(fragment_start, baseline.len() + 1);
+    }
+
+    #[test]
+    fn runtime_document_capture_accepts_resolved_source_only_imports() {
+        let source = "+> ./widgets.mec\nanswer := 42\nanswer\n";
+        let source_map = HashMap::from([(
+            "bundle/widgets.mec".to_owned(),
+            "widget := 1\n<+ widget\n".to_owned(),
+        )]);
+        let resolutions = vec![SourceResolutionEntry::new(
+            "bundle/main.mec",
+            "./widgets.mec",
+            "bundle/widgets.mec",
+        )];
+        let bootstrap = document_bootstrap("bundle/main.mec", source, source_map, resolutions);
+        let (runtime_source, output) =
+            runtime_document(&bootstrap, bootstrap.document.document()).unwrap();
+        assert!(output.is_some());
+        assert!(
+            runtime_source
+                .source()
+                .to_contiguous_string()
+                .contains("```mech\nans\n```")
+        );
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert!(ordinals.contains_key(&root_document_program_output_id()));
     }
 
     #[test]
