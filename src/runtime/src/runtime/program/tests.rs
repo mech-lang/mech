@@ -4388,7 +4388,8 @@ driven-trigger := @clock/delta-seconds
 ~driven-count := 0u64
 ~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
 ~> driven-trigger { driven-count = driven-count + 1u64 }
-snapshot-count + driven-count
+status := snapshot-count * 100u64 + driven-count
+status
 "#,
             crate::ResidentDurabilityPolicy::Retained,
         )
@@ -4399,21 +4400,12 @@ snapshot-count + driven-count
     assert_eq!(driven_reads.load(Ordering::SeqCst), 1);
     assert_eq!(
         runtime
-            .root_symbol_value("snapshot-count")
+            .root_symbol_value("status")
             .unwrap()
             .value()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::U64(1)
-    );
-    assert_eq!(
-        runtime
-            .root_symbol_value("driven-count")
-            .unwrap()
-            .value()
-            .canonical_data_draft()
-            .unwrap(),
-        ValueDataDraft::U64(0)
+        ValueDataDraft::U64(100)
     );
 
     runtime
@@ -4430,21 +4422,12 @@ snapshot-count + driven-count
     ));
     assert_eq!(
         runtime
-            .root_symbol_value("snapshot-count")
+            .root_symbol_value("status")
             .unwrap()
             .value()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::U64(1)
-    );
-    assert_eq!(
-        runtime
-            .root_symbol_value("driven-count")
-            .unwrap()
-            .value()
-            .canonical_data_draft()
-            .unwrap(),
-        ValueDataDraft::U64(1)
+        ValueDataDraft::U64(101)
     );
 }
 
