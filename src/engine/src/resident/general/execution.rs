@@ -34,11 +34,12 @@ use mech_core::{
 };
 
 use super::{
-    ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
-    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentActivationError,
-    ResidentEffectIntent, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
-    ResidentReadLocation, ResidentRegion, ResidentStorageClass, ResidentValueBorrow, SlotRole,
-    StateArena, StateVersion, TypedResidentArena, output_materialization_depends_on_match,
+    ActivatedExternalNode, ActivatedMatchNode, ActivatedNodeIndex, ActivatedTurnStep,
+    F64_STATE_ARENA_BASE, F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance,
+    ResidentActivationError, ResidentEffectIntent, ResidentExternalPublicationAuthority,
+    ResidentIntegrityMode, ResidentReadLocation, ResidentRegion, ResidentStorageClass,
+    ResidentValueBorrow, SlotRole, StateArena, StateVersion, TypedResidentArena,
+    output_materialization_depends_on_match,
 };
 
 // This is a host-stack safety ceiling, not the language's recursion budget.
@@ -1445,6 +1446,31 @@ impl ReactiveInstance {
         )
     }
 
+    fn match_depends_on_unpublished_continuation(
+        &self,
+        current_index: usize,
+        matched: &ActivatedMatchNode,
+    ) -> bool {
+        self.plan.steps.iter().enumerate().any(|(index, step)| {
+            if index == current_index || !self.unpublished_continuation(index) {
+                return false;
+            }
+            let ActivatedTurnStep::Match(unpublished) = step else {
+                return false;
+            };
+            std::iter::once(matched.scrutinee)
+                .chain(matched.capture_sources.iter().copied())
+                .any(|source| {
+                    super::read_location_depends_on_match(
+                        &self.plan,
+                        source,
+                        index,
+                        unpublished.write.region,
+                    )
+                })
+        })
+    }
+
     fn materialize_outputs(
         &mut self,
         before_epoch: InstanceEpoch,
@@ -1804,6 +1830,16 @@ impl ReactiveInstance {
             else {
                 unreachable!()
             };
+            if matched.continuation
+                && self.continuations[node_index.get() as usize].is_none()
+                && self
+                    .match_depends_on_unpublished_continuation(node_index.get() as usize, matched)
+            {
+                // A fresh continuation must not persist scratch defaults from
+                // an upstream FSM that has not published yet. Its real result
+                // will dirty this match when the upstream continuation resumes.
+                return Ok(false);
+            }
             if matched.continuation
                 && self.continuations[node_index.get() as usize].is_some()
                 && self.ready_continuations.front().copied() != Some(node_index)

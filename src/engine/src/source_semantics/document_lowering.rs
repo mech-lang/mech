@@ -538,7 +538,10 @@ fn compile_collected_document(
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
     builder.register_document_types(&units, nominal_origin)?;
-    builder.register_document_fsms(&units)?;
+    builder.register_document_fsms(
+        &units,
+        nominal_origin.map_or(&[], CanonicalNominalPath::segments),
+    )?;
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
@@ -1686,7 +1689,14 @@ pub(super) fn compile_ordered_documents(
             }
         }
         builder.register_document_types(&units, root.nominal_origin.as_ref())?;
-        builder.register_document_fsms(&units)?;
+        let fallback_fsm_namespace;
+        let fsm_namespace = if let Some(origin) = root.nominal_origin.as_ref() {
+            origin.segments()
+        } else {
+            fallback_fsm_namespace = vec![format!("ordered-root-{}", root.identity)];
+            &fallback_fsm_namespace
+        };
+        builder.register_document_fsms(&units, fsm_namespace)?;
         builder.register_document_functions(&units)?;
         builder.register_document_imports(&units, &root.resolved_modules)?;
         let mut bindings = builder.bindings.keys().cloned().collect();
