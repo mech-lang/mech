@@ -717,12 +717,21 @@ fn structural_pattern_is_irrefutable(
             {
                 return false;
             }
+            let fixed = (prefix.len() + suffix.len()) as u64;
+            if fixed == 0
+                && matches!(
+                    rest.as_deref(),
+                    Some(super::CollectionPattern::Wildcard)
+                        | Some(super::CollectionPattern::Bind { .. })
+                )
+            {
+                return true;
+            }
             let Some(length) = dimensions.iter().try_fold(1_u64, |total, dimension| {
                 total.checked_mul(constant_dimension(dimension)?)
             }) else {
                 return false;
             };
-            let fixed = (prefix.len() + suffix.len()) as u64;
             match rest.as_deref() {
                 None => length == fixed,
                 Some(super::CollectionPattern::Wildcard)

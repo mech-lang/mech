@@ -5071,6 +5071,26 @@ fn build_plan(
             ArtifactSource::Constant(_) => None,
         })
     }));
+    let output_sources = artifact
+        .outputs()
+        .iter()
+        .filter_map(|output| {
+            let declaration = &artifact.slots()[output.source.get() as usize];
+            match declaration.producer {
+                ProducerReference::Output {
+                    source: ArtifactSource::Slot(source),
+                    ..
+                } => Some(source),
+                ProducerReference::Input(_) | ProducerReference::NodeOutput { .. } => {
+                    Some(output.source)
+                }
+                ProducerReference::Output {
+                    source: ArtifactSource::Constant(_),
+                    ..
+                } => None,
+            }
+        })
+        .collect::<BTreeSet<_>>();
     let activation_sample_edge = |node: NodeId, ordinal: usize| {
         matches!(
             &artifact.nodes()[node.get() as usize].body,
@@ -5256,6 +5276,25 @@ fn build_plan(
                 })
             })
             .collect::<Vec<_>>();
+        let output_descendants = descendant_nodes
+            .iter()
+            .copied()
+            .filter(|candidate| {
+                let artifact_node = steps[candidate.get() as usize].artifact_node();
+                node_output_slot(artifact, artifact_node)
+                    .is_ok_and(|slot| output_sources.contains(&slot))
+            })
+            .filter(|candidate| {
+                !state_writers.iter().any(|writer| {
+                    writer != candidate
+                        && topology.same_turn_dependency_masks[writer.get() as usize]
+                            .get(candidate.get() as usize / 64)
+                            .is_some_and(|word| {
+                                word & (1_u64 << (candidate.get() as usize % 64)) != 0
+                            })
+                })
+            })
+            .collect::<Vec<_>>();
         // Suppression belongs only to the activation-owned path through each
         // state publication or a directly constrained descendant. Ordinary
         // consumers of retained state remain eligible on unrelated turns.
@@ -5266,6 +5305,7 @@ fn build_plan(
                     .iter()
                     .chain(&constrained_descendants)
                     .chain(&effect_descendants)
+                    .chain(&output_descendants)
                     .any(|target| {
                         candidate == target
                             || topology.same_turn_dependency_masks[candidate.get() as usize]
