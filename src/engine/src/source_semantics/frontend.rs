@@ -2808,6 +2808,13 @@ impl SemanticBuilder {
             _ => None,
         });
         let qualified_enum = name.contains('/');
+        if qualified_enum && expected_enum.is_none() {
+            // A qualified atom is an enum selector only when its surrounding
+            // value position establishes an enum schema. Otherwise the full
+            // path is nominal data, even if its first segment happens to name
+            // a declared non-enum kind in this document.
+            return Ok(None);
+        }
         let (name, qualified) = match name.rsplit_once('/') {
             Some((qualifier, variant)) => match self.declared_kinds.get(qualifier) {
                 Some(schema) if matches!(schema.body, SchemaBody::Enum { .. }) => {

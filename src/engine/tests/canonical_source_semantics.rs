@@ -428,6 +428,19 @@ fn qualified_nominal_atoms_without_enum_context_retain_their_paths() {
             _ => assert!(matches!(schema.body(), SchemaBody::Tuple(_))),
         }
     }
+
+    let compiled = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document("<foo> := <u8>\n:foo/bar\n"),
+            &nominal_origin(),
+        )
+        .unwrap();
+    compiled.compile_artifact().unwrap();
+    let schema = compiled
+        .schemas()
+        .get(compiled.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(schema.body(), SchemaBody::Atom(_)));
 }
 
 #[test]

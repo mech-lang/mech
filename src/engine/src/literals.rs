@@ -502,9 +502,14 @@ fn materialize_conversion_semantic_shape(
                 target,
                 preserve_source_axes,
             )),
-            cardinality: if preserve_source_axes
-                || matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None })
-            {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None })
+                || (preserve_source_axes
+                    && !matches!(
+                        cardinality,
+                        CardinalitySpec::Dynamic {
+                            upper_bound: Some(_)
+                        }
+                    )) {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -532,9 +537,14 @@ fn materialize_conversion_semantic_shape(
                 value,
                 preserve_source_axes,
             )),
-            cardinality: if preserve_source_axes
-                || matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None })
-            {
+            cardinality: if matches!(cardinality, CardinalitySpec::Dynamic { upper_bound: None })
+                || (preserve_source_axes
+                    && !matches!(
+                        cardinality,
+                        CardinalitySpec::Dynamic {
+                            upper_bound: Some(_)
+                        }
+                    )) {
                 CardinalitySpec::Exact(source_cardinality.clone())
             } else {
                 cardinality.clone()
@@ -568,8 +578,14 @@ fn materialize_conversion_semantic_shape(
                         ),
                     })
                     .collect(),
-                rows: if preserve_source_axes
-                    || matches!(rows, CardinalitySpec::Dynamic { upper_bound: None })
+                rows: if matches!(rows, CardinalitySpec::Dynamic { upper_bound: None })
+                    || (preserve_source_axes
+                        && !matches!(
+                            rows,
+                            CardinalitySpec::Dynamic {
+                                upper_bound: Some(_)
+                            }
+                        ))
                 {
                     CardinalitySpec::Exact(source_rows.clone())
                 } else {
@@ -2599,10 +2615,94 @@ fn narrow_concrete_reified_equations(
 }
 
 #[cfg(feature = "convert")]
+fn reified_dimension_contains_parameter(dimension: &DimensionExpr, index: usize) -> bool {
+    match dimension {
+        DimensionExpr::Parameter(id) => id.get() as usize == index,
+        DimensionExpr::Add(children)
+        | DimensionExpr::Multiply(children)
+        | DimensionExpr::Min(children)
+        | DimensionExpr::Max(children) => children
+            .iter()
+            .any(|child| reified_dimension_contains_parameter(child, index)),
+        DimensionExpr::Constant(_) | DimensionExpr::Hole => false,
+    }
+}
+
+#[cfg(feature = "convert")]
+fn narrow_concrete_reified_inequalities(
+    inequalities: &[(DimensionExpr, DimensionExpr)],
+    bindings: &[Option<DimensionExpr>],
+    unknown: &[usize],
+    domains: &mut [(u64, u64)],
+) -> bool {
+    for (lower, upper) in inequalities {
+        let (Some(lower_range), Some(upper_range)) = (
+            reified_dimension_range(lower, bindings, unknown, domains),
+            reified_dimension_range(upper, bindings, unknown, domains),
+        ) else {
+            continue;
+        };
+        if lower_range.0 > upper_range.1 {
+            return false;
+        }
+        for (position, index) in unknown.iter().copied().enumerate() {
+            let lower_has = reified_dimension_contains_parameter(lower, index);
+            let upper_has = reified_dimension_contains_parameter(upper, index);
+            if lower_has == upper_has {
+                continue;
+            }
+            let possible_at = |value| {
+                let mut candidate = domains.to_vec();
+                candidate[position] = (value, value);
+                let lower = reified_dimension_range(lower, bindings, unknown, &candidate)?;
+                let upper = reified_dimension_range(upper, bindings, unknown, &candidate)?;
+                Some(lower.0 <= upper.1)
+            };
+            let (mut low, mut high) = domains[position];
+            if lower_has {
+                if possible_at(low) != Some(true) {
+                    return false;
+                }
+                if possible_at(high) == Some(true) {
+                    continue;
+                }
+                while low < high {
+                    let middle = low + (high - low) / 2 + (high - low) % 2;
+                    if possible_at(middle) == Some(true) {
+                        low = middle;
+                    } else {
+                        high = middle - 1;
+                    }
+                }
+                domains[position].1 = low;
+            } else {
+                if possible_at(high) != Some(true) {
+                    return false;
+                }
+                if possible_at(low) == Some(true) {
+                    continue;
+                }
+                while low < high {
+                    let middle = low + (high - low) / 2;
+                    if possible_at(middle) == Some(true) {
+                        high = middle;
+                    } else {
+                        low = middle + 1;
+                    }
+                }
+                domains[position].0 = low;
+            }
+        }
+    }
+    true
+}
+
+#[cfg(feature = "convert")]
 fn solve_bounded_joint_reified_dimensions(
     equations: &[(Vec<i128>, i128)],
     inequalities: &[(Vec<i128>, i128)],
     concrete_equations: &[(DimensionExpr, DimensionExpr)],
+    concrete_inequalities: &[(DimensionExpr, DimensionExpr)],
     declarations: &[DimensionParameterDeclaration],
     bindings: &[Option<DimensionExpr>],
     unknown: &[usize],
@@ -2639,6 +2739,7 @@ fn solve_bounded_joint_reified_dimensions(
         equations: &[(Vec<i128>, i128)],
         inequalities: &[(Vec<i128>, i128)],
         concrete_equations: &[(DimensionExpr, DimensionExpr)],
+        concrete_inequalities: &[(DimensionExpr, DimensionExpr)],
         declarations: &[DimensionParameterDeclaration],
         bindings: &[Option<DimensionExpr>],
         unknown: &[usize],
@@ -2666,6 +2767,14 @@ fn solve_bounded_joint_reified_dimensions(
             }
             if !narrow_concrete_reified_equations(
                 concrete_equations,
+                bindings,
+                unknown,
+                &mut domains,
+            ) {
+                return Ok(());
+            }
+            if !narrow_concrete_reified_inequalities(
+                concrete_inequalities,
                 bindings,
                 unknown,
                 &mut domains,
@@ -2726,7 +2835,20 @@ fn solve_bounded_joint_reified_dimensions(
                                 == Some(source_value)
                         })
                 });
+                let concrete_inequalities_hold =
+                    concrete_inequalities.iter().all(|(lower, upper)| {
+                        substitute_reified_dimension(lower, &candidate)
+                            .ok()
+                            .and_then(|resolved| reified_dimension_value(&resolved))
+                            .zip(
+                                substitute_reified_dimension(upper, &candidate)
+                                    .ok()
+                                    .and_then(|resolved| reified_dimension_value(&resolved)),
+                            )
+                            .is_some_and(|(lower, upper)| lower <= upper)
+                    });
                 if concrete_equations_hold
+                    && concrete_inequalities_hold
                     && validate_reified_parameter_bindings(declarations, &candidate).is_ok()
                 {
                     solutions.push(values);
@@ -2751,6 +2873,7 @@ fn solve_bounded_joint_reified_dimensions(
                 equations,
                 inequalities,
                 concrete_equations,
+                concrete_inequalities,
                 declarations,
                 bindings,
                 unknown,
@@ -2771,6 +2894,7 @@ fn solve_bounded_joint_reified_dimensions(
         equations,
         inequalities,
         concrete_equations,
+        concrete_inequalities,
         declarations,
         bindings,
         unknown,
@@ -2881,6 +3005,7 @@ fn solve_joint_reified_dimensions(
     // parameter already has a body witness. Keep their affine inequalities
     // for the bounded search instead of considering only unknown declarations.
     let mut inequalities = Vec::<(Vec<i128>, i128)>::new();
+    let mut concrete_inequalities = Vec::<(DimensionExpr, DimensionExpr)>::new();
     for declaration in declarations {
         let subject = DimensionExpr::Parameter(declaration.id);
         for (lower, upper) in [
@@ -2901,6 +3026,7 @@ fn solve_joint_reified_dimensions(
                 affine_reified_dimension(upper, bindings, &unknown),
             )
             else {
+                concrete_inequalities.push((lower.clone(), upper.clone()));
                 continue;
             };
             let coefficients = lower_coefficients
@@ -2923,7 +3049,12 @@ fn solve_joint_reified_dimensions(
             }
         }
     }
-    if integer_rows.len().saturating_add(inequalities.len()) > MAX_REIFIED_SOLVER_EQUATIONS {
+    if integer_rows
+        .len()
+        .saturating_add(inequalities.len())
+        .saturating_add(concrete_inequalities.len())
+        > MAX_REIFIED_SOLVER_EQUATIONS
+    {
         return Err(invalid_reified_conversion_target(
             "joint target dimension system exceeds the solver limit",
         ));
@@ -2991,6 +3122,7 @@ fn solve_joint_reified_dimensions(
             &integer_rows,
             &inequalities,
             &concrete_equations,
+            &concrete_inequalities,
             declarations,
             bindings,
             &unknown,
@@ -4824,25 +4956,67 @@ mod canonical_conversion_tests {
 
     #[test]
     fn explicit_bounded_dynamic_cardinality_survives_shape_materialization() {
-        let source = SchemaBody::Set {
-            element: Box::new(SchemaBody::Index),
-            cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(5)),
+        let exact = CardinalitySpec::Exact(DimensionExpr::Constant(5));
+        let bounded = CardinalitySpec::Dynamic {
+            upper_bound: Some(DimensionExpr::Constant(2)),
         };
-        let target = SchemaBody::Set {
-            element: Box::new(SchemaBody::Index),
-            cardinality: CardinalitySpec::Dynamic {
-                upper_bound: Some(DimensionExpr::Constant(2)),
-            },
-        };
-        assert_eq!(
-            materialize_declared_conversion_shape(&source, &target),
-            target
-        );
-        let resolved = ResolvedType::from_schema_body(&source, &[]).unwrap();
-        assert_eq!(
-            materialize_declared_conversion_semantic_shape(resolved.kind(), &target),
-            target
-        );
+        let cases = [
+            (
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::Index),
+                    cardinality: exact.clone(),
+                },
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::Index),
+                    cardinality: bounded.clone(),
+                },
+            ),
+            (
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::Index),
+                    value: Box::new(SchemaBody::Bool),
+                    cardinality: exact.clone(),
+                },
+                SchemaBody::Map {
+                    key: Box::new(SchemaBody::Index),
+                    value: Box::new(SchemaBody::Bool),
+                    cardinality: bounded.clone(),
+                },
+            ),
+            (
+                SchemaBody::Table {
+                    columns: [SchemaField {
+                        name: "value".to_owned(),
+                        schema: SchemaBody::Index,
+                    }]
+                    .into(),
+                    rows: exact,
+                },
+                SchemaBody::Table {
+                    columns: [SchemaField {
+                        name: "value".to_owned(),
+                        schema: SchemaBody::Index,
+                    }]
+                    .into(),
+                    rows: bounded,
+                },
+            ),
+        ];
+        for (source, target) in cases {
+            assert_eq!(
+                materialize_declared_conversion_shape(&source, &target),
+                target
+            );
+            let resolved = ResolvedType::from_schema_body(&source, &[]).unwrap();
+            assert_eq!(
+                materialize_declared_conversion_semantic_shape(resolved.kind(), &target),
+                target
+            );
+            assert_eq!(
+                materialize_conversion_semantic_shape(resolved.kind(), &target, true),
+                target
+            );
+        }
     }
 
     #[test]
@@ -6306,6 +6480,56 @@ mod canonical_conversion_tests {
         )
         .unwrap();
         assert!(validate_reified_parameter_bindings(&declarations, &impossible).is_err());
+    }
+
+    #[test]
+    fn non_affine_range_bounds_narrow_two_unbounded_dependencies() {
+        let p = DimensionParameterId::new(0);
+        let q = DimensionParameterId::new(1);
+        let r = DimensionParameterId::new(2);
+        let product = DimensionExpr::Multiply(
+            [DimensionExpr::Parameter(q), DimensionExpr::Parameter(r)].into(),
+        );
+        let declarations = [
+            DimensionParameterDeclaration {
+                id: p,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: product.clone(),
+                upper_bound: Some(DimensionExpr::Add(
+                    [product, DimensionExpr::Constant(1)].into(),
+                )),
+            },
+            DimensionParameterDeclaration {
+                id: q,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(3),
+                upper_bound: None,
+            },
+            DimensionParameterDeclaration {
+                id: r,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(2),
+                upper_bound: None,
+            },
+        ];
+        let matrix = |extent| SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Index),
+            dimensions: [extent].into(),
+        };
+        let bindings = solve_reified_target_bindings(
+            &matrix(DimensionExpr::Constant(6)),
+            &matrix(DimensionExpr::Parameter(p)),
+            &declarations,
+        )
+        .unwrap();
+        assert_eq!(
+            bindings,
+            [6, 3, 2].map(|extent| Some(DimensionExpr::Constant(extent)))
+        );
+        validate_reified_parameter_bindings(&declarations, &bindings).unwrap();
     }
 
     #[test]
