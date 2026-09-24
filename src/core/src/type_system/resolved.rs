@@ -393,6 +393,9 @@ fn schema_predicate_set(
         if crate::schema::is_schema_body_keyable(body) {
             predicates.insert(BuiltinKindPredicate::Keyable);
         }
+        if matches!(body, SchemaBody::IntegerInterval(interval) if interval.is_valid()) {
+            predicates.insert(BuiltinKindPredicate::Ordered);
+        }
     }
     predicates
 }

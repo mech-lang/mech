@@ -2568,6 +2568,18 @@ impl ValueCell {
                 )
                 .with_compiler_loc()
             };
+            #[cfg(any(
+                feature = "u8",
+                feature = "u16",
+                feature = "u32",
+                feature = "u64",
+                feature = "u128",
+                feature = "i8",
+                feature = "i16",
+                feature = "i32",
+                feature = "i64",
+                feature = "i128"
+            ))]
             macro_rules! seeded_interval_backing {
                 ($value:expr, $scalar:ident, $element:ident) => {
                     match representation {

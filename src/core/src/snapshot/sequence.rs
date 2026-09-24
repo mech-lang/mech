@@ -156,6 +156,9 @@ impl SequenceStorage {
     /// This avoids first expanding every lane to `ValueData` and allocating a
     /// diagnostic path for every successful scalar conversion.
     pub(super) fn scalar_drafts(&self, schema: &SchemaBody) -> Option<Box<[ValueDataDraft]>> {
+        if let SchemaBody::IntegerInterval(interval) = schema {
+            return self.scalar_drafts(&interval.base_body());
+        }
         macro_rules! drafts {
             ($values:expr, $variant:ident) => {
                 $values
@@ -235,6 +238,9 @@ impl SequenceStorage {
     }
 
     pub(super) fn from_values(schema: &SchemaBody, values: Vec<ValueData>) -> Self {
+        if let SchemaBody::IntegerInterval(interval) = schema {
+            return Self::from_values(&interval.base_body(), values);
+        }
         macro_rules! pack {
             ($variant:ident, $target:ident) => {{
                 let mut packed = Vec::with_capacity(values.len());
