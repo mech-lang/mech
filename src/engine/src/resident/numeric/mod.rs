@@ -2744,6 +2744,34 @@ fn snapshot_fixed_element_encoded_bytes(element: &SchemaBody) -> Option<usize> {
     }
 }
 
+fn snapshot_power_compute_work(
+    arithmetic: SemanticArithmetic,
+    element: &SchemaBody,
+    output_elements: usize,
+) -> Result<usize, ResidentKernelError> {
+    use mech_core::FloatWidth;
+
+    if arithmetic != SemanticArithmetic::Power {
+        return Ok(0);
+    }
+    let element = match element {
+        SchemaBody::Matrix { element, .. } => element.as_ref(),
+        scalar => scalar,
+    };
+    // Integral complex powers use exponentiation by squaring. A finite f32
+    // exponent can require 127 squares, 24 accumulator multiplies, and one
+    // reciprocal; f64 can require 1023 squares, 53 multiplies, and one
+    // reciprocal. Charge that worst case before executing either power family.
+    let work_per_element = match element {
+        SchemaBody::Complex(FloatWidth::W32) => 152,
+        SchemaBody::Complex(FloatWidth::W64) if cfg!(feature = "c64") => 1_077,
+        _ => 0,
+    };
+    output_elements
+        .checked_mul(work_per_element)
+        .ok_or(ResidentKernelError::InvalidShape)
+}
+
 fn snapshot_negate_element_supported(element: &SchemaBody) -> bool {
     use mech_core::FloatWidth;
     matches!(
@@ -16990,6 +17018,19 @@ fn snapshot_numeric_binary(
     let input_elements = left_len
         .checked_add(right_len)
         .ok_or(ResidentKernelError::InvalidShape)?;
+    let additional_compute_work = if snapshot_output {
+        let output_schema = schemas
+            .get(
+                kernel
+                    .snapshot_output()
+                    .ok_or(ResidentKernelError::InvalidOutput)?
+                    .schema,
+            )
+            .ok_or(ResidentKernelError::InvalidOutput)?;
+        snapshot_power_compute_work(arithmetic, output_schema.body(), output_len)?
+    } else {
+        0
+    };
     match (left, right, snapshot_output) {
         (Some(left), Some(right), true) => preflight_snapshot_arithmetic(
             kernel,
@@ -16998,7 +17039,7 @@ fn snapshot_numeric_binary(
             &output,
             input_elements,
             output_len,
-            0,
+            additional_compute_work,
         )?,
         (Some(input), None, true) | (None, Some(input), true) => preflight_snapshot_arithmetic(
             kernel,
@@ -17007,7 +17048,7 @@ fn snapshot_numeric_binary(
             &output,
             input_elements,
             output_len,
-            0,
+            additional_compute_work,
         )?,
         (Some(left), Some(right), false) => preflight_snapshot_dense_f64_output(
             schemas,
@@ -17510,6 +17551,14 @@ fn complex32_to_draft(real: f32, imaginary: f32) -> ValueDataDraft {
 }
 
 fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
+    if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
+        let left = (f64::from(left.0), f64::from(left.1));
+        let right = (f64::from(right.0), f64::from(right.1));
+        return (
+            (left.0 * right.0 - left.1 * right.1) as f32,
+            (left.0 * right.1 + left.1 * right.0) as f32,
+        );
+    }
     (
         left.0 * right.0 - left.1 * right.1,
         left.0 * right.1 + left.1 * right.0,
@@ -17573,6 +17622,27 @@ fn complex64_from_parts(real: f64, imaginary: f64) -> ValueDataDraft {
 
 #[cfg(feature = "c64")]
 fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
+        let left_scale = left.0.abs().max(left.1.abs());
+        let right_scale = right.0.abs().max(right.1.abs());
+        if left_scale > 0.0 && right_scale > 0.0 {
+            let (_, left_exponent) = libm::frexp(left_scale);
+            let (_, right_exponent) = libm::frexp(right_scale);
+            let left = (
+                libm::scalbn(left.0, -left_exponent),
+                libm::scalbn(left.1, -left_exponent),
+            );
+            let right = (
+                libm::scalbn(right.0, -right_exponent),
+                libm::scalbn(right.1, -right_exponent),
+            );
+            let exponent = left_exponent + right_exponent;
+            return (
+                libm::scalbn(left.0 * right.0 - left.1 * right.1, exponent),
+                libm::scalbn(left.0 * right.1 + left.1 * right.0, exponent),
+            );
+        }
+    }
     (
         left.0 * right.0 - left.1 * right.1,
         left.0 * right.1 + left.1 * right.0,
@@ -22304,6 +22374,12 @@ mod tests {
 
     #[test]
     fn canonical_numeric_extremes_preserve_representable_results() {
+        let c32_factor = (1.86691995e19, 7.733035e18);
+        let c32_product = complex32_multiply(c32_factor, c32_factor);
+        assert!(c32_product.0.is_finite());
+        assert!(c32_product.1.is_finite());
+        assert!((c32_product.0 - 2.8873917e38).abs() <= 3.0e31);
+        assert!((c32_product.1 - 2.8873915e38).abs() <= 3.0e31);
         let c32 = complex32_divide((3.0e38, 3.0e38), (1.0, 1.0));
         assert_eq!(c32, (3.0e38, 0.0));
         assert_eq!(
@@ -22333,6 +22409,9 @@ mod tests {
 
         #[cfg(feature = "c64")]
         {
+            let c64_factor = (1.0e154, 4.0e153);
+            let c64_product = complex64_multiply(c64_factor, c64_factor);
+            assert_eq!(c64_product, (8.4e307, 8.0e307));
             assert_eq!(
                 complex64_divide((1.0e308, 1.0e308), (1.0, 1.0)),
                 (1.0e308, 0.0)
