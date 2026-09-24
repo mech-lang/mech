@@ -4635,8 +4635,14 @@ fn continuation_dependency_node(
     let ArtifactSource::Slot(slot) = source else {
         return Ok(None);
     };
-    let ProducerReference::NodeOutput { node, .. } = artifact.slots()[slot.get() as usize].producer
-    else {
+    let declaration = &artifact.slots()[slot.get() as usize];
+    // Mutable state is a retained turn boundary. Its current published value
+    // does not depend on whether the node that produced an older version is
+    // presently suspended.
+    if declaration.role == SlotRole::State {
+        return Ok(None);
+    }
+    let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
         return Ok(None);
     };
     if !visiting.insert(node) {
@@ -5176,7 +5182,8 @@ fn build_plan(
         )?;
         let activated = artifact_to_activated[node.node.get() as usize]
             .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
-        let update_nodes = topology.same_turn_dependency_masks[activated.get() as usize]
+        let descendants = &topology.same_turn_dependency_masks[activated.get() as usize];
+        let state_writers = descendants
             .iter()
             .enumerate()
             .flat_map(|(word, bits)| {
@@ -5188,6 +5195,37 @@ fn build_plan(
                     bits &= bits - 1;
                 }
                 nodes
+            })
+            .filter(|candidate| {
+                let artifact_node = steps[candidate.get() as usize].artifact_node();
+                node_output_slot(artifact, artifact_node)
+                    .is_ok_and(|slot| artifact.slots()[slot.get() as usize].role == SlotRole::State)
+            })
+            .collect::<Vec<_>>();
+        // Suppression belongs only to the activation-owned path through each
+        // state publication. Ordinary consumers of the retained state remain
+        // eligible on turns where another input changes.
+        let update_nodes = descendants
+            .iter()
+            .enumerate()
+            .flat_map(|(word, bits)| {
+                let mut bits = *bits;
+                let mut nodes = Vec::new();
+                while bits != 0 {
+                    let bit = bits.trailing_zeros() as usize;
+                    nodes.push(ActivatedNodeIndex((word * 64 + bit) as u32));
+                    bits &= bits - 1;
+                }
+                nodes
+            })
+            .filter(|candidate| {
+                state_writers.iter().any(|writer| {
+                    candidate == writer
+                        || bit_is_set(
+                            &topology.same_turn_dependency_masks[candidate.get() as usize],
+                            writer.get() as usize,
+                        )
+                })
             })
             .collect::<Vec<_>>();
         for update in &update_nodes {

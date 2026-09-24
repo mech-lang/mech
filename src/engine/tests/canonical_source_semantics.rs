@@ -2338,6 +2338,140 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
 }
 
 #[test]
+fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
+    use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
+    use mech_engine::__resident::CapturedValueInput;
+
+    let source = "event := event-source<f64>\nordinary := ordinary-source<f64>\n~count := 0\n~> event { count = count + 1 }\ncount + ordinary\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 761),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let resident_input_slots = instance
+        .plan
+        .inputs
+        .iter()
+        .map(|input| input.slot)
+        .collect::<Vec<_>>();
+    let context = SnapshotValidationContext::new(artifact.schemas());
+    let values = |event: f64, ordinary: f64| {
+        [event, ordinary].map(|value| {
+            mech_core::ValueDraft {
+                schema: artifact.inputs()[0].schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::F64(F64Bits::from_f64(value)),
+            }
+            .finalize(&context)
+            .unwrap()
+        })
+    };
+    let prepare_inputs = |values: &[mech_core::Value; 2]| {
+        values
+            .iter()
+            .zip(&resident_input_slots)
+            .map(|(value, slot)| CapturedValueInput { slot: *slot, value })
+            .collect::<Vec<_>>()
+    };
+
+    let first = values(1.0, 10.0);
+    let event_slot = instance.plan.inputs[0].artifact_slot;
+    instance
+        .prepare_turn_values_with_activation_triggers(&prepare_inputs(&first), &[event_slot])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(F64Bits::from_f64(11.0))
+    );
+
+    let second = values(1.0, 20.0);
+    let ordinary_slot = instance.plan.inputs[1].artifact_slot;
+    instance
+        .prepare_turn_values_with_activation_triggers(&prepare_inputs(&second), &[ordinary_slot])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(F64Bits::from_f64(21.0))
+    );
+}
+
+#[test]
+fn retained_state_stops_activation_continuation_dependency_checks() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 1u64.\nresult := #Deferred()\n~trigger := 0u64\ntrigger = result\n~count := 0u64\n~> trigger { count = count + 1u64 }\ncount\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    activate(
+        ReactiveInstanceId::new(0x540, 762),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .expect("retained state must sever the historical continuation dependency");
+}
+
+#[test]
+fn continuation_turn_keeps_input_free_activations_dormant() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ndeferred + count\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 763),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+
+    instance.turn(&[]).unwrap();
+    assert!(instance.has_ready_continuation());
+    instance
+        .prepare_continuation_turn_values(&[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(42)
+    );
+}
+
+#[test]
 fn activation_with_computed_trigger_stays_dormant_during_initial_publication() {
     let source =
         "~state := 0\nevent := state + 1\n~count := 0\n~> event { count = count + 1 }\ncount\n";
@@ -2484,6 +2618,31 @@ fn ordinary_match_bytecode_rejects_activation_only_sampled_patterns() {
     sections.nodes = serde_json::to_vec(&graph).unwrap();
     let error = mech_engine::decode_program_artifact_sections(&sections).unwrap_err();
     assert!(format!("{error:?}").contains("invalid structural match pattern"));
+}
+
+#[test]
+fn activation_bytecode_rejects_payload_literals_as_exhaustive_variants() {
+    let source = "<choice> := :some<f64> | :none\nvalue<choice> := :none\n~selected := 0\n~> value\n  | :some(0) => { selected = 1 }\n  | :none => { selected = 2 }\n  | * => { selected = 3 }\nselected\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    let arms = graph["nodes"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find_map(|node| node["body"].get_mut("Activation"))
+        .unwrap()["arms"]
+        .as_array_mut()
+        .unwrap();
+    let payload_literal = arms[0]["pattern"].clone();
+    arms[2]["pattern"] = payload_literal;
+    sections.nodes = serde_json::to_vec(&graph).unwrap();
+    let error = mech_engine::decode_program_artifact_sections(&sections).unwrap_err();
+    assert!(format!("{error:?}").contains("non-exhaustive match"));
 }
 
 #[test]
