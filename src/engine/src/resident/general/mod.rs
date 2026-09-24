@@ -3370,34 +3370,32 @@ fn closed_aggregate_equality_admitted(
     right: &Value,
     materializes_canonical_bytes: bool,
 ) -> bool {
-    let mut meter = super::budget::ResidentBudgetMeter::default();
-    if super::budget::measure_canonical_data_comparison_work(
-        &mut meter,
-        artifact
-            .schemas()
-            .get(left.schema())
-            .map(|schema| schema.body())
-            .unwrap_or(&SchemaBody::Dynamic),
-        left.data(),
-    )
-    .is_err()
-        || super::budget::measure_canonical_data_comparison_work(
-            &mut meter,
-            artifact
-                .schemas()
-                .get(right.schema())
-                .map(|schema| schema.body())
-                .unwrap_or(&SchemaBody::Dynamic),
-            right.data(),
-        )
-        .is_err()
-    {
-        return false;
-    }
-    let Ok(left_footprint) = left.retained_footprint(artifact.schemas()) else {
+    let mut comparison_work = 0_u64;
+    let mut measure = |value: &Value| {
+        let schema = artifact.schemas().get(value.schema())?;
+        let mut footprint = mech_core::snapshot::ValueFootprint::zero();
+        mech_core::snapshot::visit_canonical_data_work(schema.body(), value.data(), |chunk| {
+            let work = chunk.encoded_bytes.max(chunk.node_count).max(1);
+            comparison_work = comparison_work.checked_add(work).ok_or(())?;
+            if comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK {
+                return Err(());
+            }
+            footprint = footprint
+                .checked_add(mech_core::snapshot::ValueFootprint {
+                    encoded_bytes: chunk.encoded_bytes,
+                    retained_bytes: chunk.retained_bytes,
+                    node_count: chunk.node_count,
+                })
+                .map_err(|_| ())?;
+            Ok(())
+        })
+        .ok()?;
+        Some(footprint)
+    };
+    let Some(left_footprint) = measure(left) else {
         return false;
     };
-    let Ok(right_footprint) = right.retained_footprint(artifact.schemas()) else {
+    let Some(right_footprint) = measure(right) else {
         return false;
     };
     let schema_work = if left.schema_key() == right.schema_key() {
@@ -3432,15 +3430,13 @@ fn closed_aggregate_equality_admitted(
     } else {
         0
     };
-    if materializes_canonical_bytes
-        && (meter.charge_temporary_bytes(encoded_bytes).is_err()
-            || meter.charge_cloned_bytes(encoded_bytes).is_err())
-    {
+    if materializes_canonical_bytes && encoded_bytes > mech_core::RESIDENT_MAX_BYTES {
         return false;
     }
     schema_work
         .checked_add(additional_work)
-        .is_some_and(|work| meter.charge_comparison_work(work).is_ok())
+        .and_then(|work| comparison_work.checked_add(work))
+        .is_some_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
 }
 
 fn closed_comparison_population(
