@@ -401,6 +401,8 @@ pub(super) fn compile_document_with_options(
 ) -> Result<CanonicalSourceProgram, SourceSemanticError> {
     compile_document_with_capture_options(
         document,
+        nominal_origin,
+        imported_enum_qualifiers,
         catalog,
         input_schemas,
         interactive,
@@ -414,6 +416,8 @@ pub(super) fn compile_document_with_options(
 
 pub(super) fn compile_document_with_capture_options(
     document: &DocumentSyntax,
+    nominal_origin: Option<&CanonicalNominalPath>,
+    imported_enum_qualifiers: &BTreeMap<NominalKey, String>,
     catalog: Option<Arc<mech_core::FunctionCatalog>>,
     input_schemas: BTreeMap<String, SchemaBody>,
     interactive: bool,
