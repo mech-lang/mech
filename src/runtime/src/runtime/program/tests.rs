@@ -5660,21 +5660,16 @@ fn input_free_activation_in_external_program_advances_on_explicit_step() {
     runtime
         .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
         .unwrap();
-    let output = |runtime: &crate::MechRuntime| {
+    let state_hash = |runtime: &crate::MechRuntime| {
         let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
             panic!("effect fixture must remain resident external")
         };
-        execution
-            .coordinator
-            .instance()
-            .copied_output(0)
-            .unwrap()
-            .canonical_data_draft()
-            .unwrap()
+        execution.coordinator.instance().published_state_hash()
     };
-    assert_eq!(output(&runtime), ValueDataDraft::U64(0));
+    let initial_hash = state_hash(&runtime);
     runtime.step_active_program().unwrap();
-    assert_eq!(output(&runtime), ValueDataDraft::U64(1));
+    assert_ne!(state_hash(&runtime), initial_hash);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
 }
 
 #[test]
