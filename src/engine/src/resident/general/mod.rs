@@ -30,7 +30,7 @@ use mech_core::{
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
     ResolvedSelectionMode, ResolvedType, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule,
     SlotIndex, TargetMemoryProfile, Value, execute_conversion_draft, plan_call_memory,
-    plan_implicit_conversion,
+    plan_explicit_cast,
 };
 use sha2::{Digest, Sha256};
 
@@ -3288,36 +3288,45 @@ fn constant_comparison_operand<'a>(
                 SchemaBody::Matrix { element, .. } => element.as_ref(),
                 body => body,
             };
-            let source_type = ResolvedType::from_schema_body(&source.element, &[])
-                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
-            let target_type = ResolvedType::from_schema_body(target_element, &[])
-                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
-            let conversion = plan_implicit_conversion(&source_type, &target_type)
-                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
-            let draft = source
-                .value
-                .canonical_data_draft()
-                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            let Ok(source_type) = ResolvedType::from_schema_body(&source.element, &[]) else {
+                return Ok(None);
+            };
+            let Ok(target_type) = ResolvedType::from_schema_body(target_element, &[]) else {
+                return Ok(None);
+            };
+            let Ok(conversion) = plan_explicit_cast(&source_type, &target_type) else {
+                return Ok(None);
+            };
+            let Ok(draft) = source.value.canonical_data_draft() else {
+                return Ok(None);
+            };
             let converted = match draft {
-                ValueDataDraft::Matrix(elements) => ValueDataDraft::Matrix(
-                    elements
+                ValueDataDraft::Matrix(elements) => ValueDataDraft::Matrix({
+                    let Ok(elements) = elements
                         .into_vec()
                         .into_iter()
                         .map(|element| execute_conversion_draft(element, &conversion.step))
                         .collect::<Result<Vec<_>, _>>()
-                        .map_err(|_| ResidentActivationError::InvalidDependency { node })?
-                        .into_boxed_slice(),
-                ),
-                scalar => execute_conversion_draft(scalar, &conversion.step)
-                    .map_err(|_| ResidentActivationError::InvalidDependency { node })?,
+                    else {
+                        return Ok(None);
+                    };
+                    elements.into_boxed_slice()
+                }),
+                scalar => {
+                    let Ok(converted) = execute_conversion_draft(scalar, &conversion.step) else {
+                        return Ok(None);
+                    };
+                    converted
+                }
             };
-            let converted = ValueDraft {
+            let Ok(converted) = (ValueDraft {
                 schema: target_schema_id,
                 shape_values: source.value.shape().parameter_values().into(),
                 data: converted,
-            }
-            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
-            .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            })
+            .finalize(&SnapshotValidationContext::new(artifact.schemas())) else {
+                return Ok(None);
+            };
             std::borrow::Cow::Owned(converted)
         }
     };
@@ -3362,14 +3371,33 @@ fn closed_aggregate_equality_admitted(
     materializes_canonical_bytes: bool,
 ) -> bool {
     let mut meter = super::budget::ResidentBudgetMeter::default();
-    let Ok(left_footprint) =
-        super::budget::measure_canonical_value_footprint(&mut meter, left, artifact.schemas())
-    else {
+    if super::budget::measure_canonical_data_comparison_work(
+        &mut meter,
+        artifact
+            .schemas()
+            .get(left.schema())
+            .map(|schema| schema.body())
+            .unwrap_or(&SchemaBody::Dynamic),
+        left.data(),
+    )
+    .is_err()
+        || super::budget::measure_canonical_data_comparison_work(
+            &mut meter,
+            artifact
+                .schemas()
+                .get(right.schema())
+                .map(|schema| schema.body())
+                .unwrap_or(&SchemaBody::Dynamic),
+            right.data(),
+        )
+        .is_err()
+    {
+        return false;
+    }
+    let Ok(left_footprint) = left.retained_footprint(artifact.schemas()) else {
         return false;
     };
-    let Ok(right_footprint) =
-        super::budget::measure_canonical_value_footprint(&mut meter, right, artifact.schemas())
-    else {
+    let Ok(right_footprint) = right.retained_footprint(artifact.schemas()) else {
         return false;
     };
     let schema_work = if left.schema_key() == right.schema_key() {
@@ -3397,21 +3425,12 @@ fn closed_aggregate_equality_admitted(
     else {
         return false;
     };
-    let data_equality_work = if materializes_canonical_bytes {
-        encoded_bytes.checked_add(
-            left_footprint
-                .encoded_bytes
-                .min(right_footprint.encoded_bytes),
-        )
-    } else {
+    let additional_work = if materializes_canonical_bytes {
         left_footprint
-            .node_count
-            .checked_add(right_footprint.node_count)
-            .map(|nodes| encoded_bytes.max(nodes))
-    };
-    let Some(equality_work) = data_equality_work.and_then(|work| schema_work.checked_add(work))
-    else {
-        return false;
+            .encoded_bytes
+            .min(right_footprint.encoded_bytes)
+    } else {
+        0
     };
     if materializes_canonical_bytes
         && (meter.charge_temporary_bytes(encoded_bytes).is_err()
@@ -3419,7 +3438,9 @@ fn closed_aggregate_equality_admitted(
     {
         return false;
     }
-    meter.charge_comparison_work(equality_work).is_ok()
+    schema_work
+        .checked_add(additional_work)
+        .is_some_and(|work| meter.charge_comparison_work(work).is_ok())
 }
 
 fn closed_comparison_population(
@@ -3461,7 +3482,16 @@ fn closed_comparison_population(
         return Ok(None);
     };
     if scalar_output {
-        if left.schema != right.schema {
+        let compatible_matrix_identity = matches!(
+            (&left.schema, &right.schema),
+            (
+                SchemaBody::Matrix { element: left_element, .. },
+                SchemaBody::Matrix { element: right_element, .. },
+            ) if left_element == right_element
+                && left.rows == right.rows
+                && left.columns == right.columns
+        );
+        if left.schema != right.schema && !compatible_matrix_identity {
             return Ok(match name {
                 "seq" => Some(0),
                 "sneq" => Some(1),
@@ -3469,8 +3499,9 @@ fn closed_comparison_population(
             });
         }
         let same_shape = left.value.shape() == right.value.shape();
-        let aggregate_equality = !scalar_comparison_supported(&left.schema, false);
-        if aggregate_equality
+        let budgeted_equality = !scalar_comparison_supported(&left.schema, false)
+            || matches!(left.schema, SchemaBody::String);
+        if budgeted_equality
             && matches!(name, "eq" | "neq" | "seq" | "sneq")
             && !closed_aggregate_equality_admitted(
                 artifact,
@@ -3619,6 +3650,46 @@ fn complete_activation_shape_facts(
     schedule: &ActivationSchedule,
 ) -> Result<ActivationFacts, ResidentActivationError> {
     let mut facts = supplied.clone();
+    let mut required_logical_populations = BTreeSet::new();
+    let mut pending_logical_sources = artifact
+        .nodes()
+        .iter()
+        .filter_map(|node| {
+            let operation = node.as_operation()?;
+            let inputs = node_inputs(artifact, node.node).ok()?;
+            (operation.operation.module_path.as_ref() == ["access"]
+                && operation
+                    .operation
+                    .resolved_selection_mode(inputs.len().saturating_sub(1))
+                    .is_some_and(|mode| !matches!(mode, ResolvedSelectionMode::LinearScalar)))
+            .then(|| inputs[1..].to_vec())
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+    while let Some(source) = pending_logical_sources.pop() {
+        if !required_logical_populations.insert(source) {
+            continue;
+        }
+        let ArtifactSource::Slot(slot) = source else {
+            continue;
+        };
+        let ProducerReference::NodeOutput { node, .. } =
+            artifact.slots()[slot.get() as usize].producer
+        else {
+            continue;
+        };
+        let Some(operation) = artifact.nodes()[node.get() as usize].as_operation() else {
+            continue;
+        };
+        if operation.operation.module_path.as_ref() == ["matrix"]
+            && matches!(
+                operation.operation.operation_name.as_str(),
+                "horzcat" | "vertcat"
+            )
+        {
+            pending_logical_sources.extend(node_inputs(artifact, node)?);
+        }
+    }
     // Concatenation preserves the population of a logical selector. Track only
     // statically known populations; live masks require an explicit output shape
     // and are revalidated by the selection kernel on every turn.
@@ -3633,11 +3704,13 @@ fn complete_activation_shape_facts(
         }
         let output = node_output_slot(artifact, node.node)?;
         if class == NodeClass::Activation
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
             && let Some(population) = closed_comparison_population(artifact, node.node, &facts)?
         {
             logical_populations.insert(ArtifactSource::Slot(output), population);
         }
         if node.operation.module_path.as_ref() == ["matrix"]
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
             && matches!(
                 node.operation.operation_name.as_str(),
                 "horzcat" | "vertcat"
