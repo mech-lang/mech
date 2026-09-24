@@ -225,6 +225,30 @@ fn hidden_inline_evaluations_do_not_consume_visible_occurrences() {
 }
 
 #[test]
+fn repeated_title_fields_advance_authored_inline_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n",
+    )
+    .unwrap();
+    let expression = tree
+        .title
+        .as_ref()
+        .and_then(|title| title.author.as_ref())
+        .and_then(|paragraph| paragraph.elements.first())
+        .and_then(|element| match element {
+            ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+            _ => None,
+        })
+        .unwrap();
+    let first = inline_document_output_id(0, expression, 0);
+    let second = inline_document_output_id(0, expression, 1);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{AUTHOR}}".to_string());
+
+    assert!(!html.contains(&format!("id=\"{first}:0\"")), "{html}");
+    assert!(html.contains(&format!("id=\"{second}:0\"")), "{html}");
+}
+
+#[test]
 fn outputless_fences_do_not_consume_visible_occurrences() {
     let tree = mech_syntax::parser::parse("```mech{output: false}\n42\n```\n\n```mech\n42\n```\n")
         .unwrap();
@@ -518,6 +542,7 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
         title: Some(Title {
             text: token(TokenKind::Title, "Slot Fixture"),
             imports: Vec::new(),
+            fields: Vec::new(),
             author: Some(plain_paragraph("Fixture Author")),
             date: Some(plain_paragraph("Fixture Date")),
             hero: None,

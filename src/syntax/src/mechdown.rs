@@ -14,6 +14,7 @@ use nom::{
 #[derive(Default)]
 pub struct TitleFrontMatter {
     pub imports: Vec<(ModuleImport, Option<Comment>)>,
+    pub fields: Vec<TitleField>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,
     pub hero: Option<SectionElement>,
@@ -42,6 +43,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
         Title {
             text: title,
             imports: front_matter.imports,
+            fields: front_matter.fields,
             author: front_matter.author,
             date: front_matter.date,
             hero: front_matter.hero,
@@ -76,12 +78,16 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
             if let Ok((next_input, image)) = img(next_input.clone()) {
                 let (next_input, _) = whitespace0(next_input)?;
                 input = next_input;
-                front_matter.hero = Some(SectionElement::Image(image));
+                let hero = SectionElement::Image(image);
+                front_matter.fields.push(TitleField::Hero(hero.clone()));
+                front_matter.hero = Some(hero);
                 continue;
             } else if let Ok((next_input, figure_table)) = figures(next_input.clone()) {
                 let (next_input, _) = whitespace0(next_input)?;
                 input = next_input;
-                front_matter.hero = Some(SectionElement::FigureTable(figure_table));
+                let hero = SectionElement::FigureTable(figure_table);
+                front_matter.fields.push(TitleField::Hero(hero.clone()));
+                front_matter.hero = Some(hero);
                 continue;
             }
         }
@@ -90,13 +96,48 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
         let (next_input, _) = new_line(next_input)?;
         input = next_input;
         match key_name.as_str() {
-            "author" => front_matter.author = Some(paragraph),
-            "date" => front_matter.date = Some(paragraph),
-            "kicker" => front_matter.kicker = Some(paragraph),
-            "section" => front_matter.section = Some(paragraph),
-            "summary" => front_matter.summary = Some(paragraph),
-            "next" => front_matter.next = Some(paragraph),
-            "previous" => front_matter.previous = Some(paragraph),
+            "author" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Author(paragraph.clone()));
+                front_matter.author = Some(paragraph);
+            }
+            "date" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Date(paragraph.clone()));
+                front_matter.date = Some(paragraph);
+            }
+            "kicker" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Kicker(paragraph.clone()));
+                front_matter.kicker = Some(paragraph);
+            }
+            "section" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Section(paragraph.clone()));
+                front_matter.section = Some(paragraph);
+            }
+            "summary" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Summary(paragraph.clone()));
+                front_matter.summary = Some(paragraph);
+            }
+            "next" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Next(paragraph.clone()));
+                front_matter.next = Some(paragraph);
+            }
+            "previous" => {
+                front_matter
+                    .fields
+                    .push(TitleField::Previous(paragraph.clone()));
+                front_matter.previous = Some(paragraph);
+            }
             _ => (),
         }
     }

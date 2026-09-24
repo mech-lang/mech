@@ -1,7 +1,18 @@
 use mech_core::{
     BlockConfig, Comment, FencedMechCode, MDList, MechCode, Paragraph, ParagraphElement, Program,
-    SectionAnnotation, SectionElement, Statement, Title, hash_str, inline_document_output_id,
+    SectionAnnotation, SectionElement, Statement, Title, TitleField, hash_str,
+    inline_document_output_id,
 };
+
+/// One stable browser presentation address and its content-derived identity.
+/// The semantic identity intentionally omits positional occurrence so a
+/// retained browser document can match unchanged duplicate outputs across an
+/// accepted source edit.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RootDocumentOutputIdentity {
+    pub output_id: u64,
+    pub semantic_id: u64,
+}
 
 /// Runtime-only namespace used by the browser document adapter to capture the
 /// last ordinary source result before interactive console overlays begin.
@@ -81,6 +92,15 @@ pub fn insert_root_document_program_output_capture(
 /// compact artifact-output ordinal. Keep this traversal aligned with
 /// `mechdown::section_element` and the formatter's root presentation namespace.
 pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
+    root_document_output_identities(program)
+        .into_iter()
+        .map(|identity| identity.output_id)
+        .collect()
+}
+
+/// Returns root-document presentation identities in canonical publication
+/// order, retaining both the public occurrence address and its semantic base.
+pub fn root_document_output_identities(program: &Program) -> Vec<RootDocumentOutputIdentity> {
     let mut output_ids = Vec::new();
     let mut inline_count = 0_u64;
     let mut inline_occurrences = Vec::new();
@@ -109,7 +129,8 @@ pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
             .iter()
             .any(|annotation| annotation.name.as_ref() == PROGRAM_OUTPUT_PUBLICATION_ANNOTATION)
         {
-            push_unique(&mut output_ids, root_document_program_output_id());
+            let output_id = root_document_program_output_id();
+            push_unique(&mut output_ids, output_id, output_id);
         }
     }
     output_ids
@@ -151,8 +172,34 @@ fn collect_title_output_ids(
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
     fence_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
+    if !title.fields.is_empty() {
+        for field in &title.fields {
+            match field {
+                TitleField::Hero(hero) => collect_section_output_ids(
+                    hero,
+                    inline_count,
+                    inline_occurrences,
+                    fence_occurrences,
+                    output_ids,
+                ),
+                TitleField::Author(paragraph)
+                | TitleField::Date(paragraph)
+                | TitleField::Kicker(paragraph)
+                | TitleField::Section(paragraph)
+                | TitleField::Summary(paragraph)
+                | TitleField::Next(paragraph)
+                | TitleField::Previous(paragraph) => collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                ),
+            }
+        }
+        return;
+    }
     for paragraph in [&title.author, &title.date].into_iter().flatten() {
         collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
     }
@@ -184,7 +231,7 @@ fn collect_section_output_ids(
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
     fence_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     match element {
         SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
@@ -292,7 +339,7 @@ fn collect_fenced_output_ids(
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
     fence_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     if block.config.disabled || block.config.hidden || block.config.namespace != 0 {
         return;
@@ -323,7 +370,10 @@ fn collect_fenced_output_ids(
                 0
             }
         };
-        output_ids.push(fenced_document_output_occurrence_id(block, occurrence).unwrap());
+        output_ids.push(RootDocumentOutputIdentity {
+            output_id: fenced_document_output_occurrence_id(block, occurrence).unwrap(),
+            semantic_id: base_id,
+        });
     }
 }
 
@@ -486,7 +536,7 @@ fn collect_code_comments(
     code: &[(MechCode, Option<Comment>)],
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     for (code, trailing_comment) in code {
         if let MechCode::Comment(comment) = code {
@@ -502,7 +552,7 @@ fn collect_comment_output_ids(
     comment: &Comment,
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     collect_paragraph_output_ids(
         &comment.paragraph,
@@ -516,7 +566,7 @@ fn collect_paragraph_output_ids(
     paragraph: &Paragraph,
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     for element in &paragraph.elements {
         collect_paragraph_element_output_ids(element, inline_count, inline_occurrences, output_ids);
@@ -527,7 +577,7 @@ fn collect_paragraph_element_output_ids(
     element: &ParagraphElement,
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     match element {
         ParagraphElement::EvalInlineMechCode(expression) => {
@@ -550,6 +600,7 @@ fn collect_paragraph_element_output_ids(
             push_unique(
                 output_ids,
                 inline_document_output_id(0, expression, occurrence),
+                base,
             );
         }
         ParagraphElement::Emphasis(element)
@@ -573,7 +624,7 @@ fn collect_list_output_ids(
     list: &MDList,
     inline_count: &mut u64,
     inline_occurrences: &mut Vec<(u64, u64)>,
-    output_ids: &mut Vec<u64>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     match list {
         MDList::Unordered(items) => {
@@ -618,9 +669,15 @@ fn collect_list_output_ids(
     }
 }
 
-fn push_unique(output_ids: &mut Vec<u64>, output_id: u64) {
-    if !output_ids.contains(&output_id) {
-        output_ids.push(output_id);
+fn push_unique(output_ids: &mut Vec<RootDocumentOutputIdentity>, output_id: u64, semantic_id: u64) {
+    if !output_ids
+        .iter()
+        .any(|identity| identity.output_id == output_id)
+    {
+        output_ids.push(RootDocumentOutputIdentity {
+            output_id,
+            semantic_id,
+        });
     }
 }
 
@@ -672,6 +729,33 @@ mod tests {
         let output_ids = root_document_output_ids(&tree);
         assert_eq!(output_ids.len(), 2);
         assert_eq!(root_document_inline_eval_count(&tree), 2);
+    }
+
+    #[test]
+    fn title_front_matter_preserves_authored_output_order_and_duplicates() {
+        let tree = mech_syntax::parse(
+            "Document\n========\ndate: {40 + 2}\nauthor: {41 + 1}\nauthor: {42 + 0}\n========\n",
+        )
+        .unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        let expected = [
+            "Document\n========\ndate: {40 + 2}\n========\n",
+            "Document\n========\nauthor: {41 + 1}\n========\n",
+            "Document\n========\nauthor: {42 + 0}\n========\n",
+        ]
+        .map(|source| {
+            let field = mech_syntax::parse(source).unwrap();
+            root_document_output_ids(&field)[0]
+        });
+
+        assert_eq!(output_ids, expected);
+        assert_eq!(root_document_inline_eval_count(&tree), 3);
+    }
+
+    #[test]
+    fn prompt_wrapped_fences_remain_program_values() {
+        let tree = mech_syntax::parse(">: ```mech\n42\n```\n").unwrap();
+        assert!(root_document_has_program_value(&tree));
     }
 
     #[test]

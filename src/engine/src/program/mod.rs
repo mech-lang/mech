@@ -10,8 +10,9 @@ pub(crate) use document_outputs::{
 };
 #[cfg(feature = "semantic-compiler")]
 pub use document_outputs::{
-    configure_root_document_program_output_capture, insert_root_document_program_output_capture,
-    root_document_has_program_value, root_document_inline_eval_count, root_document_output_ids,
+    RootDocumentOutputIdentity, configure_root_document_program_output_capture,
+    insert_root_document_program_output_capture, root_document_has_program_value,
+    root_document_inline_eval_count, root_document_output_identities, root_document_output_ids,
     root_document_program_output_id,
 };
 

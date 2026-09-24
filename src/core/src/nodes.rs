@@ -399,6 +399,19 @@ impl PrettyPrint for Program {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TitleField {
+    Author(Paragraph),
+    Date(Paragraph),
+    Hero(SectionElement),
+    Kicker(Paragraph),
+    Section(Paragraph),
+    Summary(Paragraph),
+    Next(Paragraph),
+    Previous(Paragraph),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
     pub text: Token,
     /// Module imports written in the title's front-matter block. They are
@@ -406,6 +419,11 @@ pub struct Title {
     /// rendered Mechdown documents.
     #[cfg_attr(feature = "serde", serde(default))]
     pub imports: Vec<(ModuleImport, Option<Comment>)>,
+    /// Recognized front-matter values in authored source order. The named
+    /// fields below remain the last-value projection used by templates and by
+    /// legacy serialized programs.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub fields: Vec<TitleField>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,
     pub hero: Option<SectionElement>,
