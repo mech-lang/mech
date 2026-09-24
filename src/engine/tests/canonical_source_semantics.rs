@@ -2652,7 +2652,7 @@ fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
     let ordinary = base
         .inputs()
         .iter()
-        .find(|input| input.name == mech_engine::encode_source_input_name("ordinary"))
+        .find(|input| input.name == mech_engine::encode_source_input_name("ordinary-source"))
         .expect("ordinary input")
         .slot;
     let payload = base
