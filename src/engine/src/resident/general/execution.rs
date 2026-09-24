@@ -1371,7 +1371,7 @@ impl ReactiveInstance {
     }
 
     fn select_activation_roots(&mut self, trigger_inputs: &[mech_core::CellSlotId]) {
-        for (node, _, sampled) in &self.plan.activation_turn_inputs {
+        for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
             clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
             set_bit(
                 &mut self.workspace.suppressed_activation_bits,
@@ -1384,8 +1384,15 @@ impl ReactiveInstance {
                     sampled_node.get() as usize,
                 );
             }
+            for update in updates.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
         }
-        for (node, inputs, sampled) in &self.plan.activation_turn_inputs {
+        for (node, inputs, sampled, updates) in &self.plan.activation_turn_inputs {
             // An input-free scope has no host fact that can name its trigger.
             // Every explicit turn therefore admits it; initial publication uses
             // the dedicated preparation path above to keep it dormant.
@@ -1404,12 +1411,18 @@ impl ReactiveInstance {
                         sampled_node.get() as usize,
                     );
                 }
+                for update in updates.iter() {
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                }
             }
         }
     }
 
     fn clear_activation_roots(&mut self) {
-        for (node, _, sampled) in &self.plan.activation_turn_inputs {
+        for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
             clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
             set_bit(
                 &mut self.workspace.suppressed_activation_bits,
@@ -1420,6 +1433,13 @@ impl ReactiveInstance {
                 set_bit(
                     &mut self.workspace.suppressed_activation_bits,
                     sampled_node.get() as usize,
+                );
+            }
+            for update in updates.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
                 );
             }
         }
