@@ -4349,18 +4349,50 @@ count
 fn driverless_observation_gets_a_provider_turn_alongside_driven_triggers() {
     let driverless_reads = Arc::new(AtomicUsize::new(0));
     let driven_reads = Arc::new(AtomicUsize::new(0));
-    let mut runtime = runtime();
-    runtime
-        .register_resource_provider(Box::new(DriverlessObservationProvider {
-            reads: driverless_reads.clone(),
-        }))
+    let driven_plans = Arc::new(AtomicUsize::new(0));
+    let driven_value = Arc::new(AtomicU64::new(1.0_f64.to_bits()));
+    let driverless_provider = || DriverlessObservationProvider {
+        reads: driverless_reads.clone(),
+    };
+    let driven_provider = || PlanningObservationProvider {
+        plans: driven_plans.clone(),
+        reads: driven_reads.clone(),
+        value_bits: driven_value.clone(),
+    };
+    let source = r#"
+@snapshot := snapshot://clock/tick{:read(value)}
+@clock := test://clock/tick{:read(delta-seconds)}
+snapshot-trigger := @snapshot/value
+driven-trigger := @clock/delta-seconds
+~snapshot-count := 0u64
+~driven-count := 0u64
+~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
+~> driven-trigger { driven-count = driven-count + 1u64 }
+status := snapshot-count * 100u64 + driven-count
+status
+"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(driverless_provider()))
+        .resource_provider(Box::new(driven_provider()))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
         .unwrap();
     runtime
-        .register_resource_provider(Box::new(PlanningObservationProvider {
-            plans: Arc::new(AtomicUsize::new(0)),
-            reads: driven_reads.clone(),
-            value_bits: Arc::new(AtomicU64::new(1.0_f64.to_bits())),
-        }))
+        .register_resource_provider(Box::new(driverless_provider()))
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(driven_provider()))
         .unwrap();
     let subject = runtime.runtime_context().unwrap().subject;
     for (id, resource) in [
@@ -4378,21 +4410,7 @@ fn driverless_observation_gets_a_provider_turn_alongside_driven_triggers() {
     }
 
     runtime
-        .load_source_program(
-            r#"
-@snapshot := snapshot://clock/tick{:read(value)}
-@clock := test://clock/tick{:read(delta-seconds)}
-snapshot-trigger := @snapshot/value
-driven-trigger := @clock/delta-seconds
-~snapshot-count := 0u64
-~driven-count := 0u64
-~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
-~> driven-trigger { driven-count = driven-count + 1u64 }
-status := snapshot-count * 100u64 + driven-count
-status
-"#,
-            crate::ResidentDurabilityPolicy::Retained,
-        )
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
         .unwrap();
 
     assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);

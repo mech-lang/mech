@@ -243,6 +243,60 @@ impl MechRuntime {
                 self.revalidate_active_resident_grants()?;
                 self.drain_resident_continuations()
             }
+            ActiveProgramExecution::ResidentExternal(execution)
+                if execution
+                    .coordinator
+                    .instance()
+                    .plan
+                    .has_input_free_activation_roots() =>
+            {
+                self.revalidate_active_resident_grants()?;
+                let turn_started = Instant::now();
+                let admission = execution.coordinator.admit_turn()?;
+                let before = execution.coordinator.structural_probe();
+                let outcome =
+                    execution
+                        .coordinator
+                        .execute_admitted_step_turn(admission, |_| {
+                            super::super::limits::enforce_turn_duration_limit(
+                                max_turn_duration_ms,
+                                turn_started,
+                            )
+                        })?;
+                let after = execution.coordinator.structural_probe();
+                self.resident_production_probe
+                    .observe_structural_delta(before, after);
+                match &outcome {
+                    crate::ResidentExternalTurnOutcome::Rejected { .. } => {
+                        self.program_execution_info.resident_rejected_turns = self
+                            .program_execution_info
+                            .resident_rejected_turns
+                            .saturating_add(1);
+                        self.resident_production_probe.resident_rejections = self
+                            .resident_production_probe
+                            .resident_rejections
+                            .saturating_add(1);
+                    }
+                    crate::ResidentExternalTurnOutcome::Accepted { .. }
+                    | crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. } => {
+                        self.program_execution_info.resident_accepted_turns = self
+                            .program_execution_info
+                            .resident_accepted_turns
+                            .saturating_add(1);
+                        self.resident_production_probe.resident_turns = self
+                            .resident_production_probe
+                            .resident_turns
+                            .saturating_add(1);
+                    }
+                }
+                if let Some(error) = super::resident_host_turn_error(&outcome) {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::ActivationFailure,
+                        format!("resident external step did not complete cleanly: {error:?}"),
+                    ));
+                }
+                self.drain_resident_continuations()
+            }
             ActiveProgramExecution::ResidentExternal(_) => Err(invalid_active_program(
                 "external resident programs advance only from admitted host input or continuation",
             )),
