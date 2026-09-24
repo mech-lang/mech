@@ -374,6 +374,7 @@ pub struct ActivatedOutput {
 struct ActivatedOutputMaterialization {
     target: CellSlotId,
     source: ResidentReadLocation,
+    producer: Option<ActivatedNodeIndex>,
 }
 
 fn output_materialization_depends_on_match(
@@ -5254,6 +5255,7 @@ fn build_plan(
         // path; tracking reachability rather than writer ancestry preserves
         // that path when the graph converges again at an effect or output.
         let mut pre_state = vec![false; steps.len()];
+        pre_state[activated.get() as usize] = true;
         let mut pending = VecDeque::from([activated]);
         while let Some(parent) = pending.pop_front() {
             for child in topology.same_turn_downstream(parent).iter().copied() {
@@ -5347,9 +5349,21 @@ fn build_plan(
         .iter()
         .filter_map(|slot| match slot.role {
             SlotRole::Output => Some(output_materialization_source(slot.slot).and_then(|source| {
+                let producer = match source {
+                    ArtifactSource::Slot(source) => {
+                        match artifact.slots()[source.get() as usize].producer {
+                            ProducerReference::NodeOutput { node, .. } => {
+                                artifact_to_activated[node.get() as usize]
+                            }
+                            ProducerReference::Input(_) | ProducerReference::Output { .. } => None,
+                        }
+                    }
+                    ArtifactSource::Constant(_) => None,
+                };
                 resolve_read(&layout, source).map(|source| ActivatedOutputMaterialization {
                     target: slot.slot,
                     source,
+                    producer,
                 })
             })),
             SlotRole::Input | SlotRole::State | SlotRole::Derived => None,
