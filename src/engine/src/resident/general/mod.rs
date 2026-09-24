@@ -11,7 +11,7 @@ pub use execution::*;
 
 use core::ops::Range;
 use core::sync::atomic::{AtomicU64, Ordering};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
@@ -519,6 +519,12 @@ impl ActivatedPlan {
 
     pub fn has_external_steps(&self) -> bool {
         self.external_step_count != 0
+    }
+
+    pub fn has_input_free_activation_roots(&self) -> bool {
+        self.activation_turn_inputs
+            .iter()
+            .any(|(_, inputs, _, _)| inputs.is_empty())
     }
 
     pub(crate) fn has_observation_inputs(&self) -> bool {
@@ -5204,118 +5210,64 @@ fn build_plan(
         )?;
         let activated = artifact_to_activated[node.node.get() as usize]
             .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
-        let descendants = &topology.same_turn_dependency_masks[activated.get() as usize];
-        let descendant_nodes = descendants
-            .iter()
-            .enumerate()
-            .flat_map(|(word, bits)| {
-                let mut bits = *bits;
-                let mut nodes = Vec::new();
-                while bits != 0 {
-                    let bit = bits.trailing_zeros() as usize;
-                    nodes.push(ActivatedNodeIndex((word * 64 + bit) as u32));
-                    bits &= bits - 1;
+        let is_state_writer = |candidate: ActivatedNodeIndex| {
+            let artifact_node = steps[candidate.get() as usize].artifact_node();
+            node_output_slot(artifact, artifact_node)
+                .is_ok_and(|slot| artifact.slots()[slot.get() as usize].role == SlotRole::State)
+        };
+        // Follow every direct activation path, but stop expanding at retained
+        // state. A descendant can also be reachable along a second direct
+        // path; tracking reachability rather than writer ancestry preserves
+        // that path when the graph converges again at an effect or output.
+        let mut pre_state = vec![false; steps.len()];
+        let mut pending = VecDeque::from([activated]);
+        while let Some(parent) = pending.pop_front() {
+            for child in topology.same_turn_downstream(parent).iter().copied() {
+                let index = child.get() as usize;
+                if pre_state[index] {
+                    continue;
                 }
-                nodes
-            })
-            .collect::<Vec<_>>();
-        let state_writers = descendant_nodes
+                pre_state[index] = true;
+                if !is_state_writer(child) {
+                    pending.push_back(child);
+                }
+            }
+        }
+        // State publication, integrity checks, effects, and output
+        // materialization are suppression boundaries. Walk backward only
+        // through the pre-state subgraph so ordinary consumers of published
+        // state remain eligible on unrelated turns.
+        let mut protected = vec![false; steps.len()];
+        for candidate in topology.linear_node_order.iter().copied() {
+            let index = candidate.get() as usize;
+            if !pre_state[index] {
+                continue;
+            }
+            let artifact_node = steps[index].artifact_node();
+            let constrained = topology
+                .mandatory_candidate_mask
+                .get(index / 64)
+                .is_some_and(|word| word & (1_u64 << (index % 64)) != 0);
+            let effect = matches!(steps[index], ActivatedTurnStep::External(_));
+            let output = node_output_slot(artifact, artifact_node)
+                .is_ok_and(|slot| output_sources.contains(&slot));
+            protected[index] = is_state_writer(candidate) || constrained || effect || output;
+        }
+        for candidate in topology.linear_node_order.iter().rev().copied() {
+            let index = candidate.get() as usize;
+            if !pre_state[index] || protected[index] {
+                continue;
+            }
+            protected[index] = topology
+                .same_turn_downstream(candidate)
+                .iter()
+                .any(|child| protected[child.get() as usize]);
+        }
+        let update_nodes = topology
+            .linear_node_order
             .iter()
             .copied()
-            .filter(|candidate| {
-                let artifact_node = steps[candidate.get() as usize].artifact_node();
-                node_output_slot(artifact, artifact_node)
-                    .is_ok_and(|slot| artifact.slots()[slot.get() as usize].role == SlotRole::State)
-            })
-            .collect::<Vec<_>>();
-        // Integrity predicates are seeded independently of ordinary dirty
-        // propagation. Keep predicates derived directly from a dormant
-        // activation in the same suppression cone, while allowing predicates
-        // downstream of retained state to keep checking the published value.
-        let constrained_descendants = descendant_nodes
-            .iter()
-            .copied()
-            .filter(|candidate| {
-                topology
-                    .mandatory_candidate_mask
-                    .get(candidate.get() as usize / 64)
-                    .is_some_and(|word| word & (1_u64 << (candidate.get() as usize % 64)) != 0)
-            })
-            .filter(|candidate| {
-                !state_writers.iter().any(|writer| {
-                    writer != candidate
-                        && topology.same_turn_dependency_masks[writer.get() as usize]
-                            .get(candidate.get() as usize / 64)
-                            .is_some_and(|word| {
-                                word & (1_u64 << (candidate.get() as usize % 64)) != 0
-                            })
-                })
-            })
-            .collect::<Vec<_>>();
-        // External effects are another publication boundary. A pure node can
-        // combine an activation result with an ordinary input and therefore
-        // become a topology root on an unrelated turn. Keep every pre-state
-        // path from the activation to an effect in the suppression cone so a
-        // dormant activation cannot expose absent or stale scratch storage.
-        let effect_descendants = descendant_nodes
-            .iter()
-            .copied()
-            .filter(|candidate| {
-                matches!(
-                    steps[candidate.get() as usize],
-                    ActivatedTurnStep::External(_)
-                )
-            })
-            .filter(|candidate| {
-                !state_writers.iter().any(|writer| {
-                    writer != candidate
-                        && topology.same_turn_dependency_masks[writer.get() as usize]
-                            .get(candidate.get() as usize / 64)
-                            .is_some_and(|word| {
-                                word & (1_u64 << (candidate.get() as usize % 64)) != 0
-                            })
-                })
-            })
-            .collect::<Vec<_>>();
-        let output_descendants = descendant_nodes
-            .iter()
-            .copied()
-            .filter(|candidate| {
-                let artifact_node = steps[candidate.get() as usize].artifact_node();
-                node_output_slot(artifact, artifact_node)
-                    .is_ok_and(|slot| output_sources.contains(&slot))
-            })
-            .filter(|candidate| {
-                !state_writers.iter().any(|writer| {
-                    writer != candidate
-                        && topology.same_turn_dependency_masks[writer.get() as usize]
-                            .get(candidate.get() as usize / 64)
-                            .is_some_and(|word| {
-                                word & (1_u64 << (candidate.get() as usize % 64)) != 0
-                            })
-                })
-            })
-            .collect::<Vec<_>>();
-        // Suppression belongs only to the activation-owned path through each
-        // state publication or a directly constrained descendant. Ordinary
-        // consumers of retained state remain eligible on unrelated turns.
-        let update_nodes = descendant_nodes
-            .into_iter()
-            .filter(|candidate| {
-                state_writers
-                    .iter()
-                    .chain(&constrained_descendants)
-                    .chain(&effect_descendants)
-                    .chain(&output_descendants)
-                    .any(|target| {
-                        candidate == target
-                            || topology.same_turn_dependency_masks[candidate.get() as usize]
-                                .get(target.get() as usize / 64)
-                                .is_some_and(|word| {
-                                    word & (1_u64 << (target.get() as usize % 64)) != 0
-                                })
-                    })
-            })
+            .filter(|candidate| protected[candidate.get() as usize])
             .collect::<Vec<_>>();
         for update in &update_nodes {
             if activation_update_owners
