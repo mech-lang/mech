@@ -1,6 +1,4 @@
-use std::cell::Cell;
-#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
