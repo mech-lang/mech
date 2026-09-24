@@ -329,13 +329,24 @@ impl CanonicalDocumentRenderer {
                         toc.push_str("<li><a href='#section-");
                         toc.push_str(&escape_attribute(&number));
                         toc.push_str("'>");
-                        render_inline_children_html(
-                            &paragraph,
-                            owner,
-                            &lookup,
-                            &mut toc,
-                            &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
-                        )?;
+                        if let Some((cutoff, _)) = subtitle_annotation(&paragraph)? {
+                            render_inline_children_html_until(
+                                &paragraph,
+                                owner,
+                                &lookup,
+                                &mut toc,
+                                cutoff,
+                                &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+                            )?;
+                        } else {
+                            render_inline_children_html(
+                                &paragraph,
+                                owner,
+                                &lookup,
+                                &mut toc,
+                                &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+                            )?;
+                        }
                         toc.push_str("</a></li>");
                     }
                     let target = match value.kind() {
@@ -1027,16 +1038,55 @@ fn render_subtitle_html(
         .ok_or_else(|| range_error(node.range()))?;
     output.push_str(&format!("<h{level} class='mech-subtitle' id='section-"));
     output.push_str(&escape_attribute(&section));
+    let annotation = subtitle_annotation(&paragraph)?;
+    if let Some((_, annotation)) = &annotation {
+        output.push_str("' data-mech-annotations='");
+        output.push_str(&escape_attribute(annotation));
+    }
     output.push_str("'>");
-    render_inline_children_html(
-        &paragraph,
-        owner,
-        lookup,
-        output,
-        &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
-    )?;
+    if let Some((cutoff, _)) = &annotation {
+        render_inline_children_html_until(
+            &paragraph,
+            owner,
+            lookup,
+            output,
+            *cutoff,
+            &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+        )?;
+    } else {
+        render_inline_children_html(
+            &paragraph,
+            owner,
+            lookup,
+            output,
+            &[SyntaxKind::Newline, SyntaxKind::CarriageReturn],
+        )?;
+    }
+    if let Some((_, annotation)) = annotation {
+        output.push_str("<span class='mech-section-annotations'>");
+        output.push_str(&escape_html(&annotation));
+        output.push_str("</span>");
+    }
     output.push_str(&format!("</h{level}>"));
     Ok(())
+}
+
+fn subtitle_annotation(
+    paragraph: &SyntaxNode,
+) -> Result<Option<(TextSize, String)>, CanonicalDocumentRenderError> {
+    let source = node_text(paragraph)?;
+    let first_line = source.lines().next().unwrap_or_default();
+    let Some(offset) = first_line.find(" @") else {
+        return Ok(None);
+    };
+    let annotation = first_line[offset + 1..].trim().to_owned();
+    if annotation.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some((
+        TextSize(paragraph.range().start.0 + offset as u32),
+        annotation,
+    )))
 }
 
 fn subtitle_coordinates(
@@ -1852,6 +1902,49 @@ fn render_inline_children_html(
     Ok(())
 }
 
+fn render_inline_children_html_until(
+    node: &SyntaxNode,
+    owner: DocumentScopeId,
+    lookup: &ResultLookup<'_>,
+    output: &mut String,
+    cutoff: TextSize,
+    skipped_tokens: &[SyntaxKind],
+) -> Result<(), CanonicalDocumentRenderError> {
+    for element in node.children_with_tokens() {
+        let range = element.range();
+        if range.start >= cutoff {
+            continue;
+        }
+        match element {
+            SyntaxElement::Node(child) if range.end <= cutoff => {
+                render_inline_html(&child, owner, lookup, output)?
+            }
+            SyntaxElement::Node(child) => render_inline_children_html_until(
+                &child,
+                owner,
+                lookup,
+                output,
+                cutoff,
+                skipped_tokens,
+            )?,
+            SyntaxElement::Token(token) if skipped_tokens.contains(&token.kind()) => {}
+            SyntaxElement::Token(token) if range.end <= cutoff => {
+                output.push_str(&escape_html(
+                    &token.text().map_err(|_| range_error(token.range()))?,
+                ));
+            }
+            SyntaxElement::Token(token) => {
+                let source = token
+                    .source()
+                    .text(TextRange::new(range.start, cutoff))
+                    .map_err(|_| range_error(range))?;
+                output.push_str(&escape_html(&source));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn render_hyperlink_html(
     node: &SyntaxNode,
     owner: DocumentScopeId,
@@ -2361,6 +2454,14 @@ fn render_fence_html(
             message: "code fence has no valid presentation options".to_owned(),
             range: Some(fence.syntax().range()),
         })?;
+    if matches!(info.scope, CodeFenceScope::Inert)
+        && fence_language(fence).is_some_and(|language| matches!(language, "diagram" | "chart"))
+    {
+        output.push_str("<div class='mech-diagram mermaid' data-mech-diagram>");
+        output.push_str(&escape_html(&fence_body(fence)?));
+        output.push_str("</div>");
+        return Ok(());
+    }
     output.push_str("<figure class='mech-code-block");
     if info.hidden {
         output.push_str(" hidden");
@@ -2890,17 +2991,35 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             .into_iter()
             .map(|operator| operator.range()),
     );
-    let mut argument_lists = Vec::new();
-    collect_nodes(node, SyntaxKind::ArgumentList, &mut argument_lists);
-    let argument_list_ranges = argument_lists
+    let mut separator_lists = Vec::new();
+    for kind in [
+        SyntaxKind::ArgumentList,
+        SyntaxKind::Map,
+        SyntaxKind::Record,
+    ] {
+        collect_nodes(node, kind, &mut separator_lists);
+    }
+    let separator_list_ranges = separator_lists
         .into_iter()
         .map(|arguments| arguments.range())
+        .collect::<Vec<_>>();
+    let mut binding_nodes = Vec::new();
+    for kind in [SyntaxKind::MapEntry, SyntaxKind::RecordBinding] {
+        collect_nodes(node, kind, &mut binding_nodes);
+    }
+    let binding_colon_ranges = binding_nodes
+        .into_iter()
+        .flat_map(|binding| binding.children_with_tokens())
+        .filter_map(|element| match element {
+            SyntaxElement::Token(token) if token.kind() == SyntaxKind::Colon => Some(token.range()),
+            _ => None,
+        })
         .collect::<Vec<_>>();
     let mut output = String::new();
     let mut gap = String::new();
     let mut previous = None;
     let mut previous_ended_operator = false;
-    let mut previous_was_argument_comma = false;
+    let mut previous_was_separator = false;
     for token in node.tokens() {
         let kind = token.kind();
         let text = token.text().map_err(|_| range_error(token.range()))?;
@@ -2924,17 +3043,18 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             .find(|range| token.range().start >= range.start && token.range().end <= range.end);
         let starts_operator = operator.is_some_and(|range| token.range().start == range.start);
         let ends_operator = operator.is_some_and(|range| token.range().end == range.end);
-        let argument_comma = kind == SyntaxKind::Comma
-            && argument_list_ranges
+        let separator = (kind == SyntaxKind::Comma
+            && separator_list_ranges
                 .iter()
-                .any(|range| token.range().start >= range.start && token.range().end <= range.end);
+                .any(|range| token.range().start >= range.start && token.range().end <= range.end))
+            || (kind == SyntaxKind::Colon && binding_colon_ranges.contains(&token.range()));
         if gap.contains(['\r', '\n']) {
             output.push_str(&gap);
-        } else if argument_comma {
-            // Canonical call arguments never retain horizontal space before
-            // their separator.
+        } else if separator {
+            // Canonical argument and binding separators never retain
+            // horizontal space before the token.
         } else if previous.is_some() {
-            if previous_was_argument_comma
+            if previous_was_separator
                 || !gap.is_empty()
                 || starts_operator
                 || previous_ended_operator
@@ -2956,7 +3076,7 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         output.push_str(&text);
         previous = Some(kind);
         previous_ended_operator = ends_operator;
-        previous_was_argument_comma = argument_comma;
+        previous_was_separator = separator;
     }
     output.push_str(&gap);
     Ok(output)
