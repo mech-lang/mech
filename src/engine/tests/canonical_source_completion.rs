@@ -230,6 +230,23 @@ fn recursive_calls_inside_comprehensions_fail_at_the_source_boundary() {
 }
 
 #[test]
+fn recursive_pattern_function_lifts_fail_at_the_source_boundary() {
+    for call in ["walk([1 2])", "walk({1, 2})"] {
+        let source = format!("walk(n<f64>) => <f64>\n  | 0 => 0\n  | n => walk(n - 1).\n{call}\n");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x556), Revision(1), source.clone()).unwrap(),
+            ParseConfig::default(),
+        );
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        let error = CanonicalSourceFrontend
+            .compile_document(&document)
+            .err()
+            .unwrap_or_else(|| panic!("{call} must reject recursive implicit lifting"));
+        assert_eq!(error.code, "source-semantics/recursive-comprehension");
+    }
+}
+
+#[test]
 fn artifact_rejects_direct_bind_as_a_recursive_target() {
     let artifact = compile_document(
         "countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => countdown(n - 1).\ncountdown(2)\n",
