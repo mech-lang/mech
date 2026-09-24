@@ -2869,10 +2869,21 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         .collect::<Vec<_>>();
     let mut operator_nodes = Vec::new();
     collect_operator_nodes(node, &mut operator_nodes);
-    let operator_ranges = operator_nodes
+    let mut operator_ranges = operator_nodes
         .into_iter()
         .filter_map(|operator| operator.operator_token_range())
         .collect::<Vec<_>>();
+    let mut compound_assignments = Vec::new();
+    collect_nodes(
+        node,
+        SyntaxKind::OpAssignOperator,
+        &mut compound_assignments,
+    );
+    operator_ranges.extend(
+        compound_assignments
+            .into_iter()
+            .map(|operator| operator.range()),
+    );
     let mut output = String::new();
     let mut gap = String::new();
     let mut previous = None;
