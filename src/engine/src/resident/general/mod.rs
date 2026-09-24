@@ -3292,7 +3292,56 @@ fn constant_comparison_operand_at_depth<'a>(
                 .schemas()
                 .get(target_schema_id)
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            let converted = if operation.operation.module_path.as_ref() == ["convert"]
+            let converted = if operation.operation.module_path.as_ref() == ["matrix"]
+                && operation.operation.operation_name == "transpose"
+            {
+                let [input] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(source) = constant_comparison_operand_at_depth(
+                    artifact, node, *input, facts, next_depth, budget,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let rows = source.rows;
+                let columns = source.columns;
+                let Ok(ValueDataDraft::Matrix(elements)) = source.value.canonical_data_draft()
+                else {
+                    return Ok(None);
+                };
+                let elements = elements.into_vec();
+                let Some(count) = rows.checked_mul(columns) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                if count > MAX_STATIC_SELECTOR_SOURCE_STEPS || elements.len() != count {
+                    return Ok(None);
+                }
+                let mut transposed = Vec::with_capacity(count);
+                for column in 0..columns {
+                    for row in 0..rows {
+                        transposed.push(elements[row * columns + column].clone());
+                    }
+                }
+                let target_shape = matrix_shape_for_extents(
+                    target_schema,
+                    &[
+                        u64::try_from(columns)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                        u64::try_from(rows)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    ],
+                )?;
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(transposed.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if operation.operation.module_path.as_ref() == ["convert"]
                 && operation.operation.operation_name == "kind"
             {
                 let [input] = inputs.as_slice() else {
@@ -3591,7 +3640,23 @@ fn closed_comparison_population(
                 && left.columns == right.columns
                 && dense_resident_kind(left_element).is_some()
         );
+        let snapshot_matrix_identity = matches!(
+            (&left.schema, &right.schema),
+            (
+                SchemaBody::Matrix { element: left_element, .. },
+                SchemaBody::Matrix { element: right_element, .. },
+            ) if left_element == right_element
+                && left.rows == right.rows
+                && left.columns == right.columns
+                && dense_resident_kind(left_element).is_none()
+        );
         if left.schema_key != right.schema_key && !compatible_matrix_identity {
+            if snapshot_matrix_identity
+                && matches!(name, "seq" | "sneq")
+                && !closed_aggregate_equality_admitted(artifact, &left.value, &right.value, false)
+            {
+                return Ok(None);
+            }
             return Ok(match name {
                 "eq" | "seq" => Some(0),
                 "neq" | "sneq" => Some(1),
@@ -3602,6 +3667,8 @@ fn closed_comparison_population(
             let admitted =
                 if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
                     closed_scalar_string_equality_admitted(&left.value, &right.value)
+                } else if compatible_matrix_identity && matches!(name, "seq" | "sneq") {
+                    true
                 } else if !scalar_comparison_supported(&left.schema, false) {
                     closed_aggregate_equality_admitted(
                         artifact,
@@ -3726,6 +3793,14 @@ fn closed_comparison_population(
                 &right.value,
                 artifact.schemas(),
             )
+            .is_err()
+        {
+            return Ok(None);
+        }
+        let publication_work =
+            u64::try_from(output_len).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+        if comparison_meter
+            .charge_comparison_work(publication_work)
             .is_err()
         {
             return Ok(None);
