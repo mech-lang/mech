@@ -192,6 +192,7 @@ fn scalar_kind(body: &SchemaBody) -> Option<ScalarMemoryKind> {
         SchemaBody::Id => Some(ScalarMemoryKind::Id),
         SchemaBody::Index => Some(ScalarMemoryKind::Index),
         SchemaBody::Atom(_) => Some(ScalarMemoryKind::Atom),
+        SchemaBody::IntegerInterval(interval) => scalar_kind(&interval.base_body()),
         _ => None,
     }
 }
