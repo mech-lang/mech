@@ -2270,6 +2270,9 @@ mod document {
                     "invalid documentation source: {error}"
                 )))
             })?;
+            mech_runtime::CanonicalDocumentRenderer
+                .format_html_body(&document.document().document())
+                .map_err(|error| js_error(error.to_string()))?;
             let accepted_before = self.repl.session.source().len();
             let accepted = match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
