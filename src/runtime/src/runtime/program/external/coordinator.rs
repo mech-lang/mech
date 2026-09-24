@@ -171,12 +171,6 @@ impl ResidentExternalReplayBootstrap {
     }
 }
 
-impl From<bool> for ResidentExternalReplayBootstrap {
-    fn from(initial_publication_required: bool) -> Self {
-        Self::new(initial_publication_required, Box::new([]))
-    }
-}
-
 pub struct ResidentExternalCoordinator {
     instance: Option<ReactiveInstance>,
     publication_authority: RuntimeResidentPublicationAuthority,
@@ -254,7 +248,7 @@ impl ResidentExternalCoordinator {
     pub fn new_replay(
         instance: ReactiveInstance,
         artifact: Arc<ProgramArtifact>,
-        replay_bootstrap: impl Into<ResidentExternalReplayBootstrap>,
+        replay_bootstrap: ResidentExternalReplayBootstrap,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
@@ -263,7 +257,7 @@ impl ResidentExternalCoordinator {
             instance,
             artifact,
             false,
-            replay_bootstrap.into(),
+            replay_bootstrap,
             bound,
             durability,
             limits,
@@ -1292,36 +1286,8 @@ impl ResidentExternalCoordinator {
                 self.latest_live_input_byte_limit,
             )?;
         }
-        let eligible = &self.instance().plan.turn_trigger_inputs;
+        self.validate_replay_activation_scope(batch, record)?;
         let facts = batch.iter().flat_map(|batch| &batch.facts);
-        let trigger_count = facts.clone().filter(|fact| fact.trigger).count();
-        let driverless = self.replay_bootstrap.driverless_trigger_inputs();
-        if facts
-            .clone()
-            .any(|fact| fact.trigger && !eligible.contains(&fact.slot))
-            || (!mode.admits_trigger_facts() && trigger_count != 0)
-            || (mode == ResidentExternalTurnMode::DriverlessBootstrap
-                && facts
-                    .clone()
-                    .any(|fact| fact.trigger != driverless.contains(&fact.slot)))
-            || (record.header.status == TurnRecordStatus::Accepted
-                && mode == ResidentExternalTurnMode::Ordinary
-                && !eligible.is_empty()
-                && !self.instance().plan.has_input_free_activation_roots()
-                && trigger_count == 0)
-            || (record.header.status == TurnRecordStatus::Accepted
-                && mode == ResidentExternalTurnMode::DriverlessBootstrap
-                && facts
-                    .clone()
-                    .filter(|fact| fact.trigger)
-                    .map(|fact| fact.slot)
-                    .collect::<std::collections::BTreeSet<_>>()
-                    != driverless.iter().copied().collect())
-        {
-            return invalid_coordinator(
-                "recorded replay triggers do not match the activated turn mode",
-            );
-        }
         if mode.reuses_input_snapshot()
             && facts.enumerate().any(|(ordinal, fact)| {
                 self.latest_live_inputs
@@ -1359,6 +1325,63 @@ impl ResidentExternalCoordinator {
             TurnRecordStatus::Staged => {
                 return invalid_coordinator("staged resident turns are not replay decisions");
             }
+        }
+        Ok(())
+    }
+
+    fn validate_replay_activation_scope(
+        &self,
+        batch: Option<&CapturedInputBatch>,
+        record: &ResidentTurnRecord,
+    ) -> MResult<()> {
+        let mode = record.body.mode;
+        let eligible = &self.instance().plan.turn_trigger_inputs;
+        let facts = batch.map_or(&[][..], |batch| batch.facts.as_ref());
+        let trigger_count = facts.iter().filter(|fact| fact.trigger).count();
+        let driverless = self.replay_bootstrap.driverless_trigger_inputs();
+        let invalid_fact = facts
+            .iter()
+            .any(|fact| fact.trigger && !eligible.contains(&fact.slot));
+        let split_source_group = mode == ResidentExternalTurnMode::Ordinary
+            && facts.iter().zip(self.bound.observations()).enumerate().any(
+                |(ordinal, (fact, observation))| {
+                    eligible.contains(&fact.slot)
+                        && facts[..ordinal]
+                            .iter()
+                            .zip(&self.bound.observations()[..ordinal])
+                            .any(|(previous_fact, previous_observation)| {
+                                eligible.contains(&previous_fact.slot)
+                                    && observations_share_host_source(
+                                        previous_observation,
+                                        observation,
+                                    )
+                                    && previous_fact.trigger != fact.trigger
+                            })
+                },
+            );
+        let invalid_driverless = mode == ResidentExternalTurnMode::DriverlessBootstrap
+            && (facts
+                .iter()
+                .any(|fact| fact.trigger != driverless.contains(&fact.slot))
+                || (record.header.status == TurnRecordStatus::Accepted
+                    && facts
+                        .iter()
+                        .filter(|fact| fact.trigger)
+                        .map(|fact| fact.slot)
+                        .collect::<std::collections::BTreeSet<_>>()
+                        != driverless.iter().copied().collect()));
+        let trigger_free_ordinary = record.header.status == TurnRecordStatus::Accepted
+            && mode == ResidentExternalTurnMode::Ordinary
+            && trigger_count == 0;
+        if invalid_fact
+            || (!mode.admits_trigger_facts() && trigger_count != 0)
+            || split_source_group
+            || invalid_driverless
+            || trigger_free_ordinary
+        {
+            return invalid_coordinator(
+                "recorded replay triggers do not match the activated turn scope",
+            );
         }
         Ok(())
     }
@@ -2440,6 +2463,13 @@ fn observations_share_snapshot(
     left.request == right.request
         && left.input.schema_key == right.input.schema_key
         && left.input.shape == right.input.shape
+}
+
+fn observations_share_host_source(
+    left: &super::BoundResidentObservation,
+    right: &super::BoundResidentObservation,
+) -> bool {
+    left.request.base_uri == right.request.base_uri && left.request.path == right.request.path
 }
 
 #[derive(Clone, Debug)]
