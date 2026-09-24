@@ -827,6 +827,7 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
+        false,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1738,6 +1739,7 @@ fn replay_reconstructs_and_rejects_forged_batch_identity() -> MResult<()> {
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
+        false,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1781,6 +1783,7 @@ fn accepted_replay_receipt_mismatch_does_not_consume_replay_identity() -> MResul
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
+        false,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1860,6 +1863,7 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(artifact.clone()),
+        false,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1988,6 +1992,7 @@ fn shared_observations_capture_one_authoritative_provider_snapshot() -> MResult<
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(artifact.clone()),
+        false,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
