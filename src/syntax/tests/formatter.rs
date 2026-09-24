@@ -1,6 +1,6 @@
 #![cfg(feature = "formatter")]
 
-use mech_core::{hash_str, nodes::*};
+use mech_core::{hash_str, inline_document_output_id, nodes::*};
 use mech_syntax::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets};
 
 fn token(kind: TokenKind, text: &str) -> Token {
@@ -172,15 +172,116 @@ fn formatter_uses_the_stable_root_namespace_for_inline_output_addresses() {
         mech_syntax::parser::parse("The document evaluates {answer + 1} inline.\n\nanswer := 41")
             .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    let expression = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::Paragraph(paragraph) => {
+                paragraph.elements.iter().find_map(|element| match element {
+                    ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .unwrap();
     let expected = format!(
         "id=\"{}:0\" class=\"mech-inline-mech-code\" data-mech-source",
-        hash_str("inline-eval:0:0"),
+        inline_document_output_id(0, expression, 0),
     );
 
     assert!(
         html.contains(&expected),
         "missing formatter inline address: {html}"
     );
+}
+
+#[test]
+fn hidden_inline_evaluations_do_not_consume_visible_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "```mech:hidden\n42 -- Hidden {answer + 1}\n```\n\nVisible {answer + 1}.\n\nanswer := 41\n",
+    )
+    .unwrap();
+    let visible_expression = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::Paragraph(paragraph) => {
+                paragraph.elements.iter().find_map(|element| match element {
+                    ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .unwrap();
+    let output_id = inline_document_output_id(0, visible_expression, 0);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    assert_eq!(html.matches(&format!("id=\"{output_id}:0\"")).count(), 1);
+}
+
+#[test]
+fn outputless_fences_do_not_consume_visible_occurrences() {
+    let tree = mech_syntax::parser::parse("```mech{output: false}\n42\n```\n\n```mech\n42\n```\n")
+        .unwrap();
+    let block = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::FencedMechCode(block) if block.config.output => Some(block),
+            _ => None,
+        })
+        .unwrap();
+    let base_id = hash_str(&format!("{:?}", block.code.last().unwrap().0));
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+    assert!(html.contains(&format!("id=\"{base_id}:0\"")), "{html}");
+}
+
+#[test]
+fn document_slots_share_fence_occurrences_across_intro_and_content() {
+    let parsed = mech_syntax::parser::parse("```mech\n42\n```\n").unwrap();
+    let block = parsed
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::FencedMechCode(block) => Some(block),
+            _ => None,
+        })
+        .unwrap();
+    let tree = Program {
+        title: None,
+        body: Body {
+            sections: vec![
+                Section {
+                    subtitle: None,
+                    annotations: Vec::new(),
+                    elements: vec![SectionElement::FencedMechCode(block.clone())],
+                },
+                Section {
+                    subtitle: Some(Subtitle {
+                        text: plain_paragraph("Section"),
+                        level: 2,
+                    }),
+                    annotations: Vec::new(),
+                    elements: vec![SectionElement::FencedMechCode(block.clone())],
+                },
+            ],
+        },
+    };
+    let base_id = hash_str(&format!("{:?}", block.code.last().unwrap().0));
+    let second_id = hash_str(&format!("mech/fenced-document-output/{base_id}/1"));
+    let html =
+        Formatter::new().format_html(&tree, String::new(), "{{INTRO}}{{CONTENTS}}".to_string());
+    assert!(html.contains(&format!("id=\"{base_id}:0\"")), "{html}");
+    assert!(html.contains(&format!("id=\"{second_id}:0\"")), "{html}");
 }
 
 fn first_statement(src: &str) -> Statement {

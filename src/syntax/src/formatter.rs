@@ -240,8 +240,9 @@ pub struct Formatter {
     footnote_map: BTreeMap<u64, usize>,
     footnotes: Vec<String>,
     interpreter_id: u64,
-    inline_eval_counters: BTreeMap<u64, u64>,
+    inline_eval_counters: BTreeMap<(u64, u64), u64>,
     fenced_output_counters: BTreeMap<(u64, u64), u64>,
+    presentation_outputs_enabled: bool,
 }
 
 impl Formatter {
@@ -273,17 +274,15 @@ impl Formatter {
         hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
     }
 
-    fn inline_eval_id(&mut self) -> u64 {
-        let next_ix = {
-            let counter = self
-                .inline_eval_counters
-                .entry(self.interpreter_id)
-                .or_insert(0);
-            let current = *counter;
-            *counter += 1;
-            current
-        };
-        hash_str(&format!("inline-eval:{}:{}", self.interpreter_id, next_ix))
+    fn inline_eval_id(&mut self, expression: &Expression) -> u64 {
+        let base = inline_document_output_id(self.interpreter_id, expression, 0);
+        let occurrence = self
+            .inline_eval_counters
+            .entry((self.interpreter_id, base))
+            .or_insert(0);
+        let output_id = inline_document_output_id(self.interpreter_id, expression, *occurrence);
+        *occurrence = occurrence.saturating_add(1);
+        output_id
     }
 
     pub fn new() -> Formatter {
@@ -310,13 +309,8 @@ impl Formatter {
             interpreter_id: 0,
             inline_eval_counters: BTreeMap::new(),
             fenced_output_counters: BTreeMap::new(),
+            presentation_outputs_enabled: true,
         }
-    }
-
-    /// Continue the root document's inline-evaluation address sequence when
-    /// formatting a fragment that will be appended to an existing document.
-    pub fn set_root_inline_eval_offset(&mut self, offset: u64) {
-        self.inline_eval_counters.insert(0, offset);
     }
 
     pub fn format(&mut self, tree: &Program) -> String {
@@ -539,12 +533,8 @@ impl Formatter {
         let intro_sections = &tree.body.sections[..first_section_ix];
         let content_sections = &tree.body.sections[first_section_ix..];
 
-        let mut abstract_formatter = Formatter::new();
-        abstract_formatter.html = true;
-        let mut intro_formatter = Formatter::new();
-        intro_formatter.html = true;
-        let mut contents_formatter = Formatter::new();
-        contents_formatter.html = true;
+        let mut slot_formatter = Formatter::new();
+        slot_formatter.html = true;
 
         let mut abstract_src = String::new();
         let mut intro_src = String::new();
@@ -554,25 +544,25 @@ impl Formatter {
             for el in &section.elements {
                 match el {
                     SectionElement::Abstract(paragraphs) => {
-                        abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
+                        abstract_src.push_str(&slot_formatter.abstract_el(paragraphs));
                     }
                     _ => {
-                        intro_src.push_str(&intro_formatter.section_element(el));
+                        intro_src.push_str(&slot_formatter.section_element(el));
                     }
                 }
             }
         }
 
         for section in content_sections {
-            contents_src.push_str(&contents_formatter.section(section));
+            contents_src.push_str(&slot_formatter.section(section));
         }
 
         if !intro_src.is_empty() {
             intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
         }
 
-        let cited_src = contents_formatter.works_cited();
-        let footnotes_src = contents_formatter.footnotes();
+        let cited_src = slot_formatter.works_cited();
+        let footnotes_src = slot_formatter.footnotes();
 
         (
             abstract_src,
@@ -593,6 +583,11 @@ impl Formatter {
         let content_sections = &tree.body.sections[first_section_ix..];
         let mut section_formatter = Formatter::new();
         section_formatter.html = true;
+        for section in &tree.body.sections[..first_section_ix] {
+            for element in &section.elements {
+                let _ = section_formatter.section_element(element);
+            }
+        }
         content_sections
             .iter()
             .map(|section| section_formatter.section(section))
@@ -1126,14 +1121,21 @@ impl Formatter {
                 }
             }
             ParagraphElement::EvalInlineMechCode(expr) => {
-                let code_id = self.inline_eval_id();
                 let result = self.expression(expr);
                 if self.html {
-                    let element_id = format!("{}:{}", code_id, self.interpreter_id);
-                    format!(
-                        "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
-                        element_id, result
-                    )
+                    if self.presentation_outputs_enabled {
+                        let code_id = self.inline_eval_id(expr);
+                        let element_id = format!("{}:{}", code_id, self.interpreter_id);
+                        format!(
+                            "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
+                            element_id, result
+                        )
+                    } else {
+                        format!(
+                            "<code class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
+                            result
+                        )
+                    }
                 } else {
                     format!("{{{}}}", result)
                 }
@@ -1145,6 +1147,10 @@ impl Formatter {
         let parent_interpreter_id = self.interpreter_id;
         if block.config.namespace != 0 {
             self.interpreter_id = block.config.namespace;
+        }
+        let parent_presentation_outputs_enabled = self.presentation_outputs_enabled;
+        if block.config.disabled || block.config.hidden {
+            self.presentation_outputs_enabled = false;
         }
         let block_id = hash_str(&format!("{:?}", block));
         let namespace_str = &block.config.namespace_str;
@@ -1176,6 +1182,7 @@ impl Formatter {
         }
         let intrp_id = self.interpreter_id;
         self.interpreter_id = parent_interpreter_id;
+        self.presentation_outputs_enabled = parent_presentation_outputs_enabled;
         let disabled_tag = match block.config.disabled {
             true => "disabled".to_string(),
             false => "".to_string(),
@@ -1215,19 +1222,6 @@ impl Formatter {
                     style_attr, src
                 )
             } else {
-                let occurrence = self
-                    .fenced_output_counters
-                    .entry((intrp_id, base_output_id))
-                    .or_insert(0);
-                let output_id = if *occurrence == 0 {
-                    base_output_id
-                } else {
-                    hash_str(&format!(
-                        "mech/fenced-document-output/{base_output_id}/{}",
-                        *occurrence
-                    ))
-                };
-                *occurrence = occurrence.saturating_add(1);
                 let namespace_str = if namespace_str.is_empty() {
                     "".to_string()
                 } else {
@@ -1237,6 +1231,19 @@ impl Formatter {
                     )
                 };
                 let output_node = if block.config.output {
+                    let occurrence = self
+                        .fenced_output_counters
+                        .entry((intrp_id, base_output_id))
+                        .or_insert(0);
+                    let output_id = if *occurrence == 0 {
+                        base_output_id
+                    } else {
+                        hash_str(&format!(
+                            "mech/fenced-document-output/{base_output_id}/{}",
+                            *occurrence
+                        ))
+                    };
+                    *occurrence = occurrence.saturating_add(1);
                     format!(
                         "<div class=\"mech-block-output\" id=\"{}:{}\"></div>",
                         output_id, intrp_id
