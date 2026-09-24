@@ -673,6 +673,7 @@ impl<'a> ProgramCompilerView<'a> {
         program = program
             .bind_input_constants(&constants)
             .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        self.validate_canonical_planning_step_limit(&program)?;
         if !initialization {
             self.validate_canonical_planning_candidate(&program, &context.values)?;
             for name in external {
@@ -754,12 +755,7 @@ impl<'a> ProgramCompilerView<'a> {
         program: &CanonicalSourceProgram,
         values: &BTreeMap<String, Value>,
     ) -> MResult<()> {
-        if program.program().nodes.len() > self.max_planning_steps {
-            return Err(canonical_compilation_error(format!(
-                "canonical planning exceeds the configured {} step limit",
-                self.max_planning_steps
-            )));
-        }
+        self.validate_canonical_planning_step_limit(program)?;
         let has_write = program.program().nodes.iter().any(|node| {
             let mech_engine::SourceNodeBody::Operation {
                 requirement: Some(id),
@@ -818,6 +814,19 @@ impl<'a> ProgramCompilerView<'a> {
         // Planning owns no publication authority. All candidate state and
         // captured effects are discarded after the provider's effect-free hook.
         prepared.abort();
+        Ok(())
+    }
+
+    fn validate_canonical_planning_step_limit(
+        &self,
+        program: &CanonicalSourceProgram,
+    ) -> MResult<()> {
+        if program.program().nodes.len() > self.max_planning_steps {
+            return Err(canonical_compilation_error(format!(
+                "canonical planning exceeds the configured {} step limit",
+                self.max_planning_steps
+            )));
+        }
         Ok(())
     }
 
