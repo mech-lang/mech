@@ -5150,15 +5150,15 @@ fn build_plan(
         .collect::<Vec<_>>()
         .into_boxed_slice();
     let mut activation_turn_inputs = Vec::new();
+    let mut activation_update_owners = BTreeMap::<ActivatedNodeIndex, NodeId>::new();
     for node in artifact.nodes() {
         let crate::ExecutableNodeBody::Activation(control) = &node.body else {
             continue;
         };
         let activation_inputs = node_inputs(artifact, node.node)?;
-        for (ordinal, source) in activation_inputs.iter().copied().enumerate() {
-            if ordinal != control.scrutinee as usize
-                && let Some(node) =
-                    continuation_dependency_node(artifact, source, &mut BTreeSet::new())?
+        for source in activation_inputs.iter().copied() {
+            if let Some(node) =
+                continuation_dependency_node(artifact, source, &mut BTreeSet::new())?
             {
                 return Err(ResidentActivationError::InvalidDependency { node });
             }
@@ -5189,8 +5189,15 @@ fn build_plan(
                 }
                 nodes
             })
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
+            .collect::<Vec<_>>();
+        for update in &update_nodes {
+            if activation_update_owners
+                .insert(*update, node.node)
+                .is_some_and(|owner| owner != node.node)
+            {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            }
+        }
         activation_turn_inputs.push((
             activated,
             dependencies
@@ -5203,7 +5210,7 @@ fn build_plan(
                 .filter_map(|(sampled, _)| artifact_to_activated[sampled.get() as usize])
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
-            update_nodes,
+            update_nodes.into_boxed_slice(),
         ));
     }
     let outputs = artifact
