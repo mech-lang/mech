@@ -4415,18 +4415,19 @@ snapshot-count
     assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
     assert_eq!(driverless_reads.load(Ordering::SeqCst), 2);
     assert_eq!(driven_reads.load(Ordering::SeqCst), 2);
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("mixed provider fixture must remain resident external")
+    };
     assert_eq!(
-        runtime
-            .root_symbol_value("snapshot-count")
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
             .unwrap()
-            .value()
             .canonical_data_draft()
             .unwrap(),
         ValueDataDraft::U64(1)
     );
-    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
-        panic!("mixed provider fixture must remain resident external")
-    };
     let provider_batch = execution.coordinator.input_facts().last().unwrap().1;
     assert!(provider_batch.facts[0].trigger);
     assert!(!provider_batch.facts[1].trigger);
@@ -4443,18 +4444,19 @@ snapshot-count
         outcome.turn,
         Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
     ));
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("mixed provider fixture must remain resident external")
+    };
     assert_eq!(
-        runtime
-            .root_symbol_value("snapshot-count")
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
             .unwrap()
-            .value()
             .canonical_data_draft()
             .unwrap(),
         ValueDataDraft::U64(1)
     );
-    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
-        panic!("mixed provider fixture must remain resident external")
-    };
     let host_batch = execution.coordinator.input_facts().last().unwrap().1;
     assert!(!host_batch.facts[0].trigger);
     assert!(host_batch.facts[1].trigger);
