@@ -32,7 +32,7 @@ use super::{
     ResidentExternalAuthority, ResidentOutboxPayload, ResidentTurnReceiptV1, ResidentTurnRecord,
     bind_external_requirements, bind_replay_requirements, resident_effect_id,
     resident_effect_ids_hash, resident_idempotency_key, resident_idempotency_keys_hash,
-    resident_outbox_policy, resident_transaction_id,
+    resident_outbox_policy, resident_transaction_id, retained_input_value_bytes,
 };
 use crate::runtime::effect_journal::{
     RuntimeEffectJournal, deliver_prepared_after_commit, validate_prepared_after_commit,
@@ -154,6 +154,9 @@ pub struct ResidentExternalCoordinator {
     live: bool,
     bound: BoundResidentExternalPlan,
     latest_live_inputs: Vec<Option<Value>>,
+    latest_live_input_bytes: Vec<usize>,
+    latest_live_input_retained_bytes: usize,
+    latest_live_input_byte_limit: usize,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
     published_state_hash: u64,
@@ -250,6 +253,7 @@ impl ResidentExternalCoordinator {
         let layout_generation = instance.plan.layout_generation;
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
         let latest_live_inputs = vec![None; bound.observations().len()];
+        let latest_live_input_bytes = vec![0; bound.observations().len()];
         Ok(Self {
             instance: Some(instance),
             publication_authority,
@@ -261,6 +265,9 @@ impl ResidentExternalCoordinator {
             live,
             bound,
             latest_live_inputs,
+            latest_live_input_bytes,
+            latest_live_input_retained_bytes: 0,
+            latest_live_input_byte_limit: limits.input_bytes,
             durability,
             health: ResidentExternalHealth::Healthy,
             published_state_hash,
@@ -309,6 +316,7 @@ impl ResidentExternalCoordinator {
         &mut self,
         previous: &ResidentExternalCoordinator,
     ) -> MResult<()> {
+        let mut replacements = Vec::new();
         for (target_ordinal, target) in self.bound.observations().iter().enumerate() {
             let Some(value) = previous.bound.observations().iter().enumerate().find_map(
                 |(source_ordinal, source)| {
@@ -330,9 +338,14 @@ impl ResidentExternalCoordinator {
                         "live input snapshot is incompatible with the replacement: {error:?}"
                     ))
                 })?;
-            self.latest_live_inputs[target_ordinal] = Some(migrated);
+            let retained_bytes = retained_input_value_bytes(
+                &migrated,
+                &target.input.shape,
+                self.artifact.schemas(),
+            )?;
+            replacements.push((target_ordinal, migrated, retained_bytes));
         }
-        Ok(())
+        self.install_live_input_replacements(replacements)
     }
 
     #[cfg(feature = "resident_external_test_support")]
@@ -423,6 +436,7 @@ impl ResidentExternalCoordinator {
     ) -> MResult<()> {
         self.ensure_live_bindings()?;
         self.validate_host_updates(updates)?;
+        let mut replacements = Vec::new();
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
             let Some(update) = updates.iter().rev().find(|update| {
                 update.source.base_uri() == observation.request.base_uri
@@ -430,23 +444,55 @@ impl ResidentExternalCoordinator {
             }) else {
                 continue;
             };
-            self.latest_live_inputs[ordinal] = Some(
-                update
-                    .value
-                    .clone()
-                    .into_value()?
-                    .rebind(
-                        observation.input.schema,
-                        &observation.input.shape,
-                        self.artifact.schemas(),
-                    )
-                    .map_err(|error| {
-                        invalid_value(format!(
-                            "host input does not match the observed schema: {error:?}"
-                        ))
-                    })?,
-            );
+            let value = update
+                .value
+                .clone()
+                .into_value()?
+                .rebind(
+                    observation.input.schema,
+                    &observation.input.shape,
+                    self.artifact.schemas(),
+                )
+                .map_err(|error| {
+                    invalid_value(format!(
+                        "host input does not match the observed schema: {error:?}"
+                    ))
+                })?;
+            let retained_bytes = retained_input_value_bytes(
+                &value,
+                &observation.input.shape,
+                self.artifact.schemas(),
+            )?;
+            replacements.push((ordinal, value, retained_bytes));
         }
+        self.install_live_input_replacements(replacements)
+    }
+
+    fn install_live_input_replacements(
+        &mut self,
+        replacements: Vec<(usize, Value, usize)>,
+    ) -> MResult<()> {
+        let mut retained_bytes = self.latest_live_input_retained_bytes;
+        for (ordinal, _, replacement_bytes) in &replacements {
+            let previous = *self.latest_live_input_bytes.get(*ordinal).ok_or_else(|| {
+                invalid_coordinator("live input snapshot ordinal is out of bounds")
+            })?;
+            retained_bytes = retained_bytes
+                .checked_sub(previous)
+                .and_then(|bytes| bytes.checked_add(*replacement_bytes))
+                .ok_or_else(|| invalid_coordinator("live input snapshot byte accounting"))?;
+        }
+        if retained_bytes > self.latest_live_input_byte_limit {
+            return invalid_coordinator(format!(
+                "live input snapshot requires {retained_bytes} retained bytes, maximum {}",
+                self.latest_live_input_byte_limit
+            ));
+        }
+        for (ordinal, value, replacement_bytes) in replacements {
+            self.latest_live_inputs[ordinal] = Some(value);
+            self.latest_live_input_bytes[ordinal] = replacement_bytes;
+        }
+        self.latest_live_input_retained_bytes = retained_bytes;
         Ok(())
     }
 
@@ -2001,9 +2047,19 @@ impl ResidentExternalCoordinator {
 
     fn remember_live_inputs(&mut self, batch: &CapturedInputBatch) {
         debug_assert!(batch.facts.len() <= self.latest_live_inputs.len());
-        for (latest, fact) in self.latest_live_inputs.iter_mut().zip(batch.facts.iter()) {
-            *latest = Some(fact.value.clone());
+        for (ordinal, fact) in batch.facts.iter().enumerate() {
+            self.latest_live_input_retained_bytes = self
+                .latest_live_input_retained_bytes
+                .checked_sub(self.latest_live_input_bytes[ordinal])
+                .and_then(|bytes| bytes.checked_add(fact.retained_bytes()))
+                .expect("validated live input byte accounting");
+            self.latest_live_inputs[ordinal] = Some(fact.value.clone());
+            self.latest_live_input_bytes[ordinal] = fact.retained_bytes();
         }
+        debug_assert!(
+            self.latest_live_input_retained_bytes <= self.latest_live_input_byte_limit,
+            "an admitted input batch fits the live snapshot byte limit"
+        );
     }
 }
 

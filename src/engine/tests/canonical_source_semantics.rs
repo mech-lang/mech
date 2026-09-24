@@ -2452,6 +2452,16 @@ fn activation_structural_patterns_and_computed_samples_are_canonical_and_stable(
 }
 
 #[test]
+fn activation_enum_coverage_accepts_fixed_shape_payload_bindings() {
+    let source = "<event> := :pair<[f64]:1,2> | :idle\nvalue<event> := :pair([1 2])\n~selected := 0\n~> value\n  | :pair([left, right]) => { selected = left * 10 + right }\n  | :idle => { selected = -1 }\nselected\n";
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .unwrap_or_else(|error| panic!("fixed enum payload activation did not compile: {error:?}"))
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn ordinary_match_bytecode_rejects_activation_only_sampled_patterns() {
     let source = "expected := 2\nevent := [1 2]\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
     let artifact = CanonicalSourceFrontend

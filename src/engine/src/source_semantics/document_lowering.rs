@@ -1972,7 +1972,6 @@ pub(super) fn compile_ordered_documents(
         builder.function_imports.clear();
         builder.local_functions.clear();
         builder.local_fsms.clear();
-        builder.activation_owned_states.clear();
         builder.declared_kinds.clear();
         builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
