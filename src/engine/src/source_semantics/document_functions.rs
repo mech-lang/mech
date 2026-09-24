@@ -570,6 +570,9 @@ impl SemanticBuilder {
         let caller_definitions = std::mem::replace(&mut self.scope_definitions, parameter_names);
         let caller_external = std::mem::take(&mut self.external_definitions);
         self.active_functions.push(name.to_owned());
+        if lifted_collection.is_some() {
+            self.comprehension_depth += 1;
+        }
         let result = (|| match body {
             DocumentFunctionBody::Statements(body) => {
                 self.inline_statement_function_body(name, &body, call, &error)
@@ -579,6 +582,7 @@ impl SemanticBuilder {
             }
         })();
         let result = if let Some(lift) = lifted_collection {
+            self.comprehension_depth -= 1;
             self.control_depth -= 1;
             result.and_then(|result| self.finish_pattern_lift(lift, result, name, call))
         } else {
