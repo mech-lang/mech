@@ -241,9 +241,14 @@ impl ResidentExternalCoordinator {
             durability,
             limits,
         )?;
+        let trigger_sources = coordinator.trigger_sources()?;
         let driverless_trigger_inputs = coordinator.driverless_trigger_inputs()?;
+        let initial_publication_required = (trigger_sources.is_empty()
+            && driverless_trigger_inputs.is_empty())
+            || (!driverless_trigger_inputs.is_empty()
+                && !coordinator.instance().plan.activation_nodes.is_empty());
         coordinator.replay_bootstrap = ResidentExternalReplayBootstrap::new(
-            coordinator.trigger_sources()?.is_empty() || !driverless_trigger_inputs.is_empty(),
+            initial_publication_required,
             driverless_trigger_inputs,
         );
         Ok(coordinator)
@@ -323,7 +328,8 @@ impl ResidentExternalCoordinator {
             .collect::<std::collections::BTreeSet<_>>();
         if (!live && trigger_inputs.is_empty() && !replay_bootstrap.initial_publication_required)
             || (!replay_bootstrap.driverless_trigger_inputs.is_empty()
-                && !replay_bootstrap.initial_publication_required)
+                && !replay_bootstrap.initial_publication_required
+                && !instance.plan.activation_nodes.is_empty())
             || replay_bootstrap
                 .driverless_trigger_inputs
                 .windows(2)
@@ -1415,14 +1421,15 @@ impl ResidentExternalCoordinator {
                             })
                     }
                     TurnFailurePhase::Recording => empty_effect_evidence && batch.is_none(),
-                    TurnFailurePhase::Integrity | TurnFailurePhase::EffectMaterialization => {
+                    TurnFailurePhase::Execution
+                    | TurnFailurePhase::Integrity
+                    | TurnFailurePhase::EffectMaterialization => {
                         empty_effect_evidence && complete_inputs
                     }
-                    TurnFailurePhase::Execution
+                    TurnFailurePhase::Publication
                     | TurnFailurePhase::ExternalPrepare
                     | TurnFailurePhase::ExternalApply => complete_inputs,
                     TurnFailurePhase::Admission
-                    | TurnFailurePhase::Publication
                     | TurnFailurePhase::ExternalCommit
                     | TurnFailurePhase::EffectDelivery
                     | TurnFailurePhase::Finalization => false,
@@ -1631,7 +1638,7 @@ impl ResidentExternalCoordinator {
                 rejected_evidence,
                 before_epoch,
                 mode,
-                TurnFailurePhase::Execution,
+                TurnFailurePhase::Publication,
                 error,
                 cleanup,
             );
