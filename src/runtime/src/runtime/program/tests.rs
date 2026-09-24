@@ -8,8 +8,8 @@ use std::time::Duration;
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
-    snapshot::SequenceView,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData,
+    ValueDataDraft, hash_str, snapshot::SequenceView,
 };
 use mech_engine::{
     __resident::ResidentStorageClass, ArtifactSource, BindingDeclaration, ProgramArtifactDraft,
@@ -175,6 +175,38 @@ struct PlanningObservationProvider {
 #[derive(Debug)]
 struct TypedObservationProvider {
     planned: Value,
+}
+
+#[derive(Debug)]
+struct DriverlessObservationProvider {
+    reads: Arc<AtomicUsize>,
+}
+
+impl RuntimeResourceProvider for DriverlessObservationProvider {
+    fn scheme(&self) -> &str {
+        "snapshot"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec!["snapshot://clock/tick".to_owned()]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::resource_observation_contract())
+    }
+
+    fn observation_requires_input_driver(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        false
+    }
+
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::from_exact(true)?.snapshot()
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.reads.fetch_add(1, Ordering::SeqCst);
+        ValueCell::from_exact(true)?.snapshot()
+    }
 }
 
 impl RuntimeResourceProvider for TypedObservationProvider {
@@ -4270,6 +4302,47 @@ output := state
         };
         assert_eq!(value.bits(), 9.0_f64.to_bits());
     }
+}
+
+#[test]
+fn driverless_observation_gets_a_trigger_turn_after_dormant_publication() {
+    let reads = Arc::new(AtomicUsize::new(0));
+    let mut runtime = runtime();
+    runtime
+        .register_resource_provider(Box::new(DriverlessObservationProvider {
+            reads: reads.clone(),
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_023),
+            subject,
+            "snapshot://clock/tick/value",
+            ["read"],
+        )))
+        .unwrap();
+
+    runtime
+        .load_source_program(
+            r#"
+@clock := snapshot://clock/tick{:read(value)}
+trigger := @clock/value
+~count := 0u64
+~> trigger { count = 41u64 }
+count
+"#,
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert_eq!(reads.load(Ordering::SeqCst), 2);
+    let count = runtime.root_symbol_value("count").unwrap();
+    assert_eq!(
+        count.value().canonical_data_draft().unwrap(),
+        ValueDataDraft::U64(41)
+    );
 }
 
 #[test]

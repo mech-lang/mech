@@ -428,6 +428,7 @@ fn read_location_depends_on_match(
 pub struct ActivatedConstraint {
     pub artifact_id: IntegrityConstraintId,
     pub predicate: ResidentReadLocation,
+    pub producer: Option<ActivatedNodeIndex>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -5183,7 +5184,7 @@ fn build_plan(
         let activated = artifact_to_activated[node.node.get() as usize]
             .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
         let descendants = &topology.same_turn_dependency_masks[activated.get() as usize];
-        let state_writers = descendants
+        let descendant_nodes = descendants
             .iter()
             .enumerate()
             .flat_map(|(word, bits)| {
@@ -5196,35 +5197,57 @@ fn build_plan(
                 }
                 nodes
             })
+            .collect::<Vec<_>>();
+        let state_writers = descendant_nodes
+            .iter()
+            .copied()
             .filter(|candidate| {
                 let artifact_node = steps[candidate.get() as usize].artifact_node();
                 node_output_slot(artifact, artifact_node)
                     .is_ok_and(|slot| artifact.slots()[slot.get() as usize].role == SlotRole::State)
             })
             .collect::<Vec<_>>();
-        // Suppression belongs only to the activation-owned path through each
-        // state publication. Ordinary consumers of the retained state remain
-        // eligible on turns where another input changes.
-        let update_nodes = descendants
+        // Integrity predicates are seeded independently of ordinary dirty
+        // propagation. Keep predicates derived directly from a dormant
+        // activation in the same suppression cone, while allowing predicates
+        // downstream of retained state to keep checking the published value.
+        let constrained_descendants = descendant_nodes
             .iter()
-            .enumerate()
-            .flat_map(|(word, bits)| {
-                let mut bits = *bits;
-                let mut nodes = Vec::new();
-                while bits != 0 {
-                    let bit = bits.trailing_zeros() as usize;
-                    nodes.push(ActivatedNodeIndex((word * 64 + bit) as u32));
-                    bits &= bits - 1;
-                }
-                nodes
+            .copied()
+            .filter(|candidate| {
+                topology
+                    .mandatory_candidate_mask
+                    .get(candidate.get() as usize / 64)
+                    .is_some_and(|word| word & (1_u64 << (candidate.get() as usize % 64)) != 0)
             })
             .filter(|candidate| {
-                state_writers.iter().any(|writer| {
-                    candidate == writer
-                        || topology.same_turn_dependency_masks[candidate.get() as usize]
-                            .get(writer.get() as usize / 64)
-                            .is_some_and(|word| word & (1_u64 << (writer.get() as usize % 64)) != 0)
+                !state_writers.iter().any(|writer| {
+                    writer != candidate
+                        && topology.same_turn_dependency_masks[writer.get() as usize]
+                            .get(candidate.get() as usize / 64)
+                            .is_some_and(|word| {
+                                word & (1_u64 << (candidate.get() as usize % 64)) != 0
+                            })
                 })
+            })
+            .collect::<Vec<_>>();
+        // Suppression belongs only to the activation-owned path through each
+        // state publication or a directly constrained descendant. Ordinary
+        // consumers of retained state remain eligible on unrelated turns.
+        let update_nodes = descendant_nodes
+            .into_iter()
+            .filter(|candidate| {
+                state_writers
+                    .iter()
+                    .chain(&constrained_descendants)
+                    .any(|target| {
+                        candidate == target
+                            || topology.same_turn_dependency_masks[candidate.get() as usize]
+                                .get(target.get() as usize / 64)
+                                .is_some_and(|word| {
+                                    word & (1_u64 << (target.get() as usize % 64)) != 0
+                                })
+                    })
             })
             .collect::<Vec<_>>();
         for update in &update_nodes {
@@ -5303,6 +5326,17 @@ fn build_plan(
             Ok(ActivatedConstraint {
                 artifact_id: constraint.constraint,
                 predicate,
+                producer: match constraint.inputs[0] {
+                    ArtifactSource::Slot(slot) => {
+                        match artifact.slots()[slot.get() as usize].producer {
+                            ProducerReference::NodeOutput { node, .. } => {
+                                artifact_to_activated[node.get() as usize]
+                            }
+                            ProducerReference::Input(_) | ProducerReference::Output { .. } => None,
+                        }
+                    }
+                    ArtifactSource::Constant(_) => None,
+                },
             })
         })
         .collect::<Result<Vec<_>, _>>()?

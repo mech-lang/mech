@@ -2462,7 +2462,6 @@ fn continuation_turn_keeps_input_free_activations_dormant() {
         &ActivationFacts::default(),
     )
     .unwrap();
-
     instance.turn(&[]).unwrap();
     assert!(instance.has_ready_continuation());
     instance
@@ -2507,6 +2506,119 @@ fn continuation_turn_keeps_input_free_activations_dormant() {
         values[0].as_ref().unwrap().canonical_data_draft().unwrap(),
         ValueDataDraft::U64(0)
     );
+}
+
+#[test]
+fn dormant_activation_suppresses_direct_integrity_descendants() {
+    let source = "trigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\nvalid! := count > 0u64\ncount\n";
+    let base = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let predicate_node = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation()
+                .is_some_and(|operation| operation.operation.operation_name == "gt")
+        })
+        .expect("comparison node")
+        .node;
+    let activation_result = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["access"]
+                    && operation.operation.operation_name == "scalar"
+            })
+        })
+        .and_then(|access| {
+            base.slots().iter().find(|slot| {
+                matches!(
+                    slot.producer,
+                    mech_engine::ProducerReference::NodeOutput { node, .. }
+                        if node == access.node
+                )
+            })
+        })
+        .expect("activation result accessor")
+        .slot;
+    let mut bindings = base.bindings().to_vec();
+    let predicate = base
+        .nodes()
+        .iter()
+        .find(|node| node.node == predicate_node)
+        .unwrap();
+    let mech_engine::BindingDeclaration::Input { source, .. } =
+        &mut bindings[predicate.input_bindings.start as usize]
+    else {
+        panic!("comparison input binding")
+    };
+    *source = mech_engine::ArtifactSource::Slot(activation_result);
+    let predicate_slot = base
+        .slots()
+        .iter()
+        .find(|slot| {
+            matches!(
+                slot.producer,
+                mech_engine::ProducerReference::NodeOutput { node, .. }
+                    if node == predicate_node
+            )
+        })
+        .expect("predicate slot")
+        .slot;
+    let mut constraints = base.constraints().to_vec();
+    constraints[0].inputs =
+        vec![mech_engine::ArtifactSource::Slot(predicate_slot)].into_boxed_slice();
+    let artifact = mech_engine::ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: base.contracts().clone(),
+        requirements: base.requirements().clone(),
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: base.slots().to_vec().into_boxed_slice(),
+        nodes: base.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 765),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let count_slot = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    let count = |instance: &mech_engine::__resident::ReactiveInstance| {
+        let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+            instance.state_borrow(count_slot).unwrap()
+        else {
+            panic!("count must use snapshot state storage")
+        };
+        values[0].as_ref().unwrap().canonical_data_draft().unwrap()
+    };
+
+    instance
+        .prepare_initial_turn(&[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(count(&instance), ValueDataDraft::U64(0));
+    instance.turn(&[]).unwrap();
+    assert_eq!(count(&instance), ValueDataDraft::U64(1));
 }
 
 #[test]

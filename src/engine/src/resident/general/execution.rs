@@ -1835,6 +1835,14 @@ impl ReactiveInstance {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
+            if constraint.producer.is_some_and(|producer| {
+                bit_is_set(
+                    &self.workspace.suppressed_activation_bits,
+                    producer.get() as usize,
+                )
+            }) {
+                continue;
+            }
             let unpublished = self.plan.steps.iter().enumerate().any(|(index, step)| {
                 if !self.unpublished_continuation(index) {
                     return false;
