@@ -928,10 +928,12 @@ impl ResidentExternalCoordinator {
     /// Replays one canonical recorded turn attempt.
     ///
     /// The receipt is the decision authority. Accepted records execute and
-    /// must reproduce the complete receipt exactly; rejected records consume
-    /// their optional full or partial input batch without executing or
-    /// publishing. Input-only replay is intentionally unsupported because it
-    /// cannot preserve rejection decisions.
+    /// must reproduce the complete receipt exactly. Rejected records preserve
+    /// the recorded decision; post-materialization rejections prepare and
+    /// abort the deterministic resident candidate only to authenticate their
+    /// effect evidence, without invoking providers or publishing. Input-only
+    /// replay is intentionally unsupported because it cannot preserve
+    /// rejection decisions.
     pub fn execute_replay_batch(
         &mut self,
         batch: Option<&CapturedInputBatch>,
@@ -1005,7 +1007,7 @@ impl ResidentExternalCoordinator {
                                     receipt_permit,
                                     turn,
                                     transaction,
-                                    RejectedTurnEvidence::default(),
+                                    TurnEvidence::default(),
                                     before_epoch,
                                     mode,
                                     TurnFailurePhase::InputInstallation,
@@ -1019,7 +1021,7 @@ impl ResidentExternalCoordinator {
                                 receipt_permit,
                                 turn,
                                 transaction,
-                                RejectedTurnEvidence::default(),
+                                TurnEvidence::default(),
                                 before_epoch,
                                 mode,
                                 TurnFailurePhase::Recording,
@@ -1029,10 +1031,10 @@ impl ResidentExternalCoordinator {
                         self.advance_input_identity(&prefix)?;
                         self.remember_live_inputs(&prefix);
                         debug_assert_eq!(self.latest_live_input_retained_bytes, retained_bytes);
-                        RejectedTurnEvidence::from_input(&prefix)
+                        TurnEvidence::from_input(&prefix)
                     } else {
                         drop(input_permit);
-                        RejectedTurnEvidence::default()
+                        TurnEvidence::default()
                     };
                     drop(outbox_permit);
                     return self.append_rejected(
@@ -1053,7 +1055,7 @@ impl ResidentExternalCoordinator {
                     receipt_permit,
                     turn,
                     transaction,
-                    RejectedTurnEvidence::default(),
+                    TurnEvidence::default(),
                     before_epoch,
                     mode,
                     TurnFailurePhase::Recording,
@@ -1073,7 +1075,7 @@ impl ResidentExternalCoordinator {
                     receipt_permit,
                     turn,
                     transaction,
-                    RejectedTurnEvidence::default(),
+                    TurnEvidence::default(),
                     before_epoch,
                     mode,
                     TurnFailurePhase::InputInstallation,
@@ -1084,48 +1086,15 @@ impl ResidentExternalCoordinator {
         };
         let input_evidence = batch
             .as_ref()
-            .map(RejectedTurnEvidence::from_input)
+            .map(TurnEvidence::from_input)
             .unwrap_or_default();
 
-        let inputs = batch
-            .iter()
-            .flat_map(|batch| batch.facts.iter())
-            .map(|fact| CapturedValueInput {
-                slot: self
-                    .bound
-                    .observations()
-                    .iter()
-                    .find(|observation| {
-                        observation.node == fact.node
-                            && observation.input.artifact_slot == fact.slot
-                    })
-                    .expect("validated batch observation")
-                    .input
-                    .slot,
-                value: &fact.value,
-            })
-            .collect::<Vec<_>>();
-        let activation_triggers = batch
-            .iter()
-            .flat_map(|batch| batch.facts.iter())
-            .filter(|fact| fact.trigger)
-            .map(|fact| fact.slot)
-            .collect::<Vec<_>>();
+        let inputs = self.captured_turn_inputs(batch.as_ref());
+        let activation_triggers = captured_activation_triggers(batch.as_ref());
         let mut instance = self.instance.take().expect("resident instance is present");
         let result = (|| {
-            let prepared = match mode {
-                ResidentExternalTurnMode::InitialPublication => {
-                    instance.prepare_initial_turn_values(&inputs)
-                }
-                ResidentExternalTurnMode::ContinuationDrain => {
-                    instance.prepare_continuation_turn_values(&inputs)
-                }
-                ResidentExternalTurnMode::Ordinary
-                | ResidentExternalTurnMode::DriverlessBootstrap
-                | ResidentExternalTurnMode::ExplicitStep
-                | ResidentExternalTurnMode::ExplicitSnapshotStep => instance
-                    .prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers),
-            };
+            let prepared =
+                prepare_resident_turn(&mut instance, mode, &inputs, &activation_triggers);
             let prepared_turn = match prepared {
                 Ok(prepared) => prepared,
                 Err(error) => {
@@ -1163,6 +1132,30 @@ impl ResidentExternalCoordinator {
         result
     }
 
+    fn captured_turn_inputs<'a>(
+        &self,
+        batch: Option<&'a CapturedInputBatch>,
+    ) -> Vec<CapturedValueInput<'a>> {
+        batch
+            .iter()
+            .flat_map(|batch| batch.facts.iter())
+            .map(|fact| CapturedValueInput {
+                slot: self
+                    .bound
+                    .observations()
+                    .iter()
+                    .find(|observation| {
+                        observation.node == fact.node
+                            && observation.input.artifact_slot == fact.slot
+                    })
+                    .expect("captured input matches its bound observation")
+                    .input
+                    .slot,
+                value: &fact.value,
+            })
+            .collect()
+    }
+
     fn execute_replay_attempt(
         &mut self,
         batch: Option<CapturedInputBatch>,
@@ -1181,6 +1174,7 @@ impl ResidentExternalCoordinator {
             .map(|batch| self.validate_replay_batch(batch))
             .transpose()?;
         self.validate_replay_record(batch.as_ref(), &record)?;
+        self.validate_rejected_materialized_effect_evidence(batch.as_ref(), &record)?;
 
         let input_permit = batch
             .as_ref()
@@ -1270,45 +1264,16 @@ impl ResidentExternalCoordinator {
         turn: TurnId,
         transaction: TransactionId,
     ) -> MResult<ResidentExternalTurnOutcome> {
-        let inputs = batch
-            .iter()
-            .flat_map(|batch| batch.facts.iter())
-            .map(|fact| CapturedValueInput {
-                slot: self
-                    .bound
-                    .observations()
-                    .iter()
-                    .find(|observation| {
-                        observation.node == fact.node
-                            && observation.input.artifact_slot == fact.slot
-                    })
-                    .expect("validated replay observation")
-                    .input
-                    .slot,
-                value: &fact.value,
-            })
-            .collect::<Vec<_>>();
-        let activation_triggers = batch
-            .iter()
-            .flat_map(|batch| batch.facts.iter())
-            .filter(|fact| fact.trigger)
-            .map(|fact| fact.slot)
-            .collect::<Vec<_>>();
+        let inputs = self.captured_turn_inputs(batch);
+        let activation_triggers = captured_activation_triggers(batch);
         let mut instance = self.instance.take().expect("resident instance is present");
         let result = (|| {
-            let prepared_turn = match expected.body.mode {
-                ResidentExternalTurnMode::InitialPublication => {
-                    instance.prepare_initial_turn_values(&inputs)
-                }
-                ResidentExternalTurnMode::ContinuationDrain => {
-                    instance.prepare_continuation_turn_values(&inputs)
-                }
-                ResidentExternalTurnMode::Ordinary
-                | ResidentExternalTurnMode::DriverlessBootstrap
-                | ResidentExternalTurnMode::ExplicitStep
-                | ResidentExternalTurnMode::ExplicitSnapshotStep => instance
-                    .prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers),
-            }
+            let prepared_turn = prepare_resident_turn(
+                &mut instance,
+                expected.body.mode,
+                &inputs,
+                &activation_triggers,
+            )
             .map_err(resident_execution_error)?;
             let materialized = match materialize_effects(
                 &prepared_turn,
@@ -1323,19 +1288,13 @@ impl ResidentExternalCoordinator {
                     return Err(error);
                 }
             };
+            let evidence = batch
+                .map(TurnEvidence::from_input)
+                .unwrap_or_default()
+                .with_effects(&materialized)?;
             let summary = prepared_turn.summary();
-            let input_range = batch.map(|batch| batch.range);
-            let input_hash = batch.map_or([0; 32], |batch| batch.batch_hash);
-            let reproduced = self.accepted_record(
-                turn,
-                transaction,
-                input_range,
-                input_hash,
-                effect_batch_hash(&materialized),
-                summary,
-                expected.body.mode,
-                &materialized,
-            )?;
+            let reproduced =
+                self.accepted_record(turn, transaction, evidence, summary, expected.body.mode)?;
             if reproduced != expected {
                 prepared_turn.abort();
                 return invalid_coordinator(
@@ -1364,6 +1323,75 @@ impl ResidentExternalCoordinator {
                 receipt_sequence,
                 delivery_failures: Box::new([]),
             })
+        })();
+        self.instance = Some(instance);
+        result
+    }
+
+    fn validate_rejected_materialized_effect_evidence(
+        &mut self,
+        batch: Option<&CapturedInputBatch>,
+        record: &ResidentTurnRecord,
+    ) -> MResult<()> {
+        if record.header.status != TurnRecordStatus::Rejected
+            || !matches!(
+                record
+                    .header
+                    .failure
+                    .as_ref()
+                    .expect("validated rejected replay receipt")
+                    .phase,
+                TurnFailurePhase::Publication
+                    | TurnFailurePhase::ExternalPrepare
+                    | TurnFailurePhase::ExternalApply
+            )
+        {
+            return Ok(());
+        }
+
+        let inputs = self.captured_turn_inputs(batch);
+        let activation_triggers = captured_activation_triggers(batch);
+        let mut instance = self.instance.take().expect("resident instance is present");
+        let result = (|| {
+            let prepared_turn = match prepare_resident_turn(
+                &mut instance,
+                record.body.mode,
+                &inputs,
+                &activation_triggers,
+            ) {
+                Ok(prepared_turn) => prepared_turn,
+                Err(_) => {
+                    return invalid_coordinator(
+                        "rejected replay effect evidence does not reproduce its resident turn",
+                    );
+                }
+            };
+            let materialized = match materialize_effects(
+                &prepared_turn,
+                &self.artifact,
+                self.bound.effects(),
+                self.instance_id,
+                record.header.turn_id,
+            ) {
+                Ok(materialized) => materialized,
+                Err(_) => {
+                    prepared_turn.abort();
+                    return invalid_coordinator(
+                        "rejected replay effect evidence does not reproduce its resident turn",
+                    );
+                }
+            };
+            let evidence = batch
+                .map(TurnEvidence::from_input)
+                .unwrap_or_default()
+                .with_effects(&materialized);
+            prepared_turn.abort();
+            if !evidence?.matches_effect_receipt(&record.body) {
+                return invalid_coordinator(
+                    "rejected replay effect evidence does not match its materialized turn",
+                );
+            }
+            Ok(())
         })();
         self.instance = Some(instance);
         result
@@ -1536,6 +1564,23 @@ impl ResidentExternalCoordinator {
                     && record.body.effect_batch_hash == [0; 32]
                     && record.body.effect_ids_hash == [0; 32]
                     && record.body.idempotency_keys_hash == [0; 32];
+                let effect_counts_match_plan = record
+                    .body
+                    .outbox_effect_count
+                    .checked_add(record.body.transactional_effect_count)
+                    == Some(record.body.effect_count)
+                    && usize::try_from(record.body.effect_count)
+                        .is_ok_and(|count| count <= self.bound.effects().len())
+                    && usize::try_from(record.body.outbox_effect_count)
+                        .is_ok_and(|count| count <= self.bound.ordinary_effect_count())
+                    && usize::try_from(record.body.transactional_effect_count).is_ok_and(|count| {
+                        count
+                            <= self
+                                .bound
+                                .effects()
+                                .len()
+                                .saturating_sub(self.bound.ordinary_effect_count())
+                    });
                 let evidence_matches_phase = match phase {
                     TurnFailurePhase::InputInstallation => {
                         empty_effect_evidence
@@ -1551,7 +1596,9 @@ impl ResidentExternalCoordinator {
                     }
                     TurnFailurePhase::Publication
                     | TurnFailurePhase::ExternalPrepare
-                    | TurnFailurePhase::ExternalApply => complete_inputs,
+                    | TurnFailurePhase::ExternalApply => {
+                        complete_inputs && effect_counts_match_plan
+                    }
                     TurnFailurePhase::Admission
                     | TurnFailurePhase::ExternalCommit
                     | TurnFailurePhase::EffectDelivery
@@ -1600,6 +1647,25 @@ impl ResidentExternalCoordinator {
                             })
                 },
             );
+        let conflicting_host_payload = mode == ResidentExternalTurnMode::Ordinary
+            && facts.iter().zip(self.bound.observations()).enumerate().any(
+                |(ordinal, (fact, observation))| {
+                    let source_was_triggered = facts.iter().zip(self.bound.observations()).any(
+                        |(candidate_fact, candidate)| {
+                            candidate_fact.trigger
+                                && observations_share_host_source(candidate, observation)
+                        },
+                    );
+                    source_was_triggered
+                        && facts[..ordinal]
+                            .iter()
+                            .zip(&self.bound.observations()[..ordinal])
+                            .any(|(previous_fact, previous_observation)| {
+                                observations_share_host_payload(previous_observation, observation)
+                                    && previous_fact.payload_hash != fact.payload_hash
+                            })
+                },
+            );
         let invalid_driverless = mode == ResidentExternalTurnMode::DriverlessBootstrap
             && (facts
                 .iter()
@@ -1622,6 +1688,11 @@ impl ResidentExternalCoordinator {
                         && observations_share_host_source(candidate, observation)
                 })
             });
+        if conflicting_host_payload {
+            return invalid_coordinator(
+                "recorded replay contains conflicting payloads for one activated host source",
+            );
+        }
         if invalid_fact
             || (!mode.admits_trigger_facts() && trigger_count != 0)
             || split_source_group
@@ -1641,7 +1712,7 @@ impl ResidentExternalCoordinator {
         prepared_turn: PreparedResidentTurn<'_>,
         turn: TurnId,
         transaction: TransactionId,
-        input_evidence: RejectedTurnEvidence,
+        input_evidence: TurnEvidence,
         receipt_permit: LedgerPermit,
         outbox_permit: Option<OutboxPermit>,
         mode: ResidentExternalTurnMode,
@@ -1674,20 +1745,10 @@ impl ResidentExternalCoordinator {
                 );
             }
         };
-        let effect_batch_hash = effect_batch_hash(&materialized);
         let rejected_evidence = input_evidence.with_effects(&materialized)?;
         self.observe_prepared_turn(prepared_turn.structural_probe());
         let summary = prepared_turn.summary();
-        let receipt = self.accepted_record(
-            turn,
-            transaction,
-            input_evidence.input_range,
-            input_evidence.input_batch_hash,
-            effect_batch_hash,
-            summary,
-            mode,
-            &materialized,
-        )?;
+        let receipt = self.accepted_record(turn, transaction, rejected_evidence, summary, mode)?;
         let mut journal = RuntimeEffectJournal::new();
         if let Err(failure) = self.prepare_provider_effects(&materialized, &mut journal) {
             prepared_turn.abort();
@@ -2378,32 +2439,15 @@ impl ResidentExternalCoordinator {
         &self,
         turn: TurnId,
         transaction: TransactionId,
-        input_range: Option<InputSequenceRange>,
-        input_batch_hash: [u8; 32],
-        effect_batch_hash: [u8; 32],
+        evidence: TurnEvidence,
         summary: ResidentTurnSummary,
         mode: ResidentExternalTurnMode,
-        effects: &[MaterializedEffect],
     ) -> MResult<ResidentTurnRecord> {
-        let effect_count = effects.len();
-        let outbox_effect_count = effects
-            .iter()
-            .filter(|effect| matches!(effect.bound.interaction, ExternalInteraction::Effect(_)))
-            .count();
-        let transactional_effect_count = effects
-            .iter()
-            .filter(|effect| {
-                matches!(
-                    effect.bound.interaction,
-                    ExternalInteraction::TransactionalExternal(_)
-                )
-            })
-            .count();
         Ok(OwnedTurnRecord {
             header: TurnRecordHeader {
                 turn_id: turn,
                 transaction_id: transaction,
-                input_range,
+                input_range: evidence.input_range,
                 status: TurnRecordStatus::Accepted,
                 failure: None,
             },
@@ -2413,7 +2457,7 @@ impl ResidentExternalCoordinator {
                 program_revision: summary.program_revision,
                 plan_generation: self.plan_generation,
                 layout_generation: self.layout_generation,
-                input_batch_hash,
+                input_batch_hash: evidence.input_batch_hash,
                 mode,
                 before_epoch: summary.before_epoch,
                 after_epoch: Some(summary.after_epoch),
@@ -2421,16 +2465,12 @@ impl ResidentExternalCoordinator {
                 touched_slots: u32::from(summary.touched_slots),
                 changed_slots: u32::from(summary.changed_slots),
                 executed_nodes: u32::from(summary.dirty_nodes),
-                effect_count: u32::try_from(effect_count).map_err(|_| count_overflow())?,
-                outbox_effect_count: u32::try_from(outbox_effect_count)
-                    .map_err(|_| count_overflow())?,
-                transactional_effect_count: u32::try_from(transactional_effect_count)
-                    .map_err(|_| count_overflow())?,
-                effect_batch_hash,
-                effect_ids_hash: resident_effect_ids_hash(effects.iter().map(|effect| effect.id)),
-                idempotency_keys_hash: resident_idempotency_keys_hash(
-                    effects.iter().map(|effect| effect.idempotency_key.as_str()),
-                ),
+                effect_count: evidence.effect_count,
+                outbox_effect_count: evidence.outbox_effect_count,
+                transactional_effect_count: evidence.transactional_effect_count,
+                effect_batch_hash: evidence.effect_batch_hash,
+                effect_ids_hash: evidence.effect_ids_hash,
+                idempotency_keys_hash: evidence.idempotency_keys_hash,
             },
         })
     }
@@ -2440,15 +2480,13 @@ impl ResidentExternalCoordinator {
         &self,
         summary: ResidentTurnSummary,
     ) -> MResult<ResidentTurnRecord> {
+        let evidence = TurnEvidence::default().with_effects(&[])?;
         self.accepted_record(
             TurnId::new(1).expect("non-zero test turn"),
             TransactionId(1),
-            None,
-            [0; 32],
-            [0; 32],
+            evidence,
             summary,
             ResidentExternalTurnMode::Ordinary,
-            &[],
         )
     }
 
@@ -2457,7 +2495,7 @@ impl ResidentExternalCoordinator {
         permit: LedgerPermit,
         turn: TurnId,
         transaction: TransactionId,
-        evidence: RejectedTurnEvidence,
+        evidence: TurnEvidence,
         before_epoch: InstanceEpoch,
         mode: ResidentExternalTurnMode,
         phase: TurnFailurePhase,
@@ -2515,7 +2553,7 @@ impl ResidentExternalCoordinator {
         permit: LedgerPermit,
         turn: TurnId,
         transaction: TransactionId,
-        evidence: RejectedTurnEvidence,
+        evidence: TurnEvidence,
         before_epoch: InstanceEpoch,
         mode: ResidentExternalTurnMode,
         phase: TurnFailurePhase,
@@ -2743,6 +2781,46 @@ fn observations_share_host_source(
     left.request.base_uri == right.request.base_uri && left.request.path == right.request.path
 }
 
+fn observations_share_host_payload(
+    left: &super::BoundResidentObservation,
+    right: &super::BoundResidentObservation,
+) -> bool {
+    observations_share_host_source(left, right)
+        && left.input.schema_key == right.input.schema_key
+        && left.input.shape == right.input.shape
+}
+
+fn captured_activation_triggers(batch: Option<&CapturedInputBatch>) -> Vec<CellSlotId> {
+    batch
+        .iter()
+        .flat_map(|batch| batch.facts.iter())
+        .filter(|fact| fact.trigger)
+        .map(|fact| fact.slot)
+        .collect()
+}
+
+fn prepare_resident_turn<'a>(
+    instance: &'a mut ReactiveInstance,
+    mode: ResidentExternalTurnMode,
+    inputs: &[CapturedValueInput<'_>],
+    activation_triggers: &[CellSlotId],
+) -> Result<PreparedResidentTurn<'a>, ResidentExecutionError> {
+    match mode {
+        ResidentExternalTurnMode::InitialPublication => {
+            instance.prepare_initial_turn_values(inputs)
+        }
+        ResidentExternalTurnMode::ContinuationDrain => {
+            instance.prepare_continuation_turn_values(inputs)
+        }
+        ResidentExternalTurnMode::Ordinary
+        | ResidentExternalTurnMode::DriverlessBootstrap
+        | ResidentExternalTurnMode::ExplicitStep
+        | ResidentExternalTurnMode::ExplicitSnapshotStep => {
+            instance.prepare_turn_values_with_activation_triggers(inputs, activation_triggers)
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 struct MaterializedEffect {
     turn: TurnId,
@@ -2755,7 +2833,7 @@ struct MaterializedEffect {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-struct RejectedTurnEvidence {
+struct TurnEvidence {
     input_range: Option<InputSequenceRange>,
     input_batch_hash: [u8; 32],
     effect_count: u32,
@@ -2766,7 +2844,7 @@ struct RejectedTurnEvidence {
     idempotency_keys_hash: [u8; 32],
 }
 
-impl RejectedTurnEvidence {
+impl TurnEvidence {
     fn from_input(batch: &CapturedInputBatch) -> Self {
         Self {
             input_range: Some(batch.range),
@@ -2802,6 +2880,15 @@ impl RejectedTurnEvidence {
             effects.iter().map(|effect| effect.idempotency_key.as_str()),
         );
         Ok(self)
+    }
+
+    fn matches_effect_receipt(self, receipt: &ResidentTurnReceiptV1) -> bool {
+        self.effect_count == receipt.effect_count
+            && self.outbox_effect_count == receipt.outbox_effect_count
+            && self.transactional_effect_count == receipt.transactional_effect_count
+            && self.effect_batch_hash == receipt.effect_batch_hash
+            && self.effect_ids_hash == receipt.effect_ids_hash
+            && self.idempotency_keys_hash == receipt.idempotency_keys_hash
     }
 }
 

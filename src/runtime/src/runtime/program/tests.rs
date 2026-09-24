@@ -4558,6 +4558,37 @@ output := state
     let forged_batch = external::CapturedInputBatch::new(forged_facts).unwrap();
     let mut forged_record = record.clone();
     forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    let conflicting_facts = batch
+        .facts
+        .iter()
+        .enumerate()
+        .map(|(ordinal, fact)| {
+            let value = if ordinal == 1 {
+                RuntimeHostInputValue::F64(10.0)
+                    .into_value()
+                    .unwrap()
+                    .rebind(fact.value.schema(), &fact.shape, artifact.schemas())
+                    .unwrap()
+            } else {
+                fact.value.clone()
+            };
+            external::CapturedInputFact::new_with_trigger(
+                fact.sequence,
+                fact.requirement,
+                fact.node,
+                fact.slot,
+                fact.schema_key,
+                fact.shape.clone(),
+                value,
+                fact.trigger,
+                artifact.schemas(),
+            )
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let conflicting_batch = external::CapturedInputBatch::new(conflicting_facts).unwrap();
+    let mut conflicting_record = record.clone();
+    conflicting_record.body.input_batch_hash = conflicting_batch.batch_hash;
     let replay_instance = mech_engine::__resident::activate_external(
         id,
         &artifact,
@@ -4574,6 +4605,10 @@ output := state
         external::ResidentExternalLimits::default(),
     )
     .unwrap();
+    let error = replay
+        .execute_replay_batch(Some(&conflicting_batch), &conflicting_record)
+        .unwrap_err();
+    assert!(error.display_message().contains("conflicting payloads"));
     let error = replay
         .execute_replay_batch(Some(&forged_batch), &forged_record)
         .unwrap_err();
