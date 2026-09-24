@@ -415,6 +415,9 @@ fn visit_sequence_work<E>(
     count_encoded: bool,
     visitor: &mut impl FnMut(CanonicalDataWork) -> Result<(), E>,
 ) -> Result<(), CanonicalDataWorkError<E>> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return visit_sequence_work(&interval.base_body(), values, count_encoded, visitor);
+    }
     let fixed = match (schema, values) {
         (SchemaBody::UnsignedInteger(IntegerWidth::W8), SequenceStorage::U8(values)) => {
             Some((values.len(), core::mem::size_of::<u8>()))

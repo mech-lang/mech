@@ -3914,6 +3914,9 @@ struct ClosedScalarComparisonKey {
 }
 
 fn scalar_comparison_supported(element: &SchemaBody, ordering: bool) -> bool {
+    if let SchemaBody::IntegerInterval(interval) = element {
+        return scalar_comparison_supported(&interval.base_body(), ordering);
+    }
     if ordering {
         matches!(
             element,
