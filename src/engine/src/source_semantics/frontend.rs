@@ -2818,99 +2818,6 @@ struct SemanticBuilder {
 }
 
 impl SemanticBuilder {
-    fn constant_dimension(expression: &mech_core::DimensionExpr) -> Option<u64> {
-        match expression {
-            mech_core::DimensionExpr::Constant(value) => Some(*value),
-            mech_core::DimensionExpr::Add(items) => items.iter().try_fold(0_u64, |total, item| {
-                total.checked_add(Self::constant_dimension(item)?)
-            }),
-            mech_core::DimensionExpr::Multiply(items) => {
-                items.iter().try_fold(1_u64, |total, item| {
-                    total.checked_mul(Self::constant_dimension(item)?)
-                })
-            }
-            mech_core::DimensionExpr::Hole
-            | mech_core::DimensionExpr::Parameter(_)
-            | mech_core::DimensionExpr::Min(_)
-            | mech_core::DimensionExpr::Max(_) => None,
-        }
-    }
-
-    fn structural_pattern_is_irrefutable(
-        pattern: &crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
-        expected: &SchemaBody,
-    ) -> bool {
-        match pattern {
-            crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
-            crate::CollectionPattern::Equal(_) => false,
-            crate::CollectionPattern::Enum { ordinal, payload } => {
-                let SchemaBody::Enum { variants, .. } = expected else {
-                    return false;
-                };
-                if variants.len() != 1 || *ordinal != 0 {
-                    return false;
-                }
-                match (&variants[0].payload, payload.as_deref()) {
-                    (None, None) => true,
-                    (Some(schema), Some(pattern)) => {
-                        Self::structural_pattern_is_irrefutable(pattern, schema)
-                    }
-                    _ => false,
-                }
-            }
-            crate::CollectionPattern::Tuple(items) => {
-                let SchemaBody::Tuple(fields) = expected else {
-                    return false;
-                };
-                fields.len() == items.len()
-                    && items.iter().zip(fields).all(|(pattern, schema)| {
-                        Self::structural_pattern_is_irrefutable(pattern, schema)
-                    })
-            }
-            crate::CollectionPattern::Array {
-                prefix,
-                rest,
-                suffix,
-            } => {
-                let SchemaBody::Matrix {
-                    element,
-                    dimensions,
-                } = expected
-                else {
-                    return false;
-                };
-                if !prefix
-                    .iter()
-                    .chain(suffix.iter())
-                    .all(|pattern| Self::structural_pattern_is_irrefutable(pattern, element))
-                {
-                    return false;
-                }
-                let fixed = (prefix.len() + suffix.len()) as u64;
-                if fixed == 0
-                    && matches!(
-                        rest.as_deref(),
-                        Some(crate::CollectionPattern::Wildcard)
-                            | Some(crate::CollectionPattern::Bind { .. })
-                    )
-                {
-                    return true;
-                }
-                let Some(length) = dimensions.iter().try_fold(1_u64, |total, dimension| {
-                    total.checked_mul(Self::constant_dimension(dimension)?)
-                }) else {
-                    return false;
-                };
-                match rest.as_deref() {
-                    None => length == fixed,
-                    Some(crate::CollectionPattern::Wildcard)
-                    | Some(crate::CollectionPattern::Bind { .. }) => length >= fixed,
-                    Some(_) => false,
-                }
-            }
-        }
-    }
-
     fn annotation_schema_draft(
         &self,
         annotation: &KindAnnotationSyntax,
@@ -9595,7 +9502,8 @@ impl SemanticBuilder {
                                         _ => None,
                                     }
                                 }
-                                crate::MatchPatternValue::Binding(_) => None,
+                                crate::MatchPatternValue::Binding(_)
+                                | crate::MatchPatternValue::Input(_) => None,
                             },
                         );
                     }

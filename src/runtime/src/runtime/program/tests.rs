@@ -4201,6 +4201,24 @@ answer
 }
 
 #[test]
+fn trailing_activation_preserves_the_previous_implicit_result() {
+    let mut runtime = runtime();
+    runtime
+        .load_source_program(
+            "trigger := true\n~count := 0\n~> trigger { count = count + 1 }\n",
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+        panic!("trailing activation fixture must remain resident pure")
+    };
+    assert_eq!(
+        canonical_f64(&execution.instance.copied_output(0).unwrap()),
+        0.0
+    );
+}
+
+#[test]
 fn replay_explicit_steps_preserve_the_latest_observation_snapshot() {
     let plans = Arc::new(AtomicUsize::new(0));
     let reads = Arc::new(AtomicUsize::new(0));
@@ -4699,7 +4717,7 @@ snapshot-count
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact.clone()),
-        replay_bootstrap,
+        replay_bootstrap.clone(),
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )
@@ -4715,6 +4733,49 @@ snapshot-count
     replay
         .execute_replay_batch(Some(&loading_batches[1]), &loading_records[1])
         .unwrap();
+
+    let mut rejected_bootstrap = loading_records[1].clone();
+    rejected_bootstrap.header.status = crate::turn_record::TurnRecordStatus::Rejected;
+    rejected_bootstrap.header.failure = Some(crate::turn_record::TurnFailureRecord {
+        phase: crate::TurnFailurePhase::Execution,
+        kind: "InjectedBootstrapFailure".to_owned(),
+        message: "injected bootstrap rejection".to_owned(),
+    });
+    rejected_bootstrap.body.after_epoch = None;
+    rejected_bootstrap.body.state_hash = loading_records[0].body.state_hash;
+    let replay_instance = mech_engine::__resident::activate_external(
+        live_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut terminal_replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(replay_artifact.clone()),
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    terminal_replay
+        .execute_replay_batch(Some(&loading_batches[0]), &loading_records[0])
+        .unwrap();
+    assert!(matches!(
+        terminal_replay
+            .execute_replay_batch(Some(&loading_batches[1]), &rejected_bootstrap)
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    let error = terminal_replay
+        .execute_replay_batch(Some(&loading_batches[1]), &loading_records[1])
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("cannot continue after a rejected loading turn")
+    );
 
     let replay_id = mech_core::ReactiveInstanceId::new(90_001, 0);
     let direct_instance = mech_engine::__resident::activate_external(
