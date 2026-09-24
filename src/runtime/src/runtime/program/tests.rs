@@ -4382,6 +4382,7 @@ snapshot-count
         .unwrap()
         .into_parts()
         .0;
+    let replay_artifact = artifact.clone();
     let mut runtime = RuntimeBuilder::new()
         .function_catalog(catalog)
         .input_driver(ResidentTestInputDriver)
@@ -4460,6 +4461,62 @@ snapshot-count
     let host_batch = execution.coordinator.input_facts().last().unwrap().1;
     assert!(!host_batch.facts[0].trigger);
     assert!(host_batch.facts[1].trigger);
+
+    let replay_id = mech_core::ReactiveInstanceId::new(90_001, 0);
+    let direct_instance = mech_engine::__resident::activate_external(
+        replay_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let authority = external::ExactRequirementAuthority::new(
+        replay_artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone()),
+    )
+    .unwrap();
+    let mut direct = external::ResidentExternalCoordinator::new_live(
+        direct_instance,
+        Arc::new(replay_artifact.clone()),
+        &runtime.resources,
+        &authority,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(direct.initial_publication_required());
+    assert!(matches!(
+        direct.execute_turn().unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    let forged_batch = direct.input_facts().next().unwrap().1.clone();
+    let forged_record = direct.receipts().next().unwrap().1.clone();
+    assert!(!forged_record.body.initial_publication);
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        replay_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(replay_artifact),
+        true,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(
+        replay
+            .execute_replay_batch(Some(&forged_batch), &forged_record)
+            .is_err()
+    );
 }
 
 #[test]
@@ -5650,7 +5707,8 @@ fn initial_publication_replays_with_activations_dormant() {
     .unwrap();
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         instance,
-        artifact,
+        Arc::clone(&artifact),
+        true,
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )
@@ -5717,7 +5775,8 @@ fn continuation_drain_replay_keeps_input_free_activations_dormant() {
     .unwrap();
     let mut replay = external::ResidentExternalCoordinator::new_replay(
         instance,
-        artifact,
+        Arc::clone(&artifact),
+        true,
         crate::ResidentDurabilityPolicy::Retained,
         external::ResidentExternalLimits::default(),
     )
@@ -5734,6 +5793,79 @@ fn continuation_drain_replay_keeps_input_free_activations_dormant() {
             .map(|(_, record)| record.clone())
             .collect::<Vec<_>>(),
         records
+    );
+
+    let direct_id = mech_core::ReactiveInstanceId::new(90_002, 0);
+    let direct_instance = mech_engine::__resident::activate_external(
+        direct_id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let authority = external::ExactRequirementAuthority::new(
+        artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone()),
+    )
+    .unwrap();
+    let mut direct = external::ResidentExternalCoordinator::new_live(
+        direct_instance,
+        Arc::clone(&artifact),
+        &runtime.resources,
+        &authority,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    let admission = direct.admit_turn().unwrap();
+    assert!(matches!(
+        direct
+            .execute_admitted_initial_turn(admission, |_| Ok(()))
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert!(direct.instance().continuation_wakeup().is_some());
+    assert!(matches!(
+        direct.execute_turn().unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    let direct_records = direct
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(direct_records.len(), 2);
+    assert!(direct_records[0].body.initial_publication);
+    assert!(!direct_records[1].body.continuation_drain);
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        direct_id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        artifact,
+        true,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(matches!(
+        replay
+            .execute_replay_batch(None, &direct_records[0])
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert!(
+        replay
+            .execute_replay_batch(None, &direct_records[1])
+            .is_err()
     );
 }
 

@@ -152,6 +152,7 @@ pub struct ResidentExternalCoordinator {
     layout_generation: mech_core::LayoutGeneration,
     artifact: Arc<ProgramArtifact>,
     live: bool,
+    initial_publication_required: bool,
     bound: BoundResidentExternalPlan,
     latest_live_inputs: Vec<Option<Value>>,
     latest_live_input_bytes: Vec<usize>,
@@ -192,7 +193,11 @@ impl ResidentExternalCoordinator {
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
         let bound = bind_external_requirements(&instance.plan, &artifact, providers, authority)?;
-        Self::from_bound(instance, artifact, true, bound, durability, limits)
+        let mut coordinator =
+            Self::from_bound(instance, artifact, true, false, bound, durability, limits)?;
+        coordinator.initial_publication_required = coordinator.trigger_sources()?.is_empty()
+            || coordinator.has_driverless_trigger_observation()?;
+        Ok(coordinator)
     }
 
     /// Constructs an offline replay coordinator without live providers or
@@ -204,17 +209,27 @@ impl ResidentExternalCoordinator {
     pub fn new_replay(
         instance: ReactiveInstance,
         artifact: Arc<ProgramArtifact>,
+        initial_publication_required: bool,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
         let bound = bind_replay_requirements(&instance.plan, &artifact)?;
-        Self::from_bound(instance, artifact, false, bound, durability, limits)
+        Self::from_bound(
+            instance,
+            artifact,
+            false,
+            initial_publication_required,
+            bound,
+            durability,
+            limits,
+        )
     }
 
     fn from_bound(
         instance: ReactiveInstance,
         artifact: Arc<ProgramArtifact>,
         live: bool,
+        initial_publication_required: bool,
         bound: BoundResidentExternalPlan,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
@@ -263,6 +278,7 @@ impl ResidentExternalCoordinator {
             layout_generation,
             artifact,
             live,
+            initial_publication_required,
             bound,
             latest_live_inputs,
             latest_live_input_bytes,
@@ -284,6 +300,13 @@ impl ResidentExternalCoordinator {
 
     pub const fn durability(&self) -> ResidentDurabilityPolicy {
         self.durability
+    }
+
+    /// Whether the live loader must publish one dormant turn before admitting
+    /// provider-backed triggers. Retained replay must persist and restore this
+    /// decision because offline bindings intentionally omit provider policy.
+    pub const fn initial_publication_required(&self) -> bool {
+        self.initial_publication_required
     }
 
     pub fn health(&self) -> &ResidentExternalHealth {
@@ -1103,10 +1126,9 @@ impl ResidentExternalCoordinator {
             || record.body.before_epoch != self.instance().published_epoch()
             || (record.body.initial_publication && self.next_turn != 1)
             || (self.next_turn == 1
-                && self.instance().plan.turn_trigger_inputs.is_empty()
-                && !record.body.initial_publication)
+                && record.body.initial_publication != self.initial_publication_required)
             || (record.body.initial_publication && record.body.continuation_drain)
-            || (record.body.continuation_drain && self.instance().continuation_wakeup().is_none())
+            || (record.body.continuation_drain != self.instance().continuation_wakeup().is_some())
         {
             return invalid_coordinator(
                 "recorded replay receipt does not match the next activated turn",

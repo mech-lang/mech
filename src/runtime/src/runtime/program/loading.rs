@@ -533,7 +533,7 @@ impl MechRuntime {
             let has_driverless_trigger = coordinator.has_driverless_trigger_observation()?;
             self.ensure_exact_resident_input_drivers(&input_sources)?;
             let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
-            if trigger_sources.is_empty() || has_driverless_trigger {
+            if coordinator.initial_publication_required() {
                 let turn_started = Instant::now();
                 let admission = coordinator.admit_turn()?;
                 let outcome = coordinator.execute_admitted_initial_turn(admission, |_| {
