@@ -426,6 +426,37 @@ fn refutable_enum_payload_arm_does_not_complete_variant_coverage() {
 }
 
 #[test]
+fn narrowed_dynamic_enum_payload_binding_does_not_complete_variant_coverage() {
+    let source = "<event> := :data<*>\n\
+                  value<event> := :data(true)\n\
+                  result := value?\n\
+                    | :data(x<f64>) => x.\n\
+                  result\n";
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .err()
+        .expect("a typed binding cannot cover other Dynamic payload schemas");
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[test]
+fn exact_enum_payload_binding_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<f64>\n\
+                 value<event> := :data(1)\n\
+                 result := value? | :data(x) => x.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("an exact payload binding covers the enum variant")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
     let source = "<first> := :idle | :busy\n\
                   <second> := :idle | :done\n\

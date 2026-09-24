@@ -225,15 +225,38 @@ fn validate_structural_pattern(
     Some(())
 }
 
-fn structurally_irrefutable<S, V>(pattern: &super::CollectionPattern<S, V>) -> bool {
+fn structurally_irrefutable<V>(
+    schemas: &mech_core::SchemaTable,
+    pattern: &super::CollectionPattern<SchemaId, V>,
+    expected: &mech_core::Schema,
+) -> bool {
     match pattern {
-        super::CollectionPattern::Wildcard | super::CollectionPattern::Bind { .. } => true,
-        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        super::CollectionPattern::Wildcard => true,
+        super::CollectionPattern::Bind { schema, .. } => schemas.get(*schema) == Some(expected),
+        super::CollectionPattern::Tuple(items) => {
+            let mech_core::SchemaBody::Tuple(fields) = expected.body() else {
+                return false;
+            };
+            fields.len() == items.len()
+                && items.iter().zip(fields).all(|(item, field)| {
+                    component_schema(expected, field)
+                        .is_some_and(|expected| structurally_irrefutable(schemas, item, &expected))
+                })
+        }
         super::CollectionPattern::Array {
             prefix,
             rest: Some(rest),
             suffix,
-        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        } if prefix.is_empty() && suffix.is_empty() => {
+            let mech_core::SchemaBody::Matrix { element, .. } = expected.body() else {
+                return false;
+            };
+            component_schema(expected, element)
+                .and_then(|element| {
+                    super::comprehension::array_rest_schema(&element, element.body())
+                })
+                .is_some_and(|expected| structurally_irrefutable(schemas, rest, &expected))
+        }
         super::CollectionPattern::Equal(_)
         | super::CollectionPattern::Enum { .. }
         | super::CollectionPattern::Array { .. } => false,
@@ -541,7 +564,23 @@ pub(super) fn validate_match_inner(
                     }
                 }
                 MatchPattern::Structural(super::CollectionPattern::Enum { ordinal, payload }) => {
-                    if payload.as_deref().is_none_or(structurally_irrefutable)
+                    let irrefutable = draft.schemas.get(scrutinee).is_some_and(|scrutinee| {
+                        let SchemaBody::Enum { variants, .. } = scrutinee.body() else {
+                            return false;
+                        };
+                        match (variants.get(*ordinal as usize), payload.as_deref()) {
+                            (Some(variant), None) => variant.payload.is_none(),
+                            (Some(variant), Some(pattern)) => variant
+                                .payload
+                                .as_ref()
+                                .and_then(|payload| component_schema(scrutinee, payload))
+                                .is_some_and(|expected| {
+                                    structurally_irrefutable(&draft.schemas, pattern, &expected)
+                                }),
+                            _ => false,
+                        }
+                    });
+                    if irrefutable
                         && let Some(variants) = &mut enum_coverage
                         && let Some(covered) = variants.get_mut(*ordinal as usize)
                     {
@@ -893,6 +932,51 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mech_core::{FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn narrowed_dynamic_bindings_are_refutable_for_enum_coverage() {
+        let mut builder = SchemaTableBuilder::new();
+        let dynamic = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Dynamic,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let f64 = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::FloatingPoint(FloatWidth::W64),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let dynamic = built.resolve(dynamic).unwrap();
+        let f64 = built.resolve(f64).unwrap();
+        let schemas = built.table;
+        let expected = schemas.get(dynamic).unwrap();
+
+        let narrowed: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Bind {
+                local: 0,
+                schema: f64,
+            };
+        assert!(!structurally_irrefutable(&schemas, &narrowed, expected));
+
+        let exact: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Bind {
+                local: 0,
+                schema: dynamic,
+            };
+        assert!(structurally_irrefutable(&schemas, &exact, expected));
+    }
 
     #[test]
     fn combined_match_operations_and_bindings_share_the_u16_scratch_limit() {

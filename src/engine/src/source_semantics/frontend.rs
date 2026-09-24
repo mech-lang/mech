@@ -2296,15 +2296,85 @@ struct PendingMatchArm {
     body: PendingControlBlock,
 }
 
-fn structurally_irrefutable<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool {
+fn structural_component_schema_draft(
+    parent: &SchemaDraft,
+    body: &SchemaBody,
+) -> Option<SchemaDraft> {
+    let component = SchemaDraft {
+        body: body.clone(),
+        dimension_parameters: parent.dimension_parameters.clone(),
+    }
+    .finalize()
+    .ok()?;
+    Some(SchemaDraft {
+        body: component.body().clone(),
+        dimension_parameters: component
+            .dimension_parameters()
+            .iter()
+            .enumerate()
+            .map(|(id, parameter)| {
+                Some(DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(u32::try_from(id).ok()?),
+                    origin: DimensionParameterOrigin::Explicit,
+                    lifetime: parameter.lifetime(),
+                    lower_bound: parameter.lower_bound().clone(),
+                    upper_bound: parameter.upper_bound().cloned(),
+                })
+            })
+            .collect::<Option<Vec<_>>>()?
+            .into_boxed_slice(),
+    })
+}
+
+fn structural_array_rest_schema(element: &SchemaDraft) -> Option<SchemaDraft> {
+    let mut parameters = element.dimension_parameters.to_vec();
+    let extent = DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+    parameters.push(DimensionParameterDeclaration {
+        id: extent,
+        origin: DimensionParameterOrigin::Inferred,
+        lifetime: DimensionLifetime::Turn,
+        lower_bound: DimensionExpr::Constant(0),
+        upper_bound: None,
+    });
+    Some(SchemaDraft {
+        dimension_parameters: parameters.into_boxed_slice(),
+        body: SchemaBody::Matrix {
+            element: Box::new(element.body.clone()),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
+                .into_boxed_slice(),
+        },
+    })
+}
+
+fn structurally_irrefutable<V>(
+    pattern: &crate::CollectionPattern<SchemaDraft, V>,
+    expected: &SchemaDraft,
+) -> bool {
     match pattern {
-        crate::CollectionPattern::Wildcard | crate::CollectionPattern::Bind { .. } => true,
-        crate::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        crate::CollectionPattern::Wildcard => true,
+        crate::CollectionPattern::Bind { schema, .. } => schema == expected,
+        crate::CollectionPattern::Tuple(items) => {
+            let SchemaBody::Tuple(fields) = &expected.body else {
+                return false;
+            };
+            fields.len() == items.len()
+                && items.iter().zip(fields).all(|(item, field)| {
+                    structural_component_schema_draft(expected, field)
+                        .is_some_and(|expected| structurally_irrefutable(item, &expected))
+                })
+        }
         crate::CollectionPattern::Array {
             prefix,
             rest: Some(rest),
             suffix,
-        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        } if prefix.is_empty() && suffix.is_empty() => {
+            let SchemaBody::Matrix { element, .. } = &expected.body else {
+                return false;
+            };
+            structural_component_schema_draft(expected, element)
+                .and_then(|element| structural_array_rest_schema(&element))
+                .is_some_and(|expected| structurally_irrefutable(rest, &expected))
+        }
         crate::CollectionPattern::Equal(_)
         | crate::CollectionPattern::Enum { .. }
         | crate::CollectionPattern::Array { .. } => false,
@@ -8792,7 +8862,22 @@ impl SemanticBuilder {
                         ordinal,
                         payload,
                     }) => {
-                        if payload.as_deref().is_none_or(structurally_irrefutable)
+                        let irrefutable = match (&scrutinee_schema.body, payload.as_deref()) {
+                            (SchemaBody::Enum { variants, .. }, None) => variants
+                                .get(*ordinal as usize)
+                                .is_some_and(|variant| variant.payload.is_none()),
+                            (SchemaBody::Enum { variants, .. }, Some(pattern)) => variants
+                                .get(*ordinal as usize)
+                                .and_then(|variant| variant.payload.as_ref())
+                                .and_then(|payload| {
+                                    structural_component_schema_draft(&scrutinee_schema, payload)
+                                })
+                                .is_some_and(|expected| {
+                                    structurally_irrefutable(pattern, &expected)
+                                }),
+                            _ => false,
+                        };
+                        if irrefutable
                             && let Some(variants) = &mut enum_coverage
                             && let Some(covered) = variants.get_mut(*ordinal as usize)
                         {

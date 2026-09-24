@@ -3890,6 +3890,22 @@ fn collection_canonicalization_work(
         .ok_or(ResidentKernelError::InvalidShape)
 }
 
+fn measure_owned_canonical_value_footprint(
+    meter: &mut ResidentBudgetMeter,
+    value: &mech_core::snapshot::Value,
+    fallback_schemas: &mech_core::SchemaTable,
+) -> Result<ValueFootprint, ResidentKernelError> {
+    // Schema ids are arena-local. Snapshot-backed pattern bindings may retain
+    // the arena of an imported value, so measure them against their owner
+    // rather than the comprehension plan's arena.
+    let owner = value.schemas();
+    budget::measure_canonical_value_footprint(
+        meter,
+        value,
+        owner.as_deref().unwrap_or(fallback_schemas),
+    )
+}
+
 impl ReactiveInstance {
     fn resident_value_footprint(
         value: ResidentValueRef<'_>,
@@ -3913,12 +3929,8 @@ impl ReactiveInstance {
             ResidentValueRef::Snapshot(values) => {
                 for value in values.iter().flatten() {
                     let mut local_meter = ResidentBudgetMeter::default();
-                    // Schema ids are arena-local, so a captured foreign value
-                    // must be measured against the arena that finalized it.
-                    let owner = value.schemas();
-                    let owner = owner.as_deref().unwrap_or(schemas);
                     let local =
-                        budget::measure_canonical_value_footprint(&mut local_meter, value, owner)?;
+                        measure_owned_canonical_value_footprint(&mut local_meter, value, schemas)?;
                     meter.charge_comparison_work(local_meter.estimate().comparison_work())?;
                     footprint = footprint
                         .checked_add(local)
@@ -5029,7 +5041,7 @@ impl ReactiveInstance {
                 let previous_binding = match self.workspace.scratch.read(binding.region) {
                     ResidentValueRef::Snapshot([Some(previous)]) => {
                         let mut previous_meter = ResidentBudgetMeter::default();
-                        let footprint = budget::measure_canonical_value_footprint(
+                        let footprint = measure_owned_canonical_value_footprint(
                             &mut previous_meter,
                             previous,
                             schemas,
@@ -9288,6 +9300,77 @@ mod tests {
                 .unwrap();
         let owner = value.schemas().expect("finalized binding retains schemas");
         assert!(std::sync::Arc::ptr_eq(&owner, &schemas));
+    }
+
+    #[test]
+    fn previous_pattern_binding_footprint_uses_the_snapshot_owner_arena() {
+        let mut foreign_builder = SchemaTableBuilder::new();
+        let foreign_tuple = foreign_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Tuple(
+                        vec![SchemaBody::String, SchemaBody::Bool].into_boxed_slice(),
+                    ),
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let foreign_build = foreign_builder.finish().unwrap();
+        let foreign_tuple = foreign_build.resolve(foreign_tuple).unwrap();
+        let foreign = Arc::new(foreign_build.table);
+        let previous = ValueDraft {
+            schema: foreign_tuple,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Tuple(
+                vec![
+                    ValueDataDraft::String("foreign binding".repeat(64)),
+                    ValueDataDraft::Bool(true),
+                ]
+                .into_boxed_slice(),
+            ),
+        }
+        .finalize(&SnapshotValidationContext::with_shared_schemas(&foreign))
+        .unwrap();
+
+        let mut plan_builder = SchemaTableBuilder::new();
+        let plan_bool = plan_builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Bool,
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let plan_build = plan_builder.finish().unwrap();
+        let plan_bool = plan_build.resolve(plan_bool).unwrap();
+        let plan = plan_build.table;
+        assert_eq!(
+            foreign_tuple, plan_bool,
+            "the witness reuses an arena-local id"
+        );
+        assert_ne!(
+            foreign.entry(foreign_tuple).unwrap().key(),
+            plan.entry(plan_bool).unwrap().key(),
+            "the reused id denotes different schemas in each arena",
+        );
+
+        let expected = budget::measure_canonical_value_footprint(
+            &mut ResidentBudgetMeter::default(),
+            &previous,
+            &foreign,
+        )
+        .unwrap();
+        let actual = measure_owned_canonical_value_footprint(
+            &mut ResidentBudgetMeter::default(),
+            &previous,
+            &plan,
+        )
+        .expect("a previous foreign binding is measured in its owner arena");
+        assert_eq!(actual, expected);
     }
 
     #[test]
