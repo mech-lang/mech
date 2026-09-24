@@ -14,7 +14,8 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use mech_core::snapshot::{
-    schema_data_language_eq, schema_data_partial_cmp, schema_data_snapshot_eq,
+    SnapshotValidationContext, ValueDataDraft, ValueDraft, schema_data_language_eq,
+    schema_data_partial_cmp, schema_data_snapshot_eq,
 };
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
@@ -27,8 +28,9 @@ use mech_core::{
     ReactiveInstanceId, RegionAccessPlan, ResidentBuildContext, ResidentKernelBindError,
     ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey, ResidentPortLayout,
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
-    ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, SlotIndex,
-    TargetMemoryProfile, Value, plan_call_memory,
+    ResolvedSelectionMode, ResolvedType, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule,
+    SlotIndex, TargetMemoryProfile, Value, execute_conversion_draft, plan_call_memory,
+    plan_implicit_conversion,
 };
 use sha2::{Digest, Sha256};
 
@@ -3210,9 +3212,9 @@ fn logical_selector_population(
 }
 
 struct ConstantComparisonOperand<'a> {
-    schema: &'a SchemaBody,
-    data: &'a mech_core::ValueData,
-    element: &'a SchemaBody,
+    value: std::borrow::Cow<'a, Value>,
+    schema: SchemaBody,
+    element: SchemaBody,
     rows: usize,
     columns: usize,
 }
@@ -3249,13 +3251,75 @@ fn constant_comparison_operand<'a>(
     source: ArtifactSource,
     facts: &ActivationFacts,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
-    let ArtifactSource::Constant(id) = source else {
-        return Ok(None);
+    let value = match source {
+        ArtifactSource::Constant(id) => std::borrow::Cow::Borrowed(
+            artifact
+                .constants()
+                .get(id)
+                .ok_or(ResidentActivationError::InvalidDependency { node })?,
+        ),
+        ArtifactSource::Slot(slot) => {
+            let ProducerReference::NodeOutput { node: producer, .. } =
+                artifact.slots()[slot.get() as usize].producer
+            else {
+                return Ok(None);
+            };
+            let Some(operation) = artifact.nodes()[producer.get() as usize].as_operation() else {
+                return Ok(None);
+            };
+            if operation.operation.module_path.as_ref() != ["convert"]
+                || operation.operation.operation_name != "kind"
+            {
+                return Ok(None);
+            }
+            let [input] = node_inputs(artifact, producer)?.as_slice() else {
+                return Ok(None);
+            };
+            let Some(source) = constant_comparison_operand(artifact, node, *input, facts)? else {
+                return Ok(None);
+            };
+            let target_schema_id = artifact.slots()[slot.get() as usize].schema;
+            let target_schema = artifact
+                .schemas()
+                .get(target_schema_id)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            let target_element = match target_schema.body() {
+                SchemaBody::Matrix { element, .. } => element.as_ref(),
+                body => body,
+            };
+            let source_type = ResolvedType::from_schema_body(&source.element, &[])
+                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            let target_type = ResolvedType::from_schema_body(target_element, &[])
+                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            let conversion = plan_implicit_conversion(&source_type, &target_type)
+                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            let draft = source
+                .value
+                .canonical_data_draft()
+                .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            let converted = match draft {
+                ValueDataDraft::Matrix(elements) => ValueDataDraft::Matrix(
+                    elements
+                        .into_vec()
+                        .into_iter()
+                        .map(|element| execute_conversion_draft(element, &conversion.step))
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(|_| ResidentActivationError::InvalidDependency { node })?
+                        .into_boxed_slice(),
+                ),
+                scalar => execute_conversion_draft(scalar, &conversion.step)
+                    .map_err(|_| ResidentActivationError::InvalidDependency { node })?,
+            };
+            let converted = ValueDraft {
+                schema: target_schema_id,
+                shape_values: source.value.shape().parameter_values().into(),
+                data: converted,
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .map_err(|_| ResidentActivationError::InvalidDependency { node })?;
+            std::borrow::Cow::Owned(converted)
+        }
     };
-    let value = artifact
-        .constants()
-        .get(id)
-        .ok_or(ResidentActivationError::InvalidDependency { node })?;
     let schema = artifact
         .schemas()
         .entry(value.schema())
@@ -3277,13 +3341,13 @@ fn constant_comparison_operand<'a>(
             if count > MAX_STATIC_SELECTOR_SOURCE_STEPS || count != matrix.elements().len() {
                 return Ok(None);
             }
-            (element.as_ref(), rows, columns)
+            (element.as_ref().clone(), rows, columns)
         }
-        (body, _) => (body, 1, 1),
+        (body, _) => (body.clone(), 1, 1),
     };
     Ok(Some(ConstantComparisonOperand {
-        schema: schema.body(),
-        data: value.data(),
+        value,
+        schema: schema.body().clone(),
         element,
         rows,
         columns,
@@ -3332,15 +3396,26 @@ fn closed_comparison_population(
         if left.schema != right.schema {
             return Ok(None);
         }
-        let language_equal = || schema_data_language_eq(left.schema, left.data, right.data);
+        let same_shape = left.value.shape() == right.value.shape();
+        let language_equal = || {
+            same_shape
+                && schema_data_language_eq(&left.schema, left.value.data(), right.value.data())
+        };
         let ordinary_equal = || {
-            if scalar_comparison_supported(left.schema, false) {
+            if scalar_comparison_supported(&left.schema, false) {
                 language_equal()
             } else {
-                schema_data_snapshot_eq(left.schema, left.data, right.data)
+                same_shape
+                    && schema_data_snapshot_eq(&left.schema, left.value.data(), right.value.data())
             }
         };
-        let order = || schema_data_partial_cmp(left.schema, left.data, right.data);
+        let order = || {
+            same_shape
+                .then(|| {
+                    schema_data_partial_cmp(&left.schema, left.value.data(), right.value.data())
+                })
+                .flatten()
+        };
         let matches = match name {
             "eq" => ordinary_equal(),
             "neq" => !ordinary_equal(),
@@ -3348,17 +3423,17 @@ fn closed_comparison_population(
             // and snapshot paths both use language equality.
             "seq" => language_equal(),
             "sneq" => !language_equal(),
-            "lt" if scalar_comparison_supported(left.schema, true) => {
+            "lt" if scalar_comparison_supported(&left.schema, true) => {
                 order() == Some(std::cmp::Ordering::Less)
             }
-            "lte" if scalar_comparison_supported(left.schema, true) => matches!(
+            "lte" if scalar_comparison_supported(&left.schema, true) => matches!(
                 order(),
                 Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
             ),
-            "gt" if scalar_comparison_supported(left.schema, true) => {
+            "gt" if scalar_comparison_supported(&left.schema, true) => {
                 order() == Some(std::cmp::Ordering::Greater)
             }
-            "gte" if scalar_comparison_supported(left.schema, true) => matches!(
+            "gte" if scalar_comparison_supported(&left.schema, true) => matches!(
                 order(),
                 Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
             ),
@@ -3395,13 +3470,29 @@ fn closed_comparison_population(
     if output_len > MAX_STATIC_SELECTOR_SOURCE_STEPS {
         return Ok(None);
     }
-    let values = |operand: &ConstantComparisonOperand<'_>| match operand.data {
+    let left_bytes = left
+        .value
+        .retained_footprint(artifact.schemas())
+        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
+        .retained_bytes;
+    let right_bytes = right
+        .value
+        .retained_footprint(artifact.schemas())
+        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
+        .retained_bytes;
+    let cloned_bytes = left_bytes
+        .checked_add(right_bytes)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    if cloned_bytes > mech_core::RESIDENT_MAX_BYTES {
+        return Ok(None);
+    }
+    let values = |operand: &ConstantComparisonOperand<'_>| match operand.value.data() {
         mech_core::ValueData::Matrix(matrix) => matrix.elements().to_values(),
         data => vec![data.clone()],
     };
     let left_values = values(&left);
     let right_values = values(&right);
-    let element = left.element;
+    let element = &left.element;
     let compare = |left: &mech_core::ValueData, right: &mech_core::ValueData| {
         let order = || schema_data_partial_cmp(element, left, right);
         match name {
