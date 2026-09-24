@@ -1,0 +1,81 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-04",
+  "benchmark": "parallel-ekf",
+  "platform": {
+    "model": "Mac mini Macmini9,1",
+    "chip": "Apple M1",
+    "cores": "8 (4 performance + 4 efficiency)",
+    "memory": "8 GB",
+    "os": "macOS 15.6.1",
+    "architecture": "arm64"
+  },
+  "toolchain": {
+    "mojo": "1.1.0.dev2026090305 (74367f86)",
+    "max": "26.6.0.dev2026090305",
+    "metal": "Apple Metal Toolchain 17A324",
+    "max_source_checkout": "Modular modular at /tmp/modular-src, sparse max/mojo + Mojo/stdlib",
+    "cpu_build": "mojo build -I /tmp/modular-src/max/mojo -Xlinker -L/tmp/mech-mojo-venv.AJOcql/lib/python3.14/site-packages/modular/lib -Xlinker -lAsyncRTMojoBindings -O3 --fp-mode contract=off <source> -o <binary>",
+    "metal_build": "same command with mojo_metal.mojo"
+  },
+  "workload": {
+    "instances": 500000,
+    "turns": 40,
+    "state": "f32",
+    "metal_threadgroup_size": 64,
+    "samples_per_lane": 5,
+    "warmup": "CPU lanes: two discarded turns; Metal lane: five discarded turns; each process resets state before timing",
+    "timed_region": "resident EKF turn loop; setup, allocation, compilation and final checksum readback excluded",
+    "synchronization": "CPU lanes complete each turn; Metal enqueues one resident kernel per turn and synchronizes after every timed turn; checked Metal reads one compact Int32 fault status at each publication boundary"
+  },
+  "rows": {
+    "Mojo fused fixed-shape, 8 workers": {
+      "source": "../mojo_parallel.mojo",
+      "checked": {
+        "samples_million_ekf_turns_per_second": [79.6258, 79.6448, 79.5444, 79.1333, 80.0131],
+        "median_million_ekf_turns_per_second": 79.6258
+      },
+      "unchecked": {
+        "samples_million_ekf_turns_per_second": [93.1793, 94.6853, 94.8924, 94.6092, 93.4531],
+        "median_million_ekf_turns_per_second": 94.6092
+      },
+      "checksum": 133818339.81889439,
+      "faults": 0
+    },
+    "Mojo fused SIMD-4, 8 workers": {
+      "source": "../mojo_simd.mojo",
+      "checked": {
+        "samples_million_ekf_turns_per_second": [144.1306, 143.9864, 142.3346, 138.7636, 143.5194],
+        "median_million_ekf_turns_per_second": 143.5194
+      },
+      "unchecked": {
+        "samples_million_ekf_turns_per_second": [121.6952, 158.5125, 145.2190, 159.0116, 159.0128],
+        "median_million_ekf_turns_per_second": 158.5125
+      },
+      "checksum": 133818339.81889108,
+      "faults": 0
+    },
+    "Mojo native Metal resident kernel": {
+      "source": "../mojo_metal.mojo",
+      "checked": {
+        "samples_million_ekf_turns_per_second": [244.4928, 242.6890, 242.3860, 245.3928, 247.9329],
+        "median_million_ekf_turns_per_second": 244.4928
+      },
+      "unchecked": {
+        "samples_million_ekf_turns_per_second": [407.0750, 405.0469, 404.3590, 393.6001, 406.3884],
+        "median_million_ekf_turns_per_second": 405.0469
+      },
+      "checksum": 133802215.71329522,
+      "faults": 0,
+      "faults_observed_per_publication": 0,
+      "numerical_note": "Metal uses the target-native llvm.air.atan2.f32 intrinsic because the Mojo host libm atan2 entry point is CPU-only on this toolchain; checksum is reported rather than claimed bit-for-bit equality because device and CPU operation order can differ."
+    }
+  },
+  "notes": [
+    "Checked lanes validate finite state/covariance, positive covariance diagonals, and covariance symmetry; invalid candidates retain the previously published state and increment a bounded fault count.",
+    "The SIMD lane performs the EKF arithmetic on four filters per SIMD value and uses an all-valid fast store path; the per-lane fallback preserves checked publication semantics when a lane is invalid.",
+    "The Metal lane keeps all state and covariance in device buffers and performs one compact Int32 fault-status readback after each checked timed turn; it does not map the per-filter state or covariance during timing.",
+    "The optional Metal deferred-synchronization mode is diagnostic only and is excluded from the reported medians because it changes the publication and fault-observation boundary.",
+    "The /tmp/modular-src checkout is a build-time source dependency for MAX APIs absent from the installed Mojo package; it is not part of the Mech runtime or benchmark workload."
+  ]
+}

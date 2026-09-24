@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31",
+  "platform": "Apple M1 macOS",
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 5,
+    "synchronization": "after every measured turn",
+    "block_dim": 32,
+    "source": "benchmarks/archive/compute/parallel-ekf/taichi_optimized.py",
+    "compiler": "stock Taichi 1.7.4 Metal backend",
+    "notes": [
+      "Scalar component fields use a structure-of-arrays layout.",
+      "The fixed 3x3 recurrence is manually scalarized and unrolled.",
+      "Unchecked mode updates resident fields in place; checked mode uses ping-pong publication and the same integrity predicates.",
+      "This changes the Taichi program, not Taichi's compiler or runtime."
+    ]
+  },
+  "rows": [
+    {
+      "label": "Taichi optimized native Metal, checked",
+      "mode": "checked",
+      "throughput_millions": 168.798,
+      "samples_millions": [171.660, 170.807, 136.096, 168.798, 146.483],
+      "checksum": 133818339.995951742,
+      "faults": 0
+    },
+    {
+      "label": "Taichi optimized native Metal, unchecked",
+      "mode": "unchecked",
+      "throughput_millions": 217.297,
+      "samples_millions": [285.400, 217.297, 202.628, 277.650, 202.888],
+      "checksum": 133818339.995951742,
+      "faults": 0
+    }
+  ],
+  "version": "Taichi 1.7.4"
+}

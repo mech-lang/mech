@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T23:16:04.799114-04:00",
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 5,
+    "backend": "native Metal"
+  },
+  "rows": {
+    "Halide GPU Metal unchecked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-halide-metal-coc2sidq/halide-ekf",
+        "500000",
+        "40",
+        "unchecked",
+        "gpu"
+      ],
+      "throughput": [
+        64943068.74657971,
+        64259789.4768972,
+        63040572.91272663,
+        61216283.44079515,
+        63111930.91545888
+      ],
+      "checksums": [
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701
+      ]
+    },
+    "Halide GPU Metal checked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-halide-metal-coc2sidq/halide-ekf",
+        "500000",
+        "40",
+        "checked",
+        "gpu"
+      ],
+      "throughput": [
+        54834231.64873599,
+        57842594.20934666,
+        59175660.795076124,
+        58699778.02179993,
+        56674723.923251085
+      ],
+      "checksums": [
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701
+      ]
+    }
+  }
+}

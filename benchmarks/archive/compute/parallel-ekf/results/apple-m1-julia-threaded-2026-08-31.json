@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T20:26:54-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "threads": 8,
+    "samples": 3,
+    "source": "minimal/julia_simd_threads.jl",
+    "boundary": "synchronous per-turn Threads.@threads :static publication"
+  },
+  "rows": {
+    "checked": {
+      "command": [
+        "JULIA_NUM_THREADS=8",
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "minimal/julia_simd_threads.jl",
+        "500000",
+        "40",
+        "checked"
+      ],
+      "throughput_millions": [
+        105.22803554563053,
+        106.34138001186791,
+        106.42831492112842
+      ],
+      "checksums": [
+        133818339.83441573,
+        133818339.83441573,
+        133818339.83441573
+      ]
+    },
+    "unchecked": {
+      "command": [
+        "JULIA_NUM_THREADS=8",
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "minimal/julia_simd_threads.jl",
+        "500000",
+        "40",
+        "unchecked"
+      ],
+      "throughput_millions": [
+        93.50088923319449,
+        109.62848752816719,
+        110.52268037858196
+      ],
+      "checksums": [
+        133818339.83441573,
+        133818339.83441573,
+        133818339.83441573
+      ]
+    }
+  }
+}

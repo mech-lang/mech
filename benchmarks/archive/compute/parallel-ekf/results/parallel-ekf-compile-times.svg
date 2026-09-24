@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="720" viewBox="0 0 1500 720">
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#91a0b5}.grid{stroke:#263246;stroke-width:1}.label{font-size:15px}.value{font-size:13px;font-variant-numeric:tabular-nums}.phase{font-size:11px;fill:#91a0b5}</style>
+<text x="42" y="42" font-size="28" font-weight="700">Parallel EKF compile and first-run cost</text>
+<text x="42" y="70" class="muted" font-size="15">Apple M1 medians in milliseconds; each language shows baseline / advanced source controls</text>
+<text x="250" y="108" font-size="15" font-weight="600">wall time (ms)</text>
+<rect x="1080" y="91" width="14" height="14" fill="#91a0b5"/><text x="1102" y="103" class="muted" font-size="13">baseline</text>
+<rect x="1180" y="91" width="14" height="14" fill="#91a0b5" opacity="0.45"/><text x="1202" y="103" class="muted" font-size="13">advanced</text>
+<line x1="250.0" y1="115" x2="250.0" y2="650" class="grid"/>
+<text x="250.0" y="672" text-anchor="middle" class="muted" font-size="12">0</text>
+<line x1="426.7" y1="115" x2="426.7" y2="650" class="grid"/>
+<text x="426.7" y="672" text-anchor="middle" class="muted" font-size="12">292</text>
+<line x1="603.3" y1="115" x2="603.3" y2="650" class="grid"/>
+<text x="603.3" y="672" text-anchor="middle" class="muted" font-size="12">584</text>
+<line x1="780.0" y1="115" x2="780.0" y2="650" class="grid"/>
+<text x="780.0" y="672" text-anchor="middle" class="muted" font-size="12">875</text>
+<line x1="956.7" y1="115" x2="956.7" y2="650" class="grid"/>
+<text x="956.7" y="672" text-anchor="middle" class="muted" font-size="12">1167</text>
+<line x1="1133.3" y1="115" x2="1133.3" y2="650" class="grid"/>
+<text x="1133.3" y="672" text-anchor="middle" class="muted" font-size="12">1459</text>
+<line x1="1310.0" y1="115" x2="1310.0" y2="650" class="grid"/>
+<text x="1310.0" y="672" text-anchor="middle" class="muted" font-size="12">1751</text>
+<text x="234" y="155" text-anchor="end" class="label">Mech</text>
+<rect x="250" y="135" width="119.5" height="15" rx="2" fill="#f4c430" opacity="0.95"/>
+<text x="377.5" y="147" class="value">197.377</text>
+<rect x="250" y="157" width="2.6" height="15" rx="2" fill="#f4c430" opacity="0.45"/>
+<text x="260.6" y="169" class="value">4.303</text>
+<text x="1325" y="149" class="phase">source + artifact + scalarization / resident GPU prepare</text>
+<text x="234" y="207" text-anchor="end" class="label">Rust</text>
+<rect x="250" y="187" width="246.0" height="15" rx="2" fill="#dea584" opacity="0.95"/>
+<text x="504.0" y="199" class="value">406.385</text>
+<rect x="250" y="209" width="164.5" height="15" rx="2" fill="#dea584" opacity="0.45"/>
+<text x="422.5" y="221" class="value">271.686</text>
+<text x="1325" y="201" class="phase">rustc AOT compile</text>
+<text x="234" y="259" text-anchor="end" class="label">Python</text>
+<rect x="250" y="239" width="88.2" height="15" rx="2" fill="#4d77cf" opacity="0.95"/>
+<text x="346.2" y="251" class="value">145.702</text>
+<rect x="250" y="261" width="88.2" height="15" rx="2" fill="#4d77cf" opacity="0.45"/>
+<text x="346.2" y="273" class="value">145.633</text>
+<text x="1325" y="253" class="phase">CPython bytecode compile</text>
+<text x="234" y="311" text-anchor="end" class="label">NumPy</text>
+<rect x="250" y="291" width="87.8" height="15" rx="2" fill="#4d77cf" opacity="0.95"/>
+<text x="345.8" y="303" class="value">145.004</text>
+<rect x="250" y="313" width="88.2" height="15" rx="2" fill="#4d77cf" opacity="0.45"/>
+<text x="346.2" y="325" class="value">145.715</text>
+<text x="1325" y="305" class="phase">CPython bytecode compile</text>
+<text x="234" y="363" text-anchor="end" class="label">Julia</text>
+<rect x="250" y="343" width="781.1" height="15" rx="2" fill="#9558b2" opacity="0.95"/>
+<text x="1039.1" y="355" class="value">1290.287</text>
+<rect x="250" y="365" width="835.0" height="15" rx="2" fill="#9558b2" opacity="0.45"/>
+<text x="1093.0" y="377" class="value">1379.165</text>
+<text x="1325" y="357" class="phase">cold Julia process + first-call specialization</text>
+<text x="234" y="415" text-anchor="end" class="label">Lua</text>
+<rect x="250" y="395" width="1.9" height="15" rx="2" fill="#000080" opacity="0.95"/>
+<text x="259.9" y="407" class="value">3.125</text>
+<rect x="250" y="417" width="1.8" height="15" rx="2" fill="#000080" opacity="0.45"/>
+<text x="259.8" y="429" class="value">2.966</text>
+<text x="1325" y="409" class="phase">PUC Lua bytecode compile</text>
+<text x="234" y="467" text-anchor="end" class="label">LuaJIT</text>
+<rect x="250" y="447" width="1.8" height="15" rx="2" fill="#000080" opacity="0.95"/>
+<text x="259.8" y="459" class="value">2.987</text>
+<rect x="250" y="469" width="1.8" height="15" rx="2" fill="#000080" opacity="0.45"/>
+<text x="259.8" y="481" class="value">2.962</text>
+<text x="1325" y="461" class="phase">LuaJIT bytecode compile</text>
+<text x="234" y="519" text-anchor="end" class="label">Taichi</text>
+<rect x="250" y="499" width="264.1" height="15" rx="2" fill="#e36b6b" opacity="0.95"/>
+<text x="522.1" y="511" class="value">436.312</text>
+<rect x="250" y="521" width="240.2" height="15" rx="2" fill="#e36b6b" opacity="0.45"/>
+<text x="498.2" y="533" class="value">396.750</text>
+<text x="1325" y="513" class="phase">cold Taichi process + first kernel compilation</text>
+<text x="234" y="571" text-anchor="end" class="label">Halide</text>
+<rect x="250" y="551" width="862.7" height="15" rx="2" fill="#ff8f00" opacity="0.95"/>
+<text x="1120.7" y="563" class="value">1424.996</text>
+<rect x="250" y="573" width="880.4" height="15" rx="2" fill="#ff8f00" opacity="0.45"/>
+<text x="1138.4" y="585" class="value">1454.198</text>
+<text x="1325" y="565" class="phase">clang++ + Halide AOT control build</text>
+<text x="234" y="623" text-anchor="end" class="label">Futhark</text>
+<rect x="250" y="603" width="486.2" height="15" rx="2" fill="#e94f37" opacity="0.95"/>
+<text x="744.2" y="615" class="value">803.145</text>
+<rect x="250" y="625" width="898.3" height="15" rx="2" fill="#e94f37" opacity="0.45"/>
+<text x="1156.3" y="637" class="value">1483.802</text>
+<text x="1325" y="617" class="phase">futhark multicore AOT compile / futhark ispc AOT compile</text>
+<text x="42" y="624" class="muted" font-size="12">AOT and bytecode rows time artifact creation; Julia/Taichi include cold startup and specialization; Mech uses source/artifact preparation.</text>
+<g aria-label="Test machine">
+<rect x="920" y="18" width="390" height="72" rx="4" fill="#111827" stroke="#334155"/>
+<text x="932" y="34" fill="#e8edf5" font-size="11" font-weight="700">Test machine</text>
+<text x="932" y="49" fill="#91a0b5" font-size="10">Mac mini Macmini9,1 | Apple M1 | 8-core CPU (4P + 4E)</text>
+<text x="932" y="64" fill="#91a0b5" font-size="10">8 GB LPDDR4 | 8-core integrated Apple M1 GPU | Metal 3</text>
+<text x="932" y="79" fill="#91a0b5" font-size="10">macOS 15.6.1 | arm64</text>
+</g>
+</svg>

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "benchmark": "parallel-ekf",
+  "generated_at": "2026-09-04",
+  "platform": {
+    "model": "Mac mini Macmini9,1",
+    "chip": "Apple M1",
+    "cores": "8 (4 performance + 4 efficiency)",
+    "memory": "8 GB",
+    "os": "macOS 15.6.1",
+    "architecture": "arm64"
+  },
+  "compiler": {
+    "version": "Mojo 1.1.0.dev2026090305 (74367f86)",
+    "command": "mojo build -O3 --fp-mode contract=off mojo_scalar.mojo",
+    "source": "../mojo_scalar.mojo"
+  },
+  "workload": {
+    "instances": 10000,
+    "turns": 20,
+    "state": "f32",
+    "warmup": "one discarded process",
+    "samples": 5,
+    "timed_region": "outer EKF loop only"
+  },
+  "results": {
+    "unchecked": {
+      "throughput_million_ekf_turns_per_second": 25.886617,
+      "samples": [15.127449, 20.631318, 25.886617, 26.705835, 26.698705],
+      "checksum": 2682056.0740915183
+    },
+    "checked": {
+      "throughput_million_ekf_turns_per_second": 22.568269,
+      "samples": [22.568269, 22.573363, 22.555543, 22.573363, 22.547914],
+      "checksum": 2682056.0740915183,
+      "faults": 0
+    }
+  },
+  "notes": [
+    "The checked path validates finite state and covariance, positive covariance diagonals, and covariance symmetry before publication.",
+    "Mojo default floating-point contraction was disabled; the strict checksum agrees with the Rust fixed-shape control to six decimal places.",
+    "This is a scalar sequential outer loop; no Mojo GPU kernel or worker pool is included.",
+    "The existing runner's Rust scalar row is unchecked; the Mojo checked result must not be compared to it as a checked-vs-checked result."
+  ]
+}

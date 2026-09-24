@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T12:00:00-04:00",
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 3,
+    "backend": "Futhark ISPC 1 worker, FMA contraction disabled"
+  },
+  "rows": {
+    "Futhark ISPC scalarized SIMD 1 worker checked": {
+      "throughput_millions": [30.590, 30.497, 30.576],
+      "checksums": []
+    },
+    "Futhark ISPC scalarized SIMD 1 worker unchecked": {
+      "throughput_millions": [43.393, 43.337, 41.649],
+      "checksums": []
+    }
+  },
+  "notes": [
+    "ISPCFLAGS was forced to -O3 --woff --opt=disable-fma.",
+    "This file supersedes the default-ISPC-contraction scalarized result for strict comparisons."
+  ]
+}

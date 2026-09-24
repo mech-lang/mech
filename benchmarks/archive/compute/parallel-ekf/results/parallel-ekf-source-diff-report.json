@@ -1,0 +1,1635 @@
+{
+  "schema_version": 1,
+  "base_mech": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+  "reference_mech": "hosts/gpu/fixtures/ekf-kernel.mec",
+  "benchmark_evidence": {
+    "cross_language": "2026-08-31T19:43:33.948743-04:00",
+    "native": "2026-08-31",
+    "strict_mech": "2026-08-31",
+    "strict_halide": "2026-09-01T00:05:05.531733-04:00",
+    "strict_julia": "2026-09-01T08:42:44-04:00",
+    "pure_python": "2026-09-01T08:51:47-04:00",
+    "rust_scalar": "2026-09-01T09:52:23-04:00",
+    "rust_scalar_optimized": "2026-09-01",
+    "luajit_scalar": "2026-09-01T09:52:23-04:00",
+    "taichi": "2026-08-31",
+    "lua": "2026-09-01T16:24:10.948274-04:00",
+    "minimal": "2026-08-31T18:45:52.116140-04:00"
+  },
+  "compile_times": {
+    "Mech": {
+      "baseline": {
+        "available": true,
+        "phase": "source + artifact + scalarization",
+        "command": [
+          "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+          "100000",
+          "5",
+          "40",
+          "120"
+        ],
+        "milliseconds": [
+          195.777,
+          199.812,
+          197.377
+        ],
+        "median_milliseconds": 197.377,
+        "notes": "Timing was emitted by the Mech benchmark binary and retained in its evidence JSON."
+      },
+      "advanced": {
+        "available": true,
+        "phase": "resident GPU prepare",
+        "command": [
+          "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+          "100000",
+          "5",
+          "40",
+          "120"
+        ],
+        "milliseconds": [
+          4.303,
+          4.349,
+          4.215
+        ],
+        "median_milliseconds": 4.303,
+        "notes": "Timing was emitted by the Mech benchmark binary and retained in its evidence JSON."
+      }
+    },
+    "NumPy": {
+      "baseline": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py"
+        ],
+        "milliseconds": [
+          156.458917,
+          145.004292,
+          144.743416
+        ],
+        "median_milliseconds": 145.004292,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py"
+        ],
+        "milliseconds": [
+          146.391791,
+          145.715416,
+          145.050584
+        ],
+        "median_milliseconds": 145.715416,
+        "notes": ""
+      }
+    },
+    "Python": {
+      "baseline": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
+        ],
+        "milliseconds": [
+          145.7015,
+          145.516125,
+          146.045
+        ],
+        "median_milliseconds": 145.7015,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
+        ],
+        "milliseconds": [
+          145.632583,
+          145.446,
+          145.906
+        ],
+        "median_milliseconds": 145.632583,
+        "notes": ""
+      }
+    },
+    "Lua": {
+      "baseline": {
+        "available": true,
+        "phase": "PUC Lua bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luac",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-baseline.luac",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
+        ],
+        "milliseconds": [
+          5.346,
+          2.878541,
+          3.125333
+        ],
+        "median_milliseconds": 3.125333,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "PUC Lua bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luac",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-advanced.luac",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua"
+        ],
+        "milliseconds": [
+          3.27825,
+          2.966084,
+          2.83225
+        ],
+        "median_milliseconds": 2.966084,
+        "notes": ""
+      }
+    },
+    "LuaJIT": {
+      "baseline": {
+        "available": true,
+        "phase": "LuaJIT bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luajit",
+          "-b",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-baseline.ljbc"
+        ],
+        "milliseconds": [
+          5.041041,
+          2.98725,
+          2.895333
+        ],
+        "median_milliseconds": 2.98725,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "LuaJIT bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luajit",
+          "-b",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-advanced.ljbc"
+        ],
+        "milliseconds": [
+          3.045208,
+          2.961958,
+          2.883
+        ],
+        "median_milliseconds": 2.961958,
+        "notes": ""
+      }
+    },
+    "Rust": {
+      "baseline": {
+        "available": true,
+        "phase": "rustc AOT compile",
+        "command": [
+          "/Users/coreymontella/.cargo/bin/rustc",
+          "--edition=2024",
+          "-C",
+          "opt-level=3",
+          "-C",
+          "target-cpu=native",
+          "-C",
+          "codegen-units=1",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar"
+        ],
+        "milliseconds": [
+          927.054125,
+          406.385333,
+          405.215667
+        ],
+        "median_milliseconds": 406.385333,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "rustc AOT compile",
+        "command": [
+          "/Users/coreymontella/.cargo/bin/rustc",
+          "--edition=2024",
+          "-C",
+          "opt-level=3",
+          "-C",
+          "target-cpu=native",
+          "-C",
+          "codegen-units=1",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar-optimized"
+        ],
+        "milliseconds": [
+          276.141708,
+          271.686291,
+          270.716916
+        ],
+        "median_milliseconds": 271.686291,
+        "notes": ""
+      }
+    },
+    "Halide": {
+      "baseline": {
+        "available": true,
+        "phase": "clang++ + Halide AOT control build",
+        "command": [
+          "/usr/bin/clang++",
+          "-O3",
+          "-std=c++17",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+          "-I/opt/homebrew/opt/halide/include",
+          "-L/opt/homebrew/opt/halide/lib",
+          "-lHalide",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
+        ],
+        "milliseconds": [
+          1521.451959,
+          1424.995958,
+          1424.809167
+        ],
+        "median_milliseconds": 1424.995958,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "clang++ + Halide AOT control build",
+        "command": [
+          "/usr/bin/clang++",
+          "-O3",
+          "-std=c++17",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+          "-I/opt/homebrew/opt/halide/include",
+          "-L/opt/homebrew/opt/halide/lib",
+          "-lHalide",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
+        ],
+        "milliseconds": [
+          1425.204209,
+          1454.198,
+          1456.779958
+        ],
+        "median_milliseconds": 1454.198,
+        "notes": ""
+      }
+    },
+    "Futhark": {
+      "baseline": {
+        "available": true,
+        "phase": "futhark multicore AOT compile",
+        "command": [
+          "/opt/homebrew/bin/futhark",
+          "multicore",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-multicore"
+        ],
+        "milliseconds": [
+          1004.830667,
+          796.943625,
+          803.145292
+        ],
+        "median_milliseconds": 803.145292,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "futhark ispc AOT compile",
+        "command": [
+          "/opt/homebrew/bin/futhark",
+          "ispc",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-ispc"
+        ],
+        "milliseconds": [
+          1621.986625,
+          1483.802333,
+          1478.940875
+        ],
+        "median_milliseconds": 1483.802333,
+        "notes": ""
+      }
+    },
+    "Julia": {
+      "baseline": {
+        "available": true,
+        "phase": "cold Julia process + first-call specialization",
+        "command": [
+          "/opt/homebrew/bin/julia",
+          "--startup-file=no",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+          "1",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          1751.447083,
+          1290.286958,
+          1276.622417
+        ],
+        "median_milliseconds": 1290.286958,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      },
+      "advanced": {
+        "available": true,
+        "phase": "cold Julia process + first-call specialization",
+        "command": [
+          "/opt/homebrew/bin/julia",
+          "--startup-file=no",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+          "4",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          1418.290416,
+          1379.164792,
+          1371.402666
+        ],
+        "median_milliseconds": 1379.164792,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      }
+    },
+    "Taichi": {
+      "baseline": {
+        "available": true,
+        "phase": "cold Taichi process + first kernel compilation",
+        "command": [
+          "/tmp/mech-taichi-venv-20260831/bin/python",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+          "1",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          632.510625,
+          434.038625,
+          436.311625
+        ],
+        "median_milliseconds": 436.311625,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      },
+      "advanced": {
+        "available": true,
+        "phase": "cold Taichi process + first kernel compilation",
+        "command": [
+          "/tmp/mech-taichi-venv-20260831/bin/python",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+          "1",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          397.430625,
+          383.183041,
+          396.749958
+        ],
+        "median_milliseconds": 396.749958,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      }
+    }
+  },
+  "definition": "Code lines/chars exclude blank lines and full-line comments (and Mech section separators); changed line slots count the larger side of each non-equal diff block; changed characters count the larger character span within those changed line blocks. The vs Mech columns compare against the compact Mech source; the full reference path is retained separately. Compile/JIT time is shown as baseline / advanced medians from the companion compile-evidence run, with phase and command retained per row; it is not inferred from process startup or steady-state throughput. The max single-core, SIMD/multicore, and synchronized GPU columns are maxima by family and contract from the canonical ranked throughput table. Single-thread SIMD/JIT rows remain in single-core; the SIMD/multicore class requires an explicit worker, thread, pool, or parallel marker; multi-turn/fused GPU rows are retained separately as gpu_batched maxima. This is an edit-size measure, not a claim about semantic difficulty.",
+  "mech_backend_support_delta": {
+    "base_commit": "1ca47cdeef1cef071a891babf5423af03f51466f",
+    "head_commit": "HEAD",
+    "files": [
+      "Cargo.lock",
+      "hosts/gpu/Cargo.toml",
+      "hosts/gpu/examples/parallel_ekf_benchmark.rs",
+      "hosts/gpu/src/batched/mod.rs",
+      "hosts/gpu/src/metal.rs"
+    ],
+    "added_lines": 555,
+    "deleted_lines": 527,
+    "changed_line_slots": 1082,
+    "note": "This is backend/compiler support for native Metal and the direct benchmark path; generated WGSL/MSL is an artifact, not a second user program."
+  },
+  "rows": [
+    {
+      "language": "Mech",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/ekf-kernel.mec",
+      "baseline_label": "compact high-level `.mec` program",
+      "advanced_label": "same compact `.mec`; native backend selected at build",
+      "note": "The compact source recurrence does not change. Native Metal specialization is backend support, not a second Mech program.",
+      "baseline_lines": 46,
+      "baseline_chars": 1745,
+      "advanced_lines": 46,
+      "advanced_chars": 1745,
+      "baseline_code": {
+        "lines": 42,
+        "chars": 1513
+      },
+      "advanced_code": {
+        "lines": 42,
+        "chars": 1513
+      },
+      "factors": {
+        "layout": "column-major resident graph values",
+        "boundary": "resident host turn; backend selected at build",
+        "contract": "checked rejects candidate and keeps prior; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.919,
+          "unchecked": 1.029
+        },
+        "advanced": {
+          "checked": 187.999,
+          "unchecked": 275.534
+        }
+      },
+      "workload": "10,000 x 20 -> 500,000 x 40",
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "throughput_millions": {
+        "checked": 187.999,
+        "unchecked": 275.534
+      },
+      "performance_maxima": {
+        "gpu": {
+          "checked": {
+            "throughput": 187.999,
+            "label": "Mech GPU, native Metal"
+          },
+          "unchecked": {
+            "throughput": 275.534,
+            "label": "Mech GPU, native Metal"
+          }
+        },
+        "simd_multicore": {
+          "checked": {
+            "throughput": 145.573,
+            "label": "Mech Cranelift SIMD-JIT, checkpointed fused block checked (8 workers)"
+          },
+          "unchecked": {
+            "throughput": 165.83,
+            "label": "Mech SIMD/JIT CPU, fused unchecked block (8 workers)"
+          }
+        },
+        "gpu_batched": {
+          "checked": {
+            "throughput": 56.279,
+            "label": "Mech GPU, checked repeated"
+          },
+          "unchecked": {
+            "throughput": 3729.673,
+            "label": "Mech GPU, unchecked one-submit"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 41.496,
+            "label": "Mech Cranelift SIMD-JIT"
+          },
+          "unchecked": {
+            "throughput": 49.787,
+            "label": "Mech Cranelift SIMD-JIT unchecked"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "source + artifact + scalarization",
+          "command": [
+            "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+            "100000",
+            "5",
+            "40",
+            "120"
+          ],
+          "milliseconds": [
+            195.777,
+            199.812,
+            197.377
+          ],
+          "median_milliseconds": 197.377,
+          "notes": "Timing was emitted by the Mech benchmark binary and retained in its evidence JSON."
+        },
+        "advanced": {
+          "available": true,
+          "phase": "resident GPU prepare",
+          "command": [
+            "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+            "100000",
+            "5",
+            "40",
+            "120"
+          ],
+          "milliseconds": [
+            4.303,
+            4.349,
+            4.215
+          ],
+          "median_milliseconds": 4.303,
+          "notes": "Timing was emitted by the Mech benchmark binary and retained in its evidence JSON."
+        }
+      }
+    },
+    {
+      "language": "Rust",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
+      "baseline_label": "compact fixed-shape scalar control",
+      "advanced_label": "compact fixed-shape unrolled scalar control",
+      "note": "The advanced control specializes all 3x3 operations and computes sin/cos together, matching the source-level specialization Taichi receives while preserving the checked publication contract.",
+      "baseline_lines": 248,
+      "baseline_chars": 7865,
+      "advanced_lines": 225,
+      "advanced_chars": 8327,
+      "baseline_code": {
+        "lines": 243,
+        "chars": 6059
+      },
+      "advanced_code": {
+        "lines": 213,
+        "chars": 7103
+      },
+      "factors": {
+        "layout": "fixed scalar arrays -> four-lane packed values",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked and unchecked controls; no rollback in unchecked"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 19.798876479,
+          "unchecked": 20.543574349
+        },
+        "advanced": {
+          "checked": 20.010589604,
+          "unchecked": 24.712842943
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 234,
+        "added_lines": 165,
+        "deleted_lines": 188,
+        "changed_chars": 8279
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 248,
+        "added_lines": 248,
+        "deleted_lines": 46,
+        "changed_chars": 7865
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 225,
+        "added_lines": 223,
+        "deleted_lines": 44,
+        "changed_chars": 8483
+      },
+      "throughput_millions": {
+        "checked": 20.010589604,
+        "unchecked": 24.712842943
+      },
+      "performance_maxima": {
+        "simd_multicore": {
+          "checked": {
+            "throughput": 146.509,
+            "label": "Rust packed SIMD, fused worker-local block strict checked (8 workers)"
+          },
+          "unchecked": {
+            "throughput": 163.866,
+            "label": "Rust packed SIMD, fused worker-local block (8 workers)"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 25.65,
+            "label": "Rust packed SIMD, checked"
+          },
+          "unchecked": {
+            "throughput": 24.713,
+            "label": "Rust optimized fixed-shape, unchecked"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "rustc AOT compile",
+          "command": [
+            "/Users/coreymontella/.cargo/bin/rustc",
+            "--edition=2024",
+            "-C",
+            "opt-level=3",
+            "-C",
+            "target-cpu=native",
+            "-C",
+            "codegen-units=1",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar"
+          ],
+          "milliseconds": [
+            927.054125,
+            406.385333,
+            405.215667
+          ],
+          "median_milliseconds": 406.385333,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "rustc AOT compile",
+          "command": [
+            "/Users/coreymontella/.cargo/bin/rustc",
+            "--edition=2024",
+            "-C",
+            "opt-level=3",
+            "-C",
+            "target-cpu=native",
+            "-C",
+            "codegen-units=1",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar-optimized"
+          ],
+          "milliseconds": [
+            276.141708,
+            271.686291,
+            270.716916
+          ],
+          "median_milliseconds": 271.686291,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "language": "NumPy",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+      "baseline_label": "compact per-filter scalar loop",
+      "advanced_label": "compact batched fixed-shape vectorized operations",
+      "note": "The baseline is a per-filter NumPy call from a Python loop; the advanced control uses fixed-shape batched arrays. The row is labeled NumPy because both variants use NumPy for the numeric work.",
+      "baseline_lines": 71,
+      "baseline_chars": 2164,
+      "advanced_lines": 116,
+      "advanced_chars": 3568,
+      "baseline_code": {
+        "lines": 66,
+        "chars": 1819
+      },
+      "advanced_code": {
+        "lines": 108,
+        "chars": 2974
+      },
+      "factors": {
+        "layout": "per-lane arrays -> batched SoA arrays",
+        "boundary": "Python host loop (scalar) or one vectorized call per turn",
+        "contract": "checked masked copyback keeps prior lane; unchecked overwrites"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.040220152,
+          "unchecked": 0.052509955000000004
+        },
+        "advanced": {
+          "checked": 11.128708067,
+          "unchecked": 12.557587858
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 94,
+        "added_lines": 91,
+        "deleted_lines": 46,
+        "changed_chars": 3123
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 72,
+        "added_lines": 69,
+        "deleted_lines": 44,
+        "changed_chars": 2365
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 116,
+        "added_lines": 114,
+        "deleted_lines": 44,
+        "changed_chars": 3772
+      },
+      "throughput_millions": {
+        "checked": 11.128708067,
+        "unchecked": 12.557587858
+      },
+      "performance_maxima": {
+        "simd_multicore": {
+          "checked": {
+            "throughput": 80.323,
+            "label": "NumPy/Numba, fused worker-local block checked (8 workers)"
+          },
+          "unchecked": {
+            "throughput": 81.972,
+            "label": "NumPy/Numba, fused worker-local block (8 workers)"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 10.673,
+            "label": "NumPy vectorized fixed-shape, checked"
+          },
+          "unchecked": {
+            "throughput": 12.032,
+            "label": "NumPy vectorized fixed-shape, unchecked"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "CPython bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/python3",
+            "-B",
+            "-m",
+            "py_compile",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py"
+          ],
+          "milliseconds": [
+            156.458917,
+            145.004292,
+            144.743416
+          ],
+          "median_milliseconds": 145.004292,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "CPython bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/python3",
+            "-B",
+            "-m",
+            "py_compile",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py"
+          ],
+          "milliseconds": [
+            146.391791,
+            145.715416,
+            145.050584
+          ],
+          "median_milliseconds": 145.715416,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "language": "Python",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py",
+      "baseline_label": "standard-library scalar control",
+      "advanced_label": "same scalar control; no optimized Python variant",
+      "note": "This is a pure-Python lower-bound control using only math and ordinary lists. Baseline and advanced intentionally reference the same source because no optimized Python source variant is retained.",
+      "baseline_lines": 182,
+      "baseline_chars": 6286,
+      "advanced_lines": 182,
+      "advanced_chars": 6286,
+      "baseline_code": {
+        "lines": 158,
+        "chars": 5118
+      },
+      "advanced_code": {
+        "lines": 158,
+        "chars": 5118
+      },
+      "factors": {
+        "layout": "ordinary Python lists of scalar state/covariance values",
+        "boundary": "synchronous Python loop, one update per turn",
+        "contract": "checked candidate publication; unchecked overwrites"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.246483833,
+          "unchecked": 0.355909091
+        },
+        "advanced": {
+          "checked": 0.246483833,
+          "unchecked": 0.355909091
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 183,
+        "added_lines": 180,
+        "deleted_lines": 44,
+        "changed_chars": 6356
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 183,
+        "added_lines": 180,
+        "deleted_lines": 44,
+        "changed_chars": 6356
+      },
+      "throughput_millions": {
+        "checked": 0.246483833,
+        "unchecked": 0.355909091
+      },
+      "performance_maxima": {
+        "single_core": {
+          "checked": {
+            "throughput": 0.246,
+            "label": "Python pure scalar"
+          },
+          "unchecked": {
+            "throughput": 0.356,
+            "label": "Python pure scalar"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "CPython bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/python3",
+            "-B",
+            "-m",
+            "py_compile",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
+          ],
+          "milliseconds": [
+            145.7015,
+            145.516125,
+            146.045
+          ],
+          "median_milliseconds": 145.7015,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "CPython bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/python3",
+            "-B",
+            "-m",
+            "py_compile",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
+          ],
+          "milliseconds": [
+            145.632583,
+            145.446,
+            145.906
+          ],
+          "median_milliseconds": 145.632583,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "language": "Julia",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+      "baseline_label": "compact generic scalar Julia",
+      "advanced_label": "compact explicit four-lane SIMD.jl intrinsics",
+      "note": "The compact controls preserve the Julia algorithms; the advanced source introduces an explicit packed value type and lane loop.",
+      "baseline_lines": 126,
+      "baseline_chars": 4828,
+      "advanced_lines": 196,
+      "advanced_chars": 8156,
+      "baseline_code": {
+        "lines": 126,
+        "chars": 4322
+      },
+      "advanced_code": {
+        "lines": 196,
+        "chars": 6935
+      },
+      "factors": {
+        "layout": "generic arrays -> explicit four-lane SIMD values",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 3.072806272900473,
+          "unchecked": 3.123446427029506
+        },
+        "advanced": {
+          "checked": 30.83544633229325,
+          "unchecked": 32.260447626615
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 204,
+        "added_lines": 182,
+        "deleted_lines": 112,
+        "changed_chars": 8960
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 126,
+        "added_lines": 126,
+        "deleted_lines": 46,
+        "changed_chars": 4828
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 196,
+        "added_lines": 196,
+        "deleted_lines": 46,
+        "changed_chars": 8156
+      },
+      "throughput_millions": {
+        "checked": 30.83544633229325,
+        "unchecked": 32.260447626615
+      },
+      "performance_maxima": {
+        "gpu": {
+          "checked": {
+            "throughput": 178.135,
+            "label": "Julia GPU, native Metal (strict retained-state)"
+          },
+          "unchecked": {
+            "throughput": 199.454,
+            "label": "Julia GPU, native Metal (strict retained-state)"
+          }
+        },
+        "simd_multicore": {
+          "checked": {
+            "throughput": 128.544,
+            "label": "Julia SIMD.jl, fused worker-local block checked (8 workers)"
+          },
+          "unchecked": {
+            "throughput": 133.605,
+            "label": "Julia SIMD.jl, fused worker-local block (8 workers)"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 30.835,
+            "label": "Julia SIMD.jl intrinsics, checked"
+          },
+          "unchecked": {
+            "throughput": 35.1,
+            "label": "Julia fixed-shape SIMD, unchecked"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "cold Julia process + first-call specialization",
+          "command": [
+            "/opt/homebrew/bin/julia",
+            "--startup-file=no",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+            "1",
+            "1",
+            "unchecked"
+          ],
+          "milliseconds": [
+            1751.447083,
+            1290.286958,
+            1276.622417
+          ],
+          "median_milliseconds": 1290.286958,
+          "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+        },
+        "advanced": {
+          "available": true,
+          "phase": "cold Julia process + first-call specialization",
+          "command": [
+            "/opt/homebrew/bin/julia",
+            "--startup-file=no",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+            "4",
+            "1",
+            "unchecked"
+          ],
+          "milliseconds": [
+            1418.290416,
+            1379.164792,
+            1371.402666
+          ],
+          "median_milliseconds": 1379.164792,
+          "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+        }
+      }
+    },
+    {
+      "language": "LuaJIT",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "baseline_label": "compact generic matrix helper loop",
+      "advanced_label": "compact flat fixed-shape scalarized state",
+      "note": "The compact controls preserve the Lua algorithms; the advanced source removes helper-level matrix temporaries and writes each component directly.",
+      "baseline_lines": 217,
+      "baseline_chars": 5449,
+      "advanced_lines": 153,
+      "advanced_chars": 7444,
+      "baseline_code": {
+        "lines": 205,
+        "chars": 4810
+      },
+      "advanced_code": {
+        "lines": 153,
+        "chars": 7031
+      },
+      "factors": {
+        "layout": "matrix helpers -> flat fixed-shape scalar state",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 1.06752923,
+          "unchecked": 1.739718914
+        },
+        "advanced": {
+          "checked": 1.262674091,
+          "unchecked": 15.991045015000001
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 242,
+        "added_lines": 121,
+        "deleted_lines": 185,
+        "changed_chars": 9393
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 215,
+        "added_lines": 215,
+        "deleted_lines": 44,
+        "changed_chars": 5447
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 153,
+        "added_lines": 153,
+        "deleted_lines": 46,
+        "changed_chars": 7444
+      },
+      "throughput_millions": {
+        "checked": 1.262674091,
+        "unchecked": 15.991045015000001
+      },
+      "performance_maxima": {
+        "single_core": {
+          "checked": {
+            "throughput": 1.263,
+            "label": "LuaJIT fixed-shape flat, checked"
+          },
+          "unchecked": {
+            "throughput": 15.991,
+            "label": "LuaJIT fixed-shape flat, unchecked"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "LuaJIT bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/luajit",
+            "-b",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-baseline.ljbc"
+          ],
+          "milliseconds": [
+            5.041041,
+            2.98725,
+            2.895333
+          ],
+          "median_milliseconds": 2.98725,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "LuaJIT bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/luajit",
+            "-b",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-advanced.ljbc"
+          ],
+          "milliseconds": [
+            3.045208,
+            2.961958,
+            2.883
+          ],
+          "median_milliseconds": 2.961958,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "language": "Lua",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua",
+      "baseline_label": "compact flat source with zero-based Lua tables",
+      "advanced_label": "compact flat source with one-based array storage",
+      "note": "Both variants run under PUC Lua without JIT or FFI. The advanced source uses Lua's dense 1..N array part and keeps the flattened scalar recurrence, so this is a real source-level optimization rather than a runtime substitution.",
+      "baseline_lines": 153,
+      "baseline_chars": 7444,
+      "advanced_lines": 204,
+      "advanced_chars": 6416,
+      "baseline_code": {
+        "lines": 153,
+        "chars": 7031
+      },
+      "advanced_code": {
+        "lines": 196,
+        "chars": 5884
+      },
+      "factors": {
+        "layout": "flat fixed-shape Lua tables/FFI-compatible arrays",
+        "boundary": "synchronous host loop, one update per turn",
+        "contract": "checked candidate publication; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 0.564217867,
+          "unchecked": 0.835840856
+        },
+        "advanced": {
+          "checked": 0.584072916,
+          "unchecked": 0.879097694
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 181,
+        "added_lines": 178,
+        "deleted_lines": 127,
+        "changed_chars": 7203
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 153,
+        "added_lines": 153,
+        "deleted_lines": 46,
+        "changed_chars": 7444
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 202,
+        "added_lines": 202,
+        "deleted_lines": 44,
+        "changed_chars": 6578
+      },
+      "throughput_millions": {
+        "checked": 0.584072916,
+        "unchecked": 0.879097694
+      },
+      "performance_maxima": {
+        "single_core": {
+          "checked": {
+            "throughput": 0.584,
+            "label": "Lua PUC advanced"
+          },
+          "unchecked": {
+            "throughput": 0.879,
+            "label": "Lua PUC advanced"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "PUC Lua bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/luac",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-baseline.luac",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
+          ],
+          "milliseconds": [
+            5.346,
+            2.878541,
+            3.125333
+          ],
+          "median_milliseconds": 3.125333,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "PUC Lua bytecode compile",
+          "command": [
+            "/opt/homebrew/bin/luac",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-advanced.luac",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua"
+          ],
+          "milliseconds": [
+            3.27825,
+            2.966084,
+            2.83225
+          ],
+          "median_milliseconds": 2.966084,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "language": "Taichi",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+      "baseline_label": "compact Vector/Matrix resident fields",
+      "advanced_label": "compact scalar SoA fields and unrolled 3x3 arithmetic",
+      "note": "This is the compact source-specialized Taichi control; it still uses stock Taichi 1.7.4 and per-turn sync.",
+      "baseline_lines": 265,
+      "baseline_chars": 11302,
+      "advanced_lines": 282,
+      "advanced_chars": 13966,
+      "baseline_code": {
+        "lines": 265,
+        "chars": 8909
+      },
+      "advanced_code": {
+        "lines": 282,
+        "chars": 11424
+      },
+      "factors": {
+        "layout": "Vector/Matrix fields -> scalar SoA fields",
+        "boundary": "resident kernel with per-turn device synchronization",
+        "contract": "checked alternate fields keep prior; unchecked writes in place"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 176.71,
+          "unchecked": 194.793
+        },
+        "advanced": {
+          "checked": 168.798,
+          "unchecked": 217.297
+        }
+      },
+      "workload": "500,000 x 40 -> 500,000 x 40",
+      "baseline_to_advanced": {
+        "changed_line_slots": 224,
+        "added_lines": 179,
+        "deleted_lines": 162,
+        "changed_chars": 11640
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 265,
+        "added_lines": 265,
+        "deleted_lines": 46,
+        "changed_chars": 11302
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 282,
+        "added_lines": 282,
+        "deleted_lines": 46,
+        "changed_chars": 13966
+      },
+      "throughput_millions": {
+        "checked": 168.798,
+        "unchecked": 217.297
+      },
+      "performance_maxima": {
+        "gpu": {
+          "checked": {
+            "throughput": 176.71,
+            "label": "Taichi GPU, native Metal"
+          },
+          "unchecked": {
+            "throughput": 217.297,
+            "label": "Taichi optimized native Metal, unchecked"
+          }
+        },
+        "simd_multicore": {
+          "checked": {
+            "throughput": 86.047,
+            "label": "Taichi LLVM CPU, 8 workers"
+          },
+          "unchecked": {
+            "throughput": 98.14,
+            "label": "Taichi LLVM CPU, 8 workers"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "cold Taichi process + first kernel compilation",
+          "command": [
+            "/tmp/mech-taichi-venv-20260831/bin/python",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+            "1",
+            "1",
+            "unchecked"
+          ],
+          "milliseconds": [
+            632.510625,
+            434.038625,
+            436.311625
+          ],
+          "median_milliseconds": 436.311625,
+          "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+        },
+        "advanced": {
+          "available": true,
+          "phase": "cold Taichi process + first kernel compilation",
+          "command": [
+            "/tmp/mech-taichi-venv-20260831/bin/python",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+            "1",
+            "1",
+            "unchecked"
+          ],
+          "milliseconds": [
+            397.430625,
+            383.183041,
+            396.749958
+          ],
+          "median_milliseconds": 396.749958,
+          "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+        }
+      }
+    },
+    {
+      "language": "Halide",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+      "baseline_label": "same fixed-shape JIT pipeline",
+      "advanced_label": "same pipeline; strict checked publication and fault output",
+      "note": "Halide is a fixed-shape C++ pipeline JIT. Checked mode selects the previous lane state when the candidate fails the finite/diagonal/symmetry checks and emits a per-lane fault code for host observation.",
+      "baseline_lines": 346,
+      "baseline_chars": 11959,
+      "advanced_lines": 346,
+      "advanced_chars": 11959,
+      "baseline_code": {
+        "lines": 324,
+        "chars": 8928
+      },
+      "advanced_code": {
+        "lines": 324,
+        "chars": 8928
+      },
+      "factors": {
+        "layout": "fixed-shape lane buffers, vectorized by eight",
+        "boundary": "one JIT pipeline call per host turn",
+        "contract": "checked validates finite/positive/symmetric candidates, reports per-lane faults, and keeps prior; unchecked omits checks"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 111.47389174440411,
+          "unchecked": 212.28295726080685
+        },
+        "advanced": {
+          "checked": 111.47389174440411,
+          "unchecked": 212.28295726080685
+        }
+      },
+      "workload": "500,000 x 40 -> 500,000 x 40",
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 349,
+        "added_lines": 344,
+        "deleted_lines": 44,
+        "changed_chars": 12174
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 349,
+        "added_lines": 344,
+        "deleted_lines": 44,
+        "changed_chars": 12174
+      },
+      "throughput_millions": {
+        "checked": 111.47389174440411,
+        "unchecked": 212.28295726080685
+      },
+      "performance_maxima": {
+        "gpu": {
+          "checked": {
+            "throughput": 111.474,
+            "label": "Halide GPU, native Metal (strict fault-observing)"
+          },
+          "unchecked": {
+            "throughput": 212.283,
+            "label": "Halide GPU, native Metal (strict fault-observing)"
+          }
+        },
+        "simd_multicore": {
+          "checked": {
+            "throughput": 3.27,
+            "label": "Halide JIT SIMD 8 workers, checked"
+          },
+          "unchecked": {
+            "throughput": 5.593,
+            "label": "Halide JIT SIMD 8 workers, unchecked"
+          }
+        },
+        "single_core": {
+          "checked": {
+            "throughput": 2.707,
+            "label": "Halide"
+          },
+          "unchecked": {
+            "throughput": 5.058,
+            "label": "Halide"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "clang++ + Halide AOT control build",
+          "command": [
+            "/usr/bin/clang++",
+            "-O3",
+            "-std=c++17",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+            "-I/opt/homebrew/opt/halide/include",
+            "-L/opt/homebrew/opt/halide/lib",
+            "-lHalide",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
+          ],
+          "milliseconds": [
+            1521.451959,
+            1424.995958,
+            1424.809167
+          ],
+          "median_milliseconds": 1424.995958,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "clang++ + Halide AOT control build",
+          "command": [
+            "/usr/bin/clang++",
+            "-O3",
+            "-std=c++17",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+            "-I/opt/homebrew/opt/halide/include",
+            "-L/opt/homebrew/opt/halide/lib",
+            "-lHalide",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
+          ],
+          "milliseconds": [
+            1425.204209,
+            1454.198,
+            1456.779958
+          ],
+          "median_milliseconds": 1454.198,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "language": "Futhark",
+      "baseline": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+      "advanced": "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+      "baseline_label": "same data-parallel program",
+      "advanced_label": "same program; multicore worker count",
+      "note": "Futhark expresses the lane map in the source. The reported advanced control uses the same source with eight multicore workers and keeps the turns loop inside one compiled invocation; OpenCL is recorded separately when the local driver can execute it.",
+      "baseline_lines": 58,
+      "baseline_chars": 3246,
+      "advanced_lines": 58,
+      "advanced_chars": 3246,
+      "baseline_code": {
+        "lines": 56,
+        "chars": 3098
+      },
+      "advanced_code": {
+        "lines": 56,
+        "chars": 3098
+      },
+      "factors": {
+        "layout": "fixed-size array of 12-value lane states",
+        "boundary": "turn loop inside one compiled invocation; multicore map",
+        "contract": "checked select keeps prior lane; unchecked selects candidate"
+      },
+      "throughput_variants": {
+        "baseline": {
+          "checked": 19.61361184662156,
+          "unchecked": 19.6347928529354
+        },
+        "advanced": {
+          "checked": 48.390999274135005,
+          "unchecked": 47.82400765184122
+        }
+      },
+      "workload": "10,000 x 20 -> 10,000 x 20",
+      "baseline_to_advanced": {
+        "changed_line_slots": 0,
+        "added_lines": 0,
+        "deleted_lines": 0,
+        "changed_chars": 0
+      },
+      "baseline_to_base_mech": {
+        "changed_line_slots": 87,
+        "added_lines": 56,
+        "deleted_lines": 44,
+        "changed_chars": 4332
+      },
+      "advanced_to_base_mech": {
+        "changed_line_slots": 87,
+        "added_lines": 56,
+        "deleted_lines": 44,
+        "changed_chars": 4332
+      },
+      "throughput_millions": {
+        "checked": 48.390999274135005,
+        "unchecked": 47.82400765184122
+      },
+      "performance_maxima": {
+        "simd_multicore": {
+          "checked": {
+            "throughput": 48.391,
+            "label": "Futhark multicore, 8 workers (10k x 20)"
+          },
+          "unchecked": {
+            "throughput": 47.824,
+            "label": "Futhark multicore, 8 workers (10k x 20)"
+          }
+        }
+      },
+      "compile_time": {
+        "baseline": {
+          "available": true,
+          "phase": "futhark multicore AOT compile",
+          "command": [
+            "/opt/homebrew/bin/futhark",
+            "multicore",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-multicore"
+          ],
+          "milliseconds": [
+            1004.830667,
+            796.943625,
+            803.145292
+          ],
+          "median_milliseconds": 803.145292,
+          "notes": ""
+        },
+        "advanced": {
+          "available": true,
+          "phase": "futhark ispc AOT compile",
+          "command": [
+            "/opt/homebrew/bin/futhark",
+            "ispc",
+            "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+            "-o",
+            "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-ispc"
+          ],
+          "milliseconds": [
+            1621.986625,
+            1483.802333,
+            1478.940875
+          ],
+          "median_milliseconds": 1483.802333,
+          "notes": ""
+        }
+      }
+    }
+  ]
+}

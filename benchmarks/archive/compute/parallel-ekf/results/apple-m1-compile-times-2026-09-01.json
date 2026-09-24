@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T16:13:58.368514-04:00",
+  "machine": {
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "python": "3.14.6"
+  },
+  "configuration": {
+    "samples": 3
+  },
+  "definition": "AOT rows time source-to-artifact commands. Bytecode rows time compiler output. Julia, Taichi, and Mech rows time the retained first-run or preparation interval; cold-process values include startup and specialization and must not be compared to steady-state throughput.",
+  "rows": {
+    "Mech": {
+      "baseline": {
+        "available": true,
+        "phase": "source + artifact + scalarization",
+        "command": [
+          "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+          "100000",
+          "5",
+          "40",
+          "120"
+        ],
+        "milliseconds": [
+          195.777,
+          199.812,
+          197.377
+        ],
+        "median_milliseconds": 197.377,
+        "notes": "Timing was emitted by the Mech benchmark binary and retained in its evidence JSON."
+      },
+      "advanced": {
+        "available": true,
+        "phase": "resident GPU prepare",
+        "command": [
+          "/private/tmp/mech-pr11-taichi/target/release/examples/parallel_ekf_benchmark",
+          "100000",
+          "5",
+          "40",
+          "120"
+        ],
+        "milliseconds": [
+          4.303,
+          4.349,
+          4.215
+        ],
+        "median_milliseconds": 4.303,
+        "notes": "Timing was emitted by the Mech benchmark binary and retained in its evidence JSON."
+      }
+    },
+    "NumPy": {
+      "baseline": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py"
+        ],
+        "milliseconds": [
+          156.458917,
+          145.004292,
+          144.743416
+        ],
+        "median_milliseconds": 145.004292,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py"
+        ],
+        "milliseconds": [
+          146.391791,
+          145.715416,
+          145.050584
+        ],
+        "median_milliseconds": 145.715416,
+        "notes": ""
+      }
+    },
+    "Python": {
+      "baseline": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
+        ],
+        "milliseconds": [
+          145.7015,
+          145.516125,
+          146.045
+        ],
+        "median_milliseconds": 145.7015,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "CPython bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/python3",
+          "-B",
+          "-m",
+          "py_compile",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/pure_python.py"
+        ],
+        "milliseconds": [
+          145.632583,
+          145.446,
+          145.906
+        ],
+        "median_milliseconds": 145.632583,
+        "notes": ""
+      }
+    },
+    "Lua": {
+      "baseline": {
+        "available": true,
+        "phase": "PUC Lua bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luac",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-baseline.luac",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua"
+        ],
+        "milliseconds": [
+          5.346,
+          2.878541,
+          3.125333
+        ],
+        "median_milliseconds": 3.125333,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "PUC Lua bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luac",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/lua-advanced.luac",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/lua_advanced.lua"
+        ],
+        "milliseconds": [
+          3.27825,
+          2.966084,
+          2.83225
+        ],
+        "median_milliseconds": 2.966084,
+        "notes": ""
+      }
+    },
+    "LuaJIT": {
+      "baseline": {
+        "available": true,
+        "phase": "LuaJIT bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luajit",
+          "-b",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-baseline.ljbc"
+        ],
+        "milliseconds": [
+          5.041041,
+          2.98725,
+          2.895333
+        ],
+        "median_milliseconds": 2.98725,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "LuaJIT bytecode compile",
+        "command": [
+          "/opt/homebrew/bin/luajit",
+          "-b",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/luajit_fast.lua",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/luajit-advanced.ljbc"
+        ],
+        "milliseconds": [
+          3.045208,
+          2.961958,
+          2.883
+        ],
+        "median_milliseconds": 2.961958,
+        "notes": ""
+      }
+    },
+    "Rust": {
+      "baseline": {
+        "available": true,
+        "phase": "rustc AOT compile",
+        "command": [
+          "/Users/coreymontella/.cargo/bin/rustc",
+          "--edition=2024",
+          "-C",
+          "opt-level=3",
+          "-C",
+          "target-cpu=native",
+          "-C",
+          "codegen-units=1",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar"
+        ],
+        "milliseconds": [
+          927.054125,
+          406.385333,
+          405.215667
+        ],
+        "median_milliseconds": 406.385333,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "rustc AOT compile",
+        "command": [
+          "/Users/coreymontella/.cargo/bin/rustc",
+          "--edition=2024",
+          "-C",
+          "opt-level=3",
+          "-C",
+          "target-cpu=native",
+          "-C",
+          "codegen-units=1",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/rust-scalar-optimized"
+        ],
+        "milliseconds": [
+          276.141708,
+          271.686291,
+          270.716916
+        ],
+        "median_milliseconds": 271.686291,
+        "notes": ""
+      }
+    },
+    "Halide": {
+      "baseline": {
+        "available": true,
+        "phase": "clang++ + Halide AOT control build",
+        "command": [
+          "/usr/bin/clang++",
+          "-O3",
+          "-std=c++17",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+          "-I/opt/homebrew/opt/halide/include",
+          "-L/opt/homebrew/opt/halide/lib",
+          "-lHalide",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
+        ],
+        "milliseconds": [
+          1521.451959,
+          1424.995958,
+          1424.809167
+        ],
+        "median_milliseconds": 1424.995958,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "clang++ + Halide AOT control build",
+        "command": [
+          "/usr/bin/clang++",
+          "-O3",
+          "-std=c++17",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/halide_ekf.cpp",
+          "-I/opt/homebrew/opt/halide/include",
+          "-L/opt/homebrew/opt/halide/lib",
+          "-lHalide",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/halide-ekf"
+        ],
+        "milliseconds": [
+          1425.204209,
+          1454.198,
+          1456.779958
+        ],
+        "median_milliseconds": 1454.198,
+        "notes": ""
+      }
+    },
+    "Futhark": {
+      "baseline": {
+        "available": true,
+        "phase": "futhark multicore AOT compile",
+        "command": [
+          "/opt/homebrew/bin/futhark",
+          "multicore",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-multicore"
+        ],
+        "milliseconds": [
+          1004.830667,
+          796.943625,
+          803.145292
+        ],
+        "median_milliseconds": 803.145292,
+        "notes": ""
+      },
+      "advanced": {
+        "available": true,
+        "phase": "futhark ispc AOT compile",
+        "command": [
+          "/opt/homebrew/bin/futhark",
+          "ispc",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut",
+          "-o",
+          "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-compile-8z01dgr5/futhark-ispc"
+        ],
+        "milliseconds": [
+          1621.986625,
+          1483.802333,
+          1478.940875
+        ],
+        "median_milliseconds": 1483.802333,
+        "notes": ""
+      }
+    },
+    "Julia": {
+      "baseline": {
+        "available": true,
+        "phase": "cold Julia process + first-call specialization",
+        "command": [
+          "/opt/homebrew/bin/julia",
+          "--startup-file=no",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/julia_scalar.jl",
+          "1",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          1751.447083,
+          1290.286958,
+          1276.622417
+        ],
+        "median_milliseconds": 1290.286958,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      },
+      "advanced": {
+        "available": true,
+        "phase": "cold Julia process + first-call specialization",
+        "command": [
+          "/opt/homebrew/bin/julia",
+          "--startup-file=no",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/julia_simd.jl",
+          "4",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          1418.290416,
+          1379.164792,
+          1371.402666
+        ],
+        "median_milliseconds": 1379.164792,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      }
+    },
+    "Taichi": {
+      "baseline": {
+        "available": true,
+        "phase": "cold Taichi process + first kernel compilation",
+        "command": [
+          "/tmp/mech-taichi-venv-20260831/bin/python",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/taichi_comparable.py",
+          "1",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          632.510625,
+          434.038625,
+          436.311625
+        ],
+        "median_milliseconds": 436.311625,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      },
+      "advanced": {
+        "available": true,
+        "phase": "cold Taichi process + first kernel compilation",
+        "command": [
+          "/tmp/mech-taichi-venv-20260831/bin/python",
+          "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/taichi_optimized.py",
+          "1",
+          "1",
+          "unchecked"
+        ],
+        "milliseconds": [
+          397.430625,
+          383.183041,
+          396.749958
+        ],
+        "median_milliseconds": 396.749958,
+        "notes": "Cold process includes runtime startup and first-call specialization; it is not steady-state throughput."
+      }
+    }
+  }
+}

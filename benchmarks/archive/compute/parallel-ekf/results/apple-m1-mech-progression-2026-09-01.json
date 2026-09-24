@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T17:09:31.502276-04:00",
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "binary": "../../../../target/release/examples/parallel_ekf_benchmark",
+    "instances": 100000,
+    "cpu_turns": 5,
+    "gpu_turns": 120,
+    "workers": 8,
+    "samples": 5
+  },
+  "command": [
+    "../../../../target/release/examples/parallel_ekf_benchmark",
+    "100000",
+    "5",
+    "40",
+    "120"
+  ],
+  "environment": {
+    "MECH_PARALLEL_WORKERS": "8"
+  },
+  "discarded_warmup_stdout": "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 148\ngenerated WGSL bytes: 10125\ngenerated unchecked fused WGSL bytes: 8699\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nMech integrity constraints: symmetric-covariance!, finite-candidate!, positive-covariance!\nintegrity failure: reject candidate, retain previous published estimate, record latest fault + count\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 189.332 ms\nresident GPU prepare: 6.286 ms\nCranelift JIT prepare: 3.064 ms\nMech scalar CPU: 108.135 ms/turn (5 turns)\nMech scalar unchecked CPU: 96.018 ms/turn (5 turns)\nMech SIMD CPU: 24.173 ms/turn (5 turns)\nMech SIMD unchecked CPU: 21.835 ms/turn (5 turns)\nMech Cranelift JIT CPU: 6.004 ms/turn (5 turns)\nMech Cranelift JIT unchecked CPU: 5.513 ms/turn (5 turns)\nMech Cranelift SIMD-JIT CPU: 2.686 ms/turn (5 turns)\nMech Cranelift SIMD-JIT unchecked CPU: 2.166 ms/turn (5 turns)\nMech Cranelift SIMD-JIT parallel CPU (8 workers): 0.857 ms/turn (5 turns)\nMech Cranelift SIMD-JIT parallel unchecked CPU (8 workers): 0.806 ms/turn (5 turns)\nMech Cranelift SIMD-JIT parallel unchecked fused block CPU (8 workers): 0.699 ms/turn (5 turns)\nMech Cranelift SIMD-JIT parallel checked fused block CPU (8 workers): 0.953 ms/turn (5 turns)\nMech Cranelift SIMD-JIT parallel checked fused block throughput: 104.976 million EKF-turns/s\nMech Cranelift SIMD-JIT parallel checked fused block checksum: 27045907.379914504\nresident GPU, checked one-turn API call: 1.596 ms/turn (40 turns)\nresident GPU, checked repeated API call (per-turn validation): 1.949 ms/turn (120 turns)\nresident GPU, unchecked one-turn API call: 1.613 ms/turn (40 turns)\nresident GPU, unchecked repeated dispatches: 0.557 ms/turn (120 turns)\nresident GPU, unchecked one submission: 0.041 ms/turn (120 turns)\nMech scalar throughput: 0.925 million EKF-turns/s\nMech scalar unchecked throughput: 1.041 million EKF-turns/s\nMech SIMD throughput: 4.137 million EKF-turns/s\nMech SIMD unchecked throughput: 4.580 million EKF-turns/s\nMech Cranelift JIT throughput: 16.655 million EKF-turns/s\nMech Cranelift JIT unchecked throughput: 18.138 million EKF-turns/s\nMech Cranelift SIMD-JIT throughput: 37.226 million EKF-turns/s\nMech Cranelift SIMD-JIT unchecked throughput: 46.164 million EKF-turns/s\nMech Cranelift SIMD-JIT parallel throughput: 116.691 million EKF-turns/s\nMech Cranelift SIMD-JIT parallel unchecked throughput: 124.068 million EKF-turns/s\nMech Cranelift SIMD-JIT parallel unchecked fused block throughput: 142.966 million EKF-turns/s\nJIT integrity validation time overhead: 8.91%\nSIMD-JIT integrity validation time overhead: 24.01%\nGPU checked one-turn throughput: 62.661 million EKF-turns/s\nGPU checked repeated throughput (per-turn validation): 51.317 million EKF-turns/s\nGPU unchecked ping-pong one-turn throughput: 61.989 million EKF-turns/s\nGPU unchecked one-turn throughput: 61.989 million EKF-turns/s\nGPU unchecked repeated throughput: 179.382 million EKF-turns/s\nGPU unchecked in-place one-turn throughput: 49.931 million EKF-turns/s\nGPU unchecked in-place repeated throughput: 354.971 million EKF-turns/s\nGPU unchecked one-submit throughput: 2413.186 million EKF-turns/s\nresident GPU unchecked prepare: 11.286 ms\nfinal state readback: 3.837 ms\nmaximum CPU/GPU absolute error: 5.341e-5\nmaximum CPU/GPU unchecked absolute error: 5.341e-5\nmaximum CPU/GPU fused unchecked absolute error: 5.341e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum checked/unchecked SIMD CPU absolute error: 0.000e0\nmaximum scalar/JIT absolute error: 1.526e-5\nmaximum scalar/SIMD-JIT absolute error: 3.815e-5\nmaximum scalar/parallel SIMD-JIT absolute error: 3.815e-5\nMech scalar checksum: 27045907.379895236\nMech scalar unchecked checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech SIMD unchecked checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379875608\nMech Cranelift JIT unchecked checksum: 27045907.379875608\nMech Cranelift SIMD-JIT checksum: 27045907.379914504\nMech Cranelift SIMD-JIT unchecked checksum: 27045907.379914504\nMech Cranelift SIMD-JIT parallel checksum: 27045907.379914504\nMech Cranelift SIMD-JIT parallel unchecked checksum: 27045907.379914504\nMech Cranelift SIMD-JIT parallel unchecked fused block checksum: 27045907.379914504\nMech GPU checked checksum: 26675615.910507865\nMech GPU unchecked checksum: 26675615.910507865\n",
+  "rows": {
+    "Mech scalar": {
+      "label": "Mech scalar",
+      "mode": "checked",
+      "throughput_millions": [
+        0.926,
+        0.926,
+        0.923,
+        0.924,
+        0.926
+      ],
+      "median_throughput_millions": 0.926
+    },
+    "Mech scalar unchecked": {
+      "label": "Mech scalar unchecked",
+      "mode": "unchecked",
+      "throughput_millions": [
+        1.046,
+        1.045,
+        1.043,
+        1.043,
+        1.045
+      ],
+      "median_throughput_millions": 1.045
+    },
+    "Mech SIMD": {
+      "label": "Mech SIMD",
+      "mode": "checked",
+      "throughput_millions": [
+        4.156,
+        4.08,
+        4.136,
+        4.148,
+        4.168
+      ],
+      "median_throughput_millions": 4.148
+    },
+    "Mech SIMD unchecked": {
+      "label": "Mech SIMD unchecked",
+      "mode": "unchecked",
+      "throughput_millions": [
+        4.571,
+        4.58,
+        4.572,
+        4.572,
+        4.588
+      ],
+      "median_throughput_millions": 4.572
+    },
+    "Mech Cranelift JIT": {
+      "label": "Mech Cranelift JIT",
+      "mode": "checked",
+      "throughput_millions": [
+        16.571,
+        16.707,
+        16.624,
+        16.681,
+        16.515
+      ],
+      "median_throughput_millions": 16.624
+    },
+    "Mech Cranelift JIT unchecked": {
+      "label": "Mech Cranelift JIT unchecked",
+      "mode": "unchecked",
+      "throughput_millions": [
+        18.167,
+        18.015,
+        18.148,
+        18.031,
+        18.195
+      ],
+      "median_throughput_millions": 18.148
+    },
+    "Mech Cranelift SIMD-JIT": {
+      "label": "Mech Cranelift SIMD-JIT",
+      "mode": "checked",
+      "throughput_millions": [
+        40.963,
+        41.013,
+        41.058,
+        41.034,
+        41.164
+      ],
+      "median_throughput_millions": 41.034
+    },
+    "Mech Cranelift SIMD-JIT unchecked": {
+      "label": "Mech Cranelift SIMD-JIT unchecked",
+      "mode": "unchecked",
+      "throughput_millions": [
+        49.364,
+        49.287,
+        49.191,
+        49.46,
+        49.443
+      ],
+      "median_throughput_millions": 49.364
+    },
+    "Mech Cranelift SIMD-JIT parallel": {
+      "label": "Mech Cranelift SIMD-JIT parallel",
+      "mode": "checked",
+      "throughput_millions": [
+        151.647,
+        165.721,
+        165.943,
+        152.612,
+        150.619
+      ],
+      "median_throughput_millions": 152.612
+    },
+    "Mech Cranelift SIMD-JIT parallel unchecked": {
+      "label": "Mech Cranelift SIMD-JIT parallel unchecked",
+      "mode": "unchecked",
+      "throughput_millions": [
+        191.071,
+        191.257,
+        194.405,
+        181.146,
+        188.315
+      ],
+      "median_throughput_millions": 191.071
+    },
+    "Mech Cranelift SIMD-JIT parallel checked fused block": {
+      "label": "Mech Cranelift SIMD-JIT parallel checked fused block",
+      "mode": "checked",
+      "throughput_millions": [
+        137.618,
+        160.761,
+        164.833,
+        142.976,
+        167.157
+      ],
+      "median_throughput_millions": 160.761
+    },
+    "Mech Cranelift SIMD-JIT parallel unchecked fused block": {
+      "label": "Mech Cranelift SIMD-JIT parallel unchecked fused block",
+      "mode": "unchecked",
+      "throughput_millions": [
+        202.895,
+        206.388,
+        203.269,
+        204.89,
+        186.794
+      ],
+      "median_throughput_millions": 203.269
+    },
+    "GPU checked one-turn": {
+      "label": "GPU checked one-turn",
+      "mode": "checked",
+      "throughput_millions": [
+        64.137,
+        53.714,
+        61.144,
+        61.151,
+        48.821
+      ],
+      "median_throughput_millions": 61.144
+    },
+    "GPU checked repeated": {
+      "label": "GPU checked repeated",
+      "mode": "checked",
+      "throughput_millions": [
+        51.453,
+        54.868,
+        54.708,
+        53.478,
+        53.331
+      ],
+      "median_throughput_millions": 53.478
+    },
+    "GPU unchecked one-turn": {
+      "label": "GPU unchecked one-turn",
+      "mode": "unchecked",
+      "throughput_millions": [
+        49.111,
+        56.423,
+        59.05,
+        56.415,
+        52.834
+      ],
+      "median_throughput_millions": 56.415
+    },
+    "GPU unchecked repeated": {
+      "label": "GPU unchecked repeated",
+      "mode": "unchecked",
+      "throughput_millions": [
+        250.818,
+        232.951,
+        174.759,
+        194.032,
+        326.973
+      ],
+      "median_throughput_millions": 232.951
+    },
+    "GPU unchecked in-place one-turn": {
+      "label": "GPU unchecked in-place one-turn",
+      "mode": "unchecked",
+      "throughput_millions": [
+        54.916,
+        50.806,
+        58.962,
+        60.012,
+        54.745
+      ],
+      "median_throughput_millions": 54.916
+    },
+    "GPU unchecked in-place repeated": {
+      "label": "GPU unchecked in-place repeated",
+      "mode": "unchecked",
+      "throughput_millions": [
+        298.075,
+        498.507,
+        315.706,
+        314.557,
+        251.194
+      ],
+      "median_throughput_millions": 314.557
+    },
+    "GPU unchecked one-submit": {
+      "label": "GPU unchecked one-submit",
+      "mode": "unchecked",
+      "throughput_millions": [
+        2883.174,
+        2640.961,
+        990.207,
+        2559.771,
+        2538.007
+      ],
+      "median_throughput_millions": 2559.771
+    }
+  }
+}

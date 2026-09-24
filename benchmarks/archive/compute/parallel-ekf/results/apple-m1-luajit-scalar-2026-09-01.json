@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T09:52:23-04:00",
+  "platform": "Apple M1 macOS",
+  "configuration": {
+    "instances": 100000,
+    "turns": 20,
+    "samples": 5,
+    "source": "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+    "runtime": "LuaJIT 2.1.1785763465",
+    "timed_region": "steady-state scalar turn loop"
+  },
+  "rows": {
+    "checked": {
+      "command": [
+        "/opt/homebrew/bin/luajit",
+        "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+        "100000",
+        "20",
+        "checked"
+      ],
+      "throughput_millions": [
+        1.033706053,
+        1.076461027,
+        0.737653252,
+        1.067529230,
+        2.244482501
+      ],
+      "checksums": [
+        26820560.718724601,
+        26820560.718724601,
+        26820560.718724601,
+        26820560.718724601,
+        26820560.718724601
+      ],
+      "faults": [0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "command": [
+        "/opt/homebrew/bin/luajit",
+        "benchmarks/archive/compute/parallel-ekf/minimal/luajit_scalar.lua",
+        "100000",
+        "20",
+        "unchecked"
+      ],
+      "throughput_millions": [
+        2.444665008,
+        1.056814339,
+        1.739718914,
+        1.009858746,
+        2.271503758
+      ],
+      "checksums": [
+        26820560.718724601,
+        26820560.718724601,
+        26820560.718724601,
+        26820560.718724601,
+        26820560.718724601
+      ],
+      "faults": [0, 0, 0, 0, 0]
+    }
+  },
+  "notes": [
+    "Checked mode validates finite state and covariance values, positive covariance diagonals, and covariance symmetry before publication.",
+    "No candidate faults occurred in the measured workload; the checked median is 1.068 M turns/s and the unchecked median is 1.740 M turns/s.",
+    "The scalar control creates temporary Lua tables for the 3-element gain and measurement vectors inside each lane. The wide sample spread is retained because it is relevant to LuaJIT allocation and garbage-collection behavior rather than being discarded."
+  ]
+}

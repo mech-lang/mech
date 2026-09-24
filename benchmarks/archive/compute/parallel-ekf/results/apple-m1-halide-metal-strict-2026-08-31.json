@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T00:05:05.531733-04:00",
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 5,
+    "backend": "native Metal",
+    "synchronized_per_turn": true,
+    "checked_contract": "finite state/covariance, positive diagonal, symmetric covariance; invalid lanes retain prior state",
+    "checked_fault_observation": "per-lane fault code in the fused output tuple; host scans after each synchronized turn",
+    "schedule": "single fused tuple output with shared scalar intermediates"
+  },
+  "rows": {
+    "Halide GPU Metal unchecked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-halide-metal-96xbo0xl/halide-ekf",
+        "500000",
+        "40",
+        "unchecked",
+        "gpu"
+      ],
+      "throughput": [
+        175664084.45732436,
+        212282957.26080686,
+        180995065.6220235,
+        309115026.2452568,
+        245888035.89099798
+      ],
+      "checksums": [
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701
+      ]
+    },
+    "Halide GPU Metal checked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-halide-metal-96xbo0xl/halide-ekf",
+        "500000",
+        "40",
+        "checked",
+        "gpu"
+      ],
+      "throughput": [
+        97000658.63932219,
+        111473891.7444041,
+        113290270.22884583,
+        103662750.69741318,
+        120741290.91408445
+      ],
+      "checksums": [
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701,
+        133818339.74858701
+      ],
+      "fault_lanes": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "first_fault_instance": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "first_fault_code": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}

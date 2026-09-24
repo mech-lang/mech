@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T16:00:00-04:00",
+  "platform": {
+    "description": "macOS arm64",
+    "device": "Apple M1 CPU"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 3,
+    "workers": 1,
+    "backend": "Mech Cranelift SIMD-JIT CPU",
+    "boundary": "resident state; steady-state; one worker",
+    "arithmetic": "strict; no relaxed or fast-math mode",
+    "notes": [
+      "The SIMD-JIT uses direct AArch64 NEON implementations of the existing sin/cos and atan2 approximations.",
+      "Constant coefficients of +1 and -1 are lowered without a redundant multiply; other products retain fused multiply-add lowering.",
+      "Compilation, input construction, process startup, warmup, and final state readback are outside the timed region.",
+      "Unchecked means integrity publication checks are disabled; it does not enable relaxed arithmetic or NaN propagation."
+    ]
+  },
+  "rows": {
+    "checked": {
+      "label": "Mech Cranelift SIMD-JIT CPU, checked (1 worker)",
+      "throughput_millions": [41.202, 41.508, 41.496],
+      "checksum": 2682056.056591222,
+      "maximum_error": 0.00002289,
+      "faults": 0
+    },
+    "unchecked": {
+      "label": "Mech Cranelift SIMD-JIT CPU, unchecked (1 worker)",
+      "throughput_millions": [49.781, 49.787, 49.791],
+      "checksum": 2682056.056591222,
+      "maximum_error": 0.00002289,
+      "faults": 0
+    }
+  }
+}

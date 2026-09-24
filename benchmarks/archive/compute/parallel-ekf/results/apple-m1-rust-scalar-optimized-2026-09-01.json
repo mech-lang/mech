@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01",
+  "platform": "Apple M1 Mac mini (Macmini9,1), macOS 15.6.1, arm64",
+  "machine": {
+    "model": "Macmini9,1",
+    "cpu": "Apple M1, 8-core (4P + 4E)",
+    "memory": "8 GB LPDDR4",
+    "gpu": "integrated Apple GPU, Metal 3",
+    "architecture": "arm64"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 5,
+    "source": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar_optimized.rs",
+    "compiler": "rustc --edition=2024 -C opt-level=3 -C target-cpu=native -C codegen-units=1",
+    "timed_region": "steady-state fixed-shape scalar turn loop"
+  },
+  "rows": {
+    "checked": {
+      "throughput_millions": [20.013925689, 20.002250253, 20.021106250, 19.981351405, 20.010589604],
+      "checksum": [2682056.074092219, 2682056.074092219, 2682056.074092219, 2682056.074092219, 2682056.074092219],
+      "faults": [0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "throughput_millions": [24.697456162, 24.705336365, 24.716785800, 24.729138653, 24.712842943],
+      "checksum": [2682056.074092219, 2682056.074092219, 2682056.074092219, 2682056.074092219, 2682056.074092219],
+      "faults": [0, 0, 0, 0, 0]
+    }
+  },
+  "notes": [
+    "The optimized source specializes all 3x3 operations, uses direct fixed-shape locals, and computes sin/cos together. It preserves the same checked finite/positive-diagonal/symmetry contract.",
+    "Input construction, reset, five-turn warmup, compilation, and checksum are outside the timed region.",
+    "Median throughput is 20.011 M/s checked and 24.713 M/s unchecked."
+  ]
+}

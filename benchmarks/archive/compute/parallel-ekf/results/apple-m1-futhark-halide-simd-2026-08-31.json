@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T20:56:00-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 3,
+    "workers": 8,
+    "boundary": "steady-state synchronous host invocation",
+    "notes": "Halide uses compile_jit with parallel(i).vectorize(i, 8) and HL_NUM_THREADS=8. Futhark uses the ISPC backend with --num-threads=8; Futhark is AOT compiled, not a JIT."
+  },
+  "rows": {
+    "Halide JIT SIMD 8 workers checked": {
+      "command": [
+        "HL_NUM_THREADS=8",
+        "/tmp/halide-ekf-simd",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "throughput_millions": [
+        3.302600761771286,
+        3.269659012819973,
+        3.238138798771936
+      ],
+      "checksums": [
+        2682056.067247393,
+        2682056.067247393,
+        2682056.067247393
+      ]
+    },
+    "Halide JIT SIMD 8 workers unchecked": {
+      "command": [
+        "HL_NUM_THREADS=8",
+        "/tmp/halide-ekf-simd",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "throughput_millions": [
+        5.62564816256908,
+        5.332053640459623,
+        5.59278251416547
+      ],
+      "checksums": [
+        2682056.107128188,
+        2682056.107128188,
+        2682056.107128188
+      ]
+    },
+    "Futhark ISPC SIMD 8 workers checked": {
+      "command": [
+        "futhark ispc",
+        "--num-threads",
+        "8",
+        "-r",
+        "1",
+        "-t",
+        "<temporary>/time",
+        "minimal/futhark_ekf.fut",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "throughput_millions": [
+        50.543340914834477,
+        48.780487804878041,
+        49.164208456243858
+      ],
+      "checksums": [
+        2682056.0609980207,
+        2682056.0609980207,
+        2682056.0609980207
+      ]
+    },
+    "Futhark ISPC SIMD 8 workers unchecked": {
+      "command": [
+        "futhark ispc",
+        "--num-threads",
+        "8",
+        "-r",
+        "1",
+        "-t",
+        "<temporary>/time",
+        "minimal/futhark_ekf.fut",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "throughput_millions": [
+        53.648068669527896,
+        55.601890464275785,
+        50.658561296859168
+      ],
+      "checksums": [
+        2682056.0609980207,
+        2682056.0609980207,
+        2682056.0609980207
+      ]
+    }
+  }
+}

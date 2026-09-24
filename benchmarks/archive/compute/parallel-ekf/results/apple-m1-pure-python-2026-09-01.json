@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T08:51:47-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "device": "Apple M1"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 5,
+    "source": "minimal/pure_python.py",
+    "timed_region": "steady-state scalar turn loop",
+    "notes": [
+      "The control uses only Python's standard library math module and ordinary Python lists.",
+      "Input construction, state allocation, five-turn warmup, reset, and final checksum are outside the timed region.",
+      "Checked mode validates finite state/covariance, positive covariance diagonal, and covariance symmetry before publishing each candidate; an invalid candidate leaves its prior state live.",
+      "This is a pure-Python scalar baseline, not NumPy, Numba, PyPy, or a native extension."
+    ]
+  },
+  "rows": {
+    "checked": {
+      "command": ["python3", "minimal/pure_python.py", "10000", "20", "checked"],
+      "throughput_millions": [0.247309428, 0.246483833, 0.245647686, 0.246937028, 0.245739403],
+      "checksums": [2682056.217546967, 2682056.217546967, 2682056.217546967, 2682056.217546967, 2682056.217546967],
+      "faults": [0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "command": ["python3", "minimal/pure_python.py", "10000", "20", "unchecked"],
+      "throughput_millions": [0.355909091, 0.353420269, 0.358015255, 0.355041981, 0.357634097],
+      "checksums": [2682056.217546967, 2682056.217546967, 2682056.217546967, 2682056.217546967, 2682056.217546967],
+      "faults": [0, 0, 0, 0, 0]
+    }
+  },
+  "version": "Python 3 (standard library only)"
+}

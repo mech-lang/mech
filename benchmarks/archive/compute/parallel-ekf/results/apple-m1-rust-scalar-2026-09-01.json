@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T09:52:23-04:00",
+  "platform": "Apple M1 macOS",
+  "configuration": {
+    "instances": 100000,
+    "turns": 20,
+    "samples": 5,
+    "source": "benchmarks/archive/compute/parallel-ekf/minimal/rust_scalar.rs",
+    "compiler": "rustc --edition=2024 -C opt-level=3 -C target-cpu=native -C codegen-units=1",
+    "timed_region": "steady-state scalar turn loop"
+  },
+  "rows": {
+    "checked": {
+      "command": [
+        "/tmp/mech-rust-scalar-checked",
+        "100000",
+        "20",
+        "checked"
+      ],
+      "throughput_millions": [
+        19.798876479,
+        19.778692843,
+        19.801971964,
+        19.683255284,
+        19.821605550
+      ],
+      "checksums": [
+        26820560.782918889,
+        26820560.782918889,
+        26820560.782918889,
+        26820560.782918889,
+        26820560.782918889
+      ],
+      "faults": [0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "command": [
+        "/tmp/mech-rust-scalar-checked",
+        "100000",
+        "20",
+        "unchecked"
+      ],
+      "throughput_millions": [
+        20.471518856,
+        20.542229190,
+        20.543574349,
+        20.544427324,
+        20.543829474
+      ],
+      "checksums": [
+        26820560.782918889,
+        26820560.782918889,
+        26820560.782918889,
+        26820560.782918889,
+        26820560.782918889
+      ],
+      "faults": [0, 0, 0, 0, 0]
+    }
+  },
+  "notes": [
+    "Checked mode validates finite state and covariance values, positive covariance diagonals, and covariance symmetry before publication.",
+    "No candidate faults occurred in the measured workload; the checked median is 19.802 M turns/s and the unchecked median is 20.544 M turns/s.",
+    "The unchecked mode is the same source and arithmetic with the compile-time validation path disabled."
+  ]
+}

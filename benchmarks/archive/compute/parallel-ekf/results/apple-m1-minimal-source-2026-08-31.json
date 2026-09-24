@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T18:45:52.116140-04:00",
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "samples": 5
+  },
+  "rows": {
+    "NumPy scalar unchecked": {
+      "command": [
+        "/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "throughput": [
+        52621.373,
+        52792.618,
+        52509.955,
+        52079.287,
+        52092.988
+      ],
+      "checksums": [
+        2682056.056059139,
+        2682056.056059139,
+        2682056.056059139,
+        2682056.056059139,
+        2682056.056059139
+      ]
+    },
+    "NumPy scalar checked": {
+      "command": [
+        "/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_scalar.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "throughput": [
+        39972.023,
+        40352.648,
+        40331.363,
+        39968.16,
+        40220.152
+      ],
+      "checksums": [
+        2682056.056059139,
+        2682056.056059139,
+        2682056.056059139,
+        2682056.056059139,
+        2682056.056059139
+      ]
+    },
+    "NumPy advanced unchecked": {
+      "command": [
+        "/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "throughput": [
+        12484327.75,
+        12557587.858,
+        12728348.295,
+        12482934.423,
+        12603124.261
+      ],
+      "checksums": [
+        2682056.07405708,
+        2682056.07405708,
+        2682056.07405708,
+        2682056.07405708,
+        2682056.07405708
+      ]
+    },
+    "NumPy advanced checked": {
+      "command": [
+        "/tmp/mech-ekf-venv/bin/python",
+        "/private/tmp/mech-pr11-taichi/benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "throughput": [
+        11333290.945,
+        11080613.654,
+        11209925.571,
+        11127444.056,
+        11128708.067
+      ],
+      "checksums": [
+        2682056.07405708,
+        2682056.07405708,
+        2682056.07405708,
+        2682056.07405708,
+        2682056.07405708
+      ]
+    },
+    "Halide unchecked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/halide-ekf",
+        "10000",
+        "20",
+        "unchecked"
+      ],
+      "throughput": [
+        5005840.188602037,
+        5206678.043605303,
+        4982674.86579103,
+        5108442.659327537,
+        5058051.765922671
+      ],
+      "checksums": [
+        2682056.107128188,
+        2682056.107128188,
+        2682056.107128188,
+        2682056.107128188,
+        2682056.107128188
+      ]
+    },
+    "Halide checked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/halide-ekf",
+        "10000",
+        "20",
+        "checked"
+      ],
+      "throughput": [
+        2696377.765652766,
+        2681123.858484706,
+        2707733.965137925,
+        2707078.841979349,
+        2763736.804866819
+      ],
+      "checksums": [
+        2682056.067247393,
+        2682056.067247393,
+        2682056.067247393,
+        2682056.067247393,
+        2682056.067247393
+      ]
+    },
+    "Futhark multicore 1 threads unchecked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-ekf",
+        "--num-threads",
+        "1",
+        "-r",
+        "1",
+        "-t",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/time"
+      ],
+      "throughput": [
+        19580967.29978461,
+        19634792.8529354,
+        19634792.8529354,
+        19638648.860958364,
+        19636720.6676485
+      ],
+      "checksums": [
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463
+      ]
+    },
+    "Futhark multicore 1 threads checked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-ekf",
+        "--num-threads",
+        "1",
+        "-r",
+        "1",
+        "-t",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/time"
+      ],
+      "throughput": [
+        19634792.8529354,
+        19491277.653250173,
+        19642506.383814573,
+        19613611.846621558,
+        19219680.953296173
+      ],
+      "checksums": [
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463
+      ]
+    },
+    "Futhark multicore 8 threads unchecked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-ekf",
+        "--num-threads",
+        "8",
+        "-r",
+        "1",
+        "-t",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/time"
+      ],
+      "throughput": [
+        48274197.44146754,
+        47824007.65184122,
+        47225501.770956315,
+        48732943.46978558,
+        46620046.620046616
+      ],
+      "checksums": [
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463
+      ]
+    },
+    "Futhark multicore 8 threads checked": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-ekf",
+        "--num-threads",
+        "8",
+        "-r",
+        "1",
+        "-t",
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/time"
+      ],
+      "throughput": [
+        49813200.498132,
+        48285852.245292135,
+        48390999.27413501,
+        46860356.138706654,
+        48959608.32313342
+      ],
+      "checksums": [
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463,
+        2682056.0726291463
+      ]
+    },
+    "Futhark OpenCL unchecked": {
+      "available": false,
+      "error": "UNSUPPORTED (log once): createKernel: newComputePipelineState failed\n/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-opencl: /var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-opencl.c:6204: OpenCL call\n  error\nfailed with error code -48 (Invalid kernel)"
+    },
+    "Futhark OpenCL checked": {
+      "available": false,
+      "error": "UNSUPPORTED (log once): createKernel: newComputePipelineState failed\n/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-opencl: /var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-minimal-s2y3besi/futhark-opencl.c:6204: OpenCL call\n  error\nfailed with error code -48 (Invalid kernel)"
+    }
+  }
+}

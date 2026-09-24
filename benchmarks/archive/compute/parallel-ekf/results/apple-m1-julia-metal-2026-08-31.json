@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-01T08:42:44-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "device": "Apple M1, Metal 3.2, 8 GPU cores"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 5,
+    "threads_per_group": 256,
+    "source": "minimal/julia_metal_ekf.jl",
+    "boundary": "synchronous per-turn Metal dispatch and Metal.synchronize",
+    "notes": [
+      "Julia Metal kernels use the same manually lowered EKF recurrence and SoA state layout as the matched GPU controls.",
+      "Kernel compilation, allocation, warmup, and final readback are outside the timed region.",
+      "Checked mode uses two resident state groups, validates finite state/covariance, positive covariance diagonal, and covariance symmetry, writes only to the unpublished group, records a two-word atomic fault summary, and swaps publication only after a per-turn host fault readback succeeds.",
+      "The checked boundary is intended to match Mech's whole-turn retained-state contract; an invalid candidate leaves the previously published group selected.",
+      "This is a direct Metal control, not a NumPy-compatible API or a batched one-shot submission."
+    ]
+  },
+  "rows": {
+    "checked": {
+      "command": [
+        "julia",
+        "--startup-file=no",
+        "minimal/julia_metal_ekf.jl",
+        "500000",
+        "40",
+        "checked"
+      ],
+      "throughput_millions": [166.41606072082716, 184.5724354615255, 167.52073203075466, 185.91111299666297, 178.1349058037759],
+      "checksums": [133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535],
+      "faults": [0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "command": [
+        "julia",
+        "--startup-file=no",
+        "minimal/julia_metal_ekf.jl",
+        "500000",
+        "40",
+        "unchecked"
+      ],
+      "throughput_millions": [260.9956658407241, 175.0508741603028, 227.543690436457, 190.02819087214407, 199.4539111475908],
+      "checksums": [133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535, 133818339.66889535],
+      "faults": [0, 0, 0, 0, 0]
+    }
+  },
+  "version": "Julia 1.12.6 / Metal.jl 1.10.3"
+}

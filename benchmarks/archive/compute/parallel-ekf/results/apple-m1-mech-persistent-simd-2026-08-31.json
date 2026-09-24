@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-31T22:20:00-04:00",
+  "platform": {
+    "description": "macOS arm64",
+    "device": "Apple M1 CPU"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples": 3,
+    "workers": 8,
+    "source": "hosts/gpu/fixtures/ekf-kernel-taichi-comparable.mec",
+    "backend": "Mech Cranelift SIMD-JIT CPU",
+    "boundary": "resident state; persistent worker pool; steady-state",
+    "notes": [
+      "The persistent pool owns prebuilt pointer tables and worker ranges.",
+      "The per-turn lane sends one command per turn and preserves synchronous publication.",
+      "The fused unchecked block sends one command for all measured turns and publishes only at the block boundary.",
+      "Compilation, input construction, process startup, warmup, and final state readback are outside the timed region."
+    ]
+  },
+  "rows": {
+    "persistent_per_turn_unchecked_fast": {
+      "label": "Mech SIMD/JIT CPU, persistent pool per-turn (8 workers)",
+      "mode": "unchecked",
+      "throughput_millions": [147.531, 150.395, 156.570],
+      "checksum": 133818338.381598204,
+      "maximum_error": 0.00001526,
+      "faults": 0
+    },
+    "fused_unchecked_block": {
+      "label": "Mech SIMD/JIT CPU, fused unchecked block (8 workers)",
+      "mode": "unchecked",
+      "throughput_millions": [165.830, 171.894, 163.526],
+      "checksum": 133818338.381598204,
+      "maximum_error": 0.00001526,
+      "faults": 0
+    }
+  }
+}
