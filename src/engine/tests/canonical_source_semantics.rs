@@ -2336,6 +2336,53 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
 }
 
 #[test]
+fn activation_with_computed_trigger_stays_dormant_during_initial_publication() {
+    let source =
+        "~state := 0\nevent := state + 1\n~count := 0\n~> event { count = count + 1 }\ncount\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 77),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance
+        .prepare_initial_turn(&[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(0.0))
+    );
+    instance
+        .prepare_turn_values_with_activation_triggers(&[], &[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0))
+    );
+}
+
+#[test]
 fn activation_structural_patterns_and_computed_samples_are_canonical_and_stable() {
     let cases = [
         (
