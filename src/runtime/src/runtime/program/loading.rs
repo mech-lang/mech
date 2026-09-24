@@ -560,6 +560,7 @@ impl MechRuntime {
                 }
                 info.resident_accepted_turns = 1;
             }
+            self.drain_loading_external_continuations(&mut coordinator, &mut info)?;
             if has_driverless_trigger {
                 let turn_started = Instant::now();
                 let admission = coordinator.admit_turn()?;
@@ -653,6 +654,65 @@ impl MechRuntime {
             initial_value: initial_snapshot,
             info,
         })
+    }
+
+    fn drain_loading_external_continuations(
+        &mut self,
+        coordinator: &mut ResidentExternalCoordinator,
+        info: &mut RuntimeProgramExecutionInfo,
+    ) -> MResult<()> {
+        let max_work = self.config.limits.max_steps_per_turn_as_usize()?;
+        let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
+        for _ in 0..max_work {
+            let Some(wakeup) = coordinator.instance().continuation_wakeup() else {
+                return Ok(());
+            };
+            if !coordinator.instance().accepts_continuation_wakeup(wakeup) {
+                continue;
+            }
+            let turn_started = Instant::now();
+            let admission = coordinator.admit_turn()?;
+            let before = coordinator.structural_probe();
+            let outcome = coordinator.execute_admitted_continuation_turn(admission, |_| {
+                super::super::limits::enforce_turn_duration_limit(
+                    max_turn_duration_ms,
+                    turn_started,
+                )
+            })?;
+            let after = coordinator.structural_probe();
+            self.resident_production_probe
+                .observe_structural_delta(before, after);
+            match &outcome {
+                crate::ResidentExternalTurnOutcome::Rejected { .. } => {
+                    info.resident_rejected_turns = info.resident_rejected_turns.saturating_add(1);
+                    self.resident_production_probe.resident_rejections = self
+                        .resident_production_probe
+                        .resident_rejections
+                        .saturating_add(1);
+                }
+                crate::ResidentExternalTurnOutcome::Accepted { .. }
+                | crate::ResidentExternalTurnOutcome::PublishedIndeterminate { .. } => {
+                    info.resident_accepted_turns = info.resident_accepted_turns.saturating_add(1);
+                    self.resident_production_probe.resident_turns = self
+                        .resident_production_probe
+                        .resident_turns
+                        .saturating_add(1);
+                }
+            }
+            if let Some(error) = super::resident_host_turn_error(&outcome) {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::ActivationFailure,
+                    format!("initial resident continuation did not complete cleanly: {error:?}"),
+                ));
+            }
+        }
+        if coordinator.instance().continuation_wakeup().is_some() {
+            return Err(route_failure(
+                ResidentRouteFailureClass::ActivationFailure,
+                "resident continuation wakeup limit exhausted".to_owned(),
+            ));
+        }
+        Ok(())
     }
 
     fn ensure_exact_resident_input_drivers(

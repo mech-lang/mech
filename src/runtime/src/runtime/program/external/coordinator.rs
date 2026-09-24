@@ -1103,6 +1103,7 @@ impl ResidentExternalCoordinator {
             || record.body.before_epoch != self.instance().published_epoch()
             || (record.body.initial_publication && self.next_turn != 1)
             || (record.body.initial_publication && record.body.continuation_drain)
+            || (record.body.continuation_drain && self.instance().continuation_wakeup().is_none())
         {
             return invalid_coordinator(
                 "recorded replay receipt does not match the next activated turn",

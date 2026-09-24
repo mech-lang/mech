@@ -1467,6 +1467,7 @@ impl ReactiveInstance {
     }
 
     fn clear_activation_roots(&mut self) {
+        let ready_continuation = self.ready_continuations.front().copied();
         for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
             clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
             set_bit(
@@ -1481,6 +1482,20 @@ impl ReactiveInstance {
                 );
             }
             for update in updates.iter() {
+                let resumes_ready_continuation = ready_continuation.is_some_and(|ready| {
+                    *update == ready
+                        || bit_is_set(
+                            &self.plan.topology.same_turn_dependency_masks[update.get() as usize],
+                            ready.get() as usize,
+                        )
+                });
+                if resumes_ready_continuation {
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                    continue;
+                }
                 clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
                 set_bit(
                     &mut self.workspace.suppressed_activation_bits,
