@@ -12,12 +12,12 @@ use mech_core::snapshot::{
 };
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, CurrentMemoryFootprint,
-    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass, MResult,
-    OutputConstruction, RegionPolicy, ResidentKernelBindError, ResidentKernelBindRequest,
-    ResidentKernelError, ResidentKernelInputs, ResidentShape, ResidentSnapshotOutput,
-    ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedOperationContract,
-    ResolvedSelectionMode, ResolvedSourceRouting, SchemaBody, SchemaId, ShapeContractReference,
-    ShapeInstance, ShapeRule, ValueData,
+    DeliveryMode, ExternalInteraction, FunctionCatalogBuilder, ImplementationMemoryClass,
+    IntegerWidth, MResult, OutputConstruction, RegionPolicy, ResidentKernelBindError,
+    ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs, ResidentShape,
+    ResidentSnapshotOutput, ResidentValueKind, ResidentValueMut, ResidentValueRef,
+    ResolvedOperationContract, ResolvedSelectionMode, ResolvedSourceRouting, SchemaBody, SchemaId,
+    ShapeContractReference, ShapeInstance, ShapeRule, ValueData,
 };
 use std::sync::Arc;
 
@@ -17596,6 +17596,15 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
     if left.1 == 0.0 && left.0.is_finite() {
         return (right.0 * left.0, right.1 * left.0);
     }
+    if left.0 == 0.0 && right.0 == 0.0 {
+        return (-left.1 * right.1, 0.0);
+    }
+    if right.0 == 0.0 && right.1.is_finite() {
+        return (-left.1 * right.1, left.0 * right.1);
+    }
+    if left.0 == 0.0 && left.1.is_finite() {
+        return (-right.1 * left.1, right.0 * left.1);
+    }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         let left = (f64::from(left.0), f64::from(left.1));
         let right = (f64::from(right.0), f64::from(right.1));
@@ -17619,6 +17628,11 @@ fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
     }
     if right.0 == 0.0 && right.1.is_finite() && right.1 != 0.0 {
         return (left.1 / right.1, -left.0 / right.1);
+    }
+    if left.0.is_finite() && left.1.is_finite() && right.0.is_infinite() && right.1.is_infinite() {
+        let real_direction = left.0 * right.0.signum() + left.1 * right.1.signum();
+        let imaginary_direction = left.1 * right.0.signum() - left.0 * right.1.signum();
+        return (0.0 * real_direction, 0.0 * imaginary_direction);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         // Products of finite f32 values remain representable in f64. Complete
@@ -17734,6 +17748,15 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     if left.1 == 0.0 && left.0.is_finite() {
         return (right.0 * left.0, right.1 * left.0);
     }
+    if left.0 == 0.0 && right.0 == 0.0 {
+        return (-left.1 * right.1, 0.0);
+    }
+    if right.0 == 0.0 && right.1.is_finite() {
+        return (-left.1 * right.1, left.0 * right.1);
+    }
+    if left.0 == 0.0 && left.1.is_finite() {
+        return (-right.1 * left.1, right.0 * left.1);
+    }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         return (
             materialize_scaled_f64(scaled_f64_product_sum(
@@ -17764,6 +17787,11 @@ fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     }
     if right.0 == 0.0 && right.1.is_finite() && right.1 != 0.0 {
         return (left.1 / right.1, -left.0 / right.1);
+    }
+    if left.0.is_finite() && left.1.is_finite() && right.0.is_infinite() && right.1.is_infinite() {
+        let real_direction = left.0 * right.0.signum() + left.1 * right.1.signum();
+        let imaginary_direction = left.1 * right.0.signum() - left.0 * right.1.signum();
+        return (0.0 * real_direction, 0.0 * imaginary_direction);
     }
     if left.0.is_finite()
         && left.1.is_finite()
@@ -18058,7 +18086,12 @@ fn complex32_power(base: (f32, f32), exponent: (f32, f32)) -> (f32, f32) {
         return (1.0, 0.0);
     }
     if base == (0.0, 0.0) && exponent.1 == 0.0 && exponent.0 > 0.0 {
-        return (0.0, 0.0);
+        let angle = libm::atan2f(base.1, base.0);
+        let result_angle = exponent.0 * angle;
+        return (
+            0.0 * libm::cosf(result_angle),
+            0.0 * libm::sinf(result_angle),
+        );
     }
     let logarithmic_radius = libm::logf(libm::hypotf(base.0, base.1));
     let angle = libm::atan2f(base.1, base.0);
@@ -18101,7 +18134,9 @@ fn complex64_power(base: (f64, f64), exponent: (f64, f64)) -> (f64, f64) {
         return (1.0, 0.0);
     }
     if base == (0.0, 0.0) && exponent.1 == 0.0 && exponent.0 > 0.0 {
-        return (0.0, 0.0);
+        let angle = libm::atan2(base.1, base.0);
+        let result_angle = exponent.0 * angle;
+        return (0.0 * libm::cos(result_angle), 0.0 * libm::sin(result_angle));
     }
     let logarithmic_radius = libm::log(libm::hypot(base.0, base.1));
     let angle = libm::atan2(base.1, base.0);
@@ -22523,6 +22558,16 @@ mod tests {
             complex32_divide((f32::INFINITY, 0.0), (0.0, 1.0)),
             (0.0, f32::NEG_INFINITY)
         );
+        assert_eq!(
+            complex32_multiply((0.0, f32::INFINITY), (0.0, 1.0)),
+            (f32::NEG_INFINITY, 0.0)
+        );
+        let c32_infinite_divisor = complex32_divide((1.0, 0.0), (f32::INFINITY, f32::INFINITY));
+        assert_eq!(c32_infinite_divisor.0.to_bits(), 0.0_f32.to_bits());
+        assert_eq!(c32_infinite_divisor.1.to_bits(), (-0.0_f32).to_bits());
+        let c32_lower_zero = complex32_power((-0.0, -0.0), (0.5, 0.0));
+        assert_eq!(c32_lower_zero.0.to_bits(), 0.0_f32.to_bits());
+        assert_eq!(c32_lower_zero.1.to_bits(), (-0.0_f32).to_bits());
         let c32_factor = (1.86691995e19, 7.733035e18);
         let c32_product = complex32_multiply(c32_factor, c32_factor);
         assert!(c32_product.0.is_finite());
@@ -22598,6 +22643,16 @@ mod tests {
                 complex64_divide((f64::INFINITY, 0.0), (0.0, 1.0)),
                 (0.0, f64::NEG_INFINITY)
             );
+            assert_eq!(
+                complex64_multiply((0.0, f64::INFINITY), (0.0, 1.0)),
+                (f64::NEG_INFINITY, 0.0)
+            );
+            let c64_infinite_divisor = complex64_divide((1.0, 0.0), (f64::INFINITY, f64::INFINITY));
+            assert_eq!(c64_infinite_divisor.0.to_bits(), 0.0_f64.to_bits());
+            assert_eq!(c64_infinite_divisor.1.to_bits(), (-0.0_f64).to_bits());
+            let c64_lower_zero = complex64_power((-0.0, -0.0), (0.5, 0.0));
+            assert_eq!(c64_lower_zero.0.to_bits(), 0.0_f64.to_bits());
+            assert_eq!(c64_lower_zero.1.to_bits(), (-0.0_f64).to_bits());
             let admitted_matrix_factor = ValueDataDraft::Complex64(Complex64Bits::new(
                 F64Bits::from_f64(1.4e154),
                 F64Bits::from_f64(6.0e153),
