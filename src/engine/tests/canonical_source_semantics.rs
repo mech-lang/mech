@@ -2264,7 +2264,7 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
     use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
     use mech_engine::__resident::CapturedValueInput;
 
-    let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\nother := other-source<f64>\n~selected := 0\n~count := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\n~> other { count = count + 1 }\ncount\n";
+    let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\nother := other-source<f64>\nshared := expected + 0\n~selected := 0\n~count := 0\n~> event\n  | [head, shared + 0] => { selected = head }\n  | * => { selected = -1 }\n~> other { count = count + 1 }\ncount + shared\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
@@ -2321,9 +2321,10 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
     let prepared = instance
         .prepare_turn_values_with_activation_triggers(&inputs, &[other_trigger])
         .unwrap();
-    // The other scope and its downstream state/output steps execute; the
-    // first scope's sampled add would increase this count to four.
-    assert_eq!(prepared.summary().dirty_nodes, 3);
+    // The shared producer, other scope, state writer, and published add
+    // execute. The first scope's sampled add remains suppressed even though
+    // propagation from the shared producer reaches its ordinary edge.
+    assert_eq!(prepared.summary().dirty_nodes, 4);
     prepared.publish().unwrap();
     assert_eq!(
         instance
@@ -2331,7 +2332,7 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::F64(F64Bits::from_f64(1.0))
+        ValueDataDraft::F64(F64Bits::from_f64(3.0))
     );
 }
 
@@ -2587,6 +2588,14 @@ fn activation_preflight_rejects_invalid_scope_contracts() {
     assert_code(
         "left := 0\nright := 0\n~x := 0\n~> left\n  | * => { x = x + 1 }\n~> right { x = x + 10 }\nx\n",
         "source-semantics/multiple-activation-state-owners",
+    );
+    assert_code(
+        "event := 0\n~x := 0\nx = x + 1\n~> event { x = x + 10 }\nx\n",
+        "source-semantics/activation-state-writer-conflict",
+    );
+    assert_code(
+        "event := 0\n~x := 0\n~> event { x = x + 10 }\nx = x + 1\nx\n",
+        "source-semantics/activation-state-writer-conflict",
     );
 }
 
