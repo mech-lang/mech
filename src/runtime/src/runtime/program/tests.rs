@@ -3132,6 +3132,360 @@ value
 }
 
 #[test]
+fn transitive_explicit_root_reuses_one_live_graph_in_caller_order() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "dep.mec",
+            "~counter := 0\ncounter += 1\n<+ counter\ncounter\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "middle.mec",
+            "+> ./dep.mec\nvalue := dep/counter\n<+ value\nvalue\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "main.mec",
+            "+> ./middle.mec\nanswer := middle/value + 100\nanswer\n",
+        )
+        .unwrap();
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("main.mec"),
+                SourceRequest::new("dep.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+    let outputs = product
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(outputs.len(), 2, "the transitive middle root stays hidden");
+    assert_eq!(
+        outputs[0], "answer",
+        "the first caller root publishes first"
+    );
+    assert_eq!(outputs[1], "counter");
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let mut instance = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(0x832, 0),
+            artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        for expected in [1.0, 2.0] {
+            instance.turn(&[]).unwrap();
+            assert_eq!(
+                canonical_f64(&instance.copied_output(0).unwrap()),
+                expected + 100.0
+            );
+            assert_eq!(canonical_f64(&instance.copied_output(1).unwrap()), expected);
+        }
+    }
+}
+
+#[test]
+fn hidden_dependency_locals_do_not_replace_ordered_root_bindings() {
+    let catalog = mech_stdlib::source_catalog();
+    let compile = |second: &str| {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver.insert_string("first.mec", "seed := 41\n").unwrap();
+        resolver
+            .insert_string(
+                "dep.mec",
+                "seed := 100\nsecret := 200\nvalue := 1\n<+ value\nvalue\n",
+            )
+            .unwrap();
+        resolver.insert_string("second.mec", second).unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(Arc::clone(&catalog))
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        compiler.compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+    };
+    let product = compile("+> ./dep.mec\nanswer := seed + 1\nanswer\n").unwrap();
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    for artifact in [product.artifact(), &decoded] {
+        let mut instance = mech_engine::resident::activate(
+            mech_core::ReactiveInstanceId::new(0x833, 0),
+            artifact,
+            &catalog,
+            &mech_engine::resident::ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert_eq!(canonical_f64(&instance.copied_output(0).unwrap()), 41.0);
+        assert_eq!(canonical_f64(&instance.copied_output(1).unwrap()), 42.0);
+    }
+    let unexported = compile("+> ./dep.mec\nanswer := secret + 1\nanswer\n").unwrap();
+    assert_eq!(
+        unexported.artifact().inputs().len(),
+        1,
+        "an unexported dependency local remains a free source input"
+    );
+}
+
+#[test]
+fn repeated_canonical_dependency_must_keep_its_source_identity() {
+    #[derive(Debug)]
+    struct ChangingDependency {
+        first: InMemorySourceResolver,
+        changed: InMemorySourceResolver,
+        dependency_reads: AtomicUsize,
+    }
+    impl crate::SourceResolver for ChangingDependency {
+        fn resolve(&self, request: &SourceRequest) -> MResult<Option<crate::ResolvedSource>> {
+            let changed = request.specifier.ends_with("dep.mec")
+                && self.dependency_reads.fetch_add(1, Ordering::SeqCst) > 0;
+            crate::SourceResolver::resolve(
+                if changed { &self.changed } else { &self.first },
+                request,
+            )
+        }
+    }
+    let make_resolver = |dependency: &str| {
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_string("first.mec", "+> ./dep.mec\nanswer := dep/value\nanswer\n")
+            .unwrap();
+        resolver
+            .insert_string(
+                "second.mec",
+                "+> ./dep.mec\nother := dep/value + 1\nother\n",
+            )
+            .unwrap();
+        resolver.insert_string("dep.mec", dependency).unwrap();
+        resolver
+    };
+    let resolver = ChangingDependency {
+        first: make_resolver("value := 1\n<+ value\nvalue\n"),
+        changed: make_resolver("value := 2\n<+ value\nvalue\n"),
+        dependency_reads: AtomicUsize::new(0),
+    };
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let error = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("second.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .err()
+        .unwrap();
+    assert!(format!("{error:?}").contains("changed during compilation"));
+}
+
+#[test]
+fn transitive_explicit_provider_is_planned_and_read_once_per_turn() {
+    let plans = Arc::new(AtomicUsize::new(0));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let value_bits = Arc::new(AtomicU64::new(41.0_f64.to_bits()));
+    let provider = || PlanningObservationProvider {
+        plans: Arc::clone(&plans),
+        reads: Arc::clone(&reads),
+        value_bits: Arc::clone(&value_bits),
+    };
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "dep.mec",
+            "@clock := test://clock/tick{:read(delta-seconds)}\nvalue := @clock/delta-seconds\n<+ value\nvalue\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "middle.mec",
+            "+> ./dep.mec\nrelay := dep/value\n<+ relay\nrelay\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "main.mec",
+            "+> ./middle.mec\nanswer := middle/relay\nanswer\n",
+        )
+        .unwrap();
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .source_resolver(resolver)
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("main.mec"),
+                SourceRequest::new("dep.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+    assert_eq!(plans.load(Ordering::SeqCst), 1);
+    assert_eq!(reads.load(Ordering::SeqCst), 0);
+
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_023),
+            subject,
+            "test://clock/tick/delta-seconds",
+            ["read"],
+        )))
+        .unwrap();
+    runtime
+        .load_compiled_program(
+            product.artifact().clone(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    for expected in [41.0_f64, 42.0] {
+        value_bits.store(expected.to_bits(), Ordering::SeqCst);
+        let ActiveProgramExecution::ResidentExternal(execution) = &mut runtime.active_program
+        else {
+            panic!("transitive provider graph must remain resident external")
+        };
+        assert_eq!(execution.trigger_sources.len(), 1);
+        execution.coordinator.execute_turn().unwrap();
+        assert_eq!(
+            canonical_f64(&execution.coordinator.instance().copied_output(0).unwrap()),
+            expected
+        );
+        assert_eq!(
+            canonical_f64(&execution.coordinator.instance().copied_output(1).unwrap()),
+            expected
+        );
+    }
+    assert_eq!(reads.load(Ordering::SeqCst), 2);
+}
+
+#[test]
+fn rejected_later_ordered_root_leaves_no_host_effect_and_compiler_is_reusable() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "first.mec",
+            "@clock := test://clock/tick{:read(delta-seconds)}\n@scene := scene://orbit/frame{:write(points)}\nvalue := @clock/delta-seconds\n@scene/points <- [value; value]\n<+ value\nvalue\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "bad.mec",
+            "+> ./first.mec\nanswer := first/missing\nanswer\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "good.mec",
+            "+> ./first.mec\nanswer := first/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    let reads = Arc::new(AtomicUsize::new(0));
+    let trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let build = |resolver: InMemorySourceResolver,
+                 reads: Arc<AtomicUsize>,
+                 trace: Arc<Mutex<ProductSceneTrace>>| {
+        RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .source_resolver(resolver)
+            .resource_provider(Box::new(PlanningObservationProvider {
+                plans: Arc::new(AtomicUsize::new(0)),
+                reads,
+                value_bits: Arc::new(AtomicU64::new(41.0_f64.to_bits())),
+            }))
+            .resource_provider(Box::new(ProductSceneProvider {
+                trace,
+                contract: ProductSceneContract::AtMostOnce,
+                prepare_delay: Duration::ZERO,
+            }))
+            .build_compiler()
+            .unwrap()
+    };
+    let options = || ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]);
+    let mut compiler = build(resolver.clone(), Arc::clone(&reads), Arc::clone(&trace));
+    assert!(
+        compiler
+            .compile_canonical_roots(
+                &[
+                    SourceRequest::new("first.mec"),
+                    SourceRequest::new("bad.mec"),
+                ],
+                options(),
+            )
+            .is_err()
+    );
+    assert_eq!(reads.load(Ordering::SeqCst), 0);
+    let rejected = trace.lock().unwrap();
+    assert_eq!(rejected.preparations, 0);
+    assert_eq!(rejected.deliveries, 0);
+    drop(rejected);
+
+    let retry = compiler
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("good.mec"),
+            ],
+            options(),
+        )
+        .unwrap();
+    assert_eq!(reads.load(Ordering::SeqCst), 0);
+    let accepted = trace.lock().unwrap();
+    assert_eq!(accepted.preparations, 0);
+    assert_eq!(accepted.deliveries, 0);
+    drop(accepted);
+    let mut fresh = build(
+        resolver,
+        Arc::new(AtomicUsize::new(0)),
+        Arc::new(Mutex::new(ProductSceneTrace::default())),
+    );
+    let expected = fresh
+        .compile_canonical_roots(
+            &[
+                SourceRequest::new("first.mec"),
+                SourceRequest::new("good.mec"),
+            ],
+            options(),
+        )
+        .unwrap();
+    assert_eq!(retry.bytecode(), expected.bytecode());
+}
+
+#[test]
 fn external_activation_requires_exactly_one_input_driver() {
     for (driver_count, expected) in [
         (0, "ProviderUnavailable:"),
