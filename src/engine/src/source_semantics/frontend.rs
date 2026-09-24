@@ -2811,6 +2811,8 @@ struct SemanticBuilder {
     active_fsms: Vec<String>,
     active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
     activation_owned_states: BTreeSet<u32>,
+    ordinary_written_states: BTreeSet<u32>,
+    activation_assignment_depth: usize,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -3077,6 +3079,8 @@ impl SemanticBuilder {
             active_fsms: Vec::new(),
             active_recursive_outputs: Vec::new(),
             activation_owned_states: BTreeSet::new(),
+            ordinary_written_states: BTreeSet::new(),
+            activation_assignment_depth: 0,
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
         }

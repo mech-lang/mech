@@ -1373,6 +1373,15 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<(), SourceSemanticError> {
         for state in states {
+            if self.ordinary_written_states.contains(state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/activation-state-writer-conflict",
+                    message:
+                        "mutable state cannot have both ordinary and activation-scoped assignments"
+                            .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
             if !self.activation_owned_states.insert(*state) {
                 return Err(SourceSemanticError {
                     code: "source-semantics/multiple-activation-state-owners",
@@ -1488,6 +1497,7 @@ impl SemanticBuilder {
                     syntax,
                 })
                 .collect::<Vec<_>>();
+            self.activation_assignment_depth += 1;
             let value = self.lower_match_expression(
                 trigger,
                 &source_arms,
@@ -1495,7 +1505,9 @@ impl SemanticBuilder {
                 false,
                 None,
                 true,
-            )?;
+            );
+            self.activation_assignment_depth -= 1;
+            let value = value?;
             for (ordinal, state) in states.iter().copied().enumerate() {
                 let selector = self.constant_exact(
                     SchemaBody::Index,
@@ -1569,6 +1581,7 @@ impl SemanticBuilder {
         let pattern = crate::MatchPattern::Wildcard;
         let mut inputs = vec![trigger];
         let mut captures = Vec::new();
+        self.activation_assignment_depth += 1;
         let result = self.control_block_with(
             activation.syntax(),
             &pattern,
@@ -1602,6 +1615,7 @@ impl SemanticBuilder {
                 builder.pack_activation_values(values, activation.syntax())
             },
         );
+        self.activation_assignment_depth -= 1;
         self.bindings = saved_bindings;
         self.scope_definitions = saved_definitions;
         for (state, value) in saved_writer_inputs {
@@ -1785,6 +1799,18 @@ impl SemanticBuilder {
             return Ok((value, syntax.clone()));
         }
         let state = self.assignment_state(&target)?;
+        if self.activation_assignment_depth == 0 {
+            if self.activation_owned_states.contains(&state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/activation-state-writer-conflict",
+                    message:
+                        "mutable state cannot have both ordinary and activation-scoped assignments"
+                            .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            self.ordinary_written_states.insert(state);
+        }
         let expected = self.schema_draft_of(PendingValue::State(state))?;
         let mut value = self.expression(&expression)?.0;
         if let Some(subscripts) = target.subscripts() {
