@@ -2321,10 +2321,11 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
     let prepared = instance
         .prepare_turn_values_with_activation_triggers(&inputs, &[other_trigger])
         .unwrap();
-    // The shared producer, other scope, state writer, and published add
-    // execute. The first scope's sampled add remains suppressed even though
-    // propagation from the shared producer reaches its ordinary edge.
-    assert_eq!(prepared.summary().dirty_nodes, 4);
+    // The shared producer, other scope, its update, state writer, and
+    // published add execute. The first scope's sampled add remains suppressed
+    // even though propagation from the shared producer reaches its ordinary
+    // edge; executing it would raise this count to six.
+    assert_eq!(prepared.summary().dirty_nodes, 5);
     prepared.publish().unwrap();
     assert_eq!(
         instance
