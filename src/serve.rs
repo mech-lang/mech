@@ -474,6 +474,7 @@ impl ServerSourceRegistry {
         let mut resolver = mech_runtime::InMemorySourceResolver::new();
         let mut documents = HashMap::new();
         let mut transport_uris = BTreeMap::new();
+        let mut compiler_sources = BTreeSet::new();
         for source in snapshot.sources.values() {
             let Some(path) = source.path.as_ref() else {
                 continue;
@@ -529,13 +530,20 @@ impl ServerSourceRegistry {
                     );
                 }
             }
-            resolver.insert_source(
-                &uri,
-                mech_runtime::ResolvedSource::new(&uri, &uri, MechSourceCode::String(text.clone()))
+            if document.index().is_ok() {
+                resolver.insert_source(
+                    &uri,
+                    mech_runtime::ResolvedSource::new(
+                        &uri,
+                        &uri,
+                        MechSourceCode::String(text.clone()),
+                    )
                     .with_kind(SourceKind::from_path(&path))
                     .with_source_document(document.clone())?
                     .admit_canonical_document()?,
-            )?;
+                )?;
+                compiler_sources.insert(uri.clone());
+            }
             if let Some(version) = source.module_version {
                 transport_uris.insert(version, uri.clone());
             }
@@ -552,7 +560,9 @@ impl ServerSourceRegistry {
                 )
                 .into());
             };
-            resolver.insert_resolution(referrer, &edge.specifier, target)?;
+            if compiler_sources.contains(referrer) && compiler_sources.contains(target) {
+                resolver.insert_resolution(referrer, &edge.specifier, target)?;
+            }
         }
         let mut compiler = crate::configured_browser_compiler_builder(
             &self.compiler_hosts,
@@ -636,16 +646,14 @@ impl ServerSourceRegistry {
                     "retained browser document is absent",
                 )
             })?;
-            document
-                .index()
-                .map_err(|error| MechError::new(error, None))?;
+            let document_error = document.index().err();
             let mut extra_slots = HtmlShimExtraSlots::default();
             extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
             extra_slots.insert(
                 "PRESENTATION",
                 self.document_presentation.as_str().to_string(),
             );
-            let is_root = root_uris.contains(&source.canonical_uri);
+            let is_root = document_error.is_none() && root_uris.contains(&source.canonical_uri);
             if shim.contains("{{DOCUMENT_SCRIPT}}") {
                 if is_root {
                     let document_controller = self.document_controller.as_deref().ok_or_else(|| {
@@ -668,25 +676,32 @@ impl ServerSourceRegistry {
                 // with an embedded source bundle instead.
                 extra_slots.insert("DOCUMENT_SOURCES", "");
             }
-            let render = if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
-                render_canonical_html(
-                    &document.document(),
-                    stylesheets.clone(),
-                    shim.to_string(),
-                    &extra_slots,
-                )?
+            let html = if let Some(error) = document_error {
+                format!(
+                    "<html><body><pre>{}</pre></body></html>",
+                    escape_html(&format!("{error:#?}"))
+                )
             } else {
-                render_canonical_static_html(
-                    &document.document(),
-                    stylesheets.clone(),
-                    shim.to_string(),
-                    &extra_slots,
-                )?
+                let render = if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
+                    render_canonical_html(
+                        &document.document(),
+                        stylesheets.clone(),
+                        shim.to_string(),
+                        &extra_slots,
+                    )?
+                } else {
+                    render_canonical_static_html(
+                        &document.document(),
+                        stylesheets.clone(),
+                        shim.to_string(),
+                        &extra_slots,
+                    )?
+                };
+                if let Some(shim_name) = self.shipped_document_shim.as_deref() {
+                    validate_shipped_shim_render(shim_name, &render)?;
+                }
+                render.html
             };
-            if let Some(shim_name) = self.shipped_document_shim.as_deref() {
-                validate_shipped_shim_render(shim_name, &render)?;
-            }
-            let html = render.html;
             let mut backing_paths = vec![path.clone()];
             backing_paths.extend_from_slice(generated_html_backing_paths);
             self.html_sources.insert(
@@ -2825,6 +2840,45 @@ result\n";
         let changed = CanonicalProgramBundle::decode(&changed, None).unwrap();
         changed.validate_dependency_sources(|_| Some(text)).unwrap();
         assert_ne!(changed.artifact_revision, bundle.artifact_revision);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn invalid_non_root_source_does_not_abort_valid_server_roots() {
+        let root = temp_root("invalid-non-root-source");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        std::fs::write(root.join("broken.mec"), "broken := (\n").unwrap();
+        let retained = snapshot_for_sources(&root, &["main.mec", "broken.mec"]);
+        let mut registry = ServerSourceRegistry {
+            compiler_roots: Some(BTreeSet::from([root
+                .join("main.mec")
+                .canonicalize()
+                .unwrap()])),
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/code/main.mec").is_some());
+        assert!(registry.get_route("/source/broken.mec").is_some());
+        assert!(registry.get_route("/code/broken.mec").is_none());
+        let broken = String::from_utf8(registry.get_route("/broken.mec").unwrap().bytes).unwrap();
+        assert!(
+            broken.contains("cannot index an invalid retained source document"),
+            "{broken}"
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 
