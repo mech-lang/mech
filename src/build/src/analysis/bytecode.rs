@@ -5,7 +5,7 @@ use mech_core::{
     FunctionMatrixStoragePattern, FunctionValueRepresentation, IntegerWidth, MResult,
     NativeFunctionLinkage, OperationContractId, OperationId, ParsedProgram,
     ResolvedOperationContract, RuntimeBindingSelector, RuntimeFunctionEntry, RuntimeFunctionId,
-    SchemaBody, hash_str,
+    RuntimeFunctionInputs, SchemaBody, hash_str,
 };
 use mech_engine::{
     ComprehensionDeclaration, ComprehensionStep, ControlBlock, ControlOperationBody,
@@ -180,17 +180,64 @@ pub(crate) fn analyze_artifact_runtime_functions(
             .first()
             .and_then(|port| artifact.schemas().get(port.schema))
             .and_then(|schema| native_representation(schema.body()));
+        let inputs = contract
+            .inputs
+            .iter()
+            .map(|port| {
+                artifact
+                    .schemas()
+                    .get(port.schema)
+                    .and_then(|schema| native_representation(schema.body()))
+            })
+            .collect::<Vec<_>>();
         let operation_id = OperationId::from_name(&operation.canonical_name());
         for entry in catalog.runtime_entries_for_binding(
             RuntimeBindingSelector::Operation(operation_id),
             ExecutionTarget::Native,
         ) {
-            if output.is_none_or(|output| entry.signature().output.matches(output)) {
+            if output.is_none_or(|output| entry.signature().output.matches(output))
+                && artifact_inputs_match(entry.signature().inputs, &inputs)
+            {
                 ids.insert(entry.id.raw());
             }
         }
     }
     analyze_runtime_function_ids(ids, catalog)
+}
+
+fn artifact_inputs_match(
+    expected: RuntimeFunctionInputs,
+    found: &[Option<FunctionValueRepresentation>],
+) -> bool {
+    let matches = |expected: FunctionValueRepresentation,
+                   found: Option<FunctionValueRepresentation>| {
+        found.is_none_or(|found| expected.matches(found))
+    };
+    match expected {
+        RuntimeFunctionInputs::Nullary => found.is_empty(),
+        RuntimeFunctionInputs::Unary(argument) => {
+            matches!(found, [found] if matches(argument, *found))
+        }
+        RuntimeFunctionInputs::Binary(lhs, rhs) => {
+            matches!(found, [left, right] if matches(lhs, *left) && matches(rhs, *right))
+        }
+        RuntimeFunctionInputs::Ternary(first, second, third) => matches!(
+            found,
+            [one, two, three]
+                if matches(first, *one) && matches(second, *two) && matches(third, *three)
+        ),
+        RuntimeFunctionInputs::Quaternary(first, second, third, fourth) => matches!(
+            found,
+            [one, two, three, four]
+                if matches(first, *one)
+                    && matches(second, *two)
+                    && matches(third, *three)
+                    && matches(fourth, *four)
+        ),
+        RuntimeFunctionInputs::Variadic { element } => {
+            found.iter().all(|found| matches(element, *found))
+        }
+    }
 }
 
 fn collect_match_operations<'a>(

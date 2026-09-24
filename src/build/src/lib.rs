@@ -72,6 +72,7 @@ impl NativeApplicationBuilder {
             request.instruction_type_bindings.as_deref(),
             request.instruction_type_binding_requirements.as_deref(),
         )?;
+        let mut artifact_type_features = Vec::new();
         if !program.artifact.is_empty() {
             let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
                 .map_err(|error| {
@@ -86,6 +87,7 @@ impl NativeApplicationBuilder {
                 &artifact,
                 &self.environment.function_catalog,
             )?);
+            artifact_type_features = analysis::artifact_schema_features(artifact.schemas());
             runtime_functions.sort_by_key(|function| function.runtime_id);
             runtime_functions.dedup_by_key(|function| function.runtime_id);
         }
@@ -93,7 +95,10 @@ impl NativeApplicationBuilder {
             plan::validate_installer_path(&function.installer_path)?;
         }
         let referenced_runtime_types = program.referenced_runtime_types()?;
-        let runtime_types = analysis::analyze_runtime_types(&referenced_runtime_types)?;
+        let mut runtime_types = analysis::analyze_runtime_types(&referenced_runtime_types)?;
+        runtime_types.cargo_features.extend(artifact_type_features);
+        runtime_types.cargo_features.sort();
+        runtime_types.cargo_features.dedup();
         let requirements = native_resolver.finish()?;
         let application_kind = if analysis::application_requires_hosting(&program.requirements)
             || request.runtime_config.is_some()
