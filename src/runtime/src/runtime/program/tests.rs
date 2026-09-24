@@ -5617,6 +5617,67 @@ points := [1.0 2.0]
 }
 
 #[test]
+fn input_free_activation_in_external_program_advances_on_explicit_step() {
+    let compile_trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(ProductSceneProvider {
+            trace: compile_trace,
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(
+            "@scene := scene://orbit/frame{:write(points)}\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\n@scene/points <- [1.0 2.0]\ncount\n",
+        )
+        .unwrap()
+        .into_parts()
+        .0;
+    let trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(ProductSceneProvider {
+            trace,
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_103),
+            subject,
+            "scene://orbit/frame/points",
+            ["write", "points"],
+        )))
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    let output = |runtime: &crate::MechRuntime| {
+        let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+            panic!("effect fixture must remain resident external")
+        };
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap()
+    };
+    assert_eq!(output(&runtime), ValueDataDraft::U64(0));
+    runtime.step_active_program().unwrap();
+    assert_eq!(output(&runtime), ValueDataDraft::U64(1));
+}
+
+#[test]
 fn initial_publication_replays_with_activations_dormant() {
     let (mut runtime, scene) = product_nbody_runtime();
     runtime
@@ -6866,6 +6927,45 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
             );
         }
     }
+}
+
+#[test]
+fn canonical_dependency_exports_keep_input_free_activations_dormant() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string(
+            "dep.mec",
+            "trigger := true\n~value := 0u64\n~> trigger { value = value + 1u64 }\n<+ value\nvalue\n",
+        )
+        .unwrap();
+    resolver
+        .insert_canonical_string("main.mec", "+> ./dep.mec\nanswer := dep/value\nanswer\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_root(SourceRequest::new("main.mec"))
+        .unwrap();
+    let mut runtime = runtime();
+    runtime
+        .load_bytecode_program(
+            product.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(
+        runtime
+            .output_value(mech_core::OutputId::new(0))
+            .unwrap()
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(0)
+    );
 }
 
 #[test]
