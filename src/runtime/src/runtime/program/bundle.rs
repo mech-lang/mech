@@ -1,6 +1,7 @@
 use mech_core::{CanonicalNominalPath, GenericError, MResult, MechError, ProgramRevision};
 use mech_engine::{
-    CanonicalSourceFrontend, ProgramCompilationProduct, decode_program_artifact_bytecode_v1,
+    CanonicalSourceFrontend, ProgramArtifactCompilationProduct, ProgramCompilationProduct,
+    decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
 };
 
 use crate::SourceDocument;
@@ -43,6 +44,37 @@ impl CanonicalProgramBundle {
         document: &SourceDocument,
         product: &ProgramCompilationProduct,
     ) -> MResult<Self> {
+        Self::from_compiled_parts(
+            canonical_uri,
+            document,
+            product.artifact().revision(),
+            product.bytecode().to_vec(),
+            product.source_dependencies().clone(),
+        )
+    }
+
+    pub fn from_artifact_product(
+        canonical_uri: impl Into<String>,
+        document: &SourceDocument,
+        product: &ProgramArtifactCompilationProduct,
+        source_dependencies: std::collections::BTreeMap<String, u64>,
+    ) -> MResult<Self> {
+        Self::from_compiled_parts(
+            canonical_uri,
+            document,
+            product.artifact().revision(),
+            encode_program_artifact_bytecode_v1(product.artifact())?,
+            source_dependencies,
+        )
+    }
+
+    fn from_compiled_parts(
+        canonical_uri: impl Into<String>,
+        document: &SourceDocument,
+        artifact_revision: ProgramRevision,
+        bytecode: Vec<u8>,
+        source_dependencies: std::collections::BTreeMap<String, u64>,
+    ) -> MResult<Self> {
         let source = document.source().to_contiguous_string();
         let has_nominal_declarations = !CanonicalSourceFrontend
             .declared_enum_names(&document.document())
@@ -59,7 +91,6 @@ impl CanonicalProgramBundle {
         let root_nominal_package_id = has_nominal_declarations
             .then(|| document.nominal_package_id().map(str::to_owned))
             .flatten();
-        let artifact_revision = product.artifact().revision();
         let bundle = Self {
             version: CANONICAL_PROGRAM_BUNDLE_VERSION,
             canonical_uri: canonical_uri.into(),
@@ -73,9 +104,9 @@ impl CanonicalProgramBundle {
             source,
             root_nominal_origin,
             root_nominal_package_id,
-            source_dependencies: product.source_dependencies().clone(),
+            source_dependencies,
             artifact_revision: artifact_revision.into_bytes(),
-            bytecode: product.bytecode().to_vec(),
+            bytecode,
         };
         bundle.validate_root_with_provenance(
             None,

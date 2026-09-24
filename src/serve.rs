@@ -463,11 +463,10 @@ impl ServerSourceRegistry {
                 })
             })
             .collect::<BTreeSet<_>>();
-        let uses_mixed_compute_shim = self
+        let has_compute_host = self
             .compiler_hosts
             .iter()
-            .any(|host| host.provider == "compute")
-            && !shim.contains("{{DOCUMENT_SCRIPT}}");
+            .any(|host| host.provider == "compute");
         let mut module_specifiers = BTreeMap::new();
         // The workspace snapshot is the source authority, including expanded
         // includes and resolver-specific import edges. A browser transport owns
@@ -697,11 +696,12 @@ impl ServerSourceRegistry {
                     backing_paths: dedupe_paths(backing_paths),
                 },
             );
-            if is_root && !uses_mixed_compute_shim {
+            if is_root && shim.contains("{{DOCUMENT_SCRIPT}}") {
                 let code = crate::browser_planning::compile_browser_document_bundle(
                     &mut compiler,
                     uri,
                     &document,
+                    has_compute_host,
                 )?
                 .encode()?;
                 // A dependency change invalidates this response as well as
@@ -2646,7 +2646,15 @@ mod tests {
     #[test]
     fn default_document_shim_keeps_bundle_for_compute_configuration() {
         let root = temp_root("mixed-compute-default-document-shim");
-        let source = "answer := 40 + 2\nanswer\n";
+        let source = "@compute := compute://compute/kernel{:write(turn), :read(sample/result)}\n\
+@compute/turn <- 1\n\
+answer := @compute/sample/result\n\
+answer\n\n\
+calculation @compute\n\
+-------------------\n\
+~result := 0f32\n\
+result += 1f32\n\
+result\n";
         let path = root.join("main.mec");
         std::fs::write(&path, source).unwrap();
         let retained = snapshot(&root, "main.mec");
