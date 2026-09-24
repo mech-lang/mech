@@ -5400,10 +5400,23 @@ fn build_plan(
                     constraint: constraint.constraint,
                 });
             }
-            let predicate = resolve_read(&layout, constraint.inputs[0])?;
-            let layout =
-                source_port_layout(artifact, &layout, constraint.inputs[0], static_selectors)?;
-            if layout.kind != ResidentValueKind::Bool || layout.shape != ResidentShape::SCALAR {
+            let predicate_source = match constraint.inputs[0] {
+                ArtifactSource::Slot(slot)
+                    if matches!(
+                        artifact.slots()[slot.get() as usize].producer,
+                        ProducerReference::Output { .. }
+                    ) =>
+                {
+                    output_materialization_source(slot)?
+                }
+                source => source,
+            };
+            let predicate = resolve_read(&layout, predicate_source)?;
+            let predicate_layout =
+                source_port_layout(artifact, &layout, predicate_source, static_selectors)?;
+            if predicate_layout.kind != ResidentValueKind::Bool
+                || predicate_layout.shape != ResidentShape::SCALAR
+            {
                 return Err(ResidentActivationError::InvalidConstraint {
                     constraint: constraint.constraint,
                 });
@@ -5411,7 +5424,7 @@ fn build_plan(
             Ok(ActivatedConstraint {
                 artifact_id: constraint.constraint,
                 predicate,
-                producer: match constraint.inputs[0] {
+                producer: match predicate_source {
                     ArtifactSource::Slot(slot) => {
                         match artifact.slots()[slot.get() as usize].producer {
                             ProducerReference::NodeOutput { node, .. } => {
