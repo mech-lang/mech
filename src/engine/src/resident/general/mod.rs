@@ -5077,26 +5077,39 @@ fn build_plan(
             ArtifactSource::Constant(_) => None,
         })
     }));
+    let output_materialization_source =
+        |output_slot: CellSlotId| -> Result<ArtifactSource, ResidentActivationError> {
+            let declaration = &artifact.slots()[output_slot.get() as usize];
+            let source = match declaration.producer {
+                ProducerReference::Output { source, .. } => source,
+                ProducerReference::Input(_) | ProducerReference::NodeOutput { .. } => {
+                    ArtifactSource::Slot(output_slot)
+                }
+            };
+            for state in artifact
+                .slots()
+                .iter()
+                .filter(|slot| slot.role == SlotRole::State)
+            {
+                let ProducerReference::NodeOutput { node, .. } = state.producer else {
+                    continue;
+                };
+                if node_inputs(artifact, node)?.first().copied() == Some(source) {
+                    return Ok(ArtifactSource::Slot(state.slot));
+                }
+            }
+            Ok(source)
+        };
     let output_sources = artifact
         .outputs()
         .iter()
-        .filter_map(|output| {
-            let declaration = &artifact.slots()[output.source.get() as usize];
-            match declaration.producer {
-                ProducerReference::Output {
-                    source: ArtifactSource::Slot(source),
-                    ..
-                } => Some(source),
-                ProducerReference::Input(_) | ProducerReference::NodeOutput { .. } => {
-                    Some(output.source)
-                }
-                ProducerReference::Output {
-                    source: ArtifactSource::Constant(_),
-                    ..
-                } => None,
-            }
+        .map(|output| output_materialization_source(output.source))
+        .filter_map(|source| match source {
+            Ok(ArtifactSource::Slot(slot)) => Some(Ok(slot)),
+            Ok(ArtifactSource::Constant(_)) => None,
+            Err(error) => Some(Err(error)),
         })
-        .collect::<BTreeSet<_>>();
+        .collect::<Result<BTreeSet<_>, ResidentActivationError>>()?;
     let activation_sample_edge = |node: NodeId, ordinal: usize| {
         matches!(
             &artifact.nodes()[node.get() as usize].body,
@@ -5310,14 +5323,14 @@ fn build_plan(
     let output_materializations = artifact
         .slots()
         .iter()
-        .filter_map(|slot| match (slot.role, slot.producer) {
-            (SlotRole::Output, ProducerReference::Output { source, .. }) => Some(
+        .filter_map(|slot| match slot.role {
+            SlotRole::Output => Some(output_materialization_source(slot.slot).and_then(|source| {
                 resolve_read(&layout, source).map(|source| ActivatedOutputMaterialization {
                     target: slot.slot,
                     source,
-                }),
-            ),
-            _ => None,
+                })
+            })),
+            SlotRole::Input | SlotRole::State | SlotRole::Derived => None,
         })
         .collect::<Result<Vec<_>, ResidentActivationError>>()?
         .into_boxed_slice();
