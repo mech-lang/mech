@@ -2817,7 +2817,7 @@ fn downstream_fsm_output_stays_unavailable_until_resume() {
 
 #[test]
 fn state_writers_wait_for_unpublished_fsm_dependencies() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\n~total<u64> := 0u64\ntotal += #Deferred() + signal<u64>\ntotal\n";
+    let source = "#Deferred() => <f64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41.\n~total<f64> := 0.\ntotal += #Deferred() + signal<f64>\ntotal\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
@@ -2833,11 +2833,11 @@ fn state_writers_wait_for_unpublished_fsm_dependencies() {
         &ActivationFacts::default(),
     )
     .unwrap();
-    for value in [1_u64, 1_u64] {
+    for value in [1.0, 1.0] {
         instance
             .turn(&[CapturedSignalInput {
                 slot: instance.plan.inputs[0].slot,
-                value: ResidentValueRef::Index(&[value]),
+                value: ResidentValueRef::F64(&[value]),
             }])
             .unwrap();
     }
@@ -2847,13 +2847,13 @@ fn state_writers_wait_for_unpublished_fsm_dependencies() {
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::U64(42)
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0))
     );
 }
 
 #[test]
 fn fresh_fsm_waits_for_an_unpublished_upstream_continuation() {
-    let source = "#Inner() => <u64>\n  | :Start\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\n#Outer(value<u64>, live<u64>) => <u64>\n  | :Start(value<u64>, live<u64>)\n  | :Done(value<u64>).\n#Outer(value, live) -> :Start(value, live)\n  :Start(value, live) ~> :Done(value + live)\n  :Done(value) => value.\n#Outer(#Inner(), signal<u64>)\n";
+    let source = "#Inner() => <f64>\n  | :Start\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Done\n  :Done => 41.\n#Outer(value<f64>, live<f64>) => <f64>\n  | :Start(value<f64>, live<f64>)\n  | :Done(value<f64>).\n#Outer(value, live) -> :Start(value, live)\n  :Start(value, live) ~> :Done(value + live)\n  :Done(value) => value.\n#Outer(#Inner(), signal<f64>)\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
@@ -2869,31 +2869,31 @@ fn fresh_fsm_waits_for_an_unpublished_upstream_continuation() {
         &ActivationFacts::default(),
     )
     .unwrap();
-    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: u64| {
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: f64| {
         instance
             .turn(&[CapturedSignalInput {
                 slot: instance.plan.inputs[0].slot,
-                value: ResidentValueRef::Index(&[value]),
+                value: ResidentValueRef::F64(&[value]),
             }])
             .unwrap();
     };
 
-    turn(&mut instance, 1);
+    turn(&mut instance, 1.0);
     assert_eq!(instance.ready_continuation_count(), 1);
     assert!(instance.output_borrow(0).is_none());
 
-    turn(&mut instance, 1);
+    turn(&mut instance, 1.0);
     assert_eq!(instance.ready_continuation_count(), 1);
     assert!(instance.output_borrow(0).is_none());
 
-    turn(&mut instance, 99);
+    turn(&mut instance, 99.0);
     assert_eq!(
         instance
             .copied_output(0)
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::U64(42)
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0))
     );
 }
 
