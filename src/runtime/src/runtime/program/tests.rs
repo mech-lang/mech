@@ -885,7 +885,7 @@ fn production_load_drains_fsm_continuations_before_returning_initial_value() {
 
 #[test]
 fn pure_continuation_drains_keep_input_free_activations_dormant() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ncount\n";
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ndeferred\n";
     let mut runtime = runtime();
     let loaded = runtime
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)

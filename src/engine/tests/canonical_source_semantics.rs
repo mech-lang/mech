@@ -2440,7 +2440,7 @@ fn retained_state_stops_activation_continuation_dependency_checks() {
 
 #[test]
 fn continuation_turn_keeps_input_free_activations_dormant() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ncount\n";
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\ndeferred\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
         .unwrap()
