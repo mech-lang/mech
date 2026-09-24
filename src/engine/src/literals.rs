@@ -866,6 +866,7 @@ struct PlannedTypeConversion {
 #[derive(Debug)]
 struct ReifiedTargetConstraints {
     target: SchemaBody,
+    declared_target: SchemaBody,
     declarations: Box<[DimensionParameterDeclaration]>,
 }
 
@@ -878,7 +879,7 @@ impl ReifiedTargetConstraints {
             &self.declarations,
         )?;
         validate_reified_parameter_bindings(&self.declarations, &bindings)?;
-        substitute_reified_target(&self.target, &bindings)
+        substitute_reified_target(&self.target, Some(&self.declared_target), &bindings)
     }
 
     fn validate(&self, source: &ValueCell) -> MResult<()> {
@@ -988,9 +989,11 @@ fn runtime_reified_constraints(
     if close_enum_payloads {
         close_reified_enum_targets(&source_body, &mut target);
     }
+    let declared_target = target.clone();
     inherit_reified_dynamic_cardinality(&source_body, &mut target, &declarations)?;
     let constraints = ReifiedTargetConstraints {
         target,
+        declared_target,
         declarations,
     };
     let resolved = constraints.resolved_target(source)?;
@@ -1841,7 +1844,7 @@ fn solve_reified_target_bindings(
     }
     // With all available witnesses bound, every deferred compound equation
     // must match. Unresolved parameters remain an invalid ambiguous target.
-    substitute_reified_target(target, &bindings)?;
+    substitute_reified_target(target, None, &bindings)?;
     bind_reified_target_dimensions(source, target, declarations, &mut bindings)?;
     Ok(bindings)
 }
@@ -3317,6 +3320,7 @@ fn substitute_reified_dimension(
 #[cfg(feature = "convert")]
 fn substitute_reified_cardinality(
     cardinality: &CardinalitySpec,
+    declared_cardinality: Option<&CardinalitySpec>,
     bindings: &[Option<DimensionExpr>],
 ) -> MResult<CardinalitySpec> {
     Ok(match cardinality {
@@ -3324,10 +3328,18 @@ fn substitute_reified_cardinality(
             CardinalitySpec::Exact(substitute_reified_dimension(dimension, bindings)?)
         }
         CardinalitySpec::Dynamic { upper_bound } => CardinalitySpec::Dynamic {
-            // Reified source syntax creates only open dynamic cardinality.
-            // A bound here was inherited from the source schema and uses the
-            // source dimension environment, not target parameter bindings.
-            upper_bound: upper_bound.clone(),
+            upper_bound: match declared_cardinality {
+                // Dynamic cardinality present in the declared target owns its
+                // bound, so resolve it in the target parameter environment.
+                Some(CardinalitySpec::Dynamic { .. }) => upper_bound
+                    .as_ref()
+                    .map(|bound| substitute_reified_dimension(bound, bindings))
+                    .transpose()?,
+                // An exact declared cardinality can be replaced with a
+                // dynamic source cardinality during inheritance. Its bound
+                // remains in the source dimension environment.
+                _ => upper_bound.clone(),
+            },
         },
     })
 }
@@ -3335,6 +3347,7 @@ fn substitute_reified_cardinality(
 #[cfg(feature = "convert")]
 fn substitute_reified_target(
     target: &SchemaBody,
+    declared_target: Option<&SchemaBody>,
     bindings: &[Option<DimensionExpr>],
 ) -> MResult<SchemaBody> {
     Ok(match target {
@@ -3342,30 +3355,62 @@ fn substitute_reified_target(
             element,
             dimensions,
         } => SchemaBody::Matrix {
-            element: Box::new(substitute_reified_target(element, bindings)?),
+            element: Box::new(substitute_reified_target(
+                element,
+                match declared_target {
+                    Some(SchemaBody::Matrix { element, .. }) => Some(element),
+                    _ => None,
+                },
+                bindings,
+            )?),
             dimensions: dimensions
                 .iter()
                 .map(|dimension| substitute_reified_dimension(dimension, bindings))
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
         },
-        SchemaBody::Option(element) => {
-            SchemaBody::Option(Box::new(substitute_reified_target(element, bindings)?))
-        }
+        SchemaBody::Option(element) => SchemaBody::Option(Box::new(substitute_reified_target(
+            element,
+            match declared_target {
+                Some(SchemaBody::Option(element)) => Some(element),
+                _ => None,
+            },
+            bindings,
+        )?)),
         SchemaBody::Tuple(elements) => SchemaBody::Tuple(
             elements
                 .iter()
-                .map(|element| substitute_reified_target(element, bindings))
+                .enumerate()
+                .map(|(index, element)| {
+                    substitute_reified_target(
+                        element,
+                        match declared_target {
+                            Some(SchemaBody::Tuple(elements)) => elements.get(index),
+                            _ => None,
+                        },
+                        bindings,
+                    )
+                })
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
         ),
         SchemaBody::Record(fields) => SchemaBody::Record(
             fields
                 .iter()
-                .map(|field| {
+                .enumerate()
+                .map(|(index, field)| {
                     Ok(SchemaField {
                         name: field.name.clone(),
-                        schema: substitute_reified_target(&field.schema, bindings)?,
+                        schema: substitute_reified_target(
+                            &field.schema,
+                            match declared_target {
+                                Some(SchemaBody::Record(fields)) => {
+                                    fields.get(index).map(|field| &field.schema)
+                                }
+                                _ => None,
+                            },
+                            bindings,
+                        )?,
                     })
                 })
                 .collect::<MResult<Vec<_>>>()?
@@ -3375,13 +3420,25 @@ fn substitute_reified_target(
             key: *key,
             variants: variants
                 .iter()
-                .map(|variant| {
+                .enumerate()
+                .map(|(index, variant)| {
                     Ok(EnumVariantSchema {
                         name: variant.name.clone(),
                         payload: variant
                             .payload
                             .as_ref()
-                            .map(|payload| substitute_reified_target(payload, bindings))
+                            .map(|payload| {
+                                substitute_reified_target(
+                                    payload,
+                                    match declared_target {
+                                        Some(SchemaBody::Enum { variants, .. }) => variants
+                                            .get(index)
+                                            .and_then(|variant| variant.payload.as_ref()),
+                                        _ => None,
+                                    },
+                                    bindings,
+                                )
+                            })
                             .transpose()?,
                     })
                 })
@@ -3392,30 +3449,82 @@ fn substitute_reified_target(
             element,
             cardinality,
         } => SchemaBody::Set {
-            element: Box::new(substitute_reified_target(element, bindings)?),
-            cardinality: substitute_reified_cardinality(cardinality, bindings)?,
+            element: Box::new(substitute_reified_target(
+                element,
+                match declared_target {
+                    Some(SchemaBody::Set { element, .. }) => Some(element),
+                    _ => None,
+                },
+                bindings,
+            )?),
+            cardinality: substitute_reified_cardinality(
+                cardinality,
+                match declared_target {
+                    Some(SchemaBody::Set { cardinality, .. }) => Some(cardinality),
+                    _ => None,
+                },
+                bindings,
+            )?,
         },
         SchemaBody::Map {
             key,
             value,
             cardinality,
         } => SchemaBody::Map {
-            key: Box::new(substitute_reified_target(key, bindings)?),
-            value: Box::new(substitute_reified_target(value, bindings)?),
-            cardinality: substitute_reified_cardinality(cardinality, bindings)?,
+            key: Box::new(substitute_reified_target(
+                key,
+                match declared_target {
+                    Some(SchemaBody::Map { key, .. }) => Some(key),
+                    _ => None,
+                },
+                bindings,
+            )?),
+            value: Box::new(substitute_reified_target(
+                value,
+                match declared_target {
+                    Some(SchemaBody::Map { value, .. }) => Some(value),
+                    _ => None,
+                },
+                bindings,
+            )?),
+            cardinality: substitute_reified_cardinality(
+                cardinality,
+                match declared_target {
+                    Some(SchemaBody::Map { cardinality, .. }) => Some(cardinality),
+                    _ => None,
+                },
+                bindings,
+            )?,
         },
         SchemaBody::Table { columns, rows } => SchemaBody::Table {
             columns: columns
                 .iter()
-                .map(|field| {
+                .enumerate()
+                .map(|(index, field)| {
                     Ok(SchemaField {
                         name: field.name.clone(),
-                        schema: substitute_reified_target(&field.schema, bindings)?,
+                        schema: substitute_reified_target(
+                            &field.schema,
+                            match declared_target {
+                                Some(SchemaBody::Table { columns, .. }) => {
+                                    columns.get(index).map(|field| &field.schema)
+                                }
+                                _ => None,
+                            },
+                            bindings,
+                        )?,
                     })
                 })
                 .collect::<MResult<Vec<_>>>()?
                 .into_boxed_slice(),
-            rows: substitute_reified_cardinality(rows, bindings)?,
+            rows: substitute_reified_cardinality(
+                rows,
+                match declared_target {
+                    Some(SchemaBody::Table { rows, .. }) => Some(rows),
+                    _ => None,
+                },
+                bindings,
+            )?,
         },
         _ => target.clone(),
     })
@@ -3484,6 +3593,7 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             if close_enum_payloads {
                 close_reified_enum_targets(&source_body, &mut concrete_template);
             }
+            let declared_target = concrete_template.clone();
             inherit_reified_dynamic_cardinality(
                 &source_body,
                 &mut concrete_template,
@@ -3494,10 +3604,11 @@ impl CanonicalFunctionSpecializer for ConvertKind {
             validate_reified_parameter_bindings(&declarations, &bindings)?;
             let reified_constraints = ReifiedTargetConstraints {
                 target: concrete_template.clone(),
+                declared_target: declared_target.clone(),
                 declarations,
             };
             (
-                substitute_reified_target(&concrete_template, &bindings)?,
+                substitute_reified_target(&concrete_template, Some(&declared_target), &bindings)?,
                 Some(reified_constraints),
             )
         } else {
@@ -4432,11 +4543,13 @@ mod canonical_conversion_tests {
     #[test]
     fn bounded_reified_matrix_constraint_checks_each_source_turn() {
         let id = DimensionParameterId::new(0);
+        let target = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+            dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(1)].into(),
+        };
         let constraints = ReifiedTargetConstraints {
-            target: SchemaBody::Matrix {
-                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
-                dimensions: [DimensionExpr::Parameter(id), DimensionExpr::Constant(1)].into(),
-            },
+            target: target.clone(),
+            declared_target: target,
             declarations: [DimensionParameterDeclaration {
                 id,
                 origin: DimensionParameterOrigin::Inferred,
@@ -5369,6 +5482,118 @@ mod canonical_conversion_tests {
     }
 
     #[test]
+    fn schema_target_substitutes_its_dynamic_upper_bound() {
+        let id = DimensionParameterId::new(0);
+        let source_body = SchemaBody::Tuple(
+            [
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Index),
+                    dimensions: [DimensionExpr::Constant(2)].into(),
+                },
+                SchemaBody::Set {
+                    element: Box::new(SchemaBody::Index),
+                    cardinality: CardinalitySpec::Dynamic {
+                        upper_bound: Some(DimensionExpr::Constant(2)),
+                    },
+                },
+            ]
+            .into(),
+        );
+        let source = ValueCell::from_schema_data(
+            source_body.clone(),
+            ValueDataDraft::Tuple(
+                [
+                    ValueDataDraft::Matrix(
+                        [ValueDataDraft::Index(1), ValueDataDraft::Index(2)].into(),
+                    ),
+                    ValueDataDraft::Set(
+                        [ValueDataDraft::Index(1), ValueDataDraft::Index(2)].into(),
+                    ),
+                ]
+                .into(),
+            ),
+        )
+        .unwrap();
+        let target_schema = SchemaDraft {
+            dimension_parameters: [DimensionParameterDeclaration {
+                id,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Activation,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            }]
+            .into(),
+            body: SchemaBody::Tuple(
+                [
+                    SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Index),
+                        dimensions: [DimensionExpr::Parameter(id)].into(),
+                    },
+                    SchemaBody::Set {
+                        element: Box::new(SchemaBody::Index),
+                        cardinality: CardinalitySpec::Dynamic {
+                            upper_bound: Some(DimensionExpr::Parameter(id)),
+                        },
+                    },
+                ]
+                .into(),
+            ),
+        }
+        .finalize()
+        .unwrap();
+        let key = target_schema.key();
+        let target = ValueCell::from_schema_data(
+            SchemaBody::ReifiedType,
+            ValueDataDraft::Type(ReifiedTypeDraft::Schema(key)),
+        )
+        .unwrap();
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        builder.insert(target_schema).unwrap();
+        builder
+            .insert(
+                SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: SchemaBody::ReifiedType,
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let target = ValueCell::from_value(
+            target.snapshot().unwrap(),
+            std::rc::Rc::new(builder.finish().unwrap().table),
+        )
+        .unwrap();
+        let invocation = SpecializationInvocation::from_cells(
+            vec![source.clone(), target.clone()].into_boxed_slice(),
+        );
+        let operation = ResolvedOperationDescriptor::from_name(
+            "convert/kind",
+            PURE_TYPE_CONVERSION_CONTRACT.clone(),
+        )
+        .unwrap();
+        let mut context =
+            SpecializationContext::for_syntax_directed_invocation(&invocation, None, operation)
+                .unwrap();
+        let conversion = ConvertKind
+            .specialize_invocation(&invocation, &mut context)
+            .unwrap();
+        conversion.instance().solve_result().unwrap();
+        assert_eq!(
+            conversion.output().closed_schema_body().unwrap(),
+            source_body
+        );
+        assert!(
+            RuntimeReifiedKindConversion::new_invocation(FunctionInvocation::binary(
+                conversion.output().clone(),
+                source,
+                target,
+            ))
+            .is_ok()
+        );
+    }
+
+    #[test]
     fn enum_payload_dynamic_cardinality_uses_the_same_inheritance_rule() {
         let path = CanonicalNominalPath::new(vec!["test".to_owned(), "Open".to_owned()]).unwrap();
         let key = NominalKey::from_path(NominalKind::Enum, &path);
@@ -5885,7 +6110,7 @@ mod canonical_conversion_tests {
         let mut bindings = vec![None; parameters.len()];
         bind_reified_target_dimensions(&source, &target, &parameters, &mut bindings).unwrap();
         assert_eq!(
-            substitute_reified_target(&target, &bindings).unwrap(),
+            substitute_reified_target(&target, None, &bindings).unwrap(),
             source
         );
     }
@@ -5903,6 +6128,7 @@ mod canonical_conversion_tests {
             element: Box::new(SchemaBody::Index),
             cardinality: CardinalitySpec::Exact(DimensionExpr::Parameter(id)),
         };
+        let declared_target = target.clone();
         let declaration = DimensionParameterDeclaration {
             id,
             origin: DimensionParameterOrigin::Inferred,
@@ -5913,7 +6139,7 @@ mod canonical_conversion_tests {
         inherit_reified_dynamic_cardinality(&source, &mut target, &[declaration.clone()]).unwrap();
         let bindings = solve_reified_target_bindings(&source, &target, &[declaration]).unwrap();
         assert_eq!(
-            substitute_reified_target(&target, &bindings).unwrap(),
+            substitute_reified_target(&target, Some(&declared_target), &bindings).unwrap(),
             source
         );
     }
@@ -6173,7 +6399,7 @@ mod canonical_conversion_tests {
         let mut bindings = vec![None];
         bind_reified_target_dimensions(&source(2, 2), &target, &[parameter], &mut bindings)
             .unwrap();
-        let substituted = substitute_reified_target(&target, &bindings).unwrap();
+        let substituted = substitute_reified_target(&target, None, &bindings).unwrap();
         assert_eq!(
             substituted,
             SchemaBody::Tuple(
