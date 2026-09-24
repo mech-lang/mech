@@ -142,7 +142,7 @@ fn retained_compiler_document(source: &str) -> MResult<SourceDocument> {
 fn admit_resolved_canonical_source(mut resolved: ResolvedSource) -> MResult<ResolvedSource> {
     if matches!(resolved.kind, crate::SourceKind::Mech)
         && resolved.source_document().is_none()
-        && matches!(&resolved.source, crate::MechSourceCode::String(_))
+        && matches!(&resolved.source, mech_core::MechSourceCode::String(_))
     {
         resolved = resolved.retain_source_document(
             mech_syntax::document::Revision(0),
