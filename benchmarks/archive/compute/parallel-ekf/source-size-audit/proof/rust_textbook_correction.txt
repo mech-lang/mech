@@ -1,0 +1,19 @@
+    let candidate_state = [
+        predicted_state[0] + gain[0] * innovation,
+        predicted_state[1] + gain[1] * innovation,
+        predicted_state[2] + gain[2] * innovation,
+    ];
+    for column in 0..3 {
+        for row in 0..3 {
+            s.a[row + column * 3] = f32::from(row == column) - gain[row] * h[column];
+        }
+    }
+    transpose(&s.a, 3, 3, &mut s.at);
+    matmul(&s.a, 3, 3, &s.predicted_p, 3, &mut s.ap);
+    matmul(&s.ap, 3, 3, &s.at, 3, &mut s.corrected_p);
+    for column in 0..3 {
+        for row in 0..3 {
+            s.corrected_p[row + column * 3] =
+                s.corrected_p[row + column * 3] + gain[row] * gain[column] * 0.25;
+        }
+    }

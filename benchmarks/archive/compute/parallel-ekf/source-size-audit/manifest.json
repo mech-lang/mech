@@ -1,0 +1,85 @@
+{
+  "repository": "mech-lang/mech",
+  "revision": "d7c535bcccbde027db9dff3e6dc1bb77ed7be05b",
+  "counting_rule": "one Unicode code point per programmer-chosen identifier occurrence; preserve literals, punctuation, keywords and library names; exclude comments and nonliteral whitespace",
+  "mech_selection": [
+    [
+      1,
+      1
+    ],
+    [
+      16,
+      16
+    ],
+    [
+      19,
+      103
+    ]
+  ],
+  "rust_simd_selection": {
+    "imports": "use std::slice;\nuse wide::f32x4;",
+    "spans": [
+      [
+        3,
+        245
+      ],
+      [
+        259,
+        272
+      ],
+      [
+        325,
+        459
+      ],
+      [
+        476,
+        479
+      ],
+      [
+        481,
+        483
+      ]
+    ]
+  },
+  "rust_textbook_selection": {
+    "original_spans": [
+      [
+        2,
+        17
+      ],
+      [
+        96,
+        248
+      ],
+      [
+        23,
+        26
+      ]
+    ],
+    "change": "block-start checkpoint, complete rollback, terminal rejection, corresponding fault categories and metadata",
+    "patch": "evidence/textbook-contract.patch"
+  },
+  "source_metrics": {
+    "ekf.mec": {
+      "normalized_characters": 1079,
+      "width4_characters": 1628,
+      "original_name_characters": 2913,
+      "normalized_identifier_occurrences": 183,
+      "sha256": "09afcf7b354345f33e6b1e5d9b10a275cbfd1eb5763b3d0e691329861ab64224"
+    },
+    "rust_simd.rs": {
+      "normalized_characters": 5243,
+      "width4_characters": 7196,
+      "original_name_characters": 8711,
+      "normalized_identifier_occurrences": 651,
+      "sha256": "283b846040bbb65b6bfc679a51309677fc7761ec834198343f65f81c76e9d39f"
+    },
+    "rust_textbook.rs": {
+      "normalized_characters": 2355,
+      "width4_characters": 3390,
+      "original_name_characters": 4142,
+      "normalized_identifier_occurrences": 345,
+      "sha256": "e55c6b8847e47c1da5b5094a18c5ac82cc0eb4835de90c45454501be86c8aa33"
+    }
+  }
+}

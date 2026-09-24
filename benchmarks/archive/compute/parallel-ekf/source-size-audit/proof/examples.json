@@ -1,0 +1,32 @@
+{
+  "mech_correction": {
+    "source": "ekf.mec",
+    "line_ranges": [
+      [
+        60,
+        62
+      ]
+    ],
+    "normalized_characters": 38
+  },
+  "rust_textbook_correction": {
+    "source": "rust_textbook.rs",
+    "line_ranges": [
+      [
+        128,
+        146
+      ]
+    ],
+    "normalized_characters": 240
+  },
+  "rust_simd_arithmetic_trait_wrappers": {
+    "source": "rust_simd.rs",
+    "line_ranges": [
+      [
+        57,
+        91
+      ]
+    ],
+    "normalized_characters": 480
+  }
+}

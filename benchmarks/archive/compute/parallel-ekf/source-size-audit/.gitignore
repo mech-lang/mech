@@ -1,0 +1,5 @@
+__pycache__/
+normalized/
+proof/*-categorized-tokens.tsv
+*.png
+*.pdf

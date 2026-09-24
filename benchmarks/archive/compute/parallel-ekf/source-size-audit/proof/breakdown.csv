@@ -1,0 +1,8 @@
+category,ekf.mec,rust_textbook.rs,rust_simd.rs
+"Setup, constants and declarations",340,486,561
+EKF update and local candidate handling,356,1024,1119
+Validation and component extraction,383,263,396
+Matrix helpers,0,251,310
+SIMD wrapper and adapters,0,0,1243
+"Batch dispatch, workers and rollback",0,331,1614
+TOTAL,1079,2355,5243
