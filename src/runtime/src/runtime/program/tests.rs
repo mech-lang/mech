@@ -4382,8 +4382,7 @@ driven-trigger := @clock/delta-seconds
 ~driven-count := 0u64
 ~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
 ~> driven-trigger { driven-count = driven-count + 1u64 }
-status := snapshot-count * 100u64 + driven-count
-status
+0u64
 "#;
     let catalog = mech_stdlib::source_catalog();
     let mut compiler = RuntimeBuilder::new()
@@ -4432,12 +4431,21 @@ status
     assert_eq!(driven_reads.load(Ordering::SeqCst), 2);
     assert_eq!(
         runtime
-            .root_symbol_value("status")
+            .root_symbol_value("snapshot-count")
             .unwrap()
             .value()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::U64(100)
+        ValueDataDraft::U64(1)
+    );
+    assert_eq!(
+        runtime
+            .root_symbol_value("driven-count")
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(0)
     );
 
     runtime
@@ -4454,12 +4462,21 @@ status
     ));
     assert_eq!(
         runtime
-            .root_symbol_value("status")
+            .root_symbol_value("snapshot-count")
             .unwrap()
             .value()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::U64(101)
+        ValueDataDraft::U64(1)
+    );
+    assert_eq!(
+        runtime
+            .root_symbol_value("driven-count")
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(1)
     );
 }
 
