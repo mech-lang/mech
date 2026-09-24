@@ -530,6 +530,7 @@ impl MechRuntime {
             )?;
             let trigger_sources = coordinator.trigger_sources()?;
             let input_sources = coordinator.input_sources()?;
+            let has_driverless_trigger = coordinator.has_driverless_trigger_observation()?;
             self.ensure_exact_resident_input_drivers(&input_sources)?;
             if trigger_sources.is_empty() {
                 let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
@@ -550,6 +551,25 @@ impl MechRuntime {
                     ));
                 }
                 info.resident_accepted_turns = 1;
+                if has_driverless_trigger {
+                    let turn_started = Instant::now();
+                    let admission = coordinator.admit_turn()?;
+                    let outcome = coordinator.execute_admitted_provider_turn(admission, |_| {
+                        super::super::limits::enforce_turn_duration_limit(
+                            max_turn_duration_ms,
+                            turn_started,
+                        )
+                    })?;
+                    if let Some(error) = super::resident_host_turn_error(&outcome) {
+                        return Err(route_failure(
+                            ResidentRouteFailureClass::ActivationFailure,
+                            format!(
+                                "driverless resident observation did not complete cleanly: {error:?}"
+                            ),
+                        ));
+                    }
+                    info.resident_accepted_turns = 2;
+                }
             }
             ActiveProgramExecution::ResidentExternal(ResidentExternalExecution {
                 artifact,
