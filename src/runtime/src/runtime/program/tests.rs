@@ -5553,6 +5553,131 @@ points := [1.0 2.0]
 }
 
 #[test]
+fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
+    let (mut runtime, _) = product_nbody_runtime();
+    runtime
+        .load_source_program(
+            r#"
+@clock := timer://clock/tick{:read(tick)}
+@scene := scene://orbit/frame{:write(points)}
+ordinary := @clock/tick
+trigger := true
+~count := 0.0
+~> trigger { count = count + 1.0 }
+payload := ordinary + 1.0
+@scene/points <- payload
+count
+"#,
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("resource program must remain resident")
+    };
+    let base = execution.artifact.as_ref();
+    let activation_result = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["access"]
+                    && operation.operation.operation_name == "scalar"
+            })
+        })
+        .and_then(|access| {
+            base.slots().iter().find(|slot| {
+                matches!(
+                    slot.producer,
+                    mech_engine::ProducerReference::NodeOutput { node, .. }
+                        if node == access.node
+                )
+            })
+        })
+        .expect("activation result accessor")
+        .slot;
+    let effect = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                matches!(
+                    base.contracts().get(operation.contract),
+                    Some(mech_core::ResolvedOperationContract::Declared(contract))
+                        if matches!(contract.interaction, ExternalInteraction::Effect(_))
+                )
+            })
+        })
+        .expect("external effect");
+    let mech_engine::BindingDeclaration::Input {
+        source: ArtifactSource::Slot(payload_slot),
+        ..
+    } = &base.bindings()[effect.input_bindings.start as usize]
+    else {
+        panic!("effect payload slot")
+    };
+    let mech_engine::ProducerReference::NodeOutput {
+        node: payload_node, ..
+    } = base.slots()[payload_slot.get() as usize].producer
+    else {
+        panic!("effect payload producer")
+    };
+    let payload = &base.nodes()[payload_node.get() as usize];
+    let mut bindings = base.bindings().to_vec();
+    let replacement = bindings
+        [payload.input_bindings.start as usize..payload.input_bindings.end as usize]
+        .iter_mut()
+        .find(|binding| {
+            matches!(
+                binding,
+                BindingDeclaration::Input {
+                    source: ArtifactSource::Constant(_),
+                    ..
+                }
+            )
+        })
+        .expect("payload constant input");
+    let BindingDeclaration::Input { source, .. } = replacement else {
+        unreachable!()
+    };
+    *source = ArtifactSource::Slot(activation_result);
+    let artifact = ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: base.contracts().clone(),
+        requirements: base.requirements().clone(),
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: base.slots().to_vec().into_boxed_slice(),
+        nodes: base.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: base.constraints().to_vec().into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut instance = mech_engine::__resident::activate_with_options(
+        mech_core::ReactiveInstanceId::new(0x540, 767),
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentActivationOptions {
+            external: mech_engine::__resident::ResidentExternalAdmission::StructuralOnly,
+            ..mech_engine::__resident::ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let input = [0.0_f64];
+    let prepared = instance
+        .prepare_initial_turn(&[mech_engine::__resident::CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: mech_core::ResidentValueRef::F64(&input),
+        }])
+        .unwrap();
+    assert_eq!(prepared.effect_intents().count(), 0);
+    prepared.abort();
+}
+
+#[test]
 fn initial_publication_replays_with_activations_dormant() {
     let (mut runtime, scene) = product_nbody_runtime();
     runtime
