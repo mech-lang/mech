@@ -627,6 +627,7 @@ pub(super) fn validate_match(
         &[],
         false,
         false,
+        true,
     )
 }
 
@@ -647,6 +648,7 @@ pub(super) fn validate_activation(
         true,
         &mut 0,
         &[],
+        false,
         false,
         false,
     )
@@ -744,9 +746,10 @@ pub(super) fn validate_match_inner(
     lexical_signature: Option<(SchemaId, SchemaId)>,
     allow_sampled_pattern: bool,
     next_block: &mut u32,
-    enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
+    enclosing_matches: &[(SchemaId, SchemaId, bool, bool, bool)],
     inside_comprehension: bool,
     enclosing_guard: bool,
+    recursive_target_eligible: bool,
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -786,6 +789,7 @@ pub(super) fn validate_match_inner(
             .captures
             .iter()
             .any(|capture| capture.input == declaration.scrutinee),
+        recursive_target_eligible,
     ));
     if !closed_value(output)
         || (!scalar(scrutinee)
@@ -962,6 +966,7 @@ pub(super) fn validate_match_inner(
                             &match_schemas,
                             inside_comprehension,
                             guarded,
+                            true,
                         )?,
                         ControlOperationBody::Comprehension(nested) => {
                             super::comprehension::validate_comprehension_inner(
@@ -980,6 +985,11 @@ pub(super) fn validate_match_inner(
                                 .checked_sub(usize::from(*ancestor) + 1)
                                 .and_then(|index| match_schemas.get(index))
                                 .ok_or_else(|| invalid("unknown recursive lexical target"))?;
+                            if !target.4 {
+                                return Err(invalid(
+                                    "recursive target cannot be an activation scope",
+                                ));
+                            }
                             if inputs.as_slice() != [target.0] || operation.schema != target.1 {
                                 return Err(invalid(
                                     "recursive call must preserve its lexical target input and output schemas",
