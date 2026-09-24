@@ -9465,6 +9465,23 @@ fn indexed_assign_matrix_selection(
         .and_then(|nodes| nodes.checked_add(final_output_nodes))
         .ok_or(ResidentKernelError::InvalidShape)?;
     let measured = footprint_meter.estimate();
+    let compound_power_work = if plan.arithmetic == Some(SemanticArithmetic::Power) {
+        match &output {
+            ResidentValueMut::Snapshot([Some(current)]) => {
+                let schema = current
+                    .validate_against(schemas)
+                    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+                snapshot_power_compute_work(SemanticArithmetic::Power, schema.body(), write_count)?
+            }
+            ResidentValueMut::Snapshot(_) => return Err(ResidentKernelError::InvalidOutput),
+            ResidentValueMut::Bool(_)
+            | ResidentValueMut::Index(_)
+            | ResidentValueMut::F64(_)
+            | ResidentValueMut::String(_) => 0,
+        }
+    } else {
+        0
+    };
     let snapshot_finalization_work = super::budget::PreparedMutationPlan::new(
         snapshot_finalization_work,
         super::budget::PublishedOutputFootprint {
@@ -9486,9 +9503,12 @@ fn indexed_assign_matrix_selection(
                 .compute_work()
                 .checked_add(super::budget::checked_u64(
                     output_len
-                .checked_add(write_count)
+                        .checked_add(write_count)
                         .ok_or(ResidentKernelError::InvalidShape)?,
                 )?)
+                .and_then(|work| {
+                    work.checked_add(super::budget::checked_u64(compound_power_work).ok()?)
+                })
                 .and_then(|work| work.checked_add(publication_comparison_work))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             temporary_bytes,
@@ -17576,23 +17596,16 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
 }
 
 fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
-    let scale = right.0.abs().max(right.1.abs());
-    if scale.is_finite() && scale > 0.0 && left.0.is_finite() && left.1.is_finite() {
-        let real = right.0 / scale;
-        let imaginary = right.1 / scale;
-        let denominator = real * real + imaginary * imaginary;
-        let real_weight = real / denominator;
-        let imaginary_weight = imaginary / denominator;
-        let scaled_left = (left.0 / scale, left.1 / scale);
-        if scaled_left.0.is_finite() && scaled_left.1.is_finite() {
-            return (
-                scaled_left.0 * real_weight + scaled_left.1 * imaginary_weight,
-                scaled_left.1 * real_weight - scaled_left.0 * imaginary_weight,
-            );
-        }
+    if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
+        // Products of finite f32 values remain representable in f64. Complete
+        // the quotient there so a small divisor component is not rounded away
+        // before it contributes to a representable f32 result.
+        let left = (f64::from(left.0), f64::from(left.1));
+        let right = (f64::from(right.0), f64::from(right.1));
+        let denominator = right.0 * right.0 + right.1 * right.1;
         return (
-            (left.0 * real_weight + left.1 * imaginary_weight) / scale,
-            (left.1 * real_weight - left.0 * imaginary_weight) / scale,
+            ((left.0 * right.0 + left.1 * right.1) / denominator) as f32,
+            ((left.1 * right.0 - left.0 * right.1) / denominator) as f32,
         );
     }
     if right.0.abs() >= right.1.abs() {
@@ -17631,27 +17644,85 @@ fn complex64_from_parts(real: f64, imaginary: f64) -> ValueDataDraft {
 }
 
 #[cfg(feature = "c64")]
+fn scaled_f64_product(left: f64, right: f64) -> Option<(f64, i32)> {
+    if left == 0.0 || right == 0.0 {
+        return None;
+    }
+    let (left, left_exponent) = libm::frexp(left);
+    let (right, right_exponent) = libm::frexp(right);
+    Some((left * right, left_exponent + right_exponent))
+}
+
+#[cfg(feature = "c64")]
+fn scaled_f64_product_sum(
+    first: (f64, f64),
+    second: (f64, f64),
+    subtract_second: bool,
+) -> Option<(f64, i32)> {
+    let first = scaled_f64_product(first.0, first.1);
+    let second = scaled_f64_product(second.0, second.1);
+    let (mantissa, exponent) = match (first, second) {
+        (None, None) => return None,
+        (Some(value), None) => value,
+        (None, Some((mantissa, exponent))) => {
+            (if subtract_second { -mantissa } else { mantissa }, exponent)
+        }
+        (Some((first, first_exponent)), Some((second, second_exponent))) => {
+            let exponent = first_exponent.max(second_exponent);
+            let second = if subtract_second { -second } else { second };
+            (
+                libm::scalbn(first, first_exponent - exponent)
+                    + libm::scalbn(second, second_exponent - exponent),
+                exponent,
+            )
+        }
+    };
+    if mantissa == 0.0 {
+        return None;
+    }
+    let (mantissa, adjustment) = libm::frexp(mantissa);
+    Some((mantissa, exponent + adjustment))
+}
+
+#[cfg(feature = "c64")]
+fn materialize_scaled_f64(value: Option<(f64, i32)>) -> f64 {
+    value.map_or(0.0, |(mantissa, exponent)| libm::scalbn(mantissa, exponent))
+}
+
+#[cfg(feature = "c64")]
+fn divide_scaled_f64(numerator: Option<(f64, i32)>, denominator: (f64, i32)) -> f64 {
+    numerator.map_or(0.0, |(mantissa, exponent)| {
+        libm::scalbn(mantissa / denominator.0, exponent - denominator.1)
+    })
+}
+
+#[cfg(feature = "c64")]
 fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
-        let left_scale = left.0.abs().max(left.1.abs());
-        let right_scale = right.0.abs().max(right.1.abs());
-        if left_scale > 0.0 && right_scale > 0.0 {
-            let (_, left_exponent) = libm::frexp(left_scale);
-            let (_, right_exponent) = libm::frexp(right_scale);
-            let left = (
-                libm::scalbn(left.0, -left_exponent),
-                libm::scalbn(left.1, -left_exponent),
-            );
-            let right = (
-                libm::scalbn(right.0, -right_exponent),
-                libm::scalbn(right.1, -right_exponent),
-            );
-            let exponent = left_exponent + right_exponent;
-            return (
-                libm::scalbn(left.0 * right.0 - left.1 * right.1, exponent),
-                libm::scalbn(left.0 * right.1 + left.1 * right.0, exponent),
-            );
+        let products = (
+            left.0 * right.0,
+            left.1 * right.1,
+            left.0 * right.1,
+            left.1 * right.0,
+        );
+        if [products.0, products.1, products.2, products.3]
+            .iter()
+            .all(|product| product.is_finite())
+        {
+            return (products.0 - products.1, products.2 + products.3);
         }
+        return (
+            materialize_scaled_f64(scaled_f64_product_sum(
+                (left.0, right.0),
+                (left.1, right.1),
+                true,
+            )),
+            materialize_scaled_f64(scaled_f64_product_sum(
+                (left.0, right.1),
+                (left.1, right.0),
+                false,
+            )),
+        );
     }
     (
         left.0 * right.0 - left.1 * right.1,
@@ -17661,23 +17732,19 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
 
 #[cfg(feature = "c64")]
 fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
-    let scale = right.0.abs().max(right.1.abs());
-    if scale.is_finite() && scale > 0.0 && left.0.is_finite() && left.1.is_finite() {
-        let real = right.0 / scale;
-        let imaginary = right.1 / scale;
-        let denominator = real * real + imaginary * imaginary;
-        let real_weight = real / denominator;
-        let imaginary_weight = imaginary / denominator;
-        let scaled_left = (left.0 / scale, left.1 / scale);
-        if scaled_left.0.is_finite() && scaled_left.1.is_finite() {
-            return (
-                scaled_left.0 * real_weight + scaled_left.1 * imaginary_weight,
-                scaled_left.1 * real_weight - scaled_left.0 * imaginary_weight,
-            );
-        }
+    if left.0.is_finite()
+        && left.1.is_finite()
+        && right.0.is_finite()
+        && right.1.is_finite()
+        && (right.0 != 0.0 || right.1 != 0.0)
+    {
+        let denominator = scaled_f64_product_sum((right.0, right.0), (right.1, right.1), false)
+            .expect("a finite nonzero complex divisor has a positive norm");
+        let real = scaled_f64_product_sum((left.0, right.0), (left.1, right.1), false);
+        let imaginary = scaled_f64_product_sum((left.1, right.0), (left.0, right.1), true);
         return (
-            (left.0 * real_weight + left.1 * imaginary_weight) / scale,
-            (left.1 * real_weight - left.0 * imaginary_weight) / scale,
+            divide_scaled_f64(real, denominator),
+            divide_scaled_f64(imaginary, denominator),
         );
     }
     if right.0.abs() >= right.1.abs() {
