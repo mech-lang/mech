@@ -2308,48 +2308,51 @@ fn declared_fsm_bytecode_rejects_malformed_typed_continuation_operations() {
         );
     }
 
-    fn reference_terminal_publish_local(value: &mut serde_json::Value) -> bool {
+    fn reference_publish_local(value: &mut serde_json::Value) -> bool {
         match value {
             serde_json::Value::Object(object) => {
-                let publish = object
-                    .get("operations")
-                    .and_then(serde_json::Value::as_array)
-                    .and_then(|operations| {
-                        operations
-                            .iter()
-                            .find(|operation| {
-                                operation.get("body").is_some_and(|body| body == "Publish")
-                            })
-                            .filter(|_| {
-                                !operations.iter().any(|operation| {
-                                    operation.get("body").is_some_and(|body| body == "Suspend")
-                                })
-                            })
-                            .and_then(|operation| operation.get("node"))
-                            .and_then(serde_json::Value::as_u64)
-                    });
-                if let (Some(block), Some(node)) = (
-                    object.get("id").and_then(serde_json::Value::as_u64),
-                    publish,
-                ) {
-                    object.insert(
-                        "yield_value".to_owned(),
-                        serde_json::json!({"Local": {"block": block, "node": node}}),
-                    );
+                let block = object.get("id").and_then(serde_json::Value::as_u64);
+                if let (Some(block), Some(operations)) = (
+                    block,
+                    object
+                        .get_mut("operations")
+                        .and_then(serde_json::Value::as_array_mut),
+                ) && let Some(publish_index) = operations.iter().position(|operation| {
+                    operation.get("body").is_some_and(|body| body == "Publish")
+                }) {
+                    let publish_node = operations[publish_index]["node"].as_u64().unwrap();
+                    let insert = publish_index + 1;
+                    for operation in &mut operations[insert..] {
+                        let node = operation["node"].as_u64().unwrap();
+                        operation["node"] = serde_json::json!(node + 1);
+                    }
+                    let mut duplicate = operations[publish_index].clone();
+                    duplicate["node"] = serde_json::json!(insert);
+                    duplicate["inputs"] = serde_json::json!([
+                        {"Local": {"block": block, "node": publish_node}}
+                    ]);
+                    operations.insert(insert, duplicate);
+                    if let Some(local) = object
+                        .get_mut("yield_value")
+                        .and_then(|yielded| yielded.get_mut("Local"))
+                        && local["node"]
+                            .as_u64()
+                            .is_some_and(|node| node >= insert as u64)
+                    {
+                        local["node"] = serde_json::json!(local["node"].as_u64().unwrap() + 1);
+                    }
                     return true;
                 }
-                object.values_mut().any(reference_terminal_publish_local)
+                object.values_mut().any(reference_publish_local)
             }
-            serde_json::Value::Array(values) => {
-                values.iter_mut().any(reference_terminal_publish_local)
-            }
+            serde_json::Value::Array(values) => values.iter_mut().any(reference_publish_local),
             _ => false,
         }
     }
 
     let mut publish_local = sections.clone();
     let mut graph: serde_json::Value = serde_json::from_slice(&publish_local.nodes).unwrap();
-    assert!(reference_terminal_publish_local(&mut graph));
+    assert!(reference_publish_local(&mut graph));
     publish_local.nodes = serde_json::to_vec(&graph).unwrap();
     let error = mech_engine::decode_program_artifact_sections(&publish_local).unwrap_err();
     assert!(
