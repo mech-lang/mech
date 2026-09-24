@@ -12,6 +12,7 @@ pub enum ResidentExternalTurnMode {
     DriverlessBootstrap = 2,
     ExplicitStep = 3,
     ContinuationDrain = 4,
+    ExplicitSnapshotStep = 5,
 }
 
 impl ResidentExternalTurnMode {
