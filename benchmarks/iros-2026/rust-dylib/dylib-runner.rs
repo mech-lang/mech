@@ -31,13 +31,17 @@ struct Library {
 }
 
 impl Library {
-    fn open(path: &Path) -> Self {
+    fn open(path: &Path, simd_packed: bool) -> Self {
         let path = CString::new(path.as_os_str().to_string_lossy().as_bytes()).unwrap();
         let handle = unsafe { dlopen(path.as_ptr(), RTLD_NOW) };
         if handle.is_null() {
             panic!("dlopen failed: {}", dynamic_error());
         }
-        let symbol = b"mech_fixed_numeric_turn\0";
+        let symbol: &[u8] = if simd_packed {
+            b"mech_fixed_numeric_simd_turn\0"
+        } else {
+            b"mech_fixed_numeric_turn\0"
+        };
         let address = unsafe { dlsym(handle, symbol.as_ptr().cast()) };
         if address.is_null() {
             unsafe { dlclose(handle) };
@@ -69,10 +73,16 @@ struct Workload {
     inputs: [Vec<f32>; 5],
     state: [Vec<f32>; 2],
     next_state: [Vec<f32>; 2],
+    instances: usize,
+    simd_packed: bool,
 }
 
 impl Workload {
-    fn new(instances: usize) -> Self {
+    fn new(instances: usize, simd_packed: bool) -> Self {
+        assert!(
+            !simd_packed || instances.is_multiple_of(4),
+            "packed SIMD workload requires an instance count divisible by four"
+        );
         let denominator = instances as f32;
         let mut linear_velocity = vec![0.0; instances];
         let mut angular_velocity = vec![0.0; instances];
@@ -94,16 +104,32 @@ impl Workload {
             inputs,
             state: [vec![0.0; instances * 3], vec![0.0; instances * 9]],
             next_state: [vec![0.0; instances * 3], vec![0.0; instances * 9]],
+            instances,
+            simd_packed,
         };
         workload.reset();
         workload
     }
 
     fn reset(&mut self) {
-        for instance in 0..self.state[0].len() / 3 {
-            self.state[0][instance * 3..instance * 3 + 3].copy_from_slice(&[55.0, 25.0, 0.4]);
-            self.state[1][instance * 9..instance * 9 + 9]
-                .copy_from_slice(&[100.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.15]);
+        if self.simd_packed {
+            let state = [55.0, 25.0, 0.4];
+            let covariance = [100.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.15];
+            for group in 0..self.instances / 4 {
+                for (component, value) in state.into_iter().enumerate() {
+                    self.state[0][(group * 3 + component) * 4..][..4].fill(value);
+                }
+                for (component, value) in covariance.into_iter().enumerate() {
+                    self.state[1][(group * 9 + component) * 4..][..4].fill(value);
+                }
+            }
+        } else {
+            for instance in 0..self.instances {
+                self.state[0][instance * 3..instance * 3 + 3]
+                    .copy_from_slice(&[55.0, 25.0, 0.4]);
+                self.state[1][instance * 9..instance * 9 + 9]
+                    .copy_from_slice(&[100.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.15]);
+            }
         }
         self.next_state[0].fill(0.0);
         self.next_state[1].fill(0.0);
@@ -119,7 +145,11 @@ impl Workload {
                     input_pointers.as_ptr(),
                     state_pointers.as_ptr(),
                     next_state_pointers.as_ptr(),
-                    self.inputs[0].len(),
+                    if self.simd_packed {
+                        self.instances / 4
+                    } else {
+                        self.instances
+                    },
                 )
             };
             if fault != 0 {
@@ -139,13 +169,40 @@ impl Workload {
     }
 
     fn maximum_error(&self, other: &Self) -> f32 {
-        self.state
+        let left = self.logical_state();
+        let right = other.logical_state();
+        left
             .iter()
             .flatten()
-            .zip(other.state.iter().flatten())
+            .zip(right.iter().flatten())
             .map(|(left, right)| (left - right).abs())
             .fold(0.0, f32::max)
     }
+
+    fn logical_state(&self) -> [Vec<f32>; 2] {
+        if self.simd_packed {
+            [
+                unpack_simd(&self.state[0], 3),
+                unpack_simd(&self.state[1], 9),
+            ]
+        } else {
+            self.state.clone()
+        }
+    }
+}
+
+fn unpack_simd(values: &[f32], elements: usize) -> Vec<f32> {
+    let instances = values.len() / elements;
+    let mut unpacked = vec![0.0; values.len()];
+    for group in 0..instances / 4 {
+        for component in 0..elements {
+            for lane in 0..4 {
+                unpacked[(group * 4 + lane) * elements + component] =
+                    values[(group * elements + component) * 4 + lane];
+            }
+        }
+    }
+    unpacked
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
@@ -158,11 +215,12 @@ fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
 fn main() {
     let path = env::args()
         .nth(1)
-        .expect("usage: dylib-runner LIBRARY [INSTANCES] [TURNS] [REFERENCE]");
+        .expect("usage: dylib-runner LIBRARY [INSTANCES] [TURNS] [REFERENCE] [--simd]");
     let instances = argument(2, 10_000_usize).max(1);
     let turns = argument(3, 200_u32).max(1);
-    let library = Library::open(Path::new(&path));
-    let mut workload = Workload::new(instances);
+    let simd_packed = env::args().any(|argument| argument == "--simd");
+    let library = Library::open(Path::new(&path), simd_packed);
+    let mut workload = Workload::new(instances, simd_packed);
     let warmup_fault = workload.dispatch(library.turn, WARMUP_TURNS);
     assert_eq!(warmup_fault, 0, "warmup must not reject a candidate");
     workload.reset();
@@ -182,9 +240,9 @@ fn main() {
     println!("checksum: {checksum:.9}");
     println!("faults: {}", u64::from(fault != 0));
 
-    if let Some(reference_path) = env::args().nth(4) {
-        let reference = Library::open(Path::new(&reference_path));
-        let mut reference_workload = Workload::new(instances);
+    if let Some(reference_path) = env::args().nth(4).filter(|value| value != "--simd") {
+        let reference = Library::open(Path::new(&reference_path), false);
+        let mut reference_workload = Workload::new(instances, false);
         let reference_fault = reference_workload.dispatch(reference.turn, turns);
         assert_eq!(reference_fault, 0, "reference must not reject a candidate");
         println!(

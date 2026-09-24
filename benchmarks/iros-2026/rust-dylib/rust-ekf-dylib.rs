@@ -31,37 +31,40 @@ pub unsafe extern "C" fn mech_fixed_numeric_turn(
     let inputs = unsafe { slice::from_raw_parts(input_pointers, 5) };
     let states = unsafe { slice::from_raw_parts(state_pointers, 2) };
     let next_states = unsafe { slice::from_raw_parts(next_state_pointers, 2) };
+    let [dt, velocity, angular_velocity, bearing, measurement_noise] =
+        [inputs[0], inputs[1], inputs[2], inputs[3], inputs[4]];
+    let [state, covariance] = [states[0], states[1]];
+    let [next_state, next_covariance] = [next_states[0], next_states[1]];
 
     for instance in 0..instances {
-        let input = |index: usize| unsafe { *inputs[index].add(instance) };
-        let state = unsafe { slice::from_raw_parts(states[0].add(instance * 3), 3) };
-        let covariance = unsafe { slice::from_raw_parts(states[1].add(instance * 9), 9) };
+        let dt = unsafe { *dt.add(instance) };
+        let velocity = unsafe { *velocity.add(instance) };
+        let angular_velocity = unsafe { *angular_velocity.add(instance) };
+        let bearing = unsafe { *bearing.add(instance) };
+        let measurement_noise = unsafe { *measurement_noise.add(instance) };
+        let state_values = unsafe { slice::from_raw_parts(state.add(instance * 3), 3) };
+        let covariance_values = unsafe { slice::from_raw_parts(covariance.add(instance * 9), 9) };
 
-        let dt = input(0);
-        let velocity = input(1);
-        let angular_velocity = input(2);
-        let bearing = input(3);
-        let measurement_noise = input(4);
-        let theta = state[2];
+        let theta = state_values[2];
         let sin_theta = theta.sin();
         let cos_theta = theta.cos();
         let distance = velocity * dt;
-        let predicted_x0 = state[0] + distance * cos_theta;
-        let predicted_x1 = state[1] + distance * sin_theta;
+        let predicted_x0 = state_values[0] + distance * cos_theta;
+        let predicted_x1 = state_values[1] + distance * sin_theta;
         let predicted_x2 = theta + angular_velocity * dt;
         let f02 = -distance * sin_theta;
         let f12 = distance * cos_theta;
 
         // The native ABI stores fixed-shape matrices in column-major order.
-        let p00 = covariance[0];
-        let p10 = covariance[1];
-        let p20 = covariance[2];
-        let p01 = covariance[3];
-        let p11 = covariance[4];
-        let p21 = covariance[5];
-        let p02 = covariance[6];
-        let p12 = covariance[7];
-        let p22 = covariance[8];
+        let p00 = covariance_values[0];
+        let p10 = covariance_values[1];
+        let p20 = covariance_values[2];
+        let p01 = covariance_values[3];
+        let p11 = covariance_values[4];
+        let p21 = covariance_values[5];
+        let p02 = covariance_values[6];
+        let p12 = covariance_values[7];
+        let p22 = covariance_values[8];
 
         let ap00 = p00 + f02 * p20;
         let ap01 = p01 + f02 * p21;
@@ -135,11 +138,12 @@ pub unsafe extern "C" fn mech_fixed_numeric_turn(
             b20 * a20 + b21 * a21 + b22 * a22 + k2 * k2 * measurement_noise,
         ];
 
-        let next_state = unsafe { slice::from_raw_parts_mut(next_states[0].add(instance * 3), 3) };
-        let next_covariance =
-            unsafe { slice::from_raw_parts_mut(next_states[1].add(instance * 9), 9) };
-        next_state.copy_from_slice(&candidate_state);
-        next_covariance.copy_from_slice(&candidate_covariance);
+        let next_state_values =
+            unsafe { slice::from_raw_parts_mut(next_state.add(instance * 3), 3) };
+        let next_covariance_values =
+            unsafe { slice::from_raw_parts_mut(next_covariance.add(instance * 9), 9) };
+        next_state_values.copy_from_slice(&candidate_state);
+        next_covariance_values.copy_from_slice(&candidate_covariance);
 
         let constraint = if !candidate_state.iter().copied().all(f32::is_finite)
             || !candidate_covariance.iter().copied().all(f32::is_finite)

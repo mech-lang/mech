@@ -4,8 +4,6 @@ use std::{collections::BTreeMap, num::NonZeroU32, sync::Arc};
 
 use web_time::Instant;
 
-#[cfg(feature = "aot")]
-use mech_compute::CPU_AOT_BACKEND;
 #[cfg(feature = "jit")]
 use mech_compute::CPU_JIT_BACKEND;
 use mech_compute::{
@@ -16,17 +14,19 @@ use mech_compute::{
     ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePort, ComputeProgram,
     ComputeSession, ComputeValue, TensorLayout,
 };
+#[cfg(feature = "aot")]
+use mech_compute::{CPU_AOT_BACKEND, CPU_AOT_SIMD_BACKEND};
 #[cfg(feature = "native")]
 use mech_compute::{ComputeBackendRegistry, WGPU_BACKEND};
 
-#[cfg(feature = "aot")]
-use crate::BatchedAotCpuSession;
 #[cfg(feature = "jit")]
 use crate::BatchedJitCpuSession;
 #[cfg(feature = "native")]
 use crate::BatchedResidentGpuSession;
 #[cfg(feature = "native")]
 use crate::ResidentGpuSession;
+#[cfg(feature = "aot")]
+use crate::{BatchedAotCpuSession, BatchedAotSimdCpuSession};
 use crate::{
     BatchedCpuSession, BatchedExecutionError, BatchedIntegrityFault, BatchedSimdCpuSession,
     ElementwiseKernel, FixedShapeKernel, OwnedResidentCpuSession,
@@ -49,6 +49,10 @@ pub fn native_compute_backend_registry() -> Arc<ComputeBackendRegistry> {
     registry
         .register(Arc::new(CpuAotBackendFactory::new()))
         .expect("static AOT backend ID is unique");
+    #[cfg(feature = "aot")]
+    registry
+        .register(Arc::new(CpuAotSimdBackendFactory::new()))
+        .expect("static SIMD AOT backend ID is unique");
     registry
         .register(Arc::new(WgpuBackendFactory::new()))
         .expect("static wgpu backend ID is unique");
@@ -411,12 +415,64 @@ impl ComputeBackendFactory for CpuAotBackendFactory {
     }
 }
 
+#[cfg(feature = "aot")]
+#[derive(Debug)]
+pub struct CpuAotSimdBackendFactory {
+    descriptor: ComputeBackendDescriptor,
+}
+
+#[cfg(feature = "aot")]
+impl CpuAotSimdBackendFactory {
+    pub fn new() -> Self {
+        Self {
+            descriptor: fixed_cpu_descriptor(CPU_AOT_SIMD_BACKEND, 310),
+        }
+    }
+}
+
+#[cfg(feature = "aot")]
+impl Default for CpuAotSimdBackendFactory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "aot")]
+impl ComputeBackendFactory for CpuAotSimdBackendFactory {
+    fn descriptor(&self) -> &ComputeBackendDescriptor {
+        &self.descriptor
+    }
+
+    fn supports(&self, program: &ComputeProgram) -> Result<(), ComputeBackendRejection> {
+        supports_fixed_shape(&self.descriptor.id, program)
+    }
+
+    fn compile(
+        &self,
+        program: &ComputeProgram,
+    ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError> {
+        Ok(Box::new(FixedExecutable {
+            backend: self.descriptor.id.clone(),
+            program: FixedShapeKernel::from_compute_program(program).map_err(|error| {
+                backend_error(
+                    &self.descriptor.id,
+                    "compile",
+                    format!("fixed-shape lowering failed: {error}"),
+                )
+            })?,
+            implementation: FixedCpuImplementation::AotSimd,
+        }))
+    }
+}
+
 enum FixedCpuImplementation {
     Simd,
     #[cfg(feature = "jit")]
     Jit,
     #[cfg(feature = "aot")]
     Aot,
+    #[cfg(feature = "aot")]
+    AotSimd,
 }
 
 struct FixedExecutable {
@@ -455,6 +511,17 @@ impl ComputeExecutable for FixedExecutable {
                 session: self.program.prepare_aot_cpu(&inputs).map_err(|error| {
                     backend_error(&self.backend, "create session", error.to_string())
                 })?,
+            })),
+            #[cfg(feature = "aot")]
+            FixedCpuImplementation::AotSimd => Ok(Box::new(FixedAotSimdSession {
+                backend: self.backend.clone(),
+                program: self.program.clone(),
+                session: self
+                    .program
+                    .prepare_aot_simd_cpu(&inputs)
+                    .map_err(|error| {
+                        backend_error(&self.backend, "create session", error.to_string())
+                    })?,
             })),
         }
     }
@@ -567,6 +634,56 @@ struct FixedAotSession {
 
 #[cfg(feature = "aot")]
 impl ComputeSession for FixedAotSession {
+    fn update_inputs(
+        &mut self,
+        updates: &[ComputeInputUpdate],
+    ) -> Result<(), ComputeExecutionError> {
+        let inputs =
+            normalized_update_inputs(&self.backend, self.program.compute_program(), updates)?;
+        self.session
+            .update_inputs(&inputs)
+            .map_err(|error| execution_error(&self.backend, "update inputs", error.to_string()))
+    }
+
+    fn dispatch(
+        &mut self,
+        request: &ComputeDispatchRequest,
+    ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
+        let started = Instant::now();
+        let attempted_before = self.session.attempted_turns();
+        let result = self.session.dispatch_turns(turns.get());
+        fixed_dispatch_report(
+            &self.backend,
+            turns,
+            started,
+            result,
+            self.session
+                .attempted_turns()
+                .saturating_sub(attempted_before),
+            self.session.fault_count(),
+            self.session.last_fault(),
+        )
+    }
+
+    fn read_outputs(
+        &mut self,
+        selection: &ComputeOutputSelection,
+    ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
+        fixed_output_snapshot(&self.program, selection, self.session.state())
+            .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
+    }
+}
+
+#[cfg(feature = "aot")]
+struct FixedAotSimdSession {
+    backend: BackendId,
+    program: FixedShapeKernel,
+    session: BatchedAotSimdCpuSession,
+}
+
+#[cfg(feature = "aot")]
+impl ComputeSession for FixedAotSimdSession {
     fn update_inputs(
         &mut self,
         updates: &[ComputeInputUpdate],
@@ -1265,6 +1382,12 @@ mod tests {
             registry
                 .descriptors()
                 .any(|descriptor| descriptor.id.as_str() == CPU_AOT_BACKEND)
+        );
+        #[cfg(feature = "aot")]
+        assert!(
+            registry
+                .descriptors()
+                .any(|descriptor| descriptor.id.as_str() == CPU_AOT_SIMD_BACKEND)
         );
     }
 

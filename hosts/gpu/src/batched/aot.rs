@@ -211,7 +211,7 @@ fn emit_aot_library(
     directory: &Path,
 ) -> Result<PathBuf, BatchedExecutionError> {
     fs::create_dir_all(directory).map_err(aot_error)?;
-    let key = artifact_key(program);
+    let key = artifact_key(program, b"scalar-v1", &[]);
     let library_path = directory.join(format!("mech-{key}.{}", dynamic_library_extension()));
     if library_path.is_file() {
         return Ok(library_path);
@@ -242,7 +242,7 @@ fn emit_aot_library(
     )?;
     let bytes = module.finish().emit().map_err(aot_error)?;
     fs::write(&object_path, bytes).map_err(aot_error)?;
-    link_dynamic_library(&object_path, &library_path)?;
+    link_dynamic_library(&[&object_path], &library_path)?;
     Ok(library_path)
 }
 
@@ -263,12 +263,18 @@ fn load_aot_library(path: PathBuf) -> Result<AotKernel, BatchedExecutionError> {
     })
 }
 
-fn artifact_key(program: &FixedShapeKernel) -> String {
+pub(super) fn artifact_key(
+    program: &FixedShapeKernel,
+    flavor: &[u8],
+    implementation: &[u8],
+) -> String {
     let mut hasher = Sha256::new();
     hasher.update(env!("CARGO_PKG_VERSION").as_bytes());
     hasher.update(b"cranelift-0.131.3");
     hasher.update(std::env::consts::ARCH.as_bytes());
     hasher.update(std::env::consts::OS.as_bytes());
+    hasher.update(flavor);
+    hasher.update(implementation);
     hasher.update(format!("{program:#?}").as_bytes());
     hasher
         .finalize()
@@ -277,8 +283,8 @@ fn artifact_key(program: &FixedShapeKernel) -> String {
         .collect()
 }
 
-fn link_dynamic_library(
-    object_path: &Path,
+pub(super) fn link_dynamic_library(
+    object_paths: &[&Path],
     library_path: &Path,
 ) -> Result<(), BatchedExecutionError> {
     let compiler = std::env::var_os("CC").unwrap_or_else(|| OsString::from("cc"));
@@ -298,7 +304,7 @@ fn link_dynamic_library(
         ));
     }
     let output = command
-        .arg(object_path)
+        .args(object_paths)
         .arg("-o")
         .arg(&temporary)
         .arg("-lm")
@@ -322,7 +328,7 @@ fn link_dynamic_library(
     }
 }
 
-const fn dynamic_library_extension() -> &'static str {
+pub(super) const fn dynamic_library_extension() -> &'static str {
     if cfg!(target_os = "macos") {
         "dylib"
     } else if cfg!(target_os = "windows") {
@@ -332,7 +338,7 @@ const fn dynamic_library_extension() -> &'static str {
     }
 }
 
-const fn object_extension() -> &'static str {
+pub(super) const fn object_extension() -> &'static str {
     if cfg!(target_os = "windows") {
         "obj"
     } else {
@@ -340,6 +346,6 @@ const fn object_extension() -> &'static str {
     }
 }
 
-fn aot_error(error: impl std::fmt::Display) -> BatchedExecutionError {
+pub(super) fn aot_error(error: impl std::fmt::Display) -> BatchedExecutionError {
     BatchedExecutionError::Native(format!("Cranelift AOT: {error}"))
 }

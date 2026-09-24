@@ -626,6 +626,7 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
     }
     if cfg!(feature = "aot") {
         backends.push("cpu-aot");
+        backends.push("cpu-aot-simd");
     }
     backends.push("wgpu");
     for backend in backends {
@@ -892,6 +893,24 @@ fn mech_arrays_define_the_broadcast_extent() {
         .map(|(slot, elements)| cpu.state()[&slot].len() / elements)
         .collect::<Vec<_>>();
     assert_eq!(state_sizes, [7, 7]);
+}
+
+#[cfg(feature = "aot")]
+#[test]
+fn simd_aot_is_cached_and_matches_scalar_state() {
+    let (program, inputs) = source_program(8);
+    let mut scalar = program.prepare_cpu(&inputs).unwrap();
+    scalar.dispatch_turns(4).unwrap();
+
+    let artifact = program.compile_aot_simd_cpu().unwrap();
+    assert!(artifact.path().is_file());
+    let cached = program.compile_aot_simd_cpu().unwrap();
+    assert_eq!(cached.path(), artifact.path());
+    let mut simd_aot = artifact.prepare(&inputs).unwrap();
+    simd_aot.dispatch_turns(4).unwrap();
+    for (slot, expected) in scalar.state() {
+        assert_close(expected, &simd_aot.state()[slot], 1.0e-4);
+    }
 }
 
 #[test]
@@ -1190,6 +1209,20 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
         assert_eq!(aot.fault_count(), 1);
         assert_eq!(
             aot.last_fault().unwrap().constraint_name.as_ref(),
+            "finite-candidate!"
+        );
+
+        let artifact = program.compile_aot_simd_cpu().unwrap();
+        let mut simd_aot = artifact.prepare(&inputs).unwrap();
+        let simd_aot_published = simd_aot.state().clone();
+        assert!(matches!(
+            simd_aot.dispatch_turns(1).unwrap_err(),
+            BatchedExecutionError::Integrity(_)
+        ));
+        assert_eq!(simd_aot.state(), &simd_aot_published);
+        assert_eq!(simd_aot.fault_count(), 1);
+        assert_eq!(
+            simd_aot.last_fault().unwrap().constraint_name.as_ref(),
             "finite-candidate!"
         );
     }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure Mech AOT and Rust dylibs through one minimal host process."""
+"""Measure scalar/SIMD Mech AOT and Rust dylibs with one minimal loader."""
 
 from __future__ import annotations
 
@@ -56,15 +56,20 @@ def build_controls() -> None:
     )
 
 
-def measure(path: Path, instances: int, turns: int) -> dict[str, float | int]:
-    result = command(
+def measure(
+    path: Path, instances: int, turns: int, *, simd_packed: bool = False
+) -> dict[str, float | int]:
+    arguments = [
         "/usr/bin/time",
         "-l",
         str(RUNNER),
         str(path),
         str(instances),
         str(turns),
-    )
+    ]
+    if simd_packed:
+        arguments.append("--simd")
+    result = command(*arguments)
     throughput = THROUGHPUT.search(result.stdout)
     checksum = CHECKSUM.search(result.stdout)
     faults = FAULTS.search(result.stdout)
@@ -90,11 +95,15 @@ def summary(values: list[float | int]) -> dict[str, float | list[float | int]]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("mech_dylib", type=Path)
+    parser.add_argument("--mech-simd-dylib", type=Path)
     parser.add_argument("--instances", type=int, default=10_000)
     parser.add_argument("--turns", type=int, default=200)
     parser.add_argument("--samples", type=int, default=7)
     args = parser.parse_args()
     mech_library = args.mech_dylib.resolve()
+    mech_simd_library = (
+        args.mech_simd_dylib.resolve() if args.mech_simd_dylib is not None else None
+    )
     build_controls()
 
     records: dict[str, list[dict[str, float | int]]] = {
@@ -105,10 +114,20 @@ def main() -> None:
         "Mech Cranelift AOT": mech_library,
         "Rust cdylib": RUST_LIBRARY,
     }
+    if mech_simd_library is not None:
+        records["Mech Cranelift SIMD AOT"] = []
+        paths["Mech Cranelift SIMD AOT"] = mech_simd_library
     for sample in range(args.samples):
         order = list(paths) if sample % 2 == 0 else list(reversed(paths))
         for name in order:
-            records[name].append(measure(paths[name], args.instances, args.turns))
+            records[name].append(
+                measure(
+                    paths[name],
+                    args.instances,
+                    args.turns,
+                    simd_packed=name == "Mech Cranelift SIMD AOT",
+                )
+            )
 
     validation = command(
         str(RUNNER),
@@ -120,13 +139,29 @@ def main() -> None:
     maximum_error = MAX_ERROR.search(validation.stdout)
     if maximum_error is None:
         raise RuntimeError(f"validation output has no maximum error:\n{validation.stdout}")
+    simd_maximum_error = None
+    if mech_simd_library is not None:
+        simd_validation = command(
+            str(RUNNER),
+            str(mech_simd_library),
+            str(args.instances),
+            str(args.turns),
+            str(RUST_LIBRARY),
+            "--simd",
+        )
+        match = MAX_ERROR.search(simd_validation.stdout)
+        if match is None:
+            raise RuntimeError(
+                f"SIMD validation output has no maximum error:\n{simd_validation.stdout}"
+            )
+        simd_maximum_error = float(match.group(1))
 
     rows = {}
     for name, samples in records.items():
         throughput = [sample["throughput_million_ekf_turns_per_second"] for sample in samples]
         memory = [sample["maximum_resident_set_bytes"] for sample in samples]
         rows[name] = {
-            "throughput": summary(throughput),
+            "throughput_million_ekf_turns_per_second": summary(throughput),
             "maximum_resident_set_bytes": summary(memory),
             "checksums": [sample["checksum"] for sample in samples],
             "faults": [sample["faults"] for sample in samples],
@@ -152,7 +187,7 @@ def main() -> None:
             "untimed_warmup_turns": 100,
             "measured_processes_per_library": args.samples,
             "measurement_order": "Alternated by sample to reduce ordering bias.",
-            "timed_region": "Repeated checked turns through the identical four-argument native ABI; dlopen, allocation, input construction, warmup, reset, and reporting are excluded.",
+            "timed_region": "Repeated checked turns through a four-argument native ABI; scalar rows use AoS buffers and SIMD AOT uses pre-packed four-lane buffers. dlopen, allocation, packing, input construction, warmup, reset, and reporting are excluded.",
             "memory_metric": "Maximum resident set size reported by /usr/bin/time -l for a fresh minimal-loader process; this is whole-process peak RSS, not private library pages.",
         },
         "sources": {
@@ -163,8 +198,9 @@ def main() -> None:
         },
         "validation": {
             "maximum_final_state_absolute_error": float(maximum_error.group(1)),
+            "simd_aot_maximum_final_state_absolute_error": simd_maximum_error,
             "faults": 0,
-            "note": "Both libraries implement the same checked EKF equations and ABI; ordinary compiler reassociation produces small f32 differences.",
+            "note": "All libraries implement the same checked EKF equations. The scalar rows share the exact symbol and AoS layout; SIMD AOT uses a four-lane packed symbol and layout. Ordinary compiler reassociation produces small f32 differences.",
         },
         "rows": rows,
     }, indent=2))

@@ -33,6 +33,10 @@ pub use jit::*;
 mod aot;
 #[cfg(feature = "aot")]
 pub use aot::*;
+#[cfg(feature = "aot")]
+mod simd_aot;
+#[cfg(feature = "aot")]
+pub use simd_aot::*;
 
 const SIMD_LANES: usize = 4;
 const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
