@@ -3273,7 +3273,7 @@ fn constant_comparison_operand<'a>(
                 .schemas()
                 .get(target_schema_id)
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            let (data, shape_values) = if operation.operation.module_path.as_ref() == ["convert"]
+            let converted = if operation.operation.module_path.as_ref() == ["convert"]
                 && operation.operation.operation_name == "kind"
             {
                 let [input] = inputs.as_slice() else {
@@ -3319,18 +3319,26 @@ fn constant_comparison_operand<'a>(
                         converted
                     }
                 };
-                (
-                    converted,
-                    source
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: source
                         .value
                         .shape()
                         .parameter_values()
                         .to_vec()
                         .into_boxed_slice(),
-                )
+                    data: converted,
+                }
+                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
             } else if operation.operation.module_path.as_ref() == ["core"]
                 && operation.operation.operation_name == "composite-pack"
-                && matches!(target_schema.body(), SchemaBody::Tuple(_))
+                && matches!(
+                    target_schema.body(),
+                    SchemaBody::Tuple(_)
+                        | SchemaBody::Record(_)
+                        | SchemaBody::Map { .. }
+                        | SchemaBody::Table { .. }
+                )
             {
                 let mut values = Vec::with_capacity(inputs.len());
                 for input in inputs {
@@ -3338,24 +3346,35 @@ fn constant_comparison_operand<'a>(
                     else {
                         return Ok(None);
                     };
-                    let Ok(draft) = value.value.canonical_data_draft() else {
-                        return Ok(None);
-                    };
-                    values.push(draft);
+                    values.push(value.value.into_owned());
                 }
-                (
-                    ValueDataDraft::Tuple(values.into_boxed_slice()),
-                    Vec::<u64>::new().into_boxed_slice(),
-                )
+                let children = values
+                    .iter()
+                    .map(|value| (value.schema(), value.shape().clone()))
+                    .collect::<Vec<_>>();
+                let Ok(shape) =
+                    mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                        target_schema_id,
+                        &children,
+                        artifact.schemas(),
+                    )
+                else {
+                    return Ok(None);
+                };
+                let schemas = std::sync::Arc::new(artifact.schemas().clone());
+                let Ok(constructor) = mech_core::snapshot::CompositeSnapshotConstructor::bind(
+                    target_schema_id,
+                    shape,
+                    &children,
+                    schemas,
+                ) else {
+                    return Ok(None);
+                };
+                constructor.construct(values.into_boxed_slice(), None)
             } else {
                 return Ok(None);
             };
-            let Ok(converted) = (ValueDraft {
-                schema: target_schema_id,
-                shape_values,
-                data,
-            })
-            .finalize(&SnapshotValidationContext::new(artifact.schemas())) else {
+            let Ok(converted) = converted else {
                 return Ok(None);
             };
             std::borrow::Cow::Owned(converted)
@@ -3454,18 +3473,26 @@ fn closed_aggregate_equality_admitted(
     else {
         return false;
     };
-    let additional_work = if materializes_canonical_bytes {
-        left_footprint
-            .encoded_bytes
-            .min(right_footprint.encoded_bytes)
+    let data_equality_work = if materializes_canonical_bytes {
+        encoded_bytes.checked_add(
+            left_footprint
+                .encoded_bytes
+                .min(right_footprint.encoded_bytes),
+        )
     } else {
-        0
+        left_footprint
+            .node_count
+            .checked_add(right_footprint.node_count)
+            .map(|nodes| encoded_bytes.max(nodes))
+    };
+    let Some(data_equality_work) = data_equality_work else {
+        return false;
     };
     if materializes_canonical_bytes && encoded_bytes > mech_core::RESIDENT_MAX_BYTES {
         return false;
     }
     schema_work
-        .checked_add(additional_work)
+        .checked_add(data_equality_work)
         .and_then(|work| comparison_work.checked_add(work))
         .is_some_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
 }
@@ -3525,7 +3552,13 @@ fn closed_comparison_population(
                 _ => None,
             });
         }
-        let same_shape = left.value.shape() == right.value.shape();
+        let same_shape = if matches!(left.schema, SchemaBody::Matrix { .. })
+            && matches!(right.schema, SchemaBody::Matrix { .. })
+        {
+            left.rows == right.rows && left.columns == right.columns
+        } else {
+            left.value.shape() == right.value.shape()
+        };
         let budgeted_equality = !scalar_comparison_supported(&left.schema, false)
             || matches!(left.schema, SchemaBody::String);
         if budgeted_equality
