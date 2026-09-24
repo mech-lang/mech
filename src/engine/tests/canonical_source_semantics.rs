@@ -491,6 +491,23 @@ fn fixed_array_rest_enum_payload_pattern_completes_variant_coverage() {
 }
 
 #[test]
+fn fixed_array_named_rest_keeps_turn_shape_and_completes_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,3>\n\
+                 value<event> := :data([1 2 3])\n\
+                 result := value? | :data([head | rest]) => head.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("a turn-shaped named rest binding covers the fixed enum payload")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn fixed_array_rest_preserves_its_residual_extent_for_nested_patterns() {
     CanonicalSourceFrontend
         .compile_document_with_nominal_origin(

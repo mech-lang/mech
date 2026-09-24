@@ -6985,8 +6985,18 @@ mod tests {
     }
 
     #[test]
-    fn projected_tuple_binding_keeps_unused_rest_extent() {
-        let body = SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+    fn projected_tuple_binding_keeps_referenced_rest_extent() {
+        let body = SchemaBody::Tuple(
+            vec![SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Index),
+                dimensions: vec![
+                    DimensionExpr::Constant(1),
+                    DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                ]
+                .into_boxed_slice(),
+            }]
+            .into_boxed_slice(),
+        );
         let mut builder = SchemaTableBuilder::new();
         let binding = builder
             .insert(
@@ -7011,9 +7021,26 @@ mod tests {
         for extent in [2, 3] {
             let item = PatternItem::component(
                 Some(binding),
-                body.clone(),
+                SchemaBody::Tuple(
+                    vec![SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Index),
+                        dimensions: vec![
+                            DimensionExpr::Constant(1),
+                            DimensionExpr::Constant(extent),
+                        ]
+                        .into_boxed_slice(),
+                    }]
+                    .into_boxed_slice(),
+                ),
                 vec![extent].into_boxed_slice(),
-                ValueDataDraft::Tuple(vec![ValueDataDraft::Index(7)].into_boxed_slice()),
+                ValueDataDraft::Tuple(
+                    vec![ValueDataDraft::Matrix(
+                        (0..extent)
+                            .map(|value| ValueDataDraft::Index(value + 1))
+                            .collect(),
+                    )]
+                    .into_boxed_slice(),
+                ),
             );
             let bound = item
                 .into_binding(binding, &[], &schemas, &projections)
@@ -7025,6 +7052,47 @@ mod tests {
                 .unwrap();
             assert_eq!(value.shape().parameter_values(), [extent]);
         }
+    }
+
+    #[test]
+    fn projected_tuple_binding_prunes_an_unused_rest_extent() {
+        let body = SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+        let mut builder = SchemaTableBuilder::new();
+        let binding = builder
+            .insert(
+                SchemaDraft {
+                    body: body.clone(),
+                    dimension_parameters: vec![DimensionParameterDeclaration {
+                        id: DimensionParameterId::new(0),
+                        origin: DimensionParameterOrigin::Inferred,
+                        lifetime: DimensionLifetime::Turn,
+                        lower_bound: DimensionExpr::Constant(0),
+                        upper_bound: None,
+                    }]
+                    .into_boxed_slice(),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let binding = build.resolve(binding).unwrap();
+        let (schemas, projections) = structural_projection_schema_context(&build.table).unwrap();
+        let item = PatternItem::component(
+            Some(binding),
+            body,
+            vec![2].into_boxed_slice(),
+            ValueDataDraft::Tuple(vec![ValueDataDraft::Index(7)].into_boxed_slice()),
+        );
+        let bound = item
+            .into_binding(binding, &[], &schemas, &projections)
+            .unwrap()
+            .unwrap();
+        assert!(bound.shape_values.is_empty());
+        let value = pattern_binding_draft(binding, &bound.shape_values, bound.data)
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+        assert!(value.shape().parameter_values().is_empty());
     }
 
     #[test]

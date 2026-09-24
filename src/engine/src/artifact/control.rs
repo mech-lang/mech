@@ -205,13 +205,10 @@ fn validate_structural_pattern(
                 )?;
             }
             if let Some(rest) = rest {
-                let fixed = prefix.len().checked_add(suffix.len())?;
-                let residual = super::comprehension::fixed_matrix_element_count(expected)
-                    .and_then(|total| total.checked_sub(fixed));
                 validate_structural_pattern(
                     draft,
                     rest,
-                    &super::comprehension::array_rest_schema(expected, element, residual)?,
+                    &super::comprehension::array_rest_schema(expected, element, None)?,
                     bindings,
                 )?;
             }
@@ -266,12 +263,23 @@ fn structurally_irrefutable<V>(
                         .iter()
                         .chain(suffix)
                         .all(|item| structurally_irrefutable(schemas, item, &element))
-                        && super::comprehension::array_rest_schema(
+                        && (super::comprehension::array_rest_schema(
                             &element,
                             element.body(),
                             residual,
                         )
                         .is_some_and(|expected| structurally_irrefutable(schemas, rest, &expected))
+                            || matches!(
+                                rest.as_ref(),
+                                super::CollectionPattern::Bind { schema, .. }
+                                if super::comprehension::array_rest_schema(
+                                    &element,
+                                    element.body(),
+                                    None,
+                                )
+                                .as_ref()
+                                .is_some_and(|expected| schemas.get(*schema) == Some(expected))
+                            ))
                 })
         }
         super::CollectionPattern::Array {

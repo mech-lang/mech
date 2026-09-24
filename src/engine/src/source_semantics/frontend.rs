@@ -2405,8 +2405,14 @@ fn structurally_irrefutable<V>(
                         .iter()
                         .chain(suffix)
                         .all(|item| structurally_irrefutable(item, &element))
-                        && structural_array_rest_schema(&element, residual)
+                        && (structural_array_rest_schema(&element, residual)
                             .is_some_and(|expected| structurally_irrefutable(rest, &expected))
+                            || matches!(
+                                rest.as_ref(),
+                                crate::CollectionPattern::Bind { schema, .. }
+                                    if structural_array_rest_schema(&element, None).as_ref()
+                                        == Some(schema)
+                            ))
                 })
         }
         crate::CollectionPattern::Array {

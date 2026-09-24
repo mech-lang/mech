@@ -218,53 +218,28 @@ fn canonical_component_schema_draft(
 
 fn array_rest_schema(
     element: &SchemaDraft,
-    exact_extent: Option<usize>,
     syntax: &SyntaxNode,
 ) -> Result<SchemaDraft, SourceSemanticError> {
     let mut parameters = element.dimension_parameters.to_vec();
-    let extent = match exact_extent {
-        Some(extent) => DimensionExpr::Constant(u64::try_from(extent).map_err(|_| {
-            unsupported(
-                syntax,
-                "array-rest extent exceeds the schema dimension space",
-            )
-        })?),
-        None => {
-            let extent =
-                DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
-                    unsupported(syntax, "array-rest dimension identity space was exhausted")
-                })?);
-            parameters.push(DimensionParameterDeclaration {
-                id: extent,
-                origin: DimensionParameterOrigin::Inferred,
-                lifetime: DimensionLifetime::Turn,
-                lower_bound: DimensionExpr::Constant(0),
-                upper_bound: None,
-            });
-            DimensionExpr::Parameter(extent)
-        }
-    };
+    let extent =
+        DimensionParameterId::new(u32::try_from(parameters.len()).map_err(|_| {
+            unsupported(syntax, "array-rest dimension identity space was exhausted")
+        })?);
+    parameters.push(DimensionParameterDeclaration {
+        id: extent,
+        origin: DimensionParameterOrigin::Inferred,
+        lifetime: DimensionLifetime::Turn,
+        lower_bound: DimensionExpr::Constant(0),
+        upper_bound: None,
+    });
     Ok(SchemaDraft {
         dimension_parameters: parameters.into_boxed_slice(),
         body: SchemaBody::Matrix {
             element: Box::new(element.body.clone()),
-            dimensions: vec![DimensionExpr::Constant(1), extent].into_boxed_slice(),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
+                .into_boxed_slice(),
         },
     })
-}
-
-fn fixed_matrix_element_count(schema: &SchemaDraft) -> Option<usize> {
-    let schema = schema.clone().finalize().ok()?;
-    let shape = schema.instantiate_shape(Box::new([])).ok()?;
-    let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
-        return None;
-    };
-    dimensions
-        .iter()
-        .try_fold(1_u64, |count, dimension| {
-            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
-        })
-        .and_then(|count| usize::try_from(count).ok())
 }
 
 impl SemanticBuilder {
@@ -845,30 +820,8 @@ impl SemanticBuilder {
                     let mut suffix = Vec::new();
                     let mut rest = None;
                     let mut bind_rest = false;
-                    let elements = array.elements();
-                    let mut pending_rest_pattern = false;
-                    let mut fixed = 0_usize;
-                    for item in &elements {
-                        if item.spread().is_some() || item.rest().is_some() {
-                            pending_rest_pattern =
-                                item.pattern().is_none() && item.rest().is_some();
-                        } else if item.pattern().is_some() {
-                            if pending_rest_pattern {
-                                pending_rest_pattern = false;
-                            } else {
-                                fixed = fixed.checked_add(1).ok_or_else(|| {
-                                    unsupported(
-                                        array.syntax(),
-                                        "array pattern length exceeds the schema dimension space",
-                                    )
-                                })?;
-                            }
-                        }
-                    }
-                    let residual = fixed_matrix_element_count(expected)
-                        .and_then(|total| total.checked_sub(fixed));
-                    let rest_schema = array_rest_schema(&element, residual, array.syntax())?;
-                    for item in elements {
+                    let rest_schema = array_rest_schema(&element, array.syntax())?;
+                    for item in array.elements() {
                         if item.spread().is_some() || item.rest().is_some() {
                             if rest.is_some() || bind_rest {
                                 return Err(unsupported(

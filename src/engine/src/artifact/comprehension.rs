@@ -667,13 +667,10 @@ fn validate_pattern(
                 )?;
             }
             if let Some(rest) = rest {
-                let fixed = prefix.len().checked_add(suffix.len())?;
-                let residual =
-                    fixed_matrix_element_count(expected).and_then(|total| total.checked_sub(fixed));
                 validate_pattern(
                     draft,
                     rest,
-                    &array_rest_schema(expected, element, residual)?,
+                    &array_rest_schema(expected, element, None)?,
                     inputs,
                     locals,
                 )?;
