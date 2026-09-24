@@ -22,10 +22,17 @@ pub fn configured_browser_compiler_builder(
         .host_factory(Box::new(mech_scene::SceneHostFactory::with_backend(
             mech_scene::RecordingSceneBackend::new(),
         )?))?;
-    for host in hosts {
+    for host in hosts
+        .iter()
+        .filter(|host| browser_document_compiler_host(host))
+    {
         builder = builder.host_instance(host.clone());
     }
     Ok(builder)
+}
+
+fn browser_document_compiler_host(host: &HostInstanceConfig) -> bool {
+    !matches!(host.provider.as_str(), "compute" | "pointer")
 }
 
 /// Compile the browser's admitted coordinator through the canonical root graph.
@@ -109,5 +116,36 @@ impl RuntimeHostFactory for ClockFactory {
             resource_providers: vec![provider],
             input_drivers: Vec::new(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mixed_compute_hosts_do_not_enter_the_document_compiler() {
+        let hosts = [
+            HostInstanceConfig {
+                name: "pointer".to_owned(),
+                provider: "pointer".to_owned(),
+                settings: ConfigValue::Map(Default::default()),
+            },
+            HostInstanceConfig {
+                name: "particles".to_owned(),
+                provider: "compute".to_owned(),
+                settings: ConfigValue::Map(Default::default()),
+            },
+            HostInstanceConfig {
+                name: "clock".to_owned(),
+                provider: "timer".to_owned(),
+                settings: ConfigValue::Map(Default::default()),
+            },
+        ];
+
+        configured_browser_compiler_builder(&hosts, RuntimeConfig::default())
+            .unwrap()
+            .build_compiler()
+            .unwrap();
     }
 }

@@ -2474,10 +2474,10 @@ fn render_fence_text(
     if info.hidden {
         return Ok(());
     }
-    if let Some(code) = fence
+    let executable_code = fence
         .mech_code()
-        .filter(|_| render_scope(&info.scope).is_some())
-    {
+        .filter(|_| render_scope(&info.scope).is_some());
+    if let Some(code) = executable_code.as_ref() {
         render_code_comments(code.syntax(), owner, lookup, output, false)?;
     } else {
         output.push_str(&fence_body(fence)?);
@@ -2490,6 +2490,9 @@ fn render_fence_text(
         })?;
     if lookup.mode == RenderMode::Completed
         && presentation.show_output
+        && executable_code
+            .as_ref()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()))
         && let Some(scope) = render_scope(&info.scope)
     {
         let value = lookup

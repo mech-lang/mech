@@ -329,6 +329,26 @@ fn visible_executable_fences_require_their_owner_result() {
 }
 
 #[test]
+fn declaration_only_fences_do_not_require_completed_text_results() {
+    let document = document(
+        "```mech\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n```\nanswer := 42u64\nanswer\n",
+    );
+    let program = CanonicalSourceFrontend.compile_document(&document).unwrap();
+    let results = [execute(
+        document.scope_id(),
+        CanonicalRenderScope::Root,
+        &program,
+        0x923,
+    )];
+
+    let text = CanonicalDocumentRenderer
+        .render_text(&document, &results)
+        .unwrap();
+    assert!(text.contains("#Deferred() => <u64>"), "{text}");
+    assert!(text.contains("=> 42"), "{text}");
+}
+
+#[test]
 fn visible_root_programs_require_their_owner_result() {
     let document = document("answer := 42\nanswer\n");
     for error in [
