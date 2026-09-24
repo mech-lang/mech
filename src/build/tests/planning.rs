@@ -365,11 +365,13 @@ fn canonical_native_plan_filters_operation_installers_by_input_schema() {
         .runtime_functions
         .iter()
         .map(|function| function.installer_path.as_str())
-        .filter(|path| path.contains("::__mech_native::install_lt_"))
+        .filter(|path| path.contains("::__mech_native::install_l_t_"))
         .collect::<Vec<_>>();
     assert_eq!(
         installers,
-        ["mech_compare::__mech_native::install_lt_ss_f64"]
+        ["mech_compare::__mech_native::install_l_t_ss_f64"],
+        "planned functions: {:#?}",
+        plan.runtime_functions,
     );
 }
 
