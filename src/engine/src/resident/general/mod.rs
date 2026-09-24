@@ -3252,6 +3252,21 @@ fn constant_comparison_operand<'a>(
     source: ArtifactSource,
     facts: &ActivationFacts,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
+    constant_comparison_operand_at_depth(artifact, node, source, facts, 0)
+}
+
+fn constant_comparison_operand_at_depth<'a>(
+    artifact: &'a ProgramArtifact,
+    node: NodeId,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+    depth: usize,
+) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
+    const MAX_CLOSED_OPERAND_FOLD_DEPTH: usize = 64;
+    if depth >= MAX_CLOSED_OPERAND_FOLD_DEPTH {
+        return Ok(None);
+    }
+    let next_depth = depth + 1;
     let value = match source {
         ArtifactSource::Constant(id) => std::borrow::Cow::Borrowed(
             artifact
@@ -3280,7 +3295,9 @@ fn constant_comparison_operand<'a>(
                 let [input] = inputs.as_slice() else {
                     return Ok(None);
                 };
-                let Some(source) = constant_comparison_operand(artifact, node, *input, facts)?
+                let Some(source) = constant_comparison_operand_at_depth(
+                    artifact, node, *input, facts, next_depth,
+                )?
                 else {
                     return Ok(None);
                 };
@@ -3320,14 +3337,12 @@ fn constant_comparison_operand<'a>(
                         converted
                     }
                 };
+                let Ok(target_shape) = slot_shape(artifact, slot, facts) else {
+                    return Ok(None);
+                };
                 ValueDraft {
                     schema: target_schema_id,
-                    shape_values: source
-                        .value
-                        .shape()
-                        .parameter_values()
-                        .to_vec()
-                        .into_boxed_slice(),
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
                     data: converted,
                 }
                 .finalize(&SnapshotValidationContext::new(artifact.schemas()))
@@ -3343,7 +3358,9 @@ fn constant_comparison_operand<'a>(
             {
                 let mut values = Vec::with_capacity(inputs.len());
                 for input in inputs {
-                    let Some(value) = constant_comparison_operand(artifact, node, input, facts)?
+                    let Some(value) = constant_comparison_operand_at_depth(
+                        artifact, node, input, facts, next_depth,
+                    )?
                     else {
                         return Ok(None);
                     };
@@ -3556,6 +3573,7 @@ fn closed_comparison_population(
             ) if left_element == right_element
                 && left.rows == right.rows
                 && left.columns == right.columns
+                && dense_resident_kind(left_element).is_some()
         );
         if left.schema_key != right.schema_key && !compatible_matrix_identity {
             return Ok(match name {
@@ -3572,21 +3590,18 @@ fn closed_comparison_population(
             left.value.shape() == right.value.shape()
         };
         if matches!(name, "eq" | "neq" | "seq" | "sneq") {
-            let admitted =
-                if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
-                    closed_scalar_string_equality_admitted(&left.value, &right.value)
-                } else if !scalar_comparison_supported(&left.schema, false)
-                    || matches!(left.schema, SchemaBody::String)
-                {
-                    closed_aggregate_equality_admitted(
-                        artifact,
-                        &left.value,
-                        &right.value,
-                        matches!(name, "eq" | "neq"),
-                    )
-                } else {
-                    true
-                };
+            let admitted = if matches!(left.schema, SchemaBody::String) {
+                closed_scalar_string_equality_admitted(&left.value, &right.value)
+            } else if !scalar_comparison_supported(&left.schema, false) {
+                closed_aggregate_equality_admitted(
+                    artifact,
+                    &left.value,
+                    &right.value,
+                    matches!(name, "eq" | "neq"),
+                )
+            } else {
+                true
+            };
             if !admitted {
                 return Ok(None);
             }
@@ -3678,6 +3693,11 @@ fn closed_comparison_population(
         .checked_add(right_bytes)
         .ok_or(ResidentActivationError::RegionSizeOverflow)?;
     if cloned_bytes > mech_core::RESIDENT_MAX_BYTES {
+        return Ok(None);
+    }
+    if dense_resident_kind(&left.element).is_none()
+        && !closed_aggregate_equality_admitted(artifact, &left.value, &right.value, false)
+    {
         return Ok(None);
     }
     let values = |operand: &ConstantComparisonOperand<'_>| match operand.value.data() {
