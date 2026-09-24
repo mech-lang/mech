@@ -2257,7 +2257,6 @@ fn computed_activation_pattern_dependencies_remain_sample_only() {
 
 #[test]
 fn published_activation_capture_dependencies_remain_turn_triggers() {
-    use mech_core::snapshot::SnapshotValidationContext;
     use mech_engine::__resident::CapturedValueInput;
 
     let source = "event := event-source<f64>\nobserved := observed-source<f64>\npublished := observed + 1\n~count := 0\n~> event { count = count + published }\npublished\n";
@@ -2309,7 +2308,7 @@ fn published_activation_capture_dependencies_remain_turn_triggers() {
     );
 
     let second = [0.0, 20.0];
-    let context = SnapshotValidationContext::new(artifact.schemas());
+    let context = mech_core::snapshot::SnapshotValidationContext::new(artifact.schemas());
     let second_values = artifact
         .inputs()
         .iter()
@@ -2352,7 +2351,6 @@ fn published_activation_capture_dependencies_remain_turn_triggers() {
 
 #[test]
 fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
-    use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
     use mech_engine::__resident::CapturedValueInput;
 
     let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\nother := other-source<f64>\nshared := expected + 0\n~selected := 0\n~count := 0\n~> event\n  | [head, shared + 0] => { selected = head }\n  | * => { selected = -1 }\n~> other { count = count + 1 }\ncount + shared\n";
@@ -2361,7 +2359,7 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
         .unwrap()
         .compile_artifact()
         .unwrap();
-    let context = SnapshotValidationContext::new(artifact.schemas());
+    let context = mech_core::snapshot::SnapshotValidationContext::new(artifact.schemas());
     let values = artifact
         .inputs()
         .iter()
@@ -2370,11 +2368,13 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
             let data = match index {
                 0 => ValueDataDraft::Matrix(
                     [1.0, 2.0]
-                        .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                        .map(|value| {
+                            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value))
+                        })
                         .into(),
                 ),
-                1 => ValueDataDraft::F64(F64Bits::from_f64(2.0)),
-                2 => ValueDataDraft::F64(F64Bits::from_f64(4.0)),
+                1 => ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(2.0)),
+                2 => ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(4.0)),
                 _ => panic!("unexpected activation input"),
             };
             mech_core::ValueDraft {
@@ -2424,13 +2424,12 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::F64(F64Bits::from_f64(3.0))
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(3.0))
     );
 }
 
 #[test]
 fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
-    use mech_core::snapshot::{F64Bits, SnapshotValidationContext};
     use mech_engine::__resident::CapturedValueInput;
 
     let source = "event := event-source<f64>\nordinary := ordinary-source<f64>\n~count := 0\n~> event { count = count + 1 }\ncount + ordinary\n";
@@ -2455,13 +2454,13 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
         .iter()
         .map(|input| input.slot)
         .collect::<Vec<_>>();
-    let context = SnapshotValidationContext::new(artifact.schemas());
+    let context = mech_core::snapshot::SnapshotValidationContext::new(artifact.schemas());
     let values = |event: f64, ordinary: f64| {
         [event, ordinary].map(|value| {
             mech_core::ValueDraft {
                 schema: artifact.inputs()[0].schema,
                 shape_values: Box::new([]),
-                data: ValueDataDraft::F64(F64Bits::from_f64(value)),
+                data: ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)),
             }
             .finalize(&context)
             .unwrap()
@@ -2485,7 +2484,7 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::F64(F64Bits::from_f64(11.0))
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(11.0))
     );
 
     let second = values(1.0, 20.0);
@@ -2506,7 +2505,7 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
             .unwrap()
             .canonical_data_draft()
             .unwrap(),
-        ValueDataDraft::F64(F64Bits::from_f64(21.0))
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(21.0))
     );
 }
 
