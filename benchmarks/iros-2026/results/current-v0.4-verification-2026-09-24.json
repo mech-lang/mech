@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24T16:34:03-04:00",
+  "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
+  "verification_head_before_record": "9e4992b973cb84c0e99f4930e8645c5954cd441f",
+  "platform": {
+    "operating_system": "macOS 15.6.1 (24G90)",
+    "architecture": "arm64",
+    "cpu": "Apple M1"
+  },
+  "stable_mech_benchmark": {
+    "command": "cargo check -p mech-gpu --features native,jit --example parallel_ekf_benchmark",
+    "result": "passed",
+    "elapsed_seconds": 123,
+    "notes": "Compile-only compatibility qualification on the v0.4 integration base. No current-head Mech throughput is claimed by this record."
+  },
+  "rust_simd": {
+    "source": "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs",
+    "source_sha256": "3027bd5f68d7bc98f1b81c1bb43fc85acc0b6b915e10a9edd535d56cdc673a9e",
+    "compiler": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "compile_flags": "--edition=2024 -C opt-level=3 -C target-cpu=native -C codegen-units=1",
+    "arguments": [
+      "500000",
+      "40",
+      "checked",
+      "fused",
+      "8"
+    ],
+    "discarded_warmup_processes": 1,
+    "throughput_million_turns_per_second": [
+      110.794985933,
+      111.012895535,
+      148.056115370,
+      154.772307764,
+      153.849260418
+    ],
+    "median_million_turns_per_second": 148.056115370,
+    "archived_median_million_turns_per_second": 146.508742,
+    "difference_from_archived_percent": 1.0562,
+    "checksum": 133818339.815538272,
+    "faults": 0,
+    "notes": "The first two retained samples were slower than the last three; the five-sample median remains within 1.1% of the archived median and the checksum is identical in every sample."
+  }
+}

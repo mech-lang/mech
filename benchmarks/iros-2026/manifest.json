@@ -30,6 +30,12 @@
     "throughput_evidence": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json",
     "source_evidence": "benchmarks/archive/compute/parallel-ekf/source-size-audit/counts.json"
   },
+  "current_head_verification": {
+    "record": "benchmarks/iros-2026/results/current-v0.4-verification-2026-09-24.json",
+    "stable_mech_benchmark_compile_check": "passed",
+    "rust_median_million_turns_per_second": 148.056115370,
+    "rust_difference_from_archived_percent": 1.0562
+  },
   "chart_assertions": {
     "checked": {
       "Mech direct Metal, generic IR / per-filter GPU dispatch (current)": 422.70,

@@ -144,6 +144,12 @@ matched historical eight-worker result. Never combine checked and unchecked
 rows, per-turn and fused-block boundaries, or measurements from different
 machines into a speedup claim.
 
+On 2026-09-24, the stable v0.4 Mech benchmark passed the compile check above.
+The exact Rust SIMD control was also rebuilt and rerun in isolation: its five
+checked fused samples had a 148.056 M turns/s median, 1.06% above the archived
+146.509 M turns/s median, with the identical checksum and zero faults. See the
+[current-head verification record](results/current-v0.4-verification-2026-09-24.json).
+
 ## Publication language
 
 A concise claim supported by this package is:

@@ -66,6 +66,18 @@ def main() -> None:
     close(mech, matched["mech_million_turns_per_second"], 0.0005)
     close(rust, matched["rust_million_turns_per_second"], 0.0005)
 
+    current = load_json(ROOT / manifest["current_head_verification"]["record"])
+    assert current["stable_mech_benchmark"]["result"] == "passed"
+    samples = current["rust_simd"]["throughput_million_turns_per_second"]
+    current_rust = statistics.median(samples)
+    close(
+        current_rust,
+        manifest["current_head_verification"]["rust_median_million_turns_per_second"],
+        0.0005,
+    )
+    if sha256(ROOT / current["rust_simd"]["source"]) != current["rust_simd"]["source_sha256"]:
+        raise AssertionError("current-head Rust verification source hash changed")
+
     charts = {
         "checked": ARCHIVE / "charts/parallel-ekf-cross-language-checked.svg",
         "unchecked": ARCHIVE / "charts/parallel-ekf-cross-language-unchecked.svg",
@@ -93,6 +105,7 @@ def main() -> None:
         f"Rust {matched['rust_normalized_source_characters']:,} characters"
     )
     print(f"  representative source hashes: {len(manifest['representative_sources'])}")
+    print(f"  current-head Rust corroboration: {current_rust:.3f} M turns/s")
     print("  checked and unchecked mega-chart assertions: passed")
 
 
