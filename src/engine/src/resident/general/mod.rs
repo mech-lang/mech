@@ -13,6 +13,11 @@ use core::ops::Range;
 use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+use mech_core::snapshot::{
+    SnapshotCanonicalizationBudget, SnapshotValidationContext, ValueDataDraft, ValueDraft,
+    canonical_sequence_element_retained_footprint, schema_data_language_eq,
+    schema_data_partial_cmp, schema_data_snapshot_eq,
+};
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
     CallMemoryPlanningRequest, CardinalitySpec, CellSlotId, ChangeDetectionPolicy, ConstantId,
@@ -24,8 +29,9 @@ use mech_core::{
     ReactiveInstanceId, RegionAccessPlan, ResidentBuildContext, ResidentKernelBindError,
     ResidentKernelBindRequest, ResidentKernelInputs, ResidentOperationKey, ResidentPortLayout,
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, ResolvedRangeMode,
-    ResolvedSelectionMode, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule, SlotIndex,
-    TargetMemoryProfile, Value, plan_call_memory,
+    ResolvedSelectionMode, ResolvedType, SchemaBody, SchemaId, SchemaKey, ShapeInstance, ShapeRule,
+    SlotIndex, TargetMemoryProfile, Value, execute_conversion_draft, plan_call_memory,
+    plan_explicit_cast,
 };
 use sha2::{Digest, Sha256};
 
@@ -3206,6 +3212,682 @@ fn logical_selector_population(
     }
 }
 
+struct ConstantComparisonOperand<'a> {
+    value: std::borrow::Cow<'a, Value>,
+    schema_key: SchemaKey,
+    schema: SchemaBody,
+    element: SchemaBody,
+    rows: usize,
+    columns: usize,
+}
+
+fn scalar_comparison_supported(element: &SchemaBody, ordering: bool) -> bool {
+    if ordering {
+        matches!(
+            element,
+            SchemaBody::Index
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        )
+    } else {
+        matches!(
+            element,
+            SchemaBody::Bool
+                | SchemaBody::Index
+                | SchemaBody::String
+                | SchemaBody::UnsignedInteger(_)
+                | SchemaBody::SignedInteger(_)
+                | SchemaBody::FloatingPoint(_)
+                | SchemaBody::Rational64
+                | SchemaBody::Complex(_)
+        )
+    }
+}
+
+fn constant_comparison_operand<'a>(
+    artifact: &'a ProgramArtifact,
+    node: NodeId,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
+    let budget = SnapshotCanonicalizationBudget::new(mech_core::RESIDENT_MAX_COMPARISON_WORK);
+    constant_comparison_operand_at_depth(artifact, node, source, facts, 0, &budget)
+}
+
+fn constant_comparison_operand_at_depth<'a>(
+    artifact: &'a ProgramArtifact,
+    node: NodeId,
+    source: ArtifactSource,
+    facts: &ActivationFacts,
+    depth: usize,
+    budget: &SnapshotCanonicalizationBudget,
+) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
+    const MAX_CLOSED_OPERAND_FOLD_DEPTH: usize = 64;
+    if depth >= MAX_CLOSED_OPERAND_FOLD_DEPTH {
+        return Ok(None);
+    }
+    let next_depth = depth + 1;
+    let value = match source {
+        ArtifactSource::Constant(id) => std::borrow::Cow::Borrowed(
+            artifact
+                .constants()
+                .get(id)
+                .ok_or(ResidentActivationError::InvalidDependency { node })?,
+        ),
+        ArtifactSource::Slot(slot) => {
+            let ProducerReference::NodeOutput { node: producer, .. } =
+                artifact.slots()[slot.get() as usize].producer
+            else {
+                return Ok(None);
+            };
+            let Some(operation) = artifact.nodes()[producer.get() as usize].as_operation() else {
+                return Ok(None);
+            };
+            let inputs = node_inputs(artifact, producer)?;
+            let target_schema_id = artifact.slots()[slot.get() as usize].schema;
+            let target_schema = artifact
+                .schemas()
+                .get(target_schema_id)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            let converted = if operation.operation.module_path.as_ref() == ["matrix"]
+                && operation.operation.operation_name == "transpose"
+            {
+                let [input] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(source) = constant_comparison_operand_at_depth(
+                    artifact, node, *input, facts, next_depth, budget,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let rows = source.rows;
+                let columns = source.columns;
+                let Ok(ValueDataDraft::Matrix(elements)) = source.value.canonical_data_draft()
+                else {
+                    return Ok(None);
+                };
+                let elements = elements.into_vec();
+                let Some(count) = rows.checked_mul(columns) else {
+                    return Err(ResidentActivationError::RegionSizeOverflow);
+                };
+                if count > MAX_STATIC_SELECTOR_SOURCE_STEPS || elements.len() != count {
+                    return Ok(None);
+                }
+                let mut transposed = Vec::with_capacity(count);
+                for column in 0..columns {
+                    for row in 0..rows {
+                        transposed.push(elements[row * columns + column].clone());
+                    }
+                }
+                let target_shape = matrix_shape_for_extents(
+                    target_schema,
+                    &[
+                        u64::try_from(columns)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                        u64::try_from(rows)
+                            .map_err(|_| ResidentActivationError::RegionSizeOverflow)?,
+                    ],
+                )?;
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: ValueDataDraft::Matrix(transposed.into_boxed_slice()),
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if operation.operation.module_path.as_ref() == ["convert"]
+                && operation.operation.operation_name == "kind"
+            {
+                let [input] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(source) = constant_comparison_operand_at_depth(
+                    artifact, node, *input, facts, next_depth, budget,
+                )?
+                else {
+                    return Ok(None);
+                };
+                let target_element = match target_schema.body() {
+                    SchemaBody::Matrix { element, .. } => element.as_ref(),
+                    body => body,
+                };
+                let Ok(source_type) = ResolvedType::from_schema_body(&source.element, &[]) else {
+                    return Ok(None);
+                };
+                let Ok(target_type) = ResolvedType::from_schema_body(target_element, &[]) else {
+                    return Ok(None);
+                };
+                let Ok(conversion) = plan_explicit_cast(&source_type, &target_type) else {
+                    return Ok(None);
+                };
+                let Ok(draft) = source.value.canonical_data_draft() else {
+                    return Ok(None);
+                };
+                let converted = match draft {
+                    ValueDataDraft::Matrix(elements) => ValueDataDraft::Matrix({
+                        let Ok(elements) = elements
+                            .into_vec()
+                            .into_iter()
+                            .map(|element| execute_conversion_draft(element, &conversion.step))
+                            .collect::<Result<Vec<_>, _>>()
+                        else {
+                            return Ok(None);
+                        };
+                        elements.into_boxed_slice()
+                    }),
+                    scalar => {
+                        let Ok(converted) = execute_conversion_draft(scalar, &conversion.step)
+                        else {
+                            return Ok(None);
+                        };
+                        converted
+                    }
+                };
+                let Ok(target_shape) = slot_shape(artifact, slot, facts) else {
+                    return Ok(None);
+                };
+                ValueDraft {
+                    schema: target_schema_id,
+                    shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
+                    data: converted,
+                }
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
+            } else if operation.operation.module_path.as_ref() == ["core"]
+                && operation.operation.operation_name == "composite-pack"
+                && matches!(
+                    target_schema.body(),
+                    SchemaBody::Tuple(_)
+                        | SchemaBody::Record(_)
+                        | SchemaBody::Map { .. }
+                        | SchemaBody::Table { .. }
+                )
+            {
+                let mut values = Vec::with_capacity(inputs.len());
+                for input in inputs {
+                    let Some(value) = constant_comparison_operand_at_depth(
+                        artifact, node, input, facts, next_depth, budget,
+                    )?
+                    else {
+                        return Ok(None);
+                    };
+                    values.push(value.value.into_owned());
+                }
+                let children = values
+                    .iter()
+                    .map(|value| (value.schema(), value.shape().clone()))
+                    .collect::<Vec<_>>();
+                let Ok(shape) =
+                    mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+                        target_schema_id,
+                        &children,
+                        artifact.schemas(),
+                    )
+                else {
+                    return Ok(None);
+                };
+                let schemas = std::sync::Arc::new(artifact.schemas().clone());
+                let Ok(constructor) = mech_core::snapshot::CompositeSnapshotConstructor::bind(
+                    target_schema_id,
+                    shape,
+                    &children,
+                    schemas,
+                ) else {
+                    return Ok(None);
+                };
+                constructor.construct(values.into_boxed_slice(), Some(budget))
+            } else {
+                return Ok(None);
+            };
+            let Ok(converted) = converted else {
+                return Ok(None);
+            };
+            std::borrow::Cow::Owned(converted)
+        }
+    };
+    let schema = artifact
+        .schemas()
+        .entry(value.schema())
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?
+        .schema();
+    let (element, rows, columns) = match (schema.body(), value.data()) {
+        (SchemaBody::Matrix { element, .. }, mech_core::ValueData::Matrix(matrix)) => {
+            let extents = source_extents(artifact, source, facts)?;
+            let [rows, columns] = extents.as_ref() else {
+                return Ok(None);
+            };
+            let rows =
+                usize::try_from(*rows).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let columns = usize::try_from(*columns)
+                .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+            let Some(count) = rows.checked_mul(columns) else {
+                return Err(ResidentActivationError::RegionSizeOverflow);
+            };
+            if count > MAX_STATIC_SELECTOR_SOURCE_STEPS || count != matrix.elements().len() {
+                return Ok(None);
+            }
+            (element.as_ref().clone(), rows, columns)
+        }
+        (body, _) => (body.clone(), 1, 1),
+    };
+    Ok(Some(ConstantComparisonOperand {
+        schema_key: value.schema_key(),
+        value,
+        schema: schema.body().clone(),
+        element,
+        rows,
+        columns,
+    }))
+}
+
+fn closed_aggregate_equality_admitted(
+    artifact: &ProgramArtifact,
+    left: &Value,
+    right: &Value,
+    materializes_canonical_bytes: bool,
+) -> bool {
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let Ok(left_footprint) =
+        super::budget::measure_canonical_value_footprint(&mut meter, left, artifact.schemas())
+    else {
+        return false;
+    };
+    let Ok(right_footprint) =
+        super::budget::measure_canonical_value_footprint(&mut meter, right, artifact.schemas())
+    else {
+        return false;
+    };
+    let schema_work = if left.schema_key() == right.schema_key() {
+        let Some(left_schema) = artifact.schemas().entry(left.schema()) else {
+            return false;
+        };
+        let Some(right_schema) = artifact.schemas().entry(right.schema()) else {
+            return false;
+        };
+        let Ok(work) = u64::try_from(
+            left_schema
+                .canonical_bytes()
+                .len()
+                .max(right_schema.canonical_bytes().len()),
+        ) else {
+            return false;
+        };
+        work
+    } else {
+        0
+    };
+    let Some(encoded_bytes) = left_footprint
+        .encoded_bytes
+        .checked_add(right_footprint.encoded_bytes)
+    else {
+        return false;
+    };
+    let data_equality_work = if materializes_canonical_bytes {
+        encoded_bytes.checked_add(
+            left_footprint
+                .encoded_bytes
+                .min(right_footprint.encoded_bytes),
+        )
+    } else {
+        left_footprint
+            .node_count
+            .checked_add(right_footprint.node_count)
+            .map(|nodes| encoded_bytes.max(nodes))
+    };
+    let Some(data_equality_work) = data_equality_work else {
+        return false;
+    };
+    if materializes_canonical_bytes && encoded_bytes > mech_core::RESIDENT_MAX_BYTES {
+        return false;
+    }
+    schema_work
+        .checked_add(data_equality_work)
+        .is_some_and(|work| meter.charge_comparison_work(work).is_ok())
+}
+
+fn closed_scalar_string_equality_admitted(left: &Value, right: &Value) -> bool {
+    let (mech_core::ValueData::String(left), mech_core::ValueData::String(right)) =
+        (left.data(), right.data())
+    else {
+        return false;
+    };
+    u64::try_from(left.len().max(right.len()).max(1))
+        .is_ok_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+}
+
+fn closed_snapshot_element_comparison_work(
+    meter: &mut super::budget::ResidentBudgetMeter,
+    operand: &ConstantComparisonOperand<'_>,
+    index: usize,
+) -> Option<u64> {
+    match (&operand.schema, operand.value.data()) {
+        (SchemaBody::Matrix { element, .. }, mech_core::ValueData::Matrix(matrix)) => {
+            match matrix.elements() {
+                mech_core::snapshot::SequenceView::Values(values) => {
+                    super::budget::measure_canonical_data_comparison_work(
+                        meter,
+                        element,
+                        values.get(index)?,
+                    )
+                    .ok()
+                }
+                values => canonical_sequence_element_retained_footprint(element, values, index)
+                    .ok()
+                    .map(|footprint| footprint.encoded_bytes.max(footprint.node_count).max(1)),
+            }
+        }
+        (body, data) if index == 0 => {
+            super::budget::measure_canonical_data_comparison_work(meter, body, data).ok()
+        }
+        _ => None,
+    }
+}
+
+fn closed_comparison_population(
+    artifact: &ProgramArtifact,
+    node: NodeId,
+    facts: &ActivationFacts,
+) -> Result<Option<u64>, ResidentActivationError> {
+    // Activation planning may inspect closed constant comparisons, but it must
+    // never execute arbitrary turn-dependent nodes to guess a live population.
+    let operation = artifact
+        .nodes()
+        .get(node.get() as usize)
+        .and_then(|node| node.as_operation())
+        .ok_or(ResidentActivationError::InvalidDependency { node })?;
+    if operation.operation.module_path.as_ref() != ["compare"] {
+        return Ok(None);
+    }
+    let name = operation.operation.operation_name.as_str();
+    if !matches!(
+        name,
+        "eq" | "neq" | "seq" | "sneq" | "lt" | "lte" | "gt" | "gte"
+    ) {
+        return Ok(None);
+    }
+    let output = node_output_slot(artifact, node)?;
+    let output_schema = artifact
+        .schemas()
+        .get(artifact.slots()[output.get() as usize].schema)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    let scalar_output = matches!(output_schema.body(), SchemaBody::Bool);
+    let inputs = node_inputs(artifact, node)?;
+    let [left, right] = inputs.as_slice() else {
+        return Ok(None);
+    };
+    let Some(left) = constant_comparison_operand(artifact, node, *left, facts)? else {
+        return Ok(None);
+    };
+    let Some(right) = constant_comparison_operand(artifact, node, *right, facts)? else {
+        return Ok(None);
+    };
+    if scalar_output {
+        let compatible_matrix_identity = matches!(
+            (&left.schema, &right.schema),
+            (
+                SchemaBody::Matrix { element: left_element, .. },
+                SchemaBody::Matrix { element: right_element, .. },
+            ) if left_element == right_element
+                && left.rows == right.rows
+                && left.columns == right.columns
+                && dense_resident_kind(left_element).is_some()
+        );
+        let snapshot_matrix_identity = matches!(
+            (&left.schema, &right.schema),
+            (
+                SchemaBody::Matrix { element: left_element, .. },
+                SchemaBody::Matrix { element: right_element, .. },
+            ) if left_element == right_element
+                && left.rows == right.rows
+                && left.columns == right.columns
+                && dense_resident_kind(left_element).is_none()
+        );
+        if left.schema_key != right.schema_key && !compatible_matrix_identity {
+            if snapshot_matrix_identity
+                && matches!(name, "seq" | "sneq")
+                && !closed_aggregate_equality_admitted(artifact, &left.value, &right.value, false)
+            {
+                return Ok(None);
+            }
+            return Ok(match name {
+                "eq" | "seq" => Some(0),
+                "neq" | "sneq" => Some(1),
+                _ => None,
+            });
+        }
+        if matches!(name, "eq" | "neq" | "seq" | "sneq") {
+            let admitted =
+                if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
+                    closed_scalar_string_equality_admitted(&left.value, &right.value)
+                } else if compatible_matrix_identity && matches!(name, "seq" | "sneq") {
+                    true
+                } else if !scalar_comparison_supported(&left.schema, false) {
+                    closed_aggregate_equality_admitted(
+                        artifact,
+                        &left.value,
+                        &right.value,
+                        matches!(name, "eq" | "neq"),
+                    )
+                } else {
+                    true
+                };
+            if !admitted {
+                return Ok(None);
+            }
+        }
+        let same_shape = if matches!(left.schema, SchemaBody::Matrix { .. })
+            && matches!(right.schema, SchemaBody::Matrix { .. })
+        {
+            left.rows == right.rows && left.columns == right.columns
+        } else {
+            left.value.shape() == right.value.shape()
+        };
+        let language_equal = || {
+            same_shape
+                && schema_data_language_eq(&left.schema, left.value.data(), right.value.data())
+        };
+        let ordinary_equal = || {
+            if scalar_comparison_supported(&left.schema, false) {
+                language_equal()
+            } else {
+                same_shape
+                    && schema_data_snapshot_eq(&left.schema, left.value.data(), right.value.data())
+            }
+        };
+        let order = || {
+            same_shape
+                .then(|| {
+                    schema_data_partial_cmp(&left.schema, left.value.data(), right.value.data())
+                })
+                .flatten()
+        };
+        let matches = match name {
+            "eq" => ordinary_equal(),
+            "neq" => !ordinary_equal(),
+            // Strict equality routes through strict_value_equal, whose dense
+            // and snapshot paths both use language equality.
+            "seq" => language_equal(),
+            "sneq" => !language_equal(),
+            "lt" if scalar_comparison_supported(&left.schema, true) => {
+                order() == Some(std::cmp::Ordering::Less)
+            }
+            "lte" if scalar_comparison_supported(&left.schema, true) => matches!(
+                order(),
+                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+            ),
+            "gt" if scalar_comparison_supported(&left.schema, true) => {
+                order() == Some(std::cmp::Ordering::Greater)
+            }
+            "gte" if scalar_comparison_supported(&left.schema, true) => matches!(
+                order(),
+                Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
+            ),
+            _ => return Ok(None),
+        };
+        return Ok(Some(u64::from(matches)));
+    }
+    if matches!(name, "seq" | "sneq")
+        || !matches!(output_schema.body(), SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool)
+        || left.element != right.element
+    {
+        return Ok(None);
+    }
+    let broadcast_axis = |left, right| {
+        if left == right {
+            Some(left)
+        } else if left == 1 {
+            Some(right)
+        } else if right == 1 {
+            Some(left)
+        } else {
+            None
+        }
+    };
+    let Some(rows) = broadcast_axis(left.rows, right.rows) else {
+        return Ok(None);
+    };
+    let Some(columns) = broadcast_axis(left.columns, right.columns) else {
+        return Ok(None);
+    };
+    let output_len = rows
+        .checked_mul(columns)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    if output_len > MAX_STATIC_SELECTOR_SOURCE_STEPS {
+        return Ok(None);
+    }
+    let left_bytes = left
+        .value
+        .retained_footprint(artifact.schemas())
+        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
+        .retained_bytes;
+    let right_bytes = right
+        .value
+        .retained_footprint(artifact.schemas())
+        .map_err(|_| ResidentActivationError::RegionSizeOverflow)?
+        .retained_bytes;
+    let cloned_bytes = left_bytes
+        .checked_add(right_bytes)
+        .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+    if cloned_bytes > mech_core::RESIDENT_MAX_BYTES {
+        return Ok(None);
+    }
+    let aggregate_comparison = dense_resident_kind(&left.element).is_none();
+    let mut comparison_meter = super::budget::ResidentBudgetMeter::default();
+    if aggregate_comparison {
+        if super::budget::measure_canonical_value_footprint(
+            &mut comparison_meter,
+            &left.value,
+            artifact.schemas(),
+        )
+        .is_err()
+            || super::budget::measure_canonical_value_footprint(
+                &mut comparison_meter,
+                &right.value,
+                artifact.schemas(),
+            )
+            .is_err()
+        {
+            return Ok(None);
+        }
+        let publication_work =
+            u64::try_from(output_len).map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+        if comparison_meter
+            .charge_comparison_work(publication_work)
+            .is_err()
+        {
+            return Ok(None);
+        }
+    }
+    let values = |operand: &ConstantComparisonOperand<'_>| match operand.value.data() {
+        mech_core::ValueData::Matrix(matrix) => matrix.elements().to_values(),
+        data => vec![data.clone()],
+    };
+    let left_values = values(&left);
+    let right_values = values(&right);
+    let element = &left.element;
+    let compare = |left: &mech_core::ValueData, right: &mech_core::ValueData| {
+        let order = || schema_data_partial_cmp(element, left, right);
+        match name {
+            "eq" => schema_data_language_eq(element, left, right),
+            "neq" => !schema_data_language_eq(element, left, right),
+            "seq" => schema_data_snapshot_eq(element, left, right),
+            "sneq" => !schema_data_snapshot_eq(element, left, right),
+            "lt" => order() == Some(std::cmp::Ordering::Less),
+            "lte" => matches!(
+                order(),
+                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+            ),
+            "gt" => order() == Some(std::cmp::Ordering::Greater),
+            "gte" => matches!(
+                order(),
+                Some(std::cmp::Ordering::Greater | std::cmp::Ordering::Equal)
+            ),
+            _ => unreachable!("comparison operation checked above"),
+        }
+    };
+    let mut population = 0_u64;
+    let mut string_comparison_work = 0_u64;
+    for row in 0..rows {
+        for column in 0..columns {
+            let left_index = (row % left.rows) * left.columns + column % left.columns;
+            let right_index = (row % right.rows) * right.columns + column % right.columns;
+            if aggregate_comparison {
+                let Some(left_work) = closed_snapshot_element_comparison_work(
+                    &mut comparison_meter,
+                    &left,
+                    left_index,
+                ) else {
+                    return Ok(None);
+                };
+                let Some(right_work) = closed_snapshot_element_comparison_work(
+                    &mut comparison_meter,
+                    &right,
+                    right_index,
+                ) else {
+                    return Ok(None);
+                };
+                if comparison_meter
+                    .charge_comparison_work(left_work.max(right_work).max(1))
+                    .is_err()
+                {
+                    return Ok(None);
+                }
+            }
+            if matches!(element, SchemaBody::String) {
+                let (
+                    mech_core::ValueData::String(left_string),
+                    mech_core::ValueData::String(right_string),
+                ) = (&left_values[left_index], &right_values[right_index])
+                else {
+                    return Ok(None);
+                };
+                let work = u64::try_from(left_string.len().max(right_string.len()).max(1))
+                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+                string_comparison_work = string_comparison_work
+                    .checked_add(work)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                if string_comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK {
+                    return Ok(None);
+                }
+            }
+            if compare(&left_values[left_index], &right_values[right_index]) {
+                population = population
+                    .checked_add(1)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            }
+        }
+    }
+    Ok(Some(population))
+}
+
 fn complete_activation_shape_facts(
     artifact: &ProgramArtifact,
     supplied: &ActivationFacts,
@@ -3213,6 +3895,46 @@ fn complete_activation_shape_facts(
     schedule: &ActivationSchedule,
 ) -> Result<ActivationFacts, ResidentActivationError> {
     let mut facts = supplied.clone();
+    let mut required_logical_populations = BTreeSet::new();
+    let mut pending_logical_sources = artifact
+        .nodes()
+        .iter()
+        .filter_map(|node| {
+            let operation = node.as_operation()?;
+            let inputs = node_inputs(artifact, node.node).ok()?;
+            (operation.operation.module_path.as_ref() == ["access"]
+                && operation
+                    .operation
+                    .resolved_selection_mode(inputs.len().saturating_sub(1))
+                    .is_some_and(|mode| !matches!(mode, ResolvedSelectionMode::LinearScalar)))
+            .then(|| inputs[1..].to_vec())
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+    while let Some(source) = pending_logical_sources.pop() {
+        if !required_logical_populations.insert(source) {
+            continue;
+        }
+        let ArtifactSource::Slot(slot) = source else {
+            continue;
+        };
+        let ProducerReference::NodeOutput { node, .. } =
+            artifact.slots()[slot.get() as usize].producer
+        else {
+            continue;
+        };
+        let Some(operation) = artifact.nodes()[node.get() as usize].as_operation() else {
+            continue;
+        };
+        if operation.operation.module_path.as_ref() == ["matrix"]
+            && matches!(
+                operation.operation.operation_name.as_str(),
+                "horzcat" | "vertcat" | "transpose"
+            )
+        {
+            pending_logical_sources.extend(node_inputs(artifact, node)?);
+        }
+    }
     // Concatenation preserves the population of a logical selector. Track only
     // statically known populations; live masks require an explicit output shape
     // and are revalidated by the selection kernel on every turn.
@@ -3226,7 +3948,14 @@ fn complete_activation_shape_facts(
             continue;
         }
         let output = node_output_slot(artifact, node.node)?;
+        if class == NodeClass::Activation
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
+            && let Some(population) = closed_comparison_population(artifact, node.node, &facts)?
+        {
+            logical_populations.insert(ArtifactSource::Slot(output), population);
+        }
         if node.operation.module_path.as_ref() == ["matrix"]
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
             && matches!(
                 node.operation.operation_name.as_str(),
                 "horzcat" | "vertcat"
@@ -3246,6 +3975,20 @@ fn complete_activation_shape_facts(
                 },
             )?;
             if let Some(population) = population {
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+            }
+        }
+        if node.operation.module_path.as_ref() == ["matrix"]
+            && node.operation.operation_name == "transpose"
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
+        {
+            let inputs = node_inputs(artifact, node.node)?;
+            let [source] = inputs.as_slice() else {
+                continue;
+            };
+            if let Some(population) =
+                logical_selector_population(artifact, *source, &logical_populations)
+            {
                 logical_populations.insert(ArtifactSource::Slot(output), population);
             }
         }
