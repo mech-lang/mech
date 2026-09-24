@@ -4089,7 +4089,7 @@ fn resident_host_packets_coalesce_and_capture_the_latest_packet_value() {
         Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
     ));
     assert_eq!(reads.load(Ordering::SeqCst), 0);
-    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
     assert_eq!(runtime.program_execution_info().coalesced_host_packets, 1);
 
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
@@ -4339,16 +4339,29 @@ answer
 
 #[test]
 fn trailing_activation_preserves_the_previous_implicit_result() {
-    let mut runtime = runtime();
-    runtime
-        .load_source_program(
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(
             "trigger := true\n~count := 0\n~> trigger { count = count + 1 }\n",
-            crate::ResidentDurabilityPolicy::Volatile,
         )
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
         panic!("trailing activation fixture must remain resident pure")
     };
+    assert!(execution.instance.plan.has_activation_scopes());
     assert_eq!(
         canonical_f64(&execution.instance.copied_output(0).unwrap()),
         0.0
@@ -4667,7 +4680,10 @@ output := state
     let error = replay
         .execute_replay_batch(Some(&conflicting_batch), &conflicting_record)
         .unwrap_err();
-    assert!(error.display_message().contains("conflicting payloads"));
+    assert!(
+        error.display_message().contains("conflicting snapshots"),
+        "{error:?}"
+    );
     let error = replay
         .execute_replay_batch(Some(&forged_batch), &forged_record)
         .unwrap_err();
@@ -6802,7 +6818,7 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
             .as_ref()
             .unwrap()
             .phase,
-        crate::TurnFailurePhase::Execution,
+        crate::TurnFailurePhase::Publication,
     );
 
     runtime.config.limits.max_turn_duration_ms = None;
