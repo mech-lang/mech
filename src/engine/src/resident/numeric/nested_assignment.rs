@@ -36,6 +36,7 @@ enum LogicalSource {
 #[derive(Clone)]
 struct Plan {
     arithmetic: SemanticArithmetic,
+    arithmetic_element: SchemaBody,
     rational_power: bool,
     rows: usize,
     columns: usize,
@@ -100,15 +101,13 @@ pub(super) fn bind<const OPERATION: u64>(
     }
     let target_type = ResolvedType::from_schema_body(destination, &[])
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
-    let arithmetic_type = ResolvedType::from_schema_body(
-        if rational_power {
-            destination.as_ref()
-        } else {
-            incoming
-        },
-        &[],
-    )
-    .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
+    let arithmetic_element = if rational_power {
+        destination.as_ref()
+    } else {
+        incoming
+    };
+    let arithmetic_type = ResolvedType::from_schema_body(arithmetic_element, &[])
+        .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let promote = plan_implicit_conversion(&target_type, &arithmetic_type)
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     let assign = plan_explicit_cast(&arithmetic_type, &target_type)
@@ -198,6 +197,7 @@ pub(super) fn bind<const OPERATION: u64>(
     Ok(BoundResidentKernel::new(execute, Box::new([]))
         .with_retained_state(Arc::new(Plan {
             arithmetic,
+            arithmetic_element: arithmetic_element.clone(),
             rational_power,
             rows,
             columns,
@@ -545,10 +545,7 @@ fn execute(
         })
         .ok_or(ResidentKernelError::InvalidShape)?;
     let power_work = if plan.arithmetic == SemanticArithmetic::Power {
-        let output_schema = schemas
-            .get(plan.target.schema)
-            .ok_or(ResidentKernelError::InvalidOutput)?;
-        snapshot_power_compute_work(plan.arithmetic, output_schema.body(), selected_count)?
+        snapshot_power_compute_work(plan.arithmetic, &plan.arithmetic_element, selected_count)?
     } else {
         0
     };
