@@ -199,6 +199,7 @@ pub struct ResidentExternalCoordinator {
     pending_live_inputs: Vec<Option<Value>>,
     pending_live_input_bytes: Vec<usize>,
     pending_live_input_retained_bytes: usize,
+    replay_pending_snapshot_step: bool,
     latest_live_input_byte_limit: usize,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
@@ -380,6 +381,7 @@ impl ResidentExternalCoordinator {
             pending_live_inputs,
             pending_live_input_bytes,
             pending_live_input_retained_bytes: 0,
+            replay_pending_snapshot_step: false,
             latest_live_input_byte_limit: limits.input_bytes,
             durability,
             health: ResidentExternalHealth::Healthy,
@@ -1228,6 +1230,12 @@ impl ResidentExternalCoordinator {
                 self.next_turn = next_turn;
                 let receipt_sequence = self.append_receipt(prepared_receipt);
                 self.last_rejected_turn = Some(turn);
+                if record.body.mode == ResidentExternalTurnMode::ExplicitSnapshotStep {
+                    self.replay_pending_snapshot_step = matches!(
+                        phase,
+                        TurnFailurePhase::InputInstallation | TurnFailurePhase::Recording
+                    );
+                }
                 if self.replay_loading_phase != ResidentExternalReplayLoadingPhase::Complete {
                     self.replay_loading_phase = ResidentExternalReplayLoadingPhase::Failed;
                 }
@@ -1314,6 +1322,9 @@ impl ResidentExternalCoordinator {
                 self.next_input = next_input;
             }
             self.next_turn = next_turn;
+            if expected.body.mode == ResidentExternalTurnMode::ExplicitSnapshotStep {
+                self.replay_pending_snapshot_step = false;
+            }
             self.advance_replay_loading_after_accepted(
                 expected.body.mode,
                 instance.continuation_wakeup().is_some(),
@@ -1470,6 +1481,7 @@ impl ResidentExternalCoordinator {
             || record.body.layout_generation != self.layout_generation
             || record.body.before_epoch != self.instance().published_epoch()
             || !loading_mode_matches
+            || (self.replay_pending_snapshot_step && mode == ResidentExternalTurnMode::ExplicitStep)
             || (matches!(
                 mode,
                 ResidentExternalTurnMode::ExplicitStep
@@ -1648,8 +1660,11 @@ impl ResidentExternalCoordinator {
                             })
                 },
             );
-        let conflicting_host_payload = mode == ResidentExternalTurnMode::Ordinary
-            && facts.iter().zip(self.bound.observations()).enumerate().any(
+        let conflicting_host_payload =
+            matches!(
+                mode,
+                ResidentExternalTurnMode::Ordinary | ResidentExternalTurnMode::ExplicitSnapshotStep
+            ) && facts.iter().zip(self.bound.observations()).enumerate().any(
                 |(ordinal, (fact, observation))| {
                     let source_was_triggered = facts.iter().zip(self.bound.observations()).any(
                         |(candidate_fact, candidate)| {
@@ -1657,7 +1672,19 @@ impl ResidentExternalCoordinator {
                                 && observations_share_host_source(candidate, observation)
                         },
                     );
-                    source_was_triggered
+                    let source_was_sampled = mode == ResidentExternalTurnMode::ExplicitSnapshotStep
+                        && facts.iter().zip(self.bound.observations()).enumerate().any(
+                            |(candidate_ordinal, (candidate_fact, candidate))| {
+                                observations_share_host_payload(candidate, observation)
+                                    && self.latest_live_inputs[candidate_ordinal]
+                                        .as_ref()
+                                        .is_some_and(|previous| {
+                                            previous.value_hash(self.artifact.schemas()).ok()
+                                                != Some(candidate_fact.payload_hash)
+                                        })
+                            },
+                        );
+                    (source_was_triggered || source_was_sampled)
                         && facts[..ordinal]
                             .iter()
                             .zip(&self.bound.observations()[..ordinal])

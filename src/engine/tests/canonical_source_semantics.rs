@@ -3036,6 +3036,63 @@ fn dormant_activation_suppresses_direct_integrity_descendants() {
     assert_eq!(count(&instance), ValueDataDraft::U64(0));
     instance.turn(&[]).unwrap();
     assert_eq!(count(&instance), ValueDataDraft::U64(1));
+
+    let forwarded_output = mech_core::OutputId::new(artifact.outputs().len() as u32);
+    let forwarded_slot = mech_core::CellSlotId::new(artifact.slots().len() as u32);
+    let mut slots = artifact.slots().to_vec();
+    slots.push(mech_engine::SlotDeclaration {
+        slot: forwarded_slot,
+        schema: slots[predicate_slot.get() as usize].schema,
+        role: mech_engine::SlotRole::Output,
+        producer: mech_engine::ProducerReference::Output {
+            output: forwarded_output,
+            source: mech_engine::ArtifactSource::Slot(predicate_slot),
+        },
+        initializer: None,
+    });
+    let mut outputs = artifact.outputs().to_vec();
+    outputs.push(mech_engine::OutputDeclaration {
+        output: forwarded_output,
+        name: "forwarded-valid".to_owned(),
+        interactive_binding: None,
+        source: forwarded_slot,
+        schema: slots[predicate_slot.get() as usize].schema,
+    });
+    let mut constraints = artifact.constraints().to_vec();
+    constraints[0].inputs =
+        vec![mech_engine::ArtifactSource::Slot(forwarded_slot)].into_boxed_slice();
+    let forwarded = mech_engine::ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: artifact.contracts().clone(),
+        requirements: artifact.requirements().clone(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: slots.into_boxed_slice(),
+        nodes: artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: artifact.bindings().to_vec().into_boxed_slice(),
+        outputs: outputs.into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 766),
+        &forwarded,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance
+        .prepare_initial_turn(&[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(count(&instance), ValueDataDraft::U64(0));
+    instance.turn(&[]).unwrap();
+    assert_eq!(count(&instance), ValueDataDraft::U64(1));
 }
 
 #[test]

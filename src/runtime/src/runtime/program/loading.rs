@@ -584,6 +584,7 @@ impl MechRuntime {
                 prepared_initial = None;
                 needs_post_drain_snapshot = true;
                 info.resident_accepted_turns += 1;
+                self.drain_loading_external_continuations(&mut coordinator, &mut info)?;
             }
             ActiveProgramExecution::ResidentExternal(ResidentExternalExecution {
                 artifact,

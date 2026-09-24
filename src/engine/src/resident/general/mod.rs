@@ -5041,7 +5041,7 @@ fn build_plan(
         &artifact_to_activated,
         &topology,
         options.integrity,
-    );
+    )?;
     let mut execution_node_mask = vec![0_u64; topology.word_len()].into_boxed_slice();
     for node in &execution_node_order {
         set_bit(&mut execution_node_mask, node.get() as usize);
@@ -5118,19 +5118,7 @@ fn build_plan(
     );
     let output_materialization_source =
         |output_slot: CellSlotId| -> Result<ArtifactSource, ResidentActivationError> {
-            let mut source = ArtifactSource::Slot(output_slot);
-            let mut remaining = artifact.slots().len();
-            while let ArtifactSource::Slot(slot) = source {
-                let declaration = &artifact.slots()[slot.get() as usize];
-                let ProducerReference::Output { source: next, .. } = declaration.producer else {
-                    break;
-                };
-                if remaining == 0 {
-                    return Err(ResidentActivationError::RegionSizeOverflow);
-                }
-                remaining -= 1;
-                source = next;
-            }
+            let source = forwarded_output_source(artifact, ArtifactSource::Slot(output_slot))?;
             for state in artifact
                 .slots()
                 .iter()
@@ -5746,13 +5734,16 @@ fn build_execution_node_order(
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
     topology: &DependencyTopology,
     integrity: ResidentIntegrityMode,
-) -> Box<[ActivatedNodeIndex]> {
+) -> Result<Box<[ActivatedNodeIndex]>, ResidentActivationError> {
     if integrity == ResidentIntegrityMode::Checked {
-        return topology.linear_node_order.clone();
+        return Ok(topology.linear_node_order.clone());
     }
     let mut omitted = vec![false; steps.len()];
     for constraint in artifact.constraints() {
-        let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
+        let Some(source) = constraint.inputs.first().copied() else {
+            continue;
+        };
+        let ArtifactSource::Slot(slot) = forwarded_output_source(artifact, source)? else {
             continue;
         };
         let ProducerReference::NodeOutput { node, .. } =
@@ -5771,13 +5762,13 @@ fn build_execution_node_order(
             }
         }
     }
-    topology
+    Ok(topology
         .linear_node_order
         .iter()
         .copied()
         .filter(|node| !omitted[node.get() as usize])
         .collect::<Vec<_>>()
-        .into_boxed_slice()
+        .into_boxed_slice())
 }
 
 fn build_f64_read_tape(reads: &[ResidentReadLocation]) -> Option<Box<[F64ReadTapeEntry]>> {
@@ -6424,7 +6415,10 @@ fn build_topology(
     }
     let mut mandatory = vec![0_u64; words].into_boxed_slice();
     for constraint in artifact.constraints() {
-        let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
+        let Some(source) = constraint.inputs.first().copied() else {
+            continue;
+        };
+        let ArtifactSource::Slot(slot) = forwarded_output_source(artifact, source)? else {
             continue;
         };
         let ProducerReference::NodeOutput { node, .. } =

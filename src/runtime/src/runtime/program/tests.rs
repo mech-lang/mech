@@ -737,6 +737,13 @@ fn independent_external_runtime_with_source(
 fn independent_canonical_external_runtime_with_source(
     source: &str,
 ) -> (crate::MechRuntime, Arc<AtomicUsize>) {
+    independent_canonical_external_runtime_with_transformed_source(source, |artifact| artifact)
+}
+
+fn independent_canonical_external_runtime_with_transformed_source(
+    source: &str,
+    transform: impl FnOnce(mech_engine::ProgramArtifact) -> mech_engine::ProgramArtifact,
+) -> (crate::MechRuntime, Arc<AtomicUsize>) {
     let reads = Arc::new(AtomicUsize::new(0));
     let fast_bits = Arc::new(AtomicU64::new(2.0_f64.to_bits()));
     let slow_bits = Arc::new(AtomicU64::new(3.0_f64.to_bits()));
@@ -751,11 +758,13 @@ fn independent_canonical_external_runtime_with_source(
         .resource_provider(Box::new(provider()))
         .build_compiler()
         .unwrap();
-    let artifact = compiler
-        .compile_canonical_source(source)
-        .unwrap()
-        .into_parts()
-        .0;
+    let artifact = transform(
+        compiler
+            .compile_canonical_source(source)
+            .unwrap()
+            .into_parts()
+            .0,
+    );
     let mut runtime = RuntimeBuilder::new()
         .function_catalog(catalog)
         .input_driver(ResidentTestInputDriver)
@@ -4270,6 +4279,266 @@ selected
 }
 
 #[test]
+fn snapshot_step_replay_rejects_conflicting_values_from_one_host_packet() {
+    let (mut runtime, _) = independent_canonical_external_runtime_with_transformed_source(
+        r#"
+@left := test://clock/slow{:read(delta-seconds)}
+@right := test://clock/slow{:read(delta-seconds)}
+left := @left/delta-seconds
+right := @right/delta-seconds
+trigger := true
+~selected := 0.0
+~> trigger { selected = left + right }
+selected
+"#,
+        |artifact| {
+            let mut requirements = artifact
+                .requirements()
+                .iter()
+                .map(|(_, requirement)| requirement.clone())
+                .collect::<Vec<_>>();
+            assert_eq!(requirements.len(), 1);
+            let mut second = requirements[0].clone();
+            let mech_core::ApplicationRequirement::Resource(request) = &mut second else {
+                panic!("expected a resource observation")
+            };
+            request.context_name = "zslow".to_owned();
+            requirements.push(second);
+            let mut nodes = artifact.nodes().to_vec();
+            let mut observation_count = 0;
+            for node in &mut nodes {
+                let mech_engine::ExecutableNodeBody::Operation(operation) = &mut node.body else {
+                    continue;
+                };
+                if operation.requirement == Some(mech_core::ApplicationRequirementId::new(0)) {
+                    observation_count += 1;
+                    if observation_count == 2 {
+                        operation.requirement = Some(mech_core::ApplicationRequirementId::new(1));
+                    }
+                }
+            }
+            assert_eq!(observation_count, 2);
+            ProgramArtifactDraft {
+                schemas: artifact.schemas().clone(),
+                constants: artifact.constants().clone(),
+                contracts: artifact.contracts().clone(),
+                requirements: mech_engine::ApplicationRequirementTable::from_canonical_entries(
+                    requirements,
+                )
+                .unwrap(),
+                inputs: artifact.inputs().to_vec().into_boxed_slice(),
+                slots: artifact.slots().to_vec().into_boxed_slice(),
+                nodes: nodes.into_boxed_slice(),
+                bindings: artifact.bindings().to_vec().into_boxed_slice(),
+                outputs: artifact.outputs().to_vec().into_boxed_slice(),
+                constraints: artifact.constraints().to_vec().into_boxed_slice(),
+                compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
+            }
+            .finalize()
+            .unwrap()
+        },
+    );
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(9.0),
+        ))
+        .unwrap();
+    assert!(
+        runtime
+            .drain_resident_host_inputs(1)
+            .unwrap()
+            .turn
+            .is_none()
+    );
+    runtime.step_active_program().unwrap();
+
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("capture-only fixture must remain resident external")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let batches = execution
+        .coordinator
+        .input_facts()
+        .map(|(_, batch)| batch.clone())
+        .collect::<Vec<_>>();
+    let records = execution
+        .coordinator
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(batches.len(), 2);
+    assert_eq!(batches[1].facts.len(), 2);
+    assert_ne!(batches[1].facts[0].node, batches[1].facts[1].node);
+    assert_eq!(
+        records[1].body.mode,
+        external::ResidentExternalTurnMode::ExplicitSnapshotStep
+    );
+    assert_eq!(
+        batches[1].facts[0].payload_hash,
+        batches[1].facts[1].payload_hash
+    );
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::clone(&artifact),
+        execution.coordinator.replay_bootstrap(),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    replay
+        .execute_replay_batch(Some(&batches[0]), &records[0])
+        .unwrap();
+    let mut facts = batches[1].facts.to_vec();
+    let original = facts[1].clone();
+    let changed = crate::RuntimeHostInputValue::F64(10.0)
+        .into_value()
+        .unwrap()
+        .rebind(original.value.schema(), &original.shape, artifact.schemas())
+        .unwrap();
+    facts[1] = external::CapturedInputFact::new_with_trigger(
+        original.sequence,
+        original.requirement,
+        original.node,
+        original.slot,
+        original.schema_key,
+        original.shape.clone(),
+        changed,
+        original.trigger,
+        artifact.schemas(),
+    )
+    .unwrap();
+    let forged_batch = external::CapturedInputBatch::new(facts).unwrap();
+    let mut forged_record = records[1].clone();
+    forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    let error = replay
+        .execute_replay_batch(Some(&forged_batch), &forged_record)
+        .unwrap_err();
+    assert!(
+        error.display_message().contains("conflicting payloads"),
+        "{error:?}"
+    );
+    assert!(matches!(
+        replay
+            .execute_replay_batch(Some(&batches[1]), &records[1])
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+}
+
+#[test]
+fn rejected_snapshot_step_keeps_the_pending_replay_mode() {
+    let (mut runtime, _) = independent_canonical_external_runtime_with_source(
+        r#"
+@slow := test://clock/slow{:read(delta-seconds)}
+slow := @slow/delta-seconds
+trigger := true
+~selected := 0.0
+~> trigger { selected = slow }
+selected
+"#,
+    );
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(9.0),
+        ))
+        .unwrap();
+    assert!(
+        runtime
+            .drain_resident_host_inputs(1)
+            .unwrap()
+            .turn
+            .is_none()
+    );
+    runtime.step_active_program().unwrap();
+
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("capture-only fixture must remain resident external")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let records = execution
+        .coordinator
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    let batches = execution
+        .coordinator
+        .input_facts()
+        .map(|(_, batch)| batch.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 2);
+    assert_eq!(
+        records[1].body.mode,
+        external::ResidentExternalTurnMode::ExplicitSnapshotStep
+    );
+    let replay_instance = mech_engine::__resident::activate_external(
+        execution.coordinator.instance().id,
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        artifact,
+        execution.coordinator.replay_bootstrap(),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    replay
+        .execute_replay_batch(Some(&batches[0]), &records[0])
+        .unwrap();
+    let mut rejected = records[1].clone();
+    rejected.header.input_range = None;
+    rejected.header.status = crate::turn_record::TurnRecordStatus::Rejected;
+    rejected.header.failure = Some(crate::turn_record::TurnFailureRecord {
+        phase: crate::TurnFailurePhase::InputInstallation,
+        kind: "InjectedCaptureFailure".to_owned(),
+        message: "capture failed before recording inputs".to_owned(),
+    });
+    rejected.body.input_batch_hash = [0; 32];
+    rejected.body.after_epoch = None;
+    rejected.body.state_hash = records[0].body.state_hash;
+    rejected.body.touched_slots = 0;
+    rejected.body.changed_slots = 0;
+    rejected.body.executed_nodes = 0;
+    rejected.body.effect_count = 0;
+    rejected.body.outbox_effect_count = 0;
+    rejected.body.transactional_effect_count = 0;
+    rejected.body.effect_batch_hash = [0; 32];
+    rejected.body.effect_ids_hash = [0; 32];
+    rejected.body.idempotency_keys_hash = [0; 32];
+    assert!(matches!(
+        replay.execute_replay_batch(None, &rejected).unwrap(),
+        crate::ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    let mut forged = records[1].clone();
+    forged.body.mode = external::ResidentExternalTurnMode::ExplicitStep;
+    let error = replay
+        .execute_replay_batch(Some(&batches[1]), &forged)
+        .unwrap_err();
+    assert!(
+        error.display_message().contains("next activated turn"),
+        "{error:?}"
+    );
+}
+
+#[test]
 fn mixed_initial_publication_runs_ordinary_roots_and_defers_input_free_activation() {
     let source = r#"
 trigger := true
@@ -4757,6 +5026,54 @@ current
         external::ResidentExternalLimits::default(),
     )
     .expect("closed activation-time work must not invalidate a driverless-only replay profile");
+}
+
+#[test]
+fn failed_driverless_continuation_drain_releases_the_program_slot() {
+    let source = "@clock := snapshot://clock/tick{:read(value)}\ntick := @clock/value\n#Deferred(value<bool>) => <bool>\n  | :Start(value<bool>)\n  | :One(value<bool>)\n  | :Two(value<bool>)\n  | :Done(value<bool>).\n#Deferred(value) -> :Start(value)\n  :Start(value) ~> :One(value)\n  :One(value) ~> :Two(value)\n  :Two(value) -> :Done(value)\n  :Done(value) => value.\n#Deferred(tick)\n";
+    let reads = Arc::new(AtomicUsize::new(0));
+    let provider = || DriverlessObservationProvider {
+        reads: Arc::clone(&reads),
+    };
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut config = crate::RuntimeConfig::default();
+    config.limits.max_steps_per_turn = Some(1);
+    let mut runtime = RuntimeBuilder::new()
+        .config(config)
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_024),
+            subject,
+            "snapshot://clock/tick/value",
+            ["read"],
+        )))
+        .unwrap();
+    let error = runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("resident continuation wakeup limit exhausted"),
+        "{error:?}"
+    );
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
+    assert_eq!(reads.load(Ordering::SeqCst), 1);
 }
 
 #[test]
