@@ -1980,6 +1980,44 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
             .display_message()
             .contains("evidence does not match its failure phase")
     );
+    let mut impossible_partition = records[0].clone();
+    impossible_partition.body.transactional_effect_count = impossible_partition.body.effect_count;
+    let error = replay
+        .execute_replay_batch(Some(&batches[0]), &impossible_partition)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("evidence does not match its failure phase")
+    );
+    let mut beyond_plan = records[0].clone();
+    beyond_plan.body.effect_count += 1;
+    beyond_plan.body.outbox_effect_count += 1;
+    let error = replay
+        .execute_replay_batch(Some(&batches[0]), &beyond_plan)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("evidence does not match its failure phase")
+    );
+    for hash_field in 0..3 {
+        let mut mismatched_hash = records[0].clone();
+        match hash_field {
+            0 => mismatched_hash.body.effect_batch_hash[0] ^= 0xff,
+            1 => mismatched_hash.body.effect_ids_hash[0] ^= 0xff,
+            2 => mismatched_hash.body.idempotency_keys_hash[0] ^= 0xff,
+            _ => unreachable!(),
+        }
+        let error = replay
+            .execute_replay_batch(Some(&batches[0]), &mismatched_hash)
+            .unwrap_err();
+        assert!(
+            error
+                .display_message()
+                .contains("does not match its materialized turn")
+        );
+    }
     assert!(matches!(
         replay.execute_replay_batch(Some(&batches[0]), &records[0])?,
         ResidentExternalTurnOutcome::Rejected {
