@@ -911,16 +911,6 @@ impl<'a> Compiler<'a> {
                 initializer: state.initializer.clone(),
             })
             .collect::<Vec<_>>();
-        let storage_states = self
-            .state_slots
-            .into_iter()
-            .map(|(slot, state)| ElementwiseStateStorage {
-                slot,
-                source: state.source.expect("validated state has a producer source"),
-                elements: state.elements,
-                initializer: state.initializer.into(),
-            })
-            .collect::<Vec<_>>();
         let mut interface =
             build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         for output in &mut interface.outputs {
@@ -939,6 +929,16 @@ impl<'a> Compiler<'a> {
                 output.slot = state.slot;
             }
         }
+        let storage_states = self
+            .state_slots
+            .into_iter()
+            .map(|(slot, state)| ElementwiseStateStorage {
+                slot,
+                source: state.source.expect("validated state has a producer source"),
+                elements: state.elements,
+                initializer: state.initializer.into(),
+            })
+            .collect::<Vec<_>>();
         let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
         let kernel = ComputeKernel::Elementwise(ElementwiseIr {
             instructions: self.operations.into_boxed_slice(),
