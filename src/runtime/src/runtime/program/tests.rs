@@ -1067,9 +1067,23 @@ fn failed_initial_continuation_drain_releases_the_program_slot() {
 #[test]
 fn pending_continuations_are_drained_before_the_next_host_packet() {
     let source = "@clock := test://clock/tick{:read(delta-seconds)}\ntick := @clock/delta-seconds\n#Deferred(value<f64>) => <f64>\n  | :Start(value<f64>)\n  | :One(value<f64>)\n  | :Two(value<f64>)\n  | :Three(value<f64>)\n  | :Done(value<f64>).\n#Deferred(value) -> :Start(value)\n  :Start(value) ~> :One(value)\n  :One(value) ~> :Two(value)\n  :Two(value) ~> :Three(value)\n  :Three(value) -> :Done(value)\n  :Done(value) => value.\n#Deferred(tick)\n";
-    let (mut runtime, _, _, _) = configured_external_runtime();
+    let (mut runtime, plans, reads, value_bits) = configured_external_runtime();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .resource_provider(Box::new(PlanningObservationProvider {
+            plans,
+            reads,
+            value_bits,
+        }))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
     runtime
-        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     runtime.config.limits.max_steps_per_turn = Some(1);
     let trigger = crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap();
@@ -4075,7 +4089,7 @@ fn resident_host_packets_coalesce_and_capture_the_latest_packet_value() {
         Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
     ));
     assert_eq!(reads.load(Ordering::SeqCst), 0);
-    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
     assert_eq!(runtime.program_execution_info().coalesced_host_packets, 1);
 
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
@@ -4325,16 +4339,29 @@ answer
 
 #[test]
 fn trailing_activation_preserves_the_previous_implicit_result() {
-    let mut runtime = runtime();
-    runtime
-        .load_source_program(
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(
             "trigger := true\n~count := 0\n~> trigger { count = count + 1 }\n",
-            crate::ResidentDurabilityPolicy::Volatile,
         )
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
         panic!("trailing activation fixture must remain resident pure")
     };
+    assert!(execution.instance.plan.has_activation_scopes());
     assert_eq!(
         canonical_f64(&execution.instance.copied_output(0).unwrap()),
         0.0
@@ -4653,7 +4680,10 @@ output := state
     let error = replay
         .execute_replay_batch(Some(&conflicting_batch), &conflicting_record)
         .unwrap_err();
-    assert!(error.display_message().contains("conflicting payloads"));
+    assert!(
+        error.display_message().contains("conflicting snapshots"),
+        "{error:?}"
+    );
     let error = replay
         .execute_replay_batch(Some(&forged_batch), &forged_record)
         .unwrap_err();
@@ -6788,7 +6818,7 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
             .as_ref()
             .unwrap()
             .phase,
-        crate::TurnFailurePhase::Execution,
+        crate::TurnFailurePhase::Publication,
     );
 
     runtime.config.limits.max_turn_duration_ms = None;

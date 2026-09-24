@@ -5147,7 +5147,20 @@ fn build_plan(
                 {
                     continue;
                 }
-                if node_inputs(artifact, node)?.first().copied() == Some(source) {
+                let source_region = match source {
+                    ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].region,
+                    ArtifactSource::Constant(constant) => {
+                        layout.constant_regions[constant.get() as usize]
+                    }
+                };
+                let state_region = layout.slots[state.slot.get() as usize].region;
+                // Assignments may normalize a snapshot into typed lanes. The
+                // state slot can replace the source only when a direct arena
+                // copy will preserve the output's physical representation.
+                if node_inputs(artifact, node)?.first().copied() == Some(source)
+                    && source_region.kind == state_region.kind
+                    && source_region.shape == state_region.shape
+                {
                     return Ok(ArtifactSource::Slot(state.slot));
                 }
             }
