@@ -870,6 +870,51 @@ fn default_authority_denies_before_any_provider_read() -> MResult<()> {
 }
 
 #[test]
+fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
+    let trace = Arc::new(Mutex::new(ProviderTrace::default()));
+    let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
+    let mut live = coordinator(
+        instance,
+        &artifact,
+        &providers,
+        ResidentExternalLimits::default(),
+    )?;
+    let admission = live.reserve_live_turn()?;
+    assert!(matches!(
+        live.execute_live_turn(None, admission, true, false, false, |_| {
+            Err(test_error("injected initial publication rejection"))
+        })?,
+        ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    let batch = live.input_facts().next().unwrap().1.clone();
+    let record = live.receipts().next().unwrap().1.clone();
+    assert!(record.body.initial_publication);
+    assert!(!record.body.continuation_drain);
+
+    let catalog = frozen_ekf_compiler_catalog()?;
+    let replay_instance = activate_external(
+        ReactiveInstanceId::new(700, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(artifact),
+        true,
+        ResidentDurabilityPolicy::Retained,
+        ResidentExternalLimits::default(),
+    )?;
+    assert!(matches!(
+        replay.execute_replay_batch(Some(&batch), &record)?,
+        ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    Ok(())
+}
+
+#[test]
 fn idempotent_retry_requires_provider_deduplication_support() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, instance, providers) =

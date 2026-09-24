@@ -783,6 +783,8 @@ impl ResidentExternalCoordinator {
                                     transaction,
                                     RejectedTurnEvidence::default(),
                                     before_epoch,
+                                    initial_publication,
+                                    continuation_drain,
                                     TurnFailurePhase::InputInstallation,
                                     error,
                                 );
@@ -796,6 +798,8 @@ impl ResidentExternalCoordinator {
                                 transaction,
                                 RejectedTurnEvidence::default(),
                                 before_epoch,
+                                initial_publication,
+                                continuation_drain,
                                 TurnFailurePhase::Recording,
                                 error,
                             );
@@ -815,6 +819,8 @@ impl ResidentExternalCoordinator {
                         transaction,
                         evidence,
                         before_epoch,
+                        initial_publication,
+                        continuation_drain,
                         TurnFailurePhase::InputInstallation,
                         failure.error,
                     );
@@ -828,6 +834,8 @@ impl ResidentExternalCoordinator {
                     transaction,
                     RejectedTurnEvidence::default(),
                     before_epoch,
+                    initial_publication,
+                    continuation_drain,
                     TurnFailurePhase::Recording,
                     error,
                 );
@@ -844,6 +852,8 @@ impl ResidentExternalCoordinator {
                     transaction,
                     RejectedTurnEvidence::default(),
                     before_epoch,
+                    initial_publication,
+                    continuation_drain,
                     TurnFailurePhase::InputInstallation,
                     invalid_value("input-free resident turn received host updates".to_owned()),
                 );
@@ -903,6 +913,8 @@ impl ResidentExternalCoordinator {
                         transaction,
                         input_evidence,
                         before_epoch,
+                        initial_publication,
+                        continuation_drain,
                         phase,
                         resident_execution_error(error),
                     );
@@ -980,6 +992,9 @@ impl ResidentExternalCoordinator {
                 let phase = failure.phase;
                 if let Some(prepared) = prepared_input {
                     self.append_prepared_input(prepared);
+                }
+                if let Some(batch) = batch.as_ref() {
+                    self.remember_live_inputs(batch);
                 }
                 if let Some(next_input) = next_input {
                     self.next_input = next_input;
@@ -1093,6 +1108,9 @@ impl ResidentExternalCoordinator {
             if let Some(prepared) = prepared_input {
                 self.append_prepared_input(prepared);
             }
+            if let Some(batch) = batch {
+                self.remember_live_inputs(batch);
+            }
             if let Some(next_input) = next_input {
                 self.next_input = next_input;
             }
@@ -1146,6 +1164,18 @@ impl ResidentExternalCoordinator {
                 );
             }
         }
+        if let Some(batch) = batch {
+            live_input_retained_bytes_after_replacements(
+                self.latest_live_input_retained_bytes,
+                &self.latest_live_input_bytes,
+                batch
+                    .facts
+                    .iter()
+                    .enumerate()
+                    .map(|(ordinal, fact)| (ordinal, fact.retained_bytes())),
+                self.latest_live_input_byte_limit,
+            )?;
+        }
         if record.header.status == TurnRecordStatus::Accepted {
             let eligible = &self.instance().plan.turn_trigger_inputs;
             let trigger_count = batch
@@ -1167,6 +1197,30 @@ impl ResidentExternalCoordinator {
             {
                 return invalid_coordinator(
                     "recorded replay triggers do not match the activated turn mode",
+                );
+            }
+            let explicit_step = !record.body.initial_publication
+                && !record.body.continuation_drain
+                && !eligible.is_empty()
+                && self.instance().plan.has_input_free_activation_roots()
+                && trigger_count == 0;
+            if explicit_step
+                && batch
+                    .iter()
+                    .flat_map(|batch| &batch.facts)
+                    .enumerate()
+                    .any(|(ordinal, fact)| {
+                        self.latest_live_inputs
+                            .get(ordinal)
+                            .and_then(|value| value.as_ref())
+                            .is_some_and(|value| {
+                                value.value_hash(self.artifact.schemas()).ok()
+                                    != Some(fact.payload_hash)
+                            })
+                    })
+            {
+                return invalid_coordinator(
+                    "recorded explicit step changes the retained input snapshot",
                 );
             }
         }
@@ -1232,6 +1286,8 @@ impl ResidentExternalCoordinator {
                     transaction,
                     input_evidence,
                     before_epoch,
+                    initial_publication,
+                    continuation_drain,
                     TurnFailurePhase::EffectMaterialization,
                     error,
                 );
@@ -1262,6 +1318,8 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                initial_publication,
+                continuation_drain,
                 TurnFailurePhase::ExternalPrepare,
                 failure.error,
                 failure.cleanup,
@@ -1279,6 +1337,8 @@ impl ResidentExternalCoordinator {
                     transaction,
                     rejected_evidence,
                     before_epoch,
+                    initial_publication,
+                    continuation_drain,
                     TurnFailurePhase::ExternalPrepare,
                     error,
                     cleanup,
@@ -1296,6 +1356,8 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                initial_publication,
+                continuation_drain,
                 TurnFailurePhase::ExternalPrepare,
                 step.error,
                 cleanup,
@@ -1312,6 +1374,8 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                initial_publication,
+                continuation_drain,
                 TurnFailurePhase::ExternalApply,
                 step.error,
                 cleanup,
@@ -1329,6 +1393,8 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                initial_publication,
+                continuation_drain,
                 TurnFailurePhase::Execution,
                 error,
                 cleanup,
@@ -2000,6 +2066,8 @@ impl ResidentExternalCoordinator {
         transaction: TransactionId,
         evidence: RejectedTurnEvidence,
         before_epoch: InstanceEpoch,
+        initial_publication: bool,
+        continuation_drain: bool,
         phase: TurnFailurePhase,
         error: MechError,
     ) -> MResult<ResidentExternalTurnOutcome> {
@@ -2024,8 +2092,8 @@ impl ResidentExternalCoordinator {
                 plan_generation: self.plan_generation,
                 layout_generation: self.layout_generation,
                 input_batch_hash: evidence.input_batch_hash,
-                initial_publication: false,
-                continuation_drain: false,
+                initial_publication,
+                continuation_drain,
                 before_epoch,
                 after_epoch: None,
                 state_hash: self.published_state_hash,
@@ -2058,6 +2126,8 @@ impl ResidentExternalCoordinator {
         transaction: TransactionId,
         evidence: RejectedTurnEvidence,
         before_epoch: InstanceEpoch,
+        initial_publication: bool,
+        continuation_drain: bool,
         phase: TurnFailurePhase,
         error: MechError,
         cleanup: Vec<RuntimeEffectFailure>,
@@ -2068,6 +2138,8 @@ impl ResidentExternalCoordinator {
             transaction,
             evidence,
             before_epoch,
+            initial_publication,
+            continuation_drain,
             phase,
             error,
         )?;
