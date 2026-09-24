@@ -182,6 +182,7 @@ pub struct ResidentExternalCoordinator {
     live: bool,
     replay_bootstrap: ResidentExternalReplayBootstrap,
     driverless_bootstrap_pending: bool,
+    replay_loading_failed: bool,
     bound: BoundResidentExternalPlan,
     latest_live_inputs: Vec<Option<Value>>,
     latest_live_input_bytes: Vec<usize>,
@@ -343,6 +344,7 @@ impl ResidentExternalCoordinator {
             live,
             driverless_bootstrap_pending: !live
                 && !replay_bootstrap.driverless_trigger_inputs.is_empty(),
+            replay_loading_failed: false,
             replay_bootstrap,
             bound,
             latest_live_inputs,
@@ -1040,6 +1042,11 @@ impl ResidentExternalCoordinator {
         if self.live {
             return invalid_coordinator("recorded replay requires an offline coordinator");
         }
+        if self.replay_loading_failed {
+            return invalid_coordinator(
+                "recorded replay cannot continue after a rejected loading turn",
+            );
+        }
         let batch = batch
             .map(|batch| self.validate_replay_batch(batch))
             .transpose()?;
@@ -1096,6 +1103,13 @@ impl ResidentExternalCoordinator {
                 self.next_turn = next_turn;
                 let receipt_sequence = self.append_receipt(prepared_receipt);
                 self.last_rejected_turn = Some(turn);
+                if matches!(
+                    record.body.mode,
+                    ResidentExternalTurnMode::InitialPublication
+                        | ResidentExternalTurnMode::DriverlessBootstrap
+                ) {
+                    self.replay_loading_failed = true;
+                }
                 Ok(ResidentExternalTurnOutcome::Rejected {
                     turn,
                     receipt_sequence,
@@ -1300,13 +1314,13 @@ impl ResidentExternalCoordinator {
         {
             return invalid_coordinator("recorded replay turn changes its retained input snapshot");
         }
+        let complete_inputs = if self.bound.observations().is_empty() {
+            batch.is_none()
+        } else {
+            batch.is_some_and(|batch| batch.facts.len() == self.bound.observations().len())
+        };
         match record.header.status {
             TurnRecordStatus::Accepted => {
-                let complete_inputs = if self.bound.observations().is_empty() {
-                    batch.is_none()
-                } else {
-                    batch.is_some_and(|batch| batch.facts.len() == self.bound.observations().len())
-                };
                 if !complete_inputs || record.body.after_epoch.is_none() {
                     return invalid_coordinator(
                         "accepted replay requires the activated complete input boundary",
@@ -1319,6 +1333,32 @@ impl ResidentExternalCoordinator {
                 {
                     return invalid_coordinator(
                         "rejected replay receipt must preserve the published state",
+                    );
+                }
+                let phase = record
+                    .header
+                    .failure
+                    .as_ref()
+                    .expect("validated rejected replay receipt")
+                    .phase;
+                let evidence_matches_phase = match phase {
+                    TurnFailurePhase::InputInstallation => batch
+                        .is_none_or(|batch| batch.facts.len() < self.bound.observations().len()),
+                    TurnFailurePhase::Recording => batch.is_none(),
+                    TurnFailurePhase::Execution
+                    | TurnFailurePhase::Integrity
+                    | TurnFailurePhase::EffectMaterialization
+                    | TurnFailurePhase::ExternalPrepare
+                    | TurnFailurePhase::ExternalApply => complete_inputs,
+                    TurnFailurePhase::Admission
+                    | TurnFailurePhase::Publication
+                    | TurnFailurePhase::ExternalCommit
+                    | TurnFailurePhase::EffectDelivery
+                    | TurnFailurePhase::Finalization => false,
+                };
+                if !evidence_matches_phase {
+                    return invalid_coordinator(
+                        "rejected replay input evidence does not match its failure phase",
                     );
                 }
             }

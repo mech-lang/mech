@@ -4757,16 +4757,7 @@ fn build_plan(
                 | crate::ExecutableNodeBody::Activation(control) => control,
                 _ => unreachable!(),
             };
-            let input_sources = node_inputs(artifact, node.node)?
-                .into_iter()
-                .map(|source| {
-                    if matches!(&node.body, crate::ExecutableNodeBody::Activation(_)) {
-                        forwarded_output_source(artifact, source)
-                    } else {
-                        Ok(source)
-                    }
-                })
-                .collect::<Result<Vec<_>, _>>()?;
+            let input_sources = control_input_sources(artifact, node.node)?;
             let input_reads = input_sources
                 .iter()
                 .copied()
@@ -4789,7 +4780,7 @@ fn build_plan(
         if class == NodeClass::Observation {
             continue;
         }
-        let input_sources = node_inputs(artifact, node.node)?;
+        let input_sources = control_input_sources(artifact, node.node)?;
         let mech_core::ResolvedOperationContract::Declared(contract) =
             artifact.contracts().get(node.contract).unwrap()
         else {
@@ -5099,12 +5090,19 @@ fn build_plan(
             } => None,
         }
     }));
-    published.extend(artifact.constraints().iter().flat_map(|constraint| {
-        constraint.inputs.iter().filter_map(|source| match source {
-            ArtifactSource::Slot(slot) => Some(*slot),
-            ArtifactSource::Constant(_) => None,
-        })
-    }));
+    published.extend(
+        artifact
+            .constraints()
+            .iter()
+            .flat_map(|constraint| constraint.inputs.iter().copied())
+            .map(|source| forwarded_output_source(artifact, source))
+            .filter_map(|source| match source {
+                Ok(ArtifactSource::Slot(slot)) => Some(Ok(slot)),
+                Ok(ArtifactSource::Constant(_)) => None,
+                Err(error) => Some(Err(error)),
+            })
+            .collect::<Result<BTreeSet<_>, ResidentActivationError>>()?,
+    );
     let output_materialization_source =
         |output_slot: CellSlotId| -> Result<ArtifactSource, ResidentActivationError> {
             let mut source = ArtifactSource::Slot(output_slot);
@@ -6639,6 +6637,29 @@ fn node_inputs(
             BindingDeclaration::Input { source, .. } => Ok(*source),
             BindingDeclaration::Output { .. } => {
                 Err(ResidentActivationError::InvalidDependency { node })
+            }
+        })
+        .collect()
+}
+
+fn control_input_sources(
+    artifact: &ProgramArtifact,
+    node: NodeId,
+) -> Result<Vec<ArtifactSource>, ResidentActivationError> {
+    let normalize_forwarded = matches!(
+        artifact
+            .nodes()
+            .get(node.get() as usize)
+            .map(|node| &node.body),
+        Some(crate::ExecutableNodeBody::Activation(_))
+    );
+    node_inputs(artifact, node)?
+        .into_iter()
+        .map(|source| {
+            if normalize_forwarded {
+                forwarded_output_source(artifact, source)
+            } else {
+                Ok(source)
             }
         })
         .collect()
