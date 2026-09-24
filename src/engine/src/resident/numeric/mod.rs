@@ -17597,6 +17597,9 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
     if left.0 == 1.0 && left.1 == 0.0 {
         return right;
     }
+    if left.1 == 0.0 && right.1 == 0.0 {
+        return (left.0 * right.0, 0.0);
+    }
     if right.1 == 0.0 && right.0.is_finite() {
         return (left.0 * right.0, left.1 * right.0);
     }
@@ -17623,6 +17626,9 @@ fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
     }
     if right.1 == 0.0 && right.0.is_finite() && right.0 != 0.0 {
         return (left.0 / right.0, left.1 / right.0);
+    }
+    if right.0 == 0.0 && right.1.is_finite() && right.1 != 0.0 {
+        return (left.1 / right.1, -left.0 / right.1);
     }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         // Products of finite f32 values remain representable in f64. Complete
@@ -17729,6 +17735,9 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     if left.0 == 1.0 && left.1 == 0.0 {
         return right;
     }
+    if left.1 == 0.0 && right.1 == 0.0 {
+        return (left.0 * right.0, 0.0);
+    }
     if right.1 == 0.0 && right.0.is_finite() {
         return (left.0 * right.0, left.1 * right.0);
     }
@@ -17762,6 +17771,9 @@ fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     }
     if right.1 == 0.0 && right.0.is_finite() && right.0 != 0.0 {
         return (left.0 / right.0, left.1 / right.0);
+    }
+    if right.0 == 0.0 && right.1.is_finite() && right.1 != 0.0 {
+        return (left.1 / right.1, -left.0 / right.1);
     }
     if left.0.is_finite()
         && left.1.is_finite()
@@ -22506,12 +22518,20 @@ mod tests {
             (f32::INFINITY, 0.0)
         );
         assert_eq!(
+            complex32_multiply((f32::INFINITY, 0.0), (f32::INFINITY, 0.0)),
+            (f32::INFINITY, 0.0)
+        );
+        assert_eq!(
             complex32_divide((f32::INFINITY, 0.0), (2.0, 0.0)),
             (f32::INFINITY, 0.0)
         );
         assert_eq!(
             complex32_divide((-0.0, 0.0), (2.0, 0.0)).0.to_bits(),
             (-0.0_f32).to_bits()
+        );
+        assert_eq!(
+            complex32_divide((f32::INFINITY, 0.0), (0.0, 1.0)),
+            (0.0, f32::NEG_INFINITY)
         );
         let c32_factor = (1.86691995e19, 7.733035e18);
         let c32_product = complex32_multiply(c32_factor, c32_factor);
@@ -22573,12 +22593,20 @@ mod tests {
                 (f64::INFINITY, 0.0)
             );
             assert_eq!(
+                complex64_multiply((f64::INFINITY, 0.0), (f64::INFINITY, 0.0)),
+                (f64::INFINITY, 0.0)
+            );
+            assert_eq!(
                 complex64_divide((f64::INFINITY, 0.0), (2.0, 0.0)),
                 (f64::INFINITY, 0.0)
             );
             assert_eq!(
                 complex64_divide((-0.0, 0.0), (2.0, 0.0)).0.to_bits(),
                 (-0.0_f64).to_bits()
+            );
+            assert_eq!(
+                complex64_divide((f64::INFINITY, 0.0), (0.0, 1.0)),
+                (0.0, f64::NEG_INFINITY)
             );
             let admitted_matrix_factor = ValueDataDraft::Complex64(Complex64Bits::new(
                 F64Bits::from_f64(1.4e154),
