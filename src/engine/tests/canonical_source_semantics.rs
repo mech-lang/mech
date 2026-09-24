@@ -16,8 +16,8 @@ use mech_core::{
 };
 #[cfg(feature = "resident-artifact")]
 use mech_engine::__resident::{
-    ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate,
-    activate_with_options,
+    ActivationFacts, CapturedSignalInput, ResidentActivationOptions, ResidentExternalAdmission,
+    activate, activate_with_options,
 };
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
@@ -2619,6 +2619,238 @@ fn dormant_activation_suppresses_direct_integrity_descendants() {
     assert_eq!(count(&instance), ValueDataDraft::U64(0));
     instance.turn(&[]).unwrap();
     assert_eq!(count(&instance), ValueDataDraft::U64(1));
+}
+
+#[test]
+fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
+    let source = "event := event-source<f64>\nordinary := ordinary-source<f64>\n~count := 0.0\n~> event { count = count + 1.0 }\npayload := ordinary + 1.0\ncount\n";
+    let base = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let activation_result = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["access"]
+                    && operation.operation.operation_name == "scalar"
+            })
+        })
+        .and_then(|access| {
+            base.slots().iter().find(|slot| {
+                matches!(
+                    slot.producer,
+                    mech_engine::ProducerReference::NodeOutput { node, .. }
+                        if node == access.node
+                )
+            })
+        })
+        .expect("activation result accessor")
+        .slot;
+    let ordinary = base
+        .inputs()
+        .iter()
+        .find(|input| input.name == mech_engine::encode_source_input_name("ordinary"))
+        .expect("ordinary input")
+        .slot;
+    let payload = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["math"]
+                    && operation.operation.operation_name == "add"
+            }) && base.bindings()
+                [node.input_bindings.start as usize..node.input_bindings.end as usize]
+                .iter()
+                .any(|binding| {
+                    matches!(
+                        binding,
+                        mech_engine::BindingDeclaration::Input {
+                            source: mech_engine::ArtifactSource::Slot(slot),
+                            ..
+                        } if *slot == ordinary
+                    )
+                })
+        })
+        .expect("ordinary payload add");
+    let mut bindings = base.bindings().to_vec();
+    let replacement = bindings
+        [payload.input_bindings.start as usize..payload.input_bindings.end as usize]
+        .iter_mut()
+        .find(|binding| {
+            matches!(
+                binding,
+                mech_engine::BindingDeclaration::Input {
+                    source: mech_engine::ArtifactSource::Constant(_),
+                    ..
+                }
+            )
+        })
+        .expect("payload constant input");
+    let mech_engine::BindingDeclaration::Input { source, .. } = replacement else {
+        unreachable!()
+    };
+    *source = mech_engine::ArtifactSource::Slot(activation_result);
+    let payload_slot = base
+        .slots()
+        .iter()
+        .find(|slot| {
+            matches!(
+                slot.producer,
+                mech_engine::ProducerReference::NodeOutput { node, .. }
+                    if node == payload.node
+            )
+        })
+        .expect("payload output")
+        .slot;
+    let payload_schema = base.slots()[payload_slot.get() as usize].schema;
+    let mut contract_builder = mech_core::OperationContractTableBuilder::new();
+    let contract_handles = base
+        .contracts()
+        .iter()
+        .cloned()
+        .map(|contract| contract_builder.insert(contract).unwrap())
+        .collect::<Vec<_>>();
+    let effect_handle = contract_builder
+        .insert(mech_core::ResolvedOperationContract::Declared(
+            mech_core::DeclaredOperationContract {
+                inputs: vec![mech_core::ResolvedInputPort {
+                    schema: payload_schema,
+                    access: mech_core::AccessMode::Read,
+                    delivery: mech_core::DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+                outputs: Box::new([]),
+                interaction: mech_core::ExternalInteraction::Effect(mech_core::EffectContract {
+                    delivery: mech_core::EffectDeliveryPolicy::AtMostOnce,
+                    idempotency: mech_core::IdempotencyRequirement::NotRequired,
+                }),
+            },
+        ))
+        .unwrap();
+    let contracts = contract_builder.finish().unwrap();
+    let mut nodes = base.nodes().to_vec();
+    for node in &mut nodes {
+        match &mut node.body {
+            mech_engine::ExecutableNodeBody::Operation(operation) => {
+                operation.contract = contracts
+                    .resolve(contract_handles[operation.contract.get() as usize])
+                    .unwrap();
+            }
+            mech_engine::ExecutableNodeBody::Activation(control)
+            | mech_engine::ExecutableNodeBody::Match(control) => {
+                for arm in &mut control.arms {
+                    for block in arm.guard.iter_mut().chain(core::iter::once(&mut arm.body)) {
+                        for operation in &mut block.operations {
+                            let mech_engine::ControlOperationBody::Operation { contract, .. } =
+                                &mut operation.body
+                            else {
+                                panic!("simple activation fixture has only ordinary operations")
+                            };
+                            *contract = contracts
+                                .resolve(contract_handles[contract.get() as usize])
+                                .unwrap();
+                        }
+                    }
+                }
+            }
+            mech_engine::ExecutableNodeBody::Comprehension(_)
+            | mech_engine::ExecutableNodeBody::Fsm(_) => {
+                panic!("simple activation fixture has no nested control")
+            }
+        }
+    }
+    let mut constraints = base.constraints().to_vec();
+    for constraint in &mut constraints {
+        constraint.contract = contracts
+            .resolve(contract_handles[constraint.contract.get() as usize])
+            .unwrap();
+    }
+    let effect_requirement =
+        mech_core::ApplicationRequirementId::new(u32::try_from(base.requirements().len()).unwrap());
+    let effect_node = mech_core::NodeId::new(nodes.len() as u32);
+    let input_start = bindings.len() as u32;
+    bindings.push(mech_engine::BindingDeclaration::Input {
+        id: mech_core::BindingId::new(input_start),
+        node: effect_node,
+        port_ordinal: 0,
+        source: mech_engine::ArtifactSource::Slot(payload_slot),
+    });
+    nodes.push(mech_engine::NodeDeclaration {
+        node: effect_node,
+        body: mech_engine::ExecutableNodeBody::Operation(mech_engine::OperationNodeBody {
+            operation: mech_engine::OperationReference {
+                module_path: vec!["resource".to_owned(), "send".to_owned()].into_boxed_slice(),
+                operation_name: "write".to_owned(),
+            },
+            contract: contracts.resolve(effect_handle).unwrap(),
+            requirement: Some(effect_requirement),
+        }),
+        input_bindings: input_start..input_start + 1,
+        output_bindings: input_start + 1..input_start + 1,
+    });
+    let requirements = mech_engine::ApplicationRequirementTable::from_canonical_entries(
+        base.requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone())
+            .chain([mech_core::ApplicationRequirement::Resource(
+                mech_core::ExecutionResourceRequest {
+                    base_uri: "test-resource://scene/output".to_owned(),
+                    path: "frame".to_owned(),
+                    context_name: "output".to_owned(),
+                    operation: "write".to_owned(),
+                    intent: mech_core::ResourceIntent::Send,
+                    delivery: mech_core::ResourceDelivery::Snapshot,
+                },
+            )])
+            .collect(),
+    )
+    .unwrap();
+    let artifact = mech_engine::ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: contracts.table,
+        requirements,
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: base.slots().to_vec().into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 766),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            external: ResidentExternalAdmission::StructuralOnly,
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let values = [1.0, 5.0];
+    let inputs = instance
+        .plan
+        .inputs
+        .iter()
+        .zip(values.iter())
+        .map(|(input, value)| CapturedSignalInput {
+            slot: input.slot,
+            value: ResidentValueRef::F64(core::slice::from_ref(value)),
+        })
+        .collect::<Vec<_>>();
+    let prepared = instance.prepare_initial_turn(&inputs).unwrap();
+    assert_eq!(prepared.effect_intents().count(), 0);
+    prepared.abort();
 }
 
 #[test]
