@@ -881,15 +881,20 @@ fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
     )?;
     let admission = live.reserve_live_turn()?;
     assert!(matches!(
-        live.execute_live_turn(None, admission, true, false, false, |_| {
-            Err(test_error("injected initial publication rejection"))
-        })?,
+        live.execute_live_turn(
+            None,
+            admission,
+            ResidentExternalTurnMode::InitialPublication,
+            |_| Err(test_error("injected initial publication rejection")),
+        )?,
         ResidentExternalTurnOutcome::Rejected { .. }
     ));
     let batch = live.input_facts().next().unwrap().1.clone();
     let record = live.receipts().next().unwrap().1.clone();
-    assert!(record.body.initial_publication);
-    assert!(!record.body.continuation_drain);
+    assert_eq!(
+        record.body.mode,
+        ResidentExternalTurnMode::InitialPublication
+    );
 
     let catalog = frozen_ekf_compiler_catalog()?;
     let replay_instance = activate_external(
@@ -907,6 +912,25 @@ fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
+    let forged_fact = CapturedInputFact::new_with_trigger(
+        batch.facts[0].sequence,
+        batch.facts[0].requirement,
+        batch.facts[0].node,
+        batch.facts[0].slot,
+        batch.facts[0].schema_key,
+        batch.facts[0].shape.clone(),
+        batch.facts[0].value.clone(),
+        true,
+        replay.artifact.schemas(),
+    )?;
+    let forged_batch = CapturedInputBatch::new(vec![forged_fact])?;
+    let mut forged_record = record.clone();
+    forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    assert!(
+        replay
+            .execute_replay_batch(Some(&forged_batch), &forged_record)
+            .is_err()
+    );
     assert!(matches!(
         replay.execute_replay_batch(Some(&batch), &record)?,
         ResidentExternalTurnOutcome::Rejected { .. }
