@@ -3213,6 +3213,7 @@ fn logical_selector_population(
 
 struct ConstantComparisonOperand<'a> {
     value: std::borrow::Cow<'a, Value>,
+    schema_key: SchemaKey,
     schema: SchemaBody,
     element: SchemaBody,
     rows: usize,
@@ -3406,6 +3407,7 @@ fn constant_comparison_operand<'a>(
         (body, _) => (body.clone(), 1, 1),
     };
     Ok(Some(ConstantComparisonOperand {
+        schema_key: value.schema_key(),
         value,
         schema: schema.body().clone(),
         element,
@@ -3497,6 +3499,16 @@ fn closed_aggregate_equality_admitted(
         .is_some_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
 }
 
+fn closed_scalar_string_equality_admitted(left: &Value, right: &Value) -> bool {
+    let (mech_core::ValueData::String(left), mech_core::ValueData::String(right)) =
+        (left.data(), right.data())
+    else {
+        return false;
+    };
+    u64::try_from(left.len().max(right.len()).max(1))
+        .is_ok_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+}
+
 fn closed_comparison_population(
     artifact: &ProgramArtifact,
     node: NodeId,
@@ -3545,10 +3557,10 @@ fn closed_comparison_population(
                 && left.rows == right.rows
                 && left.columns == right.columns
         );
-        if left.schema != right.schema && !compatible_matrix_identity {
+        if left.schema_key != right.schema_key && !compatible_matrix_identity {
             return Ok(match name {
-                "seq" => Some(0),
-                "sneq" => Some(1),
+                "eq" | "seq" => Some(0),
+                "neq" | "sneq" => Some(1),
                 _ => None,
             });
         }
@@ -3559,18 +3571,25 @@ fn closed_comparison_population(
         } else {
             left.value.shape() == right.value.shape()
         };
-        let budgeted_equality = !scalar_comparison_supported(&left.schema, false)
-            || matches!(left.schema, SchemaBody::String);
-        if budgeted_equality
-            && matches!(name, "eq" | "neq" | "seq" | "sneq")
-            && !closed_aggregate_equality_admitted(
-                artifact,
-                &left.value,
-                &right.value,
-                matches!(name, "eq" | "neq"),
-            )
-        {
-            return Ok(None);
+        if matches!(name, "eq" | "neq" | "seq" | "sneq") {
+            let admitted =
+                if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
+                    closed_scalar_string_equality_admitted(&left.value, &right.value)
+                } else if !scalar_comparison_supported(&left.schema, false)
+                    || matches!(left.schema, SchemaBody::String)
+                {
+                    closed_aggregate_equality_admitted(
+                        artifact,
+                        &left.value,
+                        &right.value,
+                        matches!(name, "eq" | "neq"),
+                    )
+                } else {
+                    true
+                };
+            if !admitted {
+                return Ok(None);
+            }
         }
         let language_equal = || {
             same_shape
@@ -3689,10 +3708,28 @@ fn closed_comparison_population(
         }
     };
     let mut population = 0_u64;
+    let mut string_comparison_work = 0_u64;
     for row in 0..rows {
         for column in 0..columns {
             let left_index = (row % left.rows) * left.columns + column % left.columns;
             let right_index = (row % right.rows) * right.columns + column % right.columns;
+            if matches!(element, SchemaBody::String) {
+                let (
+                    mech_core::ValueData::String(left_string),
+                    mech_core::ValueData::String(right_string),
+                ) = (&left_values[left_index], &right_values[right_index])
+                else {
+                    return Ok(None);
+                };
+                let work = u64::try_from(left_string.len().max(right_string.len()).max(1))
+                    .map_err(|_| ResidentActivationError::RegionSizeOverflow)?;
+                string_comparison_work = string_comparison_work
+                    .checked_add(work)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+                if string_comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK {
+                    return Ok(None);
+                }
+            }
             if compare(&left_values[left_index], &right_values[right_index]) {
                 population = population
                     .checked_add(1)
@@ -3744,7 +3781,7 @@ fn complete_activation_shape_facts(
         if operation.operation.module_path.as_ref() == ["matrix"]
             && matches!(
                 operation.operation.operation_name.as_str(),
-                "horzcat" | "vertcat"
+                "horzcat" | "vertcat" | "transpose"
             )
         {
             pending_logical_sources.extend(node_inputs(artifact, node)?);
@@ -3790,6 +3827,20 @@ fn complete_activation_shape_facts(
                 },
             )?;
             if let Some(population) = population {
+                logical_populations.insert(ArtifactSource::Slot(output), population);
+            }
+        }
+        if node.operation.module_path.as_ref() == ["matrix"]
+            && node.operation.operation_name == "transpose"
+            && required_logical_populations.contains(&ArtifactSource::Slot(output))
+        {
+            let inputs = node_inputs(artifact, node.node)?;
+            let [source] = inputs.as_slice() else {
+                continue;
+            };
+            if let Some(population) =
+                logical_selector_population(artifact, *source, &logical_populations)
+            {
                 logical_populations.insert(ArtifactSource::Slot(output), population);
             }
         }
