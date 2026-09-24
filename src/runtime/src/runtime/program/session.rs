@@ -240,6 +240,7 @@ impl MechRuntime {
                     .continuation_wakeup()
                     .is_some() =>
             {
+                self.revalidate_active_resident_grants()?;
                 self.drain_resident_continuations()
             }
             ActiveProgramExecution::ResidentExternal(_) => Err(invalid_active_program(
@@ -304,6 +305,7 @@ impl MechRuntime {
                     }
                     let turn_started = Instant::now();
                     let admission = execution.coordinator.admit_turn()?;
+                    let before = execution.coordinator.structural_probe();
                     let outcome = execution
                         .coordinator
                         .execute_admitted_turn(admission, |_| {
@@ -312,11 +314,18 @@ impl MechRuntime {
                                 turn_started,
                             )
                         })?;
+                    let after = execution.coordinator.structural_probe();
+                    self.resident_production_probe
+                        .observe_structural_delta(before, after);
                     match &outcome {
                         crate::ResidentExternalTurnOutcome::Rejected { .. } => {
                             self.program_execution_info.resident_rejected_turns = self
                                 .program_execution_info
                                 .resident_rejected_turns
+                                .saturating_add(1);
+                            self.resident_production_probe.resident_rejections = self
+                                .resident_production_probe
+                                .resident_rejections
                                 .saturating_add(1);
                         }
                         crate::ResidentExternalTurnOutcome::Accepted { .. }
@@ -324,6 +333,10 @@ impl MechRuntime {
                             self.program_execution_info.resident_accepted_turns = self
                                 .program_execution_info
                                 .resident_accepted_turns
+                                .saturating_add(1);
+                            self.resident_production_probe.resident_turns = self
+                                .resident_production_probe
+                                .resident_turns
                                 .saturating_add(1);
                         }
                     }

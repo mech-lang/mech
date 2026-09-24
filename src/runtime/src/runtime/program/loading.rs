@@ -591,12 +591,20 @@ impl MechRuntime {
         }
         let initial_snapshot = match &self.active_program {
             ActiveProgramExecution::ResidentPure(execution) => {
-                initial_value(&execution.instance, initial_output)?
+                initial_value(&execution.instance, initial_output)
             }
             ActiveProgramExecution::ResidentExternal(execution) => {
-                initial_value(execution.coordinator.instance(), initial_output)?
+                initial_value(execution.coordinator.instance(), initial_output)
             }
             ActiveProgramExecution::None => unreachable!(),
+        };
+        let initial_snapshot = match initial_snapshot {
+            Ok(snapshot) => snapshot,
+            Err(error) => {
+                self.active_program = ActiveProgramExecution::None;
+                self.program_execution_info = RuntimeProgramExecutionInfo::default();
+                return Err(error);
+            }
         };
         let info = self.program_execution_info.clone();
         Ok(RuntimeProgramLoadOutcome {
