@@ -225,6 +225,19 @@ fn validate_structural_pattern(
     Some(())
 }
 
+fn fixed_matrix_element_count(schema: &mech_core::Schema) -> Option<usize> {
+    let shape = schema.instantiate_shape(Box::new([])).ok()?;
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+        return None;
+    };
+    dimensions
+        .iter()
+        .try_fold(1_u64, |count, dimension| {
+            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
+        })
+        .and_then(|count| usize::try_from(count).ok())
+}
+
 fn structurally_irrefutable<V>(
     schemas: &mech_core::SchemaTable,
     pattern: &super::CollectionPattern<SchemaId, V>,
@@ -256,6 +269,25 @@ fn structurally_irrefutable<V>(
                     super::comprehension::array_rest_schema(&element, element.body())
                 })
                 .is_some_and(|expected| structurally_irrefutable(schemas, rest, &expected))
+        }
+        super::CollectionPattern::Array {
+            prefix,
+            rest: None,
+            suffix,
+        } => {
+            let mech_core::SchemaBody::Matrix { element, .. } = expected.body() else {
+                return false;
+            };
+            prefix
+                .len()
+                .checked_add(suffix.len())
+                .is_some_and(|count| fixed_matrix_element_count(expected) == Some(count))
+                && component_schema(expected, element).is_some_and(|expected| {
+                    prefix
+                        .iter()
+                        .chain(suffix)
+                        .all(|item| structurally_irrefutable(schemas, item, &expected))
+                })
         }
         super::CollectionPattern::Equal(_)
         | super::CollectionPattern::Enum { .. }
@@ -932,7 +964,47 @@ pub(crate) fn is_control_value_schema(schema: &mech_core::Schema) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+    use mech_core::{DimensionExpr, FloatWidth, SchemaBody, SchemaDraft, SchemaTableBuilder};
+
+    #[test]
+    fn exact_fixed_array_patterns_are_irrefutable_for_enum_coverage() {
+        let mut builder = SchemaTableBuilder::new();
+        let matrix = builder
+            .insert(
+                SchemaDraft {
+                    body: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                        dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                            .into_boxed_slice(),
+                    },
+                    dimension_parameters: Box::new([]),
+                }
+                .finalize()
+                .unwrap(),
+            )
+            .unwrap();
+        let built = builder.finish().unwrap();
+        let matrix = built.resolve(matrix).unwrap();
+        let schemas = built.table;
+        let expected = schemas.get(matrix).unwrap();
+        let wildcard = || super::super::CollectionPattern::Wildcard;
+
+        let exact: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Array {
+                prefix: vec![wildcard(), wildcard()].into_boxed_slice(),
+                rest: None,
+                suffix: Box::new([]),
+            };
+        assert!(structurally_irrefutable(&schemas, &exact, expected));
+
+        let short: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
+            super::super::CollectionPattern::Array {
+                prefix: vec![wildcard()].into_boxed_slice(),
+                rest: None,
+                suffix: Box::new([]),
+            };
+        assert!(!structurally_irrefutable(&schemas, &short, expected));
+    }
 
     #[test]
     fn narrowed_dynamic_bindings_are_refutable_for_enum_coverage() {

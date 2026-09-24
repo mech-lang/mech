@@ -2346,6 +2346,20 @@ fn structural_array_rest_schema(element: &SchemaDraft) -> Option<SchemaDraft> {
     })
 }
 
+fn fixed_matrix_element_count(schema: &SchemaDraft) -> Option<usize> {
+    let schema = schema.clone().finalize().ok()?;
+    let shape = schema.instantiate_shape(Box::new([])).ok()?;
+    let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+        return None;
+    };
+    dimensions
+        .iter()
+        .try_fold(1_u64, |count, dimension| {
+            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
+        })
+        .and_then(|count| usize::try_from(count).ok())
+}
+
 fn structurally_irrefutable<V>(
     pattern: &crate::CollectionPattern<SchemaDraft, V>,
     expected: &SchemaDraft,
@@ -2374,6 +2388,25 @@ fn structurally_irrefutable<V>(
             structural_component_schema_draft(expected, element)
                 .and_then(|element| structural_array_rest_schema(&element))
                 .is_some_and(|expected| structurally_irrefutable(rest, &expected))
+        }
+        crate::CollectionPattern::Array {
+            prefix,
+            rest: None,
+            suffix,
+        } => {
+            let SchemaBody::Matrix { element, .. } = &expected.body else {
+                return false;
+            };
+            prefix
+                .len()
+                .checked_add(suffix.len())
+                .is_some_and(|count| fixed_matrix_element_count(expected) == Some(count))
+                && structural_component_schema_draft(expected, element).is_some_and(|expected| {
+                    prefix
+                        .iter()
+                        .chain(suffix)
+                        .all(|item| structurally_irrefutable(item, &expected))
+                })
         }
         crate::CollectionPattern::Equal(_)
         | crate::CollectionPattern::Enum { .. }
