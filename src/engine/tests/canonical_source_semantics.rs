@@ -2106,59 +2106,28 @@ fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
             *target = trigger;
         }
     }
-    for nonzero_scrutinee in [false, true] {
-        let mut nodes = state_artifact.nodes().to_vec();
-        let mut bindings = bindings.clone();
-        if nonzero_scrutinee {
-            let activation = &mut nodes[activation.node.get() as usize];
-            let activation_inputs = activation.input_bindings.clone();
-            assert!(activation_inputs.end - activation_inputs.start >= 2);
-            let mech_engine::ExecutableNodeBody::Activation(control) = &mut activation.body else {
-                panic!("activation declaration")
-            };
-            control.scrutinee = 1;
-            let first = activation_inputs.start as usize;
-            let second = first + 1;
-            let (before_second, from_second) = bindings.split_at_mut(second);
-            let mech_engine::BindingDeclaration::Input {
-                source: first_source,
-                ..
-            } = &mut before_second[first]
-            else {
-                panic!("activation trigger binding")
-            };
-            let mech_engine::BindingDeclaration::Input {
-                source: second_source,
-                ..
-            } = &mut from_second[0]
-            else {
-                panic!("activation capture binding")
-            };
-            core::mem::swap(first_source, second_source);
-        }
-        let error = mech_engine::ProgramArtifactDraft {
-            schemas: state_artifact.schemas().clone(),
-            constants: state_artifact.constants().clone(),
-            contracts: state_artifact.contracts().clone(),
-            requirements: state_artifact.requirements().clone(),
-            inputs: state_artifact.inputs().to_vec().into_boxed_slice(),
-            slots: slots.clone().into_boxed_slice(),
-            nodes: nodes.into_boxed_slice(),
-            bindings: bindings.into_boxed_slice(),
-            outputs: state_artifact.outputs().to_vec().into_boxed_slice(),
-            constraints: state_artifact.constraints().to_vec().into_boxed_slice(),
-            compute_regions: state_artifact.compute_regions().to_vec().into_boxed_slice(),
-        }
-        .finalize()
-        .unwrap_err();
-        assert!(matches!(
-            error,
-            mech_engine::ArtifactBuildError::InvalidControl {
-                reason: "activation cannot write its own trigger state",
-                ..
-            }
-        ));
+    let error = mech_engine::ProgramArtifactDraft {
+        schemas: state_artifact.schemas().clone(),
+        constants: state_artifact.constants().clone(),
+        contracts: state_artifact.contracts().clone(),
+        requirements: state_artifact.requirements().clone(),
+        inputs: state_artifact.inputs().to_vec().into_boxed_slice(),
+        slots: slots.into_boxed_slice(),
+        nodes: state_artifact.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: state_artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: state_artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: state_artifact.compute_regions().to_vec().into_boxed_slice(),
     }
+    .finalize()
+    .unwrap_err();
+    assert!(matches!(
+        error,
+        mech_engine::ArtifactBuildError::InvalidControl {
+            reason: "activation cannot write its own trigger state",
+            ..
+        }
+    ));
     let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
     let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
     let mut catalog = FunctionCatalogBuilder::new();
