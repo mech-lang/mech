@@ -827,6 +827,7 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
+        ResidentExternalReplayBootstrap::default(),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -865,6 +866,75 @@ fn default_authority_denies_before_any_provider_read() -> MResult<()> {
         .is_err()
     );
     assert_eq!(trace.lock().unwrap().reads, 0);
+    Ok(())
+}
+
+#[test]
+fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
+    let trace = Arc::new(Mutex::new(ProviderTrace::default()));
+    let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
+    let mut live = coordinator(
+        instance,
+        &artifact,
+        &providers,
+        ResidentExternalLimits::default(),
+    )?;
+    let admission = live.reserve_live_turn()?;
+    assert!(matches!(
+        live.execute_live_turn(
+            None,
+            admission,
+            ResidentExternalTurnMode::InitialPublication,
+            |_| Err(test_error("injected initial publication rejection")),
+        )?,
+        ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    let batch = live.input_facts().next().unwrap().1.clone();
+    let record = live.receipts().next().unwrap().1.clone();
+    assert_eq!(
+        record.body.mode,
+        ResidentExternalTurnMode::InitialPublication
+    );
+
+    let catalog = frozen_ekf_compiler_catalog()?;
+    let replay_instance = activate_external(
+        ReactiveInstanceId::new(700, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(artifact),
+        ResidentExternalReplayBootstrap::new(true, Box::new([])),
+        ResidentDurabilityPolicy::Retained,
+        ResidentExternalLimits::default(),
+    )?;
+    let forged_fact = CapturedInputFact::new_with_trigger(
+        batch.facts[0].sequence,
+        batch.facts[0].requirement,
+        batch.facts[0].node,
+        batch.facts[0].slot,
+        batch.facts[0].schema_key,
+        batch.facts[0].shape.clone(),
+        batch.facts[0].value.clone(),
+        true,
+        replay.artifact.schemas(),
+    )?;
+    let forged_batch = CapturedInputBatch::new(vec![forged_fact])?;
+    let mut forged_record = record.clone();
+    forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    assert!(
+        replay
+            .execute_replay_batch(Some(&forged_batch), &forged_record)
+            .is_err()
+    );
+    assert!(matches!(
+        replay.execute_replay_batch(Some(&batch), &record)?,
+        ResidentExternalTurnOutcome::Rejected { .. }
+    ));
     Ok(())
 }
 
@@ -1614,6 +1684,36 @@ fn capacity_is_reserved_before_observation_capture() -> MResult<()> {
 }
 
 #[test]
+fn sample_only_host_updates_obey_the_live_snapshot_byte_limit() -> MResult<()> {
+    let trace = Arc::new(Mutex::new(ProviderTrace::default()));
+    let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
+    let mut coordinator = coordinator(
+        instance,
+        &artifact,
+        &providers,
+        ResidentExternalLimits {
+            input_bytes: 1,
+            ..ResidentExternalLimits::default()
+        },
+    )?;
+    let update = crate::RuntimeHostInputUpdate {
+        source: crate::RuntimeHostInputSource::new("test-resource://ekf/frame", "sample")?,
+        value: RuntimeHostInputValue::F64Matrix {
+            rows: 4,
+            columns: 1,
+            values: vec![0.2, 0.01, 5.0, -2.0],
+        },
+    };
+    let error = coordinator.sample_host_updates(&[update]).unwrap_err();
+    assert!(
+        error
+            .simple_message()
+            .contains("live input snapshot requires")
+    );
+    Ok(())
+}
+
+#[test]
 fn coordinator_rejects_an_artifact_other_than_the_instance_artifact() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
@@ -1708,6 +1808,7 @@ fn replay_reconstructs_and_rejects_forged_batch_identity() -> MResult<()> {
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
+        ResidentExternalReplayBootstrap::default(),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1751,6 +1852,7 @@ fn accepted_replay_receipt_mismatch_does_not_consume_replay_identity() -> MResul
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(replay_artifact),
+        ResidentExternalReplayBootstrap::default(),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1830,9 +1932,21 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(artifact.clone()),
+        ResidentExternalReplayBootstrap::default(),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
+    let mut missing_input = records[0].clone();
+    missing_input.header.input_range = None;
+    missing_input.body.input_batch_hash = [0; 32];
+    let error = replay
+        .execute_replay_batch(None, &missing_input)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("input evidence does not match its failure phase")
+    );
     assert!(matches!(
         replay.execute_replay_batch(Some(&batches[0]), &records[0])?,
         ResidentExternalTurnOutcome::Rejected {
@@ -1958,6 +2072,7 @@ fn shared_observations_capture_one_authoritative_provider_snapshot() -> MResult<
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
         Arc::new(artifact.clone()),
+        ResidentExternalReplayBootstrap::default(),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;

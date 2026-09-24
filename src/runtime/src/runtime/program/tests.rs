@@ -8,8 +8,8 @@ use std::time::Duration;
 use mech_core::{
     AccessMode, DeliveryMode, DimensionExpr, EffectContract, EffectDeliveryPolicy,
     ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, MResult,
-    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData, hash_str,
-    snapshot::SequenceView,
+    OperationContractDeclaration, ParsedProgram, SchemaBody, Value, ValueCell, ValueData,
+    ValueDataDraft, hash_str, snapshot::SequenceView,
 };
 use mech_engine::{
     __resident::ResidentStorageClass, ArtifactSource, BindingDeclaration, ProgramArtifactDraft,
@@ -175,6 +175,38 @@ struct PlanningObservationProvider {
 #[derive(Debug)]
 struct TypedObservationProvider {
     planned: Value,
+}
+
+#[derive(Debug)]
+struct DriverlessObservationProvider {
+    reads: Arc<AtomicUsize>,
+}
+
+impl RuntimeResourceProvider for DriverlessObservationProvider {
+    fn scheme(&self) -> &str {
+        "snapshot"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec!["snapshot://clock/tick".to_owned()]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::resource_observation_contract())
+    }
+
+    fn observation_requires_input_driver(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        false
+    }
+
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        ValueCell::from_exact(true)?.snapshot()
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<Value> {
+        self.reads.fetch_add(1, Ordering::SeqCst);
+        ValueCell::from_exact(true)?.snapshot()
+    }
 }
 
 impl RuntimeResourceProvider for TypedObservationProvider {
@@ -702,6 +734,56 @@ fn independent_external_runtime_with_source(
     (runtime, reads)
 }
 
+fn independent_canonical_external_runtime_with_source(
+    source: &str,
+) -> (crate::MechRuntime, Arc<AtomicUsize>) {
+    let reads = Arc::new(AtomicUsize::new(0));
+    let fast_bits = Arc::new(AtomicU64::new(2.0_f64.to_bits()));
+    let slow_bits = Arc::new(AtomicU64::new(3.0_f64.to_bits()));
+    let provider = || IndependentObservationProvider {
+        reads: reads.clone(),
+        fast_bits: fast_bits.clone(),
+        slow_bits: slow_bits.clone(),
+    };
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, resource) in [
+        (9_020, "test://clock/fast/delta-seconds"),
+        (9_021, "test://clock/slow/delta-seconds"),
+    ] {
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                CapabilityId(id),
+                subject.clone(),
+                resource,
+                ["read"],
+            )))
+            .unwrap();
+    }
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    (runtime, reads)
+}
+
 fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
     independent_external_runtime_with_source(
         r#"
@@ -831,6 +913,58 @@ fn production_load_drains_fsm_continuations_before_returning_initial_value() {
     };
     assert_eq!(loaded.info.resident_accepted_turns, 3);
     assert!(!execution.instance.has_ready_continuation());
+}
+
+#[test]
+fn pure_continuation_drains_keep_input_free_activations_dormant() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\n#Deferred()\n";
+    let parsed = mech_syntax::document::parse_canonical_document(
+        mech_syntax::document::TextSnapshot::new(
+            mech_syntax::document::DocumentId(0x876),
+            mech_syntax::document::Revision(0),
+            source,
+        )
+        .unwrap(),
+        mech_syntax::document::ParseConfig::default(),
+    );
+    let document = <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
+        parsed.syntax(),
+    )
+    .unwrap();
+    let artifact = mech_engine::CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let mut runtime = runtime();
+    let loaded = runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(loaded.info.resident_accepted_turns, 2);
+    let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+        panic!("continuation fixture must remain resident pure")
+    };
+    let count_slot = execution
+        .artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+        execution.instance.state_borrow(count_slot).unwrap()
+    else {
+        panic!("count must use snapshot state storage")
+    };
+    assert_eq!(
+        crate::RuntimeValueSnapshot::from_value(values[0].as_ref().unwrap().clone())
+            .unwrap()
+            .format_canonical_inline(),
+        "0"
+    );
 }
 
 #[test]
@@ -3896,7 +4030,7 @@ fn resident_host_packets_coalesce_and_capture_the_latest_packet_value() {
         Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
     ));
     assert_eq!(reads.load(Ordering::SeqCst), 0);
-    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
     assert_eq!(runtime.program_execution_info().coalesced_host_packets, 1);
 
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
@@ -3940,6 +4074,275 @@ fn resident_host_packet_groups_preserve_activation_boundaries() {
     assert_eq!(second.dequeued_packets, 2);
     assert_eq!(second.coalesced_packets, 1);
     assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+}
+
+#[test]
+fn activation_capture_packets_sample_without_running_until_the_trigger_arrives() {
+    let (mut runtime, _) = independent_canonical_external_runtime_with_source(
+        r#"
+@fast := test://clock/fast{:read(delta-seconds)}
+@slow := test://clock/slow{:read(delta-seconds)}
+event := @fast/delta-seconds
+~selected := 0.0
+~> event { selected = event + @slow/delta-seconds }
+selected
+"#,
+    );
+    let fast = crate::RuntimeHostInputSource::new("test://clock/fast", "delta-seconds").unwrap();
+    let slow = crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap();
+    let selected = |runtime: &crate::MechRuntime| {
+        let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+            panic!("activation input fixture must remain resident external")
+        };
+        canonical_f64(&execution.coordinator.instance().copied_output(0).unwrap())
+    };
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            slow,
+            crate::RuntimeHostInputValue::F64(9.0),
+        ))
+        .unwrap();
+    let sampled = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(sampled.turn.is_none());
+    assert_eq!(selected(&runtime), 0.0);
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            fast,
+            crate::RuntimeHostInputValue::F64(4.0),
+        ))
+        .unwrap();
+    let triggered = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        triggered.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(selected(&runtime), 13.0);
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("activation input fixture must remain resident external")
+    };
+    let batch = execution.coordinator.input_facts().next().unwrap().1;
+    assert_eq!(batch.facts.iter().filter(|fact| fact.trigger).count(), 1);
+    let evidence = runtime.drain_resident_evidence().unwrap();
+    assert_eq!(evidence.input_batches.len(), 1);
+    assert_eq!(evidence.receipts.len(), 1);
+    runtime.unload_active_program().unwrap();
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
+}
+
+#[test]
+fn mixed_initial_publication_runs_ordinary_roots_and_defers_input_free_activation() {
+    let source = r#"
+trigger := true
+~count := 0
+~> trigger { count = count + 1 }
+answer := 40 + 2
+answer
+"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+
+    let output = |runtime: &crate::MechRuntime| {
+        let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+            panic!("mixed activation fixture must remain resident pure")
+        };
+        canonical_f64(&execution.instance.copied_output(0).unwrap())
+    };
+    assert_eq!(output(&runtime), 42.0);
+
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(
+            "trigger := true\n~count := 0\n~> trigger { count = count + 1 }\ncount\n",
+        )
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(output(&runtime), 0.0);
+
+    let ActiveProgramExecution::ResidentPure(execution) = &mut runtime.active_program else {
+        panic!("mixed activation fixture must remain resident pure")
+    };
+    execution
+        .instance
+        .prepare_turn_values_with_activation_triggers(&[], &[])
+        .unwrap()
+        .publish()
+        .unwrap();
+    assert_eq!(output(&runtime), 1.0);
+}
+
+#[test]
+fn trailing_activation_preserves_the_previous_implicit_result() {
+    let mut runtime = runtime();
+    runtime
+        .load_source_program(
+            "trigger := true\n~count := 0\n~> trigger { count = count + 1 }\n",
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    let ActiveProgramExecution::ResidentPure(execution) = &runtime.active_program else {
+        panic!("trailing activation fixture must remain resident pure")
+    };
+    assert_eq!(
+        canonical_f64(&execution.instance.copied_output(0).unwrap()),
+        0.0
+    );
+}
+
+#[test]
+fn replay_explicit_steps_preserve_the_latest_observation_snapshot() {
+    let plans = Arc::new(AtomicUsize::new(0));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let value_bits = Arc::new(AtomicU64::new(1.0_f64.to_bits()));
+    let provider = || PlanningObservationProvider {
+        plans: plans.clone(),
+        reads: reads.clone(),
+        value_bits: value_bits.clone(),
+    };
+    let source = r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+observed := @clock/delta-seconds
+trigger := true
+~count := 0.0
+~> trigger { count = count + 1.0 }
+output := observed + count
+"#;
+    let catalog = mech_stdlib::source_catalog();
+    let artifact = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap()
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_106),
+            subject,
+            "test://clock/tick/delta-seconds",
+            ["read"],
+        )))
+        .unwrap();
+    let id = mech_core::ReactiveInstanceId::new(90_003, 0);
+    let authority = external::ExactRequirementAuthority::new(
+        artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone()),
+    )
+    .unwrap();
+    let coordinator = || {
+        let instance = mech_engine::__resident::activate_external(
+            id,
+            &artifact,
+            &catalog,
+            &mech_engine::__resident::ActivationFacts::default(),
+            mech_engine::__resident::ResidentIntegrityMode::Checked,
+        )
+        .unwrap();
+        external::ResidentExternalCoordinator::new_live(
+            instance,
+            Arc::new(artifact.clone()),
+            &runtime.resources,
+            &authority,
+            crate::ResidentDurabilityPolicy::Retained,
+            external::ResidentExternalLimits::default(),
+        )
+        .unwrap()
+    };
+
+    let mut first = coordinator();
+    assert!(!first.initial_publication_required());
+    let admission = first.admit_turn().unwrap();
+    first
+        .execute_admitted_step_turn(admission, |_| Ok(()))
+        .unwrap();
+    let first_batch = first.input_facts().next().unwrap().1.clone();
+    let first_record = first.receipts().next().unwrap().1.clone();
+    assert!(first_batch.facts.iter().all(|fact| !fact.trigger));
+    let mut forged_ordinary = first_record.clone();
+    forged_ordinary.body.mode = external::ResidentExternalTurnMode::Ordinary;
+
+    value_bits.store(2.0_f64.to_bits(), Ordering::SeqCst);
+    let mut divergent = coordinator();
+    for _ in 0..2 {
+        let admission = divergent.admit_turn().unwrap();
+        divergent
+            .execute_admitted_step_turn(admission, |_| Ok(()))
+            .unwrap();
+    }
+    let divergent_batch = divergent.input_facts().nth(1).unwrap().1.clone();
+    let divergent_record = divergent.receipts().nth(1).unwrap().1.clone();
+    assert!(divergent_batch.facts.iter().all(|fact| !fact.trigger));
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(artifact),
+        external::ResidentExternalReplayBootstrap::default(),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    let error = replay
+        .execute_replay_batch(Some(&first_batch), &forged_ordinary)
+        .unwrap_err();
+    assert!(error.display_message().contains("activated turn scope"));
+    replay
+        .execute_replay_batch(Some(&first_batch), &first_record)
+        .unwrap();
+    assert!(
+        replay
+            .execute_replay_batch(Some(&divergent_batch), &divergent_record)
+            .is_err()
+    );
 }
 
 #[test]
@@ -4036,14 +4439,402 @@ output := state
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         unreachable!()
     };
-    let batch = execution.coordinator.input_facts().next().unwrap().1;
+    let batch = execution
+        .coordinator
+        .input_facts()
+        .next()
+        .unwrap()
+        .1
+        .clone();
+    let record = execution.coordinator.receipts().next().unwrap().1.clone();
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let replay_bootstrap = execution.coordinator.replay_bootstrap();
     assert_eq!(batch.facts.len(), 2);
     for fact in &batch.facts {
+        assert!(fact.trigger);
         let ValueData::F64(value) = fact.value.data() else {
             panic!("duplicate timer observation must remain f64")
         };
         assert_eq!(value.bits(), 9.0_f64.to_bits());
     }
+    let forged_facts = batch
+        .facts
+        .iter()
+        .enumerate()
+        .map(|(ordinal, fact)| {
+            external::CapturedInputFact::new_with_trigger(
+                fact.sequence,
+                fact.requirement,
+                fact.node,
+                fact.slot,
+                fact.schema_key,
+                fact.shape.clone(),
+                fact.value.clone(),
+                ordinal == 0,
+                artifact.schemas(),
+            )
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let forged_batch = external::CapturedInputBatch::new(forged_facts).unwrap();
+    let mut forged_record = record.clone();
+    forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    let replay_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        artifact,
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    let error = replay
+        .execute_replay_batch(Some(&forged_batch), &forged_record)
+        .unwrap_err();
+    assert!(error.display_message().contains("activated turn scope"));
+    assert!(matches!(
+        replay.execute_replay_batch(Some(&batch), &record).unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+}
+
+#[test]
+fn driverless_observation_gets_a_trigger_turn_after_dormant_publication() {
+    let reads = Arc::new(AtomicUsize::new(0));
+    let mut runtime = runtime();
+    runtime
+        .register_resource_provider(Box::new(DriverlessObservationProvider {
+            reads: reads.clone(),
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_023),
+            subject,
+            "snapshot://clock/tick/value",
+            ["read"],
+        )))
+        .unwrap();
+
+    runtime
+        .load_source_program(
+            r#"
+@clock := snapshot://clock/tick{:read(value)}
+trigger := @clock/value
+~count := 0u64
+~> trigger { count = 41u64 }
+count
+"#,
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert_eq!(reads.load(Ordering::SeqCst), 2);
+    let count = runtime.root_symbol_value("count").unwrap();
+    assert_eq!(
+        count.value().canonical_data_draft().unwrap(),
+        ValueDataDraft::U64(41)
+    );
+}
+
+#[test]
+fn driverless_observation_gets_a_provider_turn_alongside_driven_triggers() {
+    let driverless_reads = Arc::new(AtomicUsize::new(0));
+    let driven_reads = Arc::new(AtomicUsize::new(0));
+    let driven_plans = Arc::new(AtomicUsize::new(0));
+    let driven_value = Arc::new(AtomicU64::new(1.0_f64.to_bits()));
+    let driverless_provider = || DriverlessObservationProvider {
+        reads: driverless_reads.clone(),
+    };
+    let driven_provider = || PlanningObservationProvider {
+        plans: driven_plans.clone(),
+        reads: driven_reads.clone(),
+        value_bits: driven_value.clone(),
+    };
+    let source = r#"
+@snapshot := snapshot://clock/tick{:read(value)}
+@clock := test://clock/tick{:read(delta-seconds)}
+snapshot-trigger := @snapshot/value
+driven-trigger := @clock/delta-seconds
+~snapshot-count := 0u64
+~driven-count := 0u64
+~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
+~> driven-trigger { driven-count = driven-count + 1u64 }
+snapshot-count
+"#;
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(driverless_provider()))
+        .resource_provider(Box::new(driven_provider()))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let replay_artifact = artifact.clone();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(driverless_provider()))
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(driven_provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, resource) in [
+        (CapabilityId(9_024), "snapshot://clock/tick/value"),
+        (CapabilityId(9_025), "test://clock/tick/delta-seconds"),
+    ] {
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                id,
+                subject.clone(),
+                resource,
+                ["read"],
+            )))
+            .unwrap();
+    }
+
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+    assert_eq!(driverless_reads.load(Ordering::SeqCst), 2);
+    assert_eq!(driven_reads.load(Ordering::SeqCst), 2);
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("mixed provider fixture must remain resident external")
+    };
+    assert_eq!(
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(1)
+    );
+    let provider_batch = execution.coordinator.input_facts().last().unwrap().1;
+    assert!(provider_batch.facts[0].trigger);
+    assert!(!provider_batch.facts[1].trigger);
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    let outcome = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        outcome.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("mixed provider fixture must remain resident external")
+    };
+    assert_eq!(
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(1)
+    );
+    let host_batch = execution.coordinator.input_facts().last().unwrap().1;
+    assert!(!host_batch.facts[0].trigger);
+    assert!(host_batch.facts[1].trigger);
+    let live_id = execution.coordinator.instance().id;
+    let replay_bootstrap = execution.coordinator.replay_bootstrap();
+    let loading_batches = execution
+        .coordinator
+        .input_facts()
+        .take(2)
+        .map(|(_, batch)| batch.clone())
+        .collect::<Vec<_>>();
+    let loading_records = execution
+        .coordinator
+        .receipts()
+        .take(2)
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        loading_records[0].body.mode,
+        external::ResidentExternalTurnMode::InitialPublication
+    );
+    assert_eq!(
+        loading_records[1].body.mode,
+        external::ResidentExternalTurnMode::DriverlessBootstrap
+    );
+    let forged_facts = loading_batches[1]
+        .facts
+        .iter()
+        .map(|fact| {
+            external::CapturedInputFact::new_with_trigger(
+                fact.sequence,
+                fact.requirement,
+                fact.node,
+                fact.slot,
+                fact.schema_key,
+                fact.shape.clone(),
+                fact.value.clone(),
+                !fact.trigger,
+                replay_artifact.schemas(),
+            )
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let forged_bootstrap_batch = external::CapturedInputBatch::new(forged_facts).unwrap();
+    let mut forged_bootstrap_record = loading_records[1].clone();
+    forged_bootstrap_record.body.input_batch_hash = forged_bootstrap_batch.batch_hash;
+    let replay_instance = mech_engine::__resident::activate_external(
+        live_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(replay_artifact.clone()),
+        replay_bootstrap.clone(),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    replay
+        .execute_replay_batch(Some(&loading_batches[0]), &loading_records[0])
+        .unwrap();
+    assert!(
+        replay
+            .execute_replay_batch(Some(&forged_bootstrap_batch), &forged_bootstrap_record)
+            .is_err()
+    );
+    replay
+        .execute_replay_batch(Some(&loading_batches[1]), &loading_records[1])
+        .unwrap();
+
+    let mut rejected_bootstrap = loading_records[1].clone();
+    rejected_bootstrap.header.status = crate::turn_record::TurnRecordStatus::Rejected;
+    rejected_bootstrap.header.failure = Some(crate::turn_record::TurnFailureRecord {
+        phase: crate::TurnFailurePhase::Execution,
+        kind: "InjectedBootstrapFailure".to_owned(),
+        message: "injected bootstrap rejection".to_owned(),
+    });
+    rejected_bootstrap.body.after_epoch = None;
+    rejected_bootstrap.body.state_hash = loading_records[0].body.state_hash;
+    let replay_instance = mech_engine::__resident::activate_external(
+        live_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut terminal_replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(replay_artifact.clone()),
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    terminal_replay
+        .execute_replay_batch(Some(&loading_batches[0]), &loading_records[0])
+        .unwrap();
+    assert!(matches!(
+        terminal_replay
+            .execute_replay_batch(Some(&loading_batches[1]), &rejected_bootstrap)
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Rejected { .. }
+    ));
+    let error = terminal_replay
+        .execute_replay_batch(Some(&loading_batches[1]), &loading_records[1])
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("cannot continue after a rejected loading turn")
+    );
+
+    let replay_id = mech_core::ReactiveInstanceId::new(90_001, 0);
+    let direct_instance = mech_engine::__resident::activate_external(
+        replay_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let authority = external::ExactRequirementAuthority::new(
+        replay_artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone()),
+    )
+    .unwrap();
+    let mut direct = external::ResidentExternalCoordinator::new_live(
+        direct_instance,
+        Arc::new(replay_artifact.clone()),
+        &runtime.resources,
+        &authority,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(direct.initial_publication_required());
+    assert!(matches!(
+        direct.execute_turn().unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    let forged_batch = direct.input_facts().next().unwrap().1.clone();
+    let forged_record = direct.receipts().next().unwrap().1.clone();
+    assert_ne!(
+        forged_record.body.mode,
+        external::ResidentExternalTurnMode::InitialPublication
+    );
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        replay_id,
+        &replay_artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::new(replay_artifact),
+        external::ResidentExternalReplayBootstrap::new(true, Box::new([])),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(
+        replay
+            .execute_replay_batch(Some(&forged_batch), &forged_record)
+            .is_err()
+    );
 }
 
 #[test]
@@ -5127,12 +5918,15 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
 }
 
 #[test]
-fn effect_only_resident_program_executes_once_during_activation() {
+fn effect_only_resident_program_executes_during_initial_publication_with_dormant_activation() {
     let (mut runtime, scene) = product_nbody_runtime();
     let loaded = runtime
         .load_source_program(
             r#"
 @scene := scene://orbit/frame{:write(points)}
+trigger := true
+~count := 0
+~> trigger { count = count + 1 }
 points := [1.0 2.0]
 @scene/points <- points
 "#,
@@ -5145,6 +5939,330 @@ points := [1.0 2.0]
     let trace = scene.lock().unwrap();
     assert_eq!(trace.deliveries, 1);
     assert_eq!(trace.latest, vec![1.0, 2.0]);
+}
+
+#[test]
+fn input_free_activation_in_external_program_advances_on_explicit_step() {
+    let compile_trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(ProductSceneProvider {
+            trace: compile_trace,
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(
+            "@scene := scene://orbit/frame{:write(points)}\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\n@scene/points <- [1.0 2.0]\ncount\n",
+        )
+        .unwrap()
+        .into_parts()
+        .0;
+    let trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(ProductSceneProvider {
+            trace,
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_103),
+            subject,
+            "scene://orbit/frame/points",
+            ["write", "points"],
+        )))
+        .unwrap();
+    runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    let state_hash = |runtime: &crate::MechRuntime| {
+        let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+            panic!("effect fixture must remain resident external")
+        };
+        execution.coordinator.instance().published_state_hash()
+    };
+    let initial_hash = state_hash(&runtime);
+    runtime.step_active_program().unwrap();
+    assert_ne!(state_hash(&runtime), initial_hash);
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
+}
+
+#[test]
+fn initial_publication_replays_with_activations_dormant() {
+    let (mut runtime, scene) = product_nbody_runtime();
+    runtime
+        .load_source_program(
+            "@scene := scene://orbit/frame{:write(points)}\ntrigger := true\n~count := 0\n~> trigger { count = count + 1 }\npoints := [1.0 2.0]\n@scene/points <- points\n",
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("initial publication must use the external resident route")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let record = execution.coordinator.receipts().next().unwrap().1.clone();
+    assert_eq!(
+        record.body.mode,
+        external::ResidentExternalTurnMode::InitialPublication
+    );
+
+    let catalog = mech_stdlib::source_catalog();
+    let instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        instance,
+        Arc::clone(&artifact),
+        external::ResidentExternalReplayBootstrap::new(true, Box::new([])),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(matches!(
+        replay.execute_replay_batch(None, &record).unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert_eq!(replay.receipts().next().unwrap().1, &record);
+    assert_eq!(scene.lock().unwrap().deliveries, 1);
+}
+
+#[test]
+fn continuation_drain_replay_keeps_input_free_activations_dormant() {
+    let (mut runtime, scene) = product_nbody_runtime();
+    let plans = Arc::new(AtomicUsize::new(0));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let value_bits = Arc::new(AtomicU64::new(1.0_f64.to_bits()));
+    let observation_provider = || PlanningObservationProvider {
+        plans: plans.clone(),
+        reads: reads.clone(),
+        value_bits: value_bits.clone(),
+    };
+    runtime
+        .register_resource_provider(Box::new(observation_provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_107),
+            subject,
+            "test://clock/tick/delta-seconds",
+            ["read"],
+        )))
+        .unwrap();
+    let source = "@scene := scene://orbit/frame{:write(points)}\n@clock := test://clock/tick{:read(delta-seconds)}\nobserved := @clock/delta-seconds\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0.0\n~> trigger { count = count + observed }\npoints := [1.0 2.0]\n@scene/points <- points\n#Deferred()\n";
+    let document = crate::SourceDocument::parse_resolved(
+        "test://continuation-replay",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .unwrap();
+    let artifact = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .resource_provider(Box::new(ProductSceneProvider {
+            trace: scene,
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .resource_provider(Box::new(observation_provider()))
+        .build_compiler()
+        .unwrap()
+        .compile_document_artifact(&document)
+        .unwrap()
+        .into_artifact();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("continuation fixture must use the external resident route")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let replay_bootstrap = execution.coordinator.replay_bootstrap();
+    let batches = execution
+        .coordinator
+        .input_facts()
+        .map(|(_, batch)| batch.clone())
+        .collect::<Vec<_>>();
+    let records = execution
+        .coordinator
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 2);
+    assert_eq!(batches.len(), 2);
+    assert_eq!(
+        records[0].body.mode,
+        external::ResidentExternalTurnMode::InitialPublication
+    );
+    assert_eq!(
+        records[1].body.mode,
+        external::ResidentExternalTurnMode::ContinuationDrain
+    );
+
+    let catalog = mech_stdlib::source_catalog();
+    let instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        instance,
+        Arc::clone(&artifact),
+        replay_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(matches!(
+        replay
+            .execute_replay_batch(Some(&batches[0]), &records[0])
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    let fact = &batches[1].facts[0];
+    let divergent = RuntimeHostInputValue::F64(9.0)
+        .into_value()
+        .unwrap()
+        .rebind(fact.value.schema(), &fact.shape, artifact.schemas())
+        .unwrap();
+    let forged_fact = external::CapturedInputFact::new_with_trigger(
+        fact.sequence,
+        fact.requirement,
+        fact.node,
+        fact.slot,
+        fact.schema_key,
+        fact.shape.clone(),
+        divergent,
+        false,
+        artifact.schemas(),
+    )
+    .unwrap();
+    let forged_batch = external::CapturedInputBatch::new(vec![forged_fact]).unwrap();
+    let mut forged_record = records[1].clone();
+    forged_record.body.input_batch_hash = forged_batch.batch_hash;
+    assert!(
+        replay
+            .execute_replay_batch(Some(&forged_batch), &forged_record)
+            .is_err()
+    );
+    assert!(matches!(
+        replay
+            .execute_replay_batch(Some(&batches[1]), &records[1])
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert_eq!(
+        replay
+            .receipts()
+            .map(|(_, record)| record.clone())
+            .collect::<Vec<_>>(),
+        records
+    );
+
+    let direct_id = mech_core::ReactiveInstanceId::new(90_002, 0);
+    let direct_instance = mech_engine::__resident::activate_external(
+        direct_id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let authority = external::ExactRequirementAuthority::new(
+        artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone()),
+    )
+    .unwrap();
+    let mut direct = external::ResidentExternalCoordinator::new_live(
+        direct_instance,
+        Arc::clone(&artifact),
+        &runtime.resources,
+        &authority,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    let admission = direct.admit_turn().unwrap();
+    assert!(matches!(
+        direct
+            .execute_admitted_initial_turn(admission, |_| Ok(()))
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert!(direct.instance().continuation_wakeup().is_some());
+    assert!(matches!(
+        direct.execute_turn().unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    let direct_records = direct
+        .receipts()
+        .map(|(_, record)| record.clone())
+        .collect::<Vec<_>>();
+    let direct_batches = direct
+        .input_facts()
+        .map(|(_, batch)| batch.clone())
+        .collect::<Vec<_>>();
+    let direct_bootstrap = direct.replay_bootstrap();
+    assert_eq!(direct_records.len(), 2);
+    assert_eq!(
+        direct_records[0].body.mode,
+        external::ResidentExternalTurnMode::InitialPublication
+    );
+    assert_ne!(
+        direct_records[1].body.mode,
+        external::ResidentExternalTurnMode::ContinuationDrain
+    );
+
+    let replay_instance = mech_engine::__resident::activate_external(
+        direct_id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let mut replay = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        artifact,
+        direct_bootstrap,
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .unwrap();
+    assert!(matches!(
+        replay
+            .execute_replay_batch(Some(&direct_batches[0]), &direct_records[0])
+            .unwrap(),
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert!(
+        replay
+            .execute_replay_batch(Some(&direct_batches[1]), &direct_records[1])
+            .is_err()
+    );
 }
 
 #[test]
@@ -6282,6 +7400,45 @@ fn canonical_resolved_and_rooted_interactive_compilation_preserve_revision_and_s
             );
         }
     }
+}
+
+#[test]
+fn canonical_dependency_exports_keep_input_free_activations_dormant() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_canonical_string(
+            "dep.mec",
+            "trigger := true\n~value := 0u64\n<+ value\n~> trigger { value = value + 1u64 }\nvalue\n",
+        )
+        .unwrap();
+    resolver
+        .insert_canonical_string("main.mec", "+> ./dep.mec\nanswer := dep/value\nanswer\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_root(SourceRequest::new("main.mec"))
+        .unwrap();
+    let mut runtime = runtime();
+    runtime
+        .load_bytecode_program(
+            product.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(
+        runtime
+            .output_value(mech_core::OutputId::new(0))
+            .unwrap()
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(0)
+    );
 }
 
 #[test]

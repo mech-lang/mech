@@ -827,6 +827,51 @@ impl ReactiveInstance {
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
+    /// Prepares the initial publication turn while leaving every activation
+    /// scope dormant. Ordinary roots still run so mixed programs publish their
+    /// non-activation results at load time.
+    pub fn prepare_initial_turn(
+        &mut self,
+        inputs: &[CapturedSignalInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Resumes the continuation selected from an already accepted pure turn.
+    /// No activation scope receives a new trigger during this internal drain.
+    pub fn prepare_continuation_turn(
+        &mut self,
+        inputs: &[CapturedSignalInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
     pub fn prepare_turn_values(
         &mut self,
         inputs: &[CapturedValueInput<'_>],
@@ -843,6 +888,73 @@ impl ReactiveInstance {
             self.next_epoch = Some(working_epoch);
             return Err(error);
         }
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Value-backed form of [`Self::prepare_initial_turn`].
+    pub fn prepare_initial_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Resumes the continuation selected from an already accepted host turn.
+    /// No activation scope receives a new trigger during this internal drain.
+    pub fn prepare_continuation_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.clear_activation_roots();
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    /// Prepares a host-driven turn while scheduling only activation scopes
+    /// whose retained artifact input appeared as a trigger in this batch.
+    /// Ordinary resident roots retain their established turn behavior.
+    pub fn prepare_turn_values_with_activation_triggers(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+        trigger_inputs: &[mech_core::CellSlotId],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.select_activation_roots(trigger_inputs);
         self.prepare_installed_turn(before_epoch, working_epoch)
     }
 
@@ -1223,6 +1335,7 @@ impl ReactiveInstance {
             self.completed_continuation_roots.fill(0);
         }
         self.workspace.executed_bits.fill(0);
+        self.workspace.suppressed_activation_bits.fill(0);
         self.workspace.touched_slots.clear();
         self.workspace.changed_slots.clear();
         self.workspace.effect_intents.clear();
@@ -1276,6 +1389,111 @@ impl ReactiveInstance {
                 &mut self.workspace.dirty_bits,
                 &self.plan.topology.mandatory_candidate_mask,
             );
+        }
+    }
+
+    fn select_activation_roots(&mut self, trigger_inputs: &[mech_core::CellSlotId]) {
+        for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
+            clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            set_bit(
+                &mut self.workspace.suppressed_activation_bits,
+                node.get() as usize,
+            );
+            for sampled_node in sampled.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    sampled_node.get() as usize,
+                );
+            }
+            for update in updates.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
+        }
+        for (node, inputs, sampled, updates) in &self.plan.activation_turn_inputs {
+            // An input-free scope has no host fact that can name its trigger.
+            // Every explicit turn therefore admits it; initial publication uses
+            // the dedicated preparation path above to keep it dormant.
+            let active =
+                inputs.is_empty() || inputs.iter().any(|input| trigger_inputs.contains(input));
+            if active {
+                set_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+                clear_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    node.get() as usize,
+                );
+                for sampled_node in sampled.iter() {
+                    set_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        sampled_node.get() as usize,
+                    );
+                }
+                for update in updates.iter() {
+                    set_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                }
+            }
+        }
+    }
+
+    fn clear_activation_roots(&mut self) {
+        for (node, _, sampled, updates) in &self.plan.activation_turn_inputs {
+            clear_bit(&mut self.workspace.dirty_bits, node.get() as usize);
+            set_bit(
+                &mut self.workspace.suppressed_activation_bits,
+                node.get() as usize,
+            );
+            for sampled_node in sampled.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, sampled_node.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    sampled_node.get() as usize,
+                );
+            }
+            for update in updates.iter() {
+                clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                set_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
+        }
+        let Some(ready) = self.ready_continuations.front().copied() else {
+            return;
+        };
+        set_bit(&mut self.workspace.dirty_bits, ready.get() as usize);
+        clear_bit(
+            &mut self.workspace.suppressed_activation_bits,
+            ready.get() as usize,
+        );
+        for (_, _, _, updates) in &self.plan.activation_turn_inputs {
+            // Reopen an activation-owned cone only when the selected
+            // continuation itself belongs to that activation. Mere downstream
+            // convergence with an ordinary continuation must stay suppressed.
+            if !updates.contains(&ready) {
+                continue;
+            }
+            for update in updates.iter().copied().filter(|update| {
+                *update == ready
+                    || bit_is_set(
+                        &self.plan.topology.same_turn_dependency_masks[ready.get() as usize],
+                        update.get() as usize,
+                    )
+            }) {
+                set_bit(&mut self.workspace.dirty_bits, update.get() as usize);
+                clear_bit(
+                    &mut self.workspace.suppressed_activation_bits,
+                    update.get() as usize,
+                );
+            }
         }
     }
 
@@ -1344,6 +1562,7 @@ impl ReactiveInstance {
                 self.workspace.executed_bits[0] = executed;
                 if changed {
                     dirty |= entry.downstream;
+                    dirty &= !self.workspace.suppressed_activation_bits[0];
                 }
             }
             self.workspace.dirty_bits[0] = dirty;
@@ -1367,6 +1586,14 @@ impl ReactiveInstance {
                         &mut self.workspace.dirty_bits,
                         &self.plan.topology.same_turn_downstream_masks[index],
                     );
+                    for (dirty, suppressed) in self
+                        .workspace
+                        .dirty_bits
+                        .iter_mut()
+                        .zip(&self.workspace.suppressed_activation_bits)
+                    {
+                        *dirty &= !suppressed;
+                    }
                 }
             }
             if !self.workspace.all_outputs_initialized
@@ -1495,6 +1722,14 @@ impl ReactiveInstance {
     ) -> Result<(), ResidentExecutionError> {
         for index in 0..self.plan.output_materializations.len() {
             let materialization = self.plan.output_materializations[index];
+            if materialization.producer.is_some_and(|producer| {
+                bit_is_set(
+                    &self.workspace.suppressed_activation_bits,
+                    producer.get() as usize,
+                )
+            }) {
+                continue;
+            }
             let suspended = self.plan.steps.iter().enumerate().any(|(step, node)| {
                 self.unpublished_continuation(step)
                     && matches!(node, ActivatedTurnStep::Match(control)
@@ -1615,6 +1850,14 @@ impl ReactiveInstance {
             return Ok(());
         }
         for constraint in &self.plan.constraints {
+            if constraint.producer.is_some_and(|producer| {
+                bit_is_set(
+                    &self.workspace.suppressed_activation_bits,
+                    producer.get() as usize,
+                )
+            }) {
+                continue;
+            }
             let unpublished = self.plan.steps.iter().enumerate().any(|(index, step)| {
                 if !self.unpublished_continuation(index) {
                     return false;

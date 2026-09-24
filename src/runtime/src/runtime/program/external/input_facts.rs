@@ -16,6 +16,9 @@ pub struct CapturedInputFact {
     pub schema_key: SchemaKey,
     pub shape: ShapeInstance,
     pub value: Value,
+    /// Whether this observation scheduled activation control in the admitted
+    /// turn. Sample-only facts remain part of the retained input snapshot.
+    pub trigger: bool,
     pub payload_hash: ValueHash,
     retained_bytes: usize,
 }
@@ -31,6 +34,30 @@ impl CapturedInputFact {
         value: Value,
         schemas: &SchemaTable,
     ) -> MResult<Self> {
+        Self::new_with_trigger(
+            sequence,
+            requirement,
+            node,
+            slot,
+            schema_key,
+            shape,
+            value,
+            true,
+            schemas,
+        )
+    }
+
+    pub fn new_with_trigger(
+        sequence: InputSequence,
+        requirement: ApplicationRequirementId,
+        node: NodeId,
+        slot: CellSlotId,
+        schema_key: SchemaKey,
+        shape: ShapeInstance,
+        value: Value,
+        trigger: bool,
+        schemas: &SchemaTable,
+    ) -> MResult<Self> {
         let schema = schemas
             .entry(value.schema())
             .ok_or_else(|| invalid_error("value schema"))?;
@@ -41,13 +68,7 @@ impl CapturedInputFact {
         let payload_hash = value
             .value_hash(schemas)
             .map_err(|_| invalid_error("payload hash"))?;
-        let retained_bytes = value
-            .canonical_payload_bytes(schemas)
-            .map_err(|_| invalid_error("canonical payload"))?
-            .len()
-            .checked_add(shape.parameter_values().len() * size_of::<u64>())
-            .and_then(|bytes| bytes.checked_add(size_of::<Self>()))
-            .ok_or_else(|| invalid_error("retained byte accounting"))?;
+        let retained_bytes = retained_input_value_bytes(&value, &shape, schemas)?;
         Ok(Self {
             sequence,
             requirement,
@@ -56,6 +77,7 @@ impl CapturedInputFact {
             schema_key,
             shape,
             value,
+            trigger,
             payload_hash,
             retained_bytes,
         })
@@ -64,6 +86,20 @@ impl CapturedInputFact {
     pub const fn retained_bytes(&self) -> usize {
         self.retained_bytes
     }
+}
+
+pub(crate) fn retained_input_value_bytes(
+    value: &Value,
+    shape: &ShapeInstance,
+    schemas: &SchemaTable,
+) -> MResult<usize> {
+    value
+        .canonical_payload_bytes(schemas)
+        .map_err(|_| invalid_error("canonical payload"))?
+        .len()
+        .checked_add(shape.parameter_values().len() * size_of::<u64>())
+        .and_then(|bytes| bytes.checked_add(size_of::<CapturedInputFact>()))
+        .ok_or_else(|| invalid_error("retained byte accounting"))
 }
 
 #[derive(Clone, Debug)]
@@ -81,7 +117,7 @@ impl CapturedInputBatch {
         let mut expected = first.sequence.get();
         let mut retained_bytes = size_of::<Self>();
         let mut hash = blake3::Hasher::new();
-        hash.update(b"mech-resident-input-batch-v1");
+        hash.update(b"mech-resident-input-batch-v2");
         for fact in &facts {
             if fact.sequence.get() != expected || !identities.insert((fact.node, fact.slot)) {
                 return Err(invalid_error("sequence or duplicate identity"));
@@ -98,6 +134,7 @@ impl CapturedInputBatch {
             hash.update(&fact.slot.get().to_le_bytes());
             hash.update(fact.schema_key.as_bytes());
             hash.update(fact.payload_hash.as_bytes());
+            hash.update(&[u8::from(fact.trigger)]);
         }
         let last = facts.last().expect("nonempty facts").sequence;
         Ok(Self {
