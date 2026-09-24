@@ -5231,6 +5231,31 @@ fn build_plan(
                 })
             })
             .collect::<Vec<_>>();
+        // External effects are another publication boundary. A pure node can
+        // combine an activation result with an ordinary input and therefore
+        // become a topology root on an unrelated turn. Keep every pre-state
+        // path from the activation to an effect in the suppression cone so a
+        // dormant activation cannot expose absent or stale scratch storage.
+        let effect_descendants = descendant_nodes
+            .iter()
+            .copied()
+            .filter(|candidate| {
+                matches!(
+                    steps[candidate.get() as usize],
+                    ActivatedTurnStep::External(_)
+                )
+            })
+            .filter(|candidate| {
+                !state_writers.iter().any(|writer| {
+                    writer != candidate
+                        && topology.same_turn_dependency_masks[writer.get() as usize]
+                            .get(candidate.get() as usize / 64)
+                            .is_some_and(|word| {
+                                word & (1_u64 << (candidate.get() as usize % 64)) != 0
+                            })
+                })
+            })
+            .collect::<Vec<_>>();
         // Suppression belongs only to the activation-owned path through each
         // state publication or a directly constrained descendant. Ordinary
         // consumers of retained state remain eligible on unrelated turns.
@@ -5240,6 +5265,7 @@ fn build_plan(
                 state_writers
                     .iter()
                     .chain(&constrained_descendants)
+                    .chain(&effect_descendants)
                     .any(|target| {
                         candidate == target
                             || topology.same_turn_dependency_masks[candidate.get() as usize]

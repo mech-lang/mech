@@ -16,8 +16,8 @@ use mech_core::{
 };
 #[cfg(feature = "resident-artifact")]
 use mech_engine::__resident::{
-    ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate,
-    activate_with_options,
+    ActivationFacts, CapturedSignalInput, ResidentActivationOptions, ResidentExternalAdmission,
+    activate, activate_with_options,
 };
 use mech_engine::{
     CanonicalSourceFrontend, PHASE_2I_SEMANTIC_RULES, Phase2iSemanticDisposition, SourceValue,
@@ -2619,6 +2619,121 @@ fn dormant_activation_suppresses_direct_integrity_descendants() {
     assert_eq!(count(&instance), ValueDataDraft::U64(0));
     instance.turn(&[]).unwrap();
     assert_eq!(count(&instance), ValueDataDraft::U64(1));
+}
+
+#[test]
+fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
+    let source = "@scene := scene://orbit/frame{:write(points)}\nevent := event-source<f64>\nordinary := ordinary-source<f64>\n~count := 0.0\n~> event { count = count + 1.0 }\npayload := ordinary + 1.0\n@scene/points <- payload\ncount\n";
+    let base = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let activation_result = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["access"]
+                    && operation.operation.operation_name == "scalar"
+            })
+        })
+        .and_then(|access| {
+            base.slots().iter().find(|slot| {
+                matches!(
+                    slot.producer,
+                    mech_engine::ProducerReference::NodeOutput { node, .. }
+                        if node == access.node
+                )
+            })
+        })
+        .expect("activation result accessor")
+        .slot;
+    let ordinary = base
+        .inputs()
+        .iter()
+        .find(|input| input.name == "ordinary")
+        .expect("ordinary input")
+        .slot;
+    let payload = base
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.as_operation().is_some_and(|operation| {
+                operation.operation.module_path.as_ref() == ["math"]
+                    && operation.operation.operation_name == "add"
+            }) && base.bindings()[node.input_bindings.clone()]
+                .iter()
+                .any(|binding| {
+                    matches!(
+                        binding,
+                        mech_engine::BindingDeclaration::Input {
+                            source: mech_engine::ArtifactSource::Slot(slot),
+                            ..
+                        } if *slot == ordinary
+                    )
+                })
+        })
+        .expect("ordinary payload add");
+    let mut bindings = base.bindings().to_vec();
+    let replacement = bindings[payload.input_bindings.clone()]
+        .iter_mut()
+        .find(|binding| {
+            matches!(
+                binding,
+                mech_engine::BindingDeclaration::Input {
+                    source: mech_engine::ArtifactSource::Constant(_),
+                    ..
+                }
+            )
+        })
+        .expect("payload constant input");
+    let mech_engine::BindingDeclaration::Input { source, .. } = replacement else {
+        unreachable!()
+    };
+    *source = mech_engine::ArtifactSource::Slot(activation_result);
+    let artifact = mech_engine::ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: base.contracts().clone(),
+        requirements: base.requirements().clone(),
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: base.slots().to_vec().into_boxed_slice(),
+        nodes: base.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: base.constraints().to_vec().into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 766),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            external: ResidentExternalAdmission::StructuralOnly,
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let values = [1.0, 5.0];
+    let inputs = instance
+        .plan
+        .inputs
+        .iter()
+        .zip(values.iter())
+        .map(|(input, value)| CapturedSignalInput {
+            slot: input.slot,
+            value: ResidentValueRef::F64(core::slice::from_ref(value)),
+        })
+        .collect::<Vec<_>>();
+    let prepared = instance.prepare_initial_turn(&inputs).unwrap();
+    assert_eq!(prepared.effect_intents().count(), 0);
+    prepared.abort();
 }
 
 #[test]

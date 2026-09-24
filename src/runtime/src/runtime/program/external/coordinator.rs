@@ -534,7 +534,7 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, false, false, |_| Ok(()))
+        self.execute_live_turn(None, admission, false, false, false, |_| Ok(()))
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -548,7 +548,7 @@ impl ResidentExternalCoordinator {
         updates: &[crate::RuntimeHostInputUpdate],
     ) -> MResult<ResidentExternalTurnOutcome> {
         let admission = self.admit_host_turn(updates)?;
-        self.execute_live_turn(Some(updates), admission, false, false, |_| Ok(()))
+        self.execute_live_turn(Some(updates), admission, false, false, false, |_| Ok(()))
     }
 
     pub(crate) fn admit_host_turn(
@@ -570,7 +570,14 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(Some(updates), admission, false, false, prepublication)
+        self.execute_live_turn(
+            Some(updates),
+            admission,
+            false,
+            false,
+            false,
+            prepublication,
+        )
     }
 
     #[cfg(feature = "resident-routing")]
@@ -582,7 +589,7 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(None, admission, true, false, prepublication)
+        self.execute_live_turn(None, admission, true, false, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -594,7 +601,7 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(None, admission, false, false, prepublication)
+        self.execute_live_turn(None, admission, false, false, true, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -609,7 +616,7 @@ impl ResidentExternalCoordinator {
         // `Some(&[])` deliberately captures from the last accepted host
         // snapshot. A continuation belongs to that accepted input turn and
         // must not read a provider value whose packet is still queued.
-        self.execute_live_turn(Some(&[]), admission, false, true, prepublication)
+        self.execute_live_turn(Some(&[]), admission, false, true, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -697,6 +704,7 @@ impl ResidentExternalCoordinator {
         admission: ResidentExternalTurnAdmission,
         initial_publication: bool,
         continuation_drain: bool,
+        driverless_triggers_only: bool,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -712,7 +720,7 @@ impl ResidentExternalCoordinator {
         } = admission;
 
         let batch = if let Some(input_permit) = input_permit {
-            let batch = match self.capture_with_providers(host_updates) {
+            let batch = match self.capture_with_providers(host_updates, driverless_triggers_only) {
                 Ok(batch) => batch,
                 Err(failure) => {
                     let evidence = if let Some(prefix) = failure.captured_prefix {
@@ -1323,6 +1331,7 @@ impl ResidentExternalCoordinator {
     fn capture_with_providers(
         &self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
+        driverless_triggers_only: bool,
     ) -> Result<CapturedInputBatch, CaptureFailure> {
         let mut facts: Vec<CapturedInputFact> = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
@@ -1398,11 +1407,27 @@ impl ResidentExternalCoordinator {
                             ))
                         })?
                 };
-                let trigger = self
-                    .instance()
-                    .plan
-                    .turn_trigger_inputs
-                    .contains(&observation.input.artifact_slot)
+                let eligible_provider_trigger = if driverless_triggers_only {
+                    let provider_binding =
+                        observation.provider_binding.as_ref().ok_or_else(|| {
+                            invalid_value("live observation has no provider binding".to_owned())
+                        })?;
+                    !provider_binding.observation_requires_input_driver(
+                        &RuntimeResourceReadRequest {
+                            base_uri: observation.request.base_uri.clone(),
+                            path: observation.request.path.clone(),
+                            context_name: observation.request.context_name.clone(),
+                        },
+                    )?
+                } else {
+                    true
+                };
+                let trigger = eligible_provider_trigger
+                    && self
+                        .instance()
+                        .plan
+                        .turn_trigger_inputs
+                        .contains(&observation.input.artifact_slot)
                     && (host_updates.is_none() || packet_value.is_some());
                 CapturedInputFact::new_with_trigger(
                     sequence,
