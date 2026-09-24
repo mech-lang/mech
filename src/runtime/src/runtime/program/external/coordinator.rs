@@ -429,6 +429,33 @@ impl ResidentExternalCoordinator {
         Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
     }
 
+    pub(crate) fn has_driverless_trigger_observation(&self) -> MResult<bool> {
+        let triggers = self
+            .instance()
+            .plan
+            .turn_trigger_inputs
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        for observation in self.bound.observations() {
+            if !triggers.contains(&observation.input.artifact_slot) {
+                continue;
+            }
+            let binding = observation.provider_binding.as_ref().ok_or_else(|| {
+                invalid_value("live observation has no provider binding".to_owned())
+            })?;
+            let request = RuntimeResourceReadRequest {
+                base_uri: observation.request.base_uri.clone(),
+                path: observation.request.path.clone(),
+                context_name: observation.request.context_name.clone(),
+            };
+            if !binding.observation_requires_input_driver(&request)? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     #[cfg(feature = "resident-routing")]
     pub(crate) fn sample_host_updates(
         &mut self,
@@ -556,6 +583,18 @@ impl ResidentExternalCoordinator {
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
         self.execute_live_turn(None, admission, true, false, prepublication)
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub(crate) fn execute_admitted_provider_turn<F>(
+        &mut self,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
+    {
+        self.execute_live_turn(None, admission, false, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
