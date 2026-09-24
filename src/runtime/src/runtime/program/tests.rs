@@ -5470,11 +5470,28 @@ fn initial_publication_replays_with_activations_dormant() {
 #[test]
 fn continuation_drain_replay_keeps_input_free_activations_dormant() {
     let (mut runtime, _scene) = product_nbody_runtime();
-    runtime
-        .load_source_program(
-            "@scene := scene://orbit/frame{:write(points)}\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\ndeferred := #Deferred()\npoints := [1.0 2.0]\n@scene/points <- points\ndeferred + count\n",
-            crate::ResidentDurabilityPolicy::Retained,
+    let source = "@scene := scene://orbit/frame{:write(points)}\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\npoints := [1.0 2.0]\n@scene/points <- points\n#Deferred()\n";
+    let parsed = mech_syntax::document::parse_canonical_document(
+        mech_syntax::document::TextSnapshot::new(
+            mech_syntax::document::DocumentId(0x876),
+            mech_syntax::document::Revision(1),
+            source,
         )
+        .unwrap(),
+        mech_syntax::document::ParseConfig::default(),
+    );
+    let document = <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
+        parsed.syntax(),
+    )
+    .unwrap();
+    let artifact = mech_engine::CanonicalSourceFrontend
+        .compile_document(&document)
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Retained)
         .unwrap();
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
         panic!("continuation fixture must use the external resident route")
