@@ -14,7 +14,8 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use mech_core::snapshot::{
-    SnapshotValidationContext, ValueDataDraft, ValueDraft, schema_data_language_eq,
+    SnapshotCanonicalizationBudget, SnapshotValidationContext, ValueDataDraft, ValueDraft,
+    canonical_sequence_element_retained_footprint, schema_data_language_eq,
     schema_data_partial_cmp, schema_data_snapshot_eq,
 };
 use mech_core::{
@@ -3252,7 +3253,8 @@ fn constant_comparison_operand<'a>(
     source: ArtifactSource,
     facts: &ActivationFacts,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
-    constant_comparison_operand_at_depth(artifact, node, source, facts, 0)
+    let budget = SnapshotCanonicalizationBudget::new(mech_core::RESIDENT_MAX_COMPARISON_WORK);
+    constant_comparison_operand_at_depth(artifact, node, source, facts, 0, &budget)
 }
 
 fn constant_comparison_operand_at_depth<'a>(
@@ -3261,6 +3263,7 @@ fn constant_comparison_operand_at_depth<'a>(
     source: ArtifactSource,
     facts: &ActivationFacts,
     depth: usize,
+    budget: &SnapshotCanonicalizationBudget,
 ) -> Result<Option<ConstantComparisonOperand<'a>>, ResidentActivationError> {
     const MAX_CLOSED_OPERAND_FOLD_DEPTH: usize = 64;
     if depth >= MAX_CLOSED_OPERAND_FOLD_DEPTH {
@@ -3296,7 +3299,7 @@ fn constant_comparison_operand_at_depth<'a>(
                     return Ok(None);
                 };
                 let Some(source) = constant_comparison_operand_at_depth(
-                    artifact, node, *input, facts, next_depth,
+                    artifact, node, *input, facts, next_depth, budget,
                 )?
                 else {
                     return Ok(None);
@@ -3345,7 +3348,10 @@ fn constant_comparison_operand_at_depth<'a>(
                     shape_values: target_shape.parameter_values().to_vec().into_boxed_slice(),
                     data: converted,
                 }
-                .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+                .finalize(
+                    &SnapshotValidationContext::new(artifact.schemas())
+                        .with_canonicalization_budget(budget),
+                )
             } else if operation.operation.module_path.as_ref() == ["core"]
                 && operation.operation.operation_name == "composite-pack"
                 && matches!(
@@ -3359,7 +3365,7 @@ fn constant_comparison_operand_at_depth<'a>(
                 let mut values = Vec::with_capacity(inputs.len());
                 for input in inputs {
                     let Some(value) = constant_comparison_operand_at_depth(
-                        artifact, node, input, facts, next_depth,
+                        artifact, node, input, facts, next_depth, budget,
                     )?
                     else {
                         return Ok(None);
@@ -3388,7 +3394,7 @@ fn constant_comparison_operand_at_depth<'a>(
                 ) else {
                     return Ok(None);
                 };
-                constructor.construct(values.into_boxed_slice(), None)
+                constructor.construct(values.into_boxed_slice(), Some(budget))
             } else {
                 return Ok(None);
             };
@@ -3439,32 +3445,15 @@ fn closed_aggregate_equality_admitted(
     right: &Value,
     materializes_canonical_bytes: bool,
 ) -> bool {
-    let mut comparison_work = 0_u64;
-    let mut measure = |value: &Value| {
-        let schema = artifact.schemas().get(value.schema())?;
-        let mut footprint = mech_core::snapshot::ValueFootprint::zero();
-        mech_core::snapshot::visit_canonical_data_work(schema.body(), value.data(), |chunk| {
-            let work = chunk.encoded_bytes.max(chunk.node_count).max(1);
-            comparison_work = comparison_work.checked_add(work).ok_or(())?;
-            if comparison_work > mech_core::RESIDENT_MAX_COMPARISON_WORK {
-                return Err(());
-            }
-            footprint = footprint
-                .checked_add(mech_core::snapshot::ValueFootprint {
-                    encoded_bytes: chunk.encoded_bytes,
-                    retained_bytes: chunk.retained_bytes,
-                    node_count: chunk.node_count,
-                })
-                .map_err(|_| ())?;
-            Ok(())
-        })
-        .ok()?;
-        Some(footprint)
-    };
-    let Some(left_footprint) = measure(left) else {
+    let mut meter = super::budget::ResidentBudgetMeter::default();
+    let Ok(left_footprint) =
+        super::budget::measure_canonical_value_footprint(&mut meter, left, artifact.schemas())
+    else {
         return false;
     };
-    let Some(right_footprint) = measure(right) else {
+    let Ok(right_footprint) =
+        super::budget::measure_canonical_value_footprint(&mut meter, right, artifact.schemas())
+    else {
         return false;
     };
     let schema_work = if left.schema_key() == right.schema_key() {
@@ -3512,8 +3501,7 @@ fn closed_aggregate_equality_admitted(
     }
     schema_work
         .checked_add(data_equality_work)
-        .and_then(|work| comparison_work.checked_add(work))
-        .is_some_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+        .is_some_and(|work| meter.charge_comparison_work(work).is_ok())
 }
 
 fn closed_scalar_string_equality_admitted(left: &Value, right: &Value) -> bool {
@@ -3524,6 +3512,34 @@ fn closed_scalar_string_equality_admitted(left: &Value, right: &Value) -> bool {
     };
     u64::try_from(left.len().max(right.len()).max(1))
         .is_ok_and(|work| work <= mech_core::RESIDENT_MAX_COMPARISON_WORK)
+}
+
+fn closed_snapshot_element_comparison_work(
+    meter: &mut super::budget::ResidentBudgetMeter,
+    operand: &ConstantComparisonOperand<'_>,
+    index: usize,
+) -> Option<u64> {
+    match (&operand.schema, operand.value.data()) {
+        (SchemaBody::Matrix { element, .. }, mech_core::ValueData::Matrix(matrix)) => {
+            match matrix.elements() {
+                mech_core::snapshot::SequenceView::Values(values) => {
+                    super::budget::measure_canonical_data_comparison_work(
+                        meter,
+                        element,
+                        values.get(index)?,
+                    )
+                    .ok()
+                }
+                values => canonical_sequence_element_retained_footprint(element, values, index)
+                    .ok()
+                    .map(|footprint| footprint.encoded_bytes.max(footprint.node_count).max(1)),
+            }
+        }
+        (body, data) if index == 0 => {
+            super::budget::measure_canonical_data_comparison_work(meter, body, data).ok()
+        }
+        _ => None,
+    }
 }
 
 fn closed_comparison_population(
@@ -3582,6 +3598,24 @@ fn closed_comparison_population(
                 _ => None,
             });
         }
+        if matches!(name, "eq" | "neq" | "seq" | "sneq") {
+            let admitted =
+                if matches!(left.schema, SchemaBody::String) && matches!(name, "eq" | "neq") {
+                    closed_scalar_string_equality_admitted(&left.value, &right.value)
+                } else if !scalar_comparison_supported(&left.schema, false) {
+                    closed_aggregate_equality_admitted(
+                        artifact,
+                        &left.value,
+                        &right.value,
+                        matches!(name, "eq" | "neq"),
+                    )
+                } else {
+                    true
+                };
+            if !admitted {
+                return Ok(None);
+            }
+        }
         let same_shape = if matches!(left.schema, SchemaBody::Matrix { .. })
             && matches!(right.schema, SchemaBody::Matrix { .. })
         {
@@ -3589,23 +3623,6 @@ fn closed_comparison_population(
         } else {
             left.value.shape() == right.value.shape()
         };
-        if matches!(name, "eq" | "neq" | "seq" | "sneq") {
-            let admitted = if matches!(left.schema, SchemaBody::String) {
-                closed_scalar_string_equality_admitted(&left.value, &right.value)
-            } else if !scalar_comparison_supported(&left.schema, false) {
-                closed_aggregate_equality_admitted(
-                    artifact,
-                    &left.value,
-                    &right.value,
-                    matches!(name, "eq" | "neq"),
-                )
-            } else {
-                true
-            };
-            if !admitted {
-                return Ok(None);
-            }
-        }
         let language_equal = || {
             same_shape
                 && schema_data_language_eq(&left.schema, left.value.data(), right.value.data())
@@ -3695,10 +3712,24 @@ fn closed_comparison_population(
     if cloned_bytes > mech_core::RESIDENT_MAX_BYTES {
         return Ok(None);
     }
-    if dense_resident_kind(&left.element).is_none()
-        && !closed_aggregate_equality_admitted(artifact, &left.value, &right.value, false)
-    {
-        return Ok(None);
+    let aggregate_comparison = dense_resident_kind(&left.element).is_none();
+    let mut comparison_meter = super::budget::ResidentBudgetMeter::default();
+    if aggregate_comparison {
+        if super::budget::measure_canonical_value_footprint(
+            &mut comparison_meter,
+            &left.value,
+            artifact.schemas(),
+        )
+        .is_err()
+            || super::budget::measure_canonical_value_footprint(
+                &mut comparison_meter,
+                &right.value,
+                artifact.schemas(),
+            )
+            .is_err()
+        {
+            return Ok(None);
+        }
     }
     let values = |operand: &ConstantComparisonOperand<'_>| match operand.value.data() {
         mech_core::ValueData::Matrix(matrix) => matrix.elements().to_values(),
@@ -3733,6 +3764,28 @@ fn closed_comparison_population(
         for column in 0..columns {
             let left_index = (row % left.rows) * left.columns + column % left.columns;
             let right_index = (row % right.rows) * right.columns + column % right.columns;
+            if aggregate_comparison {
+                let Some(left_work) = closed_snapshot_element_comparison_work(
+                    &mut comparison_meter,
+                    &left,
+                    left_index,
+                ) else {
+                    return Ok(None);
+                };
+                let Some(right_work) = closed_snapshot_element_comparison_work(
+                    &mut comparison_meter,
+                    &right,
+                    right_index,
+                ) else {
+                    return Ok(None);
+                };
+                if comparison_meter
+                    .charge_comparison_work(left_work.max(right_work).max(1))
+                    .is_err()
+                {
+                    return Ok(None);
+                }
+            }
             if matches!(element, SchemaBody::String) {
                 let (
                     mech_core::ValueData::String(left_string),
