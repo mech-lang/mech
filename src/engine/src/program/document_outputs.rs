@@ -83,9 +83,15 @@ pub fn insert_root_document_program_output_capture(
 pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
     let mut output_ids = Vec::new();
     let mut inline_index = 0_u64;
+    let mut fence_occurrences = Vec::new();
     for section in &program.body.sections {
         for element in &section.elements {
-            collect_section_output_ids(element, &mut inline_index, &mut output_ids);
+            collect_section_output_ids(
+                element,
+                &mut inline_index,
+                &mut fence_occurrences,
+                &mut output_ids,
+            );
         }
         if section
             .annotations
@@ -104,9 +110,15 @@ pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
 pub fn root_document_inline_eval_count(program: &Program) -> u64 {
     let mut output_ids = Vec::new();
     let mut inline_index = 0_u64;
+    let mut fence_occurrences = Vec::new();
     for section in &program.body.sections {
         for element in &section.elements {
-            collect_section_output_ids(element, &mut inline_index, &mut output_ids);
+            collect_section_output_ids(
+                element,
+                &mut inline_index,
+                &mut fence_occurrences,
+                &mut output_ids,
+            );
         }
     }
     inline_index
@@ -115,17 +127,18 @@ pub fn root_document_inline_eval_count(program: &Program) -> u64 {
 fn collect_section_output_ids(
     element: &SectionElement,
     inline_index: &mut u64,
+    fence_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
     match element {
         SectionElement::Float((element, _)) => {
-            collect_section_output_ids(element, inline_index, output_ids);
+            collect_section_output_ids(element, inline_index, fence_occurrences, output_ids);
         }
         SectionElement::MechCode(code) => {
             collect_code_comments(code, inline_index, output_ids);
         }
         SectionElement::FencedMechCode(block) => {
-            collect_fenced_output_ids(block, inline_index, output_ids);
+            collect_fenced_output_ids(block, inline_index, fence_occurrences, output_ids);
         }
         SectionElement::Comment(comment) => {
             collect_comment_output_ids(comment, inline_index, output_ids);
@@ -154,6 +167,7 @@ fn collect_section_output_ids(
 fn collect_fenced_output_ids(
     block: &FencedMechCode,
     inline_index: &mut u64,
+    fence_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<u64>,
 ) {
     if block.config.disabled || block.config.hidden || block.config.namespace != 0 {
@@ -170,8 +184,22 @@ fn collect_fenced_output_ids(
     if !block.config.output {
         return;
     }
-    if let Some(output_id) = fenced_document_output_id(block) {
-        push_unique(output_ids, output_id);
+    if let Some(base_id) = fenced_document_output_id(block) {
+        let occurrence = match fence_occurrences
+            .iter_mut()
+            .find(|(candidate, _)| *candidate == base_id)
+        {
+            Some((_, count)) => {
+                let occurrence = *count;
+                *count = count.saturating_add(1);
+                occurrence
+            }
+            None => {
+                fence_occurrences.push((base_id, 1));
+                0
+            }
+        };
+        output_ids.push(fenced_document_output_occurrence_id(block, occurrence).unwrap());
     }
 }
 
@@ -183,6 +211,20 @@ pub(crate) fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
         .code
         .last()
         .map(|(last_code, _)| hash_str(&format!("{last_code:?}")))
+}
+
+pub(crate) fn fenced_document_output_occurrence_id(
+    block: &FencedMechCode,
+    occurrence: u64,
+) -> Option<u64> {
+    let base = fenced_document_output_id(block)?;
+    if occurrence == 0 || block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
+        Some(base)
+    } else {
+        Some(hash_str(&format!(
+            "mech/fenced-document-output/{base}/{occurrence}"
+        )))
+    }
 }
 
 fn section_contains_program_value(elements: &[SectionElement]) -> bool {
@@ -339,5 +381,13 @@ mod tests {
     fn hidden_fences_have_no_presentation_addresses() {
         let tree = mech_syntax::parse("```mech:hidden\n42 -- Result {1 + 1}\n```\n").unwrap();
         assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn repeated_fences_receive_distinct_presentation_addresses() {
+        let tree = mech_syntax::parse("```mech\n42\n```\n\n```mech\n42\n```\n").unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        assert_eq!(output_ids.len(), 2);
+        assert_ne!(output_ids[0], output_ids[1]);
     }
 }
