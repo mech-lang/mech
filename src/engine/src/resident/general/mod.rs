@@ -5062,7 +5062,10 @@ fn build_plan(
         .collect::<BTreeSet<_>>();
     let mut consumers = BTreeMap::<CellSlotId, Vec<(NodeId, usize)>>::new();
     for node in artifact.nodes() {
-        for (ordinal, source) in node_inputs(artifact, node.node)?.into_iter().enumerate() {
+        for (ordinal, source) in control_input_sources(artifact, node.node)?
+            .into_iter()
+            .enumerate()
+        {
             if let ArtifactSource::Slot(slot) = source {
                 consumers
                     .entry(slot)
@@ -6251,7 +6254,10 @@ fn build_topology(
             crate::ExecutableNodeBody::Activation(control) => Some(control.scrutinee as usize),
             _ => None,
         };
-        for (ordinal, source) in node_inputs(artifact, node.node)?.into_iter().enumerate() {
+        for (ordinal, source) in control_input_sources(artifact, node.node)?
+            .into_iter()
+            .enumerate()
+        {
             if activation_scrutinee.is_some_and(|scrutinee| ordinal != scrutinee) {
                 // Sample captures are read by the activation body, but they do
                 // not schedule it or form dirty-propagation edges into it.

@@ -321,8 +321,9 @@ impl ResidentExternalCoordinator {
             .iter()
             .map(|observation| observation.input.artifact_slot)
             .collect::<std::collections::BTreeSet<_>>();
-        if (!replay_bootstrap.driverless_trigger_inputs.is_empty()
-            && !replay_bootstrap.initial_publication_required)
+        if (!live && trigger_inputs.is_empty() && !replay_bootstrap.initial_publication_required)
+            || (!replay_bootstrap.driverless_trigger_inputs.is_empty()
+                && !replay_bootstrap.initial_publication_required)
             || replay_bootstrap
                 .driverless_trigger_inputs
                 .windows(2)

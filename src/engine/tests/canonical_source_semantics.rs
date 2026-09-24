@@ -2158,6 +2158,112 @@ fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
 }
 
 #[test]
+fn artifact_rejects_activation_as_its_trigger_state_writer() {
+    let base = CanonicalSourceFrontend
+        .compile_document(&document("~tick := ()\n~> tick {}\ntick\n"))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let activation = base
+        .nodes()
+        .iter()
+        .find(|node| matches!(node.body, mech_engine::ExecutableNodeBody::Activation(_)))
+        .expect("activation control");
+    let mech_engine::BindingDeclaration::Input {
+        source: mech_engine::ArtifactSource::Slot(trigger_source),
+        ..
+    } = base
+        .bindings()
+        .get(activation.input_bindings.start as usize)
+        .expect("activation trigger binding")
+    else {
+        panic!("state-backed activation trigger")
+    };
+    let mut trigger = *trigger_source;
+    while base.slots()[trigger.get() as usize].role != mech_engine::SlotRole::State {
+        let mech_engine::ProducerReference::NodeOutput { node, .. } =
+            base.slots()[trigger.get() as usize].producer
+        else {
+            panic!("derived trigger read")
+        };
+        let mech_engine::BindingDeclaration::Input {
+            source: mech_engine::ArtifactSource::Slot(source),
+            ..
+        } = &base.bindings()[base.nodes()[node.get() as usize].input_bindings.start as usize]
+        else {
+            panic!("derived trigger read source")
+        };
+        trigger = *source;
+    }
+    let activation_output = activation.output_bindings.start as usize;
+    let mech_engine::BindingDeclaration::Output {
+        port_ordinal: activation_ordinal,
+        target: activation_target,
+        ..
+    } = &base.bindings()[activation_output]
+    else {
+        panic!("activation output binding")
+    };
+    let mech_engine::ProducerReference::NodeOutput {
+        node: trigger_writer,
+        output_ordinal: trigger_ordinal,
+    } = base.slots()[trigger.get() as usize].producer
+    else {
+        panic!("trigger state writer")
+    };
+    let trigger_output = base.nodes()[trigger_writer.get() as usize]
+        .output_bindings
+        .start as usize;
+
+    let mut slots = base.slots().to_vec();
+    slots[trigger.get() as usize].producer = mech_engine::ProducerReference::NodeOutput {
+        node: activation.node,
+        output_ordinal: *activation_ordinal,
+    };
+    slots[activation_target.get() as usize].producer = mech_engine::ProducerReference::NodeOutput {
+        node: trigger_writer,
+        output_ordinal: trigger_ordinal,
+    };
+    let mut bindings = base.bindings().to_vec();
+    let mech_engine::BindingDeclaration::Output { target, .. } = &mut bindings[activation_output]
+    else {
+        unreachable!()
+    };
+    *target = trigger;
+    let mech_engine::BindingDeclaration::Output { target, .. } = &mut bindings[trigger_output]
+    else {
+        unreachable!()
+    };
+    *target = *activation_target;
+
+    let error = mech_engine::ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: base.contracts().clone(),
+        requirements: base.requirements().clone(),
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: slots.into_boxed_slice(),
+        nodes: base.nodes().to_vec().into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: base.constraints().to_vec().into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap_err();
+    assert!(
+        matches!(
+            error,
+            mech_engine::ArtifactBuildError::InvalidControl {
+                node,
+                reason: "activation cannot write its own trigger state",
+            } if node == activation.node
+        ),
+        "{error:?}"
+    );
+}
+
+#[test]
 fn patterned_activation_dispatches_first_successful_guard_and_samples_captures() {
     let source = "event := event-source<f64>\nsample := sample-source<f64>\n~selected := 0\n~> event\n  | value, value > 10 => { selected = value + sample }\n  | value, value > 0 => { selected = value * sample }\n  | * => { selected = -1 }\nselected\n";
     let compiled = CanonicalSourceFrontend
@@ -2301,6 +2407,126 @@ fn activation_reads_forwarded_output_from_the_current_input_turn() {
         values[0].as_ref().unwrap().canonical_data_draft().unwrap(),
         ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(current))
     );
+}
+
+#[test]
+fn forwarded_activation_capture_orders_its_terminal_producer_first() {
+    let base = CanonicalSourceFrontend
+        .compile_document(&document(
+            "event := event-source<f64>\nsample := sample-source<f64>\n~selected := 0.0\n~> event { selected = sample }\nlater := sample + 1\nlater\n",
+        ))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let event = base.inputs()[0].slot;
+    let sample = base.inputs()[1].slot;
+    let (activation, capture_index, capture_binding) = base
+        .nodes()
+        .iter()
+        .find_map(|node| match &node.body {
+            mech_engine::ExecutableNodeBody::Activation(control) => control
+                .captures
+                .iter()
+                .enumerate()
+                .find_map(|(index, capture)| {
+                    let binding = node.input_bindings.start as usize + capture.input as usize;
+                    matches!(
+                        base.bindings()[binding],
+                        mech_engine::BindingDeclaration::Input {
+                            source: mech_engine::ArtifactSource::Slot(slot),
+                            ..
+                        } if slot == sample
+                    )
+                    .then_some((node.node, index, binding))
+                }),
+            _ => None,
+        })
+        .expect("activation sample capture");
+    let output_slot = base.outputs()[0].source;
+    let mech_engine::ProducerReference::Output {
+        source: mech_engine::ArtifactSource::Slot(terminal),
+        ..
+    } = base.slots()[output_slot.get() as usize].producer
+    else {
+        panic!("forwarded output source")
+    };
+    let mech_engine::ProducerReference::NodeOutput { node: producer, .. } =
+        base.slots()[terminal.get() as usize].producer
+    else {
+        panic!("derived output producer")
+    };
+    assert!(
+        activation.get() < producer.get(),
+        "fixture must require a scheduling edge"
+    );
+
+    let mut bindings = base.bindings().to_vec();
+    let mech_engine::BindingDeclaration::Input { source, .. } = &mut bindings[capture_binding]
+    else {
+        panic!("activation capture binding")
+    };
+    *source = mech_engine::ArtifactSource::Slot(output_slot);
+    let mut nodes = base.nodes().to_vec();
+    let mech_engine::ExecutableNodeBody::Activation(control) =
+        &mut nodes[activation.get() as usize].body
+    else {
+        unreachable!()
+    };
+    control.captures[capture_index].freeze_on_suspend = true;
+    let artifact = mech_engine::ProgramArtifactDraft {
+        schemas: base.schemas().clone(),
+        constants: base.constants().clone(),
+        contracts: base.contracts().clone(),
+        requirements: base.requirements().clone(),
+        inputs: base.inputs().to_vec().into_boxed_slice(),
+        slots: base.slots().to_vec().into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: base.outputs().to_vec().into_boxed_slice(),
+        constraints: base.constraints().to_vec().into_boxed_slice(),
+        compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 702),
+        &artifact,
+        &catalog.build().unwrap(),
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    assert!(instance.plan.turn_trigger_inputs.contains(&event));
+    let event_value = 1.0;
+    let sample_value = 3.0;
+    let inputs = instance
+        .plan
+        .inputs
+        .iter()
+        .map(|input| CapturedSignalInput {
+            slot: input.slot,
+            value: if input.artifact_slot == event {
+                ResidentValueRef::F64(core::slice::from_ref(&event_value))
+            } else {
+                assert_eq!(input.artifact_slot, sample);
+                ResidentValueRef::F64(core::slice::from_ref(&sample_value))
+            },
+        })
+        .collect::<Vec<_>>();
+    instance.turn(&inputs).unwrap();
+    let selected = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == mech_engine::SlotRole::State)
+        .unwrap()
+        .slot;
+    let mech_engine::__resident::ResidentValueBorrow::F64 { values, .. } =
+        instance.state_borrow(selected).unwrap()
+    else {
+        panic!("mutable activation state uses f64 storage")
+    };
+    assert_eq!(values, [4.0]);
 }
 
 #[test]

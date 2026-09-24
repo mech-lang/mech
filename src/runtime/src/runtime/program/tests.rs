@@ -6068,6 +6068,28 @@ fn initial_publication_replays_with_activations_dormant() {
     );
 
     let catalog = mech_stdlib::source_catalog();
+    let invalid_profile_instance = mech_engine::__resident::activate_external(
+        id,
+        &artifact,
+        &catalog,
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let error = external::ResidentExternalCoordinator::new_replay(
+        invalid_profile_instance,
+        Arc::clone(&artifact),
+        external::ResidentExternalReplayBootstrap::new(false, Box::new([])),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .err()
+    .expect("input-free external replay must require initial publication");
+    assert!(
+        error
+            .display_message()
+            .contains("invalid retained replay bootstrap profile")
+    );
     let instance = mech_engine::__resident::activate_external(
         id,
         &artifact,
