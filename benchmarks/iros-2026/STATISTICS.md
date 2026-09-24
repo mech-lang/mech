@@ -25,12 +25,43 @@ The median gap is 0.936 M turns/s, or 0.64%. The observed ranges overlap. The
 supported conclusion is that these retained runs show comparable throughput;
 they do not establish that either implementation is faster.
 
-## Broad comparison and full mega chart
+## Cross-language publication figure
 
-The publication-facing representative chart shows every retained sample,
-median diamonds, and observed-range whiskers. It combines retained campaigns
-with different implementation strategies and workload boundaries, so it is
-still a performance landscape rather than a rank.
+The publication-facing cross-language figure keeps only checked f32 CPU rows
+with the same Apple M1, 500,000-filter × 40-turn workload, eight workers, and
+fused worker-local execution shape. It shows every retained process sample,
+median diamonds, and observed-range whiskers.
+
+| Implementation | n | Median | Observed min-max |
+| --- | ---: | ---: | ---: |
+| Rust packed SIMD | 3 | 146.509 M turns/s | 141.568-146.999 |
+| Mech SIMD/JIT | 3 | 145.573 M turns/s | 139.668-147.381 |
+| Julia SIMD.jl | 3 | 128.544 M turns/s | 126.952-128.650 |
+| NumPy/Numba | 3 | 80.323 M turns/s | 80.111-80.358 |
+
+Mech and Rust additionally share block-atomic rollback and fault metadata.
+Julia and Numba reject invalid candidates per lane. All retained samples
+reported zero faults. The common successful-path execution shape makes this a
+useful comparison, but the rollback distinction should remain explicit.
+
+## Mech backend publication figure
+
+The second figure stacks six backends for the same high-level Mech EKF. All
+rows use checked publication after every turn and show every retained process
+sample, but they combine 10,000-filter × 20-turn and 500,000-filter × 40-turn
+campaigns. The logarithmic scale shows backend reach; it is not evidence for
+fine rankings between rows.
+
+| Backend | Workload | n | Median | Observed min-max |
+| --- | --- | ---: | ---: | ---: |
+| Direct Metal GPU | 500k × 40 | 5 | 422.702 M turns/s | 401.943-428.966 |
+| WGPU on Metal | 500k × 40 | 3 | 152.972 M turns/s | 152.314-160.313 |
+| SIMD/JIT CPU, 8 workers | 500k × 40 | 3 | 104.783 M turns/s | 98.691-128.144 |
+| SIMD/JIT CPU, 1 worker | 10k × 20 | 3 | 41.496 M turns/s | 41.202-41.508 |
+| Cranelift JIT CPU | 10k × 20 | 5 | 16.741 M turns/s | 16.697-16.795 |
+| Scalar artifact evaluator | 10k × 20 | 5 | 1.032 M turns/s | 1.031-1.035 |
+
+## Full mega chart
 
 The larger archival mega chart keeps additional lanes. Its bar endpoints are
 medians when the raw record contains repeated samples. Some legacy rows retain

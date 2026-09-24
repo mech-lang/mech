@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "title": "IROS 2026 parallel EKF benchmark package",
   "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
   "evidence_revisions": {
@@ -10,6 +10,9 @@
   "selected_evidence": {
     "mech_direct_metal": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-metal-2026-09-04.json",
     "matched_mech_rust": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json",
+    "mech_runtime_backends": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-taichi-runtime-2026-08-31.json",
+    "mech_simd_one_worker": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json",
+    "mech_scalar_and_jit": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-scalar-checked-matched-2026-09-09.json",
     "same_machine_reruns": "benchmarks/iros-2026/results/same-machine-reruns-2026-09-24.json"
   },
   "machine": {
@@ -58,6 +61,32 @@
     "taichi_exact_toolchain": true,
     "mojo_exact_toolchain": false
   },
+  "post_charts": {
+    "cross_language": {
+      "file": "benchmarks/iros-2026/charts/post-cross-language-comparison.svg",
+      "selection": "checked f32 CPU lanes on the same Apple M1 with 500,000 filters x 40 turns, eight workers, and a fused worker-local block",
+      "error_bars": "observed minimum to maximum; every retained process sample is shown",
+      "rows_median_million_turns_per_second": {
+        "Rust packed SIMD": 146.508742,
+        "Mech SIMD/JIT": 145.573,
+        "Julia SIMD.jl": 128.544239,
+        "NumPy/Numba": 80.322749
+      }
+    },
+    "mech_backends": {
+      "file": "benchmarks/iros-2026/charts/post-mech-backend-stack.svg",
+      "selection": "same high-level Mech EKF with checked per-turn publication across retained scalar, JIT, SIMD, WGPU, and direct Metal backends",
+      "error_bars": "observed minimum to maximum; every retained process sample is shown",
+      "rows_median_million_turns_per_second": {
+        "Direct Metal GPU": 422.702,
+        "WGPU on Metal": 152.972,
+        "SIMD/JIT CPU · 8 workers": 104.783,
+        "SIMD/JIT CPU · 1 worker": 41.496,
+        "Cranelift JIT CPU": 16.741,
+        "Scalar artifact evaluator": 1.032
+      }
+    }
+  },
   "chart_assertions": {
     "checked": {
       "Mech direct Metal, generic IR / per-filter GPU dispatch (current)": 422.70,
@@ -94,10 +123,10 @@
       "sha256": "283b846040bbb65b6bfc679a51309677fc7761ec834198343f65f81c76e9d39f"
     },
     {
-      "family": "NumPy",
-      "strategy": "batched fixed-shape vectorized operations",
-      "path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_fast.py",
-      "sha256": "b0b8a94f519f5cf6020cdc00cd34fe3f5bf6e052bdfd299d7244971a4bec7fcd"
+      "family": "NumPy/Numba",
+      "strategy": "eight-worker compiled array kernel",
+      "path": "benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py",
+      "sha256": "de3c6036e87b833e489916bef855665b0af5f8ef172b3cb7686ca39d7c149260"
     },
     {
       "family": "Julia",

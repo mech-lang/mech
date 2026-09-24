@@ -9,46 +9,56 @@ on `origin/integration/v0.4`. It preserves the broad cross-language benchmark,
 the matched Rust–Mech comparison, the exact source-size audit, the benchmark
 programs, raw result records, and the scripts used to inspect them.
 
-## The broad result: one Mech program spans many backends
+## The cross-language result: matched checked CPU implementations
 
-![Representative checked EKF throughput with raw samples and observed ranges](charts/representative-checked-variability.svg)
+![Checked CPU EKF throughput under a matched execution shape](charts/post-cross-language-comparison.svg)
 
-The publication figure keeps representative scalar, multicore SIMD, and native
-Metal lanes for which every retained process sample is available. Diamonds are
-medians; whiskers are observed min-max ranges, not confidence intervals. Some
-rows use 10,000 filters × 20 turns and the native/runtime rows use 500,000
-filters × 40 turns, so the figure is a map of implementation strategies—not a
-league table of languages. The horizontal scale is logarithmic.
+This is the most defensible cross-language slice in the archive: every row is
+an f32 CPU implementation running 500,000 filters for 40 turns with eight
+workers, a fused worker-local block, and checked candidate publication on the
+same Apple M1. Every retained process sample is visible. Diamonds are medians;
+whiskers are observed minimum-to-maximum ranges, not confidence intervals.
 
-That heterogeneity is the point. The Mech rows come from one high-level EKF
-program lowered through different execution backends. In the retained
-same-machine Apple M1 measurement campaigns, Mech ranges from a checked scalar
-evaluator at 0.919 million EKF turns/s to direct Metal at 422.702 million
-turns/s. Changing the backend changes the physical execution strategy without
-requiring a new user-level EKF implementation.
+The publication boundary is still not identical in every respect. Mech and
+Rust additionally implement block-atomic rollback to the block-start
+checkpoint and return fault metadata. Julia and Numba reject invalid
+candidates per lane. All measured samples reported zero faults, so this
+difference did not change the successful execution path, but it should remain
+in the caption instead of being hidden.
 
-The chart also keeps optimized controls for Rust, Mojo, Julia, Taichi, Halide,
-Futhark, NumPy/Numba, Lua/LuaJIT, CPython, and PyPy. Those programs are valuable
-controls, but they are not all source-identical or boundary-identical. Use them
-to understand the available performance spectrum, not to claim a universal
-ranking among languages. Bar endpoints are medians when repeated samples are
-available. Because the combined campaigns do not share one randomized run
-order or machine-state protocol, small gaps between rows are not meaningful.
-See the [statistics and uncertainty policy](STATISTICS.md).
+The larger archive also contains Mojo, Futhark, Halide, Taichi, CPython, PyPy, and
+other controls. They are excluded from this figure when their retained evidence
+changes the worker count, workload size, publication boundary, device, or
+strict arithmetic contract. They remain useful context, not evidence for a
+fine language ranking.
 
 [Open the full checked mega chart](../archive/compute/parallel-ekf/charts/parallel-ekf-cross-language-checked.svg) ·
 [open the unchecked SVG](../archive/compute/parallel-ekf/charts/parallel-ekf-cross-language-unchecked.svg) ·
 [open both charts](../archive/compute/parallel-ekf/charts/parallel-ekf-cross-language-full.html)
 
-## The matched result: Rust and Mech are effectively tied
+## The Mech result: one EKF across execution backends
+
+![One Mech EKF across six execution backends](charts/post-mech-backend-stack.svg)
+
+These six rows use the same high-level Mech EKF and change the execution
+backend: the scalar artifact evaluator, Cranelift JIT, one- and eight-worker
+SIMD/JIT, WGPU on Metal, and direct Metal. All rows are checked and publish
+after every turn. The 10,000-filter CPU rows and 500,000-filter parallel/GPU
+rows come from retained same-machine campaigns, so normalized throughput makes
+the backend span visible, but small cross-row gaps are not ranking claims.
+
+That span is the point. In these campaigns the medians range from 1.032 million
+EKF turns/s in the scalar evaluator to 422.702 million in direct Metal. Mech
+changes the physical execution strategy without requiring the user-level EKF
+to be rewritten around SIMD adapters, worker dispatch, or GPU kernels.
+
+## Why Mech if Rust can match it?
 
 The clearest one-to-one comparison is the checked, fused SIMD block from one
 measurement campaign on the same Apple M1. Both paths run 500,000 filters for
 40 turns with four-wide SIMD and eight workers. Both retain a block-start
 checkpoint, reject an invalid block, restore the complete prior state, and
 return fault metadata.
-
-![Matched Mech and Rust throughput with all samples and observed ranges](charts/matched-mech-rust-variability.svg)
 
 | Implementation | n | Median checked throughput | Observed min-max | Audited application source |
 | --- | ---: | ---: | ---: | ---: |
@@ -62,8 +72,6 @@ is faster. The whiskers are observed ranges, not confidence intervals; no
 significance test is claimed. The audited Rust application is 4.86× the size
 of the unchanged Mech application. Put another way, Mech expresses this
 application boundary with 79.4% fewer normalized source characters.
-
-![Audited Mech and Rust source size](../archive/compute/parallel-ekf/source-size-audit/ekf-source-size-reconciled.svg)
 
 The source metric removes comments and nonliteral whitespace and counts every
 programmer-chosen identifier occurrence as one character, so long descriptive
@@ -108,7 +116,7 @@ publication story should lead with only these representative sources:
 
 - [Mech EKF](../archive/compute/parallel-ekf/source-size-audit/selected/ekf.mec)
   and the matched [Rust SIMD control](../archive/compute/parallel-ekf/source-size-audit/selected/rust_simd.rs).
-- [NumPy](../archive/compute/parallel-ekf/minimal/numpy_fast.py),
+- [NumPy/Numba](../archive/compute/parallel-ekf/minimal/numpy_numba.py),
   [Julia](../archive/compute/parallel-ekf/minimal/julia_simd_threads.jl),
   [Taichi](../archive/compute/parallel-ekf/minimal/taichi_optimized.py),
   [Halide](../archive/compute/parallel-ekf/minimal/halide_ekf.cpp), and
@@ -153,10 +161,10 @@ Verify the consolidated package from the repository root:
 python3 benchmarks/iros-2026/verify.py
 ```
 
-Regenerate the matched raw-sample and range figure:
+Regenerate both publication figures from the retained raw samples:
 
 ```sh
-python3 benchmarks/iros-2026/plot_variability.py
+python3 benchmarks/iros-2026/plot_post_charts.py
 ```
 
 Recompute the source audit with only the Python standard library:
@@ -200,9 +208,9 @@ A concise claim supported by this package is:
 > Rust SIMD implementation—comparable measured throughput with about one-fifth
 > of the application source for these implementations.
 
-The broad chart supports a different claim:
+The Mech backend chart supports a different claim:
 
 > A single high-level Mech EKF source can target scalar, SIMD, JIT, WGPU, and
-> native Metal execution. The surrounding language controls show the range of
-> strategies available on the same workload; they are not a universal language
-> ranking.
+> native Metal execution. The retained rows span more than two orders of
+> magnitude in normalized throughput; because the workloads and campaigns
+> differ, that span demonstrates backend reach rather than a fine ranking.

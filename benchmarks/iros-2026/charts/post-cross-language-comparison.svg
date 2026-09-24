@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620" role="img" aria-labelledby="cross-title cross-desc">
+<title id="cross-title">Checked CPU EKF throughput under a matched execution shape</title>
+<desc id="cross-desc">Four checked CPU implementations on one Apple M1, each running 500,000 filters for 40 turns with eight workers and a fused worker-local block. Every retained process sample is shown with its median and observed minimum-to-maximum range.</desc>
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:18px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker{stroke:#e8edf5;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>
+<text x="42" y="48" font-size="28" font-weight="700">Checked CPU EKF throughput under a matched execution shape</text>
+<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers · fused worker-local block · checked · n=3</text>
+<text x="42" y="112" class="muted" font-size="13">Circles are retained process samples; diamonds are medians; whiskers are observed min–max ranges, not confidence intervals.</text>
+<line x1="350.0" y1="140" x2="350.0" y2="475" class="grid"/>
+<text x="350.0" y="502" text-anchor="middle" class="axis">0</text>
+<line x1="483.9" y1="140" x2="483.9" y2="475" class="grid"/>
+<text x="483.9" y="502" text-anchor="middle" class="axis">20</text>
+<line x1="617.9" y1="140" x2="617.9" y2="475" class="grid"/>
+<text x="617.9" y="502" text-anchor="middle" class="axis">40</text>
+<line x1="751.8" y1="140" x2="751.8" y2="475" class="grid"/>
+<text x="751.8" y="502" text-anchor="middle" class="axis">60</text>
+<line x1="885.8" y1="140" x2="885.8" y2="475" class="grid"/>
+<text x="885.8" y="502" text-anchor="middle" class="axis">80</text>
+<line x1="1019.7" y1="140" x2="1019.7" y2="475" class="grid"/>
+<text x="1019.7" y="502" text-anchor="middle" class="axis">100</text>
+<line x1="1153.6" y1="140" x2="1153.6" y2="475" class="grid"/>
+<text x="1153.6" y="502" text-anchor="middle" class="axis">120</text>
+<line x1="1287.6" y1="140" x2="1287.6" y2="475" class="grid"/>
+<text x="1287.6" y="502" text-anchor="middle" class="axis">140</text>
+<line x1="1421.5" y1="140" x2="1421.5" y2="475" class="grid"/>
+<text x="1421.5" y="502" text-anchor="middle" class="axis">160</text>
+<line x1="350" y1="199" x2="1455" y2="199" class="row-guide"/>
+<text x="326" y="163" text-anchor="end" class="label">Rust packed SIMD</text>
+<text x="326" y="184" text-anchor="end" class="detail">four-wide SIMD</text>
+<line x1="1298.1" y1="165" x2="1334.4" y2="165" class="whisker"/>
+<line x1="1298.1" y1="154" x2="1298.1" y2="176" class="whisker"/>
+<line x1="1334.4" y1="154" x2="1334.4" y2="176" class="whisker"/>
+<circle cx="1298.1" cy="157" r="6" fill="#dea584" stroke="#080c14" stroke-width="2"><title>Rust packed SIMD sample: 141.568 million turns/s</title></circle>
+<circle cx="1331.2" cy="165" r="6" fill="#dea584" stroke="#080c14" stroke-width="2"><title>Rust packed SIMD sample: 146.509 million turns/s</title></circle>
+<circle cx="1334.4" cy="173" r="6" fill="#dea584" stroke="#080c14" stroke-width="2"><title>Rust packed SIMD sample: 146.999 million turns/s</title></circle>
+<path d="M 1331.2 155 L 1341.2 165 L 1331.2 175 L 1321.2 165 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Rust packed SIMD median: 146.509 million turns/s</title></path>
+<text x="1352.4" y="170" class="value">146.509 · n=3</text>
+<line x1="350" y1="271" x2="1455" y2="271" class="row-guide"/>
+<text x="326" y="235" text-anchor="end" class="label">Mech SIMD/JIT</text>
+<text x="326" y="256" text-anchor="end" class="detail">four-wide SIMD</text>
+<line x1="1285.4" y1="237" x2="1337.0" y2="237" class="whisker"/>
+<line x1="1285.4" y1="226" x2="1285.4" y2="248" class="whisker"/>
+<line x1="1337.0" y1="226" x2="1337.0" y2="248" class="whisker"/>
+<circle cx="1285.4" cy="229" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Mech SIMD/JIT sample: 139.668 million turns/s</title></circle>
+<circle cx="1324.9" cy="237" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Mech SIMD/JIT sample: 145.573 million turns/s</title></circle>
+<circle cx="1337.0" cy="245" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Mech SIMD/JIT sample: 147.381 million turns/s</title></circle>
+<path d="M 1324.9 227 L 1334.9 237 L 1324.9 247 L 1314.9 237 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Mech SIMD/JIT median: 145.573 million turns/s</title></path>
+<text x="1355.0" y="242" class="value">145.573 · n=3</text>
+<line x1="350" y1="343" x2="1455" y2="343" class="row-guide"/>
+<text x="326" y="307" text-anchor="end" class="label">Julia SIMD.jl</text>
+<text x="326" y="328" text-anchor="end" class="detail">SIMD, eight threads</text>
+<line x1="1200.2" y1="309" x2="1211.6" y2="309" class="whisker"/>
+<line x1="1200.2" y1="298" x2="1200.2" y2="320" class="whisker"/>
+<line x1="1211.6" y1="298" x2="1211.6" y2="320" class="whisker"/>
+<circle cx="1200.2" cy="301" r="6" fill="#9558b2" stroke="#080c14" stroke-width="2"><title>Julia SIMD.jl sample: 126.952 million turns/s</title></circle>
+<circle cx="1210.9" cy="309" r="6" fill="#9558b2" stroke="#080c14" stroke-width="2"><title>Julia SIMD.jl sample: 128.544 million turns/s</title></circle>
+<circle cx="1211.6" cy="317" r="6" fill="#9558b2" stroke="#080c14" stroke-width="2"><title>Julia SIMD.jl sample: 128.650 million turns/s</title></circle>
+<path d="M 1210.9 299 L 1220.9 309 L 1210.9 319 L 1200.9 309 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Julia SIMD.jl median: 128.544 million turns/s</title></path>
+<text x="1229.6" y="314" class="value">128.544 · n=3</text>
+<line x1="350" y1="415" x2="1455" y2="415" class="row-guide"/>
+<text x="326" y="379" text-anchor="end" class="label">NumPy/Numba</text>
+<text x="326" y="400" text-anchor="end" class="detail">compiled array kernel</text>
+<line x1="886.5" y1="381" x2="888.2" y2="381" class="whisker"/>
+<line x1="886.5" y1="370" x2="886.5" y2="392" class="whisker"/>
+<line x1="888.2" y1="370" x2="888.2" y2="392" class="whisker"/>
+<circle cx="886.5" cy="373" r="6" fill="#4d77cf" stroke="#080c14" stroke-width="2"><title>NumPy/Numba sample: 80.111 million turns/s</title></circle>
+<circle cx="887.9" cy="381" r="6" fill="#4d77cf" stroke="#080c14" stroke-width="2"><title>NumPy/Numba sample: 80.323 million turns/s</title></circle>
+<circle cx="888.2" cy="389" r="6" fill="#4d77cf" stroke="#080c14" stroke-width="2"><title>NumPy/Numba sample: 80.358 million turns/s</title></circle>
+<path d="M 887.9 371 L 897.9 381 L 887.9 391 L 877.9 381 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>NumPy/Numba median: 80.323 million turns/s</title></path>
+<text x="906.2" y="386" class="value">80.323 · n=3</text>
+<line x1="350" y1="475" x2="1455" y2="475" class="grid"/>
+<text x="902.5" y="533" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>
+<text x="42" y="570" class="footnote">Mech and Rust additionally match block-atomic rollback. Julia and Numba reject invalid candidates per lane; all measured samples reported zero faults.</text>
+<text x="42" y="595" class="footnote">Use this figure for the matched CPU execution shape; use the Mech backend figure for backend reach.</text>
+</svg>

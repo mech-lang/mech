@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import statistics
 import subprocess
 import xml.etree.ElementTree as ET
@@ -37,6 +38,18 @@ def chart_values(path: Path) -> dict[str, float]:
         elif y is not None and css_class == "value":
             values[y] = float(node.text)
     return {label: values[y] for y, label in labels.items() if y in values}
+
+
+def post_chart_medians(path: Path) -> dict[str, float]:
+    values: dict[str, float] = {}
+    pattern = re.compile(r"^(.*?) median: ([0-9.]+) million turns/s$")
+    for node in ET.parse(path).getroot().iter():
+        if not node.tag.endswith("title") or node.text is None:
+            continue
+        match = pattern.match(node.text)
+        if match:
+            values[match.group(1)] = float(match.group(2))
+    return values
 
 
 def close(actual: float, expected: float, tolerance: float = 0.005) -> None:
@@ -122,13 +135,65 @@ def main() -> None:
         ],
     )
 
-    for name in (
-        "matched-mech-rust-variability.svg",
-        "representative-checked-variability.svg",
+    cross_samples = {
+        "Rust packed SIMD": rust_samples,
+        "Mech SIMD/JIT": mech_samples,
+        "Julia SIMD.jl": fused["rows"]["julia_fused_checked"]["throughput_millions"],
+        "NumPy/Numba": fused["rows"]["numba_fused_checked"]["throughput_millions"],
+    }
+
+    runtime = load_json(ROOT / manifest["selected_evidence"]["mech_runtime_backends"])
+    runtime_rows = {row["label"]: row for row in runtime["rows"]}
+    simd = load_json(ROOT / manifest["selected_evidence"]["mech_simd_one_worker"])
+    scalar = load_json(ROOT / manifest["selected_evidence"]["mech_scalar_and_jit"])
+    mech_backend_samples = {
+        "Direct Metal GPU": direct_row["checked"]["samples_million_ekf_turns_per_second"],
+        "WGPU on Metal": runtime_rows["Mech WGPU GPU, checked"]["samples"],
+        "SIMD/JIT CPU · 8 workers": runtime_rows[
+            "Mech SIMD/JIT CPU, checked (8 workers)"
+        ]["samples"],
+        "SIMD/JIT CPU · 1 worker": simd["rows"]["checked"]["throughput_millions"],
+        "Cranelift JIT CPU": [
+            sample["jit_checked_million_ekf_turns_per_second"]
+            for sample in scalar["samples"]
+        ],
+        "Scalar artifact evaluator": [
+            sample["scalar_checked_million_ekf_turns_per_second"]
+            for sample in scalar["samples"]
+        ],
+    }
+
+    for chart_name, samples_by_row in (
+        ("cross_language", cross_samples),
+        ("mech_backends", mech_backend_samples),
     ):
-        root = ET.parse(HERE / "charts" / name).getroot()
+        chart = manifest["post_charts"][chart_name]
+        expected = chart["rows_median_million_turns_per_second"]
+        if set(samples_by_row) != set(expected):
+            raise AssertionError(f"post chart row selection changed: {chart_name}")
+        for label, lane_samples in samples_by_row.items():
+            close(statistics.median(lane_samples), expected[label], 0.0005)
+
+        path = ROOT / chart["file"]
+        root = ET.parse(path).getroot()
         if not any(node.tag.endswith("title") for node in root.iter()):
-            raise AssertionError(f"variability chart is missing an accessible title: {name}")
+            raise AssertionError(f"post chart is missing an accessible title: {path.name}")
+        if not any(node.tag.endswith("desc") for node in root.iter()):
+            raise AssertionError(f"post chart is missing an accessible description: {path.name}")
+        chart_medians = post_chart_medians(path)
+        if set(chart_medians) != set(expected):
+            raise AssertionError(f"rendered post chart rows changed: {chart_name}")
+        for label, value in chart_medians.items():
+            close(value, expected[label], 0.0005)
+
+    readme = (HERE / "README.md").read_text(encoding="utf-8")
+    embedded_figures = re.findall(r"^!\[.*?\]\((.*?)\)$", readme, flags=re.MULTILINE)
+    expected_figures = [
+        "charts/post-cross-language-comparison.svg",
+        "charts/post-mech-backend-stack.svg",
+    ]
+    if embedded_figures != expected_figures:
+        raise AssertionError(f"README must embed exactly the two post charts: {embedded_figures}")
 
     charts = {
         "checked": ARCHIVE / "charts/parallel-ekf-cross-language-checked.svg",
@@ -167,6 +232,7 @@ def main() -> None:
         f"median {current_rust:.3f}, range {min(samples):.3f}-{max(samples):.3f} M turns/s"
     )
     print("  same-machine Halide/Taichi/Mojo rerun samples: verified")
+    print("  two post-facing charts: raw samples, medians, and observed ranges verified")
     print("  checked and unchecked mega-chart assertions: passed")
 
 
