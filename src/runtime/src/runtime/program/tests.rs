@@ -3193,6 +3193,45 @@ fn hidden_dependency_locals_do_not_replace_ordered_root_bindings() {
 }
 
 #[test]
+fn canonical_roots_retain_textual_resolver_results_and_dependencies() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_source(
+            "dep.mec",
+            crate::ResolvedSource::new(
+                "dep.mec",
+                "memory:dep.mec",
+                crate::MechSourceCode::String("value := 41.0\n<+ value\n".into()),
+            )
+            .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap();
+    resolver
+        .insert_source(
+            "main.mec",
+            crate::ResolvedSource::new(
+                "main.mec",
+                "memory:main.mec",
+                crate::MechSourceCode::String(
+                    "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n".into(),
+                ),
+            )
+            .with_kind(crate::SourceKind::Mech),
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_root(SourceRequest::new("main.mec"))
+        .unwrap();
+    assert!(product.source_dependencies().contains_key("memory:dep.mec"));
+    assert!(!product.artifact().nodes().is_empty());
+}
+
+#[test]
 fn repeated_canonical_dependency_must_keep_its_source_identity() {
     #[derive(Debug)]
     struct ChangingDependency {

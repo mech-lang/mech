@@ -317,6 +317,31 @@ fn literal_only_bytecode_yields_an_engine_plan_without_runtime_config() {
 }
 
 #[test]
+fn canonical_source_native_plan_installs_its_artifact_operation() {
+    let catalog = mech_stdlib::source_native_plan_catalog();
+    let mut compiler = mech_runtime::RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_canonical_source("left := 1.0\nright := 2.0\nleft + right\n")
+        .unwrap();
+    let (_, bytecode, bindings, requirements, _) = product.into_native_parts();
+    let mut request = request(&bytecode);
+    request.instruction_type_bindings = Some(bindings);
+    request.instruction_type_binding_requirements = Some(requirements);
+    let plan = NativeApplicationBuilder::new(environment(catalog))
+        .plan(&request)
+        .unwrap();
+    assert!(
+        plan.runtime_functions.iter().any(|function| {
+            function.installer_path == "mech_math::__mech_native::install_add_ss_f64"
+        }),
+        "canonical artifact must plan the scalar add installer"
+    );
+}
+
+#[test]
 fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
     let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
     let mut request = request(LITERAL_F64);
