@@ -102,10 +102,11 @@ fn play_mika_farewell(draw_target: ProgressDrawTarget, message: String, frame_de
         final_state.tick();
     }
 
-    let resting_face = MICROMIKA_WAVE[0];
+    let resting_face = ReplGreetingVariant::Standard.mika();
+    let resting_frames = [resting_face, resting_face];
     let resting_style = ProgressStyle::with_template(MIKA_FAREWELL_TEMPLATE)
         .unwrap_or_else(|_| ProgressStyle::default_spinner())
-        .tick_strings(&[resting_face, resting_face]);
+        .tick_strings(&resting_frames);
     final_state.set_style(resting_style);
     final_state.finish();
 }
@@ -956,18 +957,25 @@ mod tests {
         use indicatif::InMemoryTerm;
 
         let terminal = InMemoryTerm::new(10, 80);
+        let frame_delay = Duration::from_millis(10);
+        let expected_duration =
+            frame_delay * u32::try_from(MICROMIKA_WAVE.len().saturating_sub(1)).unwrap();
         let started = Instant::now();
         play_mika_farewell(
             ProgressDrawTarget::term_like(Box::new(terminal.clone())),
             "⸢Okay cya!⸥\n".to_string(),
-            Duration::from_millis(10),
+            frame_delay,
         );
 
         assert!(
-            started.elapsed() >= Duration::from_millis(50),
+            started.elapsed() >= expected_duration,
             "Mika farewell did not advance through its wave frames"
         );
-        assert!(terminal.contents().contains("╭◉╮ ⸢Okay cya!⸥"));
+        let contents = terminal.contents();
+        assert!(
+            contents.contains("╭◉╮ ⸢Okay cya!⸥"),
+            "unexpected final Mika frame: {contents:?}"
+        );
     }
 
     #[test]

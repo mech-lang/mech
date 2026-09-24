@@ -414,6 +414,13 @@ jobs:
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
+      - name: Verify canonical document bundle activation and replacement
+        env:
+          MECH_BROWSER_BUNDLE_FIXTURES: ${{ runner.temp }}/canonical-document-bundles
+        run: |
+          cargo fetch --locked --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          cargo run --locked --offline --manifest-path tests/fixtures/full-source-runtime/Cargo.toml
+          python3 scripts/smoke-canonical-document-bundle-browser.py --fixtures "$MECH_BROWSER_BUNDLE_FIXTURES" --served-compute
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech

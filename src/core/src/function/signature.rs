@@ -4,10 +4,10 @@ use alloc::{collections::BTreeSet, string::String};
 use std::{collections::BTreeSet, string::String};
 
 use crate::MechErrorKind;
-#[cfg(feature = "program")]
-use crate::RuntimeType;
 #[cfg(feature = "matrix")]
 use crate::structures::Matrix as MechMatrix;
+#[cfg(feature = "program")]
+use crate::{DimensionExpr, FloatWidth, IntegerWidth, RuntimeType, SchemaBody};
 use core::fmt;
 
 /// Identifies the argument whose exact runtime representation was rejected.
@@ -920,5 +920,182 @@ pub fn native_features_for_runtime_type(
         RuntimeType::Kind(_) => {
             features.insert(NativeValueFeature::KindAnnotation);
         }
+    }
+}
+
+#[cfg(feature = "program")]
+pub fn native_features_for_schema_body(
+    schema: &SchemaBody,
+    features: &mut BTreeSet<NativeValueFeature>,
+) {
+    match schema {
+        SchemaBody::IntegerInterval(interval) => {
+            native_features_for_schema_body(&interval.base_body(), features);
+        }
+        SchemaBody::Dynamic => features.extend(ALL_NATIVE_VALUE_FEATURES.iter().copied()),
+        SchemaBody::Bool => {
+            features.insert(NativeValueFeature::Bool);
+        }
+        SchemaBody::String => {
+            features.insert(NativeValueFeature::String);
+        }
+        SchemaBody::UnsignedInteger(width) => {
+            features.insert(match width {
+                IntegerWidth::W8 => NativeValueFeature::U8,
+                IntegerWidth::W16 => NativeValueFeature::U16,
+                IntegerWidth::W32 => NativeValueFeature::U32,
+                IntegerWidth::W64 => NativeValueFeature::U64,
+                IntegerWidth::W128 => NativeValueFeature::U128,
+            });
+        }
+        SchemaBody::SignedInteger(width) => {
+            features.insert(match width {
+                IntegerWidth::W8 => NativeValueFeature::I8,
+                IntegerWidth::W16 => NativeValueFeature::I16,
+                IntegerWidth::W32 => NativeValueFeature::I32,
+                IntegerWidth::W64 => NativeValueFeature::I64,
+                IntegerWidth::W128 => NativeValueFeature::I128,
+            });
+        }
+        SchemaBody::FloatingPoint(width) => {
+            features.insert(match width {
+                FloatWidth::W32 => NativeValueFeature::F32,
+                FloatWidth::W64 => NativeValueFeature::F64,
+            });
+        }
+        SchemaBody::Complex(_) => {
+            features.insert(NativeValueFeature::C64);
+        }
+        SchemaBody::Rational64 => {
+            features.insert(NativeValueFeature::R64);
+        }
+        SchemaBody::Id | SchemaBody::Index => {}
+        SchemaBody::Atom(_) => {
+            features.insert(NativeValueFeature::Atom);
+        }
+        SchemaBody::Enum { variants, .. } => {
+            features.insert(NativeValueFeature::Enum);
+            for payload in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                native_features_for_schema_body(payload, features);
+            }
+        }
+        SchemaBody::Option(inner) => native_features_for_schema_body(inner, features),
+        SchemaBody::Tuple(items) => {
+            if !items.is_empty() {
+                features.insert(NativeValueFeature::Tuple);
+            }
+            for item in items {
+                native_features_for_schema_body(item, features);
+            }
+        }
+        SchemaBody::Record(fields) => {
+            features.insert(NativeValueFeature::Record);
+            for field in fields {
+                native_features_for_schema_body(&field.schema, features);
+            }
+        }
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } => {
+            features.insert(native_matrix_feature(dimensions));
+            native_features_for_schema_body(element, features);
+        }
+        SchemaBody::Table { columns, .. } => {
+            features.insert(NativeValueFeature::Table);
+            for column in columns {
+                native_features_for_schema_body(&column.schema, features);
+            }
+        }
+        SchemaBody::Set { element, .. } => {
+            features.insert(NativeValueFeature::Set);
+            native_features_for_schema_body(element, features);
+        }
+        SchemaBody::Map { key, value, .. } => {
+            features.insert(NativeValueFeature::Map);
+            native_features_for_schema_body(key, features);
+            native_features_for_schema_body(value, features);
+        }
+        SchemaBody::ReifiedType => {
+            features.insert(NativeValueFeature::KindAnnotation);
+        }
+    }
+}
+
+#[cfg(feature = "program")]
+fn native_matrix_feature(dimensions: &[DimensionExpr]) -> NativeValueFeature {
+    let [rows, columns] = dimensions else {
+        return NativeValueFeature::MatrixD;
+    };
+    match (constant_dimension(rows), constant_dimension(columns)) {
+        (Some(1), Some(1)) => NativeValueFeature::Matrix1,
+        (Some(2), Some(2)) => NativeValueFeature::Matrix2,
+        (Some(3), Some(3)) => NativeValueFeature::Matrix3,
+        (Some(4), Some(4)) => NativeValueFeature::Matrix4,
+        (Some(2), Some(3)) => NativeValueFeature::Matrix2x3,
+        (Some(3), Some(2)) => NativeValueFeature::Matrix3x2,
+        (Some(1), Some(2)) => NativeValueFeature::RowVector2,
+        (Some(1), Some(3)) => NativeValueFeature::RowVector3,
+        (Some(1), Some(4)) => NativeValueFeature::RowVector4,
+        (Some(2), Some(1)) => NativeValueFeature::Vector2,
+        (Some(3), Some(1)) => NativeValueFeature::Vector3,
+        (Some(4), Some(1)) => NativeValueFeature::Vector4,
+        (Some(1), _) => NativeValueFeature::RowVectorD,
+        (_, Some(1)) => NativeValueFeature::VectorD,
+        _ => NativeValueFeature::MatrixD,
+    }
+}
+
+#[cfg(feature = "program")]
+fn constant_dimension(expression: &DimensionExpr) -> Option<u64> {
+    match expression {
+        DimensionExpr::Constant(value) => Some(*value),
+        DimensionExpr::Add(items) => items.iter().try_fold(0_u64, |total, item| {
+            total.checked_add(constant_dimension(item)?)
+        }),
+        DimensionExpr::Multiply(items) => items.iter().try_fold(1_u64, |total, item| {
+            total.checked_mul(constant_dimension(item)?)
+        }),
+        DimensionExpr::Hole
+        | DimensionExpr::Parameter(_)
+        | DimensionExpr::Min(_)
+        | DimensionExpr::Max(_) => None,
+    }
+}
+
+#[cfg(all(test, feature = "program"))]
+mod schema_feature_tests {
+    use super::*;
+
+    #[test]
+    fn schema_features_preserve_scalar_and_fixed_matrix_storage() {
+        let schema = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W32)),
+            dimensions: vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)]
+                .into_boxed_slice(),
+        };
+        let mut features = BTreeSet::new();
+        native_features_for_schema_body(&schema, &mut features);
+
+        assert_eq!(
+            features,
+            BTreeSet::from([NativeValueFeature::F32, NativeValueFeature::Matrix2x3])
+        );
+    }
+
+    #[test]
+    fn dynamic_schema_selects_the_complete_native_value_surface() {
+        let mut features = BTreeSet::new();
+        native_features_for_schema_body(&SchemaBody::Dynamic, &mut features);
+
+        assert_eq!(features.len(), ALL_NATIVE_VALUE_FEATURES.len());
+        assert!(
+            ALL_NATIVE_VALUE_FEATURES
+                .iter()
+                .all(|feature| features.contains(feature))
+        );
     }
 }

@@ -14,6 +14,7 @@ rust-version = "1.92"
 default = []
 serde = ["dep:serde", "dep:serde_derive", "mech-core/serde", "mech-runtime/serde"]
 provider = ["mech-core/string"]
+pointer = ["mech-runtime/f32", "mech-runtime/f64", "mech-runtime/vectord", "mech-runtime/matrixd"]
 delegation = ["serde", "mech-runtime/host_delegation"]
 delegation_signing = ["delegation", "mech-runtime/host_delegation_signing"]
 

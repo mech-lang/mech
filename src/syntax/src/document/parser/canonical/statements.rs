@@ -5,7 +5,7 @@ use super::super::{Parser, checkpoint::ParserCheckpoint, marker::Marker};
 use super::base;
 use super::combinator::Attempt;
 use crate::document::{RuleId, SyntaxKind, TextSize};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 pub(crate) fn supports(rule: RuleId) -> bool {
     matches!(rule, rules::COMMENT | rules::COMMENT_SIGIL)
@@ -27,6 +27,7 @@ enum Frame {
     SigilProbe(bool),
     SigilToken(RuleId, bool),
     Base(base::continuation::Continuation),
+    Paragraph(Box<super::document::continuation::Continuation<'static>>),
     Probe(LiteralScan<'static>),
 }
 pub(crate) struct Continuation {
@@ -83,7 +84,10 @@ impl Continuation {
                 return Progress::NeedsProcessing;
             }
             let frame = self.frames.pop().expect("comment phase");
-            if !matches!(frame, Frame::Base(_) | Frame::Probe(_)) {
+            if !matches!(
+                frame,
+                Frame::Base(_) | Frame::Probe(_) | Frame::Paragraph(_)
+            ) {
                 *allowance -= 1;
                 self.work += 1;
             }
@@ -139,7 +143,13 @@ impl Continuation {
                         self.finish_comment(parser, marker);
                     } else {
                         self.push(Frame::BodyResult(marker, parser.offset()));
-                        self.base(rules::ANY_TOKEN);
+                        let rule = super::document_grammar::DOCUMENT_RULES
+                            .iter()
+                            .find(|rule| rule.rule == rules::PARAGRAPH_ELEMENT)
+                            .expect("canonical paragraph element");
+                        self.push(Frame::Paragraph(Box::new(
+                            super::document::continuation::Continuation::for_rule(rule),
+                        )));
                     }
                 }
                 Frame::BodyResult(marker, before) => {
@@ -169,6 +179,29 @@ impl Continuation {
                     } else {
                         self.push(Frame::SigilToken(rule, true));
                         self.base(rule);
+                    }
+                }
+                Frame::Paragraph(mut continuation) => {
+                    use super::document::continuation::Progress as ParagraphProgress;
+                    let before = *allowance;
+                    let progress = continuation.advance(parser, final_input, allowance);
+                    self.work += before - *allowance;
+                    match progress {
+                        ParagraphProgress::Complete(result) => {
+                            self.matched = result != Attempt::NoMatch;
+                        }
+                        ParagraphProgress::NeedsProcessing => {
+                            self.push(Frame::Paragraph(continuation));
+                            return Progress::NeedsProcessing;
+                        }
+                        ParagraphProgress::NeedInput => {
+                            self.push(Frame::Paragraph(continuation));
+                            return Progress::NeedInput;
+                        }
+                        ParagraphProgress::Limited => {
+                            self.push(Frame::Paragraph(continuation));
+                            return Progress::Limited;
+                        }
                     }
                 }
                 Frame::Base(mut continuation) => {
@@ -236,7 +269,7 @@ fn parse_rule(parser: &mut Parser<'_>, rule: RuleId) -> Attempt {
 pub(crate) fn parse_comment_sigil(parser: &mut Parser<'_>) -> bool {
     parse_rule(parser, rules::COMMENT_SIGIL) == Attempt::Matched
 }
-/// Keep comment content as raw any-token children under its canonical owner.
+/// Comment bodies share the retained rich paragraph-element grammar.
 pub(crate) fn parse_comment(parser: &mut Parser<'_>) -> Attempt {
     parse_rule(parser, rules::COMMENT)
 }
@@ -267,6 +300,8 @@ mod tests {
             "\u{a0}--text\n",
             " //raw\\text\u{0}x",
             "--🇦🇧🇨\n",
+            "-- **bold** [link](https://mech-lang.org) {ans}\nnext",
+            "// __under__ `code` {{1 + 2}} {ans + 1}\r\nnext",
         ];
         for rule in [rules::COMMENT, rules::COMMENT_SIGIL] {
             for text in cases {
@@ -296,6 +331,21 @@ mod tests {
                     assert_eq!(observed, baseline);
                 }
             }
+        }
+    }
+
+    #[test]
+    fn rich_comment_body_uses_paragraph_nodes_and_stops_at_newline() {
+        let source = "-- **bold** [link](https://mech-lang.org) `code` {ans}\nnext";
+        let (parsed, _) = run(rules::COMMENT, source, &[source], u64::MAX, false);
+        assert_eq!(parsed.result, Attempt::Matched);
+        assert_eq!(parsed.end.to_usize(), source.find('\n').unwrap());
+        for kind in ["Strong", "Hyperlink", "InlineCode", "EvalInlineMechCode"] {
+            assert!(
+                parsed.events.contains(kind),
+                "missing {kind}: {}",
+                parsed.events
+            );
         }
     }
 

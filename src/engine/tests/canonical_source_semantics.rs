@@ -180,6 +180,17 @@ fn typed_document_compiles_definition_and_expression_units_in_source_order() {
 }
 
 #[test]
+fn interactive_ans_requires_a_preceding_value() {
+    let error =
+        match CanonicalSourceFrontend.compile_document(&document("-- result: {ans}\n1 + 1\n")) {
+            Ok(_) => panic!("ans must not resolve from a later statement"),
+            Err(error) => error,
+        };
+    assert_eq!(error.code, "source-semantics/missing-preceding-answer");
+    assert!(error.message.contains("preceding interactive value"));
+}
+
+#[test]
 fn document_kind_aliases_and_enum_variants_share_the_canonical_type_environment() {
     let alias = CanonicalSourceFrontend
         .compile_document(&document("<count> := <u8>\nx<count> := 1\nx\n"))
@@ -1621,6 +1632,30 @@ fn typed_document_executes_only_eval_inline_mech_code() {
         .expect("eval inline Mech must enter document execution");
     assert_eq!(evaluated.source_map().nodes.len(), 1);
     assert_eq!(evaluated.source_map().nodes[0].operation, "math/add");
+
+    let comment = CanonicalSourceFrontend
+        .compile_document(&document("-- result: {1 + 2}\n"))
+        .expect("comment-only evaluated output must compile for presentation");
+    assert!(
+        comment
+            .document_outputs()
+            .iter()
+            .any(|output| { output.kind == mech_engine::SourceDocumentOutputKind::Inline })
+    );
+    assert!(comment.document_outputs().iter().any(|output| {
+        output.kind == mech_engine::SourceDocumentOutputKind::Program && !output.visible
+    }));
+}
+
+#[test]
+fn numbered_compute_section_uses_its_logical_title_as_the_region_name() {
+    let document = document("5. ekf-batch @compute\n--------------------\nanswer := 42\nanswer\n");
+    assert_eq!(
+        CanonicalSourceFrontend
+            .document_compute_regions(&document)
+            .unwrap(),
+        vec![("ekf-batch".to_owned(), mech_core::ComputePlacement::Compute,)]
+    );
 }
 
 #[test]

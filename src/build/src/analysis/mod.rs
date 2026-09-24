@@ -4,10 +4,11 @@
 //! bytecode model.  It does not inspect source-level exports or infer Cargo
 //! metadata from names embedded in a program.
 
+pub(crate) mod artifact;
 pub(crate) mod bytecode;
 pub(crate) mod requirements;
 pub(crate) mod runtime_types;
 
-pub(crate) use bytecode::{analyze_artifact_runtime_functions, analyze_runtime_functions};
+pub(crate) use bytecode::analyze_runtime_functions;
 pub(crate) use requirements::{NativeBytecodeContractResolver, application_requires_hosting};
-pub(crate) use runtime_types::{analyze_runtime_types, artifact_schema_features};
+pub(crate) use runtime_types::analyze_runtime_types;

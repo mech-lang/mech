@@ -21,6 +21,8 @@ use mech_browser::BrowserHostFactory;
 use mech_browser::BrowserRuntimeInjectionConfig;
 #[cfg(feature = "served_project_authority")]
 use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
+#[cfg(feature = "browser_compute")]
+use mech_browser::{PointerHostFactory, PointerInputHandle};
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
@@ -30,12 +32,11 @@ use mech_engine::{
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
 use mech_runtime::{
-    BrowserDocumentPayload, CanonicalDependencySource, CanonicalProgramBundle,
-    ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
-    MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
-    ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
-    SourceDocument, SourceKind, SourceRequest, SourceResolutionEntry,
+    BrowserDocumentPayload, ConfigProfileOptions, ConfigValue, HostInstanceConfig,
+    InMemorySourceResolver, MechConfigDocument, MechEventBuffer, MechEventBus, MechRuntime,
+    ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
+    RunResourceGrantConfig, RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
+    RuntimeProgramRoute, SourceDocument, SourceKind, SourceRequest, SourceResolutionEntry,
     import_may_resolve_source_dependency, parse_config_document, source_request_for_import,
     validate_source_resolution_entries,
 };
@@ -50,33 +51,8 @@ use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
 use mech_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
 use mech_timer::BrowserTimerHostFactory;
+#[cfg(feature = "served_project_authority")]
 use serde::Deserialize;
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ServedSourceProvenance {
-    pub(crate) nominal_origin: mech_core::CanonicalNominalPath,
-    pub(crate) nominal_package_id: Option<String>,
-}
-
-fn served_provenance_from_js(
-    value: JsValue,
-    sources: &HashMap<String, String>,
-) -> Result<HashMap<String, ServedSourceProvenance>, JsValue> {
-    let provenance = if value.is_undefined() || value.is_null() {
-        HashMap::new()
-    } else {
-        serde_wasm_bindgen::from_value(value)
-            .map_err(|error| js_error(format!("invalid served nominal provenance: {error}")))?
-    };
-    if provenance
-        .keys()
-        .any(|specifier| !sources.contains_key(specifier))
-    {
-        return Err(js_error("served nominal provenance has an unknown source"));
-    }
-    Ok(provenance)
-}
 
 use crate::canonical_document::CanonicalWasmDocument;
 #[cfg(feature = "browser_host_dom")]
@@ -114,11 +90,16 @@ impl WasmProject {
         cfg!(feature = "served_project_authority")
     }
 
+    #[wasm_bindgen(js_name = supportsServedDocumentResolutions)]
+    pub fn supports_served_document_resolutions() -> bool {
+        cfg!(feature = "served_project_authority")
+    }
+
     #[wasm_bindgen(js_name = fromSources)]
     pub fn from_sources(config_source: &str, sources: JsValue) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_project_sources(document, source_map, Vec::new(), HashMap::new())
+        Self::from_project_sources(document, source_map, Vec::new())
     }
 
     #[wasm_bindgen(js_name = fromSourcesWithResolutions)]
@@ -126,30 +107,23 @@ impl WasmProject {
         config_source: &str,
         sources: JsValue,
         resolutions: JsValue,
-        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-        let provenance = served_provenance_from_js(provenance, &source_map)?;
-        Self::from_project_sources(document, source_map, resolutions, provenance)
+        Self::from_project_sources(document, source_map, resolutions)
     }
 
     fn from_project_sources(
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
         resolutions: Vec<SourceResolutionEntry>,
-        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         validate_compiled_host_providers(&document).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_resolutions_and_provenance(
-            &source_map,
-            &resolutions,
-            &provenance,
-        )
-        .map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions(&source_map, &resolutions)
+            .map_err(to_js_error)?;
         let mut runtime = build_runtime(
             &document,
             source_resolver,
@@ -172,7 +146,7 @@ impl WasmProject {
     ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        Self::from_served_project(document, source_map, Vec::new(), HashMap::new())
+        Self::from_served_project(document, source_map, Vec::new())
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -181,114 +155,55 @@ impl WasmProject {
         config_source: &str,
         sources: JsValue,
         resolutions: JsValue,
-        provenance: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
         let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-        let provenance = served_provenance_from_js(provenance, &source_map)?;
-        Self::from_served_project(document, source_map, resolutions, provenance)
+        Self::from_served_project(document, source_map, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
-    #[wasm_bindgen(js_name = fromServedBundle)]
-    pub fn from_served_bundle(
+    #[wasm_bindgen(js_name = fromServedDocuments)]
+    pub fn from_served_documents(
         config_source: &str,
         sources: JsValue,
-        artifacts: JsValue,
+        documents: JsValue,
         roots: JsValue,
-        provenance: JsValue,
+        resolutions: JsValue,
     ) -> Result<WasmProject, JsValue> {
         let mut document = parse_project_config(config_source)?;
         let source_map = source_map_from_js(sources)?;
-        let artifact_map = source_map_from_js(artifacts)?;
+        let document_map = source_map_from_js(documents)?;
         let roots = bundle_roots_from_js(roots)?;
-        let provenance: HashMap<String, ServedSourceProvenance> =
-            serde_wasm_bindgen::from_value(provenance)
-                .map_err(|error| js_error(format!("invalid bundle nominal provenance: {error}")))?;
-        if provenance
-            .keys()
-            .any(|specifier| !source_map.contains_key(specifier))
-        {
-            return Err(js_error("bundle nominal provenance has an unknown source"));
-        }
+        let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
         replace_bundle_run_paths(&mut document, roots.clone())?;
-        Self::from_served_project_bundle(document, source_map, artifact_map, roots, provenance)
+        Self::from_served_project_documents(document, source_map, document_map, roots, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
-    fn from_served_project_bundle(
+    fn from_served_project_documents(
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
-        artifact_map: HashMap<String, String>,
+        document_map: HashMap<String, String>,
         roots: Vec<String>,
-        provenance: HashMap<String, ServedSourceProvenance>,
+        resolutions: Vec<SourceResolutionEntry>,
     ) -> Result<WasmProject, JsValue> {
-        let authority = served_browser_authority()?;
-        validate_served_authority(&document, &authority).map_err(to_js_error)?;
-        validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
-        #[cfg(feature = "browser_host_scene")]
-        let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_provenance(&source_map, &provenance)
-            .map_err(to_js_error)?;
-        let mut runtime = build_runtime_from_authority(
-            &document,
-            &authority,
-            source_resolver,
-            #[cfg(feature = "browser_host_scene")]
-            scenes.clone(),
-        )?;
         let [root] = roots.as_slice() else {
             return Err(to_js_error(MechError::new(
                 GenericError {
-                    msg: "canonical browser bundles require exactly one root artifact".to_owned(),
+                    msg: "canonical browser projects require exactly one root document".to_owned(),
                 },
                 None,
             )));
         };
-        let source = source_map.get(root).ok_or_else(|| {
-            JsValue::from_str(&format!("canonical bundle root source is missing: {root}"))
-        })?;
-        let encoded = artifact_map.get(root).ok_or_else(|| {
+        let encoded = document_map.get(root).ok_or_else(|| {
             JsValue::from_str(&format!(
-                "canonical bundle root artifact is missing: {root}"
+                "canonical browser root document is missing: {root}"
             ))
         })?;
-        let root_provenance = provenance.get(root);
-        let bundle = CanonicalProgramBundle::decode_with_root_provenance(
-            encoded,
-            Some(source),
-            root_provenance.map(|item| &item.nominal_origin),
-            root_provenance.and_then(|item| item.nominal_package_id.as_deref()),
-        )
-        .map_err(to_js_error)?;
-        bundle
-            .validate_dependency_sources_with_provenance(|uri| {
-                let specifier = uri.strip_prefix("bundle:///")?;
-                let source = source_map.get(specifier)?.as_str();
-                let retained = provenance.get(specifier);
-                Some(CanonicalDependencySource {
-                    source,
-                    nominal_origin: retained.map(|item| &item.nominal_origin),
-                    nominal_package_id: retained
-                        .and_then(|item| item.nominal_package_id.as_deref()),
-                })
-            })
-            .map_err(to_js_error)?;
-        if bundle.canonical_uri != format!("bundle:///{root}") {
-            return Err(JsValue::from_str(
-                "canonical bundle root identity is stale; regenerate the bundle",
-            ));
-        }
-        let durability = runtime.config().resident_durability;
-        runtime
-            .load_bytecode_program(&bundle.bytecode, durability)
-            .map_err(to_js_error)?;
-        Ok(Self::from_runtime(
-            runtime,
-            #[cfg(feature = "browser_host_scene")]
-            scenes,
-        ))
+        let payload = decode_document_payload(encoded)?;
+        validate_document_payload(&payload, root, &source_map)?;
+        Self::from_served_project(document, source_map, resolutions)
     }
 
     #[cfg(feature = "served_project_authority")]
@@ -296,19 +211,14 @@ impl WasmProject {
         document: MechConfigDocument,
         source_map: HashMap<String, String>,
         resolutions: Vec<SourceResolutionEntry>,
-        provenance: HashMap<String, ServedSourceProvenance>,
     ) -> Result<WasmProject, JsValue> {
         let authority = served_browser_authority()?;
         validate_served_authority(&document, &authority).map_err(to_js_error)?;
         validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
         #[cfg(feature = "browser_host_scene")]
         let scenes = BrowserSceneRegistry::new();
-        let source_resolver = project_source_resolver_with_resolutions_and_provenance(
-            &source_map,
-            &resolutions,
-            &provenance,
-        )
-        .map_err(to_js_error)?;
+        let source_resolver = project_source_resolver_with_resolutions(&source_map, &resolutions)
+            .map_err(to_js_error)?;
         let mut runtime = build_runtime_from_authority(
             &document,
             &authority,
@@ -498,11 +408,9 @@ pub(crate) struct WasmDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
-    provenance: HashMap<String, ServedSourceProvenance>,
     document: CanonicalWasmDocument,
     document_base: Rc<RefCell<Staged<SourceDocument>>>,
     presentation_output_ids: Vec<u64>,
-    initial_bundle: Option<CanonicalProgramBundle>,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
     #[cfg(feature = "served_project_authority")]
@@ -535,6 +443,8 @@ impl<T> Staged<T> {
 struct DocumentRuntimeLifecycle {
     drivers_started: Rc<Cell<bool>>,
     #[cfg(feature = "browser_compute")]
+    pointer: Rc<RefCell<Staged<Option<PointerInputHandle>>>>,
+    #[cfg(feature = "browser_compute")]
     compute_generation: Rc<Cell<u64>>,
     #[cfg(feature = "browser_host_scene")]
     scenes: Rc<RefCell<Staged<BrowserSceneRegistry>>>,
@@ -549,6 +459,26 @@ impl DocumentRuntimeLifecycle {
 
     fn set_drivers_started(&self, started: bool) {
         self.drivers_started.set(started);
+    }
+
+    #[cfg(feature = "browser_compute")]
+    fn pointer(&self) -> Option<PointerInputHandle> {
+        self.pointer.borrow().active.clone()
+    }
+
+    #[cfg(feature = "browser_compute")]
+    fn stage_pointer(&self, pointer: Option<PointerInputHandle>) {
+        self.pointer.borrow_mut().stage(pointer);
+    }
+
+    #[cfg(feature = "browser_compute")]
+    fn commit_pointer(&self) {
+        self.pointer.borrow_mut().commit();
+    }
+
+    #[cfg(feature = "browser_compute")]
+    fn abort_pointer(&self) {
+        self.pointer.borrow_mut().abort();
     }
 
     #[cfg(feature = "browser_host_scene")]
@@ -596,6 +526,9 @@ impl DocumentRuntimeLifecycle {
 
     #[cfg(feature = "browser_compute")]
     fn commit_compute(&self) {
+        if self.compute.borrow().pending.is_none() {
+            return;
+        }
         let next = self
             .compute_generation
             .get()
@@ -660,7 +593,7 @@ impl WasmDocumentBootstrap {
             // Commands such as :clear replace source inside the former base.
             // The accepted revision becomes the next stable document boundary.
             self.stage_document_base(accepted.clone());
-            self.document_base.borrow_mut().commit();
+            self.commit();
         }
     }
 
@@ -685,6 +618,8 @@ impl WasmDocumentBootstrap {
 
     pub(crate) fn commit(&self) {
         self.document_base.borrow_mut().commit();
+        #[cfg(feature = "browser_compute")]
+        self.source().lifecycle.commit_pointer();
         #[cfg(feature = "browser_host_scene")]
         self.source().lifecycle.commit_scenes();
         #[cfg(feature = "browser_compute")]
@@ -693,6 +628,8 @@ impl WasmDocumentBootstrap {
 
     pub(crate) fn abort(&self) {
         self.document_base.borrow_mut().abort();
+        #[cfg(feature = "browser_compute")]
+        self.source().lifecycle.abort_pointer();
         #[cfg(feature = "browser_host_scene")]
         self.source().lifecycle.abort_scenes();
         #[cfg(feature = "browser_compute")]
@@ -728,14 +665,16 @@ pub(crate) fn activate_document_repl_runtime_document(
     events: MechEventBuffer,
     document: &SourceDocument,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
-    let initial_bundle = bootstrap.source().initial_bundle.as_ref().filter(|_| {
-        document.source().revision() == bootstrap.source().document.document().source().revision()
-    });
     let mut candidate = build_document_repl_runtime_for_document(bootstrap, events, document)?;
     let source = document.source().to_contiguous_string();
     if source.trim().is_empty() {
         #[cfg(feature = "browser_host_scene")]
         bootstrap.source().lifecycle.stage_scenes(candidate.scenes);
+        #[cfg(feature = "browser_compute")]
+        bootstrap
+            .source()
+            .lifecycle
+            .stage_pointer(candidate.pointer);
         #[cfg(feature = "browser_compute")]
         bootstrap
             .source()
@@ -752,29 +691,21 @@ pub(crate) fn activate_document_repl_runtime_document(
     }
     let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
-    let activation = if let Some(bundle) = initial_bundle {
-        runtime.load_bytecode_program(&bundle.bytecode, durability)
-    } else {
-        #[cfg(feature = "browser_compute")]
-        {
-            match candidate.coordinator.take() {
-                Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
-                None => runtime.load_interactive_root_program(
-                    SourceRequest::new(&bootstrap.source().root_specifier),
-                    browser_module_options(),
-                    durability,
-                ),
-            }
-        }
-        #[cfg(not(feature = "browser_compute"))]
-        {
-            runtime.load_interactive_root_program(
-                SourceRequest::new(&bootstrap.source().root_specifier),
-                browser_module_options(),
-                durability,
-            )
-        }
+    #[cfg(feature = "browser_compute")]
+    let activation = match candidate.coordinator.take() {
+        Some(coordinator) => runtime.load_compiled_program(coordinator, durability),
+        None => runtime.load_interactive_root_program(
+            SourceRequest::new(&bootstrap.source().root_specifier),
+            browser_module_options(),
+            durability,
+        ),
     };
+    #[cfg(not(feature = "browser_compute"))]
+    let activation = runtime.load_interactive_root_program(
+        SourceRequest::new(&bootstrap.source().root_specifier),
+        browser_module_options(),
+        durability,
+    );
     let outcome = match activation {
         Ok(outcome) => outcome,
         Err(error) => {
@@ -792,12 +723,19 @@ pub(crate) fn activate_document_repl_runtime_document(
     bootstrap
         .source()
         .lifecycle
+        .stage_pointer(candidate.pointer);
+    #[cfg(feature = "browser_compute")]
+    bootstrap
+        .source()
+        .lifecycle
         .stage_compute(candidate.compute);
     Ok((candidate.runtime, outcome))
 }
 
 struct DocumentRuntimeCandidate {
     runtime: MechRuntime,
+    #[cfg(feature = "browser_compute")]
+    pointer: Option<PointerInputHandle>,
     #[cfg(feature = "browser_compute")]
     coordinator: Option<mech_engine::ProgramArtifact>,
     #[cfg(feature = "browser_compute")]
@@ -806,12 +744,41 @@ struct DocumentRuntimeCandidate {
     scenes: BrowserSceneRegistry,
 }
 
+#[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
+fn configured_document_pointer(
+    bootstrap: &WasmDocumentBootstrap,
+) -> MResult<Option<PointerInputHandle>> {
+    let Some(served) = bootstrap.served.as_ref() else {
+        return Ok(None);
+    };
+    let document = parse_config_document(
+        "mech.mcfg",
+        &served.config_source,
+        ConfigProfileOptions::default(),
+    )?;
+    let mut pointers = document
+        .hosts
+        .iter()
+        .filter(|host| host.provider == "pointer");
+    let pointer = pointers.next();
+    if pointers.next().is_some() {
+        return Err(document_runtime_error(
+            "a served document supports one pointer host instance",
+        ));
+    }
+    Ok(pointer.map(|host| PointerInputHandle::new(&host.name)))
+}
+
 fn build_document_repl_runtime_for_document(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
     candidate_document: &SourceDocument,
 ) -> MResult<DocumentRuntimeCandidate> {
     let source = bootstrap.source();
+    #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
+    let candidate_pointer = configured_document_pointer(bootstrap)?;
+    #[cfg(all(feature = "browser_compute", not(feature = "served_project_authority")))]
+    let candidate_pointer = None;
     #[cfg(feature = "browser_compute")]
     let previous_compute = source.lifecycle.compute();
     #[cfg(feature = "browser_compute")]
@@ -837,6 +804,8 @@ fn build_document_repl_runtime_for_document(
                     Some(events.clone()),
                     #[cfg(feature = "browser_host_scene")]
                     planning_scenes,
+                    #[cfg(feature = "browser_compute")]
+                    None,
                 )
                 .map_err(js_value_to_mech_error)?
                 .function_catalog(mech_stdlib::source_native_plan_catalog())
@@ -905,6 +874,8 @@ fn build_document_repl_runtime_for_document(
         Some(events),
         #[cfg(feature = "browser_host_scene")]
         candidate_scenes.clone(),
+        #[cfg(feature = "browser_compute")]
+        candidate_pointer.clone(),
     )
     .map_err(js_value_to_mech_error)?;
     #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
@@ -966,6 +937,8 @@ fn build_document_repl_runtime_for_document(
         .build()?;
     Ok(DocumentRuntimeCandidate {
         runtime,
+        #[cfg(feature = "browser_compute")]
+        pointer: candidate_pointer,
         #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
         coordinator: compute_coordinator,
         #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
@@ -1040,32 +1013,23 @@ fn runtime_document(
         Ok(program) => program,
         Err(_) => return Ok((candidate.clone(), None)),
     };
-    let program_boundary = original_program
+    let publishes_program = original_program
         .document_outputs()
         .iter()
-        .find(|output| output.kind == SourceDocumentOutputKind::Program)
-        .and_then(|output| {
-            original_program
-                .source_map()
-                .outputs
-                .get(output.output as usize)
-        })
-        .map(|anchor| anchor.range.end.0 as usize);
-    let Some(program_boundary) = program_boundary else {
+        .any(|output| output.kind == SourceDocumentOutputKind::Program && output.visible);
+    if !publishes_program {
         return Ok((candidate.clone(), None));
-    };
+    }
 
     const CAPTURE: &str = "```mech\nans\n```\n";
     let mut executable = String::with_capacity(candidate_source.len() + CAPTURE.len() + 1);
-    let (program_prefix, trailing_presentation) = base.split_at(program_boundary.min(base.len()));
-    executable.push_str(program_prefix);
+    executable.push_str(base);
     if !executable.ends_with(['\r', '\n']) {
         executable.push('\n');
     }
     let capture_start = executable.len();
     executable.push_str(CAPTURE);
     let capture_end = executable.len();
-    executable.push_str(trailing_presentation);
     executable.push_str(suffix);
     let document = retain_provenance(
         SourceDocument::parse_resolved(
@@ -1176,77 +1140,59 @@ mod document {
     use super::*;
 
     pub(super) fn document_output_ordinals(
-        bootstrap: &WasmDocumentBootstrap,
-    ) -> MResult<HashMap<u64, u64>> {
-        document_output_ordinals_for_source(bootstrap, bootstrap.document.document(), true)
-    }
+        document: &SourceDocument,
+        runtime: &MechRuntime,
+        program_output: Option<OutputId>,
+        presentation_output_ids: &[u64],
+    ) -> HashMap<u64, u64> {
+        use mech_syntax::document::{AstNode, SyntaxKind};
 
-    pub(super) fn document_output_ordinals_for_source(
-        bootstrap: &WasmDocumentBootstrap,
-        candidate: &SourceDocument,
-        require_all: bool,
-    ) -> MResult<HashMap<u64, u64>> {
-        let bundled_initial = bootstrap
-            .initial_bundle
-            .as_ref()
-            .is_some_and(|bundle| bundle.source == candidate.source().to_contiguous_string());
-        let (runtime_source, program_output) = if bundled_initial {
-            (candidate.clone(), None)
-        } else {
-            runtime_document(bootstrap, candidate)?
-        };
-        let nominal_origin = runtime_source.nominal_origin().cloned().or_else(|| {
-            bootstrap
-                .provenance
-                .get(&bootstrap.root_specifier)
-                .map(|provenance| provenance.nominal_origin.clone())
-        });
-        let frontend = nominal_origin.map_or(CanonicalSourceFrontend, |origin| {
-            CanonicalSourceFrontend.with_nominal_origin(origin)
-        });
-        let program = match frontend.compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        ) {
-            Ok(program) => program,
-            Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
-            Err(error) => return Err(document_runtime_error(error.to_string())),
-        };
-        let outputs = program
-            .document_outputs()
-            .iter()
-            .filter(|output| {
-                output.visible
-                    && output.kind != SourceDocumentOutputKind::Program
-                    && Some(output.output) != program_output.map(|id| id.get())
-            })
-            .collect::<Vec<_>>();
-        if require_all && outputs.len() < bootstrap.presentation_output_ids.len() {
-            return Err(document_runtime_error(format!(
-                "browser presentation payload has {} addresses for {} canonical outputs",
-                bootstrap.presentation_output_ids.len(),
-                outputs.len(),
-            )));
+        let mut names = HashMap::new();
+        for ordinal in 0..u32::MAX {
+            let Some(name) = runtime.output_name(OutputId::new(ordinal)) else {
+                break;
+            };
+            names.insert(name, u64::from(ordinal));
         }
-        let mut ordinals = bootstrap
-            .presentation_output_ids
-            .iter()
-            .copied()
-            .zip(outputs.into_iter().map(|output| u64::from(output.output)))
-            .collect::<HashMap<_, _>>();
-        let program_output = program_output.or_else(|| {
-            bundled_initial.then(|| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .find(|output| output.kind == SourceDocumentOutputKind::Program)
-                    .map(|output| OutputId::new(output.output))
-            })?
-        });
+        let mut outputs = HashMap::new();
         if let Some(output) = program_output {
-            ordinals.insert(root_document_program_output_id(), u64::from(output.0));
+            outputs.insert(root_document_program_output_id(), u64::from(output.0));
         }
-        Ok(ordinals)
+        let mut presentation = Vec::new();
+        let mut pending = vec![document.document().syntax().clone()];
+        while let Some(node) = pending.pop() {
+            let role = match node.kind() {
+                SyntaxKind::EvalInlineMechCode => {
+                    Some(("inline", SourceDocumentOutputKind::Inline))
+                }
+                SyntaxKind::CodeBlock => Some(("fence", SourceDocumentOutputKind::Fence)),
+                _ => None,
+            };
+            if let Some((role, kind)) = role {
+                let local_name = format!("document:{role}:{}", node.range().start.0);
+                let ordered_name = format!(
+                    "document:{}:{role}:{}",
+                    node.source().document().0,
+                    node.range().start.0
+                );
+                if let Some(ordinal) = names
+                    .get(local_name.as_str())
+                    .or_else(|| names.get(ordered_name.as_str()))
+                {
+                    outputs.insert(
+                        mech_runtime::canonical_document_output_id(kind, node.range()),
+                        *ordinal,
+                    );
+                    presentation.push((node.range().start.0, *ordinal));
+                }
+            }
+            pending.extend(node.children());
+        }
+        presentation.sort_by_key(|(start, _)| *start);
+        for (address, (_, ordinal)) in presentation_output_ids.iter().zip(presentation) {
+            outputs.insert(*address, ordinal);
+        }
+        outputs
     }
 
     fn selected_value_response(
@@ -1307,17 +1253,7 @@ mod document {
             let Some(runtime) = repl.session.runtime() else {
                 return Ok(None);
             };
-            let bundle_output = bootstrap.initial_bundle.as_ref().is_some_and(|bundle| {
-                repl.session.source_document().is_some_and(|document| {
-                    document.source().to_contiguous_string() == bundle.source
-                })
-            });
-            let output_id = if bundle_output {
-                runtime.program_output_id()
-            } else {
-                bootstrap.program_output_id()?
-            };
-            let Some(output_id) = output_id else {
+            let Some(output_id) = bootstrap.program_output_id()? else {
                 return Ok(None);
             };
             (output_id, runtime.output_value(output_id)?)
@@ -1376,28 +1312,17 @@ mod document {
             resolutions: JsValue,
             provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
+            let payload = decode_document_payload(encoded)?;
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
-            if let Ok(payload) = BrowserDocumentPayload::decode(encoded) {
-                return Self::from_payload_with_sources_and_provenance(
-                    payload,
-                    root_specifier,
-                    source_map,
-                    resolutions,
-                    provenance,
-                    None,
-                );
-            }
-            let bundle = decode_document_bundle(encoded, root_specifier, &source_map, &provenance)?;
-            let payload = document_payload_from_bundle(root_specifier, &bundle)?;
             Self::from_payload_with_sources_and_provenance(
                 payload,
                 root_specifier,
                 source_map,
                 resolutions,
                 provenance,
-                Some(bundle),
+                None,
             )
         }
 
@@ -1406,24 +1331,6 @@ mod document {
             root_specifier: &str,
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
-        ) -> Result<WasmDocument, JsValue> {
-            Self::from_payload_with_sources_and_provenance(
-                payload,
-                root_specifier,
-                source_map,
-                resolutions,
-                HashMap::new(),
-                None,
-            )
-        }
-
-        fn from_payload_with_sources_and_provenance(
-            payload: BrowserDocumentPayload,
-            root_specifier: &str,
-            source_map: HashMap<String, String>,
-            resolutions: Vec<SourceResolutionEntry>,
-            provenance: HashMap<String, ServedSourceProvenance>,
-            initial_bundle: Option<CanonicalProgramBundle>,
         ) -> Result<WasmDocument, JsValue> {
             validate_document_payload(&payload, root_specifier, &source_map)?;
             let document = CanonicalWasmDocument::retain(
@@ -1440,11 +1347,9 @@ mod document {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
-                provenance,
                 document,
                 document_base,
                 presentation_output_ids: payload.presentation_output_ids().to_vec(),
-                initial_bundle,
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 #[cfg(feature = "served_project_authority")]
@@ -1459,9 +1364,17 @@ mod document {
         pub(super) fn try_from_bootstrap(
             bootstrap: WasmDocumentBootstrap,
         ) -> MResult<WasmDocument> {
-            let document_output_ordinals = document_output_ordinals(&bootstrap)?;
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
+            let program_output_id = bootstrap.program_output_id()?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
+            let document_output_ordinals = document_output_ordinals(
+                bootstrap.document.document(),
+                repl.session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?,
+                program_output_id,
+                &bootstrap.presentation_output_ids,
+            );
             Ok(Self {
                 repl,
                 bootstrap,
@@ -1493,9 +1406,7 @@ mod document {
                 config_source,
                 source_map,
                 Vec::new(),
-                HashMap::new(),
                 authority,
-                None,
             )
         }
 
@@ -1510,14 +1421,11 @@ mod document {
             config_source: &str,
             sources: JsValue,
             resolutions: JsValue,
-            provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
+            let payload = decode_document_payload(encoded)?;
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
-            let provenance = served_provenance_from_js(provenance, &source_map)?;
-            let bundle = decode_document_bundle(encoded, root_specifier, &source_map, &provenance)?;
-            let payload = document_payload_from_bundle(root_specifier, &bundle)?;
             let authority = served_browser_authority()?;
             Self::from_served_payload(
                 payload,
@@ -1526,9 +1434,7 @@ mod document {
                 config_source,
                 source_map,
                 resolutions,
-                provenance,
                 authority,
-                Some(bundle),
             )
         }
 
@@ -1540,9 +1446,7 @@ mod document {
             config_source: &str,
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
-            provenance: HashMap<String, ServedSourceProvenance>,
             authority: BrowserRuntimeInjectionConfig,
-            initial_bundle: Option<CanonicalProgramBundle>,
         ) -> Result<WasmDocument, JsValue> {
             validate_served_authority(&document, &authority).map_err(to_js_error)?;
             validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
@@ -1561,11 +1465,9 @@ mod document {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
-                provenance,
                 document: retained,
                 document_base,
                 presentation_output_ids: payload.presentation_output_ids().to_vec(),
-                initial_bundle,
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
                 served: Some(ServedDocumentBootstrap {
@@ -1573,6 +1475,11 @@ mod document {
                     authority,
                 }),
             })
+        }
+
+        #[wasm_bindgen(js_name = runtimeInfo)]
+        pub fn runtime_info(&self) -> Result<JsValue, JsValue> {
+            runtime_info_value(&self.runtime()?.program_execution_info())
         }
 
         #[wasm_bindgen(js_name = renderedOutput)]
@@ -1689,7 +1596,6 @@ mod document {
                 payload.source(),
             )
             .map_err(to_js_error)?;
-            replacement_bootstrap.initial_bundle = None;
             replacement_bootstrap.document_base = Rc::new(RefCell::new(Staged {
                 active: replacement_bootstrap.document.document().clone(),
                 pending: None,
@@ -1873,6 +1779,24 @@ mod document {
                 .lifecycle
                 .scenes()
                 .submit_pointer(instance, x, y, pressed, delta_seconds)
+                .map_err(to_js_error)
+        }
+
+        #[cfg(feature = "browser_compute")]
+        #[wasm_bindgen(js_name = pointerInput)]
+        pub fn pointer_input(
+            &self,
+            x: f64,
+            y: f64,
+            pressed: bool,
+            delta_seconds: f64,
+        ) -> Result<(), JsValue> {
+            self.bootstrap
+                .source()
+                .lifecycle
+                .pointer()
+                .ok_or_else(|| js_error("document has no pointer host"))?
+                .submit(x, y, pressed, delta_seconds)
                 .map_err(to_js_error)
         }
 
@@ -2244,15 +2168,10 @@ mod document {
                 let current = self.repl.session.source_document().ok_or_else(|| {
                     js_error("documentation source was accepted without a retained document")
                 })?;
-                let retained_source = current.source().to_contiguous_string();
-                let accepted_fragment =
-                    retained_source.get(accepted_before..).ok_or_else(|| {
-                        js_error("accepted documentation range is outside the retained source")
-                    })?;
                 let addresses = live_document_fragment_addresses(
                     &self.bootstrap,
                     current,
-                    accepted_fragment,
+                    source,
                     accepted_before,
                 )
                 .map_err(to_js_error)?;
@@ -2297,17 +2216,21 @@ mod document {
                 .ok_or_else(|| js_error("document runtime is not active"))
         }
 
-        fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
+        pub(super) fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
             let current =
                 self.repl.session.source_document().ok_or_else(|| {
                     document_runtime_error("document session has no retained source")
                 })?;
-            let ordinals = document_output_ordinals_for_source(&self.bootstrap, current, false)?;
-            let output_id = ordinals
-                .get(&root_document_program_output_id())
-                .and_then(|ordinal| u32::try_from(*ordinal).ok())
-                .map(OutputId::new);
-            self.document_output_ordinals = ordinals;
+            let (_, output_id) = runtime_document(self.bootstrap.source(), current)?;
+            self.document_output_ordinals = document_output_ordinals(
+                current,
+                self.repl
+                    .session
+                    .runtime()
+                    .ok_or_else(|| document_runtime_error("document runtime is not active"))?,
+                output_id,
+                &self.bootstrap.presentation_output_ids,
+            );
             if let (Some(program_output), Some(output_id)) =
                 (self.program_output.as_mut(), output_id)
             {
@@ -2316,6 +2239,11 @@ mod document {
                 self.program_output = None;
             }
             Ok(())
+        }
+
+        #[cfg(test)]
+        pub(super) fn document_output_ordinal(&self, output_id: u64) -> Option<u64> {
+            self.document_output_ordinals.get(&output_id).copied()
         }
 
         fn runtime_output_id(&self, output_id: u64) -> Option<OutputId> {
@@ -2393,64 +2321,6 @@ fn decode_document_payload(encoded: &str) -> Result<BrowserDocumentPayload, JsVa
     BrowserDocumentPayload::decode(encoded).map_err(to_js_error)
 }
 
-fn decode_document_bundle(
-    encoded: &str,
-    root_specifier: &str,
-    source_map: &HashMap<String, String>,
-    provenance: &HashMap<String, ServedSourceProvenance>,
-) -> Result<CanonicalProgramBundle, JsValue> {
-    let source = source_map.get(root_specifier).ok_or_else(|| {
-        js_error(format!(
-            "document root `{root_specifier}` is missing from the source map"
-        ))
-    })?;
-    let root_provenance = provenance.get(root_specifier);
-    let bundle = CanonicalProgramBundle::decode_with_root_provenance(
-        encoded,
-        Some(source),
-        root_provenance.map(|item| &item.nominal_origin),
-        root_provenance.and_then(|item| item.nominal_package_id.as_deref()),
-    )
-    .map_err(to_js_error)?;
-    bundle
-        .validate_dependency_sources_with_provenance(|uri| {
-            let specifier = uri.strip_prefix("bundle:///")?;
-            let source = source_map.get(specifier)?.as_str();
-            let retained = provenance.get(specifier);
-            Some(CanonicalDependencySource {
-                source,
-                nominal_origin: retained.map(|item| &item.nominal_origin),
-                nominal_package_id: retained.and_then(|item| item.nominal_package_id.as_deref()),
-            })
-        })
-        .map_err(to_js_error)?;
-    if bundle.canonical_uri != format!("bundle:///{root_specifier}") {
-        return Err(js_error(
-            "canonical bundle root identity does not match the requested document root",
-        ));
-    }
-    Ok(bundle)
-}
-
-fn document_payload_from_bundle(
-    root_specifier: &str,
-    bundle: &CanonicalProgramBundle,
-) -> Result<BrowserDocumentPayload, JsValue> {
-    let document = SourceDocument::parse_resolved(
-        &bundle.canonical_uri,
-        mech_syntax::document::Revision(bundle.source_revision),
-        bundle.source.as_str(),
-        mech_syntax::document::ParseConfig::default(),
-    )
-    .map_err(|error| js_error(format!("invalid canonical bundle source: {error:?}")))?;
-    let presentation_output_ids =
-        mech_runtime::canonical_document_presentation_output_ids(&document.document())
-            .map_err(|error| js_error(error.to_string()))?;
-    BrowserDocumentPayload::new(root_specifier, &bundle.source)
-        .map(|payload| payload.with_presentation_output_ids(presentation_output_ids))
-        .map_err(to_js_error)
-}
-
 fn validate_document_payload(
     payload: &BrowserDocumentPayload,
     root_specifier: &str,
@@ -2508,6 +2378,7 @@ pub(super) fn browser_runtime_builder() -> RuntimeBuilder {
 fn runtime_builder_with_factories(
     repl_events: Option<MechEventBuffer>,
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
+    #[cfg(feature = "browser_compute")] pointer: Option<PointerInputHandle>,
 ) -> Result<RuntimeBuilder, JsValue> {
     let mut builder = browser_runtime_builder();
     #[cfg(feature = "browser_host_dom")]
@@ -2516,6 +2387,14 @@ fn runtime_builder_with_factories(
             .host_factory(Box::new(
                 BrowserHostFactory::new(WasmBrowserDomBackend::new()).map_err(to_js_error)?,
             ))
+            .map_err(to_js_error)?;
+    }
+    #[cfg(feature = "browser_compute")]
+    {
+        let pointer_factory =
+            pointer.map_or_else(PointerHostFactory::planning, PointerHostFactory::new);
+        builder = builder
+            .host_factory(Box::new(pointer_factory))
             .map_err(to_js_error)?;
     }
     #[cfg(feature = "browser_host_time")]
@@ -2573,6 +2452,8 @@ fn build_runtime(
         None,
         #[cfg(feature = "browser_host_scene")]
         scenes,
+        #[cfg(feature = "browser_compute")]
+        None,
     )?
     .config(runtime_config)
     .source_resolver(source_resolver);
@@ -2598,6 +2479,8 @@ fn build_runtime_from_authority(
         None,
         #[cfg(feature = "browser_host_scene")]
         scenes,
+        #[cfg(feature = "browser_compute")]
+        None,
     )?
     // The served authority already contains the project patch that the server
     // verified and signed. Keep that runtime environment authoritative here.
@@ -2632,6 +2515,8 @@ fn compiled_browser_providers() -> BTreeMap<&'static str, &'static str> {
     providers.insert("scene", "browser_host_scene");
     #[cfg(feature = "browser_compute")]
     providers.insert("compute", "browser_compute");
+    #[cfg(feature = "browser_compute")]
+    providers.insert("pointer", "browser_compute");
     providers
 }
 
@@ -2659,6 +2544,7 @@ fn standard_browser_provider_feature(provider: &str) -> Option<&'static str> {
         "console" => Some("browser_host_console"),
         "scene" => Some("browser_host_scene"),
         "compute" => Some("browser_compute"),
+        "pointer" => Some("browser_compute"),
         _ => None,
     }
 }
@@ -2965,61 +2851,12 @@ fn project_source_resolver(
     Ok(resolver)
 }
 
-fn project_source_resolver_with_provenance(
-    sources: &HashMap<String, String>,
-    provenance: &HashMap<String, ServedSourceProvenance>,
-) -> mech_core::MResult<InMemorySourceResolver> {
-    let mut resolver = InMemorySourceResolver::new();
-    for (specifier, source) in sources {
-        if let Some(retained) = provenance.get(specifier) {
-            let mut resolved = ResolvedSource::new(
-                specifier,
-                format!("memory:{specifier}"),
-                MechSourceCode::String(source.clone()),
-            )
-            .with_kind(SourceKind::Mech)
-            .with_nominal_origin(retained.nominal_origin.clone());
-            if let Some(package_id) = &retained.nominal_package_id {
-                resolved = resolved.with_nominal_package_id(package_id.clone());
-            }
-            resolver.insert_source(
-                specifier,
-                resolved
-                    .retain_source_document(
-                        mech_syntax::document::Revision(0),
-                        mech_syntax::document::ParseConfig::default(),
-                    )?
-                    .admit_canonical_document()?,
-            )?;
-        } else {
-            resolver.insert_string(specifier, source)?;
-        }
-    }
-    Ok(resolver)
-}
-
 fn project_source_resolver_with_resolutions(
     sources: &HashMap<String, String>,
     resolutions: &[SourceResolutionEntry],
 ) -> mech_core::MResult<InMemorySourceResolver> {
     validate_source_resolution_entries(sources.keys().map(String::as_str), resolutions)?;
     let mut resolver = project_source_resolver(sources)?;
-    for resolution in resolutions {
-        resolver.insert_resolution_entry(resolution)?;
-    }
-    Ok(resolver)
-}
-
-fn project_source_resolver_with_resolutions_and_provenance(
-    sources: &HashMap<String, String>,
-    resolutions: &[SourceResolutionEntry],
-    provenance: &HashMap<String, ServedSourceProvenance>,
-) -> mech_core::MResult<InMemorySourceResolver> {
-    if provenance.is_empty() {
-        return project_source_resolver_with_resolutions(sources, resolutions);
-    }
-    validate_source_resolution_entries(sources.keys().map(String::as_str), resolutions)?;
-    let mut resolver = project_source_resolver_with_provenance(sources, provenance)?;
     for resolution in resolutions {
         resolver.insert_resolution_entry(resolution)?;
     }
@@ -3042,11 +2879,8 @@ fn document_source_resolver(
         )));
     }
 
-    let mut resolver = project_source_resolver_with_resolutions_and_provenance(
-        &source.source_map,
-        &source.resolutions,
-        &source.provenance,
-    )?;
+    let mut resolver =
+        project_source_resolver_with_resolutions(&source.source_map, &source.resolutions)?;
     let default_root_uri = format!("memory:{}", source.root_specifier);
     let mut derived_root_resolutions = Vec::new();
     let index = document
@@ -3074,20 +2908,19 @@ fn document_source_resolver(
         ));
     }
     let candidate_source = document.source().to_contiguous_string();
-    let mut resolved = ResolvedSource::new(
+    resolver.insert_source(
         &source.root_specifier,
-        "runtime:interactive",
-        MechSourceCode::String(candidate_source),
-    )
-    .with_source_document(document.clone())?
-    .with_kind(SourceKind::Mech);
-    if let Some(retained) = source.provenance.get(&source.root_specifier) {
-        resolved = resolved.with_nominal_origin(retained.nominal_origin.clone());
-        if let Some(package_id) = &retained.nominal_package_id {
-            resolved = resolved.with_nominal_package_id(package_id.clone());
-        }
+        ResolvedSource::new(
+            &source.root_specifier,
+            "runtime:interactive",
+            MechSourceCode::String(candidate_source),
+        )
+        .with_source_document(document.clone())?
+        .with_kind(SourceKind::Mech),
+    )?;
+    for resolution in &source.resolutions {
+        resolver.insert_resolution_entry(resolution)?;
     }
-    resolver.insert_source(&source.root_specifier, resolved)?;
     for resolution in &derived_root_resolutions {
         resolver.insert_resolution_entry(resolution)?;
     }
@@ -3135,7 +2968,7 @@ fn run_source_roots<'a>(
         ));
     }
     let durability = runtime.config().resident_durability;
-    runtime.load_root_program(
+    runtime.load_interactive_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,
@@ -3412,22 +3245,8 @@ mod tests {
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
+        let presentation_output_ids =
+            mech_runtime::canonical_document_presentation_output_ids(&document.document()).unwrap();
         BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)
@@ -3455,11 +3274,9 @@ mod tests {
             root_specifier: root_specifier.to_owned(),
             source_map,
             resolutions,
-            provenance: HashMap::new(),
             document,
             document_base,
             presentation_output_ids: payload.presentation_output_ids().to_vec(),
-            initial_bundle: None,
             console_instance: "repl".to_owned(),
             lifecycle: DocumentRuntimeLifecycle::default(),
             #[cfg(feature = "served_project_authority")]
@@ -3474,13 +3291,21 @@ mod tests {
             include_str!("../../../tests/fixtures/shims/all-slots.mec"),
         ] {
             let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
-            let outputs = document::document_output_ordinals(&bootstrap).unwrap();
+            let repl = crate::repl::WasmRepl::from_document(bootstrap.clone()).unwrap();
+            let runtime = repl.session.runtime().unwrap();
+            let program_output = bootstrap.program_output_id().unwrap();
+            let outputs = document::document_output_ordinals(
+                bootstrap.document.document(),
+                runtime,
+                program_output,
+                &bootstrap.presentation_output_ids,
+            );
             for output_id in &bootstrap.presentation_output_ids {
                 assert!(outputs.contains_key(output_id));
             }
             assert_eq!(
                 outputs.contains_key(&root_document_program_output_id()),
-                bootstrap.program_output_id().unwrap().is_some(),
+                program_output.is_some(),
             );
         }
     }
@@ -3490,7 +3315,19 @@ mod tests {
         let original = "value := 42\n\nResult {value}.\n";
         let replacement = "value := 42\n<+ value\n\nResult {value}.\n";
         let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
-        let before = document::document_output_ordinals(&bootstrap).unwrap();
+        let initial = bootstrap.initial_document();
+        let (before_runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &initial,
+        )
+        .unwrap();
+        let before = document::document_output_ordinals(
+            &initial,
+            &before_runtime,
+            bootstrap.program_output_id().unwrap(),
+            &bootstrap.presentation_output_ids,
+        );
         let candidate = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
@@ -3500,8 +3337,18 @@ mod tests {
         .unwrap();
         bootstrap.stage_document_base(candidate.clone());
         bootstrap.commit();
-        let after =
-            document::document_output_ordinals_for_source(&bootstrap, &candidate, false).unwrap();
+        let (after_runtime, _) = activate_document_repl_runtime_document(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &candidate,
+        )
+        .unwrap();
+        let after = document::document_output_ordinals(
+            &candidate,
+            &after_runtime,
+            bootstrap.program_output_id().unwrap(),
+            &bootstrap.presentation_output_ids,
+        );
         let address = bootstrap.presentation_output_ids[0];
         assert_ne!(before[&address], after[&address]);
         let (runtime_source, _) = runtime_document(&bootstrap, &candidate).unwrap();
@@ -3523,13 +3370,18 @@ mod tests {
     fn interactive_presentation_skips_integrity_constraint_outputs() {
         let source = include_str!("../../../examples/working/fizzbuzz.mec");
         let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
-        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
         let (runtime, _) = activate_document_repl_runtime_document(
             &bootstrap,
             MechEventBuffer::default(),
             &bootstrap.initial_document(),
         )
         .unwrap();
+        let ordinals = document::document_output_ordinals(
+            bootstrap.document.document(),
+            &runtime,
+            bootstrap.program_output_id().unwrap(),
+            &bootstrap.presentation_output_ids,
+        );
         let address = bootstrap.presentation_output_ids[0];
         let value = runtime
             .output_value(OutputId::new(ordinals[&address] as u32))
@@ -3543,8 +3395,6 @@ mod tests {
         let original = "first := 1\nsecond := 2\nsecond\n";
         let retained = "second := 2\nsecond\n";
         let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
-        #[cfg(feature = "browser_compute")]
-        let compute_generation = bootstrap.source().lifecycle.compute_generation();
         let cleared = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
@@ -3554,12 +3404,6 @@ mod tests {
         .unwrap();
         bootstrap.rebase_document_boundary_if_needed(&cleared);
         assert_eq!(bootstrap.initial_repl_source(), retained);
-        #[cfg(feature = "browser_compute")]
-        assert_eq!(
-            bootstrap.source().lifecycle.compute_generation(),
-            compute_generation,
-            "rebasing the document boundary must not commit the already accepted compute bridge",
-        );
         let overlaid = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(2),
@@ -3660,6 +3504,7 @@ mod tests {
         );
 
         document.repl.session.submit("40 + 2").unwrap();
+        document.refresh_document_output_ordinals().unwrap();
 
         assert_eq!(
             document
@@ -3671,6 +3516,11 @@ mod tests {
                 .to_string(),
             "7",
             "a console result must not replace the fixed document output",
+        );
+        assert_eq!(
+            document.document_output_ordinal(root_document_program_output_id()),
+            Some(u64::from(output_id.0)),
+            "the canonical document mount must remain mapped to the captured result",
         );
     }
 
@@ -4872,6 +4722,53 @@ phase"#;
         );
 
         validate_served_authority(&document, &authority).unwrap();
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_compute"))]
+    #[test]
+    fn served_pointer_host_plans_and_delivers_live_input() {
+        let config_source = r#"config := {
+  hosts: [{ name: "mouse" provider: "pointer" settings: {} }]
+  run: {
+    paths: ["main.mec"]
+    grants: [{ target: "mouse/frame" operations: ["read"] paths: ["pulse", "position", "pressed", "delta-seconds"] }]
+  }
+}"#;
+        let source =
+            "@mouse := pointer://mouse/frame{:read(pulse)}\npulse := @mouse/pulse\npulse\n";
+        let config =
+            parse_config_document("mech.mcfg", config_source, ConfigProfileOptions::default())
+                .unwrap();
+        let mut bootstrap = document_bootstrap("main.mec", source, HashMap::new(), Vec::new());
+        bootstrap.console_instance = internal_repl_console_instance(&config.hosts);
+        bootstrap.served = Some(ServedDocumentBootstrap {
+            config_source: config_source.to_owned(),
+            authority: authority_config(
+                config.hosts.clone(),
+                config.run.as_ref().unwrap().grants.clone(),
+            ),
+        });
+        let mut document = WasmDocument::try_from_bootstrap(bootstrap).unwrap();
+        document.start().unwrap();
+        document.pointer_input(0.5, -0.25, true, 0.016).unwrap();
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .pending_host_input_count()
+                .unwrap(),
+            1
+        );
+        document.repl.session.drain_pending_inputs(1).unwrap();
+        let pulse = document
+            .runtime()
+            .unwrap()
+            .root_symbol_values(&["pulse"])
+            .unwrap()
+            .pop()
+            .unwrap()
+            .1;
+        assert_eq!(pulse.format_canonical_inline(), "1");
     }
 
     #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]
@@ -6169,9 +6066,13 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_project_reports_served_authority_capability() {
+    fn wasm_project_reports_served_project_capabilities() {
         assert_eq!(
             WasmProject::supports_served_authority(),
+            cfg!(feature = "served_project_authority")
+        );
+        assert_eq!(
+            WasmProject::supports_served_document_resolutions(),
             cfg!(feature = "served_project_authority")
         );
     }

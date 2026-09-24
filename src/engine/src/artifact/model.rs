@@ -426,6 +426,63 @@ impl NodeDeclaration {
     }
 }
 
+fn control_body_operation_references(
+    body: &super::ControlOperationBody,
+    references: &mut Vec<OperationReference>,
+) {
+    match body {
+        super::ControlOperationBody::Operation { operation, .. } => {
+            references.push(operation.clone());
+        }
+        super::ControlOperationBody::Match(control) => {
+            match_operation_references(control, references);
+        }
+        super::ControlOperationBody::Comprehension(control) => {
+            comprehension_operation_references(control, references);
+        }
+        super::ControlOperationBody::Recur(_)
+        | super::ControlOperationBody::Suspend
+        | super::ControlOperationBody::Publish => {}
+    }
+}
+
+fn match_operation_references(
+    control: &super::MatchDeclaration,
+    references: &mut Vec<OperationReference>,
+) {
+    for block in control
+        .arms
+        .iter()
+        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
+    {
+        for operation in &block.operations {
+            control_body_operation_references(&operation.body, references);
+        }
+    }
+}
+
+fn comprehension_operation_references(
+    control: &super::ComprehensionDeclaration,
+    references: &mut Vec<OperationReference>,
+) {
+    for operation in control.operations() {
+        control_body_operation_references(&operation.body, references);
+    }
+}
+
+fn node_operation_references(body: &ExecutableNodeBody, references: &mut Vec<OperationReference>) {
+    match body {
+        ExecutableNodeBody::Operation(operation) => references.push(operation.operation.clone()),
+        ExecutableNodeBody::Comprehension(control) => {
+            comprehension_operation_references(control, references);
+        }
+        ExecutableNodeBody::Match(control) | ExecutableNodeBody::Activation(control) => {
+            match_operation_references(control, references);
+        }
+        ExecutableNodeBody::Fsm(_) => {}
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InputDeclaration {
     pub input: InputId,
@@ -537,6 +594,23 @@ impl ProgramArtifact {
 
     pub const fn constraints(&self) -> &[IntegrityConstraintDeclaration] {
         &self.constraints
+    }
+
+    /// Returns the complete canonical operation closure carried by ordinary,
+    /// nested-control, and integrity nodes in deterministic order.
+    pub fn operation_references(&self) -> Vec<OperationReference> {
+        let mut references = Vec::new();
+        for node in &self.nodes {
+            node_operation_references(&node.body, &mut references);
+        }
+        references.extend(
+            self.constraints
+                .iter()
+                .map(|constraint| constraint.operation.clone()),
+        );
+        references.sort();
+        references.dedup();
+        references
     }
 
     pub const fn compute_regions(&self) -> &[ComputeRegionDeclaration] {

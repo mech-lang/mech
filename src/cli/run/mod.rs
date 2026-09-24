@@ -66,7 +66,7 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
         if Path::new(&inputs[0]).exists() {
             return RunInputMode::Paths(inputs);
         }
-        if parses_as_executable_run_source(&inputs[0]) {
+        if parses_as_run_source(&inputs[0]) {
             return RunInputMode::InlineSource(inputs[0].clone());
         }
         if is_intended_path(&inputs[0]) {
@@ -76,7 +76,7 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     }
 
     let joined = inputs.join(" ");
-    if parses_as_executable_run_source(&joined) {
+    if parses_as_run_source(&joined) {
         return RunInputMode::InlineSource(joined);
     }
 
@@ -87,14 +87,14 @@ pub fn classify_run_inputs(inputs: Vec<String>) -> RunInputMode {
     }
 }
 
-fn parses_as_executable_run_source(input: &str) -> bool {
+fn parses_as_run_source(input: &str) -> bool {
     use mech_runtime::resolver::SourceDocument;
     use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
     let Ok(source) = TextSnapshot::new(DocumentId(0), Revision(0), input) else {
         return false;
     };
     let document = SourceDocument::parse(source, ParseConfig::default());
-    document.is_strictly_clean() && document.document().contains_executable_source()
+    document.is_strictly_clean() && document.document().contains_program_source()
 }
 
 pub fn new_cli_runtime(
@@ -326,6 +326,14 @@ mod tests {
             .to_string(),
         ]);
         assert!(matches!(mode, RunInputMode::InlineSource(_)));
+    }
+
+    #[test]
+    fn classifies_declaration_only_context_as_inline_source() {
+        assert!(matches!(
+            classify_run_inputs(vec!["+> @out := cli/stdout".to_owned()]),
+            RunInputMode::InlineSource(_)
+        ));
     }
 
     #[test]

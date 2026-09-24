@@ -242,7 +242,6 @@ pub(crate) struct ServePlan {
     pub wasm_pkg: String,
     pub compute_backend: Option<String>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
-    pub uses_configured_paths: bool,
     pub runtime_config: mech_runtime::RuntimeConfig,
     pub host_config: Option<mech_browser::BrowserRuntimeInjectionConfig>,
     pub host_config_injection: Option<crate::HostAuthorityInjection>,
@@ -280,7 +279,6 @@ pub(crate) fn prepare(
         .with_compiler_loc());
     }
     let project_root = effective.project_root.clone();
-    let uses_configured_paths = effective.uses_configured_paths;
     let project_overlay = if effective.uses_configured_paths {
         let loaded = loaded_config.as_ref().ok_or_else(|| {
             MechError::new(
@@ -381,7 +379,6 @@ pub(crate) fn prepare(
         wasm_pkg: effective.wasm_pkg,
         compute_backend: effective.compute_backend,
         loaded_config,
-        uses_configured_paths,
         runtime_config,
         host_config,
         host_config_injection,
@@ -599,7 +596,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         options.config_shim_at_root,
     );
 
-    if options.uses_configured_paths
+    if options.project_overlay.is_some()
         && let Some(loaded) = &options.loaded_config
         && let Some(run) = &loaded.document.run
     {

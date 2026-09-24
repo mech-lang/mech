@@ -110,6 +110,7 @@ full-hosts = [
       ]
 compute_backends_native = [
       "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
+      "mech-browser/pointer",
       "mech-runtime/compute",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
