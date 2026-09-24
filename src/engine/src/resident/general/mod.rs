@@ -1271,6 +1271,7 @@ pub struct TurnWorkspace {
     pub(crate) input: TypedResidentArena,
     pub(crate) scratch: TypedResidentArena,
     pub(crate) dirty_bits: Box<[u64]>,
+    pub(crate) suppressed_activation_bits: Box<[u64]>,
     pub(crate) executed_bits: Box<[u64]>,
     pub(crate) initialized_output_bits: Box<[u64]>,
     pub(crate) all_outputs_initialized: bool,
@@ -1316,6 +1317,7 @@ impl TurnWorkspace {
                 memory,
             )?,
             dirty_bits: vec![0; words].into_boxed_slice(),
+            suppressed_activation_bits: vec![0; words].into_boxed_slice(),
             executed_bits: vec![0; words].into_boxed_slice(),
             initialized_output_bits: vec![0; plan.steps.len().div_ceil(64)].into_boxed_slice(),
             all_outputs_initialized: false,
@@ -5951,6 +5953,7 @@ fn build_topology(
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
 ) -> Result<DependencyTopology, ResidentActivationError> {
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
+    let mut sample_ordering = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
     let mut prior_state_consumers = Vec::<ActivatedNodeIndex>::new();
@@ -5970,6 +5973,20 @@ fn build_topology(
             if activation_scrutinee.is_some_and(|scrutinee| ordinal != scrutinee) {
                 // Sample captures are read by the activation body, but they do
                 // not schedule it or form dirty-propagation edges into it.
+                // A computed sample must nevertheless run before its owner
+                // when both are selected for the same turn.
+                if let ArtifactSource::Slot(slot_id) = source {
+                    let slot = &artifact.slots()[slot_id.get() as usize];
+                    if slot.role != SlotRole::State {
+                        if let ProducerReference::NodeOutput { node: parent, .. } = slot.producer {
+                            if let Some(parent) = artifact_to_activated[parent.get() as usize] {
+                                if !sample_ordering[parent.get() as usize].contains(&current) {
+                                    sample_ordering[parent.get() as usize].push(current);
+                                }
+                            }
+                        }
+                    }
+                }
                 continue;
             }
             let ArtifactSource::Slot(slot_id) = source else {
@@ -6044,9 +6061,11 @@ fn build_topology(
     roots.sort_by_key(|node| node.get());
     let order_source = downstream
         .iter()
-        .map(|children| {
+        .zip(&sample_ordering)
+        .map(|(children, samples)| {
             children
                 .iter()
+                .chain(samples)
                 .map(|child| child.get() as usize)
                 .collect::<Vec<_>>()
         })
@@ -6360,6 +6379,11 @@ fn collect_resident_input_dependencies(
             node: NodeId::new(slot.get()),
         },
     )?;
+    if declaration.role == SlotRole::State {
+        // Retained state is sampled from the previous publication. Its
+        // historical writer inputs do not trigger this activation.
+        return Ok(());
+    }
     let ProducerReference::NodeOutput { node, .. } = declaration.producer else {
         return Ok(());
     };
