@@ -4368,7 +4368,7 @@ driven-trigger := @clock/delta-seconds
 ~driven-count := 0u64
 ~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
 ~> driven-trigger { driven-count = driven-count + 1u64 }
-0u64
+snapshot-count
 "#;
     let catalog = mech_stdlib::source_catalog();
     let mut compiler = RuntimeBuilder::new()
@@ -4424,15 +4424,12 @@ driven-trigger := @clock/delta-seconds
             .unwrap(),
         ValueDataDraft::U64(1)
     );
-    assert_eq!(
-        runtime
-            .root_symbol_value("driven-count")
-            .unwrap()
-            .value()
-            .canonical_data_draft()
-            .unwrap(),
-        ValueDataDraft::U64(0)
-    );
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("mixed provider fixture must remain resident external")
+    };
+    let provider_batch = execution.coordinator.input_facts().last().unwrap().1;
+    assert!(provider_batch.facts[0].trigger);
+    assert!(!provider_batch.facts[1].trigger);
 
     runtime
         .ingress()
@@ -4455,15 +4452,12 @@ driven-trigger := @clock/delta-seconds
             .unwrap(),
         ValueDataDraft::U64(1)
     );
-    assert_eq!(
-        runtime
-            .root_symbol_value("driven-count")
-            .unwrap()
-            .value()
-            .canonical_data_draft()
-            .unwrap(),
-        ValueDataDraft::U64(1)
-    );
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("mixed provider fixture must remain resident external")
+    };
+    let host_batch = execution.coordinator.input_facts().last().unwrap().1;
+    assert!(!host_batch.facts[0].trigger);
+    assert!(host_batch.facts[1].trigger);
 }
 
 #[test]
