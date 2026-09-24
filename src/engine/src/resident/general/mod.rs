@@ -4792,7 +4792,7 @@ fn build_plan(
         if class == NodeClass::Observation {
             continue;
         }
-        let input_sources = control_input_sources(artifact, node.node)?;
+        let input_sources = node_inputs(artifact, node.node)?;
         let mech_core::ResolvedOperationContract::Declared(contract) =
             artifact.contracts().get(node.contract).unwrap()
         else {
@@ -4999,7 +4999,7 @@ fn build_plan(
             | crate::ExecutableNodeBody::Activation(control) => control,
             _ => continue,
         };
-        let input_sources = node_inputs(artifact, node.node)?;
+        let input_sources = control_input_sources(artifact, node.node)?;
         let input_reads = input_sources
             .iter()
             .copied()

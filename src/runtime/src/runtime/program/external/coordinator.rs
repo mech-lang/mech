@@ -171,6 +171,16 @@ impl ResidentExternalReplayBootstrap {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ResidentExternalReplayLoadingPhase {
+    InitialPublication,
+    InitialContinuation,
+    DriverlessBootstrap,
+    DriverlessContinuation,
+    Complete,
+    Failed,
+}
+
 pub struct ResidentExternalCoordinator {
     instance: Option<ReactiveInstance>,
     publication_authority: RuntimeResidentPublicationAuthority,
@@ -181,8 +191,7 @@ pub struct ResidentExternalCoordinator {
     artifact: Arc<ProgramArtifact>,
     live: bool,
     replay_bootstrap: ResidentExternalReplayBootstrap,
-    driverless_bootstrap_pending: bool,
-    replay_loading_failed: bool,
+    replay_loading_phase: ResidentExternalReplayLoadingPhase,
     bound: BoundResidentExternalPlan,
     latest_live_inputs: Vec<Option<Value>>,
     latest_live_input_bytes: Vec<usize>,
@@ -342,9 +351,15 @@ impl ResidentExternalCoordinator {
             layout_generation,
             artifact,
             live,
-            driverless_bootstrap_pending: !live
-                && !replay_bootstrap.driverless_trigger_inputs.is_empty(),
-            replay_loading_failed: false,
+            replay_loading_phase: if live {
+                ResidentExternalReplayLoadingPhase::Complete
+            } else if replay_bootstrap.initial_publication_required {
+                ResidentExternalReplayLoadingPhase::InitialPublication
+            } else if !replay_bootstrap.driverless_trigger_inputs.is_empty() {
+                ResidentExternalReplayLoadingPhase::DriverlessBootstrap
+            } else {
+                ResidentExternalReplayLoadingPhase::Complete
+            },
             replay_bootstrap,
             bound,
             latest_live_inputs,
@@ -1042,7 +1057,7 @@ impl ResidentExternalCoordinator {
         if self.live {
             return invalid_coordinator("recorded replay requires an offline coordinator");
         }
-        if self.replay_loading_failed {
+        if self.replay_loading_phase == ResidentExternalReplayLoadingPhase::Failed {
             return invalid_coordinator(
                 "recorded replay cannot continue after a rejected loading turn",
             );
@@ -1103,12 +1118,8 @@ impl ResidentExternalCoordinator {
                 self.next_turn = next_turn;
                 let receipt_sequence = self.append_receipt(prepared_receipt);
                 self.last_rejected_turn = Some(turn);
-                if matches!(
-                    record.body.mode,
-                    ResidentExternalTurnMode::InitialPublication
-                        | ResidentExternalTurnMode::DriverlessBootstrap
-                ) {
-                    self.replay_loading_failed = true;
+                if self.replay_loading_phase != ResidentExternalReplayLoadingPhase::Complete {
+                    self.replay_loading_phase = ResidentExternalReplayLoadingPhase::Failed;
                 }
                 Ok(ResidentExternalTurnOutcome::Rejected {
                     turn,
@@ -1227,9 +1238,10 @@ impl ResidentExternalCoordinator {
                 self.next_input = next_input;
             }
             self.next_turn = next_turn;
-            if expected.body.mode == ResidentExternalTurnMode::DriverlessBootstrap {
-                self.driverless_bootstrap_pending = false;
-            }
+            self.advance_replay_loading_after_accepted(
+                expected.body.mode,
+                instance.continuation_wakeup().is_some(),
+            );
             let receipt_sequence = self.append_receipt(prepared_receipt);
             Ok(ResidentExternalTurnOutcome::Accepted {
                 turn,
@@ -1239,6 +1251,38 @@ impl ResidentExternalCoordinator {
         })();
         self.instance = Some(instance);
         result
+    }
+
+    fn advance_replay_loading_after_accepted(
+        &mut self,
+        mode: ResidentExternalTurnMode,
+        continuation_ready: bool,
+    ) {
+        use ResidentExternalReplayLoadingPhase as Loading;
+
+        let driverless_pending = !self.replay_bootstrap.driverless_trigger_inputs.is_empty();
+        self.replay_loading_phase = match (self.replay_loading_phase, mode) {
+            (Loading::InitialPublication, ResidentExternalTurnMode::InitialPublication)
+            | (Loading::InitialContinuation, ResidentExternalTurnMode::ContinuationDrain) => {
+                if continuation_ready {
+                    Loading::InitialContinuation
+                } else if driverless_pending {
+                    Loading::DriverlessBootstrap
+                } else {
+                    Loading::Complete
+                }
+            }
+            (Loading::DriverlessBootstrap, ResidentExternalTurnMode::DriverlessBootstrap)
+            | (Loading::DriverlessContinuation, ResidentExternalTurnMode::ContinuationDrain) => {
+                if continuation_ready {
+                    Loading::DriverlessContinuation
+                } else {
+                    Loading::Complete
+                }
+            }
+            (Loading::Complete, _) => Loading::Complete,
+            _ => Loading::Failed,
+        };
     }
 
     fn validate_replay_record(
@@ -1251,11 +1295,27 @@ impl ResidentExternalCoordinator {
         let expected_transaction = resident_transaction_id(self.instance_id, expected_turn);
         let mode = record.body.mode;
         let continuation_ready = self.instance().continuation_wakeup().is_some();
-        let initial_publication_expected =
-            self.next_turn == 1 && self.replay_bootstrap.initial_publication_required;
-        let driverless_bootstrap_expected = self.driverless_bootstrap_pending
-            && !initial_publication_expected
-            && !continuation_ready;
+        use ResidentExternalReplayLoadingPhase as Loading;
+        let loading_mode_matches = match self.replay_loading_phase {
+            Loading::InitialPublication => {
+                mode == ResidentExternalTurnMode::InitialPublication && !continuation_ready
+            }
+            Loading::InitialContinuation | Loading::DriverlessContinuation => {
+                mode == ResidentExternalTurnMode::ContinuationDrain && continuation_ready
+            }
+            Loading::DriverlessBootstrap => {
+                mode == ResidentExternalTurnMode::DriverlessBootstrap && !continuation_ready
+            }
+            Loading::Complete => match mode {
+                ResidentExternalTurnMode::Ordinary | ResidentExternalTurnMode::ExplicitStep => {
+                    !continuation_ready
+                }
+                ResidentExternalTurnMode::ContinuationDrain => continuation_ready,
+                ResidentExternalTurnMode::InitialPublication
+                | ResidentExternalTurnMode::DriverlessBootstrap => false,
+            },
+            Loading::Failed => false,
+        };
         if record.header.turn_id != expected_turn
             || record.header.transaction_id != expected_transaction
             || record.body.version != ResidentTurnReceiptV1::VERSION
@@ -1264,11 +1324,7 @@ impl ResidentExternalCoordinator {
             || record.body.plan_generation != self.plan_generation
             || record.body.layout_generation != self.layout_generation
             || record.body.before_epoch != self.instance().published_epoch()
-            || ((mode == ResidentExternalTurnMode::InitialPublication)
-                != initial_publication_expected)
-            || ((mode == ResidentExternalTurnMode::ContinuationDrain) != continuation_ready)
-            || ((mode == ResidentExternalTurnMode::DriverlessBootstrap)
-                != driverless_bootstrap_expected)
+            || !loading_mode_matches
             || (mode == ResidentExternalTurnMode::ExplicitStep
                 && !self.instance().plan.has_input_free_activation_roots())
         {
@@ -1330,6 +1386,9 @@ impl ResidentExternalCoordinator {
             TurnRecordStatus::Rejected => {
                 if record.body.after_epoch.is_some()
                     || record.body.state_hash != self.published_state_hash
+                    || record.body.touched_slots != 0
+                    || record.body.changed_slots != 0
+                    || record.body.executed_nodes != 0
                 {
                     return invalid_coordinator(
                         "rejected replay receipt must preserve the published state",
@@ -1341,13 +1400,24 @@ impl ResidentExternalCoordinator {
                     .as_ref()
                     .expect("validated rejected replay receipt")
                     .phase;
+                let empty_effect_evidence = record.body.effect_count == 0
+                    && record.body.outbox_effect_count == 0
+                    && record.body.transactional_effect_count == 0
+                    && record.body.effect_batch_hash == [0; 32]
+                    && record.body.effect_ids_hash == [0; 32]
+                    && record.body.idempotency_keys_hash == [0; 32];
                 let evidence_matches_phase = match phase {
-                    TurnFailurePhase::InputInstallation => batch
-                        .is_none_or(|batch| batch.facts.len() < self.bound.observations().len()),
-                    TurnFailurePhase::Recording => batch.is_none(),
+                    TurnFailurePhase::InputInstallation => {
+                        empty_effect_evidence
+                            && batch.is_none_or(|batch| {
+                                batch.facts.len() < self.bound.observations().len()
+                            })
+                    }
+                    TurnFailurePhase::Recording => empty_effect_evidence && batch.is_none(),
+                    TurnFailurePhase::Integrity | TurnFailurePhase::EffectMaterialization => {
+                        empty_effect_evidence && complete_inputs
+                    }
                     TurnFailurePhase::Execution
-                    | TurnFailurePhase::Integrity
-                    | TurnFailurePhase::EffectMaterialization
                     | TurnFailurePhase::ExternalPrepare
                     | TurnFailurePhase::ExternalApply => complete_inputs,
                     TurnFailurePhase::Admission
@@ -1358,7 +1428,7 @@ impl ResidentExternalCoordinator {
                 };
                 if !evidence_matches_phase {
                     return invalid_coordinator(
-                        "rejected replay input evidence does not match its failure phase",
+                        "rejected replay evidence does not match its failure phase",
                     );
                 }
             }
