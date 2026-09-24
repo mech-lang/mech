@@ -191,12 +191,18 @@ pub fn section_element(
                 out = eval_fenced_code_block(&block.code, p, false)?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let out_id = crate::program::fenced_document_output_id(block)
-                    .expect("an executable fenced block has an output identity");
-                p.out_values.borrow_mut().insert(
-                    out_id,
-                    crate::interpreter::retained_source_cell(out.clone())?,
-                );
+                let base_id = crate::program::fenced_document_output_id(block);
+                if base_id.is_some_and(|base_id| {
+                    (!block.config.hidden && block.config.output)
+                        || base_id == crate::program::root_document_program_output_id()
+                }) {
+                    let out_id = next_fenced_document_output_id(block, p)
+                        .expect("a checked fenced output identity remains available");
+                    p.out_values.borrow_mut().insert(
+                        out_id,
+                        crate::interpreter::retained_source_cell(out.clone())?,
+                    );
+                }
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
@@ -213,12 +219,15 @@ pub fn section_element(
                 })?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let out_id = crate::program::fenced_document_output_id(block)
-                    .expect("an executable fenced block has an output identity");
-                pp.out_values.borrow_mut().insert(
-                    out_id,
-                    crate::interpreter::retained_source_cell(out.clone())?,
-                );
+                if !block.config.hidden
+                    && block.config.output
+                    && let Some(out_id) = next_fenced_document_output_id(block, pp.as_ref())
+                {
+                    pp.out_values.borrow_mut().insert(
+                        out_id,
+                        crate::interpreter::retained_source_cell(out.clone())?,
+                    );
+                }
                 // A named fence is a scoped evaluator, but its returned value is
                 // still the latest document result. Mirror it into the parent
                 // `ans` projection so the document-boundary capture observes the
@@ -338,6 +347,23 @@ pub fn section_element(
         .map(SpecializationInput::Cell)
 }
 
+fn next_fenced_document_output_id(
+    block: &FencedMechCode,
+    interpreter: &Interpreter,
+) -> Option<u64> {
+    let outputs = interpreter.out_values.borrow();
+    let mut occurrence = 0_u64;
+    loop {
+        let output_id = crate::program::fenced_document_output_occurrence_id(block, occurrence)?;
+        if !outputs.contains_key(&output_id) {
+            return Some(output_id);
+        }
+        occurrence = occurrence
+            .checked_add(1)
+            .expect("fenced document output occurrence space is exhausted");
+    }
+}
+
 #[cfg(test)]
 mod section_annotation_tests {
     use super::*;
@@ -452,18 +478,19 @@ fn eval_fenced_code_block(
     Ok(out)
 }
 
-fn inline_eval_id(p: &InterpreterExecution<'_>) -> u64 {
-    let next_ix = {
-        let mut counter = p.inline_eval_counter.borrow_mut();
-        let current = *counter;
-        *counter += 1;
-        current
-    };
-    hash_str(&format!(
-        "inline-eval:{}:{}",
-        p.presentation_namespace(),
-        next_ix
-    ))
+fn inline_eval_id(expression: &Expression, p: &InterpreterExecution<'_>) -> u64 {
+    let outputs = p.out_values.borrow();
+    let mut occurrence = 0_u64;
+    loop {
+        let output_id =
+            inline_document_output_id(p.presentation_namespace(), expression, occurrence);
+        if !outputs.contains_key(&output_id) {
+            return output_id;
+        }
+        occurrence = occurrence
+            .checked_add(1)
+            .expect("inline document output occurrence space is exhausted");
+    }
 }
 
 #[cfg(feature = "mika")]
@@ -477,7 +504,7 @@ pub fn paragraph_element(
 ) -> MResult<(u64, SpecializationInput)> {
     let result = match element {
         ParagraphElement::EvalInlineMechCode(expr) => {
-            let code_id = inline_eval_id(p);
+            let code_id = inline_eval_id(expr, p);
             match expression(&expr, None, p) {
                 Ok(val) => (code_id, val),
                 // Inline document expressions are opportunistic: unresolved

@@ -221,7 +221,7 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, true)
+        self.render_html_mode(document, &[], RenderMode::Source, true, &[])
     }
 
     /// Format section content for a host shim that owns the article and title.
@@ -229,7 +229,17 @@ impl CanonicalDocumentRenderer {
         &self,
         document: &DocumentSyntax,
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, &[], RenderMode::Source, false)
+        self.render_html_mode(document, &[], RenderMode::Source, false, &[])
+    }
+
+    /// Format a browser fragment with addresses for values in the resident
+    /// interactive document. The host fills these slots after publication.
+    pub fn format_html_body_live(
+        &self,
+        document: &DocumentSyntax,
+        output_addresses: &[(TextRange, u64)],
+    ) -> Result<String, CanonicalDocumentRenderError> {
+        self.render_html_mode(document, &[], RenderMode::Live, false, output_addresses)
     }
 
     pub fn render_html(
@@ -237,7 +247,7 @@ impl CanonicalDocumentRenderer {
         document: &DocumentSyntax,
         results: &[CanonicalScopeResults],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        self.render_html_mode(document, results, RenderMode::Completed, true)
+        self.render_html_mode(document, results, RenderMode::Completed, true, &[])
     }
 
     fn render_html_mode(
@@ -246,8 +256,10 @@ impl CanonicalDocumentRenderer {
         results: &[CanonicalScopeResults],
         mode: RenderMode,
         document_frame: bool,
+        output_addresses: &[(TextRange, u64)],
     ) -> Result<String, CanonicalDocumentRenderError> {
-        let lookup = ResultLookup::new(document, results, mode)?;
+        let mut lookup = ResultLookup::new(document, results, mode)?;
+        lookup.output_addresses = output_addresses.iter().copied().collect();
         let mut output = String::new();
         if document_frame {
             output.push_str("<article class='mech-document'>");
@@ -400,12 +412,14 @@ struct ResultKey {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RenderMode {
     Source,
+    Live,
     Completed,
 }
 
 struct ResultLookup<'a> {
     mode: RenderMode,
     values: HashMap<ResultKey, &'a RuntimeValueSnapshot>,
+    output_addresses: HashMap<TextRange, u64>,
     citation_numbers: HashMap<String, usize>,
     citations: Vec<(DocumentScopeId, SyntaxNode)>,
     footnote_numbers: HashMap<String, usize>,
@@ -557,6 +571,7 @@ impl<'a> ResultLookup<'a> {
         Ok(Self {
             mode,
             values,
+            output_addresses: HashMap::new(),
             citation_numbers,
             citations,
             footnote_numbers,
@@ -848,7 +863,7 @@ fn render_document_node_text(
     } else if let Some(fence) = CodeBlockSyntax::cast(value.clone()) {
         render_fence_text(&fence, owner, lookup, output)?;
     } else if let Some(mika) = find::<MikaSectionSyntax>(value) {
-        if lookup.mode == RenderMode::Source {
+        if lookup.mode != RenderMode::Completed {
             output.push_str(&node_text(value)?);
             return Ok(());
         }
@@ -1373,7 +1388,7 @@ fn render_inline_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         return push_source(node, node.range(), output, false);
     }
     let mut replacements = Vec::new();
@@ -1422,6 +1437,20 @@ fn render_inline_html(
 ) -> Result<(), CanonicalDocumentRenderError> {
     match node.kind() {
         SyntaxKind::EvalInlineMechCode => {
+            if lookup.mode == RenderMode::Live {
+                let range = node.range();
+                if let Some(address) = lookup.output_addresses.get(&range) {
+                    output.push_str(&format!(
+                        "<code id='{address}:0' class='mech-inline-mech-code' data-mech-source>{}</code>",
+                        escape_html(&node_text(node)?)
+                    ));
+                } else {
+                    output.push_str("<code class='mech-inline'>");
+                    output.push_str(&escape_html(&node_text(node)?));
+                    output.push_str("</code>");
+                }
+                return Ok(());
+            }
             if lookup.mode == RenderMode::Source {
                 output.push_str("<code class='mech-inline'>");
                 output.push_str(&escape_html(&node_text(node)?));
@@ -2059,6 +2088,18 @@ fn render_fence_html(
     output.push_str(&escape_html(&fence_body(fence)?));
     output.push_str("</code></pre>");
     let scope = render_scope(&info.scope);
+    if lookup.mode == RenderMode::Live
+        && !info.hidden
+        && presentation.show_output
+        && scope.is_some()
+    {
+        let range = fence.syntax().range();
+        if let Some(address) = lookup.output_addresses.get(&range) {
+            output.push_str(&format!(
+                "<div class='mech-block-output' id='{address}:0'></div>"
+            ));
+        }
+    }
     if lookup.mode == RenderMode::Completed
         && presentation.show_output
         && let Some(scope) = scope
@@ -2098,7 +2139,7 @@ fn render_fence_text(
     lookup: &ResultLookup<'_>,
     output: &mut String,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         output.push_str(&node_text(fence.syntax())?);
         return Ok(());
     }
@@ -2219,7 +2260,7 @@ fn append_program_html(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         return Ok(());
     }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);
@@ -2246,7 +2287,7 @@ fn append_program_text(
     output: &mut String,
     required: Option<TextRange>,
 ) -> Result<(), CanonicalDocumentRenderError> {
-    if lookup.mode == RenderMode::Source {
+    if lookup.mode != RenderMode::Completed {
         return Ok(());
     }
     let value = lookup.get(owner, scope, SourceDocumentOutputKind::Program, None);

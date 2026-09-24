@@ -17,6 +17,42 @@ struct TitleSlots {
     previous: String,
 }
 
+fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
+    if !block.code.iter().any(|(code, _)| match code {
+        MechCode::ActivationScope(_) | MechCode::Expression(_) => true,
+        MechCode::Statement(statement) => matches!(
+            statement,
+            Statement::OpAssign(_)
+                | Statement::VariableAssign(_)
+                | Statement::VariableDefine(_)
+                | Statement::ContextSend(_)
+                | Statement::TupleDestructure(_)
+        ),
+        _ => false,
+    }) {
+        return None;
+    }
+    let mut identity = String::from("mech/fenced-document-output/v2");
+    for (code, _) in &block.code {
+        identity.push_str(match code {
+            MechCode::Comment(_) => "/comment",
+            MechCode::ActivationScope(_) => "/activation",
+            MechCode::Expression(_) => "/expression",
+            MechCode::FsmImplementation(_) => "/fsm-implementation",
+            MechCode::FsmSpecification(_) => "/fsm-specification",
+            MechCode::FunctionDefine(_) => "/function",
+            MechCode::Import(_) => "/import",
+            MechCode::Statement(_) => "/statement",
+            MechCode::Error(_, _) => "/error",
+        });
+        for token in code.tokens() {
+            identity.push('/');
+            identity.push_str(&format!("{:?}:{}", token.kind, token.to_string()));
+        }
+    }
+    Some(hash_str(&identity))
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct HtmlShimExtraSlots {
     slots: BTreeMap<String, String>,
@@ -240,7 +276,9 @@ pub struct Formatter {
     footnote_map: BTreeMap<u64, usize>,
     footnotes: Vec<String>,
     interpreter_id: u64,
-    inline_eval_counters: BTreeMap<u64, u64>,
+    inline_eval_counters: BTreeMap<(u64, u64), u64>,
+    fenced_output_counters: BTreeMap<(u64, u64), u64>,
+    presentation_outputs_enabled: bool,
 }
 
 impl Formatter {
@@ -272,17 +310,15 @@ impl Formatter {
         hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
     }
 
-    fn inline_eval_id(&mut self) -> u64 {
-        let next_ix = {
-            let counter = self
-                .inline_eval_counters
-                .entry(self.interpreter_id)
-                .or_insert(0);
-            let current = *counter;
-            *counter += 1;
-            current
-        };
-        hash_str(&format!("inline-eval:{}:{}", self.interpreter_id, next_ix))
+    fn inline_eval_id(&mut self, expression: &Expression) -> u64 {
+        let base = inline_document_output_id(self.interpreter_id, expression, 0);
+        let occurrence = self
+            .inline_eval_counters
+            .entry((self.interpreter_id, base))
+            .or_insert(0);
+        let output_id = inline_document_output_id(self.interpreter_id, expression, *occurrence);
+        *occurrence = occurrence.saturating_add(1);
+        output_id
     }
 
     pub fn new() -> Formatter {
@@ -308,18 +344,15 @@ impl Formatter {
             toc: false,
             interpreter_id: 0,
             inline_eval_counters: BTreeMap::new(),
+            fenced_output_counters: BTreeMap::new(),
+            presentation_outputs_enabled: true,
         }
-    }
-
-    /// Continue the root document's inline-evaluation address sequence when
-    /// formatting a fragment that will be appended to an existing document.
-    pub fn set_root_inline_eval_offset(&mut self, offset: u64) {
-        self.inline_eval_counters.insert(0, offset);
     }
 
     pub fn format(&mut self, tree: &Program) -> String {
         self.html = false;
         self.inline_eval_counters.clear();
+        self.fenced_output_counters.clear();
         self.program(tree)
     }
 
@@ -404,6 +437,7 @@ impl Formatter {
     ) -> HtmlShimRender {
         self.html = true;
         self.inline_eval_counters.clear();
+        self.fenced_output_counters.clear();
 
         let title_slots = self.title_slots(&tree.title);
         let (
@@ -479,6 +513,40 @@ impl Formatter {
 
     fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
         match title {
+            Some(title) if !title.fields.is_empty() => {
+                let mut slots = TitleSlots::default();
+                // Format every authored occurrence so duplicate inline values
+                // advance the same identity namespace as canonical lowering.
+                // Repeated fields retain the last rendered value in their
+                // template slot, matching the legacy Title projection.
+                for field in &title.fields {
+                    match field {
+                        TitleField::Author(paragraph) => {
+                            slots.author = self.inline_para_el(paragraph, "mech-author")
+                        }
+                        TitleField::Date(paragraph) => {
+                            slots.date = self.inline_para_el(paragraph, "mech-date")
+                        }
+                        TitleField::Hero(hero) => slots.hero = self.hero_el(hero),
+                        TitleField::Kicker(paragraph) => {
+                            slots.kicker = self.inline_para_el(paragraph, "hero-kicker")
+                        }
+                        TitleField::Section(paragraph) => {
+                            slots.section = self.inline_para_el(paragraph, "mech-section")
+                        }
+                        TitleField::Summary(paragraph) => {
+                            slots.summary = self.synopsis_el(paragraph)
+                        }
+                        TitleField::Next(paragraph) => {
+                            slots.next = self.inline_para_el(paragraph, "mech-next")
+                        }
+                        TitleField::Previous(paragraph) => {
+                            slots.previous = self.inline_para_el(paragraph, "mech-previous")
+                        }
+                    }
+                }
+                slots
+            }
             Some(title) => TitleSlots {
                 author: title
                     .author
@@ -535,12 +603,8 @@ impl Formatter {
         let intro_sections = &tree.body.sections[..first_section_ix];
         let content_sections = &tree.body.sections[first_section_ix..];
 
-        let mut abstract_formatter = Formatter::new();
-        abstract_formatter.html = true;
-        let mut intro_formatter = Formatter::new();
-        intro_formatter.html = true;
-        let mut contents_formatter = Formatter::new();
-        contents_formatter.html = true;
+        let mut slot_formatter = Formatter::new();
+        slot_formatter.html = true;
 
         let mut abstract_src = String::new();
         let mut intro_src = String::new();
@@ -550,25 +614,25 @@ impl Formatter {
             for el in &section.elements {
                 match el {
                     SectionElement::Abstract(paragraphs) => {
-                        abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
+                        abstract_src.push_str(&slot_formatter.abstract_el(paragraphs));
                     }
                     _ => {
-                        intro_src.push_str(&intro_formatter.section_element(el));
+                        intro_src.push_str(&slot_formatter.section_element(el));
                     }
                 }
             }
         }
 
         for section in content_sections {
-            contents_src.push_str(&contents_formatter.section(section));
+            contents_src.push_str(&slot_formatter.section(section));
         }
 
         if !intro_src.is_empty() {
             intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
         }
 
-        let cited_src = contents_formatter.works_cited();
-        let footnotes_src = contents_formatter.footnotes();
+        let cited_src = slot_formatter.works_cited();
+        let footnotes_src = slot_formatter.footnotes();
 
         (
             abstract_src,
@@ -589,6 +653,11 @@ impl Formatter {
         let content_sections = &tree.body.sections[first_section_ix..];
         let mut section_formatter = Formatter::new();
         section_formatter.html = true;
+        for section in &tree.body.sections[..first_section_ix] {
+            for element in &section.elements {
+                let _ = section_formatter.section_element(element);
+            }
+        }
         content_sections
             .iter()
             .map(|section| section_formatter.section(section))
@@ -726,25 +795,49 @@ impl Formatter {
             format!("<h1 class=\"mech-program-title\">{}</h1>", title)
         } else {
             let mut front_matter = Vec::new();
-            for (name, value) in [
-                ("author", &node.author),
-                ("date", &node.date),
-                ("kicker", &node.kicker),
-                ("section", &node.section),
-                ("summary", &node.summary),
-                ("next", &node.next),
-                ("previous", &node.previous),
-            ] {
-                if let Some(value) = value {
-                    front_matter.push(format!("{name}: {}", value.to_string()));
+            if node.fields.is_empty() {
+                for (name, value) in [
+                    ("author", &node.author),
+                    ("date", &node.date),
+                    ("kicker", &node.kicker),
+                    ("section", &node.section),
+                    ("summary", &node.summary),
+                    ("next", &node.next),
+                    ("previous", &node.previous),
+                ] {
+                    if let Some(value) = value {
+                        front_matter.push(format!("{name}: {}", value.to_string()));
+                    }
                 }
-            }
-            if let Some(hero) = &node.hero {
-                let hero = match hero {
-                    SectionElement::FigureTable(table) => self.figure_table_source(table),
-                    _ => self.section_element(hero).trim().to_string(),
-                };
-                front_matter.push(format!("hero: {hero}"));
+                if let Some(hero) = &node.hero {
+                    let hero = match hero {
+                        SectionElement::FigureTable(table) => self.figure_table_source(table),
+                        _ => self.section_element(hero).trim().to_string(),
+                    };
+                    front_matter.push(format!("hero: {hero}"));
+                }
+            } else {
+                for field in &node.fields {
+                    let (name, value) = match field {
+                        TitleField::Author(value) => ("author", value.to_string()),
+                        TitleField::Date(value) => ("date", value.to_string()),
+                        TitleField::Kicker(value) => ("kicker", value.to_string()),
+                        TitleField::Section(value) => ("section", value.to_string()),
+                        TitleField::Summary(value) => ("summary", value.to_string()),
+                        TitleField::Next(value) => ("next", value.to_string()),
+                        TitleField::Previous(value) => ("previous", value.to_string()),
+                        TitleField::Hero(hero) => {
+                            let value = match hero {
+                                SectionElement::FigureTable(table) => {
+                                    self.figure_table_source(table)
+                                }
+                                _ => self.section_element(hero).trim().to_string(),
+                            };
+                            ("hero", value)
+                        }
+                    };
+                    front_matter.push(format!("{name}: {value}"));
+                }
             }
             if !node.imports.is_empty() {
                 let imports = node
@@ -1122,14 +1215,21 @@ impl Formatter {
                 }
             }
             ParagraphElement::EvalInlineMechCode(expr) => {
-                let code_id = self.inline_eval_id();
                 let result = self.expression(expr);
                 if self.html {
-                    let element_id = format!("{}:{}", code_id, self.interpreter_id);
-                    format!(
-                        "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
-                        element_id, result
-                    )
+                    if self.presentation_outputs_enabled {
+                        let code_id = self.inline_eval_id(expr);
+                        let element_id = format!("{}:{}", code_id, self.interpreter_id);
+                        format!(
+                            "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
+                            element_id, result
+                        )
+                    } else {
+                        format!(
+                            "<code class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
+                            result
+                        )
+                    }
                 } else {
                     format!("{{{}}}", result)
                 }
@@ -1141,6 +1241,10 @@ impl Formatter {
         let parent_interpreter_id = self.interpreter_id;
         if block.config.namespace != 0 {
             self.interpreter_id = block.config.namespace;
+        }
+        let parent_presentation_outputs_enabled = self.presentation_outputs_enabled;
+        if block.config.disabled || block.config.hidden {
+            self.presentation_outputs_enabled = false;
         }
         let block_id = hash_str(&format!("{:?}", block));
         let namespace_str = &block.config.namespace_str;
@@ -1172,13 +1276,13 @@ impl Formatter {
         }
         let intrp_id = self.interpreter_id;
         self.interpreter_id = parent_interpreter_id;
+        self.presentation_outputs_enabled = parent_presentation_outputs_enabled;
         let disabled_tag = match block.config.disabled {
             true => "disabled".to_string(),
             false => "".to_string(),
         };
         if self.html {
-            let (out_node, _) = block.code.last().unwrap();
-            let output_id = hash_str(&format!("{:?}", out_node));
+            let base_output_id = fenced_document_output_id(block);
             let style_attr = match &block.options {
                 Some(option_map) if !option_map.elements.is_empty() => {
                     let style_str = option_map
@@ -1219,7 +1323,21 @@ impl Formatter {
                         block_id, namespace_str
                     )
                 };
-                let output_node = if block.config.output {
+                let output_node = if block.config.output && base_output_id.is_some() {
+                    let base_output_id = base_output_id.expect("checked fenced output identity");
+                    let occurrence = self
+                        .fenced_output_counters
+                        .entry((intrp_id, base_output_id))
+                        .or_insert(0);
+                    let output_id = if *occurrence == 0 {
+                        base_output_id
+                    } else {
+                        hash_str(&format!(
+                            "mech/fenced-document-output/{base_output_id}/{}",
+                            *occurrence
+                        ))
+                    };
+                    *occurrence = occurrence.saturating_add(1);
                     format!(
                         "<div class=\"mech-block-output\" id=\"{}:{}\"></div>",
                         output_id, intrp_id

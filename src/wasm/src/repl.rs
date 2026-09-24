@@ -140,16 +140,15 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
         }
     }
 
-    fn activate_tree(
+    fn activate_document(
         &self,
         events: MechEventBuffer,
-        source: &str,
-        tree: mech_core::nodes::Program,
+        document: &mech_runtime::SourceDocument,
     ) -> MResult<(MechRuntime, mech_runtime::RuntimeProgramLoadOutcome)> {
         match self {
-            Self::Standalone => self.activate(events, source),
+            Self::Standalone => self.activate(events, &document.source().to_contiguous_string()),
             Self::Document(bootstrap) => {
-                crate::project::activate_document_repl_runtime_tree(bootstrap, events, source, tree)
+                crate::project::activate_document_repl_runtime_document(bootstrap, events, document)
             }
         }
     }
@@ -830,13 +829,11 @@ impl WasmRepl {
 
     pub(crate) fn from_document(bootstrap: crate::project::WasmDocumentBootstrap) -> MResult<Self> {
         let console_output_context = bootstrap.console_output_context();
-        let initial_source = bootstrap.initial_repl_source();
-        let initial_tree = bootstrap.initial_repl_tree();
+        let initial_document = bootstrap.initial_document();
         Ok(Self {
-            session: ResidentReplSession::from_tree(
+            session: ResidentReplSession::from_document(
                 WasmReplRuntimeFactory::Document(bootstrap),
-                initial_source,
-                initial_tree,
+                initial_document,
             )?,
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,

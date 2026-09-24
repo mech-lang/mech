@@ -1,7 +1,18 @@
 use mech_core::{
-    BlockConfig, Comment, FencedMechCode, MechCode, Paragraph, ParagraphElement, Program,
-    SectionAnnotation, SectionElement, Statement, hash_str,
+    BlockConfig, Comment, FencedMechCode, MDList, MechCode, Paragraph, ParagraphElement, Program,
+    SectionAnnotation, SectionElement, Statement, Title, TitleField, hash_str,
+    inline_document_output_id,
 };
+
+/// One stable browser presentation address and its content-derived identity.
+/// The semantic identity intentionally omits positional occurrence so a
+/// retained browser document can match unchanged duplicate outputs across an
+/// accepted source edit.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RootDocumentOutputIdentity {
+    pub output_id: u64,
+    pub semantic_id: u64,
+}
 
 /// Runtime-only namespace used by the browser document adapter to capture the
 /// last ordinary source result before interactive console overlays begin.
@@ -81,18 +92,45 @@ pub fn insert_root_document_program_output_capture(
 /// compact artifact-output ordinal. Keep this traversal aligned with
 /// `mechdown::section_element` and the formatter's root presentation namespace.
 pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
+    root_document_output_identities(program)
+        .into_iter()
+        .map(|identity| identity.output_id)
+        .collect()
+}
+
+/// Returns root-document presentation identities in canonical publication
+/// order, retaining both the public occurrence address and its semantic base.
+pub fn root_document_output_identities(program: &Program) -> Vec<RootDocumentOutputIdentity> {
     let mut output_ids = Vec::new();
-    let mut inline_index = 0_u64;
+    let mut inline_count = 0_u64;
+    let mut inline_occurrences = Vec::new();
+    let mut fence_occurrences = Vec::new();
+    if let Some(title) = &program.title {
+        collect_title_output_ids(
+            title,
+            &mut inline_count,
+            &mut inline_occurrences,
+            &mut fence_occurrences,
+            &mut output_ids,
+        );
+    }
     for section in &program.body.sections {
         for element in &section.elements {
-            collect_section_output_ids(element, &mut inline_index, &mut output_ids);
+            collect_section_output_ids(
+                element,
+                &mut inline_count,
+                &mut inline_occurrences,
+                &mut fence_occurrences,
+                &mut output_ids,
+            );
         }
         if section
             .annotations
             .iter()
             .any(|annotation| annotation.name.as_ref() == PROGRAM_OUTPUT_PUBLICATION_ANNOTATION)
         {
-            push_unique(&mut output_ids, root_document_program_output_id());
+            let output_id = root_document_program_output_id();
+            push_unique(&mut output_ids, output_id, output_id);
         }
     }
     output_ids
@@ -103,47 +141,192 @@ pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
 /// formatted document fragments without restarting their address namespace.
 pub fn root_document_inline_eval_count(program: &Program) -> u64 {
     let mut output_ids = Vec::new();
-    let mut inline_index = 0_u64;
+    let mut inline_count = 0_u64;
+    let mut inline_occurrences = Vec::new();
+    let mut fence_occurrences = Vec::new();
+    if let Some(title) = &program.title {
+        collect_title_output_ids(
+            title,
+            &mut inline_count,
+            &mut inline_occurrences,
+            &mut fence_occurrences,
+            &mut output_ids,
+        );
+    }
     for section in &program.body.sections {
         for element in &section.elements {
-            collect_section_output_ids(element, &mut inline_index, &mut output_ids);
+            collect_section_output_ids(
+                element,
+                &mut inline_count,
+                &mut inline_occurrences,
+                &mut fence_occurrences,
+                &mut output_ids,
+            );
         }
     }
-    inline_index
+    inline_count
+}
+
+fn collect_title_output_ids(
+    title: &Title,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    fence_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
+) {
+    if !title.fields.is_empty() {
+        for field in &title.fields {
+            match field {
+                TitleField::Hero(hero) => collect_section_output_ids(
+                    hero,
+                    inline_count,
+                    inline_occurrences,
+                    fence_occurrences,
+                    output_ids,
+                ),
+                TitleField::Author(paragraph)
+                | TitleField::Date(paragraph)
+                | TitleField::Kicker(paragraph)
+                | TitleField::Section(paragraph)
+                | TitleField::Summary(paragraph)
+                | TitleField::Next(paragraph)
+                | TitleField::Previous(paragraph) => collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                ),
+            }
+        }
+        return;
+    }
+    for paragraph in [&title.author, &title.date].into_iter().flatten() {
+        collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
+    }
+    if let Some(hero) = &title.hero {
+        collect_section_output_ids(
+            hero,
+            inline_count,
+            inline_occurrences,
+            fence_occurrences,
+            output_ids,
+        );
+    }
+    for paragraph in [
+        &title.kicker,
+        &title.section,
+        &title.summary,
+        &title.next,
+        &title.previous,
+    ]
+    .into_iter()
+    .flatten()
+    {
+        collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
+    }
 }
 
 fn collect_section_output_ids(
     element: &SectionElement,
-    inline_index: &mut u64,
-    output_ids: &mut Vec<u64>,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    fence_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     match element {
-        SectionElement::Float((element, _)) => {
-            collect_section_output_ids(element, inline_index, output_ids);
+        SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
+            collect_section_output_ids(
+                element,
+                inline_count,
+                inline_occurrences,
+                fence_occurrences,
+                output_ids,
+            );
         }
         SectionElement::MechCode(code) => {
-            collect_code_comments(code, inline_index, output_ids);
+            collect_code_comments(code, inline_count, inline_occurrences, output_ids);
         }
         SectionElement::FencedMechCode(block) => {
-            collect_fenced_output_ids(block, inline_index, output_ids);
+            collect_fenced_output_ids(
+                block,
+                inline_count,
+                inline_occurrences,
+                fence_occurrences,
+                output_ids,
+            );
         }
         SectionElement::Comment(comment) => {
-            collect_comment_output_ids(comment, inline_index, output_ids);
+            collect_comment_output_ids(comment, inline_count, inline_occurrences, output_ids);
+        }
+        SectionElement::Abstract(paragraphs)
+        | SectionElement::QuoteBlock(paragraphs)
+        | SectionElement::InfoBlock(paragraphs)
+        | SectionElement::SuccessBlock(paragraphs)
+        | SectionElement::IdeaBlock(paragraphs)
+        | SectionElement::WarningBlock(paragraphs)
+        | SectionElement::ErrorBlock(paragraphs)
+        | SectionElement::QuestionBlock(paragraphs)
+        | SectionElement::Footnote((_, paragraphs)) => {
+            for paragraph in paragraphs {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+            }
+        }
+        SectionElement::Citation(citation) => {
+            collect_paragraph_output_ids(
+                &citation.text,
+                inline_count,
+                inline_occurrences,
+                output_ids,
+            );
         }
         SectionElement::Paragraph(paragraph) => {
-            collect_paragraph_output_ids(paragraph, inline_index, output_ids);
+            collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
+        }
+        SectionElement::Subtitle(subtitle) => {
+            collect_paragraph_output_ids(
+                &subtitle.text,
+                inline_count,
+                inline_occurrences,
+                output_ids,
+            );
+        }
+        SectionElement::Image(image) => {
+            if let Some(caption) = &image.caption {
+                collect_paragraph_output_ids(caption, inline_count, inline_occurrences, output_ids);
+            }
+        }
+        SectionElement::List(list) => {
+            collect_list_output_ids(list, inline_count, inline_occurrences, output_ids);
         }
         SectionElement::Table(table) => {
+            for cell in &table.header {
+                collect_paragraph_output_ids(cell, inline_count, inline_occurrences, output_ids);
+            }
             for row in &table.rows {
                 for cell in row {
-                    collect_paragraph_output_ids(cell, inline_index, output_ids);
+                    collect_paragraph_output_ids(
+                        cell,
+                        inline_count,
+                        inline_occurrences,
+                        output_ids,
+                    );
                 }
             }
         }
         SectionElement::FigureTable(table) => {
             for row in &table.rows {
                 for figure in row {
-                    collect_paragraph_output_ids(&figure.caption, inline_index, output_ids);
+                    collect_paragraph_output_ids(
+                        &figure.caption,
+                        inline_count,
+                        inline_occurrences,
+                        output_ids,
+                    );
                 }
             }
         }
@@ -153,13 +336,15 @@ fn collect_section_output_ids(
 
 fn collect_fenced_output_ids(
     block: &FencedMechCode,
-    inline_index: &mut u64,
-    output_ids: &mut Vec<u64>,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    fence_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
-    if block.config.disabled || block.config.namespace != 0 {
+    if block.config.disabled || block.config.hidden || block.config.namespace != 0 {
         return;
     }
-    collect_code_comments(&block.code, inline_index, output_ids);
+    collect_code_comments(&block.code, inline_count, inline_occurrences, output_ids);
     // The capture executes beside the source value so it snapshots the right
     // `ans`, but its public ordinal belongs to the original document boundary.
     // The boundary annotation below publishes it after all source-visible
@@ -170,8 +355,25 @@ fn collect_fenced_output_ids(
     if !block.config.output {
         return;
     }
-    if let Some(output_id) = fenced_document_output_id(block) {
-        push_unique(output_ids, output_id);
+    if let Some(base_id) = fenced_document_output_id(block) {
+        let occurrence = match fence_occurrences
+            .iter_mut()
+            .find(|(candidate, _)| *candidate == base_id)
+        {
+            Some((_, count)) => {
+                let occurrence = *count;
+                *count = count.saturating_add(1);
+                occurrence
+            }
+            None => {
+                fence_occurrences.push((base_id, 1));
+                0
+            }
+        };
+        output_ids.push(RootDocumentOutputIdentity {
+            output_id: fenced_document_output_occurrence_id(block, occurrence).unwrap(),
+            semantic_id: base_id,
+        });
     }
 }
 
@@ -179,14 +381,75 @@ pub(crate) fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
     if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
         return Some(root_document_program_output_id());
     }
-    block
+    if !block
         .code
-        .last()
-        .map(|(last_code, _)| hash_str(&format!("{last_code:?}")))
+        .iter()
+        .any(|(code, _)| code_produces_fence_result(code))
+    {
+        return None;
+    }
+    let mut identity = String::from("mech/fenced-document-output/v2");
+    for (code, _) in &block.code {
+        identity.push_str(match code {
+            MechCode::Comment(_) => "/comment",
+            MechCode::ActivationScope(_) => "/activation",
+            MechCode::Expression(_) => "/expression",
+            MechCode::FsmImplementation(_) => "/fsm-implementation",
+            MechCode::FsmSpecification(_) => "/fsm-specification",
+            MechCode::FunctionDefine(_) => "/function",
+            MechCode::Import(_) => "/import",
+            MechCode::Statement(_) => "/statement",
+            MechCode::Error(_, _) => "/error",
+        });
+        for token in code.tokens() {
+            identity.push('/');
+            identity.push_str(&format!("{:?}:{}", token.kind, token.to_string()));
+        }
+    }
+    Some(hash_str(&identity))
+}
+
+fn code_produces_fence_result(code: &MechCode) -> bool {
+    match code {
+        MechCode::ActivationScope(_) | MechCode::Expression(_) => true,
+        MechCode::Statement(statement) => matches!(
+            statement,
+            Statement::OpAssign(_)
+                | Statement::VariableAssign(_)
+                | Statement::VariableDefine(_)
+                | Statement::ContextSend(_)
+                | Statement::TupleDestructure(_)
+        ),
+        _ => false,
+    }
+}
+
+pub(crate) fn fenced_document_output_occurrence_id(
+    block: &FencedMechCode,
+    occurrence: u64,
+) -> Option<u64> {
+    let base = fenced_document_output_id(block)?;
+    if occurrence == 0 || block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
+        Some(base)
+    } else {
+        Some(hash_str(&format!(
+            "mech/fenced-document-output/{base}/{occurrence}"
+        )))
+    }
 }
 
 fn section_contains_program_value(elements: &[SectionElement]) -> bool {
     elements.iter().any(element_contains_program_value)
+}
+
+/// Whether a root document contains an ordinary value eligible for the
+/// implicit program-result presentation.
+pub fn root_document_has_program_value(program: &Program) -> bool {
+    program
+        .body
+        .sections
+        .iter()
+        .any(|section| section_contains_program_value(&section.elements))
 }
 
 fn element_contains_program_value(element: &SectionElement) -> bool {
@@ -199,7 +462,9 @@ fn element_contains_program_value(element: &SectionElement) -> bool {
                     .iter()
                     .any(|(code, _)| code_is_program_value(code))
         }
-        SectionElement::Float((element, _)) => element_contains_program_value(element),
+        SectionElement::Float((element, _)) | SectionElement::Prompt(element) => {
+            element_contains_program_value(element)
+        }
         _ => false,
     }
 }
@@ -269,44 +534,150 @@ fn split_element_at_last_program_value(
 
 fn collect_code_comments(
     code: &[(MechCode, Option<Comment>)],
-    inline_index: &mut u64,
-    output_ids: &mut Vec<u64>,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     for (code, trailing_comment) in code {
         if let MechCode::Comment(comment) = code {
-            collect_comment_output_ids(comment, inline_index, output_ids);
+            collect_comment_output_ids(comment, inline_count, inline_occurrences, output_ids);
         }
         if let Some(comment) = trailing_comment {
-            collect_comment_output_ids(comment, inline_index, output_ids);
+            collect_comment_output_ids(comment, inline_count, inline_occurrences, output_ids);
         }
     }
 }
 
 fn collect_comment_output_ids(
     comment: &Comment,
-    inline_index: &mut u64,
-    output_ids: &mut Vec<u64>,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
-    collect_paragraph_output_ids(&comment.paragraph, inline_index, output_ids);
+    collect_paragraph_output_ids(
+        &comment.paragraph,
+        inline_count,
+        inline_occurrences,
+        output_ids,
+    );
 }
 
 fn collect_paragraph_output_ids(
     paragraph: &Paragraph,
-    inline_index: &mut u64,
-    output_ids: &mut Vec<u64>,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     for element in &paragraph.elements {
-        if matches!(element, ParagraphElement::EvalInlineMechCode(_)) {
-            let output_id = hash_str(&format!("inline-eval:0:{inline_index}"));
-            *inline_index += 1;
-            push_unique(output_ids, output_id);
+        collect_paragraph_element_output_ids(element, inline_count, inline_occurrences, output_ids);
+    }
+}
+
+fn collect_paragraph_element_output_ids(
+    element: &ParagraphElement,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
+) {
+    match element {
+        ParagraphElement::EvalInlineMechCode(expression) => {
+            let base = inline_document_output_id(0, expression, 0);
+            let occurrence = match inline_occurrences
+                .iter_mut()
+                .find(|(candidate, _)| *candidate == base)
+            {
+                Some((_, count)) => {
+                    let occurrence = *count;
+                    *count = count.saturating_add(1);
+                    occurrence
+                }
+                None => {
+                    inline_occurrences.push((base, 1));
+                    0
+                }
+            };
+            *inline_count = inline_count.saturating_add(1);
+            push_unique(
+                output_ids,
+                inline_document_output_id(0, expression, occurrence),
+                base,
+            );
+        }
+        ParagraphElement::Emphasis(element)
+        | ParagraphElement::Highlight(element)
+        | ParagraphElement::Strikethrough(element)
+        | ParagraphElement::Strong(element)
+        | ParagraphElement::Underline(element) => collect_paragraph_element_output_ids(
+            element,
+            inline_count,
+            inline_occurrences,
+            output_ids,
+        ),
+        ParagraphElement::Hyperlink((paragraph, _)) => {
+            collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids)
+        }
+        _ => {}
+    }
+}
+
+fn collect_list_output_ids(
+    list: &MDList,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
+) {
+    match list {
+        MDList::Unordered(items) => {
+            for ((_, paragraph), nested) in items {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_count, inline_occurrences, output_ids);
+                }
+            }
+        }
+        MDList::Ordered(list) => {
+            for ((_, paragraph), nested) in &list.items {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_count, inline_occurrences, output_ids);
+                }
+            }
+        }
+        MDList::Check(items) => {
+            for ((_, paragraph), nested) in items {
+                collect_paragraph_output_ids(
+                    paragraph,
+                    inline_count,
+                    inline_occurrences,
+                    output_ids,
+                );
+                if let Some(nested) = nested {
+                    collect_list_output_ids(nested, inline_count, inline_occurrences, output_ids);
+                }
+            }
         }
     }
 }
 
-fn push_unique(output_ids: &mut Vec<u64>, output_id: u64) {
-    if !output_ids.contains(&output_id) {
-        output_ids.push(output_id);
+fn push_unique(output_ids: &mut Vec<RootDocumentOutputIdentity>, output_id: u64, semantic_id: u64) {
+    if !output_ids
+        .iter()
+        .any(|identity| identity.output_id == output_id)
+    {
+        output_ids.push(RootDocumentOutputIdentity {
+            output_id,
+            semantic_id,
+        });
     }
 }
 
@@ -333,5 +704,78 @@ mod tests {
             MechCode::Statement(Statement::ContextSend(_))
         ));
         assert!(!code_is_program_value(code));
+    }
+
+    #[test]
+    fn hidden_fences_have_no_presentation_addresses() {
+        let tree = mech_syntax::parse("```mech:hidden\n42 -- Result {1 + 1}\n```\n").unwrap();
+        assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn repeated_fences_receive_distinct_presentation_addresses() {
+        let tree = mech_syntax::parse("```mech\n42\n```\n\n```mech\n42\n```\n").unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        assert_eq!(output_ids.len(), 2);
+        assert_ne!(output_ids[0], output_ids[1]);
+    }
+
+    #[test]
+    fn title_front_matter_uses_the_root_inline_identity_namespace() {
+        let tree = mech_syntax::parse(
+            "Document\n========\nauthor: Ada {40 + 2}\nhero: ![Result {41 + 1}](hero.svg)\n========\n",
+        )
+        .unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        assert_eq!(output_ids.len(), 2);
+        assert_eq!(root_document_inline_eval_count(&tree), 2);
+    }
+
+    #[test]
+    fn title_front_matter_preserves_authored_output_order_and_duplicates() {
+        let tree = mech_syntax::parse(
+            "Document\n========\ndate: {40 + 2}\nauthor: {41 + 1}\nauthor: {42 + 0}\n========\n",
+        )
+        .unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        let expected = [
+            "Document\n========\ndate: {40 + 2}\n========\n",
+            "Document\n========\nauthor: {41 + 1}\n========\n",
+            "Document\n========\nauthor: {42 + 0}\n========\n",
+        ]
+        .map(|source| {
+            let field = mech_syntax::parse(source).unwrap();
+            root_document_output_ids(&field)[0]
+        });
+
+        assert_eq!(output_ids, expected);
+        assert_eq!(root_document_inline_eval_count(&tree), 3);
+    }
+
+    #[test]
+    fn prompt_wrapped_fences_remain_program_values() {
+        let tree = mech_syntax::parse(">: ```mech\n42\n```\n").unwrap();
+        assert!(root_document_has_program_value(&tree));
+    }
+
+    #[test]
+    fn declaration_only_fences_have_no_presentation_address() {
+        let tree = mech_syntax::parse("```mech\n#Identity(x) => x\n```\n").unwrap();
+        assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn fences_with_the_same_final_expression_keep_semantic_identities() {
+        let original =
+            mech_syntax::parse("```mech\nx := 1\nx\n```\n\n```mech\nx := 2\nx\n```\n").unwrap();
+        let inserted = mech_syntax::parse(
+            "```mech\nx := 0\nx\n```\n\n```mech\nx := 1\nx\n```\n\n```mech\nx := 2\nx\n```\n",
+        )
+        .unwrap();
+        let original_ids = root_document_output_ids(&original);
+        let inserted_ids = root_document_output_ids(&inserted);
+        assert_eq!(original_ids.len(), 2);
+        assert_eq!(inserted_ids.len(), 3);
+        assert!(original_ids.iter().all(|id| inserted_ids.contains(id)));
     }
 }
