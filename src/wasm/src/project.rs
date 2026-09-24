@@ -815,17 +815,78 @@ fn compile_browser_interactive_document(
             resolved_source_modules.insert(module);
         }
     }
-    CanonicalSourceFrontend
-        .compile_interactive_document_with_planning_contract(
-            &document.document(),
-            mech_stdlib::source_catalog(),
-            BTreeMap::new(),
-            BTreeMap::new(),
-            &BTreeSet::new(),
-            &BTreeSet::new(),
-            &resolved_source_modules,
-        )
-        .map_err(|error| document_runtime_error(error.to_string()))
+    document_planning_compiler(bootstrap, document)?
+        .plan_interactive_document(document, &resolved_source_modules)
+}
+
+fn document_planning_compiler(
+    bootstrap: &WasmDocumentBootstrap,
+    document: &SourceDocument,
+) -> MResult<mech_runtime::ProgramCompiler> {
+    let source = bootstrap.source();
+    #[cfg(feature = "browser_host_scene")]
+    let planning_scenes = BrowserSceneRegistry::new();
+    let mut builder = runtime_builder_with_factories(
+        None,
+        #[cfg(feature = "browser_host_scene")]
+        planning_scenes,
+    )
+    .map_err(js_value_to_mech_error)?;
+    let resolver = document_source_resolver(document, source)?;
+
+    #[cfg(feature = "served_project_authority")]
+    match bootstrap.served.as_ref() {
+        None => {
+            builder = builder
+                .config(mech_runtime::RuntimeConfig::new("wasm-document-planning"))
+                .source_resolver(resolver);
+        }
+        Some(served) => {
+            let config = parse_config_document(
+                "mech.mcfg",
+                &served.config_source,
+                ConfigProfileOptions::default(),
+            )?;
+            builder = builder
+                .config(served.authority.into_runtime_config()?)
+                .source_resolver(resolver);
+            for required in config
+                .hosts
+                .iter()
+                .filter(|host| host.provider != "compute")
+            {
+                if let Some(host) =
+                    served.authority.hosts.iter().find(|host| {
+                        host.name == required.name && host.provider == required.provider
+                    })
+                {
+                    builder = builder.host_instance(host.clone());
+                }
+            }
+            for grant in required_issued_grants(&config, &served.authority) {
+                builder = builder.run_resource_grant(grant);
+            }
+        }
+    }
+    #[cfg(not(feature = "served_project_authority"))]
+    {
+        builder = builder
+            .config(mech_runtime::RuntimeConfig::new("wasm-document-planning"))
+            .source_resolver(resolver);
+    }
+
+    builder
+        .host_instance(HostInstanceConfig {
+            name: source.console_instance.clone(),
+            provider: "console".to_string(),
+            settings: ConfigValue::Map(Default::default()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: format!("{}/output", source.console_instance),
+            operations: vec!["write".to_string()],
+            paths: vec!["line".to_string()],
+        })
+        .build_compiler()
 }
 
 fn build_document_repl_runtime_for_document(
@@ -2190,6 +2251,9 @@ mod document {
                     "invalid documentation source: {error}"
                 )))
             })?;
+            mech_runtime::CanonicalDocumentRenderer
+                .format_html_body(&document.document().document())
+                .map_err(|error| js_error(error.to_string()))?;
             let accepted_before = self.repl.session.source().len();
             let accepted = match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
