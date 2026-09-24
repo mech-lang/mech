@@ -1236,6 +1236,9 @@ impl ReactiveInstance {
     fn publish_continuation_candidates(&mut self) {
         for index in 0..self.plan.steps.len() {
             let node = ActivatedNodeIndex(index as u32);
+            if bit_is_set(&self.workspace.continuation_publications, index) {
+                set_bit(&mut self.published_continuations, index);
+            }
             if bit_is_set(&self.workspace.completed_continuations, index) {
                 self.continuations[index] = None;
                 self.ready_continuations.retain(|ready| *ready != node);
@@ -1436,6 +1439,7 @@ impl ReactiveInstance {
             Some(ActivatedTurnStep::Match(control))
                 if control.continuation
                     && !bit_is_set(&self.workspace.continuation_publications, index)
+                    && !bit_is_set(&self.published_continuations, index)
                     && (self.workspace.continuation_candidates[index].is_some()
                         || (self.continuations[index].is_some()
                             && !bit_is_set(&self.workspace.completed_continuations, index)))
@@ -1911,23 +1915,24 @@ impl ReactiveInstance {
                 error,
             };
             let mut capture_meter = budget::ResidentBudgetMeter::default();
-            let capture_bytes = core::iter::once(suspension.argument)
+            let (capture_bytes, capture_nodes) = core::iter::once(suspension.argument)
                 .chain(
                     capture_sources
                         .iter()
                         .copied()
                         .filter(|source| !matches!(source, ResidentReadLocation::Input(_))),
                 )
-                .try_fold(0_u64, |total, source| {
+                .try_fold((0_u64, 0_u64), |(bytes, nodes), source| {
                     let value = self.read_location(source, working_epoch)?;
-                    total.checked_add(
-                        resident_frame_value_footprint(
-                            value,
-                            &self.plan.schemas,
-                            &mut capture_meter,
-                        )?
-                        .0,
-                    )
+                    let footprint = resident_frame_value_footprint(
+                        value,
+                        &self.plan.schemas,
+                        &mut capture_meter,
+                    )?;
+                    Some((
+                        bytes.checked_add(footprint.0)?,
+                        nodes.checked_add(footprint.1)?,
+                    ))
                 })
                 .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
             let capture_work = capture_meter
@@ -1942,6 +1947,7 @@ impl ReactiveInstance {
                         compute_work: capture_work,
                         temporary_bytes: capture_bytes,
                         cloned_bytes: capture_bytes,
+                        retained_nodes: capture_nodes,
                         ..budget::KernelCostEstimate::default()
                     },
                 )

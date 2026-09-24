@@ -312,7 +312,7 @@ pub(super) fn validate_comprehension(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
-    validate_comprehension_inner(draft, node, declaration, inputs, output, &mut 0)
+    validate_comprehension_inner(draft, node, declaration, inputs, output, &mut 0, false)
 }
 
 pub(super) fn validate_comprehension_inner(
@@ -322,6 +322,7 @@ pub(super) fn validate_comprehension_inner(
     inputs: &[SchemaId],
     output: SchemaId,
     next_block: &mut u32,
+    enclosing_guard: bool,
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -477,6 +478,8 @@ pub(super) fn validate_comprehension_inner(
                             operation.schema,
                             next_block,
                             &[],
+                            true,
+                            enclosing_guard,
                         )?;
                     }
                     super::ControlOperationBody::Comprehension(nested) => {
@@ -487,6 +490,7 @@ pub(super) fn validate_comprehension_inner(
                             &operation_inputs,
                             operation.schema,
                             next_block,
+                            enclosing_guard,
                         )?;
                     }
                     super::ControlOperationBody::Recur(_)

@@ -570,7 +570,17 @@ pub(super) fn validate_match(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
-    validate_match_inner(draft, node, declaration, inputs, output, &mut 0, &[])
+    validate_match_inner(
+        draft,
+        node,
+        declaration,
+        inputs,
+        output,
+        &mut 0,
+        &[],
+        false,
+        false,
+    )
 }
 
 pub(super) fn validate_match_inner(
@@ -581,6 +591,8 @@ pub(super) fn validate_match_inner(
     output: SchemaId,
     next_block: &mut u32,
     enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
+    inside_comprehension: bool,
+    enclosing_guard: bool,
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -688,6 +700,7 @@ pub(super) fn validate_match_inner(
             .map(|block| (block, true))
             .chain(core::iter::once((&arm.body, false)))
         {
+            let guarded = enclosing_guard || is_guard;
             if block.id.0 != *next_block {
                 return Err(invalid("noncanonical block identity"));
             }
@@ -780,6 +793,8 @@ pub(super) fn validate_match_inner(
                             operation.schema,
                             next_block,
                             &match_schemas,
+                            inside_comprehension,
+                            guarded,
                         )?,
                         ControlOperationBody::Comprehension(nested) => {
                             super::comprehension::validate_comprehension_inner(
@@ -789,6 +804,7 @@ pub(super) fn validate_match_inner(
                                 &inputs,
                                 operation.schema,
                                 next_block,
+                                guarded,
                             )?
                         }
                         ControlOperationBody::Recur(ancestor) => {
@@ -819,7 +835,8 @@ pub(super) fn validate_match_inner(
                                     "suspended control must preserve the enclosing input and output schemas",
                                 ));
                             }
-                            if is_guard
+                            if guarded
+                                || inside_comprehension
                                 || index + 1 != block.operations.len()
                                 || block.yield_value
                                     != (ControlValue::Local {
@@ -836,6 +853,11 @@ pub(super) fn validate_match_inner(
                             if inputs.as_slice() != [output] || operation.schema != output {
                                 return Err(invalid(
                                     "FSM publication must preserve the enclosing output schema",
+                                ));
+                            }
+                            if guarded || inside_comprehension {
+                                return Err(invalid(
+                                    "FSM publication cannot execute inside a match guard or comprehension",
                                 ));
                             }
                         }
@@ -1178,8 +1200,8 @@ impl<C> MatchDeclaration<C> {
                 .any(|operation| match &operation.body {
                     ControlOperationBody::Suspend => true,
                     ControlOperationBody::Match(nested) => nested.contains_suspend(),
-                    ControlOperationBody::Comprehension(_)
-                    | ControlOperationBody::Operation { .. }
+                    ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                    ControlOperationBody::Operation { .. }
                     | ControlOperationBody::Recur(_)
                     | ControlOperationBody::Publish => false,
                 })
@@ -1276,6 +1298,23 @@ impl<C> MatchDeclaration<C> {
 }
 
 impl<C> super::ComprehensionDeclaration<C> {
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) fn contains_suspend(&self) -> bool {
+        self.steps.iter().any(|step| {
+            let super::ComprehensionStep::Operation(operation) = step else {
+                return false;
+            };
+            match &operation.body {
+                ControlOperationBody::Suspend => true,
+                ControlOperationBody::Match(nested) => nested.contains_suspend(),
+                ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                ControlOperationBody::Operation { .. }
+                | ControlOperationBody::Recur(_)
+                | ControlOperationBody::Publish => false,
+            }
+        })
+    }
+
     pub(super) fn validate_depth(
         &self,
         node: mech_core::NodeId,
