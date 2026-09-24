@@ -27,7 +27,7 @@ use crate::{
 use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramCompilationProduct};
 
 use super::diagnostics::activation_failure_for_artifact;
-use super::value::initial_value;
+use super::value::{initial_prepared_value, initial_value};
 use super::{
     ActiveProgramExecution, ResidentExternalExecution, ResidentPureExecution,
     ResidentRouteFailureClass, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
@@ -518,6 +518,8 @@ impl MechRuntime {
         };
 
         let initial_output = initial_output_index(&artifact, initial_value_projection);
+        let mut prepared_initial = None;
+        let mut needs_post_drain_snapshot = false;
         let active = if external {
             let authority = authority.expect("external authority was built");
             let mut coordinator = ResidentExternalCoordinator::new_live(
@@ -534,11 +536,17 @@ impl MechRuntime {
                 let max_turn_duration_ms = self.config.limits.max_turn_duration_ms;
                 let turn_started = Instant::now();
                 let admission = coordinator.admit_turn()?;
-                let outcome = coordinator.execute_admitted_turn(admission, |_| {
+                let outcome = coordinator.execute_admitted_turn(admission, |prepared| {
                     super::super::limits::enforce_turn_duration_limit(
                         max_turn_duration_ms,
                         turn_started,
-                    )
+                    )?;
+                    if prepared.will_have_ready_continuation() {
+                        needs_post_drain_snapshot = true;
+                    } else {
+                        prepared_initial = Some(initial_prepared_value(prepared, initial_output)?);
+                    }
+                    Ok(())
                 })?;
                 if let Some(error) = super::resident_host_turn_error(&outcome) {
                     return Err(route_failure(
@@ -572,6 +580,11 @@ impl MechRuntime {
                 prepared.abort();
                 return Err(error);
             }
+            if prepared.will_have_ready_continuation() {
+                needs_post_drain_snapshot = true;
+            } else {
+                prepared_initial = Some(initial_prepared_value(&prepared, initial_output)?);
+            }
             prepared.publish().map_err(|error| {
                 route_failure(
                     ResidentRouteFailureClass::ActivationFailure,
@@ -590,14 +603,17 @@ impl MechRuntime {
             }
             return Err(error);
         }
-        let initial_snapshot = match &self.active_program {
-            ActiveProgramExecution::ResidentPure(execution) => {
-                initial_value(&execution.instance, initial_output)
-            }
-            ActiveProgramExecution::ResidentExternal(execution) => {
-                initial_value(execution.coordinator.instance(), initial_output)
-            }
-            ActiveProgramExecution::None => unreachable!(),
+        let initial_snapshot = match prepared_initial {
+            Some(snapshot) if !needs_post_drain_snapshot => Ok(snapshot),
+            _ => match &self.active_program {
+                ActiveProgramExecution::ResidentPure(execution) => {
+                    initial_value(&execution.instance, initial_output)
+                }
+                ActiveProgramExecution::ResidentExternal(execution) => {
+                    initial_value(execution.coordinator.instance(), initial_output)
+                }
+                ActiveProgramExecution::None => unreachable!(),
+            },
         };
         let initial_snapshot = match initial_snapshot {
             Ok(snapshot) => snapshot,

@@ -3113,6 +3113,40 @@ fn nested_fsm_suspension_is_rejected_during_source_admission() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn nested_synchronous_fsm_publications_lower_to_the_nested_owner() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueDataDraft};
+    use mech_engine::__resident::{ActivationFacts, activate};
+
+    let source = "#Inner() => <u64>\n  | :Start\n  | :Later.\n#Inner() -> :Start\n  :Start\n    => 7u64\n    -> :Later\n  :Later => 9u64.\n#Outer() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Outer() -> :Start\n  :Start -> :Done(#Inner())\n  :Done(value) => value.\n#Outer()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 88),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+
+    instance.turn(&[]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(9)
+    );
+}
+
 #[test]
 fn maximum_depth_structured_fsm_values_roundtrip() {
     let nested_value = |wrappers| {
@@ -3190,6 +3224,16 @@ fn declared_fsm_bodies_predeclare_late_input_annotations() {
     compiled
         .compile_artifact()
         .expect("declared FSM input annotations must close the control block");
+}
+
+#[test]
+fn declared_fsm_input_predeclaration_preserves_every_lexical_scope() {
+    let source = "#Scoped(seed<u8>) => <u8>\n  | :Start(value<u8>).\n#Scoped(seed) -> :Start(seed)\n  :Start(value)\n    local := seed<u8> + value<u8>\n    => local<u8>.\n#Scoped(7u8)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .expect("FSM parameters, state binders, and preceding locals must remain lexical");
+    assert!(compiled.program().inputs.is_empty());
+    compiled.compile_artifact().unwrap();
 }
 
 #[cfg(feature = "resident-artifact")]

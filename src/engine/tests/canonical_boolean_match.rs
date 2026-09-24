@@ -324,14 +324,14 @@ fn typed_match_rejects_fsm_publication_nested_inside_a_guard() {
     assert!(matches!(
         draft.finalize(),
         Err(ArtifactBuildError::InvalidControl {
-            reason: "FSM publication cannot execute inside a nested match, guard, or comprehension",
+            reason: "FSM publication cannot execute inside a guard or comprehension",
             ..
         })
     ));
 }
 
 #[test]
-fn typed_match_rejects_fsm_publication_nested_inside_another_match() {
+fn typed_match_accepts_fsm_publication_nested_inside_another_match() {
     let mut draft = fixture();
     let scalar = draft.outputs[0].schema;
     let true_ = (0..draft.constants.len())
@@ -364,10 +364,7 @@ fn typed_match_rejects_fsm_publication_nested_inside_another_match() {
                     schema: scalar,
                 }]
                 .into_boxed_slice(),
-                yield_value: ControlValue::Local {
-                    block: ControlBlockId(1),
-                    node: 0,
-                },
+                yield_value: ControlValue::Constant(scalar_constant),
             },
         }]
         .into_boxed_slice(),
@@ -386,13 +383,7 @@ fn typed_match_rejects_fsm_publication_nested_inside_another_match() {
     };
     matched.arms[1].body.id = ControlBlockId(2);
 
-    assert!(matches!(
-        draft.finalize(),
-        Err(ArtifactBuildError::InvalidControl {
-            reason: "FSM publication cannot execute inside a nested match, guard, or comprehension",
-            ..
-        })
-    ));
+    draft.finalize().unwrap();
 }
 
 #[test]

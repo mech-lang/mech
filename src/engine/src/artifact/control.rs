@@ -858,9 +858,9 @@ pub(super) fn validate_match_inner(
                                     "FSM publication must preserve the enclosing output schema",
                                 ));
                             }
-                            if !enclosing_matches.is_empty() || guarded || inside_comprehension {
+                            if guarded || inside_comprehension {
                                 return Err(invalid(
-                                    "FSM publication cannot execute inside a nested match, guard, or comprehension",
+                                    "FSM publication cannot execute inside a guard or comprehension",
                                 ));
                             }
                         }
