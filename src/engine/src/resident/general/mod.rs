@@ -2287,37 +2287,47 @@ fn append_match_execution_cases(
                         &inputs,
                         static_selectors,
                         cases,
-                    )?;
-                }
-                crate::ControlOperationBody::Recur(_)
-                | crate::ControlOperationBody::Suspend
-                | crate::ControlOperationBody::Publish => {}
-                crate::ControlOperationBody::Operation {
-                    operation: reference,
-                    contract,
-                } => {
-                    let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
-                        artifact.contracts().get(*contract)
-                    else {
-                        return Err(ResidentActivationError::LegacyOpaque { node: owner });
-                    };
-                    let selectors = inputs
-                        .into_iter()
-                        .map(|source| {
-                            source
-                                .map(|source| static_selectors.resolve(artifact, source))
-                                .transpose()
-                                .map(Option::flatten)
-                        })
-                        .collect::<Result<Box<[_]>, _>>()?;
-                    cases.push(ConcreteExecutionCase {
-                        node: owner,
-                        operation: reference.clone(),
-                        input_schemas: contract.inputs.iter().map(|port| port.schema).collect(),
-                        input_resolved_selectors: selectors,
-                        output_schema: operation.schema,
-                        targets: ExecutionTargetSet::RESIDENT_CPU,
-                    });
+                    )?,
+                    crate::ControlOperationBody::Comprehension(nested) => {
+                        append_comprehension_execution_cases(
+                            artifact,
+                            owner,
+                            nested,
+                            &inputs,
+                            static_selectors,
+                            cases,
+                        )?;
+                    }
+                    crate::ControlOperationBody::Recur(_)
+                    | crate::ControlOperationBody::Suspend
+                    | crate::ControlOperationBody::Publish => {}
+                    crate::ControlOperationBody::Operation {
+                        operation: reference,
+                        contract,
+                    } => {
+                        let Some(mech_core::ResolvedOperationContract::Declared(contract)) =
+                            artifact.contracts().get(*contract)
+                        else {
+                            return Err(ResidentActivationError::LegacyOpaque { node: owner });
+                        };
+                        let selectors = inputs
+                            .into_iter()
+                            .map(|source| {
+                                source
+                                    .map(|source| static_selectors.resolve(artifact, source))
+                                    .transpose()
+                                    .map(Option::flatten)
+                            })
+                            .collect::<Result<Box<[_]>, _>>()?;
+                        cases.push(ConcreteExecutionCase {
+                            node: owner,
+                            operation: reference.clone(),
+                            input_schemas: contract.inputs.iter().map(|port| port.schema).collect(),
+                            input_resolved_selectors: selectors,
+                            output_schema: operation.schema,
+                            targets: ExecutionTargetSet::RESIDENT_CPU,
+                        });
+                    }
                 }
             }
         }
