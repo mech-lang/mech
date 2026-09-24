@@ -2758,11 +2758,21 @@ fn snapshot_power_compute_work(
         SchemaBody::Matrix { element, .. } => element.as_ref(),
         scalar => scalar,
     };
-    // Integral complex powers use exponentiation by squaring. A finite f32
-    // exponent can require 127 squares, 24 accumulator multiplies, and one
-    // reciprocal; f64 can require 1023 squares, 53 multiplies, and one
-    // reciprocal. Charge that worst case before executing either power family.
+    // Exact integer/rational and integral complex powers use exponentiation by
+    // squaring. Charge the maximum number of accumulator multiplies, squares,
+    // and (where admitted) one reciprocal before executing the kernel.
     let work_per_element = match element {
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => 15,
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => 31,
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => 63,
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => 127,
+        SchemaBody::UnsignedInteger(IntegerWidth::W128) => 255,
+        SchemaBody::SignedInteger(IntegerWidth::W8) => 13,
+        SchemaBody::SignedInteger(IntegerWidth::W16) => 29,
+        SchemaBody::SignedInteger(IntegerWidth::W32) => 61,
+        SchemaBody::SignedInteger(IntegerWidth::W64) => 125,
+        SchemaBody::SignedInteger(IntegerWidth::W128) => 253,
+        SchemaBody::Rational64 if cfg!(feature = "r64") => 126,
         SchemaBody::Complex(FloatWidth::W32) => 152,
         SchemaBody::Complex(FloatWidth::W64) if cfg!(feature = "c64") => 1_077,
         _ => 0,
@@ -17711,9 +17721,10 @@ fn numeric_multiply(
             rational_to_draft(next)
         }
         #[cfg(feature = "c64")]
-        (left @ ValueDataDraft::Complex64(_), right @ ValueDataDraft::Complex64(_)) => Ok(
-            complex_to_draft(complex_from_draft(left)? * complex_from_draft(right)?),
-        ),
+        (left @ ValueDataDraft::Complex64(_), right @ ValueDataDraft::Complex64(_)) => {
+            let product = complex64_multiply(complex64_parts(left)?, complex64_parts(right)?);
+            Ok(complex64_from_parts(product.0, product.1))
+        }
         (left, right) => {
             checked_numeric_binary!(left, right, checked_mul).ok_or(ResidentKernelError::Arithmetic)
         }
@@ -22409,6 +22420,22 @@ mod tests {
 
         #[cfg(feature = "c64")]
         {
+            let admitted_matrix_factor = ValueDataDraft::Complex64(Complex64Bits::new(
+                F64Bits::from_f64(1.4e154),
+                F64Bits::from_f64(6.0e153),
+            ));
+            let ValueDataDraft::Complex64(admitted_matrix_product) =
+                numeric_multiply(admitted_matrix_factor.clone(), admitted_matrix_factor).unwrap()
+            else {
+                unreachable!("c64 multiplication preserves its exact domain")
+            };
+            let admitted_real = admitted_matrix_product.real().to_f64();
+            let admitted_imaginary = admitted_matrix_product.imaginary().to_f64();
+            assert!(admitted_real.is_finite());
+            assert!(admitted_imaginary.is_finite());
+            assert!((admitted_real / 1.6e308 - 1.0).abs() < 1.0e-15);
+            assert!((admitted_imaginary / 1.68e308 - 1.0).abs() < 1.0e-15);
+
             let c64_factor = (1.0e154, 4.0e153);
             let c64_product = complex64_multiply(c64_factor, c64_factor);
             assert_eq!(c64_product, (8.4e307, 8.0e307));
@@ -22425,6 +22452,31 @@ mod tests {
                 (1.0, 0.0)
             );
         }
+    }
+
+    #[test]
+    fn exact_iterative_powers_are_charged_before_execution() {
+        assert_eq!(
+            snapshot_power_compute_work(
+                SemanticArithmetic::Power,
+                &SchemaBody::UnsignedInteger(IntegerWidth::W128),
+                65_536,
+            ),
+            Ok(65_536 * 255)
+        );
+        assert_eq!(
+            snapshot_power_compute_work(
+                SemanticArithmetic::Power,
+                &SchemaBody::SignedInteger(IntegerWidth::W128),
+                1,
+            ),
+            Ok(253)
+        );
+        #[cfg(feature = "r64")]
+        assert_eq!(
+            snapshot_power_compute_work(SemanticArithmetic::Power, &SchemaBody::Rational64, 1,),
+            Ok(126)
+        );
     }
 
     #[cfg(feature = "r64")]
