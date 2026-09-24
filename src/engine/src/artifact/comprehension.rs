@@ -132,6 +132,9 @@ impl<C> ComprehensionDeclaration<C> {
                                             nested.map_contracts_inner(map)?,
                                         )
                                     }
+                                    super::ControlOperationBody::Recur(ancestor) => {
+                                        super::ControlOperationBody::Recur(*ancestor)
+                                    }
                                 },
                                 inputs: operation.inputs.clone(),
                                 schema: operation.schema,
@@ -467,6 +470,7 @@ pub(super) fn validate_comprehension_inner(
                             &operation_inputs,
                             operation.schema,
                             next_block,
+                            &[],
                         )?;
                     }
                     super::ControlOperationBody::Comprehension(nested) => {
@@ -478,6 +482,11 @@ pub(super) fn validate_comprehension_inner(
                             operation.schema,
                             next_block,
                         )?;
+                    }
+                    super::ControlOperationBody::Recur(_) => {
+                        return Err(invalid(
+                            "recursive calls cannot escape their function match",
+                        ));
                     }
                 }
                 locals.push(operation.schema);
