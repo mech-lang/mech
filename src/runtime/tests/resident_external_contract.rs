@@ -11,9 +11,9 @@ use mech_runtime::runtime::program::external::test_provider::{
 };
 use mech_runtime::{
     CapturedInputBatch, ExactRequirementAuthority, ResidentDurabilityPolicy,
-    ResidentExternalCoordinator, ResidentExternalLimits, ResidentExternalTurnOutcome,
-    ResidentTurnRecord, RuntimeBuilder, RuntimeResourceRegistry, resident_effect_ids_hash,
-    resident_idempotency_keys_hash,
+    ResidentExternalCoordinator, ResidentExternalLimits, ResidentExternalTurnMode,
+    ResidentExternalTurnOutcome, ResidentTurnRecord, RuntimeBuilder, RuntimeResourceRegistry,
+    resident_effect_ids_hash, resident_idempotency_keys_hash,
 };
 use sha2::{Digest, Sha256};
 
@@ -431,7 +431,7 @@ fn run_replay(
         Arc::new(artifact.clone()),
         records
             .first()
-            .is_some_and(|record| record.body.initial_publication),
+            .is_some_and(|record| record.body.mode == ResidentExternalTurnMode::InitialPublication),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits {
             input_batches: TURNS + 32,
