@@ -63,7 +63,8 @@ impl CanonicalProgramBundle {
             canonical_uri,
             document,
             product.artifact().revision(),
-            encode_program_artifact_bytecode_v1(product.artifact())?,
+            encode_program_artifact_bytecode_v1(product.artifact())
+                .map_err(|error| bundle_error(format!("{error:?}")))?,
             source_dependencies,
         )
     }
