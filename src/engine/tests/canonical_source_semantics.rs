@@ -9,6 +9,7 @@ use mech_core::{
     ManagedMemoryBudget, OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody,
     ShapeRule, ValueData, ValueDataDraft,
 };
+#[cfg(feature = "resident-artifact")]
 use mech_engine::__resident::{
     ActivationFacts, CapturedSignalInput, ResidentActivationOptions, activate,
     activate_with_options,
@@ -86,6 +87,7 @@ fn nominal_origin() -> CanonicalNominalPath {
     CanonicalNominalPath::new(vec!["mech-test".to_owned(), "canonical-source".to_owned()]).unwrap()
 }
 
+#[cfg(feature = "resident-artifact")]
 fn execute_document<'a>(
     source: &str,
     turns: impl IntoIterator<Item = (Vec<ResidentValueRef<'a>>, ValueDataDraft)>,
@@ -302,6 +304,7 @@ fn declared_scalar_aliases_type_kind_extent_literals() {
         .unwrap();
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_enum_kind_values_reify_the_nominal_kind() {
     let compiled = CanonicalSourceFrontend
@@ -374,6 +377,7 @@ fn contextual_and_qualified_enum_atoms_resolve_exact_nominal_kinds() {
     qualified.compile_artifact().unwrap();
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
     execute_document(
@@ -387,6 +391,7 @@ fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn complete_enum_variant_arms_are_exhaustive_without_a_wildcard() {
     execute_document(
@@ -487,6 +492,7 @@ fn enum_payload_patterns_retain_nominal_identity_through_bytecode() {
     assert_eq!(decoded_match, match_node);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn qualified_enum_payload_pattern_matches_its_declared_variant() {
     execute_document(
@@ -503,6 +509,7 @@ fn qualified_enum_payload_pattern_matches_its_declared_variant() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn dynamic_enum_payloads_wrap_constant_and_live_values() {
     let samples = [
@@ -575,6 +582,7 @@ fn enum_payloads_materialize_nested_deferred_constants() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn live_enum_payloads_execute_after_artifact_roundtrip() {
     let first = [3.0];
@@ -599,6 +607,7 @@ fn live_enum_payloads_execute_after_artifact_roundtrip() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn live_structural_enum_payload_retains_its_declared_variant() {
     let first = [3.0];
@@ -626,6 +635,7 @@ fn live_structural_enum_payload_retains_its_declared_variant() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn live_enum_publication_rolls_back_after_managed_allocation_failure() {
     let source = "<event> := :idle | :point<(f64,bool)>\n\
