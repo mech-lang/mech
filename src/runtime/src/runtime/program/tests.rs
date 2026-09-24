@@ -5421,6 +5421,13 @@ fn initial_publication_replays_with_activations_dormant() {
 fn continuation_drain_replay_keeps_input_free_activations_dormant() {
     let (mut runtime, scene) = product_nbody_runtime();
     let source = "@scene := scene://orbit/frame{:write(points)}\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\npoints := [1.0 2.0]\n@scene/points <- points\n#Deferred()\n";
+    let document = crate::SourceDocument::parse_resolved(
+        "test://continuation-replay",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .unwrap();
     let artifact = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .resource_provider(Box::new(ProductSceneProvider {
@@ -5430,7 +5437,7 @@ fn continuation_drain_replay_keeps_input_free_activations_dormant() {
         }))
         .build_compiler()
         .unwrap()
-        .compile_source_artifact(source)
+        .compile_document_artifact(&document)
         .unwrap()
         .into_artifact();
     let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
