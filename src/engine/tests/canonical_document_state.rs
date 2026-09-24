@@ -2612,6 +2612,52 @@ fn ordered_roots_namespace_same_named_fsm_state_schemas() {
 }
 
 #[test]
+fn ordered_root_imports_preserve_activation_state_ownership() {
+    use mech_engine::{CanonicalOrderedDocument, CanonicalOrderedImport};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let root = |identity, source: &str| {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x596 + identity as u64), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        CanonicalOrderedDocument {
+            identity,
+            document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: None,
+            nominal_package_id: None,
+            input_schemas: BTreeMap::new(),
+            resource_writes: BTreeMap::new(),
+            imports: BTreeMap::new(),
+            resolved_modules: BTreeSet::new(),
+        }
+    };
+    let owner = root(1, "left := 0\n~x := 0\n~> left { x = x + 1 }\n<+ x\nx\n");
+    let mut second = root(2, "right := 0\n~> right { x = x + 10 }\nx\n");
+    second.imports.insert(
+        "x".to_owned(),
+        CanonicalOrderedImport::RootExport {
+            root: 1,
+            name: "x".to_owned(),
+        },
+    );
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let error = CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(
+            &[owner, second],
+            std::sync::Arc::new(catalog.build().unwrap()),
+        )
+        .err()
+        .expect("an imported mutable state retains its first activation owner");
+    assert_eq!(
+        error.code,
+        "source-semantics/multiple-activation-state-owners"
+    );
+}
+
+#[test]
 fn ordered_roots_reject_same_nominal_path_from_distinct_sources() {
     use mech_engine::CanonicalOrderedDocument;
     use std::collections::{BTreeMap, BTreeSet};

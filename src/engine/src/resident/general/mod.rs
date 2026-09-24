@@ -5044,48 +5044,59 @@ fn build_plan(
     // capture's sampled dependency cone. Host updates may refresh their input
     // snapshots, but only the activation scrutinee schedules their execution.
     let mut sampled_nodes = BTreeMap::<NodeId, BTreeSet<NodeId>>::new();
-    for node in artifact.nodes().iter().rev() {
-        let pure = match &node.body {
-            crate::ExecutableNodeBody::Operation(operation) => matches!(
-                artifact.contracts().get(operation.contract),
-                Some(mech_core::ResolvedOperationContract::Declared(contract))
-                    if contract.interaction == ExternalInteraction::Pure
-            ),
-            crate::ExecutableNodeBody::Match(_) | crate::ExecutableNodeBody::Comprehension(_) => {
-                true
+    loop {
+        let before = sampled_nodes.len();
+        for node in artifact.nodes().iter().rev() {
+            if sampled_nodes.contains_key(&node.node) {
+                continue;
             }
-            crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => false,
-        };
-        if !pure {
-            continue;
-        }
-        let output = node_output_slot(artifact, node.node)?;
-        if published.contains(&output)
-            || artifact.slots()[output.get() as usize].role != SlotRole::Derived
-        {
-            continue;
-        }
-        let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
-        if !uses.is_empty()
-            && uses.iter().all(|(consumer, ordinal)| {
-                activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains_key(consumer)
-            })
-        {
-            let owners = uses
-                .iter()
-                .flat_map(|(consumer, ordinal)| {
-                    if activation_sample_edge(*consumer, *ordinal) {
-                        vec![*consumer]
-                    } else {
-                        sampled_nodes
-                            .get(consumer)
-                            .into_iter()
-                            .flat_map(|owners| owners.iter().copied())
-                            .collect()
-                    }
+            let pure = match &node.body {
+                crate::ExecutableNodeBody::Operation(operation) => matches!(
+                    artifact.contracts().get(operation.contract),
+                    Some(mech_core::ResolvedOperationContract::Declared(contract))
+                        if contract.interaction == ExternalInteraction::Pure
+                ),
+                crate::ExecutableNodeBody::Match(_)
+                | crate::ExecutableNodeBody::Comprehension(_) => true,
+                crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => {
+                    false
+                }
+            };
+            if !pure {
+                continue;
+            }
+            let output = node_output_slot(artifact, node.node)?;
+            if published.contains(&output)
+                || artifact.slots()[output.get() as usize].role != SlotRole::Derived
+            {
+                continue;
+            }
+            let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
+            if !uses.is_empty()
+                && uses.iter().all(|(consumer, ordinal)| {
+                    activation_sample_edge(*consumer, *ordinal)
+                        || sampled_nodes.contains_key(consumer)
                 })
-                .collect();
-            sampled_nodes.insert(node.node, owners);
+            {
+                let owners = uses
+                    .iter()
+                    .flat_map(|(consumer, ordinal)| {
+                        if activation_sample_edge(*consumer, *ordinal) {
+                            vec![*consumer]
+                        } else {
+                            sampled_nodes
+                                .get(consumer)
+                                .into_iter()
+                                .flat_map(|owners| owners.iter().copied())
+                                .collect()
+                        }
+                    })
+                    .collect();
+                sampled_nodes.insert(node.node, owners);
+            }
+        }
+        if sampled_nodes.len() == before {
+            break;
         }
     }
     let turn_trigger_inputs = inputs
