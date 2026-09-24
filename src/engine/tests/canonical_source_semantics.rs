@@ -2292,6 +2292,9 @@ fn computed_activation_pattern_dependencies_remain_sample_only() {
 
 #[test]
 fn published_activation_capture_dependencies_remain_turn_triggers() {
+    use mech_core::snapshot::SnapshotValidationContext;
+    use mech_engine::__resident::CapturedValueInput;
+
     let source = "event := event-source<f64>\nobserved := observed-source<f64>\npublished := observed + 1\n~count := 0\n~> event { count = count + published }\npublished\n";
     let artifact = CanonicalSourceFrontend
         .compile_document(&document(source))
@@ -2341,14 +2344,29 @@ fn published_activation_capture_dependencies_remain_turn_triggers() {
     );
 
     let second = [0.0, 20.0];
+    let context = SnapshotValidationContext::new(artifact.schemas());
+    let second_values = artifact
+        .inputs()
+        .iter()
+        .zip(second)
+        .map(|(input, value)| {
+            mech_core::ValueDraft {
+                schema: input.schema,
+                shape_values: Box::new([]),
+                data: ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)),
+            }
+            .finalize(&context)
+            .unwrap()
+        })
+        .collect::<Vec<_>>();
     let second_inputs = instance
         .plan
         .inputs
         .iter()
-        .zip(second.iter())
-        .map(|(input, value)| CapturedSignalInput {
+        .zip(&second_values)
+        .map(|(input, value)| CapturedValueInput {
             slot: input.slot,
-            value: ResidentValueRef::F64(core::slice::from_ref(value)),
+            value,
         })
         .collect::<Vec<_>>();
     let observed = instance.plan.inputs[1].artifact_slot;
