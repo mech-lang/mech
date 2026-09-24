@@ -109,6 +109,22 @@ fn closed_whole_value_comparisons_have_scalar_populations() {
         "x := [42 43]\np := (-0.0, 1) == (0.0, 1)\nmask := [p true]\nx[mask]\n",
         "[43]",
     );
+    exact_closed_mask(
+        "x := [42 43]\np := {a: 1, b: 2} == {a: 1, b: 2}\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := {1: 2, 3: 4} == {1: 2, 3: 4}\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := (|a<u8>|1u8|) == (|a<u8>|1u8|)\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\nfixed := [1 2]\nparameterized<[f64]:1,2> := [1 2]\np := fixed === parameterized\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
 }
 
 #[test]
