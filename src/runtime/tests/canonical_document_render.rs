@@ -971,6 +971,27 @@ fn browser_source_omits_mounts_for_named_and_mika_scopes() {
 }
 
 #[test]
+fn browser_source_omits_mounts_for_declaration_only_root_fences() {
+    let document = document(
+        "~~~mech\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n~~~\n\n~~~mech\n40 + 2\n~~~\n",
+    );
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document)
+        .unwrap();
+    assert_eq!(
+        html.matches("class='mech-block-output'").count(),
+        1,
+        "{html}"
+    );
+    assert_eq!(
+        mech_runtime::canonical_document_presentation_output_ids(&document)
+            .unwrap()
+            .len(),
+        1,
+    );
+}
+
+#[test]
 fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
     let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
     let slots = CanonicalDocumentRenderer

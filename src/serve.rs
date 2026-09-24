@@ -2644,6 +2644,42 @@ mod tests {
     }
 
     #[test]
+    fn default_document_shim_keeps_bundle_for_compute_configuration() {
+        let root = temp_root("mixed-compute-default-document-shim");
+        let source = "answer := 40 + 2\nanswer\n";
+        let path = root.join("main.mec");
+        std::fs::write(&path, source).unwrap();
+        let retained = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry {
+            compiler_hosts: vec![mech_runtime::HostInstanceConfig {
+                name: "compute".into(),
+                provider: "compute".into(),
+                settings: mech_runtime::ConfigValue::Map(Default::default()),
+            }],
+            compiler_roots: Some(BTreeSet::from([path.canonicalize().unwrap()])),
+            ..ServerSourceRegistry::default()
+        };
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &retained,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+
+        assert!(registry.get_route("/code/main.mec").is_some());
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"), "{html}");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn configured_output_presentation_reaches_generated_documents() {
         let root = temp_root("output-document-presentation");
         std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
