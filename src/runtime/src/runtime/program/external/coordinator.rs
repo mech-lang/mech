@@ -472,22 +472,14 @@ impl ResidentExternalCoordinator {
         &mut self,
         replacements: Vec<(usize, Value, usize)>,
     ) -> MResult<()> {
-        let mut retained_bytes = self.latest_live_input_retained_bytes;
-        for (ordinal, _, replacement_bytes) in &replacements {
-            let previous = *self.latest_live_input_bytes.get(*ordinal).ok_or_else(|| {
-                invalid_value("live input snapshot ordinal is out of bounds".to_owned())
-            })?;
-            retained_bytes = retained_bytes
-                .checked_sub(previous)
-                .and_then(|bytes| bytes.checked_add(*replacement_bytes))
-                .ok_or_else(|| invalid_value("live input snapshot byte accounting".to_owned()))?;
-        }
-        if retained_bytes > self.latest_live_input_byte_limit {
-            return Err(invalid_value(format!(
-                "live input snapshot requires {retained_bytes} retained bytes, maximum {}",
-                self.latest_live_input_byte_limit
-            )));
-        }
+        let retained_bytes = live_input_retained_bytes_after_replacements(
+            self.latest_live_input_retained_bytes,
+            &self.latest_live_input_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
         for (ordinal, value, replacement_bytes) in replacements {
             self.latest_live_inputs[ordinal] = Some(value);
             self.latest_live_input_bytes[ordinal] = replacement_bytes;
@@ -684,6 +676,31 @@ impl ResidentExternalCoordinator {
                 Ok(batch) => batch,
                 Err(failure) => {
                     let evidence = if let Some(prefix) = failure.captured_prefix {
+                        let retained_bytes = match live_input_retained_bytes_after_replacements(
+                            self.latest_live_input_retained_bytes,
+                            &self.latest_live_input_bytes,
+                            prefix
+                                .facts
+                                .iter()
+                                .enumerate()
+                                .map(|(ordinal, fact)| (ordinal, fact.retained_bytes())),
+                            self.latest_live_input_byte_limit,
+                        ) {
+                            Ok(retained_bytes) => retained_bytes,
+                            Err(error) => {
+                                drop(input_permit);
+                                drop(outbox_permit);
+                                return self.append_rejected(
+                                    receipt_permit,
+                                    turn,
+                                    transaction,
+                                    RejectedTurnEvidence::default(),
+                                    before_epoch,
+                                    TurnFailurePhase::InputInstallation,
+                                    error,
+                                );
+                            }
+                        };
                         if let Err(error) = self.append_input_batch(input_permit, prefix.clone()) {
                             drop(outbox_permit);
                             return self.append_rejected(
@@ -698,6 +715,7 @@ impl ResidentExternalCoordinator {
                         }
                         self.advance_input_identity(&prefix)?;
                         self.remember_live_inputs(&prefix);
+                        debug_assert_eq!(self.latest_live_input_retained_bytes, retained_bytes);
                         RejectedTurnEvidence::from_input(&prefix)
                     } else {
                         drop(input_permit);
@@ -2059,6 +2077,45 @@ impl ResidentExternalCoordinator {
         debug_assert!(
             self.latest_live_input_retained_bytes <= self.latest_live_input_byte_limit,
             "an admitted input batch fits the live snapshot byte limit"
+        );
+    }
+}
+
+fn live_input_retained_bytes_after_replacements(
+    mut retained_bytes: usize,
+    current_bytes: &[usize],
+    replacements: impl IntoIterator<Item = (usize, usize)>,
+    retained_byte_limit: usize,
+) -> MResult<usize> {
+    for (ordinal, replacement_bytes) in replacements {
+        let previous = *current_bytes.get(ordinal).ok_or_else(|| {
+            invalid_value("live input snapshot ordinal is out of bounds".to_owned())
+        })?;
+        retained_bytes = retained_bytes
+            .checked_sub(previous)
+            .and_then(|bytes| bytes.checked_add(replacement_bytes))
+            .ok_or_else(|| invalid_value("live input snapshot byte accounting".to_owned()))?;
+    }
+    if retained_bytes > retained_byte_limit {
+        return Err(invalid_value(format!(
+            "live input snapshot requires {retained_bytes} retained bytes, maximum {retained_byte_limit}"
+        )));
+    }
+    Ok(retained_bytes)
+}
+
+#[cfg(test)]
+mod live_input_accounting_tests {
+    use super::live_input_retained_bytes_after_replacements;
+
+    #[test]
+    fn partial_prefix_is_admitted_against_the_retained_suffix() {
+        let error = live_input_retained_bytes_after_replacements(90, &[10, 80], [(0, 30)], 100)
+            .unwrap_err();
+        assert!(
+            error
+                .simple_message()
+                .contains("live input snapshot requires 110 retained bytes, maximum 100")
         );
     }
 }
