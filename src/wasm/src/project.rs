@@ -21,7 +21,8 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
 use mech_engine::{
-    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_program_output_id,
+    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_output_ids,
+    root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -796,6 +797,14 @@ fn compile_browser_interactive_document(
     document: &SourceDocument,
 ) -> MResult<mech_engine::CanonicalSourceProgram> {
     let resolver = document_source_resolver(document, bootstrap)?;
+    let resolved_root = mech_runtime::SourceResolver::resolve(
+        &resolver,
+        &SourceRequest::new(&bootstrap.root_specifier),
+    )?
+    .ok_or_else(|| document_runtime_error("browser document root did not resolve"))?;
+    let document = resolved_root
+        .source_document()
+        .ok_or_else(|| document_runtime_error("browser document root has no retained source"))?;
     let index = document
         .index()
         .map_err(|error| MechError::new(error, None))?;
@@ -817,6 +826,16 @@ fn compile_browser_interactive_document(
     }
     document_planning_compiler(bootstrap, document)?
         .plan_interactive_document(document, &resolved_source_modules)
+}
+
+fn presentation_output_ids_for_document(document: &SourceDocument) -> MResult<Vec<u64>> {
+    let source = document.source().to_contiguous_string();
+    let program = mech_syntax::parser::parse(source.trim()).map_err(|error| {
+        document_runtime_error(format!(
+            "browser presentation identity parsing failed: {error:?}"
+        ))
+    })?;
+    Ok(root_document_output_ids(&program))
 }
 
 fn document_planning_compiler(
@@ -1208,11 +1227,23 @@ fn live_document_fragment_addresses(
         })?;
     let fragment_end = fragment_start + fragment.len();
     let program = compile_browser_interactive_document(bootstrap, &runtime_source)?;
-    Ok(program
+    let outputs = program
         .document_outputs()
         .iter()
         .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
-        .filter_map(|output| {
+        .collect::<Vec<_>>();
+    let output_ids = presentation_output_ids_for_document(accepted)?;
+    if output_ids.len() != outputs.len() {
+        return Err(document_runtime_error(format!(
+            "browser presentation identity count {} does not match {} canonical outputs",
+            output_ids.len(),
+            outputs.len(),
+        )));
+    }
+    Ok(output_ids
+        .into_iter()
+        .zip(outputs)
+        .filter_map(|(output_id, output)| {
             let anchor = program.source_map().outputs.get(output.output as usize)?;
             let start = anchor.range.start.0 as usize;
             let end = anchor.range.end.0 as usize;
@@ -1222,7 +1253,7 @@ fn live_document_fragment_addresses(
                         TextSize((start - fragment_start) as u32),
                         TextSize((end - fragment_start) as u32),
                     ),
-                    u64::from(output.output),
+                    output_id,
                 )
             })
         })
@@ -1288,19 +1319,28 @@ mod document {
                     && Some(output.output) != program_output.map(|id| id.get())
             })
             .collect::<Vec<_>>();
-        if require_all && outputs.len() < bootstrap.presentation_output_ids.len() {
+        let output_ids = presentation_output_ids_for_document(candidate)?;
+        if output_ids.len() != outputs.len() {
             return Err(document_runtime_error(format!(
-                "browser presentation payload has {} addresses for {} canonical outputs",
-                bootstrap.presentation_output_ids.len(),
+                "browser presentation identity count {} does not match {} canonical outputs",
+                output_ids.len(),
                 outputs.len(),
             )));
         }
-        let mut ordinals = bootstrap
-            .presentation_output_ids
-            .iter()
-            .copied()
+        let mut ordinals = output_ids
+            .into_iter()
             .zip(outputs.into_iter().map(|output| u64::from(output.output)))
             .collect::<HashMap<_, _>>();
+        if require_all
+            && bootstrap
+                .presentation_output_ids
+                .iter()
+                .any(|output_id| !ordinals.contains_key(output_id))
+        {
+            return Err(document_runtime_error(
+                "browser presentation payload contains an output absent from the canonical document",
+            ));
+        }
         if let Some(output) = program_output {
             ordinals.insert(root_document_program_output_id(), u64::from(output.0));
         }
@@ -3382,29 +3422,8 @@ mod tests {
 }"#;
 
     fn document_payload(root_specifier: &str, source: &str) -> BrowserDocumentPayload {
-        let document = SourceDocument::parse_resolved(
-            "runtime:test-presentation",
-            mech_syntax::document::Revision(0),
-            source,
-            mech_syntax::document::ParseConfig::default(),
-        )
-        .unwrap();
-        let presentation_output_ids = CanonicalSourceFrontend
-            .compile_document(&document.document())
-            .ok()
-            .into_iter()
-            .flat_map(|program| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .filter(|output| {
-                        output.visible && output.kind != SourceDocumentOutputKind::Program
-                    })
-                    .map(|output| {
-                        mech_core::hash_str(&format!("browser-test-output:{}", output.output))
-                    })
-                    .collect::<Vec<_>>()
-            });
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let presentation_output_ids = root_document_output_ids(&tree);
         BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)
@@ -3493,6 +3512,26 @@ mod tests {
             .find(|output| output.kind == SourceDocumentOutputKind::Inline)
             .unwrap();
         assert_eq!(after[&address], u64::from(inline.output));
+    }
+
+    #[test]
+    fn accepted_fence_insertion_preserves_existing_presentation_identities() {
+        let original = "```mech\nfirst := 1\nfirst\n```\n\n```mech\nsecond := 2\nsecond\n```\n";
+        let replacement = "```mech\nnew := 0\nnew\n```\n\n```mech\nfirst := 1\nfirst\n```\n\n```mech\nsecond := 2\nsecond\n```\n";
+        let bootstrap = document_bootstrap("document.mec", original, HashMap::new(), Vec::new());
+        let before = document::document_output_ordinals(&bootstrap).unwrap();
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            replacement,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let after =
+            document::document_output_ordinals_for_source(&bootstrap, &candidate, false).unwrap();
+        for output_id in &bootstrap.presentation_output_ids {
+            assert_eq!(after[output_id], before[output_id] + 1);
+        }
     }
 
     #[test]
@@ -4375,6 +4414,8 @@ phase"#;
             resolved.nominal_package_id.as_deref(),
             Some("sha256:fixture")
         );
+        compile_browser_interactive_document(&bootstrap, &document)
+            .expect("browser output planning must use the provenance-enriched root document");
     }
 
     #[test]
@@ -4574,6 +4615,11 @@ phase"#;
             .unwrap();
         assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
         assert!(html.contains("class='mech-block-output'"), "{html}");
+        let ordinals =
+            document::document_output_ordinals_for_source(&bootstrap, &candidate, false).unwrap();
+        for (_, output_id) in addresses {
+            assert!(ordinals.contains_key(&output_id));
+        }
     }
 
     #[test]
