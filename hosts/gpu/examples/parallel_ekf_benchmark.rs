@@ -119,6 +119,22 @@ fn main() {
     if cpu_only {
         println!("EKF instances: {instances}");
         println!("CPU benchmark mode: scalar, SIMD, JIT, and AOT only");
+        println!(
+            "native ABI inputs: {}",
+            program
+                .inputs()
+                .map(|(name, elements)| format!("{name}[{elements}]"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        println!(
+            "native ABI state widths: {}",
+            program
+                .state_layout()
+                .map(|(_, elements)| elements.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
         println!("Cranelift JIT prepare: {:.3} ms", millis(jit_prepare));
         #[cfg(feature = "aot")]
         println!(

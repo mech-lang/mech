@@ -120,6 +120,53 @@ def main() -> None:
             close(min(lane_samples), row["observed_range_million_turns_per_second"][0], 0.0005)
             close(max(lane_samples), row["observed_range_million_turns_per_second"][1], 0.0005)
 
+    dylib = load_json(ROOT / manifest["selected_evidence"]["aot_vs_rust_dylib"])
+    dylib_summary = manifest["aot_rust_dylib_comparison"]
+    assert dylib["configuration"]["measured_processes_per_library"] == dylib_summary[
+        "retained_process_runs_per_implementation"
+    ]
+    for key in ("rust_library", "common_runner"):
+        path = ROOT / dylib["sources"][key]
+        if sha256(path) != dylib["sources"][f"{key}_sha256"]:
+            raise AssertionError(f"dynamic-library comparison source hash changed: {path}")
+    for label, prefix in (("Mech Cranelift AOT", "mech"), ("Rust cdylib", "rust")):
+        row = dylib["rows"][label]
+        throughput = row["throughput_million_ekf_turns_per_second"]
+        throughput_samples = throughput["samples"]
+        assert len(throughput_samples) == dylib_summary[
+            "retained_process_runs_per_implementation"
+        ]
+        close(statistics.median(throughput_samples), throughput["median"], 0.0000005)
+        close(min(throughput_samples), throughput["observed_range"][0], 0.0000005)
+        close(max(throughput_samples), throughput["observed_range"][1], 0.0000005)
+        close(
+            throughput["median"],
+            dylib_summary[f"{prefix}_throughput_million_turns_per_second"],
+            0.0000005,
+        )
+        assert throughput["observed_range"] == dylib_summary[
+            f"{prefix}_throughput_observed_range"
+        ]
+        memory = row["maximum_resident_set_bytes"]
+        assert statistics.median(memory["samples"]) == memory["median"]
+        assert [min(memory["samples"]), max(memory["samples"])] == memory[
+            "observed_range"
+        ]
+        assert memory["median"] == dylib_summary[f"{prefix}_median_peak_rss_bytes"]
+        assert row["faults"] == [0] * len(throughput_samples)
+    assert dylib["rows"]["Mech Cranelift AOT"]["library_bytes"] == dylib_summary[
+        "mech_library_bytes"
+    ]
+    assert dylib["rows"]["Rust cdylib"]["library_bytes"] == dylib_summary[
+        "rust_library_bytes"
+    ]
+    close(
+        dylib["validation"]["maximum_final_state_absolute_error"],
+        dylib_summary["maximum_final_state_absolute_error"],
+        1.0e-12,
+    )
+    assert dylib["validation"]["faults"] == 0
+
     direct_metal = load_json(ROOT / manifest["selected_evidence"]["mech_direct_metal"])
     direct_row = direct_metal["rows"]["Mech direct Metal generated from generic scalar IR"]
     close(
@@ -146,6 +193,7 @@ def main() -> None:
     runtime_rows = {row["label"]: row for row in runtime["rows"]}
     simd = load_json(ROOT / manifest["selected_evidence"]["mech_simd_one_worker"])
     scalar = load_json(ROOT / manifest["selected_evidence"]["mech_scalar_and_jit"])
+    aot = load_json(ROOT / manifest["selected_evidence"]["mech_aot"])
     mech_backend_samples = {
         "Direct Metal GPU": direct_row["checked"]["samples_million_ekf_turns_per_second"],
         "WGPU on Metal": runtime_rows["Mech WGPU GPU, checked"]["samples"],
@@ -153,10 +201,10 @@ def main() -> None:
             "Mech SIMD/JIT CPU, checked (8 workers)"
         ]["samples"],
         "SIMD/JIT CPU · 1 worker": simd["rows"]["checked"]["throughput_millions"],
-        "Cranelift JIT CPU": [
-            sample["jit_checked_million_ekf_turns_per_second"]
-            for sample in scalar["samples"]
-        ],
+        "Cranelift JIT CPU": aot["rows"]["Mech Cranelift JIT CPU, same processes"]
+        ["samples_million_ekf_turns_per_second"],
+        "Cranelift AOT CPU": aot["rows"]["Mech Cranelift AOT CPU"]
+        ["samples_million_ekf_turns_per_second"],
         "Scalar artifact evaluator": [
             sample["scalar_checked_million_ekf_turns_per_second"]
             for sample in scalar["samples"]
@@ -232,6 +280,12 @@ def main() -> None:
         f"median {current_rust:.3f}, range {min(samples):.3f}-{max(samples):.3f} M turns/s"
     )
     print("  same-machine Halide/Taichi/Mojo rerun samples: verified")
+    print(
+        "  AOT/Rust dylib: "
+        f"Mech {dylib_summary['mech_throughput_million_turns_per_second']:.3f} vs "
+        f"Rust {dylib_summary['rust_throughput_million_turns_per_second']:.3f} M turns/s; "
+        "size and peak RSS verified"
+    )
     print("  two post-facing charts: raw samples, medians, and observed ranges verified")
     print("  checked and unchecked mega-chart assertions: passed")
 

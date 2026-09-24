@@ -46,7 +46,7 @@ useful comparison, but the rollback distinction should remain explicit.
 
 ## Mech backend publication figure
 
-The second figure stacks six backends for the same high-level Mech EKF. All
+The second figure stacks seven backends for the same high-level Mech EKF. All
 rows use checked publication after every turn and show every retained process
 sample, but they combine 10,000-filter × 20-turn and 500,000-filter × 40-turn
 campaigns. The logarithmic scale shows backend reach; it is not evidence for
@@ -58,8 +58,32 @@ fine rankings between rows.
 | WGPU on Metal | 500k × 40 | 3 | 152.972 M turns/s | 152.314-160.313 |
 | SIMD/JIT CPU, 8 workers | 500k × 40 | 3 | 104.783 M turns/s | 98.691-128.144 |
 | SIMD/JIT CPU, 1 worker | 10k × 20 | 3 | 41.496 M turns/s | 41.202-41.508 |
-| Cranelift JIT CPU | 10k × 20 | 5 | 16.741 M turns/s | 16.697-16.795 |
+| Cranelift JIT CPU | 10k × 20 | 5 | 14.618 M turns/s | 14.068-14.641 |
+| Cranelift AOT CPU | 10k × 20 | 5 | 14.593 M turns/s | 14.089-14.644 |
 | Scalar artifact evaluator | 10k × 20 | 5 | 1.032 M turns/s | 1.031-1.035 |
+
+## Mech AOT versus Rust dynamic library
+
+This comparison uses the same minimal loader, four-argument ABI, input buffers,
+ping-pong state layout, one-thread checked publication boundary, and run order
+alternated by sample. Each fresh process runs 100 untimed warmup turns, resets
+state, then measures 10,000 filters × 200 turns.
+
+| Implementation | n | Median throughput | Observed min-max | Library bytes | Median peak RSS | RSS min-max |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mech Cranelift AOT | 7 | 14.672 M turns/s | 14.381-14.682 | 33,544 | 2,834,432 B | 2,834,432-2,949,120 B |
+| Rust `cdylib` | 7 | 20.789 M turns/s | 20.324-20.805 | 50,016 | 2,834,432 B | 2,834,432-2,965,504 B |
+
+The Rust median is 41.69% higher. The Mech library is 32.93% smaller. Median
+whole-process peak RSS is identical, and the observed ranges overlap. These
+are descriptive min-max ranges over seven independent processes, not
+confidence intervals. The final states agree within 4.05e-4 after 200 turns;
+all samples report zero faults.
+
+Peak RSS includes the common loader and live workload buffers, so it must not
+be relabeled as the private memory cost of either library. Likewise, binary
+size must not be conflated with the normalized application-source metric in
+the separate SIMD/eight-worker audit.
 
 ## Full mega chart
 

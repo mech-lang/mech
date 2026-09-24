@@ -38,14 +38,52 @@ fine language ranking.
 
 ## The Mech result: one EKF across execution backends
 
-![One Mech EKF across six execution backends](charts/post-mech-backend-stack.svg)
+![One Mech EKF across seven execution backends](charts/post-mech-backend-stack.svg)
 
-These six rows use the same high-level Mech EKF and change the execution
-backend: the scalar artifact evaluator, Cranelift JIT, one- and eight-worker
-SIMD/JIT, WGPU on Metal, and direct Metal. All rows are checked and publish
-after every turn. The 10,000-filter CPU rows and 500,000-filter parallel/GPU
-rows come from retained same-machine campaigns, so normalized throughput makes
-the backend span visible, but small cross-row gaps are not ranking claims.
+These seven rows use the same high-level Mech EKF and change the execution
+backend: the scalar artifact evaluator, Cranelift JIT, Cranelift AOT, one- and
+eight-worker SIMD/JIT, WGPU on Metal, and direct Metal. All rows are checked and
+publish after every turn. The 10,000-filter CPU rows and 500,000-filter
+parallel/GPU rows come from retained same-machine campaigns, so normalized
+throughput makes the backend span visible, but small cross-row gaps are not
+ranking claims.
+
+The AOT path shares the JIT's Cranelift lowering, emits a host object, links a
+reusable native library, and reloads its exported turn function. Five release
+processes produced a 14.593 M turns/s AOT median (14.089-14.644 observed range)
+and a 14.618 M turns/s JIT median (14.068-14.641) in the same processes. Both
+matched scalar state bit-for-bit. A cold emit/link/load took 202.029 ms; cached
+loads had a 3.283 ms median. These timings support equivalent steady-state
+execution, not a claim that either compiler mode is faster.
+
+### Mech AOT versus a Rust dynamic library
+
+The direct dynamic-library control uses a longer, steadier campaign than the
+backend overview: 10,000 filters × 200 checked turns, preceded by 100 untimed
+turns and a full state reset. A hand-specialized Rust `cdylib` exports the same
+`mech_fixed_numeric_turn` symbol as the generated Mech library. The same
+minimal loader supplies identical input and ping-pong state buffers to both,
+so the measurement excludes the Mech compiler and Rust build process.
+
+| Metric | Mech Cranelift AOT | Rust `cdylib` | Measured differential |
+| --- | ---: | ---: | ---: |
+| Steady-state throughput, median (observed min-max), n=7 | 14.672 M/s (14.381-14.682) | 20.789 M/s (20.324-20.805) | Rust +41.69% |
+| Dynamic-library file size | 33,544 bytes | 50,016 bytes | Mech -32.93% |
+| Peak process RSS, median (observed min-max), n=7 | 2,834,432 B (2,834,432-2,949,120) | 2,834,432 B (2,834,432-2,965,504) | no measured median difference |
+
+The complete final states agree within 4.05e-4 after 200 turns and every run
+reported zero faults. Rust is clearly faster in this hand-expanded scalar
+control; Mech's generated library is smaller. The peak-RSS medians are
+identical at `/usr/bin/time -l` precision and the ranges overlap, so this
+campaign does not support a memory-use difference. File size and peak process
+RSS are intentionally separate: one is the on-disk library, while the other
+includes the common loader and live EKF buffers.
+
+This is not the eight-worker SIMD source-size comparison below. It isolates
+the AOT artifact boundary on one scalar thread. The Rust control specializes
+the fixed 3×3 algebra by hand, while Mech reaches the same ABI from the generic
+matrix source. See the [raw seven-process record](results/apple-m1-aot-vs-rust-dylib-2026-09-24.json)
+and the [common-loader control](rust-dylib/README.md).
 
 That span is the point. In these campaigns the medians range from 1.032 million
 EKF turns/s in the scalar evaluator to 422.702 million in direct Metal. Mech
@@ -167,6 +205,15 @@ Regenerate both publication figures from the retained raw samples:
 python3 benchmarks/iros-2026/plot_post_charts.py
 ```
 
+Rebuild and remeasure the Rust/Mech dynamic-library control after first
+producing the Mech AOT library:
+
+```sh
+python3 benchmarks/iros-2026/measure_dylib_comparison.py \
+  target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib \
+  --samples 7 --instances 10000 --turns 200
+```
+
 Recompute the source audit with only the Python standard library:
 
 ```sh
@@ -180,7 +227,7 @@ Build and run the stable v0.4 Mech backend benchmark on a machine with a
 supported GPU:
 
 ```sh
-cargo run -p mech-gpu --release --features native,jit \
+cargo run -p mech-gpu --release --features native,aot \
   --example parallel_ekf_benchmark -- 10000 20 3 20
 ```
 
@@ -210,7 +257,7 @@ A concise claim supported by this package is:
 
 The Mech backend chart supports a different claim:
 
-> A single high-level Mech EKF source can target scalar, SIMD, JIT, WGPU, and
-> native Metal execution. The retained rows span more than two orders of
+> A single high-level Mech EKF source can target scalar, SIMD, JIT, AOT, WGPU,
+> and native Metal execution. The retained rows span more than two orders of
 > magnitude in normalized throughput; because the workloads and campaigns
 > differ, that span demonstrates backend reach rather than a fine ranking.

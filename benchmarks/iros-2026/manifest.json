@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "title": "IROS 2026 parallel EKF benchmark package",
   "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
   "evidence_revisions": {
@@ -13,6 +13,8 @@
     "mech_runtime_backends": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-taichi-runtime-2026-08-31.json",
     "mech_simd_one_worker": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json",
     "mech_scalar_and_jit": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-scalar-checked-matched-2026-09-09.json",
+    "mech_aot": "benchmarks/iros-2026/results/apple-m1-mech-aot-2026-09-24.json",
+    "aot_vs_rust_dylib": "benchmarks/iros-2026/results/apple-m1-aot-vs-rust-dylib-2026-09-24.json",
     "same_machine_reruns": "benchmarks/iros-2026/results/same-machine-reruns-2026-09-24.json"
   },
   "machine": {
@@ -61,6 +63,26 @@
     "taichi_exact_toolchain": true,
     "mojo_exact_toolchain": false
   },
+  "aot_rust_dylib_comparison": {
+    "workload": "10,000 filters x 200 turns after 100 untimed warmup turns and reset",
+    "execution": "one checked scalar thread through the same native turn ABI and minimal loader",
+    "summary_statistic": "median",
+    "uncertainty_statistic": "observed minimum to maximum",
+    "inference": "descriptive only; no confidence interval or significance test",
+    "retained_process_runs_per_implementation": 7,
+    "mech_throughput_million_turns_per_second": 14.67233,
+    "mech_throughput_observed_range": [14.380519, 14.681777],
+    "rust_throughput_million_turns_per_second": 20.789444,
+    "rust_throughput_observed_range": [20.324007, 20.804619],
+    "rust_throughput_advantage_percent": 41.69,
+    "mech_library_bytes": 33544,
+    "rust_library_bytes": 50016,
+    "mech_library_size_reduction_percent": 32.93,
+    "mech_median_peak_rss_bytes": 2834432,
+    "rust_median_peak_rss_bytes": 2834432,
+    "maximum_final_state_absolute_error": 0.0004043579102,
+    "evidence": "benchmarks/iros-2026/results/apple-m1-aot-vs-rust-dylib-2026-09-24.json"
+  },
   "post_charts": {
     "cross_language": {
       "file": "benchmarks/iros-2026/charts/post-cross-language-comparison.svg",
@@ -82,7 +104,8 @@
         "WGPU on Metal": 152.972,
         "SIMD/JIT CPU · 8 workers": 104.783,
         "SIMD/JIT CPU · 1 worker": 41.496,
-        "Cranelift JIT CPU": 16.741,
+        "Cranelift JIT CPU": 14.618,
+        "Cranelift AOT CPU": 14.593,
         "Scalar artifact evaluator": 1.032
       }
     }
@@ -121,6 +144,12 @@
       "strategy": "packed SIMD with eight-worker dispatch and rollback",
       "path": "benchmarks/archive/compute/parallel-ekf/source-size-audit/selected/rust_simd.rs",
       "sha256": "283b846040bbb65b6bfc679a51309677fc7761ec834198343f65f81c76e9d39f"
+    },
+    {
+      "family": "Rust",
+      "strategy": "hand-specialized scalar dynamic library using the Mech AOT turn ABI",
+      "path": "benchmarks/iros-2026/rust-dylib/rust-ekf-dylib.rs",
+      "sha256": "02f185dcc5679c326b1561329937bb35f3471ded2857fbbc55888cb449cce22d"
     },
     {
       "family": "NumPy/Numba",

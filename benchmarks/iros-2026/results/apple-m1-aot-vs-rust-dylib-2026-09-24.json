@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "implementation_commit": "b10593b75ec8b9283ae33e4ac330c00dda9957d7",
+  "platform": {
+    "model": "Mac mini Macmini9,1",
+    "chip": "Apple M1",
+    "memory_bytes": 8589934592,
+    "operating_system": "macOS 15.6.1 (24G90)",
+    "darwin_release": "24.6.0",
+    "architecture": "arm64"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "cranelift": "0.131.3",
+    "linker": "Apple clang 17.0.0 (clang-1700.3.19.1)",
+    "rust_library_build": "rustc --edition=2024 --crate-type cdylib -C opt-level=3 -C target-cpu=native -C codegen-units=1",
+    "runner_build": "rustc --edition=2024 -C opt-level=3 -C target-cpu=native -C codegen-units=1",
+    "measurement_command": "python3 benchmarks/iros-2026/measure_dylib_comparison.py target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib --samples 7 --instances 10000 --turns 200"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 200,
+    "untimed_warmup_turns": 100,
+    "measured_processes_per_library": 7,
+    "measurement_order": "Alternated by sample to reduce ordering bias.",
+    "abi": "Both libraries export mech_fixed_numeric_turn and receive identical five-input and two-state pointer tables from the same minimal loader.",
+    "execution_strategy": "One checked scalar thread with ping-pong publication after every turn.",
+    "timed_region": "Repeated checked turns through the identical four-argument native ABI; dlopen, allocation, input construction, warmup, reset, and reporting are excluded.",
+    "memory_metric": "Maximum resident set size reported by /usr/bin/time -l for a fresh minimal-loader process; this is whole-process peak RSS, not private library pages.",
+    "sample_precision": "The common loader printed throughput to six decimal places."
+  },
+  "sources": {
+    "mech": "benchmarks/archive/compute/parallel-ekf/source-size-audit/selected/ekf.mec",
+    "rust_library": "benchmarks/iros-2026/rust-dylib/rust-ekf-dylib.rs",
+    "rust_library_sha256": "02f185dcc5679c326b1561329937bb35f3471ded2857fbbc55888cb449cce22d",
+    "common_runner": "benchmarks/iros-2026/rust-dylib/dylib-runner.rs",
+    "common_runner_sha256": "2049f6fdcdffb876fc9618d2707f531d2bb6dc72baf981fd517e2dd75c244168"
+  },
+  "validation": {
+    "maximum_final_state_absolute_error": 0.0004043579102,
+    "faults": 0,
+    "note": "Both libraries implement the same checked EKF equations and ABI. The complete final states agree within 4.05e-4 after 200 turns; ordinary compiler reassociation accounts for the small f32 difference."
+  },
+  "rows": {
+    "Mech Cranelift AOT": {
+      "throughput_million_ekf_turns_per_second": {
+        "samples": [14.67233, 14.664979, 14.675228, 14.680295, 14.681777, 14.380519, 14.647861],
+        "median": 14.67233,
+        "observed_range": [14.380519, 14.681777]
+      },
+      "maximum_resident_set_bytes": {
+        "samples": [2949120, 2834432, 2834432, 2834432, 2834432, 2949120, 2949120],
+        "median": 2834432,
+        "observed_range": [2834432, 2949120]
+      },
+      "checksums": [2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952, 2653979.26274952],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "library": "target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib",
+      "library_bytes": 33544,
+      "library_sha256": "e6cd0d2eebcf8e867e762c43b3b79c6e9859c48503c9eda9ee184c002ea1f8fb"
+    },
+    "Rust cdylib": {
+      "throughput_million_ekf_turns_per_second": {
+        "samples": [20.324007, 20.779077, 20.795722, 20.794596, 20.804619, 20.789444, 20.788013],
+        "median": 20.789444,
+        "observed_range": [20.324007, 20.804619]
+      },
+      "maximum_resident_set_bytes": {
+        "samples": [2965504, 2834432, 2834432, 2834432, 2834432, 2834432, 2834432],
+        "median": 2834432,
+        "observed_range": [2834432, 2965504]
+      },
+      "checksums": [2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925, 2653979.306663925],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "library": "target/iros-rust-dylib/librust_ekf.dylib",
+      "library_bytes": 50016,
+      "library_sha256": "35bf1fcfe34921a4634490c0d928ffc7920b27500991745ef6c332fb70748aab"
+    }
+  },
+  "comparison": {
+    "rust_throughput_advantage_percent": 41.69,
+    "mech_throughput_deficit_percent": 29.42,
+    "mech_library_size_reduction_percent": 32.93,
+    "rust_to_mech_library_size_ratio": 1.491,
+    "median_peak_rss_difference_bytes": 0,
+    "interpretation": "Rust is clearly faster in this hand-specialized scalar control, while the generated Mech library is smaller. Peak RSS medians are identical at the precision of /usr/bin/time and the observed ranges overlap, so the samples do not support a memory-use difference."
+  }
+}

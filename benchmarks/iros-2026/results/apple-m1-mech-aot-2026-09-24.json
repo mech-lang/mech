@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "implementation_commit": "b10593b75ec8b9283ae33e4ac330c00dda9957d7",
+  "platform": {
+    "model": "Mac mini Macmini9,1",
+    "chip": "Apple M1",
+    "memory_bytes": 8589934592,
+    "operating_system": "macOS 15.6.1 (24G90)",
+    "architecture": "arm64"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "cranelift": "0.131.3",
+    "linker": "Apple clang 17.0.0 (clang-1700.3.19.1)",
+    "build_command": "cargo build -p mech-gpu --release --features native,aot --example parallel_ekf_benchmark",
+    "run_command": "MECH_AOT_CACHE_DIR=target/mech-aot target/release/examples/parallel_ekf_benchmark 10000 20 3 20 cpu-only"
+  },
+  "configuration": {
+    "instances": 10000,
+    "turns": 20,
+    "measured_processes": 5,
+    "internal_warmup_turns_per_lane": 5,
+    "mode": "checked publication after every turn",
+    "timed_region": "Twenty state-dependent EKF turns; source compilation, Cranelift compilation, object emission, linking, library loading, allocation, warmup, and checksum reporting are excluded.",
+    "sample_precision": "The benchmark printed throughput rounded to three decimal places.",
+    "aot_path": "The fixed-shape Cranelift lowering emits a PIC host object, links a reusable dynamic library, and loads the exported mech_fixed_numeric_turn entry point. The library is content-addressed by the lowered program and toolchain identity."
+  },
+  "artifact": {
+    "cache_directory": "target/mech-aot",
+    "library": "target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.dylib",
+    "library_bytes": 33544,
+    "library_sha256": "e6cd0d2eebcf8e867e762c43b3b79c6e9859c48503c9eda9ee184c002ea1f8fb",
+    "object": "target/mech-aot/mech-42c18f83c35ea5415d4a333b3e9e41602adfc62ed0032d105f3ec9812953b00e.o",
+    "object_bytes": 3424,
+    "object_sha256": "a3387a73d98d1f8f11181064e6aa9efca0296aaddb9af90fad24a0714b4eb5e6",
+    "cold_emit_link_load_milliseconds": 202.029,
+    "cached_load_samples_milliseconds": [3.327, 3.295, 3.282, 3.251, 3.283],
+    "cached_load_median_milliseconds": 3.283
+  },
+  "rows": {
+    "Mech Cranelift AOT CPU": {
+      "samples_million_ekf_turns_per_second": [14.644, 14.089, 14.587, 14.602, 14.593],
+      "median_million_ekf_turns_per_second": 14.593,
+      "observed_range_million_ekf_turns_per_second": [14.089, 14.644],
+      "checksum": 2682056.056255098,
+      "maximum_scalar_absolute_error": 0.0,
+      "faults": 0
+    },
+    "Mech Cranelift JIT CPU, same processes": {
+      "samples_million_ekf_turns_per_second": [14.641, 14.068, 14.618, 14.586, 14.623],
+      "median_million_ekf_turns_per_second": 14.618,
+      "observed_range_million_ekf_turns_per_second": [14.068, 14.641],
+      "checksum": 2682056.056255098,
+      "maximum_scalar_absolute_error": 0.0,
+      "faults": 0
+    }
+  },
+  "interpretation": "The AOT and JIT rows share the same Cranelift lowering and produced bit-for-bit identical state. Their observed ranges overlap almost completely; these samples support equivalent steady-state throughput, not a claim that either path is faster."
+}
