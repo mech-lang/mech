@@ -262,7 +262,6 @@ fn typed_match_rejects_invalid_scope_coverage_schema_and_writer() {
 fn typed_match_rejects_fsm_publication_nested_inside_a_guard() {
     let mut draft = fixture();
     let boolean = draft.inputs[0].schema;
-    let scalar = draft.outputs[0].schema;
     let true_ = (0..draft.constants.len())
         .map(|id| ConstantId::new(id as u32))
         .find(|id| {
@@ -272,10 +271,18 @@ fn typed_match_rejects_fsm_publication_nested_inside_a_guard() {
             )
         })
         .unwrap();
-    let scalar_constant = (0..draft.constants.len())
+    let false_ = (0..draft.constants.len())
         .map(|id| ConstantId::new(id as u32))
-        .find(|id| draft.constants.get(*id).unwrap().schema() == scalar)
+        .find(|id| {
+            matches!(
+                draft.constants.get(*id).unwrap().data(),
+                mech_core::ValueData::Bool(false)
+            )
+        })
         .unwrap();
+    draft.slots[1].schema = boolean;
+    draft.slots[2].schema = boolean;
+    draft.outputs[0].schema = boolean;
     let nested = MatchDeclaration {
         scrutinee: 0,
         partial: false,
@@ -318,16 +325,21 @@ fn typed_match_rejects_fsm_publication_nested_inside_a_guard() {
         },
     });
     matched.arms[0].body.id = ControlBlockId(2);
-    matched.arms[0].body.yield_value = ControlValue::Constant(scalar_constant);
+    matched.arms[0].body.yield_value = ControlValue::Constant(true_);
     matched.arms[1].body.id = ControlBlockId(3);
+    matched.arms[1].body.yield_value = ControlValue::Constant(false_);
 
-    assert!(matches!(
-        draft.finalize(),
-        Err(ArtifactBuildError::InvalidControl {
-            reason: "FSM publication cannot execute inside a match guard or comprehension",
-            ..
-        })
-    ));
+    let result = draft.finalize();
+    assert!(
+        matches!(
+            result,
+            Err(ArtifactBuildError::InvalidControl {
+                reason: "FSM publication cannot execute inside a match guard or comprehension",
+                ..
+            })
+        ),
+        "{result:?}"
+    );
 }
 
 #[test]
@@ -1864,7 +1876,7 @@ fn comprehension_rejects_suspend_hidden_in_a_nested_match() {
         matches!(
             result,
             Err(ArtifactBuildError::InvalidControl {
-                reason: "suspension must be the terminal FSM body yield",
+                reason: "suspended control requires an enclosing lexical signature",
                 ..
             })
         ),
