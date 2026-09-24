@@ -524,7 +524,9 @@ impl ServerSourceRegistry {
                     document = document.with_nominal_origin(origin.clone());
                 }
                 if let Some(package_id) = retained.nominal_package_id() {
-                    document = document.with_nominal_package_id(package_id);
+                    document = document.with_nominal_package_id(
+                        crate::nominal_provenance::transport_package_id(package_id),
+                    );
                 }
             }
             resolver.insert_source(

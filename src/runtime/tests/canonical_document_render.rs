@@ -1005,6 +1005,27 @@ fn browser_source_omits_program_mounts_for_effect_and_activation_roots() {
 }
 
 #[test]
+fn browser_source_preserves_program_mount_before_trailing_context_send() {
+    let source = "answer := 42\n@out/line <- answer\n";
+    let html = CanonicalDocumentRenderer
+        .format_browser_html(&document(source))
+        .unwrap();
+    assert!(html.contains("class='mech-program-output'"), "{html}");
+}
+
+#[test]
+fn canonical_pretty_text_spaces_formula_operators() {
+    let source = "answer:=40+2\nvalid:=answer>=42 & true\n";
+    let formatted = CanonicalDocumentRenderer
+        .format_pretty_text(&document(source))
+        .unwrap();
+    assert_eq!(
+        formatted,
+        "answer := 40 + 2\nvalid := answer >= 42 & true\n"
+    );
+}
+
+#[test]
 fn browser_shim_regions_preserve_metadata_navigation_and_section_boundaries() {
     let document = document(include_str!("../../../tests/fixtures/shims/all-slots.mec"));
     let slots = CanonicalDocumentRenderer
