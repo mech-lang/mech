@@ -17699,18 +17699,6 @@ fn divide_scaled_f64(numerator: Option<(f64, i32)>, denominator: (f64, i32)) -> 
 #[cfg(feature = "c64")]
 fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
-        let products = (
-            left.0 * right.0,
-            left.1 * right.1,
-            left.0 * right.1,
-            left.1 * right.0,
-        );
-        if [products.0, products.1, products.2, products.3]
-            .iter()
-            .all(|product| product.is_finite())
-        {
-            return (products.0 - products.1, products.2 + products.3);
-        }
         return (
             materialize_scaled_f64(scaled_f64_product_sum(
                 (left.0, right.0),
@@ -22521,6 +22509,9 @@ mod tests {
             let c64_minor_product = complex64_multiply((1.0e308, 1.0e-100), (0.0, 1.0e-200));
             assert!((c64_minor_product.0 / -1.0e-300 - 1.0).abs() < 2.0e-16);
             assert!((c64_minor_product.1 / 1.0e108 - 1.0).abs() < 2.0e-16);
+            let c64_subnormal_product =
+                complex64_multiply((2.0e-200, 2.0e-200), (1.0e-124, 1.0e-124));
+            assert_eq!(c64_subnormal_product, (0.0, f64::from_bits(1)));
             let c64_minor_quotient = complex64_divide((0.0, 1.0e118), (1.0e100, 1.0e-240));
             assert!(c64_minor_quotient.0 > 0.0);
             assert!(c64_minor_quotient.0 <= 2.0e-322);

@@ -1083,15 +1083,17 @@ pub fn string_binary() -> Result<KindScheme, SemanticModelError> {
 
 fn absolute_value() -> Result<Vec<KindScheme>, SemanticModelError> {
     let mut schemes = predicate_unary_same(BuiltinKindPredicate::Real)?;
-    let complex = BuiltinScalarKind::C64.kind_expr();
-    schemes.push(exact_unary(complex.clone(), complex.clone())?);
-    schemes.push(make(
-        0,
-        2,
-        vec![matrix(complex.clone(), dim(0), dim(1))],
-        vec![matrix(complex, dim(0), dim(1))],
-        Vec::new(),
-    )?);
+    for complex in [BuiltinScalarKind::C32, BuiltinScalarKind::C64] {
+        let complex = complex.kind_expr();
+        schemes.push(exact_unary(complex.clone(), complex.clone())?);
+        schemes.push(make(
+            0,
+            2,
+            vec![matrix(complex.clone(), dim(0), dim(1))],
+            vec![matrix(complex, dim(0), dim(1))],
+            Vec::new(),
+        )?);
+    }
     Ok(schemes)
 }
 
