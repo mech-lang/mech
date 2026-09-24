@@ -2662,7 +2662,8 @@ fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
             node.as_operation().is_some_and(|operation| {
                 operation.operation.module_path.as_ref() == ["math"]
                     && operation.operation.operation_name == "add"
-            }) && base.bindings()[node.input_bindings.clone()]
+            }) && base.bindings()
+                [node.input_bindings.start as usize..node.input_bindings.end as usize]
                 .iter()
                 .any(|binding| {
                     matches!(
@@ -2670,13 +2671,14 @@ fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
                         mech_engine::BindingDeclaration::Input {
                             source: mech_engine::ArtifactSource::Slot(slot),
                             ..
-                        } if *slot == ordinary
+                        } if slot == ordinary
                     )
                 })
         })
         .expect("ordinary payload add");
     let mut bindings = base.bindings().to_vec();
-    let replacement = bindings[payload.input_bindings.clone()]
+    let replacement = bindings
+        [payload.input_bindings.start as usize..payload.input_bindings.end as usize]
         .iter_mut()
         .find(|binding| {
             matches!(
