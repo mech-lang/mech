@@ -17581,6 +17581,12 @@ fn complex32_to_draft(real: f32, imaginary: f32) -> ValueDataDraft {
 }
 
 fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
+    if right.0 == 1.0 && right.1 == 0.0 {
+        return left;
+    }
+    if left.0 == 1.0 && left.1 == 0.0 {
+        return right;
+    }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         let left = (f64::from(left.0), f64::from(left.1));
         let right = (f64::from(right.0), f64::from(right.1));
@@ -17596,6 +17602,9 @@ fn complex32_multiply(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
 }
 
 fn complex32_divide(left: (f32, f32), right: (f32, f32)) -> (f32, f32) {
+    if right.0 == 1.0 && right.1 == 0.0 {
+        return left;
+    }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         // Products of finite f32 values remain representable in f64. Complete
         // the quotient there so a small divisor component is not rounded away
@@ -17695,6 +17704,12 @@ fn divide_scaled_f64(numerator: Option<(f64, i32)>, denominator: (f64, i32)) -> 
 
 #[cfg(feature = "c64")]
 fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    if right.0 == 1.0 && right.1 == 0.0 {
+        return left;
+    }
+    if left.0 == 1.0 && left.1 == 0.0 {
+        return right;
+    }
     if left.0.is_finite() && left.1.is_finite() && right.0.is_finite() && right.1.is_finite() {
         return (
             materialize_scaled_f64(scaled_f64_product_sum(
@@ -17717,6 +17732,9 @@ fn complex64_multiply(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
 
 #[cfg(feature = "c64")]
 fn complex64_divide(left: (f64, f64), right: (f64, f64)) -> (f64, f64) {
+    if right.0 == 1.0 && right.1 == 0.0 {
+        return left;
+    }
     if left.0.is_finite()
         && left.1.is_finite()
         && right.0.is_finite()
@@ -22443,6 +22461,18 @@ mod tests {
 
     #[test]
     fn canonical_numeric_extremes_preserve_representable_results() {
+        assert_eq!(
+            complex32_multiply((f32::INFINITY, 0.0), (1.0, 0.0)),
+            (f32::INFINITY, 0.0)
+        );
+        assert_eq!(
+            complex32_multiply((1.0, 0.0), (f32::INFINITY, 0.0)),
+            (f32::INFINITY, 0.0)
+        );
+        assert_eq!(
+            complex32_divide((f32::INFINITY, 0.0), (1.0, 0.0)),
+            (f32::INFINITY, 0.0)
+        );
         let c32_factor = (1.86691995e19, 7.733035e18);
         let c32_product = complex32_multiply(c32_factor, c32_factor);
         assert!(c32_product.0.is_finite());
@@ -22486,6 +22516,18 @@ mod tests {
 
         #[cfg(feature = "c64")]
         {
+            assert_eq!(
+                complex64_multiply((f64::INFINITY, 0.0), (1.0, 0.0)),
+                (f64::INFINITY, 0.0)
+            );
+            assert_eq!(
+                complex64_multiply((1.0, 0.0), (f64::INFINITY, 0.0)),
+                (f64::INFINITY, 0.0)
+            );
+            assert_eq!(
+                complex64_divide((f64::INFINITY, 0.0), (1.0, 0.0)),
+                (f64::INFINITY, 0.0)
+            );
             let admitted_matrix_factor = ValueDataDraft::Complex64(Complex64Bits::new(
                 F64Bits::from_f64(1.4e154),
                 F64Bits::from_f64(6.0e153),
