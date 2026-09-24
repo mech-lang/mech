@@ -5419,70 +5419,20 @@ fn initial_publication_replays_with_activations_dormant() {
 
 #[test]
 fn continuation_drain_replay_keeps_input_free_activations_dormant() {
-    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\n#Deferred()\n";
-    let parsed = mech_syntax::document::parse_canonical_document(
-        mech_syntax::document::TextSnapshot::new(
-            mech_syntax::document::DocumentId(0x876),
-            mech_syntax::document::Revision(1),
-            source,
+    let (mut runtime, _scene) = product_nbody_runtime();
+    runtime
+        .load_source_program(
+            "@scene := scene://orbit/frame{:write(points)}\n#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\npoints := [1.0 2.0]\n@scene/points <- points\n#Deferred()\n",
+            crate::ResidentDurabilityPolicy::Retained,
         )
-        .unwrap(),
-        mech_syntax::document::ParseConfig::default(),
-    );
-    let document = <mech_syntax::document::DocumentSyntax as mech_syntax::document::AstNode>::cast(
-        parsed.syntax(),
-    )
-    .unwrap();
-    let artifact = Arc::new(
-        mech_engine::CanonicalSourceFrontend
-            .compile_document(&document)
-            .unwrap()
-            .compile_artifact()
-            .unwrap(),
-    );
-    let id = mech_core::ReactiveInstanceId::new(0x876, 1);
-    let catalog = mech_stdlib::source_catalog();
-    let instance = mech_engine::__resident::activate_external(
-        id,
-        &artifact,
-        &catalog,
-        &mech_engine::__resident::ActivationFacts::default(),
-        mech_engine::__resident::ResidentIntegrityMode::Checked,
-    )
-    .unwrap();
-    let providers = crate::RuntimeResourceRegistry::new();
-    let authority = external::ExactRequirementAuthority::new(
-        artifact
-            .requirements()
-            .iter()
-            .map(|(_, requirement)| requirement.clone()),
-    )
-    .unwrap();
-    let mut coordinator = external::ResidentExternalCoordinator::new_live(
-        instance,
-        Arc::clone(&artifact),
-        &providers,
-        &authority,
-        crate::ResidentDurabilityPolicy::Retained,
-        external::ResidentExternalLimits::default(),
-    )
-    .unwrap();
-    let admission = coordinator.admit_turn().unwrap();
-    assert!(matches!(
-        coordinator
-            .execute_admitted_initial_turn(admission, |_| Ok(()))
-            .unwrap(),
-        crate::ResidentExternalTurnOutcome::Accepted { .. }
-    ));
-    assert!(coordinator.instance().has_ready_continuation());
-    let admission = coordinator.admit_turn().unwrap();
-    assert!(matches!(
-        coordinator
-            .execute_admitted_continuation_turn(admission, |_| Ok(()))
-            .unwrap(),
-        crate::ResidentExternalTurnOutcome::Accepted { .. }
-    ));
-    let records = coordinator
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("continuation fixture must use the external resident route")
+    };
+    let artifact = Arc::clone(&execution.artifact);
+    let id = execution.coordinator.instance().id;
+    let records = execution
+        .coordinator
         .receipts()
         .map(|(_, record)| record.clone())
         .collect::<Vec<_>>();
