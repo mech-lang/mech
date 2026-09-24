@@ -924,6 +924,11 @@ impl<'a> Compiler<'a> {
         let mut interface =
             build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         for output in &mut interface.outputs {
+            if self.state_slots.contains_key(&output.slot)
+                || self.input_slots.contains_key(&output.slot)
+            {
+                continue;
+            }
             if let Some(state) = states.iter().find(|state| {
                 state.source == ArtifactSource::Slot(output.slot)
                     && state.elements == output.elements().unwrap_or_default() as u64
@@ -1450,20 +1455,6 @@ impl<'a> Compiler<'a> {
                     continue;
                 };
                 let dimensions = self.slot_dimensions(source);
-                if let Some((state_slot, state)) = self.state_slots.iter().find(|(_, state)| {
-                    state.source == Some(ArtifactSource::Slot(source)) && state.elements == elements
-                }) {
-                    let Some(_) = state.write_binding else {
-                        continue;
-                    };
-                    self.outputs.push(KernelOutput {
-                        name,
-                        source: *state_slot,
-                        elements,
-                        dimensions,
-                    });
-                    continue;
-                }
                 if let Some(state) = self.state_slots.get(&source) {
                     let Some(_) = state.write_binding else {
                         continue;
@@ -1475,6 +1466,23 @@ impl<'a> Compiler<'a> {
                         dimensions,
                     });
                     continue;
+                }
+                if !self.input_slots.contains_key(&source) {
+                    if let Some((state_slot, state)) = self.state_slots.iter().find(|(_, state)| {
+                        state.source == Some(ArtifactSource::Slot(source))
+                            && state.elements == elements
+                    }) {
+                        let Some(_) = state.write_binding else {
+                            continue;
+                        };
+                        self.outputs.push(KernelOutput {
+                            name,
+                            source: *state_slot,
+                            elements,
+                            dimensions,
+                        });
+                        continue;
+                    }
                 }
                 let binding = self.bindings.len() as u32;
                 self.bindings.push(GpuBinding {
