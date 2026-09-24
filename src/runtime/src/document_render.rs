@@ -2587,6 +2587,12 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
             node.kind(),
             SyntaxKind::ContextDeclaration
                 | SyntaxKind::ExportDeclaration
+                | SyntaxKind::FunctionDefine
+                | SyntaxKind::InvariantDefine
+                | SyntaxKind::KindDefine
+                | SyntaxKind::EnumDefine
+                | SyntaxKind::FsmSpecification
+                | SyntaxKind::FsmImplementation
                 | SyntaxKind::ImportDeclaration
                 | SyntaxKind::ModuleImport
         ) {
@@ -2884,10 +2890,17 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             .into_iter()
             .map(|operator| operator.range()),
     );
+    let mut argument_lists = Vec::new();
+    collect_nodes(node, SyntaxKind::ArgumentList, &mut argument_lists);
+    let argument_list_ranges = argument_lists
+        .into_iter()
+        .map(|arguments| arguments.range())
+        .collect::<Vec<_>>();
     let mut output = String::new();
     let mut gap = String::new();
     let mut previous = None;
     let mut previous_ended_operator = false;
+    let mut previous_was_argument_comma = false;
     for token in node.tokens() {
         let kind = token.kind();
         let text = token.text().map_err(|_| range_error(token.range()))?;
@@ -2911,10 +2924,18 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             .find(|range| token.range().start >= range.start && token.range().end <= range.end);
         let starts_operator = operator.is_some_and(|range| token.range().start == range.start);
         let ends_operator = operator.is_some_and(|range| token.range().end == range.end);
+        let argument_comma = kind == SyntaxKind::Comma
+            && argument_list_ranges
+                .iter()
+                .any(|range| token.range().start >= range.start && token.range().end <= range.end);
         if gap.contains(['\r', '\n']) {
             output.push_str(&gap);
+        } else if argument_comma {
+            // Canonical call arguments never retain horizontal space before
+            // their separator.
         } else if previous.is_some() {
-            if !gap.is_empty()
+            if previous_was_argument_comma
+                || !gap.is_empty()
                 || starts_operator
                 || previous_ended_operator
                 || matches!(
@@ -2935,6 +2956,7 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         output.push_str(&text);
         previous = Some(kind);
         previous_ended_operator = ends_operator;
+        previous_was_argument_comma = argument_comma;
     }
     output.push_str(&gap);
     Ok(output)

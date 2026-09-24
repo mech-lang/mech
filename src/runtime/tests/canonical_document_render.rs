@@ -996,6 +996,7 @@ fn browser_source_omits_program_mounts_for_effect_and_activation_roots() {
     for source in [
         "@view := scene://view/root{:write(replace)}\n@view/replace <- 42\n",
         "~state := 0\n~> true { state = state + 1 }\n",
+        "@out/line <- 1\nf() => <f64>\n  | * => 2.\n",
     ] {
         let html = CanonicalDocumentRenderer
             .format_browser_html(&document(source))
@@ -1015,13 +1016,14 @@ fn browser_source_preserves_program_mount_before_trailing_context_send() {
 
 #[test]
 fn canonical_pretty_text_spaces_formula_operators() {
-    let source = "answer:=40+2\nvalid:=answer>=42 & true\n~count:=0\ncount+=1\n";
+    let source =
+        "answer:=40+2\nvalid:=answer>=42 & true\n~count:=0\ncount+=1\nresult:=make(1 ,2)\n";
     let formatted = CanonicalDocumentRenderer
         .format_pretty_text(&document(source))
         .unwrap();
     assert_eq!(
         formatted,
-        "answer := 40 + 2\nvalid := answer >= 42 & true\n~count := 0\ncount += 1\n"
+        "answer := 40 + 2\nvalid := answer >= 42 & true\n~count := 0\ncount += 1\nresult := make(1, 2)\n"
     );
 }
 
