@@ -1,6 +1,4 @@
-use std::cell::Cell;
-#[cfg(any(feature = "browser_compute", feature = "browser_host_scene"))]
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
@@ -20,9 +18,10 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
+#[cfg(test)]
+use mech_engine::CanonicalSourceFrontend;
 use mech_engine::{
-    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_output_ids,
-    root_document_program_output_id,
+    SourceDocumentOutputKind, root_document_output_ids, root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
