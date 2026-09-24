@@ -93,6 +93,7 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
 
 #[test]
 fn closed_whole_value_comparisons_have_scalar_populations() {
+    exact_closed_mask("x := [42]\np := [1 2] !== [1; 2]\nx[p]\n", "[42]");
     exact_closed_mask(
         "x := [42 43]\np := [1 2] === [1 2]\nmask := [p false]\nx[mask]\n",
         "[42]",
