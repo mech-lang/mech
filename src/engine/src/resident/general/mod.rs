@@ -3267,62 +3267,85 @@ fn constant_comparison_operand<'a>(
             let Some(operation) = artifact.nodes()[producer.get() as usize].as_operation() else {
                 return Ok(None);
             };
-            if operation.operation.module_path.as_ref() != ["convert"]
-                || operation.operation.operation_name != "kind"
-            {
-                return Ok(None);
-            }
             let inputs = node_inputs(artifact, producer)?;
-            let [input] = inputs.as_slice() else {
-                return Ok(None);
-            };
-            let Some(source) = constant_comparison_operand(artifact, node, *input, facts)? else {
-                return Ok(None);
-            };
             let target_schema_id = artifact.slots()[slot.get() as usize].schema;
             let target_schema = artifact
                 .schemas()
                 .get(target_schema_id)
                 .ok_or(ResidentActivationError::RegionSizeOverflow)?;
-            let target_element = match target_schema.body() {
-                SchemaBody::Matrix { element, .. } => element.as_ref(),
-                body => body,
-            };
-            let Ok(source_type) = ResolvedType::from_schema_body(&source.element, &[]) else {
-                return Ok(None);
-            };
-            let Ok(target_type) = ResolvedType::from_schema_body(target_element, &[]) else {
-                return Ok(None);
-            };
-            let Ok(conversion) = plan_explicit_cast(&source_type, &target_type) else {
-                return Ok(None);
-            };
-            let Ok(draft) = source.value.canonical_data_draft() else {
-                return Ok(None);
-            };
-            let converted = match draft {
-                ValueDataDraft::Matrix(elements) => ValueDataDraft::Matrix({
-                    let Ok(elements) = elements
-                        .into_vec()
-                        .into_iter()
-                        .map(|element| execute_conversion_draft(element, &conversion.step))
-                        .collect::<Result<Vec<_>, _>>()
+            let (data, shape_values) = if operation.operation.module_path.as_ref() == ["convert"]
+                && operation.operation.operation_name == "kind"
+            {
+                let [input] = inputs.as_slice() else {
+                    return Ok(None);
+                };
+                let Some(source) = constant_comparison_operand(artifact, node, *input, facts)?
+                else {
+                    return Ok(None);
+                };
+                let target_element = match target_schema.body() {
+                    SchemaBody::Matrix { element, .. } => element.as_ref(),
+                    body => body,
+                };
+                let Ok(source_type) = ResolvedType::from_schema_body(&source.element, &[]) else {
+                    return Ok(None);
+                };
+                let Ok(target_type) = ResolvedType::from_schema_body(target_element, &[]) else {
+                    return Ok(None);
+                };
+                let Ok(conversion) = plan_explicit_cast(&source_type, &target_type) else {
+                    return Ok(None);
+                };
+                let Ok(draft) = source.value.canonical_data_draft() else {
+                    return Ok(None);
+                };
+                let converted = match draft {
+                    ValueDataDraft::Matrix(elements) => ValueDataDraft::Matrix({
+                        let Ok(elements) = elements
+                            .into_vec()
+                            .into_iter()
+                            .map(|element| execute_conversion_draft(element, &conversion.step))
+                            .collect::<Result<Vec<_>, _>>()
+                        else {
+                            return Ok(None);
+                        };
+                        elements.into_boxed_slice()
+                    }),
+                    scalar => {
+                        let Ok(converted) = execute_conversion_draft(scalar, &conversion.step)
+                        else {
+                            return Ok(None);
+                        };
+                        converted
+                    }
+                };
+                (converted, source.value.shape().parameter_values().into())
+            } else if operation.operation.module_path.as_ref() == ["core"]
+                && operation.operation.operation_name == "composite-pack"
+                && matches!(target_schema.body(), SchemaBody::Tuple(_))
+            {
+                let mut values = Vec::with_capacity(inputs.len());
+                for input in inputs {
+                    let Some(value) = constant_comparison_operand(artifact, node, input, facts)?
                     else {
                         return Ok(None);
                     };
-                    elements.into_boxed_slice()
-                }),
-                scalar => {
-                    let Ok(converted) = execute_conversion_draft(scalar, &conversion.step) else {
+                    let Ok(draft) = value.value.canonical_data_draft() else {
                         return Ok(None);
                     };
-                    converted
+                    values.push(draft);
                 }
+                (
+                    ValueDataDraft::Tuple(values.into_boxed_slice()),
+                    Box::new([]),
+                )
+            } else {
+                return Ok(None);
             };
             let Ok(converted) = (ValueDraft {
                 schema: target_schema_id,
-                shape_values: source.value.shape().parameter_values().into(),
-                data: converted,
+                shape_values,
+                data,
             })
             .finalize(&SnapshotValidationContext::new(artifact.schemas())) else {
                 return Ok(None);
