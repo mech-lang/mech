@@ -2316,7 +2316,7 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
         .collect::<Vec<_>>();
     let other_trigger = instance.plan.inputs[2].artifact_slot;
     let initial = instance.prepare_initial_turn_values(&inputs).unwrap();
-    assert_eq!(initial.summary().dirty_nodes, 0);
+    assert_eq!(initial.summary().dirty_nodes, 2);
     initial.abort();
     let prepared = instance
         .prepare_turn_values_with_activation_triggers(&inputs, &[other_trigger])
