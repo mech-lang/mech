@@ -900,6 +900,8 @@ impl CanonicalSourceFrontend {
         reject_recovered_syntax(document)?;
         document_lowering::compile_document_with_capture_options(
             document,
+            self.nominal_origin.as_ref(),
+            &self.imported_enum_qualifiers,
             Some(catalog),
             input_schemas,
             true,
