@@ -136,6 +136,56 @@ impl MechRuntime {
         })
     }
 
+    /// Compile and activate a rooted source graph through the canonical
+    /// frontend, preserving retained nominal declaration provenance and every
+    /// named root symbol needed by live hosts.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_canonical_root_program(
+        &mut self,
+        request: SourceRequest,
+        module_options: ModuleBuildOptions<'_>,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with_projection(
+            durability,
+            InitialValueProjection::InteractiveRootResult,
+            |runtime| {
+                let resolved = runtime.resolve_source(request.clone())?.ok_or_else(|| {
+                    route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        format!("root source `{}` was not found", request.specifier),
+                    )
+                })?;
+                match &resolved.source {
+                    MechSourceCode::String(source) => {
+                        runtime.enforce_source_byte_limit(
+                            u64::try_from(source.len()).unwrap_or(u64::MAX),
+                        )?;
+                        Ok(Arc::new(
+                            runtime
+                                .plan_canonical_resolved_root_source_product(
+                                    resolved,
+                                    module_options,
+                                )?
+                                .into_parts()
+                                .0,
+                        ))
+                    }
+                    MechSourceCode::ByteCode(bytecode) => {
+                        runtime.enforce_source_byte_limit(
+                            u64::try_from(bytecode.len()).unwrap_or(u64::MAX),
+                        )?;
+                        runtime.decode_artifact(bytecode)
+                    }
+                    _ => Err(route_failure(
+                        ResidentRouteFailureClass::SemanticUnsupported,
+                        "root source kind is not resident-routable",
+                    )),
+                }
+            },
+        )
+    }
+
     /// Compile and activate a rooted source graph with every root symbol
     /// retained for live interactive inspection.
     #[cfg(feature = "resident-routing-source")]
@@ -286,6 +336,16 @@ impl MechRuntime {
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
             .compile_resolved_root(resolved, module_options)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_canonical_resolved_root_source_product(
+        &mut self,
+        resolved: crate::ResolvedSource,
+        module_options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?
+            .compile_canonical_resolved_root(resolved, true, Some(module_options))
     }
 
     #[cfg(feature = "resident-routing-source")]

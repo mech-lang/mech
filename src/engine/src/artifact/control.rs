@@ -205,10 +205,13 @@ fn validate_structural_pattern(
                 )?;
             }
             if let Some(rest) = rest {
+                let fixed = prefix.len().checked_add(suffix.len())?;
+                let residual = super::comprehension::fixed_matrix_element_count(expected)
+                    .and_then(|total| total.checked_sub(fixed));
                 validate_structural_pattern(
                     draft,
                     rest,
-                    &super::comprehension::array_rest_schema(expected, element)?,
+                    &super::comprehension::array_rest_schema(expected, element, residual)?,
                     bindings,
                 )?;
             }
@@ -223,19 +226,6 @@ fn validate_structural_pattern(
         }
     }
     Some(())
-}
-
-fn fixed_matrix_element_count(schema: &mech_core::Schema) -> Option<usize> {
-    let shape = schema.instantiate_shape(Box::new([])).ok()?;
-    let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
-        return None;
-    };
-    dimensions
-        .iter()
-        .try_fold(1_u64, |count, dimension| {
-            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
-        })
-        .and_then(|count| usize::try_from(count).ok())
 }
 
 fn structurally_irrefutable<V>(
@@ -267,18 +257,21 @@ fn structurally_irrefutable<V>(
             let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
                 return false;
             };
-            let length_is_irrefutable = fixed == 0
-                || fixed_matrix_element_count(expected).is_some_and(|count| count >= fixed);
+            let residual = super::comprehension::fixed_matrix_element_count(expected)
+                .and_then(|count| count.checked_sub(fixed));
+            let length_is_irrefutable = fixed == 0 || residual.is_some();
             length_is_irrefutable
                 && component_schema(expected, element).is_some_and(|element| {
                     prefix
                         .iter()
                         .chain(suffix)
                         .all(|item| structurally_irrefutable(schemas, item, &element))
-                        && super::comprehension::array_rest_schema(&element, element.body())
-                            .is_some_and(|expected| {
-                                structurally_irrefutable(schemas, rest, &expected)
-                            })
+                        && super::comprehension::array_rest_schema(
+                            &element,
+                            element.body(),
+                            residual,
+                        )
+                        .is_some_and(|expected| structurally_irrefutable(schemas, rest, &expected))
                 })
         }
         super::CollectionPattern::Array {
@@ -289,18 +282,33 @@ fn structurally_irrefutable<V>(
             let mech_core::SchemaBody::Matrix { element, .. } = expected.body() else {
                 return false;
             };
-            prefix
-                .len()
-                .checked_add(suffix.len())
-                .is_some_and(|count| fixed_matrix_element_count(expected) == Some(count))
-                && component_schema(expected, element).is_some_and(|expected| {
-                    prefix
-                        .iter()
-                        .chain(suffix)
-                        .all(|item| structurally_irrefutable(schemas, item, &expected))
-                })
+            prefix.len().checked_add(suffix.len()).is_some_and(|count| {
+                super::comprehension::fixed_matrix_element_count(expected) == Some(count)
+            }) && component_schema(expected, element).is_some_and(|expected| {
+                prefix
+                    .iter()
+                    .chain(suffix)
+                    .all(|item| structurally_irrefutable(schemas, item, &expected))
+            })
         }
-        super::CollectionPattern::Equal(_) | super::CollectionPattern::Enum { .. } => false,
+        super::CollectionPattern::Enum { ordinal, payload } => {
+            let mech_core::SchemaBody::Enum { variants, .. } = expected.body() else {
+                return false;
+            };
+            if variants.len() != 1 {
+                return false;
+            }
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return false;
+            };
+            match (&variant.payload, payload) {
+                (None, None) => true,
+                (Some(payload_schema), Some(pattern)) => component_schema(expected, payload_schema)
+                    .is_some_and(|expected| structurally_irrefutable(schemas, pattern, &expected)),
+                _ => false,
+            }
+        }
+        super::CollectionPattern::Equal(_) => false,
     }
 }
 

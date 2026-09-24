@@ -491,6 +491,41 @@ fn fixed_array_rest_enum_payload_pattern_completes_variant_coverage() {
 }
 
 #[test]
+fn fixed_array_rest_preserves_its_residual_extent_for_nested_patterns() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<event> := :data<[f64]:1,3>\n\
+                 value<event> := :data([1 2 3])\n\
+                 result := value? | :data([* | [*, *]]) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the fixed parent determines the nested rest pattern's exact extent")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
+fn singleton_enum_payload_pattern_completes_outer_variant_coverage() {
+    CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(
+            &document(
+                "<inner> := :only\n\
+                 <outer> := :wrap<inner>\n\
+                 value<outer> := :wrap(:only)\n\
+                 result := value? | :wrap(:only) => true.\n\
+                 result\n",
+            ),
+            &nominal_origin(),
+        )
+        .expect("the sole nested enum variant is irrefutable")
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn bare_enum_comprehension_pattern_uses_generator_element_schema() {
     let source = "<first> := :idle | :busy\n\
                   <second> := :idle | :done\n\

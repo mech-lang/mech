@@ -1330,7 +1330,7 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_canonical_resolved_root(resolved, interactive, options)
     }
 
-    fn compile_canonical_resolved_root(
+    pub(crate) fn compile_canonical_resolved_root(
         &self,
         resolved: ResolvedSource,
         interactive: bool,
@@ -1562,10 +1562,14 @@ impl<'a> ProgramCompilerView<'a> {
             let request = source_request_for_import(&declaration, Some(uri));
             let Some(dependency) = self.source_resolver.resolve(&request)? else {
                 if import_requires_source_dependency(&declaration) {
-                    return Err(canonical_compilation_error(format!(
-                        "missing canonical dependency {} from {uri}",
-                        request.specifier
-                    )));
+                    return Err(MechError::new(
+                        RuntimeModuleDependencyMissingError {
+                            module: uri.to_owned(),
+                            specifier: request.specifier,
+                            referrer: request.referrer,
+                        },
+                        None,
+                    ));
                 }
                 continue;
             };

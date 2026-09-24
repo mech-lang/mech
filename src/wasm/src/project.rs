@@ -2695,7 +2695,7 @@ fn run_source_roots<'a>(
         ));
     }
     let durability = runtime.config().resident_durability;
-    runtime.load_root_program(
+    runtime.load_canonical_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,
@@ -3330,7 +3330,10 @@ mod tests {
             .build_compiler()
             .unwrap();
         let bytecode = compiler
-            .compile_root(SourceRequest::new("demo.mec"), browser_module_options())
+            .compile_canonical_interactive_root_with_options(
+                SourceRequest::new("demo.mec"),
+                browser_module_options(),
+            )
             .unwrap()
             .into_parts()
             .1;
@@ -3787,6 +3790,52 @@ phase"#;
             resolved.nominal_package_id.as_deref(),
             Some("sha256:fixture")
         );
+    }
+
+    #[test]
+    fn live_project_sources_compile_nominals_with_retained_provenance() {
+        fn enum_key(package: &str) -> mech_core::NominalKey {
+            let document = project_document(&["main.mec"]);
+            let sources = HashMap::from([(
+                "main.mec".to_string(),
+                "<event> := :idle | :busy\nvalue<event> := :idle\nvalue\n".to_string(),
+            )]);
+            let provenance = HashMap::from([(
+                "main.mec".to_string(),
+                ServedSourceProvenance {
+                    nominal_origin: mech_core::CanonicalNominalPath::new([
+                        package.to_string(),
+                        "main".to_string(),
+                    ])
+                    .unwrap(),
+                    nominal_package_id: Some(format!("sha256:{package}")),
+                },
+            )]);
+            let resolver =
+                project_source_resolver_with_resolutions_and_provenance(&sources, &[], &provenance)
+                    .unwrap();
+            let mut runtime = browser_runtime_builder()
+                .source_resolver(resolver)
+                .build()
+                .unwrap();
+
+            run_project_sources(&mut runtime, &document).unwrap();
+            let (_, value) = runtime
+                .root_symbol_values_all()
+                .unwrap()
+                .into_iter()
+                .next()
+                .expect("project source publishes its final enum value");
+            let schemas = value.value().schemas().unwrap();
+            let mech_core::SchemaBody::Enum { key, .. } =
+                schemas.get(value.schema()).unwrap().body()
+            else {
+                panic!("project enum value did not retain its nominal schema")
+            };
+            *key
+        }
+
+        assert_ne!(enum_key("package-a"), enum_key("package-b"));
     }
 
     #[test]

@@ -530,6 +530,7 @@ fn component_schema(
 pub(super) fn array_rest_schema(
     parent: &mech_core::Schema,
     element: &mech_core::SchemaBody,
+    exact_extent: Option<usize>,
 ) -> Option<mech_core::Schema> {
     let mut parameters = parent
         .dimension_parameters()
@@ -545,27 +546,43 @@ pub(super) fn array_rest_schema(
             })
         })
         .collect::<Option<Vec<_>>>()?;
-    let extent = mech_core::DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
-    parameters.push(mech_core::DimensionParameterDeclaration {
-        id: extent,
-        origin: mech_core::DimensionParameterOrigin::Inferred,
-        lifetime: mech_core::DimensionLifetime::Turn,
-        lower_bound: mech_core::DimensionExpr::Constant(0),
-        upper_bound: None,
-    });
+    let extent = match exact_extent {
+        Some(extent) => mech_core::DimensionExpr::Constant(u64::try_from(extent).ok()?),
+        None => {
+            let extent =
+                mech_core::DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+            parameters.push(mech_core::DimensionParameterDeclaration {
+                id: extent,
+                origin: mech_core::DimensionParameterOrigin::Inferred,
+                lifetime: mech_core::DimensionLifetime::Turn,
+                lower_bound: mech_core::DimensionExpr::Constant(0),
+                upper_bound: None,
+            });
+            mech_core::DimensionExpr::Parameter(extent)
+        }
+    };
     mech_core::SchemaDraft {
         body: mech_core::SchemaBody::Matrix {
             element: Box::new(element.clone()),
-            dimensions: vec![
-                mech_core::DimensionExpr::Constant(1),
-                mech_core::DimensionExpr::Parameter(extent),
-            ]
-            .into_boxed_slice(),
+            dimensions: vec![mech_core::DimensionExpr::Constant(1), extent].into_boxed_slice(),
         },
         dimension_parameters: parameters.into_boxed_slice(),
     }
     .finalize()
     .ok()
+}
+
+pub(super) fn fixed_matrix_element_count(schema: &mech_core::Schema) -> Option<usize> {
+    let shape = schema.instantiate_shape(Box::new([])).ok()?;
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = schema.body() else {
+        return None;
+    };
+    dimensions
+        .iter()
+        .try_fold(1_u64, |count, dimension| {
+            count.checked_mul(shape.resolve_dimension(dimension).ok()?)
+        })
+        .and_then(|count| usize::try_from(count).ok())
 }
 
 fn validate_pattern(
@@ -650,10 +667,13 @@ fn validate_pattern(
                 )?;
             }
             if let Some(rest) = rest {
+                let fixed = prefix.len().checked_add(suffix.len())?;
+                let residual =
+                    fixed_matrix_element_count(expected).and_then(|total| total.checked_sub(fixed));
                 validate_pattern(
                     draft,
                     rest,
-                    &array_rest_schema(expected, element)?,
+                    &array_rest_schema(expected, element, residual)?,
                     inputs,
                     locals,
                 )?;

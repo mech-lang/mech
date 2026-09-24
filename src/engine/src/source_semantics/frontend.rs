@@ -2326,22 +2326,30 @@ fn structural_component_schema_draft(
     })
 }
 
-fn structural_array_rest_schema(element: &SchemaDraft) -> Option<SchemaDraft> {
+fn structural_array_rest_schema(
+    element: &SchemaDraft,
+    exact_extent: Option<usize>,
+) -> Option<SchemaDraft> {
     let mut parameters = element.dimension_parameters.to_vec();
-    let extent = DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
-    parameters.push(DimensionParameterDeclaration {
-        id: extent,
-        origin: DimensionParameterOrigin::Inferred,
-        lifetime: DimensionLifetime::Turn,
-        lower_bound: DimensionExpr::Constant(0),
-        upper_bound: None,
-    });
+    let extent = match exact_extent {
+        Some(extent) => DimensionExpr::Constant(u64::try_from(extent).ok()?),
+        None => {
+            let extent = DimensionParameterId::new(u32::try_from(parameters.len()).ok()?);
+            parameters.push(DimensionParameterDeclaration {
+                id: extent,
+                origin: DimensionParameterOrigin::Inferred,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: None,
+            });
+            DimensionExpr::Parameter(extent)
+        }
+    };
     Some(SchemaDraft {
         dimension_parameters: parameters.into_boxed_slice(),
         body: SchemaBody::Matrix {
             element: Box::new(element.body.clone()),
-            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Parameter(extent)]
-                .into_boxed_slice(),
+            dimensions: vec![DimensionExpr::Constant(1), extent].into_boxed_slice(),
         },
     })
 }
@@ -2388,15 +2396,16 @@ fn structurally_irrefutable<V>(
             let Some(fixed) = prefix.len().checked_add(suffix.len()) else {
                 return false;
             };
-            let length_is_irrefutable = fixed == 0
-                || fixed_matrix_element_count(expected).is_some_and(|count| count >= fixed);
+            let residual =
+                fixed_matrix_element_count(expected).and_then(|count| count.checked_sub(fixed));
+            let length_is_irrefutable = fixed == 0 || residual.is_some();
             length_is_irrefutable
                 && structural_component_schema_draft(expected, element).is_some_and(|element| {
                     prefix
                         .iter()
                         .chain(suffix)
                         .all(|item| structurally_irrefutable(item, &element))
-                        && structural_array_rest_schema(&element)
+                        && structural_array_rest_schema(&element, residual)
                             .is_some_and(|expected| structurally_irrefutable(rest, &expected))
                 })
         }
@@ -2419,7 +2428,26 @@ fn structurally_irrefutable<V>(
                         .all(|item| structurally_irrefutable(item, &expected))
                 })
         }
-        crate::CollectionPattern::Equal(_) | crate::CollectionPattern::Enum { .. } => false,
+        crate::CollectionPattern::Enum { ordinal, payload } => {
+            let SchemaBody::Enum { variants, .. } = &expected.body else {
+                return false;
+            };
+            if variants.len() != 1 {
+                return false;
+            }
+            let Some(variant) = variants.get(*ordinal as usize) else {
+                return false;
+            };
+            match (&variant.payload, payload) {
+                (None, None) => true,
+                (Some(payload_schema), Some(pattern)) => {
+                    structural_component_schema_draft(expected, payload_schema)
+                        .is_some_and(|expected| structurally_irrefutable(pattern, &expected))
+                }
+                _ => false,
+            }
+        }
+        crate::CollectionPattern::Equal(_) => false,
     }
 }
 
