@@ -4507,6 +4507,45 @@ output := state
 }
 
 #[test]
+fn driverless_observation_without_activation_scope_bootstraps_once() {
+    let reads = Arc::new(AtomicUsize::new(0));
+    let mut runtime = runtime();
+    runtime
+        .register_resource_provider(Box::new(DriverlessObservationProvider {
+            reads: reads.clone(),
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_022),
+            subject,
+            "snapshot://clock/tick/value",
+            ["read"],
+        )))
+        .unwrap();
+
+    runtime
+        .load_source_program(
+            r#"
+@clock := snapshot://clock/tick{:read(value)}
+current := @clock/value
+current
+"#,
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
+    assert_eq!(reads.load(Ordering::SeqCst), 1);
+    let current = runtime.root_symbol_value("current").unwrap();
+    assert_eq!(
+        current.value().canonical_data_draft().unwrap(),
+        ValueDataDraft::Bool(true)
+    );
+}
+
+#[test]
 fn driverless_observation_gets_a_trigger_turn_after_dormant_publication() {
     let reads = Arc::new(AtomicUsize::new(0));
     let mut runtime = runtime();

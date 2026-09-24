@@ -873,20 +873,18 @@ fn default_authority_denies_before_any_provider_read() -> MResult<()> {
 fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, instance, providers) = fixture(trace, ProviderProtocol::AfterCommit)?;
+    let replay_artifact = Arc::new(artifact.clone());
     let mut live = coordinator(
         instance,
         &artifact,
         &providers,
         ResidentExternalLimits::default(),
     )?;
-    let admission = live.reserve_live_turn()?;
+    let admission = live.admit_turn()?;
     assert!(matches!(
-        live.execute_live_turn(
-            None,
-            admission,
-            ResidentExternalTurnMode::InitialPublication,
-            |_| Err(test_error("injected initial publication rejection")),
-        )?,
+        live.execute_admitted_initial_turn(admission, |_| Err(test_error(
+            "injected initial publication rejection"
+        )))?,
         ResidentExternalTurnOutcome::Rejected { .. }
     ));
     let batch = live.input_facts().next().unwrap().1.clone();
@@ -895,6 +893,11 @@ fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
         record.body.mode,
         ResidentExternalTurnMode::InitialPublication
     );
+    assert_eq!(
+        record.header.failure.as_ref().unwrap().phase,
+        TurnFailurePhase::Publication
+    );
+    assert_ne!(record.body.effect_count, 0);
 
     let catalog = frozen_ekf_compiler_catalog()?;
     let replay_instance = activate_external(
@@ -907,7 +910,7 @@ fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
     .unwrap();
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        Arc::new(artifact),
+        Arc::clone(&replay_artifact),
         ResidentExternalReplayBootstrap::new(true, Box::new([])),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
@@ -921,7 +924,7 @@ fn rejected_initial_publication_retains_its_replay_mode() -> MResult<()> {
         batch.facts[0].shape.clone(),
         batch.facts[0].value.clone(),
         true,
-        replay.artifact.schemas(),
+        replay_artifact.schemas(),
     )?;
     let forged_batch = CapturedInputBatch::new(vec![forged_fact])?;
     let mut forged_record = record.clone();
@@ -1945,6 +1948,21 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
         .phase = TurnFailurePhase::EffectMaterialization;
     let error = replay
         .execute_replay_batch(Some(&batches[0]), &premature_effects)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("evidence does not match its failure phase")
+    );
+    let mut execution_with_effects = records[0].clone();
+    execution_with_effects
+        .header
+        .failure
+        .as_mut()
+        .expect("rejected fixture")
+        .phase = TurnFailurePhase::Execution;
+    let error = replay
+        .execute_replay_batch(Some(&batches[0]), &execution_with_effects)
         .unwrap_err();
     assert!(
         error
