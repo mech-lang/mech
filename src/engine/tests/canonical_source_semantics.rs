@@ -3,11 +3,16 @@
 use std::fs;
 use std::path::PathBuf;
 
+#[cfg(feature = "resident-artifact")]
 use mech_core::snapshot::{ReifiedKind, ReifiedTypeDraft};
 use mech_core::{
-    CanonicalNominalPath, ChangeDetectionPolicy, FunctionCatalogBuilder, IntegerWidth, KindExpr,
-    ManagedMemoryBudget, OutputConstruction, ReactiveInstanceId, ResidentValueRef, SchemaBody,
-    ShapeRule, ValueData, ValueDataDraft,
+    CanonicalNominalPath, ChangeDetectionPolicy, IntegerWidth, OutputConstruction, SchemaBody,
+    ShapeRule, ValueData,
+};
+#[cfg(feature = "resident-artifact")]
+use mech_core::{
+    FunctionCatalogBuilder, KindExpr, ManagedMemoryBudget, ReactiveInstanceId, ResidentValueRef,
+    ValueDataDraft,
 };
 #[cfg(feature = "resident-artifact")]
 use mech_engine::__resident::{
