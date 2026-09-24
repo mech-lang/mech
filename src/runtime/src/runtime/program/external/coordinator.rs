@@ -249,7 +249,7 @@ impl ResidentExternalCoordinator {
         let initial_publication_required = (trigger_sources.is_empty()
             && driverless_trigger_inputs.is_empty())
             || (!driverless_trigger_inputs.is_empty()
-                && !coordinator.instance().plan.activation_nodes.is_empty());
+                && coordinator.instance().plan.has_activation_scopes());
         coordinator.replay_bootstrap = ResidentExternalReplayBootstrap::new(
             initial_publication_required,
             driverless_trigger_inputs,
@@ -332,7 +332,7 @@ impl ResidentExternalCoordinator {
         if (!live && trigger_inputs.is_empty() && !replay_bootstrap.initial_publication_required)
             || (!replay_bootstrap.driverless_trigger_inputs.is_empty()
                 && !replay_bootstrap.initial_publication_required
-                && !instance.plan.activation_nodes.is_empty())
+                && instance.plan.has_activation_scopes())
             || replay_bootstrap
                 .driverless_trigger_inputs
                 .windows(2)
@@ -649,6 +649,7 @@ impl ResidentExternalCoordinator {
         self.install_pending_live_input_replacements(replacements)
     }
 
+    #[cfg(feature = "resident-routing-source")]
     fn install_live_input_replacements(
         &mut self,
         replacements: Vec<(usize, Value, usize)>,

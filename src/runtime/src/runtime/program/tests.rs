@@ -784,6 +784,51 @@ fn independent_canonical_external_runtime_with_source(
     (runtime, reads)
 }
 
+fn canonical_driverless_external_runtime_with_source(
+    source: &str,
+) -> (
+    crate::MechRuntime,
+    Arc<AtomicUsize>,
+    RuntimeProgramLoadOutcome,
+) {
+    let reads = Arc::new(AtomicUsize::new(0));
+    let provider = || DriverlessObservationProvider {
+        reads: Arc::clone(&reads),
+    };
+    let catalog = mech_stdlib::source_catalog();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(Arc::clone(&catalog))
+        .resource_provider(Box::new(provider()))
+        .build_compiler()
+        .unwrap();
+    let artifact = compiler
+        .compile_canonical_source(source)
+        .unwrap()
+        .into_parts()
+        .0;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(provider()))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_022),
+            subject,
+            "snapshot://clock/tick/value",
+            ["read"],
+        )))
+        .unwrap();
+    let loaded = runtime
+        .load_compiled_program(artifact, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    (runtime, reads, loaded)
+}
+
 fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
     independent_external_runtime_with_source(
         r#"
@@ -4621,85 +4666,164 @@ output := state
 
 #[test]
 fn driverless_observation_without_activation_scope_bootstraps_once() {
-    let reads = Arc::new(AtomicUsize::new(0));
-    let mut runtime = runtime();
-    runtime
-        .register_resource_provider(Box::new(DriverlessObservationProvider {
-            reads: reads.clone(),
-        }))
-        .unwrap();
-    let subject = runtime.runtime_context().unwrap().subject;
-    runtime
-        .grant_capability(Arc::new(BasicCapability::from_keys(
-            CapabilityId(9_022),
-            subject,
-            "snapshot://clock/tick/value",
-            ["read"],
-        )))
-        .unwrap();
-
-    runtime
-        .load_source_program(
-            r#"
+    let (runtime, reads, _) = canonical_driverless_external_runtime_with_source(
+        r#"
 @clock := snapshot://clock/tick{:read(value)}
+samples := 1..=3
+closed := [sample | sample <- samples]
 current := @clock/value
 current
 "#,
-            crate::ResidentDurabilityPolicy::Retained,
-        )
-        .unwrap();
+    );
 
     assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
     assert_eq!(reads.load(Ordering::SeqCst), 1);
-    let current = runtime.root_symbol_value("current").unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("driverless observation fixture must remain resident external")
+    };
     assert_eq!(
-        current.value().canonical_data_draft().unwrap(),
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
         ValueDataDraft::Bool(true)
     );
+    assert!(
+        !execution
+            .coordinator
+            .instance()
+            .plan
+            .has_activation_scopes()
+    );
+    assert!(
+        !execution
+            .coordinator
+            .instance()
+            .plan
+            .activation_nodes
+            .is_empty(),
+        "the closed comprehension must exercise the old activation-node proxy"
+    );
+    assert_eq!(
+        execution.coordinator.receipts().next().unwrap().1.body.mode,
+        external::ResidentExternalTurnMode::DriverlessBootstrap
+    );
+    let replay_instance = mech_engine::__resident::activate_external(
+        execution.coordinator.instance().id,
+        &execution.artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::clone(&execution.artifact),
+        execution.coordinator.replay_bootstrap(),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .expect("closed activation-time work must not invalidate a driverless-only replay profile");
 }
 
 #[test]
 fn driverless_observation_gets_a_trigger_turn_after_dormant_publication() {
-    let reads = Arc::new(AtomicUsize::new(0));
-    let mut runtime = runtime();
-    runtime
-        .register_resource_provider(Box::new(DriverlessObservationProvider {
-            reads: reads.clone(),
-        }))
-        .unwrap();
-    let subject = runtime.runtime_context().unwrap().subject;
-    runtime
-        .grant_capability(Arc::new(BasicCapability::from_keys(
-            CapabilityId(9_023),
-            subject,
-            "snapshot://clock/tick/value",
-            ["read"],
-        )))
-        .unwrap();
-
-    let loaded = runtime
-        .load_source_program(
-            r#"
+    let (runtime, reads, loaded) = canonical_driverless_external_runtime_with_source(
+        r#"
 @clock := snapshot://clock/tick{:read(value)}
 trigger := @clock/value
 ~count := 0u64
 ~> trigger { count = 41u64 }
 count
 "#,
-            crate::ResidentDurabilityPolicy::Retained,
-        )
-        .unwrap();
+    );
 
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("driverless activation fixture must remain resident external")
+    };
+    assert!(
+        execution
+            .artifact
+            .nodes()
+            .iter()
+            .any(|node| matches!(node.body, mech_engine::ExecutableNodeBody::Activation(_)))
+    );
+    assert!(
+        execution
+            .coordinator
+            .instance()
+            .plan
+            .has_activation_scopes()
+    );
+    assert!(
+        execution
+            .coordinator
+            .instance()
+            .plan
+            .activation_nodes
+            .is_empty(),
+        "the reactive activation scope must not need a closed activation computation"
+    );
+    assert!(execution.coordinator.initial_publication_required());
     assert_eq!(runtime.program_execution_info().resident_accepted_turns, 2);
     assert!(matches!(
         loaded.initial_value.value().data(),
         ValueData::U64(41)
     ));
     assert_eq!(reads.load(Ordering::SeqCst), 2);
-    let count = runtime.root_symbol_value("count").unwrap();
     assert_eq!(
-        count.value().canonical_data_draft().unwrap(),
+        execution
+            .coordinator
+            .instance()
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
         ValueDataDraft::U64(41)
+    );
+    let modes = execution
+        .coordinator
+        .receipts()
+        .map(|(_, record)| record.body.mode)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        modes,
+        [
+            external::ResidentExternalTurnMode::InitialPublication,
+            external::ResidentExternalTurnMode::DriverlessBootstrap,
+        ]
+    );
+    let replay_bootstrap = execution.coordinator.replay_bootstrap();
+    let replay_instance = mech_engine::__resident::activate_external(
+        execution.coordinator.instance().id,
+        &execution.artifact,
+        &mech_stdlib::source_catalog(),
+        &mech_engine::__resident::ActivationFacts::default(),
+        mech_engine::__resident::ResidentIntegrityMode::Checked,
+    )
+    .unwrap();
+    let error = external::ResidentExternalCoordinator::new_replay(
+        replay_instance,
+        Arc::clone(&execution.artifact),
+        external::ResidentExternalReplayBootstrap::new(
+            false,
+            replay_bootstrap
+                .driverless_trigger_inputs()
+                .to_vec()
+                .into_boxed_slice(),
+        ),
+        crate::ResidentDurabilityPolicy::Retained,
+        external::ResidentExternalLimits::default(),
+    )
+    .err()
+    .expect("a driverless activation scope must retain its dormant publication boundary");
+    assert!(
+        error
+            .display_message()
+            .contains("invalid retained replay bootstrap profile")
     );
 }
 
@@ -4899,6 +5023,15 @@ snapshot-count
     });
     rejected_bootstrap.body.after_epoch = None;
     rejected_bootstrap.body.state_hash = loading_records[0].body.state_hash;
+    rejected_bootstrap.body.touched_slots = 0;
+    rejected_bootstrap.body.changed_slots = 0;
+    rejected_bootstrap.body.executed_nodes = 0;
+    rejected_bootstrap.body.effect_count = 0;
+    rejected_bootstrap.body.outbox_effect_count = 0;
+    rejected_bootstrap.body.transactional_effect_count = 0;
+    rejected_bootstrap.body.effect_batch_hash = [0; 32];
+    rejected_bootstrap.body.effect_ids_hash = [0; 32];
+    rejected_bootstrap.body.idempotency_keys_hash = [0; 32];
     let replay_instance = mech_engine::__resident::activate_external(
         live_id,
         &replay_artifact,
@@ -6420,6 +6553,12 @@ fn continuation_drain_replay_keeps_input_free_activations_dormant() {
     rejected_continuation.body.touched_slots = 0;
     rejected_continuation.body.changed_slots = 0;
     rejected_continuation.body.executed_nodes = 0;
+    rejected_continuation.body.effect_count = 0;
+    rejected_continuation.body.outbox_effect_count = 0;
+    rejected_continuation.body.transactional_effect_count = 0;
+    rejected_continuation.body.effect_batch_hash = [0; 32];
+    rejected_continuation.body.effect_ids_hash = [0; 32];
+    rejected_continuation.body.idempotency_keys_hash = [0; 32];
     let instance = mech_engine::__resident::activate_external(
         id,
         &artifact,

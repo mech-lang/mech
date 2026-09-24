@@ -495,6 +495,9 @@ pub struct ActivatedPlan {
     pub outputs: Box<[ActivatedOutput]>,
     output_materializations: Box<[ActivatedOutputMaterialization]>,
     pub constraints: Box<[ActivatedConstraint]>,
+    /// Artifact nodes evaluated once while the resident instance is
+    /// activated. This is not the set of reactive activation scopes; use
+    /// [`Self::has_activation_scopes`] for that scheduling distinction.
     pub activation_nodes: Box<[NodeId]>,
     activation_steps: Box<[ActivatedOnceNode]>,
     pub(crate) schemas: std::sync::Arc<mech_core::SchemaTable>,
@@ -520,6 +523,13 @@ impl ActivatedPlan {
 
     pub fn has_external_steps(&self) -> bool {
         self.external_step_count != 0
+    }
+
+    /// Reports whether the resident plan owns any reactive activation scopes.
+    /// This is distinct from `activation_nodes`, which contains closed
+    /// computations evaluated once while the resident instance is activated.
+    pub fn has_activation_scopes(&self) -> bool {
+        !self.activation_turn_inputs.is_empty()
     }
 
     pub fn has_input_free_activation_roots(&self) -> bool {
@@ -5229,7 +5239,10 @@ fn build_plan(
         }
     }
     for node in artifact.nodes() {
-        if node_is_pure(node) || sampled_nodes.contains_key(&node.node) {
+        if node_is_pure(node)
+            || classes[node.node.get() as usize] == NodeClass::Observation
+            || sampled_nodes.contains_key(&node.node)
+        {
             continue;
         }
         // Outputless effects are scheduling roots, not value producers. They
@@ -7354,6 +7367,7 @@ fn prepare_match_node(
         }
     }
     let output = &layout.slots[output_slot.get() as usize];
+    let suspends = control.contains_suspend();
     Ok(ActivatedMatchNode {
         artifact_node: owner,
         budget_node,
@@ -7383,6 +7397,9 @@ fn prepare_match_node(
             .iter()
             .map(|capture| {
                 let source = input_reads[capture.input as usize];
+                if !suspends {
+                    return Ok(source);
+                }
                 match (capture.freeze_on_suspend, source) {
                     (true, ResidentReadLocation::Input(region)) => {
                         Ok(ResidentReadLocation::LexicalInput(region))
