@@ -1102,6 +1102,9 @@ impl ResidentExternalCoordinator {
             || record.body.layout_generation != self.layout_generation
             || record.body.before_epoch != self.instance().published_epoch()
             || (record.body.initial_publication && self.next_turn != 1)
+            || (self.next_turn == 1
+                && self.instance().plan.turn_trigger_inputs.is_empty()
+                && !record.body.initial_publication)
             || (record.body.initial_publication && record.body.continuation_drain)
             || (record.body.continuation_drain && self.instance().continuation_wakeup().is_none())
         {
