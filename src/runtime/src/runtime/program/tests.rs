@@ -4346,6 +4346,109 @@ count
 }
 
 #[test]
+fn driverless_observation_gets_a_provider_turn_alongside_driven_triggers() {
+    let driverless_reads = Arc::new(AtomicUsize::new(0));
+    let driven_reads = Arc::new(AtomicUsize::new(0));
+    let mut runtime = runtime();
+    runtime
+        .register_resource_provider(Box::new(DriverlessObservationProvider {
+            reads: driverless_reads.clone(),
+        }))
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(PlanningObservationProvider {
+            plans: Arc::new(AtomicUsize::new(0)),
+            reads: driven_reads.clone(),
+            value_bits: Arc::new(AtomicU64::new(1.0_f64.to_bits())),
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, resource) in [
+        (CapabilityId(9_024), "snapshot://clock/tick/value"),
+        (CapabilityId(9_025), "test://clock/tick/delta-seconds"),
+    ] {
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                id,
+                subject,
+                resource,
+                ["read"],
+            )))
+            .unwrap();
+    }
+
+    runtime
+        .load_source_program(
+            r#"
+@snapshot := snapshot://clock/tick{:read(value)}
+@clock := test://clock/tick{:read(delta-seconds)}
+snapshot-trigger := @snapshot/value
+driven-trigger := @clock/delta-seconds
+~snapshot-count := 0u64
+~driven-count := 0u64
+~> snapshot-trigger { snapshot-count = snapshot-count + 1u64 }
+~> driven-trigger { driven-count = driven-count + 1u64 }
+snapshot-count + driven-count
+"#,
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+
+    assert_eq!(runtime.program_execution_info().resident_accepted_turns, 1);
+    assert_eq!(driverless_reads.load(Ordering::SeqCst), 1);
+    assert_eq!(driven_reads.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        runtime
+            .root_symbol_value("snapshot-count")
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(1)
+    );
+    assert_eq!(
+        runtime
+            .root_symbol_value("driven-count")
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(0)
+    );
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    let outcome = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        outcome.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(
+        runtime
+            .root_symbol_value("snapshot-count")
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(1)
+    );
+    assert_eq!(
+        runtime
+            .root_symbol_value("driven-count")
+            .unwrap()
+            .value()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(1)
+    );
+}
+
+#[test]
 fn independent_observations_seed_then_retain_the_accepted_host_snapshot() {
     let (mut runtime, reads) = independent_external_runtime();
     runtime
