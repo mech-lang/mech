@@ -2412,6 +2412,9 @@ fn render_fence_html(
         && !info.hidden
         && owner == lookup.root_owner
         && scope.as_ref() == Some(&CanonicalRenderScope::Root)
+        && fence
+            .mech_code()
+            .is_some_and(|code| scope_has_compiled_value(code.syntax()))
     {
         append_browser_mount(
             output,

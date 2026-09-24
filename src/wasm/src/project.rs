@@ -1750,6 +1750,16 @@ mod document {
             let source_map = source_map_from_js(sources)?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
+            if let Ok(payload) = BrowserDocumentPayload::decode(encoded) {
+                return Self::from_payload_with_sources_and_provenance(
+                    payload,
+                    root_specifier,
+                    source_map,
+                    resolutions,
+                    provenance,
+                    None,
+                );
+            }
             let bundle = decode_document_bundle(encoded, root_specifier, &source_map, &provenance)?;
             let payload = document_payload_from_bundle(root_specifier, &bundle)?;
             Self::from_payload_with_sources_and_provenance(

@@ -466,7 +466,8 @@ impl ServerSourceRegistry {
         let uses_mixed_compute_shim = self
             .compiler_hosts
             .iter()
-            .any(|host| host.provider == "compute");
+            .any(|host| host.provider == "compute")
+            && !shim.contains("{{DOCUMENT_SCRIPT}}");
         let mut module_specifiers = BTreeMap::new();
         // The workspace snapshot is the source authority, including expanded
         // includes and resolver-specific import edges. A browser transport owns
