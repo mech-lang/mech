@@ -3715,7 +3715,8 @@ pub(super) fn finalize_data(
 fn scalar_sequence_schema(schema: &SchemaBody) -> bool {
     matches!(
         schema,
-        SchemaBody::UnsignedInteger(_)
+        SchemaBody::IntegerInterval(_)
+            | SchemaBody::UnsignedInteger(_)
             | SchemaBody::SignedInteger(_)
             | SchemaBody::FloatingPoint(_)
             | SchemaBody::Complex(_)
@@ -3741,6 +3742,29 @@ fn finalize_scalar_sequence(
     element: ScalarSequenceElement,
     context: &SnapshotValidationContext<'_>,
 ) -> Result<SequenceStorage, SnapshotValueError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        for (index, draft) in values.iter().enumerate() {
+            let contained = match draft {
+                ValueDataDraft::U8(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U16(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U32(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U64(value) => interval.contains_unsigned(u128::from(*value)),
+                ValueDataDraft::U128(value) => interval.contains_unsigned(*value),
+                ValueDataDraft::I8(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I16(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I32(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I64(value) => interval.contains_signed(i128::from(*value)),
+                ValueDataDraft::I128(value) => interval.contains_signed(*value),
+                _ => false,
+            };
+            if !contained {
+                return Err(SnapshotValueError::IntegerIntervalViolationV1 {
+                    path: element.path(path, index),
+                });
+            }
+        }
+        return finalize_scalar_sequence(&interval.base_body(), values, path, element, context);
+    }
     macro_rules! pack {
         ($draft:ident, $storage:ident) => {{
             let mut packed = context.try_vec_with_capacity(values.len())?;
@@ -4165,10 +4189,23 @@ mod tests {
                 vec![ValueDataDraft::U8(1), ValueDataDraft::U8(second)].into_boxed_slice(),
             ),
         };
-        assert!(
-            matrix_draft(9)
-                .finalize(&SnapshotValidationContext::new(&matrix_schemas))
-                .is_ok()
+        let accepted = matrix_draft(9)
+            .finalize(&SnapshotValidationContext::new(&matrix_schemas))
+            .unwrap();
+        let ValueData::Matrix(accepted) = accepted.data() else {
+            panic!("interval matrix did not finalize as a matrix")
+        };
+        assert!(matches!(
+            accepted.elements(),
+            SequenceView::U8(values) if values == [1, 9]
+        ));
+        assert_eq!(
+            crate::snapshot::canonical_data_draft_finalization_work(
+                &SchemaBody::IntegerInterval(interval),
+                &ValueData::U8(1),
+            )
+            .unwrap(),
+            0
         );
         assert!(matches!(
             matrix_draft(10).finalize(&SnapshotValidationContext::new(&matrix_schemas)),

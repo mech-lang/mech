@@ -2482,40 +2482,71 @@ impl ValueCell {
         } else {
             None
         };
-        let allocated = if matches!(descriptor.schema().body(), SchemaBody::IntegerInterval(_)) {
-            // An exact primitive backing is rebound to the interval schema below.
-            // Seed it inside that interval before the required snapshot check.
-            match initial_data_for_descriptor(descriptor)? {
+        let interval = match descriptor.schema().body() {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            SchemaBody::Matrix { element, .. } => match element.as_ref() {
+                SchemaBody::IntegerInterval(interval) => Some(*interval),
+                _ => None,
+            },
+            _ => None,
+        };
+        let allocated = if let Some(interval) = interval {
+            // Exact primitive and matrix backings are rebound to the interval
+            // schema below. Seed every lane inside the interval before the
+            // required snapshot check.
+            let unsupported = || {
+                MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation,
+                        reason: "interval output has no matching exact numeric backing".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            };
+            macro_rules! seeded_interval_backing {
+                ($value:expr, $scalar:ident, $element:ident) => {
+                    match representation {
+                        FunctionValueRepresentation::$scalar => Self::from_exact_in(owner, $value)?,
+                        #[cfg(feature = "matrix")]
+                        FunctionValueRepresentation::Matrix {
+                            element: FunctionMatrixElement::$element,
+                            storage,
+                        } => default_matrix_cell_in(
+                            owner,
+                            storage,
+                            dimensions.ok_or_else(&unsupported)?,
+                            $value,
+                        )?,
+                        _ => return Err(unsupported()),
+                    }
+                };
+            }
+            match initial_data_for_schema(
+                &SchemaBody::IntegerInterval(interval),
+                descriptor.shape(),
+            )? {
                 #[cfg(feature = "u8")]
-                ValueDataDraft::U8(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::U8(value) => seeded_interval_backing!(value, U8, U8),
                 #[cfg(feature = "u16")]
-                ValueDataDraft::U16(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::U16(value) => seeded_interval_backing!(value, U16, U16),
                 #[cfg(feature = "u32")]
-                ValueDataDraft::U32(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::U32(value) => seeded_interval_backing!(value, U32, U32),
                 #[cfg(feature = "u64")]
-                ValueDataDraft::U64(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::U64(value) => seeded_interval_backing!(value, U64, U64),
                 #[cfg(feature = "u128")]
-                ValueDataDraft::U128(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::U128(value) => seeded_interval_backing!(value, U128, U128),
                 #[cfg(feature = "i8")]
-                ValueDataDraft::I8(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::I8(value) => seeded_interval_backing!(value, I8, I8),
                 #[cfg(feature = "i16")]
-                ValueDataDraft::I16(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::I16(value) => seeded_interval_backing!(value, I16, I16),
                 #[cfg(feature = "i32")]
-                ValueDataDraft::I32(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::I32(value) => seeded_interval_backing!(value, I32, I32),
                 #[cfg(feature = "i64")]
-                ValueDataDraft::I64(value) => Self::from_exact_in(owner, value)?,
+                ValueDataDraft::I64(value) => seeded_interval_backing!(value, I64, I64),
                 #[cfg(feature = "i128")]
-                ValueDataDraft::I128(value) => Self::from_exact_in(owner, value)?,
-                _ => {
-                    return Err(MechError::new(
-                        ValueCellOutputConstructionUnsupported {
-                            representation,
-                            reason: "interval output has no exact primitive backing".into(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc());
-                }
+                ValueDataDraft::I128(value) => seeded_interval_backing!(value, I128, I128),
+                _ => return Err(unsupported()),
             }
         } else {
             Self::allocate_backing_for_representation_in(owner, representation, dimensions)?
@@ -7805,6 +7836,43 @@ mod tests {
         assert_eq!(
             output.snapshot().unwrap().canonical_data_draft().unwrap(),
             ValueDataDraft::U8(1)
+        );
+    }
+
+    #[cfg(all(feature = "u8", feature = "matrixd"))]
+    #[test]
+    fn exact_interval_matrix_output_seeds_every_lane_inside_the_interval() {
+        let interval = crate::IntegerInterval::Unsigned {
+            width: crate::IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        };
+        let schema = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::IntegerInterval(interval)),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        };
+        let source = ValueCell::from_schema_data(
+            schema,
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(2), ValueDataDraft::U8(3)].into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let output = ValueCell::allocate_for_descriptor(
+            &source.resolved_descriptor().unwrap(),
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::U8,
+                storage: FunctionMatrixStoragePattern::AnyStorage,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(1)].into_boxed_slice(),
+            )
         );
     }
 

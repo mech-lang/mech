@@ -8145,7 +8145,7 @@ fn kind_schema_body(
                 .name()
                 .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
             let name = node_text(name.syntax())?;
-if let Some(range) = scalar.constraint() {
+            if let Some(range) = scalar.constraint() {
                 SchemaBody::IntegerInterval(integer_interval(&name, &range)?)
             } else {
                 match name.as_str() {
@@ -8177,10 +8177,6 @@ if let Some(range) = scalar.constraint() {
                                     anchor,
                                 });
                             }
-                        }
-                    },
-                }
-            }
                         }
                     },
                 }

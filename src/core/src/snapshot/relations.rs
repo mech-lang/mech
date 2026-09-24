@@ -763,6 +763,9 @@ pub fn canonical_data_draft_finalization_work_with_budget(
         data: &ValueData,
         budget: &SnapshotCanonicalizationBudget,
     ) -> Result<(), SnapshotValueError> {
+        if let SchemaBody::IntegerInterval(interval) = schema {
+            return visit(&interval.base_body(), data, budget);
+        }
         match (schema, data) {
             (SchemaBody::Option(element), ValueData::Option(value)) => {
                 if let Some(value) = value.as_deref() {
