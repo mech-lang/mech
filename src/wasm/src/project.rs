@@ -1152,13 +1152,19 @@ fn retained_submission_fragment<'a>(
     accepted_before: usize,
     submitted: &str,
 ) -> MResult<(&'a str, usize)> {
+    let mut normalized = submitted.to_owned();
+    if let Some(terminal) = mech_syntax::submission_terminal(submitted)
+        && terminal.suppresses_value
+    {
+        normalized.remove(terminal.byte_offset);
+    }
     let suffix = retained_source.get(accepted_before..).ok_or_else(|| {
         document_runtime_error("accepted documentation range is outside the retained source")
     })?;
     let relative_start = suffix
-        .rfind(submitted)
+        .rfind(&normalized)
         .ok_or_else(|| document_runtime_error("accepted documentation source was not retained"))?;
-    let relative_end = relative_start + submitted.len();
+    let relative_end = relative_start + normalized.len();
     if !suffix[relative_end..]
         .chars()
         .all(|character| matches!(character, '\r' | '\n'))
@@ -1168,7 +1174,7 @@ fn retained_submission_fragment<'a>(
         ));
     }
     let start = accepted_before + relative_start;
-    let end = start + submitted.len();
+    let end = start + normalized.len();
     Ok((&retained_source[start..end], start))
 }
 
@@ -4700,6 +4706,43 @@ phase"#;
             .format_html_body_live(&parsed.document(), &addresses)
             .unwrap();
         assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+    }
+
+    #[test]
+    fn documentation_fragment_uses_the_retained_suppressed_source() {
+        let baseline = "answer := 1\nanswer";
+        let submitted = "answer + 1; -- suppressed";
+        let retained = format!("{baseline}\nanswer + 1 -- suppressed\n");
+        let (fragment, fragment_start) =
+            retained_submission_fragment(&retained, baseline.len(), submitted).unwrap();
+        assert_eq!(fragment, "answer + 1 -- suppressed");
+        assert_eq!(fragment_start, baseline.len() + 1);
+    }
+
+    #[test]
+    fn runtime_document_capture_accepts_resolved_source_only_imports() {
+        let source = "+> ./widgets.mec\nanswer := 42\nanswer\n";
+        let source_map = HashMap::from([(
+            "bundle/widgets.mec".to_owned(),
+            "widget := 1\n<+ widget\n".to_owned(),
+        )]);
+        let resolutions = vec![SourceResolutionEntry::new(
+            "bundle/main.mec",
+            "./widgets.mec",
+            "bundle/widgets.mec",
+        )];
+        let bootstrap = document_bootstrap("bundle/main.mec", source, source_map, resolutions);
+        let (runtime_source, output) =
+            runtime_document(&bootstrap, bootstrap.document.document()).unwrap();
+        assert!(output.is_some());
+        assert!(
+            runtime_source
+                .source()
+                .to_contiguous_string()
+                .contains("```mech\nans\n```")
+        );
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert!(ordinals.contains_key(&root_document_program_output_id()));
     }
 
     #[test]
