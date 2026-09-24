@@ -241,6 +241,7 @@ pub struct Formatter {
     footnotes: Vec<String>,
     interpreter_id: u64,
     inline_eval_counters: BTreeMap<u64, u64>,
+    fenced_output_counters: BTreeMap<(u64, u64), u64>,
 }
 
 impl Formatter {
@@ -308,6 +309,7 @@ impl Formatter {
             toc: false,
             interpreter_id: 0,
             inline_eval_counters: BTreeMap::new(),
+            fenced_output_counters: BTreeMap::new(),
         }
     }
 
@@ -320,6 +322,7 @@ impl Formatter {
     pub fn format(&mut self, tree: &Program) -> String {
         self.html = false;
         self.inline_eval_counters.clear();
+        self.fenced_output_counters.clear();
         self.program(tree)
     }
 
@@ -404,6 +407,7 @@ impl Formatter {
     ) -> HtmlShimRender {
         self.html = true;
         self.inline_eval_counters.clear();
+        self.fenced_output_counters.clear();
 
         let title_slots = self.title_slots(&tree.title);
         let (
@@ -1178,7 +1182,7 @@ impl Formatter {
         };
         if self.html {
             let (out_node, _) = block.code.last().unwrap();
-            let output_id = hash_str(&format!("{:?}", out_node));
+            let base_output_id = hash_str(&format!("{:?}", out_node));
             let style_attr = match &block.options {
                 Some(option_map) if !option_map.elements.is_empty() => {
                     let style_str = option_map
@@ -1211,6 +1215,19 @@ impl Formatter {
                     style_attr, src
                 )
             } else {
+                let occurrence = self
+                    .fenced_output_counters
+                    .entry((intrp_id, base_output_id))
+                    .or_insert(0);
+                let output_id = if *occurrence == 0 {
+                    base_output_id
+                } else {
+                    hash_str(&format!(
+                        "mech/fenced-document-output/{base_output_id}/{}",
+                        *occurrence
+                    ))
+                };
+                *occurrence = occurrence.saturating_add(1);
                 let namespace_str = if namespace_str.is_empty() {
                     "".to_string()
                 } else {

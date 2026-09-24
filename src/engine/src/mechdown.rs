@@ -191,12 +191,17 @@ pub fn section_element(
                 out = eval_fenced_code_block(&block.code, p, false)?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let out_id = crate::program::fenced_document_output_id(block)
+                let base_id = crate::program::fenced_document_output_id(block)
                     .expect("an executable fenced block has an output identity");
-                p.out_values.borrow_mut().insert(
-                    out_id,
-                    crate::interpreter::retained_source_cell(out.clone())?,
-                );
+                if (!block.config.hidden && block.config.output)
+                    || base_id == crate::program::root_document_program_output_id()
+                {
+                    let out_id = next_fenced_document_output_id(block, p);
+                    p.out_values.borrow_mut().insert(
+                        out_id,
+                        crate::interpreter::retained_source_cell(out.clone())?,
+                    );
+                }
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
 
@@ -213,12 +218,13 @@ pub fn section_element(
                 })?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let out_id = crate::program::fenced_document_output_id(block)
-                    .expect("an executable fenced block has an output identity");
-                pp.out_values.borrow_mut().insert(
-                    out_id,
-                    crate::interpreter::retained_source_cell(out.clone())?,
-                );
+                if !block.config.hidden && block.config.output {
+                    let out_id = next_fenced_document_output_id(block, pp.as_ref());
+                    pp.out_values.borrow_mut().insert(
+                        out_id,
+                        crate::interpreter::retained_source_cell(out.clone())?,
+                    );
+                }
                 // A named fence is a scoped evaluator, but its returned value is
                 // still the latest document result. Mirror it into the parent
                 // `ans` projection so the document-boundary capture observes the
@@ -336,6 +342,24 @@ pub fn section_element(
     let hash = hasher.finish();
     ValueCell::from_schema_data(SchemaBody::Id, ValueDataDraft::Id(hash))
         .map(SpecializationInput::Cell)
+}
+
+fn next_fenced_document_output_id(
+    block: &FencedMechCode,
+    interpreter: &InterpreterExecution<'_>,
+) -> u64 {
+    let outputs = interpreter.out_values.borrow();
+    let mut occurrence = 0_u64;
+    loop {
+        let output_id = crate::program::fenced_document_output_occurrence_id(block, occurrence)
+            .expect("an executable fenced block has an output identity");
+        if !outputs.contains_key(&output_id) {
+            return output_id;
+        }
+        occurrence = occurrence
+            .checked_add(1)
+            .expect("fenced document output occurrence space is exhausted");
+    }
 }
 
 #[cfg(test)]

@@ -1089,7 +1089,9 @@ fn runtime_document(
     source: &WasmDocumentBootstrap,
     candidate: &SourceDocument,
 ) -> MResult<(SourceDocument, Option<OutputId>)> {
-    use mech_syntax::document::{AstNode, CodeBlockSyntax, CodeFenceScope, ParseConfig, Revision};
+    use mech_syntax::document::{
+        AstNode, CodeBlockSyntax, CodeFenceScope, MechCodeSyntax, ParseConfig, Revision, SyntaxKind,
+    };
 
     let original = source.initial_repl_source();
     let candidate_source = candidate.source().to_contiguous_string();
@@ -1133,6 +1135,21 @@ fn runtime_document(
                     )
                 {
                     boundary = boundary.max(node.range().end.0 as usize);
+                }
+                if let Some(code) = MechCodeSyntax::cast(node.clone()) {
+                    let mut found_owner = false;
+                    for child in code.syntax().children() {
+                        if child.range().contains_range(anchor.range) {
+                            found_owner = true;
+                            boundary = boundary.max(child.range().end.0 as usize);
+                            continue;
+                        }
+                        if found_owner && child.kind() == SyntaxKind::CodeTerminal {
+                            boundary = boundary.max(child.range().end.0 as usize);
+                        } else if found_owner {
+                            break;
+                        }
+                    }
                 }
                 pending.extend(node.children());
             }
@@ -3532,6 +3549,39 @@ mod tests {
         for output_id in &bootstrap.presentation_output_ids {
             assert_eq!(after[output_id], before[output_id] + 1);
         }
+    }
+
+    #[test]
+    fn repeated_fences_map_to_distinct_runtime_outputs() {
+        let source = "```mech\n42\n```\n\n```mech\n42\n```\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 2);
+        assert_ne!(
+            bootstrap.presentation_output_ids[0],
+            bootstrap.presentation_output_ids[1]
+        );
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert!(
+            bootstrap
+                .presentation_output_ids
+                .iter()
+                .all(|output_id| ordinals.contains_key(output_id))
+        );
+    }
+
+    #[test]
+    fn runtime_capture_follows_a_statement_terminal() {
+        let source = "answer := 42\nanswer;\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        let (runtime_source, capture) =
+            runtime_document(&bootstrap, bootstrap.document.document()).unwrap();
+        assert!(capture.is_some());
+        assert!(
+            runtime_source
+                .source()
+                .to_contiguous_string()
+                .contains("answer;\n```mech\nans\n```")
+        );
     }
 
     #[test]
