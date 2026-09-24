@@ -2252,6 +2252,43 @@ fn declared_fsm_publishes_output_and_continuation_atomically() {
 }
 
 #[test]
+fn fsm_publication_admission_counts_live_arm_bindings() {
+    let source = "#Publishing(kept<string>, published<string>) => <string>\n  | :Start(kept<string>)\n  | :Later.\n#Publishing(kept, published) -> :Start(kept)\n  :Start(kept)\n    => published\n    ~> :Later\n  :Later => published.\n#Publishing(kept<string>, published<string>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 86),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let kept = ["k".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let published = ["p".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let inputs = [
+        CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::String(&kept),
+        },
+        CapturedSignalInput {
+            slot: instance.plan.inputs[1].slot,
+            value: ResidentValueRef::String(&published),
+        },
+    ];
+
+    let epoch = instance.published_epoch();
+    assert!(instance.turn(&inputs).is_err());
+    assert_eq!(instance.published_epoch(), epoch);
+    assert!(!instance.has_ready_continuation());
+}
+
+#[test]
 fn declared_fsm_retains_its_last_publication_across_later_suspensions() {
     let source = "#Publishing() => <f64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9.\nvalue := #Publishing()\nvalue + signal<f64>\n";
     let compiled = CanonicalSourceFrontend

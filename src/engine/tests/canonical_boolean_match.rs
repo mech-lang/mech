@@ -324,7 +324,72 @@ fn typed_match_rejects_fsm_publication_nested_inside_a_guard() {
     assert!(matches!(
         draft.finalize(),
         Err(ArtifactBuildError::InvalidControl {
-            reason: "FSM publication cannot execute inside a match guard or comprehension",
+            reason: "FSM publication cannot execute inside a nested match, guard, or comprehension",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn typed_match_rejects_fsm_publication_nested_inside_another_match() {
+    let mut draft = fixture();
+    let scalar = draft.outputs[0].schema;
+    let true_ = (0..draft.constants.len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| {
+            matches!(
+                draft.constants.get(*id).unwrap().data(),
+                mech_core::ValueData::Bool(true)
+            )
+        })
+        .unwrap();
+    let scalar_constant = (0..draft.constants.len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| draft.constants.get(*id).unwrap().schema() == scalar)
+        .unwrap();
+    let nested = MatchDeclaration {
+        scrutinee: 0,
+        partial: false,
+        captures: Box::new([]),
+        arms: vec![ControlMatchArm {
+            pattern: MatchPattern::Wildcard,
+            guard: None,
+            body: ControlBlock {
+                id: ControlBlockId(1),
+                parameters: Box::new([]),
+                operations: vec![ControlOperation {
+                    node: 0,
+                    body: ControlOperationBody::Publish,
+                    inputs: vec![ControlValue::Constant(scalar_constant)].into_boxed_slice(),
+                    schema: scalar,
+                }]
+                .into_boxed_slice(),
+                yield_value: ControlValue::Local {
+                    block: ControlBlockId(1),
+                    node: 0,
+                },
+            },
+        }]
+        .into_boxed_slice(),
+    };
+    let matched = control(&mut draft);
+    matched.arms[0].body.operations = vec![ControlOperation {
+        node: 0,
+        body: ControlOperationBody::Match(nested),
+        inputs: vec![ControlValue::Constant(true_)].into_boxed_slice(),
+        schema: scalar,
+    }]
+    .into_boxed_slice();
+    matched.arms[0].body.yield_value = ControlValue::Local {
+        block: matched.arms[0].body.id,
+        node: 0,
+    };
+    matched.arms[1].body.id = ControlBlockId(2);
+
+    assert!(matches!(
+        draft.finalize(),
+        Err(ArtifactBuildError::InvalidControl {
+            reason: "FSM publication cannot execute inside a nested match, guard, or comprehension",
             ..
         })
     ));
