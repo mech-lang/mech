@@ -84,6 +84,7 @@ fn closed_comparison_masks_share_broadcast_and_ordering_semantics() {
         );
     }
     exact_closed_mask("x := [1 2; 3 4]\nmask := x >= 3\nx[mask]\n", "[3; 4]");
+    exact_closed_mask("x := [42]\nmask := 1 < 2\nx[mask]\n", "[42]");
 }
 
 #[test]
@@ -99,6 +100,14 @@ fn closed_whole_value_comparisons_have_scalar_populations() {
     exact_closed_mask(
         "x := [42 43]\np := [:Point :Point] == [:Point :Point]\nmask := [p false]\nx[mask]\n",
         "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := [-0.0] === [0.0]\nmask := [p false]\nx[mask]\n",
+        "[42]",
+    );
+    exact_closed_mask(
+        "x := [42 43]\np := (-0.0, 1) == (0.0, 1)\nmask := [p true]\nx[mask]\n",
+        "[43]",
     );
 }
 
