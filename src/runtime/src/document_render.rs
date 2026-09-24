@@ -6,8 +6,9 @@ use mech_engine::{CanonicalSourceProgram, SourceDocumentOutputKind};
 use mech_syntax::document::{
     AstNode, CodeBlockSyntax, CodeFenceScope, DocumentScopeId, DocumentSyntax,
     EvalInlineMechCodeSyntax, IdentifierSyntax, InlineMechCodeSyntax, MechCodeSyntax,
-    MikaSectionSyntax, NodeFlags, OptionMapSyntax, ParagraphSyntax, SectionElementSyntax,
-    SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange, TitleSyntax, UlSubtitleSyntax,
+    MikaSectionSyntax, NodeFlags, OperatorSyntax, OptionMapSyntax, ParagraphSyntax,
+    SectionElementSyntax, SectionSyntax, SyntaxElement, SyntaxKind, SyntaxNode, TextRange,
+    TitleSyntax, UlSubtitleSyntax,
 };
 
 use crate::RuntimeValueSnapshot;
@@ -2561,10 +2562,13 @@ fn visible_root_program_range(root: &SyntaxNode) -> Option<TextRange> {
             }
             return;
         }
-        if matches!(
-            node.kind(),
-            SyntaxKind::ContextSend | SyntaxKind::ActivationScope
-        ) {
+        if node.kind() == SyntaxKind::ContextSend {
+            if latest.is_none() {
+                retain_latest(latest, node.range(), false);
+            }
+            return;
+        }
+        if node.kind() == SyntaxKind::ActivationScope {
             retain_latest(latest, node.range(), false);
             return;
         }
@@ -2863,9 +2867,16 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         .into_iter()
         .map(|node| node.range())
         .collect::<Vec<_>>();
+    let mut operator_nodes = Vec::new();
+    collect_operator_nodes(node, &mut operator_nodes);
+    let operator_ranges = operator_nodes
+        .into_iter()
+        .filter_map(|operator| operator.operator_token_range())
+        .collect::<Vec<_>>();
     let mut output = String::new();
     let mut gap = String::new();
     let mut previous = None;
+    let mut previous_ended_operator = false;
     for token in node.tokens() {
         let kind = token.kind();
         let text = token.text().map_err(|_| range_error(token.range()))?;
@@ -2884,10 +2895,17 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
             gap.push_str(&text);
             continue;
         }
+        let operator = operator_ranges
+            .iter()
+            .find(|range| token.range().start >= range.start && token.range().end <= range.end);
+        let starts_operator = operator.is_some_and(|range| token.range().start == range.start);
+        let ends_operator = operator.is_some_and(|range| token.range().end == range.end);
         if gap.contains(['\r', '\n']) {
             output.push_str(&gap);
         } else if previous.is_some() {
             if !gap.is_empty()
+                || starts_operator
+                || previous_ended_operator
                 || matches!(
                     kind,
                     SyntaxKind::DefineOperatorToken | SyntaxKind::AssignOperator
@@ -2905,9 +2923,19 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         gap.clear();
         output.push_str(&text);
         previous = Some(kind);
+        previous_ended_operator = ends_operator;
     }
     output.push_str(&gap);
     Ok(output)
+}
+
+fn collect_operator_nodes(node: &SyntaxNode, output: &mut Vec<OperatorSyntax>) {
+    if let Some(operator) = OperatorSyntax::cast(node.clone()) {
+        output.push(operator);
+    }
+    for child in node.children() {
+        collect_operator_nodes(&child, output);
+    }
 }
 
 fn range_error(range: TextRange) -> CanonicalDocumentRenderError {

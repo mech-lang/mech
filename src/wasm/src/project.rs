@@ -1149,13 +1149,39 @@ fn runtime_document(
         .strip_prefix(&original)
         .map(|suffix| (original.as_str(), suffix))
         .unwrap_or((candidate_source.as_str(), ""));
-    let base_document = SourceDocument::parse_resolved(
-        "runtime:interactive",
-        Revision(candidate.source().revision().0),
-        base,
-        ParseConfig::default(),
-    )
-    .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
+    let nominal_origin = candidate.nominal_origin().cloned().or_else(|| {
+        source
+            .provenance
+            .get(&source.root_specifier)
+            .map(|provenance| provenance.nominal_origin.clone())
+    });
+    let nominal_package_id = candidate
+        .nominal_package_id()
+        .map(str::to_owned)
+        .or_else(|| {
+            source
+                .provenance
+                .get(&source.root_specifier)
+                .and_then(|provenance| provenance.nominal_package_id.clone())
+        });
+    let retain_provenance = |mut document: SourceDocument| {
+        if let Some(origin) = &nominal_origin {
+            document = document.with_nominal_origin(origin.clone());
+        }
+        if let Some(package_id) = &nominal_package_id {
+            document = document.with_nominal_package_id(package_id.clone());
+        }
+        document
+    };
+    let base_document = retain_provenance(
+        SourceDocument::parse_resolved(
+            "runtime:interactive",
+            Revision(candidate.source().revision().0),
+            base,
+            ParseConfig::default(),
+         )
+         .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?,
+     );
     let original_program = match compile_browser_interactive_document(source, &base_document) {
         Ok(program) => program,
         Err(_) => return Ok((candidate.clone(), None)),
@@ -1230,15 +1256,17 @@ fn runtime_document(
     let capture_end = executable.len();
     executable.push_str(trailing_presentation);
     executable.push_str(suffix);
-    let document = SourceDocument::parse_resolved(
-        "runtime:interactive",
-        Revision(candidate.source().revision().0),
-        executable,
-        ParseConfig::default(),
-    )
-    .map_err(|error| {
-        document_runtime_error(format!("invalid browser runtime source: {error:?}"))
-    })?;
+    let document = retain_provenance(
+        SourceDocument::parse_resolved(
+            "runtime:interactive",
+            Revision(candidate.source().revision().0),
+            executable,
+            ParseConfig::default(),
+        )
+         .map_err(|error| {
+             document_runtime_error(format!("invalid browser runtime source: {error:?}"))
+         })?,
+     );
     let program = compile_browser_interactive_document(source, &document)?;
     let output = program.document_outputs().iter().find_map(|output| {
         let anchor = program.source_map().outputs.get(output.output as usize)?;
@@ -4880,6 +4908,38 @@ phase"#;
         );
         compile_browser_interactive_document(&bootstrap, &document)
             .expect("browser output planning must use the provenance-enriched root document");
+    }
+
+    #[test]
+    fn runtime_capture_rewrite_retains_root_nominal_provenance() {
+        let source = "<event> := :idle | :busy\nanswer := 42\nanswer\n";
+        let origin =
+            mech_core::CanonicalNominalPath::new(["test-package".to_string(), "main".to_string()])
+                .unwrap();
+        let mut bootstrap = document_bootstrap(
+            "main.mec",
+            source,
+            HashMap::from([("main.mec".to_string(), source.to_string())]),
+            Vec::new(),
+        );
+        bootstrap.provenance.insert(
+            "main.mec".to_string(),
+            ServedSourceProvenance {
+                nominal_origin: origin.clone(),
+                nominal_package_id: Some("sha256:fixture".to_string()),
+            },
+        );
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            format!("{source}\nnext := 1\n"),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let (runtime_source, output) = runtime_document(&bootstrap, &candidate).unwrap();
+        assert!(output.is_some());
+        assert_eq!(runtime_source.nominal_origin(), Some(&origin));
+        assert_eq!(runtime_source.nominal_package_id(), Some("sha256:fixture"));
     }
 
     #[test]
