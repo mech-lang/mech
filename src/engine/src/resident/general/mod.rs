@@ -3319,7 +3319,15 @@ fn constant_comparison_operand<'a>(
                         converted
                     }
                 };
-                (converted, source.value.shape().parameter_values().into())
+                (
+                    converted,
+                    source
+                        .value
+                        .shape()
+                        .parameter_values()
+                        .to_vec()
+                        .into_boxed_slice(),
+                )
             } else if operation.operation.module_path.as_ref() == ["core"]
                 && operation.operation.operation_name == "composite-pack"
                 && matches!(target_schema.body(), SchemaBody::Tuple(_))
@@ -3337,7 +3345,7 @@ fn constant_comparison_operand<'a>(
                 }
                 (
                     ValueDataDraft::Tuple(values.into_boxed_slice()),
-                    Box::new([]),
+                    Vec::<u64>::new().into_boxed_slice(),
                 )
             } else {
                 return Ok(None);
