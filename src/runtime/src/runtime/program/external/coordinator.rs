@@ -507,7 +507,7 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, false, |_| Ok(()))
+        self.execute_live_turn(None, admission, false, false, |_| Ok(()))
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -521,7 +521,7 @@ impl ResidentExternalCoordinator {
         updates: &[crate::RuntimeHostInputUpdate],
     ) -> MResult<ResidentExternalTurnOutcome> {
         let admission = self.admit_host_turn(updates)?;
-        self.execute_live_turn(Some(updates), admission, false, |_| Ok(()))
+        self.execute_live_turn(Some(updates), admission, false, false, |_| Ok(()))
     }
 
     pub(crate) fn admit_host_turn(
@@ -543,7 +543,7 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(Some(updates), admission, false, prepublication)
+        self.execute_live_turn(Some(updates), admission, false, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -555,7 +555,7 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(None, admission, true, prepublication)
+        self.execute_live_turn(None, admission, true, false, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -570,7 +570,7 @@ impl ResidentExternalCoordinator {
         // `Some(&[])` deliberately captures from the last accepted host
         // snapshot. A continuation belongs to that accepted input turn and
         // must not read a provider value whose packet is still queued.
-        self.execute_live_turn(Some(&[]), admission, false, prepublication)
+        self.execute_live_turn(Some(&[]), admission, false, true, prepublication)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -657,6 +657,7 @@ impl ResidentExternalCoordinator {
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
         admission: ResidentExternalTurnAdmission,
         initial_publication: bool,
+        continuation_drain: bool,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -796,6 +797,8 @@ impl ResidentExternalCoordinator {
         let result = (|| {
             let prepared = if initial_publication {
                 instance.prepare_initial_turn_values(&inputs)
+            } else if continuation_drain {
+                instance.prepare_continuation_turn_values(&inputs)
             } else {
                 instance.prepare_turn_values_with_activation_triggers(&inputs, &activation_triggers)
             };
