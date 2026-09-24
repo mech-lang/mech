@@ -4,7 +4,8 @@
 use mech_syntax::document::{
     ActivationScopeSyntax, CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation,
     CodeFenceScope, EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax,
-    OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
+    OpAssignSyntax, SliceRefSyntax, TupleDestructureSyntax, VariableAssignSyntax,
+    VariableDefineSyntax,
 };
 
 use super::*;
@@ -72,9 +73,29 @@ pub(super) fn root_state_mutation_names(
     for node in root_statement_nodes(document)? {
         let target = VariableAssignSyntax::cast(node.clone())
             .and_then(|assignment| assignment.target())
-            .or_else(|| OpAssignSyntax::cast(node).and_then(|assignment| assignment.target()));
+            .or_else(|| {
+                OpAssignSyntax::cast(node.clone()).and_then(|assignment| assignment.target())
+            });
         if let Some(stem) = target.and_then(|target| target.stem()) {
             names.insert(node_text(stem.syntax())?);
+            continue;
+        }
+        if let Some(definition) = VariableDefineSyntax::cast(node.clone()) {
+            if definition.mutability_marker().is_some() {
+                let variable = definition
+                    .variable()
+                    .ok_or_else(|| missing_kind_child(definition.syntax(), "a defined variable"))?;
+                let stem = variable
+                    .stem()
+                    .ok_or_else(|| missing_kind_child(variable.syntax(), "a variable stem"))?;
+                names.insert(node_text(stem.syntax())?);
+            }
+            continue;
+        }
+        if let Some(destructure) = TupleDestructureSyntax::cast(node) {
+            for name in destructure.names() {
+                names.insert(node_text(name.syntax())?);
+            }
         }
     }
     Ok(names)

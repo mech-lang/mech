@@ -41,31 +41,53 @@ pub(in crate::runtime) fn validate_module_import_edges(
     })
 }
 
+#[cfg(feature = "source")]
 fn source_index_for_module_record_source(
-    source: &mech_core::MechSourceCode,
-    syntax_tree: Option<&mech_core::Program>,
+    source_document: Option<&crate::SourceDocument>,
 ) -> MResult<Option<SourceIndex>> {
-    if let Some(tree) = syntax_tree {
-        return Ok(Some(SourceIndex::from_program(tree)));
-    }
-    match source {
-        #[cfg(feature = "source")]
-        mech_core::MechSourceCode::String(source) => {
-            let tree = mech_syntax::parser::parse(source.trim())?;
-            Ok(Some(SourceIndex::from_program(&tree)))
-        }
-        _ => Ok(None),
-    }
+    source_document
+        .map(|document| {
+            document
+                .index()
+                .map(|index| index.root)
+                .map_err(|error| MechError::new(error, None))
+        })
+        .transpose()
 }
 
-fn source_index_for_resolved_source(resolved: &ResolvedSource) -> MResult<Option<SourceIndex>> {
-    source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())
+fn source_index_for_resolved_source(resolved: &mut ResolvedSource) -> MResult<Option<SourceIndex>> {
+    #[cfg(feature = "source")]
+    {
+        if matches!(resolved.kind, crate::SourceKind::Mech)
+            && matches!(&resolved.source, MechSourceCode::String(_))
+            && resolved.source_document().is_none()
+        {
+            *resolved = resolved.clone().retain_source_document(
+                mech_syntax::document::Revision(0),
+                mech_syntax::document::ParseConfig::default(),
+            )?;
+        }
+        source_index_for_module_record_source(resolved.source_document())
+    }
+    #[cfg(not(feature = "source"))]
+    {
+        let _ = resolved;
+        Ok(None)
+    }
 }
 
 fn source_index_for_runtime_record(
     record: &crate::RuntimeModuleRecord,
 ) -> MResult<Option<SourceIndex>> {
-    source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())
+    #[cfg(feature = "source")]
+    {
+        source_index_for_module_record_source(record.source_document.as_ref())
+    }
+    #[cfg(not(feature = "source"))]
+    {
+        let _ = record;
+        Ok(None)
+    }
 }
 
 fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
@@ -84,6 +106,35 @@ fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
     resolved.address_references = index.all_address_references();
     resolved.scopes = index.module_scopes();
     Ok(())
+}
+
+#[cfg(all(test, feature = "source"))]
+#[test]
+fn textual_custom_resolver_result_retains_canonical_module_edges() {
+    let mut resolved = ResolvedSource::new(
+        "main.mec",
+        "main.mec",
+        MechSourceCode::String("+> ./dep.mec\nvalue := 1\n".to_owned()),
+    )
+    .with_kind(crate::SourceKind::Mech);
+    assert!(resolved.source_document().is_none());
+    index_unindexed_module_source(&mut resolved).unwrap();
+    assert!(resolved.source_document().is_some());
+    assert_eq!(resolved.imports.len(), 1);
+}
+
+#[cfg(all(test, feature = "source"))]
+#[test]
+fn nested_program_custom_resolver_result_remains_unindexed() {
+    let mut resolved = ResolvedSource::new(
+        "main.mec",
+        "main.mec",
+        MechSourceCode::Program(vec![MechSourceCode::String("value := 1\n".to_owned())]),
+    )
+    .with_kind(crate::SourceKind::Mech);
+    index_unindexed_module_source(&mut resolved).unwrap();
+    assert!(resolved.source_document().is_none());
+    assert!(resolved.scopes.is_empty());
 }
 
 impl MechRuntime {
@@ -618,7 +669,6 @@ impl MechRuntime {
             #[cfg(feature = "source")]
             let version = version.with_source_document(record.source_document);
             let version = version
-                .with_syntax_tree(record.syntax_tree)
                 .with_exports(record.exports)
                 .with_imports(record.imports)
                 .with_contexts(record.contexts)

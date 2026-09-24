@@ -463,17 +463,9 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            let fallback_tree = source
-                .syntax_tree
-                .is_none()
-                .then(|| parser::parse(&source_text));
-            let tree = match (source.syntax_tree.as_deref(), fallback_tree.as_ref()) {
-                (Some(tree), _) => Ok(tree),
-                (None, Some(tree)) => tree.as_ref(),
-                (None, None) => unreachable!("missing parsed-tree fallback"),
-            };
+            let tree = parser::parse(&source_text);
             match tree {
-                Ok(tree) => {
+                Ok(ref tree) => {
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
                     extra_slots.insert(
@@ -4350,7 +4342,6 @@ mod tests {
                     path: Some(root.join("missing.mec")),
                     source: None,
                     source_document: None,
-                    syntax_tree: None,
                     module_version: None,
                     content_hash: 0,
                     modified_time: None,
