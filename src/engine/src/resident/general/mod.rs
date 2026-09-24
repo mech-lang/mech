@@ -3272,7 +3272,8 @@ fn constant_comparison_operand<'a>(
             {
                 return Ok(None);
             }
-            let [input] = node_inputs(artifact, producer)?.as_slice() else {
+            let inputs = node_inputs(artifact, producer)?;
+            let [input] = inputs.as_slice() else {
                 return Ok(None);
             };
             let Some(source) = constant_comparison_operand(artifact, node, *input, facts)? else {
