@@ -1233,6 +1233,7 @@ fn initialize_planned_default(
     frame: &mut crate::KernelMemoryFrame<'_>,
     object: crate::PlanObjectKey,
     slot: crate::PlannedSlotKind,
+    descriptor: &crate::ResolvedValueDescriptor,
 ) -> MResult<()> {
     use crate::{FloatWidth, IntegerWidth, PlannedSlotKind, ScalarMemoryKind};
     macro_rules! fill {
@@ -1240,6 +1241,64 @@ fn initialize_planned_default(
             frame.with_object_init_view::<$type, _>(object, |output| {
                 output.try_fill_column_major(|_| Ok($value))
             })
+        };
+    }
+    let interval = match descriptor.schema().body() {
+        SchemaBody::IntegerInterval(interval) => Some(*interval),
+        SchemaBody::Matrix { element, .. } => match element.as_ref() {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            _ => None,
+        },
+        _ => None,
+    };
+    if let Some(interval) = interval {
+        let seed =
+            initial_data_for_schema(&SchemaBody::IntegerInterval(interval), descriptor.shape())?;
+        return match (slot, seed) {
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W8)),
+                ValueDataDraft::U8(value),
+            ) => fill!(u8, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W16)),
+                ValueDataDraft::U16(value),
+            ) => fill!(u16, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W32)),
+                ValueDataDraft::U32(value),
+            ) => fill!(u32, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64)),
+                ValueDataDraft::U64(value),
+            ) => fill!(u64, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W128)),
+                ValueDataDraft::U128(value),
+            ) => fill!(u128, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W8)),
+                ValueDataDraft::I8(value),
+            ) => fill!(i8, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W16)),
+                ValueDataDraft::I16(value),
+            ) => fill!(i16, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W32)),
+                ValueDataDraft::I32(value),
+            ) => fill!(i32, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W64)),
+                ValueDataDraft::I64(value),
+            ) => fill!(i64, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W128)),
+                ValueDataDraft::I128(value),
+            ) => fill!(i128, value),
+            _ => Err(managed_host_shape_error(
+                object,
+                "planned interval output has no matching fixed initialization codec",
+            )),
         };
     }
     match slot {
@@ -1387,7 +1446,12 @@ impl ValueCell {
             let _scope =
                 owner.enter_realized_plan_point(&realized, crate::MemoryPlanPoint::new(0))?;
             let mut frame = owner.acquire_call(&realized, &prepared)?;
-            initialize_planned_default(&mut frame, object, output.value.storage.planned_slot())?;
+            initialize_planned_default(
+                &mut frame,
+                object,
+                output.value.storage.planned_slot(),
+                &output.descriptor,
+            )?;
         }
         Self::allocate_planned(
             owner,
