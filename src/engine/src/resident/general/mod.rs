@@ -5221,10 +5221,9 @@ fn build_plan(
             .filter(|candidate| {
                 state_writers.iter().any(|writer| {
                     candidate == writer
-                        || bit_is_set(
-                            &topology.same_turn_dependency_masks[candidate.get() as usize],
-                            writer.get() as usize,
-                        )
+                        || topology.same_turn_dependency_masks[candidate.get() as usize]
+                            .get(writer.get() as usize / 64)
+                            .is_some_and(|word| word & (1_u64 << (writer.get() as usize % 64)) != 0)
                 })
             })
             .collect::<Vec<_>>();
