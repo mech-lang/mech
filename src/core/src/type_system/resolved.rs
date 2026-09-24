@@ -245,6 +245,7 @@ struct SchemaKindBuilder {
 impl SchemaKindBuilder {
     fn kind(&mut self, body: &SchemaBody) -> Result<KindExpr, TypeResolutionError> {
         let kind = match body {
+            SchemaBody::IntegerInterval(interval) => KindExpr::IntegerInterval(*interval),
             body if BuiltinScalarKind::from_schema_body(body).is_some() => {
                 BuiltinScalarKind::from_schema_body(body)
                     .unwrap()
@@ -380,14 +381,20 @@ fn schema_predicate_set(
         })
         .collect::<Vec<_>>();
     let mut predicates = intrinsic_kind_predicates(kind, &child_predicates);
-    // Nominal enum payloads are intentionally absent from KindExpr, so their
-    // closed schema remains the evidence authority for these two predicates.
-    if matches!(body, SchemaBody::Enum { .. }) {
+    // Enum payloads and integer intervals use their closed schema as the
+    // evidence authority for equality and keyability.
+    if matches!(
+        body,
+        SchemaBody::Enum { .. } | SchemaBody::IntegerInterval(_)
+    ) {
         if schema_equatable(body) {
             predicates.insert(BuiltinKindPredicate::Equatable);
         }
         if crate::schema::is_schema_body_keyable(body) {
             predicates.insert(BuiltinKindPredicate::Keyable);
+        }
+        if matches!(body, SchemaBody::IntegerInterval(interval) if interval.is_valid()) {
+            predicates.insert(BuiltinKindPredicate::Ordered);
         }
     }
     predicates
@@ -395,6 +402,7 @@ fn schema_predicate_set(
 
 fn schema_equatable(body: &SchemaBody) -> bool {
     match body {
+        SchemaBody::IntegerInterval(_) => true,
         SchemaBody::Dynamic => false,
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)

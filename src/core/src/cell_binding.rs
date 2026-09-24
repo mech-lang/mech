@@ -1233,6 +1233,7 @@ fn initialize_planned_default(
     frame: &mut crate::KernelMemoryFrame<'_>,
     object: crate::PlanObjectKey,
     slot: crate::PlannedSlotKind,
+    descriptor: &crate::ResolvedValueDescriptor,
 ) -> MResult<()> {
     use crate::{FloatWidth, IntegerWidth, PlannedSlotKind, ScalarMemoryKind};
     macro_rules! fill {
@@ -1240,6 +1241,64 @@ fn initialize_planned_default(
             frame.with_object_init_view::<$type, _>(object, |output| {
                 output.try_fill_column_major(|_| Ok($value))
             })
+        };
+    }
+    let interval = match descriptor.schema().body() {
+        SchemaBody::IntegerInterval(interval) => Some(*interval),
+        SchemaBody::Matrix { element, .. } => match element.as_ref() {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            _ => None,
+        },
+        _ => None,
+    };
+    if let Some(interval) = interval {
+        let seed =
+            initial_data_for_schema(&SchemaBody::IntegerInterval(interval), descriptor.shape())?;
+        return match (slot, seed) {
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W8)),
+                ValueDataDraft::U8(value),
+            ) => fill!(u8, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W16)),
+                ValueDataDraft::U16(value),
+            ) => fill!(u16, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W32)),
+                ValueDataDraft::U32(value),
+            ) => fill!(u32, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64)),
+                ValueDataDraft::U64(value),
+            ) => fill!(u64, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W128)),
+                ValueDataDraft::U128(value),
+            ) => fill!(u128, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W8)),
+                ValueDataDraft::I8(value),
+            ) => fill!(i8, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W16)),
+                ValueDataDraft::I16(value),
+            ) => fill!(i16, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W32)),
+                ValueDataDraft::I32(value),
+            ) => fill!(i32, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W64)),
+                ValueDataDraft::I64(value),
+            ) => fill!(i64, value),
+            (
+                PlannedSlotKind::FixedScalar(ScalarMemoryKind::Signed(IntegerWidth::W128)),
+                ValueDataDraft::I128(value),
+            ) => fill!(i128, value),
+            _ => Err(managed_host_shape_error(
+                object,
+                "planned interval output has no matching fixed initialization codec",
+            )),
         };
     }
     match slot {
@@ -1387,7 +1446,12 @@ impl ValueCell {
             let _scope =
                 owner.enter_realized_plan_point(&realized, crate::MemoryPlanPoint::new(0))?;
             let mut frame = owner.acquire_call(&realized, &prepared)?;
-            initialize_planned_default(&mut frame, object, output.value.storage.planned_slot())?;
+            initialize_planned_default(
+                &mut frame,
+                object,
+                output.value.storage.planned_slot(),
+                &output.descriptor,
+            )?;
         }
         Self::allocate_planned(
             owner,
@@ -2482,8 +2546,87 @@ impl ValueCell {
         } else {
             None
         };
-        let allocated =
-            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?;
+        let interval = match descriptor.schema().body() {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            SchemaBody::Matrix { element, .. } => match element.as_ref() {
+                SchemaBody::IntegerInterval(interval) => Some(*interval),
+                _ => None,
+            },
+            _ => None,
+        };
+        let allocated = if let Some(interval) = interval {
+            // Exact primitive and matrix backings are rebound to the interval
+            // schema below. Seed every lane inside the interval before the
+            // required snapshot check.
+            let unsupported = || {
+                MechError::new(
+                    ValueCellOutputConstructionUnsupported {
+                        representation,
+                        reason: "interval output has no matching exact numeric backing".into(),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            };
+            #[cfg(any(
+                feature = "u8",
+                feature = "u16",
+                feature = "u32",
+                feature = "u64",
+                feature = "u128",
+                feature = "i8",
+                feature = "i16",
+                feature = "i32",
+                feature = "i64",
+                feature = "i128"
+            ))]
+            macro_rules! seeded_interval_backing {
+                ($value:expr, $scalar:ident, $element:ident) => {
+                    match representation {
+                        FunctionValueRepresentation::$scalar => Self::from_exact_in(owner, $value)?,
+                        #[cfg(feature = "matrix")]
+                        FunctionValueRepresentation::Matrix {
+                            element: FunctionMatrixElement::$element,
+                            storage,
+                        } => default_matrix_cell_in(
+                            owner,
+                            storage,
+                            dimensions.ok_or_else(&unsupported)?,
+                            $value,
+                        )?,
+                        _ => return Err(unsupported()),
+                    }
+                };
+            }
+            match initial_data_for_schema(
+                &SchemaBody::IntegerInterval(interval),
+                descriptor.shape(),
+            )? {
+                #[cfg(feature = "u8")]
+                ValueDataDraft::U8(value) => seeded_interval_backing!(value, U8, U8),
+                #[cfg(feature = "u16")]
+                ValueDataDraft::U16(value) => seeded_interval_backing!(value, U16, U16),
+                #[cfg(feature = "u32")]
+                ValueDataDraft::U32(value) => seeded_interval_backing!(value, U32, U32),
+                #[cfg(feature = "u64")]
+                ValueDataDraft::U64(value) => seeded_interval_backing!(value, U64, U64),
+                #[cfg(feature = "u128")]
+                ValueDataDraft::U128(value) => seeded_interval_backing!(value, U128, U128),
+                #[cfg(feature = "i8")]
+                ValueDataDraft::I8(value) => seeded_interval_backing!(value, I8, I8),
+                #[cfg(feature = "i16")]
+                ValueDataDraft::I16(value) => seeded_interval_backing!(value, I16, I16),
+                #[cfg(feature = "i32")]
+                ValueDataDraft::I32(value) => seeded_interval_backing!(value, I32, I32),
+                #[cfg(feature = "i64")]
+                ValueDataDraft::I64(value) => seeded_interval_backing!(value, I64, I64),
+                #[cfg(feature = "i128")]
+                ValueDataDraft::I128(value) => seeded_interval_backing!(value, I128, I128),
+                _ => return Err(unsupported()),
+            }
+        } else {
+            Self::allocate_backing_for_representation_in(owner, representation, dimensions)?
+        };
         let mut builder = SchemaTableBuilder::new();
         let handle = builder
             .insert(descriptor.schema().clone())
@@ -5171,6 +5314,61 @@ fn initial_data_for_descriptor(
 fn initial_data_for_schema(schema: &SchemaBody, shape: &ShapeInstance) -> MResult<ValueDataDraft> {
     use crate::snapshot::{Complex32Bits, Complex64Bits, F32Bits, F64Bits};
     Ok(match schema {
+        SchemaBody::IntegerInterval(interval) => {
+            use crate::{IntegerInterval, IntegerWidth};
+            match interval {
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W8,
+                    lower,
+                    ..
+                } => ValueDataDraft::U8(*lower as u8),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W16,
+                    lower,
+                    ..
+                } => ValueDataDraft::U16(*lower as u16),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W32,
+                    lower,
+                    ..
+                } => ValueDataDraft::U32(*lower as u32),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W64,
+                    lower,
+                    ..
+                } => ValueDataDraft::U64(*lower as u64),
+                IntegerInterval::Unsigned {
+                    width: IntegerWidth::W128,
+                    lower,
+                    ..
+                } => ValueDataDraft::U128(*lower),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W8,
+                    lower,
+                    ..
+                } => ValueDataDraft::I8(*lower as i8),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W16,
+                    lower,
+                    ..
+                } => ValueDataDraft::I16(*lower as i16),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W32,
+                    lower,
+                    ..
+                } => ValueDataDraft::I32(*lower as i32),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W64,
+                    lower,
+                    ..
+                } => ValueDataDraft::I64(*lower as i64),
+                IntegerInterval::Signed {
+                    width: IntegerWidth::W128,
+                    lower,
+                    ..
+                } => ValueDataDraft::I128(*lower),
+            }
+        }
         SchemaBody::Dynamic => ValueDataDraft::Dynamic(None),
         SchemaBody::Bool => ValueDataDraft::Bool(false),
         SchemaBody::UnsignedInteger(crate::IntegerWidth::W8) => ValueDataDraft::U8(0),
@@ -7271,6 +7469,7 @@ impl canonical_cell_sealed::Sealed for Value {
 
 fn representation_for_schema(schema: &SchemaBody) -> FunctionValueRepresentation {
     match schema {
+        SchemaBody::IntegerInterval(interval) => representation_for_schema(&interval.base_body()),
         SchemaBody::Dynamic => FunctionValueRepresentation::AnyValue,
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => FunctionValueRepresentation::U8,
         SchemaBody::UnsignedInteger(IntegerWidth::W16) => FunctionValueRepresentation::U16,
@@ -7424,6 +7623,7 @@ pub(crate) fn close_schema_body(body: &SchemaBody, shape: &ShapeInstance) -> MRe
     }
 
     Ok(match body {
+        SchemaBody::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
         SchemaBody::Dynamic => SchemaBody::Dynamic,
         SchemaBody::Bool => SchemaBody::Bool,
         SchemaBody::UnsignedInteger(width) => SchemaBody::UnsignedInteger(*width),
@@ -7690,6 +7890,67 @@ mod tests {
     #[cfg(all(feature = "f64", feature = "matrix"))]
     use crate::{DimensionLifetime, DimensionParameterId, DimensionParameterOrigin};
     use crate::{DimensionParameterDeclaration, SchemaDraft, SchemaTableBuilder};
+
+    #[cfg(feature = "u8")]
+    #[test]
+    fn exact_interval_output_starts_at_the_admitted_lower_endpoint() {
+        let interval = SchemaBody::IntegerInterval(crate::IntegerInterval::Unsigned {
+            width: crate::IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        });
+        let source = ValueCell::from_schema_data(interval, ValueDataDraft::U8(2)).unwrap();
+        let resolved = source.resolved_type().unwrap();
+        assert!(resolved.satisfies(crate::BuiltinKindPredicate::Equatable));
+        assert!(resolved.satisfies(crate::BuiltinKindPredicate::Keyable));
+        let output = ValueCell::allocate_for_descriptor(
+            &source.resolved_descriptor().unwrap(),
+            FunctionValueRepresentation::U8,
+        )
+        .unwrap();
+        assert_eq!(
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::U8(1)
+        );
+    }
+
+    #[cfg(all(feature = "u8", feature = "matrixd"))]
+    #[test]
+    fn exact_interval_matrix_output_seeds_every_lane_inside_the_interval() {
+        let interval = crate::IntegerInterval::Unsigned {
+            width: crate::IntegerWidth::W8,
+            lower: 1,
+            upper: 10,
+            upper_inclusive: false,
+        };
+        let schema = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::IntegerInterval(interval)),
+            dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(2)]
+                .into_boxed_slice(),
+        };
+        let source = ValueCell::from_schema_data(
+            schema,
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(2), ValueDataDraft::U8(3)].into_boxed_slice(),
+            ),
+        )
+        .unwrap();
+        let output = ValueCell::allocate_for_descriptor(
+            &source.resolved_descriptor().unwrap(),
+            FunctionValueRepresentation::Matrix {
+                element: FunctionMatrixElement::U8,
+                storage: FunctionMatrixStoragePattern::AnyStorage,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            output.snapshot().unwrap().canonical_data_draft().unwrap(),
+            ValueDataDraft::Matrix(
+                vec![ValueDataDraft::U8(1), ValueDataDraft::U8(1)].into_boxed_slice(),
+            )
+        );
+    }
 
     struct TestSchema {
         id: SchemaId,

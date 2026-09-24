@@ -895,6 +895,7 @@ fn retain_component_children(
     entries: &mut Vec<SchemaEntry>,
 ) -> Result<(), SemanticModelError> {
     match body {
+        SchemaBody::IntegerInterval(_) => {}
         SchemaBody::Enum { variants, .. } => {
             for child in variants
                 .iter()
@@ -1131,6 +1132,10 @@ fn component_closure_cost_for_roots_with_budget(
 
         charge(budget)?;
         match body {
+            SchemaBody::IntegerInterval(_) => Some(CloneEncodingCost {
+                clone_bytes: 0,
+                encoding_bytes: 37,
+            }),
             SchemaBody::Dynamic
             | SchemaBody::Bool
             | SchemaBody::String
@@ -1499,6 +1504,7 @@ fn boxed_body_clone_bytes(body: &SchemaBody) -> Option<u64> {
 
 fn body_clone_heap_bytes(body: &SchemaBody) -> Option<u64> {
     match body {
+        SchemaBody::IntegerInterval(_) => Some(0),
         SchemaBody::Dynamic
         | SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)

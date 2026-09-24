@@ -56,6 +56,9 @@ fn collect_schema_features(body: &SchemaBody, features: &mut BTreeSet<NativeValu
         SchemaBody::Bool => {
             features.insert(Feature::Bool);
         }
+        SchemaBody::IntegerInterval(interval) => {
+            collect_schema_features(&interval.base_body(), features);
+        }
         SchemaBody::UnsignedInteger(width) => {
             features.insert(match width {
                 mech_core::IntegerWidth::W8 => Feature::U8,

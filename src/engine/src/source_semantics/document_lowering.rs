@@ -1832,7 +1832,12 @@ impl SemanticBuilder {
             self.ordinary_written_states.insert(state);
         }
         let expected = self.schema_draft_of(PendingValue::State(state))?;
-        let mut value = self.expression(&expression)?.0;
+        let mut value = if operation.is_none() && target.subscripts().is_none() {
+            self.expression_with_expected(&expression, Some(ExpectedSchema::Value(&expected)))?
+                .0
+        } else {
+            self.expression(&expression)?.0
+        };
         if let Some(subscripts) = target.subscripts() {
             value = self.document_selected_update(
                 self.current_state_value(state),

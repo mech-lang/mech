@@ -127,6 +127,7 @@ fn evaluate_min_max(
 
 fn evaluate_body_extents(body: &SchemaBody, values: &[u64]) -> Result<(), SemanticModelError> {
     match body {
+        SchemaBody::IntegerInterval(_) => {}
         SchemaBody::Enum { variants, .. } => {
             for variant in variants {
                 if let Some(payload) = &variant.payload {

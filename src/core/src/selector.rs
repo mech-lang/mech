@@ -20,6 +20,9 @@ pub enum CanonicalSelectorVisitError<E> {
 }
 
 pub fn is_positional_selector_schema(schema: &SchemaBody) -> bool {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return is_positional_selector_schema(&interval.base_body());
+    }
     matches!(
         schema,
         SchemaBody::Index
@@ -189,6 +192,9 @@ pub fn visit_canonical_positional_indices<E>(
 }
 
 fn scalar_matches_schema(schema: &SchemaBody, data: &ValueData) -> bool {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return scalar_matches_schema(&interval.base_body(), data);
+    }
     matches!(
         (schema, data),
         (SchemaBody::Index, ValueData::Index(_))

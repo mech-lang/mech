@@ -413,6 +413,11 @@ pub fn bytecode_kind_from_schema(schema: &crate::SchemaBody) -> MResult<crate::B
     use crate::{BytecodeKind, FloatWidth, IntegerWidth, SchemaBody};
 
     Ok(match schema {
+        // Matrix templates encode the storage lane; the register descriptor
+        // remains the authority for the interval's distinct schema identity.
+        SchemaBody::IntegerInterval(interval) => {
+            return bytecode_kind_from_schema(&interval.base_body());
+        }
         SchemaBody::Bool => BytecodeKind::Scalar(crate::hash_str("bool")),
         SchemaBody::UnsignedInteger(IntegerWidth::W8) => {
             BytecodeKind::Scalar(crate::hash_str("u8"))

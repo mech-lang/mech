@@ -22,12 +22,12 @@ use mech_core::{
     BuiltinKindPredicate, BuiltinScalarKind, CanonicalNominalPath, CardinalitySpec,
     ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder, DimensionEnvironmentBuilder,
     DimensionExpr, DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerWidth, KindExpr, KindField,
-    KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind, OperationContractDeclaration,
-    ResolvedOutputSchemaRule, ResolvedType, Schema, SchemaBody, SchemaDraft, SchemaField, SchemaId,
-    SchemaTable, SchemaTableBuilder, SourceInputKind, TypeConstraintOrigin, TypeOverloadCandidate,
-    Value, ValueDataDraft, ValueDraft, execute_conversion_draft, plan_explicit_cast,
-    plan_numeric_promotion,
+    DimensionParameterOrigin, FloatWidth, InputKindScheme, IntegerInterval, IntegerWidth, KindExpr,
+    KindField, KindId, NamedKindPathResolver, NodeId, NominalKey, NominalKind,
+    OperationContractDeclaration, ResolvedOutputSchemaRule, ResolvedType, Schema, SchemaBody,
+    SchemaDraft, SchemaField, SchemaId, SchemaTable, SchemaTableBuilder, SourceInputKind,
+    TypeConstraintOrigin, TypeOverloadCandidate, Value, ValueDataDraft, ValueDraft,
+    execute_conversion_draft, plan_explicit_cast, plan_numeric_promotion,
 };
 use mech_syntax::document::{
     AnyCallArgumentSyntax, AstNode, CanonicalOperator, ComprehensionQualifierValueSyntax,
@@ -1884,6 +1884,7 @@ fn schema_draft_from_resolved(
                 })?,
             KindExpr::Id => SchemaBody::Id,
             KindExpr::Index => SchemaBody::Index,
+            KindExpr::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
             KindExpr::Atom(key) => SchemaBody::Atom(*key),
             KindExpr::Enum(key) => {
                 let mut witnesses = known
@@ -3762,7 +3763,7 @@ impl SemanticBuilder {
                 self.expression_body_with_expected(&expression, expected)?
             }
             FactorValueSyntax::Negate(value) => {
-                if let Some(literal) = self.negated_number_literal(&value)? {
+                if let Some(literal) = self.negated_number_literal(&value, expected)? {
                     literal
                 } else {
                     let operand =
@@ -4721,6 +4722,29 @@ impl SemanticBuilder {
                 None => Ok(atom),
             };
         }
+        if let (Some(annotation), Some(LiteralValueSyntax::Number(number))) =
+            (literal.annotation(), literal.value())
+        {
+            let expected = self.annotation_schema_draft(&annotation)?;
+            if let Some(value) = self.constrained_integer_literal(
+                expected,
+                &number,
+                canonical_number_source(&number)?,
+            )? {
+                return Ok(value);
+            }
+        }
+        if literal.annotation().is_none()
+            && let (Some(contextual), Some(LiteralValueSyntax::Number(number))) =
+                (contextual, literal.value())
+            && let Some(value) = self.constrained_integer_literal(
+                contextual.clone(),
+                &number,
+                canonical_number_source(&number)?,
+            )?
+        {
+            return Ok(value);
+        }
         let annotation = literal
             .annotation()
             .map(|annotation| self.scalar_annotation_schema(&annotation))
@@ -4818,9 +4842,70 @@ impl SemanticBuilder {
         })
     }
 
+    fn constrained_integer_literal(
+        &mut self,
+        expected: SchemaDraft,
+        number: &mech_syntax::document::NumberSyntax,
+        source: String,
+    ) -> Result<Option<PendingValue>, SourceSemanticError> {
+        let interval = match &expected.body {
+            SchemaBody::IntegerInterval(interval) => Some(*interval),
+            SchemaBody::Option(payload) => match payload.as_ref() {
+                SchemaBody::IntegerInterval(interval) => Some(*interval),
+                _ => None,
+            },
+            _ => None,
+        };
+        let Some(interval) = interval else {
+            return Ok(None);
+        };
+        let builtin = builtin_schema_for_body(&interval.base_body())
+            .expect("integer interval has a builtin base");
+        let suffix = selected_integer_suffix(number)?;
+        let (decoded, data) = decode_number(
+            &source,
+            if suffix.is_some() {
+                None
+            } else {
+                Some(builtin)
+            },
+            suffix,
+        )
+        .ok_or_else(|| SourceSemanticError {
+            code: "source-semantics/invalid-interval-literal",
+            message: "integer literal cannot be represented by the interval's base kind".to_owned(),
+            anchor: SourceSemanticAnchor::for_node(number.syntax()),
+        })?;
+        if decoded != builtin {
+            return Err(SourceSemanticError {
+                code: "source-semantics/incompatible-literal-kind",
+                message: "explicit integer suffix does not match the interval's base kind"
+                    .to_owned(),
+                anchor: SourceSemanticAnchor::for_node(number.syntax()),
+            });
+        }
+        if !integer_interval_contains_draft(interval, &data) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/integer-interval-violation",
+                message: "integer literal is outside its annotated interval".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(number.syntax()),
+            });
+        }
+        let data = if matches!(expected.body, SchemaBody::Option(_)) {
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(data)),
+            })
+        } else {
+            data
+        };
+        Ok(Some(self.constant_draft(expected, data)))
+    }
+
     fn negated_number_literal(
         &mut self,
         negate: &mech_syntax::document::NegateFactorSyntax,
+        expected: Option<ExpectedSchema<'_>>,
     ) -> Result<Option<PendingValue>, SourceSemanticError> {
         fn find<N: AstNode>(node: &SyntaxNode, range: TextRange) -> Option<N> {
             if node.range() == range {
@@ -4846,6 +4931,20 @@ impl SemanticBuilder {
         let Some(LiteralValueSyntax::Number(number)) = literal.value() else {
             return Ok(None);
         };
+        if let Some(annotation) = literal.annotation() {
+            let expected = self.annotation_schema_draft(&annotation)?;
+            let source = format!("-{}", canonical_number_source(&number)?);
+            if let Some(value) = self.constrained_integer_literal(expected, &number, source)? {
+                return Ok(Some(value));
+            }
+        } else if let Some(expected) = expected {
+            let source = format!("-{}", canonical_number_source(&number)?);
+            if let Some(value) =
+                self.constrained_integer_literal(expected.schema().clone(), &number, source)?
+            {
+                return Ok(Some(value));
+            }
+        }
         let annotation = literal
             .annotation()
             .map(|annotation| self.scalar_annotation_schema(&annotation))
@@ -6845,6 +6944,27 @@ impl SemanticBuilder {
         {
             return Ok(value);
         }
+        if let SchemaBody::IntegerInterval(interval) = &expected.body {
+            if actual.body == interval.base_body() {
+                if let PendingValue::Constant(index) = value {
+                    let data = self.constants[index].data.clone();
+                    if integer_interval_contains_draft(*interval, &data) {
+                        return Ok(self.constant_draft(expected.clone(), data));
+                    }
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/integer-interval-violation",
+                        message: "integer constant is outside its annotated interval".to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
+                return Err(SourceSemanticError {
+                    code: "source-semantics/unsupported-live-interval-conversion",
+                    message: "a live integer value cannot be implicitly narrowed into an interval"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+        }
         if let SchemaBody::Option(payload) = &expected.body {
             if !matches!(actual.body, SchemaBody::Option(_)) {
                 let payload_schema = SchemaDraft {
@@ -7654,17 +7774,14 @@ fn kind_expr(
             KindExpr::Atom(NominalKey::from_path(NominalKind::Atom, &path))
         }
         KindValueSyntax::Scalar(scalar) => {
-            if scalar.constraint().is_some() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-constraint",
-                    message: "reified scalar range constraints are not representable".to_owned(),
-                    anchor,
-                });
-            }
             let name = scalar
                 .name()
                 .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
-            match node_text(name.syntax())?.as_str() {
+            let name = node_text(name.syntax())?;
+            if let Some(range) = scalar.constraint() {
+                return Ok(KindExpr::IntegerInterval(integer_interval(&name, &range)?));
+            }
+            match name.as_str() {
                 "id" => KindExpr::Id,
                 "ix" | "index" => KindExpr::Index,
                 name => {
@@ -7840,6 +7957,121 @@ fn builtin_schema_for_annotation_body(body: &SchemaBody) -> Option<BuiltinSchema
     }
 }
 
+fn integer_interval(
+    name: &str,
+    range: &RangeExpressionSyntax,
+) -> Result<IntegerInterval, SourceSemanticError> {
+    let anchor = SourceSemanticAnchor::for_node(range.syntax());
+    let error = |code, message: &str| SourceSemanticError {
+        code,
+        message: message.to_owned(),
+        anchor,
+    };
+    let base = builtin_kind_named(name).map(BuiltinScalarKind::schema_body);
+    let (signed, width) = match base {
+        Some(SchemaBody::UnsignedInteger(width)) => (false, width),
+        Some(SchemaBody::SignedInteger(width)) => (true, width),
+        _ => {
+            return Err(error(
+                "source-semantics/unsupported-interval-domain",
+                "fixed integer intervals require a signed or unsigned integer scalar kind",
+            ));
+        }
+    };
+    let bounds = range.bounds();
+    let operators = range.operators();
+    if bounds.len() != 2 || operators.len() != 1 {
+        return Err(error(
+            "source-semantics/unsupported-interval-step",
+            "fixed integer intervals require two endpoints and no step operand",
+        ));
+    }
+    let operator = node_text(operators[0].syntax())?;
+    let upper_inclusive = match operator.trim() {
+        ".." => false,
+        "..=" => true,
+        _ => {
+            return Err(error(
+                "source-semantics/unsupported-interval-operator",
+                "fixed integer intervals require .. or ..=",
+            ));
+        }
+    };
+    let parse = |bound: &FormulaSyntax| -> Result<String, SourceSemanticError> {
+        let text = node_text(bound.syntax())?;
+        let text = text.trim().replace('_', "");
+        let digits = text.strip_prefix('-').unwrap_or(&text);
+        if digits.is_empty() || !digits.bytes().all(|digit| digit.is_ascii_digit()) {
+            return Err(SourceSemanticError {
+                code: "source-semantics/unsupported-interval-endpoint",
+                message: "interval endpoints must be closed decimal integer literals".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(bound.syntax()),
+            });
+        }
+        Ok(text)
+    };
+    let lower = parse(&bounds[0])?;
+    let upper = parse(&bounds[1])?;
+    let interval = if signed {
+        IntegerInterval::Signed {
+            width,
+            lower: lower.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "lower endpoint is outside the supported signed integer domain",
+                )
+            })?,
+            upper: upper.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "upper endpoint is outside the supported signed integer domain",
+                )
+            })?,
+            upper_inclusive,
+        }
+    } else {
+        IntegerInterval::Unsigned {
+            width,
+            lower: lower.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "lower endpoint is outside the supported unsigned integer domain",
+                )
+            })?,
+            upper: upper.parse().map_err(|_| {
+                error(
+                    "source-semantics/invalid-interval-bound",
+                    "upper endpoint is outside the supported unsigned integer domain",
+                )
+            })?,
+            upper_inclusive,
+        }
+    };
+    if !interval.is_valid() {
+        return Err(error(
+            "source-semantics/invalid-interval-bound",
+            "integer interval is empty, descending, or outside its declared width",
+        ));
+    }
+    Ok(interval)
+}
+
+fn integer_interval_contains_draft(interval: IntegerInterval, data: &ValueDataDraft) -> bool {
+    match data {
+        ValueDataDraft::U8(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U16(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U32(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U64(v) => interval.contains_unsigned(u128::from(*v)),
+        ValueDataDraft::U128(v) => interval.contains_unsigned(*v),
+        ValueDataDraft::I8(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I16(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I32(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I64(v) => interval.contains_signed(i128::from(*v)),
+        ValueDataDraft::I128(v) => interval.contains_signed(*v),
+        _ => false,
+    }
+}
+
 fn annotation_schema_draft_with_declarations(
     annotation: &KindAnnotationSyntax,
     declarations: &BTreeMap<String, SchemaDraft>,
@@ -7909,49 +8141,45 @@ fn kind_schema_body(
             SchemaBody::Atom(NominalKey::from_path(NominalKind::Atom, &path))
         }
         KindValueSyntax::Scalar(scalar) => {
-            if scalar.constraint().is_some() {
-                return Err(SourceSemanticError {
-                    code: "source-semantics/unsupported-kind-constraint",
-                    message: "scalar range constraints require a first-class constrained schema"
-                        .to_owned(),
-                    anchor,
-                });
-            }
             let name = scalar
                 .name()
                 .ok_or_else(|| missing_kind_child(scalar.syntax(), "scalar kind name"))?;
             let name = node_text(name.syntax())?;
-            match name.as_str() {
-                "ix" | "index" => SchemaBody::Index,
-                "id" => SchemaBody::Id,
-                _ => match builtin_kind_named(&name) {
-                    Some(kind) => kind.schema_body(),
-                    None => {
-                        if let Some(declaration) = declarations.get(&name) {
-                            mech_core::rebase_schema_draft_dimensions(declaration, dimensions)
-                                .map_err(|error| {
-                                    internal(
-                                        anchor,
-                                        format!(
-                                            "unable to instantiate declared kind {name:?}: {error:?}"
-                                        ),
-                                    )
-                                })?
-                        } else if pending.contains(&name) {
-                            return Err(SourceSemanticError {
-                                code: "source-semantics/pending-kind-declaration",
-                                message: format!("declared kind {name:?} is not resolved yet"),
-                                anchor,
-                            });
-                        } else {
-                            return Err(SourceSemanticError {
-                                code: "source-semantics/unsupported-kind-annotation",
-                                message: format!("unknown scalar or declared kind {name:?}"),
-                                anchor,
-                            });
+            if let Some(range) = scalar.constraint() {
+                SchemaBody::IntegerInterval(integer_interval(&name, &range)?)
+            } else {
+                match name.as_str() {
+                    "ix" | "index" => SchemaBody::Index,
+                    "id" => SchemaBody::Id,
+                    _ => match builtin_kind_named(&name) {
+                        Some(kind) => kind.schema_body(),
+                        None => {
+                            if let Some(declaration) = declarations.get(&name) {
+                                mech_core::rebase_schema_draft_dimensions(declaration, dimensions)
+                                    .map_err(|error| {
+                                        internal(
+                                            anchor,
+                                            format!(
+                                                "unable to instantiate declared kind {name:?}: {error:?}"
+                                            ),
+                                        )
+                                    })?
+                            } else if pending.contains(&name) {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/pending-kind-declaration",
+                                    message: format!("declared kind {name:?} is not resolved yet"),
+                                    anchor,
+                                });
+                            } else {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/unsupported-kind-annotation",
+                                    message: format!("unknown scalar or declared kind {name:?}"),
+                                    anchor,
+                                });
+                            }
                         }
-                    }
-                },
+                    },
+                }
             }
         }
         KindValueSyntax::Map(map) => SchemaBody::Map {

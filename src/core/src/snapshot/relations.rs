@@ -763,6 +763,9 @@ pub fn canonical_data_draft_finalization_work_with_budget(
         data: &ValueData,
         budget: &SnapshotCanonicalizationBudget,
     ) -> Result<(), SnapshotValueError> {
+        if let SchemaBody::IntegerInterval(interval) = schema {
+            return visit(&interval.base_body(), data, budget);
+        }
         match (schema, data) {
             (SchemaBody::Option(element), ValueData::Option(value)) => {
                 if let Some(value) = value.as_deref() {
@@ -876,6 +879,9 @@ fn compare_key_data_with_budget(
     right: &ValueData,
     budget: Option<&SnapshotCanonicalizationBudget>,
 ) -> Result<Ordering, SnapshotValueError> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return compare_key_data_with_budget(&interval.base_body(), left, right, budget);
+    }
     if !schema_is_keyable(schema) {
         return Err(SnapshotValueError::SchemaNotKeyableV1);
     }
@@ -1028,6 +1034,9 @@ pub fn schema_data_partial_cmp(
     left: &ValueData,
     right: &ValueData,
 ) -> Option<Ordering> {
+    if let SchemaBody::IntegerInterval(interval) = schema {
+        return schema_data_partial_cmp(&interval.base_body(), left, right);
+    }
     macro_rules! ordinary {
         ($variant:ident) => {
             if let (ValueData::$variant(left), ValueData::$variant(right)) = (left, right) {
@@ -1465,6 +1474,7 @@ fn sequence_exact_eq(left: &SequenceStorage, right: &SequenceStorage) -> bool {
 
 pub(super) fn schema_is_keyable(schema: &SchemaBody) -> bool {
     match schema {
+        SchemaBody::IntegerInterval(_) => true,
         SchemaBody::Bool
         | SchemaBody::UnsignedInteger(_)
         | SchemaBody::SignedInteger(_)
