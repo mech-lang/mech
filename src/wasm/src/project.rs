@@ -21,7 +21,8 @@ use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode,
 #[cfg(test)]
 use mech_engine::CanonicalSourceFrontend;
 use mech_engine::{
-    SourceDocumentOutputKind, root_document_output_ids, root_document_program_output_id,
+    SourceDocumentOutputKind, root_document_has_program_value, root_document_output_ids,
+    root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -1142,51 +1143,60 @@ fn runtime_document(
         Ok(program) => program,
         Err(_) => return Ok((candidate.clone(), None)),
     };
-    let program_boundary = original_program
-        .document_outputs()
-        .iter()
-        .find(|output| output.kind == SourceDocumentOutputKind::Program)
-        .and_then(|output| {
+    let presentation = mech_syntax::parser::parse(base.trim()).map_err(|error| {
+        document_runtime_error(format!(
+            "browser presentation identity parsing failed: {error:?}"
+        ))
+    })?;
+    let program_boundary = root_document_has_program_value(&presentation)
+        .then(|| {
             original_program
-                .source_map()
-                .outputs
-                .get(output.output as usize)
-        })
-        .map(|anchor| {
-            let mut boundary = anchor.range.end.0 as usize;
-            let mut pending = vec![base_document.document().syntax().clone()];
-            while let Some(node) = pending.pop() {
-                if !node.range().contains_range(anchor.range) {
-                    continue;
-                }
-                if let Some(fence) = CodeBlockSyntax::cast(node.clone())
-                    && fence.mech_code().is_some()
-                    && matches!(
-                        fence.info().map(|info| info.scope),
-                        Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
-                    )
-                {
-                    boundary = boundary.max(node.range().end.0 as usize);
-                }
-                if let Some(code) = MechCodeSyntax::cast(node.clone()) {
-                    let mut found_owner = false;
-                    for child in code.syntax().children() {
-                        if child.range().contains_range(anchor.range) {
-                            found_owner = true;
-                            boundary = boundary.max(child.range().end.0 as usize);
+                .document_outputs()
+                .iter()
+                .find(|output| output.kind == SourceDocumentOutputKind::Program)
+                .and_then(|output| {
+                    original_program
+                        .source_map()
+                        .outputs
+                        .get(output.output as usize)
+                })
+                .map(|anchor| {
+                    let mut boundary = anchor.range.end.0 as usize;
+                    let mut pending = vec![base_document.document().syntax().clone()];
+                    while let Some(node) = pending.pop() {
+                        if !node.range().contains_range(anchor.range) {
                             continue;
                         }
-                        if found_owner && child.kind() == SyntaxKind::CodeTerminal {
-                            boundary = boundary.max(child.range().end.0 as usize);
-                        } else if found_owner {
-                            break;
+                        if let Some(fence) = CodeBlockSyntax::cast(node.clone())
+                            && fence.mech_code().is_some()
+                            && matches!(
+                                fence.info().map(|info| info.scope),
+                                Some(CodeFenceScope::Root | CodeFenceScope::Named(_))
+                            )
+                        {
+                            boundary = boundary.max(node.range().end.0 as usize);
                         }
+                        if let Some(code) = MechCodeSyntax::cast(node.clone()) {
+                            let mut found_owner = false;
+                            for child in code.syntax().children() {
+                                if child.range().contains_range(anchor.range) {
+                                    found_owner = true;
+                                    boundary = boundary.max(child.range().end.0 as usize);
+                                    continue;
+                                }
+                                if found_owner && child.kind() == SyntaxKind::CodeTerminal {
+                                    boundary = boundary.max(child.range().end.0 as usize);
+                                } else if found_owner {
+                                    break;
+                                }
+                            }
+                        }
+                        pending.extend(node.children());
                     }
-                }
-                pending.extend(node.children());
-            }
-            boundary
-        });
+                    boundary
+                })
+        })
+        .flatten();
     let Some(program_boundary) = program_boundary else {
         return Ok((candidate.clone(), None));
     };

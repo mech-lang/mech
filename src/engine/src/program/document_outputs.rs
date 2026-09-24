@@ -1,6 +1,6 @@
 use mech_core::{
     BlockConfig, Comment, FencedMechCode, MDList, MechCode, Paragraph, ParagraphElement, Program,
-    SectionAnnotation, SectionElement, Statement, hash_str, inline_document_output_id,
+    SectionAnnotation, SectionElement, Statement, Title, hash_str, inline_document_output_id,
 };
 
 /// Runtime-only namespace used by the browser document adapter to capture the
@@ -85,6 +85,15 @@ pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
     let mut inline_count = 0_u64;
     let mut inline_occurrences = Vec::new();
     let mut fence_occurrences = Vec::new();
+    if let Some(title) = &program.title {
+        collect_title_output_ids(
+            title,
+            &mut inline_count,
+            &mut inline_occurrences,
+            &mut fence_occurrences,
+            &mut output_ids,
+        );
+    }
     for section in &program.body.sections {
         for element in &section.elements {
             collect_section_output_ids(
@@ -114,6 +123,15 @@ pub fn root_document_inline_eval_count(program: &Program) -> u64 {
     let mut inline_count = 0_u64;
     let mut inline_occurrences = Vec::new();
     let mut fence_occurrences = Vec::new();
+    if let Some(title) = &program.title {
+        collect_title_output_ids(
+            title,
+            &mut inline_count,
+            &mut inline_occurrences,
+            &mut fence_occurrences,
+            &mut output_ids,
+        );
+    }
     for section in &program.body.sections {
         for element in &section.elements {
             collect_section_output_ids(
@@ -126,6 +144,39 @@ pub fn root_document_inline_eval_count(program: &Program) -> u64 {
         }
     }
     inline_count
+}
+
+fn collect_title_output_ids(
+    title: &Title,
+    inline_count: &mut u64,
+    inline_occurrences: &mut Vec<(u64, u64)>,
+    fence_occurrences: &mut Vec<(u64, u64)>,
+    output_ids: &mut Vec<u64>,
+) {
+    for paragraph in [&title.author, &title.date].into_iter().flatten() {
+        collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
+    }
+    if let Some(hero) = &title.hero {
+        collect_section_output_ids(
+            hero,
+            inline_count,
+            inline_occurrences,
+            fence_occurrences,
+            output_ids,
+        );
+    }
+    for paragraph in [
+        &title.kicker,
+        &title.section,
+        &title.summary,
+        &title.next,
+        &title.previous,
+    ]
+    .into_iter()
+    .flatten()
+    {
+        collect_paragraph_output_ids(paragraph, inline_count, inline_occurrences, output_ids);
+    }
 }
 
 fn collect_section_output_ids(
@@ -280,10 +331,47 @@ pub(crate) fn fenced_document_output_id(block: &FencedMechCode) -> Option<u64> {
     if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
         return Some(root_document_program_output_id());
     }
-    block
+    if !block
         .code
-        .last()
-        .map(|(last_code, _)| hash_str(&format!("{last_code:?}")))
+        .iter()
+        .any(|(code, _)| code_produces_fence_result(code))
+    {
+        return None;
+    }
+    let mut identity = String::from("mech/fenced-document-output/v2");
+    for (code, _) in &block.code {
+        identity.push_str(match code {
+            MechCode::Comment(_) => "/comment",
+            MechCode::ActivationScope(_) => "/activation",
+            MechCode::Expression(_) => "/expression",
+            MechCode::FsmImplementation(_) => "/fsm-implementation",
+            MechCode::FsmSpecification(_) => "/fsm-specification",
+            MechCode::FunctionDefine(_) => "/function",
+            MechCode::Import(_) => "/import",
+            MechCode::Statement(_) => "/statement",
+            MechCode::Error(_, _) => "/error",
+        });
+        for token in code.tokens() {
+            identity.push('/');
+            identity.push_str(&format!("{:?}:{}", token.kind, token.to_string()));
+        }
+    }
+    Some(hash_str(&identity))
+}
+
+fn code_produces_fence_result(code: &MechCode) -> bool {
+    match code {
+        MechCode::ActivationScope(_) | MechCode::Expression(_) => true,
+        MechCode::Statement(statement) => matches!(
+            statement,
+            Statement::OpAssign(_)
+                | Statement::VariableAssign(_)
+                | Statement::VariableDefine(_)
+                | Statement::ContextSend(_)
+                | Statement::TupleDestructure(_)
+        ),
+        _ => false,
+    }
 }
 
 pub(crate) fn fenced_document_output_occurrence_id(
@@ -302,6 +390,16 @@ pub(crate) fn fenced_document_output_occurrence_id(
 
 fn section_contains_program_value(elements: &[SectionElement]) -> bool {
     elements.iter().any(element_contains_program_value)
+}
+
+/// Whether a root document contains an ordinary value eligible for the
+/// implicit program-result presentation.
+pub fn root_document_has_program_value(program: &Program) -> bool {
+    program
+        .body
+        .sections
+        .iter()
+        .any(|section| section_contains_program_value(&section.elements))
 }
 
 fn element_contains_program_value(element: &SectionElement) -> bool {
@@ -561,5 +659,37 @@ mod tests {
         let output_ids = root_document_output_ids(&tree);
         assert_eq!(output_ids.len(), 2);
         assert_ne!(output_ids[0], output_ids[1]);
+    }
+
+    #[test]
+    fn title_front_matter_uses_the_root_inline_identity_namespace() {
+        let tree = mech_syntax::parse(
+            "Document\n========\nauthor: Ada {40 + 2}\nhero: ![Result {41 + 1}](hero.svg)\n========\n",
+        )
+        .unwrap();
+        let output_ids = root_document_output_ids(&tree);
+        assert_eq!(output_ids.len(), 2);
+        assert_eq!(root_document_inline_eval_count(&tree), 2);
+    }
+
+    #[test]
+    fn declaration_only_fences_have_no_presentation_address() {
+        let tree = mech_syntax::parse("```mech\n#Identity(x) => x\n```\n").unwrap();
+        assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn fences_with_the_same_final_expression_keep_semantic_identities() {
+        let original =
+            mech_syntax::parse("```mech\nx := 1\nx\n```\n\n```mech\nx := 2\nx\n```\n").unwrap();
+        let inserted = mech_syntax::parse(
+            "```mech\nx := 0\nx\n```\n\n```mech\nx := 1\nx\n```\n\n```mech\nx := 2\nx\n```\n",
+        )
+        .unwrap();
+        let original_ids = root_document_output_ids(&original);
+        let inserted_ids = root_document_output_ids(&inserted);
+        assert_eq!(original_ids.len(), 2);
+        assert_eq!(inserted_ids.len(), 3);
+        assert!(original_ids.iter().all(|id| inserted_ids.contains(id)));
     }
 }
