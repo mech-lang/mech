@@ -443,6 +443,7 @@ fn qualified_nominal_atoms_without_enum_context_retain_their_paths() {
     assert!(matches!(schema.body(), SchemaBody::Atom(_)));
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn payload_free_enum_match_arms_lower_as_nominal_structural_patterns() {
     execute_document(

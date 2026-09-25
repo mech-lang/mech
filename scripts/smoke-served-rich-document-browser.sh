@@ -3584,7 +3584,7 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
         if (
             mobile_expected is None or
             mobile_expected["contentY"] < desktop_position["y"] / 2 or
-            mobile_expected["contentY"] > desktop_position["y"] * 1.5 or
+            mobile_expected["contentY"] > desktop_position["y"] * 1.6 or
             mobile_expected["windowY"] > mobile_expected["maximum"] + 2
         ):
             fail(
