@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the two publication-facing IROS EKF charts from retained samples."""
+"""Render the publication-facing IROS EKF charts from retained samples."""
 
 from __future__ import annotations
 
@@ -23,6 +23,14 @@ class Row:
     detail: str
     color: str
     samples: list[float]
+
+
+@dataclass(frozen=True)
+class ModePairRow:
+    label: str
+    detail: str
+    checked: list[float]
+    unchecked: list[float]
 
 
 def esc(value: object) -> str:
@@ -52,54 +60,74 @@ def sample_offsets(count: int) -> list[int]:
 
 def render_cross_language() -> None:
     fused = load("apple-m1-fused-reference-controls-2026-08-31.json")
+    mech_unchecked = load("apple-m1-mech-persistent-simd-2026-08-31.json")
+    mojo = load("apple-m1-mojo-advanced-2026-09-04.json")
+    futhark = load("apple-m1-futhark-ispc-fixed-2026-08-31.json")
     rows = [
-        Row(
-            "Rust packed SIMD",
-            "four-wide SIMD",
-            "#dea584",
-            fused["rows"]["rust_fused_checked"]["throughput_millions"],
-        ),
-        Row(
-            "Mech SIMD/JIT",
-            "four-wide SIMD",
-            "#f4c430",
+        ModePairRow(
+            "Mech",
+            "SIMD/JIT · f32x4",
             fused["rows"]["mech_fused_checked"]["throughput_millions"],
+            mech_unchecked["rows"]["fused_unchecked_block"]["throughput_millions"],
         ),
-        Row(
-            "Julia SIMD.jl",
-            "SIMD, eight threads",
-            "#9558b2",
+        ModePairRow(
+            "Rust",
+            "packed SIMD · f32x4",
+            fused["rows"]["rust_fused_checked"]["throughput_millions"],
+            fused["rows"]["rust_fused"]["throughput_millions"],
+        ),
+        ModePairRow(
+            "Mojo",
+            "explicit SIMD-4",
+            mojo["rows"]["Mojo fused SIMD-4, 8 workers"]["checked"]
+            ["samples_million_ekf_turns_per_second"],
+            mojo["rows"]["Mojo fused SIMD-4, 8 workers"]["unchecked"]
+            ["samples_million_ekf_turns_per_second"],
+        ),
+        ModePairRow(
+            "Julia",
+            "SIMD.jl",
             fused["rows"]["julia_fused_checked"]["throughput_millions"],
+            fused["rows"]["julia_fused"]["throughput_millions"],
         ),
-        Row(
+        ModePairRow(
+            "Futhark",
+            "ISPC AOT",
+            futhark["rows"]["checked"]["throughput_millions"],
+            futhark["rows"]["unchecked"]["throughput_millions"],
+        ),
+        ModePairRow(
             "NumPy/Numba",
-            "compiled array kernel",
-            "#4d77cf",
+            "compiled parallel kernel",
             fused["rows"]["numba_fused_checked"]["throughput_millions"],
+            fused["rows"]["numba_fused"]["throughput_millions"],
         ),
     ]
 
-    width, height = 1600, 620
-    left, right, top = 350, 145, 165
-    axis_y = 475
-    chart_width = width - left - right
-    maximum = 165.0
+    width, height = 1800, 900
+    left, plot_right, top = 355, 1450, 190
+    axis_y = 765
+    chart_width = plot_right - left
+    maximum = 185.0
 
     def x(value: float) -> float:
         return left + chart_width * value / maximum
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="cross-title cross-desc">',
-        '<title id="cross-title">Checked CPU EKF throughput under a matched execution shape</title>',
-        '<desc id="cross-desc">Four checked CPU implementations on one Apple M1, each running 500,000 filters for 40 turns with eight workers and a fused worker-local block. Every retained process sample is shown with its median and observed minimum-to-maximum range.</desc>',
+        '<title id="cross-title">Comparable checked and unchecked CPU EKF throughput across six implementations</title>',
+        '<desc id="cross-desc">Mech, Rust, Mojo, Julia, Futhark, and NumPy with Numba on one Apple M1, each running 500,000 filters for 40 turns with eight workers and a fused CPU implementation. Checked and unchecked lanes show every retained process sample with its median and observed minimum-to-maximum range.</desc>',
         '<rect width="100%" height="100%" fill="#080c14"/>',
-        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:18px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker{stroke:#e8edf5;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>',
-        '<text x="42" y="48" font-size="28" font-weight="700">Checked CPU EKF throughput under a matched execution shape</text>',
-        '<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers · fused worker-local block · checked · n=3</text>',
+        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker-checked{stroke:#f4c430;stroke-width:2.5}.whisker-unchecked{stroke:#58a6ff;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>',
+        '<text x="42" y="48" font-size="28" font-weight="700">Comparable CPU EKF throughput across six implementations</text>',
+        '<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers · fused CPU execution</text>',
         '<text x="42" y="112" class="muted" font-size="13">Circles are retained process samples; diamonds are medians; whiskers are observed min–max ranges, not confidence intervals.</text>',
+        '<circle cx="1160" cy="145" r="6" fill="#f4c430"/><text x="1175" y="150" class="muted" font-size="14">checked</text>',
+        '<circle cx="1270" cy="145" r="6" fill="#58a6ff"/><text x="1285" y="150" class="muted" font-size="14">unchecked</text>',
+        '<text x="1510" y="150" class="muted" font-size="13">median M turns/s</text>',
     ]
 
-    for tick in range(0, 161, 20):
+    for tick in range(0, 181, 20):
         tick_x = x(float(tick))
         lines.append(
             f'<line x1="{tick_x:.1f}" y1="{top - 25}" x2="{tick_x:.1f}" y2="{axis_y}" class="grid"/>'
@@ -109,47 +137,194 @@ def render_cross_language() -> None:
         )
 
     for index, row in enumerate(rows):
-        y = top + index * 72
-        median = statistics.median(row.samples)
-        low, high = min(row.samples), max(row.samples)
+        y = top + index * 92
         lines.append(
-            f'<line x1="{left}" y1="{y + 34}" x2="{width - right}" y2="{y + 34}" class="row-guide"/>'
+            f'<line x1="{left}" y1="{y + 43}" x2="{plot_right}" y2="{y + 43}" class="row-guide"/>'
         )
         lines.append(
-            f'<text x="{left - 24}" y="{y - 2}" text-anchor="end" class="label">{esc(row.label)}</text>'
+            f'<text x="{left - 24}" y="{y - 4}" text-anchor="end" class="label">{esc(row.label)}</text>'
         )
         lines.append(
-            f'<text x="{left - 24}" y="{y + 19}" text-anchor="end" class="detail">{esc(row.detail)}</text>'
+            f'<text x="{left - 24}" y="{y + 18}" text-anchor="end" class="detail">{esc(row.detail)}</text>'
         )
-        lines.append(
-            f'<line x1="{x(low):.1f}" y1="{y}" x2="{x(high):.1f}" y2="{y}" class="whisker"/>'
-        )
-        for endpoint in (low, high):
+        for mode, samples, mode_y, color, css in (
+            ("checked", row.checked, y - 12, "#f4c430", "whisker-checked"),
+            ("unchecked", row.unchecked, y + 12, "#58a6ff", "whisker-unchecked"),
+        ):
+            median = statistics.median(samples)
+            low, high = min(samples), max(samples)
             lines.append(
-                f'<line x1="{x(endpoint):.1f}" y1="{y - 11}" x2="{x(endpoint):.1f}" y2="{y + 11}" class="whisker"/>'
+                f'<line x1="{x(low):.1f}" y1="{mode_y}" x2="{x(high):.1f}" y2="{mode_y}" class="{css}"/>'
             )
-        for sample, offset in zip(sorted(row.samples), sample_offsets(len(row.samples))):
+            for endpoint in (low, high):
+                lines.append(
+                    f'<line x1="{x(endpoint):.1f}" y1="{mode_y - 7}" x2="{x(endpoint):.1f}" y2="{mode_y + 7}" class="{css}"/>'
+                )
+            for sample, offset in zip(sorted(samples), sample_offsets(len(samples))):
+                lines.append(
+                    f'<circle cx="{x(sample):.1f}" cy="{mode_y + offset / 2:.1f}" r="5" fill="{color}" stroke="#080c14" stroke-width="1.5"><title>{esc(row.label)} · {mode} sample: {sample:.3f} million turns/s</title></circle>'
+                )
+            median_x = x(median)
             lines.append(
-                f'<circle cx="{x(sample):.1f}" cy="{y + offset}" r="6" fill="{row.color}" stroke="#080c14" stroke-width="2"><title>{esc(row.label)} sample: {sample:.3f} million turns/s</title></circle>'
+                f'<path d="M {median_x:.1f} {mode_y - 8} L {median_x + 8:.1f} {mode_y} L {median_x:.1f} {mode_y + 8} L {median_x - 8:.1f} {mode_y} Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>{esc(row.label)} · {mode} median: {median:.3f} million turns/s</title></path>'
             )
-        median_x = x(median)
-        lines.append(
-            f'<path d="M {median_x:.1f} {y - 10} L {median_x + 10:.1f} {y} L {median_x:.1f} {y + 10} L {median_x - 10:.1f} {y} Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>{esc(row.label)} median: {median:.3f} million turns/s</title></path>'
-        )
-        lines.append(
-            f'<text x="{x(high) + 18:.1f}" y="{y + 5}" class="value">{median:.3f} · n={len(row.samples)}</text>'
-        )
+            lines.append(
+                f'<text x="1510" y="{mode_y + 5}" class="value" fill="{color}">{mode[0].upper()} {median:.3f} · n={len(samples)}</text>'
+            )
 
     lines.extend(
         [
-            f'<line x1="{left}" y1="{axis_y}" x2="{width - right}" y2="{axis_y}" class="grid"/>',
+            f'<line x1="{left}" y1="{axis_y}" x2="{plot_right}" y2="{axis_y}" class="grid"/>',
             f'<text x="{left + chart_width / 2:.1f}" y="{axis_y + 58}" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>',
-            '<text x="42" y="570" class="footnote">Mech and Rust additionally match block-atomic rollback. Julia and Numba reject invalid candidates per lane; all measured samples reported zero faults.</text>',
-            '<text x="42" y="595" class="footnote">Use this figure for the matched CPU execution shape; use the Mech backend figure for backend reach.</text>',
+            '<text x="42" y="850" class="footnote">All rows match workload, CPU, worker count, and fused execution. Mech/Rust additionally match block-atomic rollback; other fault interfaces differ.</text>',
+            '<text x="42" y="875" class="footnote">NumPy/Numba is compiled by Numba, not interpreted Python. All measured samples reported zero faults.</text>',
             '</svg>',
         ]
     )
     write_svg("post-cross-language-comparison.svg", lines)
+
+
+def render_metal_comparison() -> None:
+    mech = load("apple-m1-mech-metal-2026-09-04.json")
+    mojo = load("apple-m1-mojo-advanced-2026-09-04.json")
+    julia = json.loads(
+        (HERE / "results/apple-m1-julia-metal-matched-2026-09-24.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    taichi = load("apple-m1-taichi-optimized-native-metal-2026-08-31.json")
+    halide = load("apple-m1-halide-metal-strict-2026-08-31.json")
+    rust = json.loads(
+        (HERE / "results/apple-m1-rust-metal-2026-09-24.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    mech_row = mech["rows"]["Mech direct Metal generated from generic scalar IR"]
+    mojo_row = mojo["rows"]["Mojo native Metal resident kernel"]
+    taichi_rows = {row["mode"]: row for row in taichi["rows"]}
+    rows = [
+        ModePairRow(
+            "Mech",
+            "generated MSL · direct Metal",
+            mech_row["checked"]["samples_million_ekf_turns_per_second"],
+            mech_row["unchecked"]["samples_million_ekf_turns_per_second"],
+        ),
+        ModePairRow(
+            "Rust + MSL",
+            "hand-written MSL · metal-rs host",
+            rust["rows"]["checked"]["samples_million_ekf_turns_per_second"],
+            rust["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+        ),
+        ModePairRow(
+            "Mojo",
+            "native Metal kernel",
+            mojo_row["checked"]["samples_million_ekf_turns_per_second"],
+            mojo_row["unchecked"]["samples_million_ekf_turns_per_second"],
+        ),
+        ModePairRow(
+            "Julia",
+            "Metal.jl · matched packed SoA",
+            julia["rows"]["checked"]["samples_million_ekf_turns_per_second"],
+            julia["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+        ),
+        ModePairRow(
+            "Taichi",
+            "optimized native Metal",
+            taichi_rows["checked"]["samples_millions"],
+            taichi_rows["unchecked"]["samples_millions"],
+        ),
+        ModePairRow(
+            "Halide",
+            "fused tuple · Metal schedule",
+            [
+                value / 1_000_000.0
+                for value in halide["rows"]["Halide GPU Metal checked"]["throughput"]
+            ],
+            [
+                value / 1_000_000.0
+                for value in halide["rows"]["Halide GPU Metal unchecked"]["throughput"]
+            ],
+        ),
+    ]
+
+    width, height = 1800, 900
+    left, plot_right, top = 355, 1450, 190
+    axis_y = 765
+    chart_width = plot_right - left
+    maximum = 460.0
+
+    def x(value: float) -> float:
+        return left + chart_width * value / maximum
+
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="metal-title metal-desc">',
+        '<title id="metal-title">Apple M1 Metal EKF throughput across six implementation ecosystems</title>',
+        '<desc id="metal-desc">Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide run 500,000 filters for 40 turns on the Apple M1 GPU with one synchronized publication boundary per turn. Checked and unchecked lanes show every retained process sample, medians, and observed minimum-to-maximum ranges.</desc>',
+        '<rect width="100%" height="100%" fill="#080c14"/>',
+        '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker-checked{stroke:#f4c430;stroke-width:2.5}.whisker-unchecked{stroke:#58a6ff;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>',
+        '<text x="42" y="48" font-size="28" font-weight="700">Apple M1 Metal EKF throughput</text>',
+        '<text x="42" y="80" class="muted" font-size="16">500,000 filters × 40 turns · f32 · resident GPU state · synchronized publication after every turn</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Circles are retained process samples; diamonds are medians; whiskers are observed min–max ranges, not confidence intervals.</text>',
+        '<circle cx="1160" cy="145" r="6" fill="#f4c430"/><text x="1175" y="150" class="muted" font-size="14">checked</text>',
+        '<circle cx="1270" cy="145" r="6" fill="#58a6ff"/><text x="1285" y="150" class="muted" font-size="14">unchecked</text>',
+        '<text x="1510" y="150" class="muted" font-size="13">median M turns/s</text>',
+    ]
+
+    for tick in range(0, 451, 50):
+        tick_x = x(float(tick))
+        lines.append(
+            f'<line x1="{tick_x:.1f}" y1="{top - 25}" x2="{tick_x:.1f}" y2="{axis_y}" class="grid"/>'
+        )
+        lines.append(
+            f'<text x="{tick_x:.1f}" y="{axis_y + 27}" text-anchor="middle" class="axis">{tick}</text>'
+        )
+
+    for index, row in enumerate(rows):
+        y = top + index * 92
+        lines.append(
+            f'<line x1="{left}" y1="{y + 43}" x2="{plot_right}" y2="{y + 43}" class="row-guide"/>'
+        )
+        lines.append(
+            f'<text x="{left - 24}" y="{y - 4}" text-anchor="end" class="label">{esc(row.label)}</text>'
+        )
+        lines.append(
+            f'<text x="{left - 24}" y="{y + 18}" text-anchor="end" class="detail">{esc(row.detail)}</text>'
+        )
+        for mode, samples, mode_y, color, css in (
+            ("checked", row.checked, y - 12, "#f4c430", "whisker-checked"),
+            ("unchecked", row.unchecked, y + 12, "#58a6ff", "whisker-unchecked"),
+        ):
+            median = statistics.median(samples)
+            low, high = min(samples), max(samples)
+            lines.append(
+                f'<line x1="{x(low):.1f}" y1="{mode_y}" x2="{x(high):.1f}" y2="{mode_y}" class="{css}"/>'
+            )
+            for endpoint in (low, high):
+                lines.append(
+                    f'<line x1="{x(endpoint):.1f}" y1="{mode_y - 7}" x2="{x(endpoint):.1f}" y2="{mode_y + 7}" class="{css}"/>'
+                )
+            for sample, offset in zip(sorted(samples), sample_offsets(len(samples))):
+                lines.append(
+                    f'<circle cx="{x(sample):.1f}" cy="{mode_y + offset / 2:.1f}" r="5" fill="{color}" stroke="#080c14" stroke-width="1.5"><title>{esc(row.label)} · {mode} sample: {sample:.3f} million turns/s</title></circle>'
+                )
+            median_x = x(median)
+            lines.append(
+                f'<path d="M {median_x:.1f} {mode_y - 8} L {median_x + 8:.1f} {mode_y} L {median_x:.1f} {mode_y + 8} L {median_x - 8:.1f} {mode_y} Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>{esc(row.label)} · {mode} median: {median:.3f} million turns/s</title></path>'
+            )
+            lines.append(
+                f'<text x="1510" y="{mode_y + 5}" class="value">{mode[0].upper()} {median:.3f} · n={len(samples)}</text>'
+            )
+
+    lines.extend(
+        [
+            f'<line x1="{left}" y1="{axis_y}" x2="{plot_right}" y2="{axis_y}" class="grid"/>',
+            f'<text x="{left + chart_width / 2:.1f}" y="{axis_y + 58}" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>',
+            '<text x="42" y="850" class="footnote">Workload and per-turn synchronization match. Mech, Rust + MSL, and Julia use matched resident SoA, ping-pong publication, and compact status.</text>',
+            '<text x="42" y="875" class="footnote">Rust + MSL is a Rust host dispatching hand-written MSL, not Rust source compiled to Metal. Read small gaps as non-ranking.</text>',
+            '</svg>',
+        ]
+    )
+    write_svg("post-metal-comparison.svg", lines)
 
 
 def render_mech_backends() -> None:
@@ -304,6 +479,7 @@ def render_mech_backends() -> None:
 
 def main() -> None:
     render_cross_language()
+    render_metal_comparison()
     render_mech_backends()
 
 

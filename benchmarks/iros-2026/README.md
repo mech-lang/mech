@@ -9,32 +9,87 @@ on `origin/integration/v0.4`. It preserves the broad cross-language benchmark,
 the matched Rust–Mech comparison, the exact source-size audit, the benchmark
 programs, raw result records, and the scripts used to inspect them.
 
-## The cross-language result: matched checked CPU implementations
+## The cross-language CPU result: checked and unchecked
 
-![Checked CPU EKF throughput under a matched execution shape](charts/post-cross-language-comparison.svg)
+![Comparable checked and unchecked CPU EKF throughput across six implementations](charts/post-cross-language-comparison.svg)
 
-This is the most defensible cross-language slice in the archive: every row is
-an f32 CPU implementation running 500,000 filters for 40 turns with eight
-workers, a fused worker-local block, and checked candidate publication on the
-same Apple M1. Every retained process sample is visible. Diamonds are medians;
-whiskers are observed minimum-to-maximum ranges, not confidence intervals.
+This figure keeps the widest defensible CPU slice: every implementation runs
+500,000 filters for 40 turns in f32 with eight workers and a fused compiled
+kernel on the same Apple M1. It includes Mech, Rust, Mojo, Julia, Futhark, and
+NumPy/Numba, with checked and unchecked modes shown separately.
 
-The publication boundary is still not identical in every respect. Mech and
-Rust additionally implement block-atomic rollback to the block-start
-checkpoint and return fault metadata. Julia and Numba reject invalid
-candidates per lane. All measured samples reported zero faults, so this
-difference did not change the successful execution path, but it should remain
-in the caption instead of being hidden.
+| Implementation | CPU strategy | Checked median (observed min-max) | Unchecked median (observed min-max) |
+| --- | --- | ---: | ---: |
+| Mech | SIMD/JIT, f32x4 | 145.573 M/s (139.668-147.381), n=3 | 165.830 M/s (163.526-171.894), n=3 |
+| Rust | packed f32x4 | 146.509 M/s (141.568-146.999), n=3 | 163.866 M/s (162.420-169.581), n=3 |
+| Mojo | explicit SIMD-4 | 143.519 M/s (138.764-144.131), n=5 | 158.512 M/s (121.695-159.013), n=5 |
+| Julia | SIMD.jl | 128.544 M/s (126.952-128.650), n=3 | 133.605 M/s (108.763-136.755), n=3 |
+| Futhark | ISPC AOT | 108.718 M/s (107.497-109.275), n=5 | 152.330 M/s (151.093-154.089), n=5 |
+| NumPy/Numba | compiled parallel kernel | 80.323 M/s (80.111-80.358), n=3 | 81.972 M/s (79.427-82.242), n=3 |
 
-The larger archive also contains Mojo, Futhark, Halide, Taichi, CPython, PyPy, and
-other controls. They are excluded from this figure when their retained evidence
-changes the worker count, workload size, publication boundary, device, or
-strict arithmetic contract. They remain useful context, not evidence for a
-fine language ranking.
+The strict one-to-one anchor inside the wider figure is Mech versus Rust: both
+use four-wide packed SIMD, eight workers, fused execution, and block-atomic
+rollback. Their observed ranges overlap in both modes. Checked Rust is 0.64%
+ahead at the median; unchecked Mech is 1.20% ahead. Those small reversals are
+why the supported conclusion is comparable throughput, not a language winner.
+
+The other four implementations match workload, CPU, worker count, precision,
+and fused successful-path execution, but their fault reporting and rollback
+interfaces are not identical. NumPy/Numba means an LLVM-compiled Numba kernel
+launched from Python—not interpreted Python and not ordinary eager NumPy.
+Every retained sample is visible; diamonds are medians and whiskers are
+descriptive minimum-to-maximum ranges, not confidence intervals.
+
+The larger archive also contains Halide CPU, Taichi CPU, CPython, PyPy, and
+other controls. They remain in the mega charts when their retained evidence
+changes the workload size, execution shape, device, or arithmetic contract.
 
 [Open the full checked mega chart](../archive/compute/parallel-ekf/charts/parallel-ekf-cross-language-checked.svg) ·
 [open the unchecked SVG](../archive/compute/parallel-ekf/charts/parallel-ekf-cross-language-unchecked.svg) ·
 [open both charts](../archive/compute/parallel-ekf/charts/parallel-ekf-cross-language-full.html)
+
+## The Metal result: six implementation ecosystems
+
+![Checked and unchecked Apple M1 Metal EKF throughput across six implementation ecosystems](charts/post-metal-comparison.svg)
+
+This Metal-only figure keeps the workload and synchronization boundary fixed:
+500,000 filters × 40 turns, resident f32 state, and one completed Metal
+publication per turn. It compares Mech-generated MSL, a Rust host dispatching
+hand-written MSL, Mojo, Julia/Metal.jl, Taichi, and Halide.
+
+| Implementation | Metal path | Checked median (observed min-max) | Unchecked median (observed min-max) |
+| --- | --- | ---: | ---: |
+| Mech | generated MSL, direct Metal | 422.702 M/s (401.943-428.966), n=5 | 421.651 M/s (365.737-422.463), n=5 |
+| Rust + MSL | hand-written MSL, `metal-rs` host | 416.215 M/s (401.396-424.149), n=7 | 418.697 M/s (410.126-420.335), n=7 |
+| Mojo | native Metal kernel | 244.493 M/s (242.386-247.933), n=5 | 405.047 M/s (393.600-407.075), n=5 |
+| Julia | Metal.jl, matched packed SoA | 406.432 M/s (402.129-407.495), n=7 | 406.803 M/s (405.092-414.707), n=7 |
+| Taichi | optimized native Metal | 168.798 M/s (136.096-171.660), n=5 | 217.297 M/s (202.628-285.400), n=5 |
+| Halide | fused tuple, Metal schedule | 111.474 M/s (97.001-120.741), n=5 | 212.283 M/s (175.664-309.115), n=5 |
+
+The Rust control was added specifically to test whether Mech's 422.702 M/s
+result depended on an unavailable trick. It uses resident SoA buffers, one GPU
+thread per filter, paired trigonometry, explicit fused arithmetic, 64-thread
+threadgroups, ping-pong publication, a two-word shared fault status, and one
+command buffer plus wait per turn. Its range overlaps Mech in both modes. This
+supports the useful claim: Mech generates a Metal execution strategy comparable
+to a hand-written Metal kernel; it does not show that Metal itself favors Mech.
+
+Stable Rust does not directly compile Rust kernels to Apple Metal, so that row
+is accurately labeled “Rust + MSL”: Rust owns the host and a hand-written MSL
+kernel owns GPU execution. Julia compiles its Julia kernel through Metal.jl.
+The matched Julia control gives both modes the same component-major packed SoA,
+resident ping-pong buffers, 64-thread launch geometry, and per-turn
+synchronization. Checked mode adds only the candidate predicates and a shared
+two-word fault status. Its checked median is 0.09% below unchecked and the
+observed ranges overlap, replacing the earlier host-transport-heavy path with
+a like-for-like measurement of checking.
+
+All rows share the successful-path workload. Mech, Rust + MSL, and Julia also
+share the resident SoA, ping-pong publication, compact fault status, and
+per-turn synchronization strategy. Compiler contraction, transcendental
+lowering, launch geometry, and campaign dates can still move results. Use
+medians and ranges as a backend landscape; do not turn small gaps into a
+ranking.
 
 ## The Mech result: one EKF across execution backends
 
@@ -62,7 +117,13 @@ the same checked rollback contract. It is selected by the backend registry or
 directly through `compile_aot_simd_cpu`; the scalar `cpu-aot` option remains as
 the exact-ABI baseline.
 
-### Mech AOT versus a Rust dynamic library
+AOT and SIMD are orthogonal here. AOT describes when the native code is
+compiled and that it is saved as a reusable library; SIMD describes how the
+kernel executes independent filters. Mech supports scalar AOT and SIMD AOT,
+and the performance difference comes from the lowering strategy rather than
+from whether the library was loaded from disk.
+
+### AOT code-generation diagnostic
 
 The direct dynamic-library control uses a longer, steadier campaign than the
 backend overview: 10,000 filters × 200 checked turns, preceded by 100 untimed
@@ -71,26 +132,31 @@ four-lane Mech AOT, and a hand-specialized Rust `cdylib`; compiler/build time,
 allocation, packing, warmup, and reset are outside the timed region. All rows
 use one host thread and checked publication after every turn.
 
+This table is a backend diagnostic, not the Rust–Mech language comparison.
+Scalar Mech and Rust share an ABI and workload, but not the same generated
+optimization: LLVM applies local SLP vectorization and combines sine/cosine
+calls in the Rust kernel, while scalar Cranelift AOT does not. Conversely,
+four-lane Mech AOT uses packed cross-filter SIMD that the Rust dylib does not.
+
 | Implementation | Steady-state throughput, median (observed min-max), n=7 | Library size | Peak process RSS, median (observed min-max), n=7 |
 | --- | ---: | ---: | ---: |
 | Mech scalar Cranelift AOT | 14.671 M/s (14.458-14.679) | 33,544 B | 2,818,048 B (2,818,048-3,014,656) |
 | Optimized Rust `cdylib` | 21.121 M/s (21.097-21.129) | 50,016 B | 2,818,048 B (2,818,048-2,916,352) |
 | Mech four-lane Cranelift AOT | 34.863 M/s (34.847-34.927) | 33,864 B | 2,818,048 B (2,818,048-2,818,048) |
 
-The exact scalar comparison still answers why Rust was faster: after hoisting
-the pointer-table loads, Rust is 43.96% ahead of scalar AOT. LLVM combines both
-adjacent sine/cosine pairs and SLP-vectorizes independent arithmetic inside a
-filter, while scalar Cranelift AOT emits separate math calls and scalar
-instructions. This is a code-generation and hand-specialization gap, not
-dynamic-library overhead.
+Rust is 43.96% ahead of scalar AOT because of that code-generation and
+hand-specialization gap, not because dynamic libraries favor Rust or because
+Mech is intrinsically slower. Scalar AOT and scalar JIT are effectively tied
+in the matched Mech-only measurement above, demonstrating that AOT packaging
+does not itself impose the gap.
 
 Changing only the Mech backend reverses that result. Four-lane AOT is 65.07%
-faster than the Rust control and 137.63% faster than scalar AOT in this
-campaign. This second comparison is intentionally not called scalar-for-scalar:
-its packed state and four-filter vector body are a different physical strategy,
-selected without changing the Mech EKF source. The Rust control could likewise
-add explicit cross-filter SIMD or workers; the matched eight-worker comparison
-below shows that strategy.
+faster than the scalar Rust control and 137.63% faster than scalar AOT in this
+campaign. This is likewise not a language ranking: its packed state and
+four-filter vector body are a different physical strategy. Rust can and does
+use the same strategy in the matched checked/unchecked comparison above. The
+result demonstrated here is that Mech can select AOT packaging and SIMD
+lowering together without changing the user-level EKF source.
 
 Both generated Mech libraries are about one-third smaller than the Rust
 library. All three median peak-RSS values are identical and their observed
@@ -108,24 +174,18 @@ to be rewritten around SIMD adapters, worker dispatch, or GPU kernels.
 
 ## Why Mech if Rust can match it?
 
-The clearest one-to-one comparison is the checked, fused SIMD block from one
-measurement campaign on the same Apple M1. Both paths run 500,000 filters for
-40 turns with four-wide SIMD and eight workers. Both retain a block-start
-checkpoint, reject an invalid block, restore the complete prior state, and
-return fault metadata.
+The matched comparison answers the performance question in both modes: Rust
+and Mech are comparable when workload, SIMD width, worker count, fusion, and
+integrity contract are aligned. Checked Rust is 0.64% ahead at the median;
+unchecked Mech is 1.20% ahead. Both observed ranges overlap, so neither small
+gap supports a winner.
 
-| Implementation | n | Median checked throughput | Observed min-max | Audited application source |
-| --- | ---: | ---: | ---: | ---: |
-| Rust packed SIMD, eight workers | 3 | 146.509 M turns/s | 141.568-146.999 | 5,243 normalized characters |
-| Mech SIMD/JIT, eight workers | 3 | 145.573 M turns/s | 139.668-147.381 | 1,079 normalized characters |
-
-The Rust median is 0.64% higher, but the observed ranges overlap and the median
-gap is smaller than either implementation's run-to-run spread. These three-run
-samples support comparable throughput, not a claim that either implementation
-is faster. The whiskers are observed ranges, not confidence intervals; no
-significance test is claimed. The audited Rust application is 4.86× the size
-of the unchanged Mech application. Put another way, Mech expresses this
-application boundary with 79.4% fewer normalized source characters.
+The engineering difference is how much application code is required to reach
+that execution shape. The audited Rust SIMD/eight-worker application contains
+5,243 normalized characters; the unchanged Mech application contains 1,079.
+The Rust implementation is therefore 4.86× the size at this boundary, while
+Mech expresses it with 79.4% fewer normalized source characters. The same Mech
+source also supplies the scalar, JIT, AOT, SIMD AOT, WGPU, and Metal rows.
 
 The source metric removes comments and nonliteral whitespace and counts every
 programmer-chosen identifier occurrence as one character, so long descriptive
@@ -169,7 +229,8 @@ The full archive contains more variants than the article needs, so the
 publication story should lead with only these representative sources:
 
 - [Mech EKF](../archive/compute/parallel-ekf/source-size-audit/selected/ekf.mec)
-  and the matched [Rust SIMD control](../archive/compute/parallel-ekf/source-size-audit/selected/rust_simd.rs).
+  and the matched [Rust SIMD control](../archive/compute/parallel-ekf/source-size-audit/selected/rust_simd.rs),
+  plus the [Rust-hosted MSL control](rust-metal/README.md).
 - [NumPy/Numba](../archive/compute/parallel-ekf/minimal/numpy_numba.py),
   [Julia](../archive/compute/parallel-ekf/minimal/julia_simd_threads.jl),
   [Taichi](../archive/compute/parallel-ekf/minimal/taichi_optimized.py),
@@ -178,6 +239,8 @@ publication story should lead with only these representative sources:
 - [Mojo fixed-matrix](../archive/compute/parallel-ekf/mojo_textbook_fixed.mojo),
   [Mojo Metal](../archive/compute/parallel-ekf/mojo_metal.mojo), and the
   identical-source [CPython/PyPy control](../archive/compute/parallel-ekf/pypy_optimized.py).
+- [Matched Julia Metal.jl](julia-metal-matched.jl)
+  and the retained Metal records for Mech, Mojo, Taichi, and Halide.
 - [Raw benchmark evidence](../archive/compute/parallel-ekf/results/) and the
   complete [source-size audit](../archive/compute/parallel-ekf/source-size-audit/README.md).
 
@@ -215,10 +278,24 @@ Verify the consolidated package from the repository root:
 python3 benchmarks/iros-2026/verify.py
 ```
 
-Regenerate both publication figures from the retained raw samples:
+Regenerate all three publication figures from the retained raw samples:
 
 ```sh
 python3 benchmarks/iros-2026/plot_post_charts.py
+```
+
+Rebuild and rerun the Rust-hosted hand-written Metal control:
+
+```sh
+python3 benchmarks/iros-2026/measure_rust_metal.py \
+  --samples 7 --instances 500000 --turns 40
+```
+
+Rerun the matched Julia/Metal.jl control:
+
+```sh
+python3 benchmarks/iros-2026/measure_julia_metal.py \
+  --samples 7 --instances 500000 --turns 40
 ```
 
 Rebuild and remeasure the Rust/Mech dynamic-library control after first
@@ -265,12 +342,13 @@ record](results/current-v0.4-verification-2026-09-24.json).
 
 A concise claim supported by this package is:
 
-> On an Apple M1, three retained checked eight-worker SIMD runs produced a
-> median of 145.573 million EKF turns/s for Mech (139.668-147.381 observed
-> range) and 146.509 million for Rust (141.568-146.999). The audited Mech
-> application used 1,079 normalized source characters versus 5,243 for the
-> Rust SIMD implementation—comparable measured throughput with about one-fifth
-> of the application source for these implementations.
+> On an Apple M1, matched four-wide SIMD/eight-worker runs produced checked
+> medians of 145.573 million EKF turns/s for Mech and 146.509 million for Rust,
+> and unchecked medians of 165.830 million for Mech and 163.866 million for
+> Rust. The observed ranges overlap in both modes. The audited Mech application
+> used 1,079 normalized source characters versus 5,243 for the Rust SIMD
+> implementation—comparable measured throughput with about one-fifth of the
+> application source for these implementations.
 
 The Mech backend chart supports a different claim:
 
@@ -279,3 +357,9 @@ The Mech backend chart supports a different claim:
 > two orders of magnitude in normalized throughput; because the workloads and
 > campaigns differ, that span demonstrates backend reach rather than a fine
 > ranking.
+
+The 14.671 M/s scalar Mech AOT and 21.121 M/s scalar-ABI Rust dylib values must
+not be quoted as the language comparison: the generated optimization
+strategies differ. They are retained only to diagnose scalar Cranelift versus
+LLVM code generation. Likewise, 34.863 M/s SIMD AOT versus the scalar Rust
+dylib demonstrates backend selection, not a matched Rust–Mech speedup.

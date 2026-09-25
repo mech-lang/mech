@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 8,
   "title": "IROS 2026 parallel EKF benchmark package",
   "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
   "evidence_revisions": {
@@ -10,6 +10,13 @@
   "selected_evidence": {
     "mech_direct_metal": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-metal-2026-09-04.json",
     "matched_mech_rust": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json",
+    "matched_mech_unchecked": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json",
+    "matched_mojo_cpu": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mojo-advanced-2026-09-04.json",
+    "matched_futhark_cpu": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-futhark-ispc-fixed-2026-08-31.json",
+    "rust_metal": "benchmarks/iros-2026/results/apple-m1-rust-metal-2026-09-24.json",
+    "julia_metal": "benchmarks/iros-2026/results/apple-m1-julia-metal-matched-2026-09-24.json",
+    "taichi_metal": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-taichi-optimized-native-metal-2026-08-31.json",
+    "halide_metal": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-halide-metal-strict-2026-08-31.json",
     "mech_runtime_backends": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-taichi-runtime-2026-08-31.json",
     "mech_simd_one_worker": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-simd-jit-neon-strict-2026-09-01.json",
     "mech_scalar_and_jit": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-scalar-checked-matched-2026-09-09.json",
@@ -48,6 +55,26 @@
     "throughput_evidence": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json",
     "source_evidence": "benchmarks/archive/compute/parallel-ekf/source-size-audit/counts.json"
   },
+  "matched_unchecked_comparison": {
+    "workload": "500,000 filters x 40 turns",
+    "execution": "four-wide SIMD, eight workers, fused block",
+    "contract": "unchecked block publication with no candidate validation",
+    "summary_statistic": "median",
+    "uncertainty_statistic": "observed minimum to maximum",
+    "inference": "descriptive only; no confidence interval or significance test",
+    "retained_process_runs_per_implementation": 3,
+    "mech_samples_million_turns_per_second": [165.83, 171.894, 163.526],
+    "mech_million_turns_per_second": 165.83,
+    "mech_observed_range_million_turns_per_second": [163.526, 171.894],
+    "rust_samples_million_turns_per_second": [163.865925, 169.581225, 162.420114],
+    "rust_million_turns_per_second": 163.865925,
+    "rust_observed_range_million_turns_per_second": [162.420114, 169.581225],
+    "mech_throughput_advantage_percent": 1.1986,
+    "mech_checked_throughput_reduction_percent": 12.2155,
+    "rust_checked_throughput_reduction_percent": 10.5923,
+    "mech_evidence": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-mech-persistent-simd-2026-08-31.json",
+    "rust_evidence": "benchmarks/archive/compute/parallel-ekf/results/apple-m1-fused-reference-controls-2026-08-31.json"
+  },
   "current_head_verification": {
     "record": "benchmarks/iros-2026/results/current-v0.4-verification-2026-09-24.json",
     "stable_mech_benchmark_compile_check": "passed",
@@ -64,6 +91,7 @@
     "mojo_exact_toolchain": false
   },
   "aot_rust_dylib_comparison": {
+    "classification": "code-generation diagnostic; not a matched language comparison",
     "workload": "10,000 filters x 200 turns after 100 untimed warmup turns and reset",
     "execution": "one checked host thread through one minimal loader; scalar Mech and Rust share AoS layout, while SIMD AOT uses pre-packed four-lane state",
     "summary_statistic": "median",
@@ -92,13 +120,40 @@
   "post_charts": {
     "cross_language": {
       "file": "benchmarks/iros-2026/charts/post-cross-language-comparison.svg",
-      "selection": "checked f32 CPU lanes on the same Apple M1 with 500,000 filters x 40 turns, eight workers, and a fused worker-local block",
+      "selection": "six compiled f32 CPU implementations on the same Apple M1 with 500,000 filters x 40 turns, eight workers, and fused execution; checked and unchecked shown separately",
       "error_bars": "observed minimum to maximum; every retained process sample is shown",
       "rows_median_million_turns_per_second": {
-        "Rust packed SIMD": 146.508742,
-        "Mech SIMD/JIT": 145.573,
-        "Julia SIMD.jl": 128.544239,
-        "NumPy/Numba": 80.322749
+        "Mech · checked": 145.573,
+        "Mech · unchecked": 165.83,
+        "Rust · checked": 146.508742,
+        "Rust · unchecked": 163.865925,
+        "Mojo · checked": 143.5194,
+        "Mojo · unchecked": 158.5125,
+        "Julia · checked": 128.544239,
+        "Julia · unchecked": 133.605332,
+        "Futhark · checked": 108.717514,
+        "Futhark · unchecked": 152.329886,
+        "NumPy/Numba · checked": 80.322749,
+        "NumPy/Numba · unchecked": 81.971832
+      }
+    },
+    "metal": {
+      "file": "benchmarks/iros-2026/charts/post-metal-comparison.svg",
+      "selection": "six Apple M1 Metal implementation ecosystems with 500,000 filters x 40 turns, resident f32 state, and synchronization after every turn; checked and unchecked shown separately",
+      "error_bars": "observed minimum to maximum; every retained process sample is shown",
+      "rows_median_million_turns_per_second": {
+        "Mech · checked": 422.702,
+        "Mech · unchecked": 421.651,
+        "Rust + MSL · checked": 416.215047327,
+        "Rust + MSL · unchecked": 418.696542396,
+        "Mojo · checked": 244.4928,
+        "Mojo · unchecked": 405.0469,
+        "Julia · checked": 406.432121599,
+        "Julia · unchecked": 406.802759140,
+        "Taichi · checked": 168.798,
+        "Taichi · unchecked": 217.297,
+        "Halide · checked": 111.473891744,
+        "Halide · unchecked": 212.282957261
       }
     },
     "mech_backends": {
@@ -169,6 +224,24 @@
       "strategy": "SIMD with eight worker threads",
       "path": "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl",
       "sha256": "02eea78d3a802241577fcf68bb16feef7b08f121125c71cbf01f56e6a513acba"
+    },
+    {
+      "family": "Julia",
+      "strategy": "matched resident Metal.jl kernel with packed SoA and compact shared fault status",
+      "path": "benchmarks/iros-2026/julia-metal-matched.jl",
+      "sha256": "c81d575432fa346d7ed4837f3b67d832e840d734a2a3a8c10a69cece23f5566e"
+    },
+    {
+      "family": "Rust + MSL",
+      "strategy": "Rust Metal host with a hand-written MSL EKF kernel",
+      "path": "benchmarks/iros-2026/rust-metal/src/main.rs",
+      "sha256": "61ea88b8f921e5fab233e7334d2a5a15d96ec3fd9e397735c216fbf3f4044d1c"
+    },
+    {
+      "family": "Rust + MSL",
+      "strategy": "hand-written resident Metal EKF kernel",
+      "path": "benchmarks/iros-2026/rust-metal/src/ekf.metal",
+      "sha256": "04df6a6bc2bd225aa62dd868a6214f8bf55d0b6d6d5673720c95f3a60155e923"
     },
     {
       "family": "Taichi",

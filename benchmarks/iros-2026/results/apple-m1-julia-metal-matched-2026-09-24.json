@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "platform": {
+    "system": "Darwin",
+    "release": "24.6.0",
+    "architecture": "arm64",
+    "device": "Apple M1 GPU"
+  },
+  "toolchain": {
+    "julia": "julia version 1.12.6",
+    "metal_jl": "1.10.3",
+    "metal": "3.2 MSL / 2.7 AIR / 1.2.8 metallib"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples_per_mode": 7,
+    "warmup_turns": 5,
+    "threadgroup_size": 64,
+    "state": "one packed f32 structure-of-arrays buffer; both modes use the same resident double buffers",
+    "boundary": "one Metal.jl submission and synchronization per turn",
+    "checked_status": "two-word SharedStorage fault array read directly by the host after synchronization",
+    "checked_difference": "candidate predicates and compact fault status only; allocation, binding layout, publication buffers, and synchronization match unchecked mode",
+    "measurement_order": "checked and unchecked process order alternated by sample"
+  },
+  "sources": {
+    "kernel_and_host": "benchmarks/iros-2026/julia-metal-matched.jl",
+    "kernel_and_host_sha256": "c81d575432fa346d7ed4837f3b67d832e840d734a2a3a8c10a69cece23f5566e"
+  },
+  "rows": {
+    "checked": {
+      "samples_million_ekf_turns_per_second": [
+        406.4321215986381,
+        405.3855469917859,
+        407.0583925264079,
+        402.12927450852266,
+        407.4945003014135,
+        407.2055013463232,
+        402.35815677958
+      ],
+      "median_million_ekf_turns_per_second": 406.4321215986381,
+      "observed_range_million_ekf_turns_per_second": [
+        402.12927450852266,
+        407.4945003014135
+      ],
+      "checksums": [
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "samples_million_ekf_turns_per_second": [
+        414.7068914933726,
+        405.09235113129535,
+        409.8962564871719,
+        405.2842336347696,
+        406.8027591397138,
+        410.89311336773153,
+        405.8379793327009
+      ],
+      "median_million_ekf_turns_per_second": 406.8027591397138,
+      "observed_range_million_ekf_turns_per_second": [
+        405.09235113129535,
+        414.7068914933726
+      ],
+      "checksums": [
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114,
+        133818339.0170114
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0]
+    }
+  }
+}

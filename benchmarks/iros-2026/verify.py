@@ -92,6 +92,44 @@ def main() -> None:
     mech = statistics.median(mech_samples)
     rust = statistics.median(rust_samples)
 
+    matched_unchecked = manifest["matched_unchecked_comparison"]
+    persistent = load_json(ROOT / manifest["selected_evidence"]["matched_mech_unchecked"])
+    mech_unchecked_samples = persistent["rows"]["fused_unchecked_block"][
+        "throughput_millions"
+    ]
+    rust_unchecked_samples = fused["rows"]["rust_fused"]["throughput_millions"]
+    assert mech_unchecked_samples == matched_unchecked[
+        "mech_samples_million_turns_per_second"
+    ]
+    assert rust_unchecked_samples == matched_unchecked[
+        "rust_samples_million_turns_per_second"
+    ]
+    assert len(mech_unchecked_samples) == matched_unchecked[
+        "retained_process_runs_per_implementation"
+    ]
+    assert len(rust_unchecked_samples) == matched_unchecked[
+        "retained_process_runs_per_implementation"
+    ]
+    check_distribution(mech_unchecked_samples, matched_unchecked, "mech")
+    check_distribution(rust_unchecked_samples, matched_unchecked, "rust")
+    mech_unchecked = statistics.median(mech_unchecked_samples)
+    rust_unchecked = statistics.median(rust_unchecked_samples)
+    close(
+        (mech_unchecked / rust_unchecked - 1.0) * 100.0,
+        matched_unchecked["mech_throughput_advantage_percent"],
+        0.0001,
+    )
+    close(
+        (1.0 - mech / mech_unchecked) * 100.0,
+        matched_unchecked["mech_checked_throughput_reduction_percent"],
+        0.0001,
+    )
+    close(
+        (1.0 - rust / rust_unchecked) * 100.0,
+        matched_unchecked["rust_checked_throughput_reduction_percent"],
+        0.0001,
+    )
+
     current = load_json(ROOT / manifest["current_head_verification"]["record"])
     assert current["stable_mech_benchmark"]["result"] == "passed"
     samples = current["rust_simd"]["throughput_million_turns_per_second"]
@@ -188,11 +226,110 @@ def main() -> None:
         ],
     )
 
+    mojo = load_json(ROOT / manifest["selected_evidence"]["matched_mojo_cpu"])
+    mojo_cpu = mojo["rows"]["Mojo fused SIMD-4, 8 workers"]
+    futhark = load_json(ROOT / manifest["selected_evidence"]["matched_futhark_cpu"])
+    assert fused["configuration"]["instances"] == 500_000
+    assert fused["configuration"]["turns"] == 40
+    assert fused["configuration"]["workers"] == 8
+    assert persistent["configuration"]["instances"] == 500_000
+    assert persistent["configuration"]["turns"] == 40
+    assert persistent["configuration"]["workers"] == 8
+    assert mojo["workload"]["instances"] == 500_000
+    assert mojo["workload"]["turns"] == 40
+    assert futhark["configuration"]["instances"] == 500_000
+    assert futhark["configuration"]["turns"] == 40
+    assert futhark["configuration"]["workers"] == 8
     cross_samples = {
-        "Rust packed SIMD": rust_samples,
-        "Mech SIMD/JIT": mech_samples,
-        "Julia SIMD.jl": fused["rows"]["julia_fused_checked"]["throughput_millions"],
-        "NumPy/Numba": fused["rows"]["numba_fused_checked"]["throughput_millions"],
+        "Mech · checked": mech_samples,
+        "Mech · unchecked": mech_unchecked_samples,
+        "Rust · checked": rust_samples,
+        "Rust · unchecked": rust_unchecked_samples,
+        "Mojo · checked": mojo_cpu["checked"]["samples_million_ekf_turns_per_second"],
+        "Mojo · unchecked": mojo_cpu["unchecked"]["samples_million_ekf_turns_per_second"],
+        "Julia · checked": fused["rows"]["julia_fused_checked"]["throughput_millions"],
+        "Julia · unchecked": fused["rows"]["julia_fused"]["throughput_millions"],
+        "Futhark · checked": futhark["rows"]["checked"]["throughput_millions"],
+        "Futhark · unchecked": futhark["rows"]["unchecked"]["throughput_millions"],
+        "NumPy/Numba · checked": fused["rows"]["numba_fused_checked"][
+            "throughput_millions"
+        ],
+        "NumPy/Numba · unchecked": fused["rows"]["numba_fused"]["throughput_millions"],
+    }
+
+    rust_metal = load_json(ROOT / manifest["selected_evidence"]["rust_metal"])
+    for source_key in ("host", "kernel"):
+        source = ROOT / rust_metal["sources"][source_key]
+        if sha256(source) != rust_metal["sources"][f"{source_key}_sha256"]:
+            raise AssertionError(f"Rust Metal source hash changed: {source}")
+    for mode in ("checked", "unchecked"):
+        row = rust_metal["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(statistics.median(lane_samples), row["median_million_ekf_turns_per_second"], 0.0000005)
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
+
+    julia_metal = load_json(ROOT / manifest["selected_evidence"]["julia_metal"])
+    julia_source = ROOT / julia_metal["sources"]["kernel_and_host"]
+    if sha256(julia_source) != julia_metal["sources"]["kernel_and_host_sha256"]:
+        raise AssertionError(f"Julia Metal source hash changed: {julia_source}")
+    for mode in ("checked", "unchecked"):
+        row = julia_metal["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(
+            statistics.median(lane_samples),
+            row["median_million_ekf_turns_per_second"],
+            0.0000005,
+        )
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
+    taichi_metal = load_json(ROOT / manifest["selected_evidence"]["taichi_metal"])
+    halide_metal = load_json(ROOT / manifest["selected_evidence"]["halide_metal"])
+    assert direct_metal["workload"]["instances"] == 500_000
+    assert direct_metal["workload"]["turns"] == 40
+    assert rust_metal["configuration"]["instances"] == 500_000
+    assert rust_metal["configuration"]["turns"] == 40
+    assert mojo["workload"]["instances"] == 500_000
+    assert mojo["workload"]["turns"] == 40
+    assert julia_metal["configuration"]["instances"] == 500_000
+    assert julia_metal["configuration"]["turns"] == 40
+    assert taichi_metal["configuration"]["instances"] == 500_000
+    assert taichi_metal["configuration"]["turns"] == 40
+    assert halide_metal["configuration"]["instances"] == 500_000
+    assert halide_metal["configuration"]["turns"] == 40
+    taichi_metal_rows = {row["mode"]: row for row in taichi_metal["rows"]}
+    mojo_metal = mojo["rows"]["Mojo native Metal resident kernel"]
+    metal_samples = {
+        "Mech · checked": direct_row["checked"]["samples_million_ekf_turns_per_second"],
+        "Mech · unchecked": direct_row["unchecked"]["samples_million_ekf_turns_per_second"],
+        "Rust + MSL · checked": rust_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Rust + MSL · unchecked": rust_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Mojo · checked": mojo_metal["checked"]["samples_million_ekf_turns_per_second"],
+        "Mojo · unchecked": mojo_metal["unchecked"]["samples_million_ekf_turns_per_second"],
+        "Julia · checked": julia_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Julia · unchecked": julia_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Taichi · checked": taichi_metal_rows["checked"]["samples_millions"],
+        "Taichi · unchecked": taichi_metal_rows["unchecked"]["samples_millions"],
+        "Halide · checked": [
+            value / 1_000_000.0
+            for value in halide_metal["rows"]["Halide GPU Metal checked"]["throughput"]
+        ],
+        "Halide · unchecked": [
+            value / 1_000_000.0
+            for value in halide_metal["rows"]["Halide GPU Metal unchecked"]["throughput"]
+        ],
     }
 
     runtime = load_json(ROOT / manifest["selected_evidence"]["mech_runtime_backends"])
@@ -221,6 +358,7 @@ def main() -> None:
 
     for chart_name, samples_by_row in (
         ("cross_language", cross_samples),
+        ("metal", metal_samples),
         ("mech_backends", mech_backend_samples),
     ):
         chart = manifest["post_charts"][chart_name]
@@ -246,10 +384,11 @@ def main() -> None:
     embedded_figures = re.findall(r"^!\[.*?\]\((.*?)\)$", readme, flags=re.MULTILINE)
     expected_figures = [
         "charts/post-cross-language-comparison.svg",
+        "charts/post-metal-comparison.svg",
         "charts/post-mech-backend-stack.svg",
     ]
     if embedded_figures != expected_figures:
-        raise AssertionError(f"README must embed exactly the two post charts: {embedded_figures}")
+        raise AssertionError(f"README must embed exactly the three post charts: {embedded_figures}")
 
     charts = {
         "checked": ARCHIVE / "charts/parallel-ekf-cross-language-checked.svg",
@@ -273,6 +412,10 @@ def main() -> None:
     print("IROS EKF evidence verified")
     print(f"  matched checked throughput: Mech {mech:.3f} vs Rust {rust:.3f} M turns/s")
     print(
+        "  matched unchecked throughput: "
+        f"Mech {mech_unchecked:.3f} vs Rust {rust_unchecked:.3f} M turns/s"
+    )
+    print(
         "  normalized application source: "
         f"Mech {matched['mech_normalized_source_characters']:,} vs "
         f"Rust {matched['rust_normalized_source_characters']:,} characters"
@@ -295,7 +438,7 @@ def main() -> None:
         f"SIMD Mech {dylib_summary['simd_aot_throughput_million_turns_per_second']:.3f} M turns/s; "
         "size and peak RSS verified"
     )
-    print("  two post-facing charts: raw samples, medians, and observed ranges verified")
+    print("  three post-facing charts: raw samples, medians, and observed ranges verified")
     print("  checked and unchecked mega-chart assertions: passed")
 
 

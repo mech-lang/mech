@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "platform": {
+    "system": "Darwin",
+    "release": "24.6.0",
+    "architecture": "arm64",
+    "device": "Apple M1 GPU"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "metal_crate": "0.28.0",
+    "kernel_language": "hand-written Metal Shading Language"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples_per_mode": 7,
+    "warmup_turns": 5,
+    "threadgroup_size": 64,
+    "state": "f32 structure-of-arrays, resident double buffer",
+    "boundary": "one Metal command buffer and host completion wait per turn",
+    "checked_contract": "finite candidate, positive covariance diagonal, covariance symmetry; reject before publication and return compact fault status",
+    "measurement_order": "checked and unchecked process order alternated by sample"
+  },
+  "classification": "Rust host plus hand-written MSL; stable Rust does not compile Rust kernels directly to Apple Metal",
+  "sources": {
+    "host": "benchmarks/iros-2026/rust-metal/src/main.rs",
+    "host_sha256": "61ea88b8f921e5fab233e7334d2a5a15d96ec3fd9e397735c216fbf3f4044d1c",
+    "kernel": "benchmarks/iros-2026/rust-metal/src/ekf.metal",
+    "kernel_sha256": "04df6a6bc2bd225aa62dd868a6214f8bf55d0b6d6d5673720c95f3a60155e923"
+  },
+  "rows": {
+    "checked": {
+      "samples_million_ekf_turns_per_second": [401.396184376, 418.669152501, 418.601976978, 414.591910549, 424.148540891, 416.215047327, 413.336295577],
+      "median_million_ekf_turns_per_second": 416.215047327,
+      "observed_range_million_ekf_turns_per_second": [401.396184376, 424.148540891],
+      "checksums": [133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112],
+      "faults": [0, 0, 0, 0, 0, 0, 0]
+    },
+    "unchecked": {
+      "samples_million_ekf_turns_per_second": [410.1256664, 418.519128239, 420.334744082, 419.846126395, 416.631218294, 418.696542396, 419.411408515],
+      "median_million_ekf_turns_per_second": 418.696542396,
+      "observed_range_million_ekf_turns_per_second": [410.1256664, 420.334744082],
+      "checksums": [133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112, 133818339.14086112],
+      "faults": [0, 0, 0, 0, 0, 0, 0]
+    }
+  }
+}

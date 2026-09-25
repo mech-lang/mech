@@ -14,6 +14,12 @@ and SLP-vectorizes independent arithmetic within a filter. Comparing the AOT
 library directly to the eight-worker Rust maximum would conflate compiler and
 execution strategy.
 
+It also must not be compared directly with four-lane Mech AOT as a language
+ranking: that Mech artifact uses explicit packed cross-filter SIMD that this
+Rust control does not. These dylib rows diagnose code generation, artifact
+size, and peak process RSS. The publication-level Rust–Mech comparison uses
+the separate matched packed-SIMD/eight-worker checked and unchecked records.
+
 On macOS, build both pieces with:
 
 ```sh

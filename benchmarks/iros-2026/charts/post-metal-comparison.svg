@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="900" viewBox="0 0 1800 900" role="img" aria-labelledby="metal-title metal-desc">
+<title id="metal-title">Apple M1 Metal EKF throughput across six implementation ecosystems</title>
+<desc id="metal-desc">Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide run 500,000 filters for 40 turns on the Apple M1 GPU with one synchronized publication boundary per turn. Checked and unchecked lanes show every retained process sample, medians, and observed minimum-to-maximum ranges.</desc>
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker-checked{stroke:#f4c430;stroke-width:2.5}.whisker-unchecked{stroke:#58a6ff;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>
+<text x="42" y="48" font-size="28" font-weight="700">Apple M1 Metal EKF throughput</text>
+<text x="42" y="80" class="muted" font-size="16">500,000 filters × 40 turns · f32 · resident GPU state · synchronized publication after every turn</text>
+<text x="42" y="112" class="muted" font-size="13">Circles are retained process samples; diamonds are medians; whiskers are observed min–max ranges, not confidence intervals.</text>
+<circle cx="1160" cy="145" r="6" fill="#f4c430"/><text x="1175" y="150" class="muted" font-size="14">checked</text>
+<circle cx="1270" cy="145" r="6" fill="#58a6ff"/><text x="1285" y="150" class="muted" font-size="14">unchecked</text>
+<text x="1510" y="150" class="muted" font-size="13">median M turns/s</text>
+<line x1="355.0" y1="165" x2="355.0" y2="765" class="grid"/>
+<text x="355.0" y="792" text-anchor="middle" class="axis">0</text>
+<line x1="474.0" y1="165" x2="474.0" y2="765" class="grid"/>
+<text x="474.0" y="792" text-anchor="middle" class="axis">50</text>
+<line x1="593.0" y1="165" x2="593.0" y2="765" class="grid"/>
+<text x="593.0" y="792" text-anchor="middle" class="axis">100</text>
+<line x1="712.1" y1="165" x2="712.1" y2="765" class="grid"/>
+<text x="712.1" y="792" text-anchor="middle" class="axis">150</text>
+<line x1="831.1" y1="165" x2="831.1" y2="765" class="grid"/>
+<text x="831.1" y="792" text-anchor="middle" class="axis">200</text>
+<line x1="950.1" y1="165" x2="950.1" y2="765" class="grid"/>
+<text x="950.1" y="792" text-anchor="middle" class="axis">250</text>
+<line x1="1069.1" y1="165" x2="1069.1" y2="765" class="grid"/>
+<text x="1069.1" y="792" text-anchor="middle" class="axis">300</text>
+<line x1="1188.2" y1="165" x2="1188.2" y2="765" class="grid"/>
+<text x="1188.2" y="792" text-anchor="middle" class="axis">350</text>
+<line x1="1307.2" y1="165" x2="1307.2" y2="765" class="grid"/>
+<text x="1307.2" y="792" text-anchor="middle" class="axis">400</text>
+<line x1="1426.2" y1="165" x2="1426.2" y2="765" class="grid"/>
+<text x="1426.2" y="792" text-anchor="middle" class="axis">450</text>
+<line x1="355" y1="233" x2="1450" y2="233" class="row-guide"/>
+<text x="331" y="186" text-anchor="end" class="label">Mech</text>
+<text x="331" y="208" text-anchor="end" class="detail">generated MSL · direct Metal</text>
+<line x1="1311.8" y1="178" x2="1376.1" y2="178" class="whisker-checked"/>
+<line x1="1311.8" y1="171" x2="1311.8" y2="185" class="whisker-checked"/>
+<line x1="1376.1" y1="171" x2="1376.1" y2="185" class="whisker-checked"/>
+<circle cx="1311.8" cy="173.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mech · checked sample: 401.943 million turns/s</title></circle>
+<circle cx="1355.7" cy="175.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mech · checked sample: 420.404 million turns/s</title></circle>
+<circle cx="1361.2" cy="178.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mech · checked sample: 422.702 million turns/s</title></circle>
+<circle cx="1364.1" cy="180.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mech · checked sample: 423.895 million turns/s</title></circle>
+<circle cx="1376.1" cy="183.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mech · checked sample: 428.966 million turns/s</title></circle>
+<path d="M 1361.2 170 L 1369.2 178 L 1361.2 186 L 1353.2 178 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Mech · checked median: 422.702 million turns/s</title></path>
+<text x="1510" y="183" class="value">C 422.702 · n=5</text>
+<line x1="1225.6" y1="202" x2="1360.6" y2="202" class="whisker-unchecked"/>
+<line x1="1225.6" y1="195" x2="1225.6" y2="209" class="whisker-unchecked"/>
+<line x1="1360.6" y1="195" x2="1360.6" y2="209" class="whisker-unchecked"/>
+<circle cx="1225.6" cy="197.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mech · unchecked sample: 365.737 million turns/s</title></circle>
+<circle cx="1353.6" cy="199.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mech · unchecked sample: 419.523 million turns/s</title></circle>
+<circle cx="1358.7" cy="202.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mech · unchecked sample: 421.651 million turns/s</title></circle>
+<circle cx="1360.0" cy="204.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mech · unchecked sample: 422.187 million turns/s</title></circle>
+<circle cx="1360.6" cy="207.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mech · unchecked sample: 422.463 million turns/s</title></circle>
+<path d="M 1358.7 194 L 1366.7 202 L 1358.7 210 L 1350.7 202 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Mech · unchecked median: 421.651 million turns/s</title></path>
+<text x="1510" y="207" class="value">U 421.651 · n=5</text>
+<line x1="355" y1="325" x2="1450" y2="325" class="row-guide"/>
+<text x="331" y="278" text-anchor="end" class="label">Rust + MSL</text>
+<text x="331" y="300" text-anchor="end" class="detail">hand-written MSL · metal-rs host</text>
+<line x1="1310.5" y1="270" x2="1364.7" y2="270" class="whisker-checked"/>
+<line x1="1310.5" y1="263" x2="1310.5" y2="277" class="whisker-checked"/>
+<line x1="1364.7" y1="263" x2="1364.7" y2="277" class="whisker-checked"/>
+<circle cx="1310.5" cy="264.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 401.396 million turns/s</title></circle>
+<circle cx="1338.9" cy="266.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 413.336 million turns/s</title></circle>
+<circle cx="1341.9" cy="268.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 414.592 million turns/s</title></circle>
+<circle cx="1345.8" cy="270.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 416.215 million turns/s</title></circle>
+<circle cx="1351.5" cy="272.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 418.602 million turns/s</title></circle>
+<circle cx="1351.6" cy="274.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 418.669 million turns/s</title></circle>
+<circle cx="1364.7" cy="276.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · checked sample: 424.149 million turns/s</title></circle>
+<path d="M 1345.8 262 L 1353.8 270 L 1345.8 278 L 1337.8 270 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Rust + MSL · checked median: 416.215 million turns/s</title></path>
+<text x="1510" y="275" class="value">C 416.215 · n=7</text>
+<line x1="1331.3" y1="294" x2="1355.6" y2="294" class="whisker-unchecked"/>
+<line x1="1331.3" y1="287" x2="1331.3" y2="301" class="whisker-unchecked"/>
+<line x1="1355.6" y1="287" x2="1355.6" y2="301" class="whisker-unchecked"/>
+<circle cx="1331.3" cy="288.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 410.126 million turns/s</title></circle>
+<circle cx="1346.8" cy="290.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 416.631 million turns/s</title></circle>
+<circle cx="1351.3" cy="292.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 418.519 million turns/s</title></circle>
+<circle cx="1351.7" cy="294.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 418.697 million turns/s</title></circle>
+<circle cx="1353.4" cy="296.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 419.411 million turns/s</title></circle>
+<circle cx="1354.4" cy="298.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 419.846 million turns/s</title></circle>
+<circle cx="1355.6" cy="300.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Rust + MSL · unchecked sample: 420.335 million turns/s</title></circle>
+<path d="M 1351.7 286 L 1359.7 294 L 1351.7 302 L 1343.7 294 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Rust + MSL · unchecked median: 418.697 million turns/s</title></path>
+<text x="1510" y="299" class="value">U 418.697 · n=7</text>
+<line x1="355" y1="417" x2="1450" y2="417" class="row-guide"/>
+<text x="331" y="370" text-anchor="end" class="label">Mojo</text>
+<text x="331" y="392" text-anchor="end" class="detail">native Metal kernel</text>
+<line x1="932.0" y1="362" x2="945.2" y2="362" class="whisker-checked"/>
+<line x1="932.0" y1="355" x2="932.0" y2="369" class="whisker-checked"/>
+<line x1="945.2" y1="355" x2="945.2" y2="369" class="whisker-checked"/>
+<circle cx="932.0" cy="357.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mojo · checked sample: 242.386 million turns/s</title></circle>
+<circle cx="932.7" cy="359.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mojo · checked sample: 242.689 million turns/s</title></circle>
+<circle cx="937.0" cy="362.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mojo · checked sample: 244.493 million turns/s</title></circle>
+<circle cx="939.1" cy="364.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mojo · checked sample: 245.393 million turns/s</title></circle>
+<circle cx="945.2" cy="367.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Mojo · checked sample: 247.933 million turns/s</title></circle>
+<path d="M 937.0 354 L 945.0 362 L 937.0 370 L 929.0 362 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Mojo · checked median: 244.493 million turns/s</title></path>
+<text x="1510" y="367" class="value">C 244.493 · n=5</text>
+<line x1="1291.9" y1="386" x2="1324.0" y2="386" class="whisker-unchecked"/>
+<line x1="1291.9" y1="379" x2="1291.9" y2="393" class="whisker-unchecked"/>
+<line x1="1324.0" y1="379" x2="1324.0" y2="393" class="whisker-unchecked"/>
+<circle cx="1291.9" cy="381.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mojo · unchecked sample: 393.600 million turns/s</title></circle>
+<circle cx="1317.6" cy="383.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mojo · unchecked sample: 404.359 million turns/s</title></circle>
+<circle cx="1319.2" cy="386.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mojo · unchecked sample: 405.047 million turns/s</title></circle>
+<circle cx="1322.4" cy="388.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mojo · unchecked sample: 406.388 million turns/s</title></circle>
+<circle cx="1324.0" cy="391.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Mojo · unchecked sample: 407.075 million turns/s</title></circle>
+<path d="M 1319.2 378 L 1327.2 386 L 1319.2 394 L 1311.2 386 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Mojo · unchecked median: 405.047 million turns/s</title></path>
+<text x="1510" y="391" class="value">U 405.047 · n=5</text>
+<line x1="355" y1="509" x2="1450" y2="509" class="row-guide"/>
+<text x="331" y="462" text-anchor="end" class="label">Julia</text>
+<text x="331" y="484" text-anchor="end" class="detail">Metal.jl · matched packed SoA</text>
+<line x1="1312.2" y1="454" x2="1325.0" y2="454" class="whisker-checked"/>
+<line x1="1312.2" y1="447" x2="1312.2" y2="461" class="whisker-checked"/>
+<line x1="1325.0" y1="447" x2="1325.0" y2="461" class="whisker-checked"/>
+<circle cx="1312.2" cy="448.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 402.129 million turns/s</title></circle>
+<circle cx="1312.8" cy="450.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 402.358 million turns/s</title></circle>
+<circle cx="1320.0" cy="452.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 405.386 million turns/s</title></circle>
+<circle cx="1322.5" cy="454.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 406.432 million turns/s</title></circle>
+<circle cx="1324.0" cy="456.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 407.058 million turns/s</title></circle>
+<circle cx="1324.3" cy="458.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 407.206 million turns/s</title></circle>
+<circle cx="1325.0" cy="460.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Julia · checked sample: 407.495 million turns/s</title></circle>
+<path d="M 1322.5 446 L 1330.5 454 L 1322.5 462 L 1314.5 454 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Julia · checked median: 406.432 million turns/s</title></path>
+<text x="1510" y="459" class="value">C 406.432 · n=7</text>
+<line x1="1319.3" y1="478" x2="1342.2" y2="478" class="whisker-unchecked"/>
+<line x1="1319.3" y1="471" x2="1319.3" y2="485" class="whisker-unchecked"/>
+<line x1="1342.2" y1="471" x2="1342.2" y2="485" class="whisker-unchecked"/>
+<circle cx="1319.3" cy="472.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 405.092 million turns/s</title></circle>
+<circle cx="1319.8" cy="474.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 405.284 million turns/s</title></circle>
+<circle cx="1321.1" cy="476.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 405.838 million turns/s</title></circle>
+<circle cx="1323.4" cy="478.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 406.803 million turns/s</title></circle>
+<circle cx="1330.7" cy="480.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 409.896 million turns/s</title></circle>
+<circle cx="1333.1" cy="482.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 410.893 million turns/s</title></circle>
+<circle cx="1342.2" cy="484.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Julia · unchecked sample: 414.707 million turns/s</title></circle>
+<path d="M 1323.4 470 L 1331.4 478 L 1323.4 486 L 1315.4 478 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Julia · unchecked median: 406.803 million turns/s</title></path>
+<text x="1510" y="483" class="value">U 406.803 · n=7</text>
+<line x1="355" y1="601" x2="1450" y2="601" class="row-guide"/>
+<text x="331" y="554" text-anchor="end" class="label">Taichi</text>
+<text x="331" y="576" text-anchor="end" class="detail">optimized native Metal</text>
+<line x1="679.0" y1="546" x2="763.6" y2="546" class="whisker-checked"/>
+<line x1="679.0" y1="539" x2="679.0" y2="553" class="whisker-checked"/>
+<line x1="763.6" y1="539" x2="763.6" y2="553" class="whisker-checked"/>
+<circle cx="679.0" cy="541.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Taichi · checked sample: 136.096 million turns/s</title></circle>
+<circle cx="703.7" cy="543.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Taichi · checked sample: 146.483 million turns/s</title></circle>
+<circle cx="756.8" cy="546.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Taichi · checked sample: 168.798 million turns/s</title></circle>
+<circle cx="761.6" cy="548.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Taichi · checked sample: 170.807 million turns/s</title></circle>
+<circle cx="763.6" cy="551.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Taichi · checked sample: 171.660 million turns/s</title></circle>
+<path d="M 756.8 538 L 764.8 546 L 756.8 554 L 748.8 546 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Taichi · checked median: 168.798 million turns/s</title></path>
+<text x="1510" y="551" class="value">C 168.798 · n=5</text>
+<line x1="837.3" y1="570" x2="1034.4" y2="570" class="whisker-unchecked"/>
+<line x1="837.3" y1="563" x2="837.3" y2="577" class="whisker-unchecked"/>
+<line x1="1034.4" y1="563" x2="1034.4" y2="577" class="whisker-unchecked"/>
+<circle cx="837.3" cy="565.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Taichi · unchecked sample: 202.628 million turns/s</title></circle>
+<circle cx="838.0" cy="567.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Taichi · unchecked sample: 202.888 million turns/s</title></circle>
+<circle cx="872.3" cy="570.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Taichi · unchecked sample: 217.297 million turns/s</title></circle>
+<circle cx="1015.9" cy="572.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Taichi · unchecked sample: 277.650 million turns/s</title></circle>
+<circle cx="1034.4" cy="575.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Taichi · unchecked sample: 285.400 million turns/s</title></circle>
+<path d="M 872.3 562 L 880.3 570 L 872.3 578 L 864.3 570 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Taichi · unchecked median: 217.297 million turns/s</title></path>
+<text x="1510" y="575" class="value">U 217.297 · n=5</text>
+<line x1="355" y1="693" x2="1450" y2="693" class="row-guide"/>
+<text x="331" y="646" text-anchor="end" class="label">Halide</text>
+<text x="331" y="668" text-anchor="end" class="detail">fused tuple · Metal schedule</text>
+<line x1="585.9" y1="638" x2="642.4" y2="638" class="whisker-checked"/>
+<line x1="585.9" y1="631" x2="585.9" y2="645" class="whisker-checked"/>
+<line x1="642.4" y1="631" x2="642.4" y2="645" class="whisker-checked"/>
+<circle cx="585.9" cy="633.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Halide · checked sample: 97.001 million turns/s</title></circle>
+<circle cx="601.8" cy="635.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Halide · checked sample: 103.663 million turns/s</title></circle>
+<circle cx="620.4" cy="638.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Halide · checked sample: 111.474 million turns/s</title></circle>
+<circle cx="624.7" cy="640.5" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Halide · checked sample: 113.290 million turns/s</title></circle>
+<circle cx="642.4" cy="643.0" r="5" fill="#f4c430" stroke="#080c14" stroke-width="1.5"><title>Halide · checked sample: 120.741 million turns/s</title></circle>
+<path d="M 620.4 630 L 628.4 638 L 620.4 646 L 612.4 638 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Halide · checked median: 111.474 million turns/s</title></path>
+<text x="1510" y="643" class="value">C 111.474 · n=5</text>
+<line x1="773.2" y1="662" x2="1090.8" y2="662" class="whisker-unchecked"/>
+<line x1="773.2" y1="655" x2="773.2" y2="669" class="whisker-unchecked"/>
+<line x1="1090.8" y1="655" x2="1090.8" y2="669" class="whisker-unchecked"/>
+<circle cx="773.2" cy="657.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Halide · unchecked sample: 175.664 million turns/s</title></circle>
+<circle cx="785.8" cy="659.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Halide · unchecked sample: 180.995 million turns/s</title></circle>
+<circle cx="860.3" cy="662.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Halide · unchecked sample: 212.283 million turns/s</title></circle>
+<circle cx="940.3" cy="664.5" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Halide · unchecked sample: 245.888 million turns/s</title></circle>
+<circle cx="1090.8" cy="667.0" r="5" fill="#58a6ff" stroke="#080c14" stroke-width="1.5"><title>Halide · unchecked sample: 309.115 million turns/s</title></circle>
+<path d="M 860.3 654 L 868.3 662 L 860.3 670 L 852.3 662 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Halide · unchecked median: 212.283 million turns/s</title></path>
+<text x="1510" y="667" class="value">U 212.283 · n=5</text>
+<line x1="355" y1="765" x2="1450" y2="765" class="grid"/>
+<text x="902.5" y="823" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>
+<text x="42" y="850" class="footnote">Workload and per-turn synchronization match. Mech, Rust + MSL, and Julia use matched resident SoA, ping-pong publication, and compact status.</text>
+<text x="42" y="875" class="footnote">Rust + MSL is a Rust host dispatching hand-written MSL, not Rust source compiled to Metal. Read small gaps as non-ranking.</text>
+</svg>
