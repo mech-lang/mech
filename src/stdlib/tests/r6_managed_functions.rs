@@ -77,7 +77,7 @@ fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static
     {
         return Some("F06");
     }
-    if name.starts_with("Convert") || name == "convert/kind" {
+    if name.starts_with("Convert") || name.starts_with("convert/") {
         return Some("F07");
     }
     if name.starts_with("VariableDefine") || name == "integrity/constraint" {

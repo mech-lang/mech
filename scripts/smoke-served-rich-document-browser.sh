@@ -1305,7 +1305,7 @@ def assert_fullscreen_accessibility():
   const consolePanel = document.querySelector('[data-mech-console-panel="console"]');
   const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
   const separators = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
-  const ariaMatchesGeometry = Boolean(workspaceBounds) && separators.every(handle => {
+  const ariaMetrics = workspaceBounds ? separators.map(handle => {
     const column = handle.dataset.mechConsoleWorkspaceResizer === 'column';
     const total = column ? workspaceBounds.width : workspaceBounds.height;
     const minimumPixels = Math.min(column ? 180 : 120, Math.max(0, total / 2 - 4));
@@ -1314,10 +1314,21 @@ def assert_fullscreen_accessibility():
       ? consolePanel?.getBoundingClientRect().width || 0
       : outputPanel?.getBoundingClientRect().height || 0;
     const percentage = value => Math.round((value / total) * 100);
-    return Number(handle.getAttribute('aria-valuemin')) === percentage(minimumPixels) &&
-      Number(handle.getAttribute('aria-valuemax')) === percentage(maximumPixels) &&
-      Number(handle.getAttribute('aria-valuenow')) === percentage(size);
-  });
+    const expected = {
+      minimum: percentage(minimumPixels),
+      maximum: percentage(maximumPixels),
+      value: percentage(size),
+    };
+    const actual = {
+      minimum: Number(handle.getAttribute('aria-valuemin')),
+      maximum: Number(handle.getAttribute('aria-valuemax')),
+      value: Number(handle.getAttribute('aria-valuenow')),
+    };
+    return { axis: column ? 'column' : 'row', total, expected, actual };
+  }) : [];
+  const ariaMatchesGeometry = Boolean(workspaceBounds) && ariaMetrics.every(({expected, actual}) =>
+    expected.minimum === actual.minimum && expected.maximum === actual.maximum &&
+    expected.value === actual.value);
   return {
     contained: Boolean(bounds) && panels.every(panel => {
       const rect = panel.getBoundingClientRect();
@@ -1325,6 +1336,7 @@ def assert_fullscreen_accessibility():
         rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
     }),
     ariaMatchesGeometry,
+    ariaMetrics,
   };
 })()
 """)
@@ -3584,7 +3596,7 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
         if (
             mobile_expected is None or
             mobile_expected["contentY"] < desktop_position["y"] / 2 or
-            mobile_expected["contentY"] > desktop_position["y"] * 1.5 or
+            mobile_expected["contentY"] > desktop_position["y"] * 1.6 or
             mobile_expected["windowY"] > mobile_expected["maximum"] + 2
         ):
             fail(

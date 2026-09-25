@@ -622,6 +622,17 @@ impl FrozenSnapshotConstruction {
         output.rebuild_data_draft_with_construction(data, self)
     }
 
+    /// Finalizes a shape-preserving conversion using the current source
+    /// witness rather than the output cell's preceding turn shape.
+    pub fn try_rebuild_data_draft_with_shape(
+        &mut self,
+        output: &crate::ValueCell,
+        data: crate::ValueDataDraft,
+        shape: &crate::ShapeInstance,
+    ) -> crate::MResult<crate::Value> {
+        output.rebuild_data_draft_with_shape_with_construction(data, shape, self)
+    }
+
     /// Rebuilds one tuple from values resolved through the current call
     /// frame. The child cells contribute semantic schema identity only; their
     /// backing is never reread behind the frame.

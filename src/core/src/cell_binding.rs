@@ -2678,6 +2678,16 @@ impl ValueCell {
         Self::from_snapshot_in(&MemoryDomain::new().map_err(MechError::from)?, value)
     }
 
+    /// Reconstruct a detached snapshot with its complete schema table while
+    /// selecting the runtime backing required for reactive aggregate outputs.
+    pub fn from_runtime_snapshot(value: Value) -> MResult<Self> {
+        let schemas = value.schemas().ok_or_else(|| {
+            MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
+        })?;
+        value.validate_against(&schemas).map_err(snapshot_failure)?;
+        Self::from_runtime_value(value, Rc::new((*schemas).clone()))
+    }
+
     pub fn from_snapshot_in(owner: &MemoryDomain, value: Value) -> MResult<Self> {
         let schemas = value.schemas().ok_or_else(|| {
             MechError::new(ValueSchemaContextUnavailable, None).with_compiler_loc()
@@ -3799,6 +3809,13 @@ impl ValueCell {
         self.binding.schemas.clone()
     }
 
+    /// Retains this cell's schema context without copying its value payload.
+    /// Consumers resolving reified schema keys can use the shared table even
+    /// when the cell's payload has not been admitted for a snapshot.
+    pub fn retained_schema_table(&self) -> Rc<SchemaTable> {
+        self.schema_table()
+    }
+
     #[cfg(feature = "functions")]
     pub(crate) fn schema_clone_allocation_bound_bytes(&self) -> MResult<u64> {
         self.binding
@@ -3949,11 +3966,6 @@ impl ValueCell {
                 schema: value.schema(),
             })
         })?;
-        let extents =
-            crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
-                .map_err(MechError::from)?
-                .current_extents()
-                .map_err(MechError::from)?;
         let target_schema = self
             .binding
             .schemas
@@ -3963,7 +3975,18 @@ impl ValueCell {
                     schema: self.binding.schema,
                 })
             })?;
-        let target_shape = crate::shape_for_resolved_extents(target_schema, &extents)?;
+        let target_shape = if source_schema.key() == target_schema.key() {
+            // Identical schemas own the same complete parameter vector. Keep
+            // nested tuple/record/option witnesses and turn-varying extents.
+            value.shape().clone()
+        } else {
+            let extents =
+                crate::ResolvedValueDescriptor::from_schema(source_schema, value.shape().clone())
+                    .map_err(MechError::from)?
+                    .current_extents()
+                    .map_err(MechError::from)?;
+            crate::shape_for_resolved_extents(target_schema, &extents)?
+        };
         value
             .rebind(
                 self.binding.schema,
@@ -5089,6 +5112,30 @@ impl ValueCell {
         finalize_draft_with_construction(
             self.binding.schema,
             &self.binding.shape(),
+            self.binding.schemas.as_ref(),
+            data,
+            construction,
+        )
+    }
+
+    pub(crate) fn rebuild_data_draft_with_shape_with_construction(
+        &self,
+        data: ValueDataDraft,
+        shape: &ShapeInstance,
+        construction: &dyn crate::snapshot::validation::SnapshotConstructionAuthority,
+    ) -> MResult<Value> {
+        let schema = self
+            .binding
+            .schemas
+            .get(self.binding.schema)
+            .expect("value-cell schema remains present");
+        let shape_values = admitted_copy_slice(shape.parameter_values(), construction)?;
+        let shape = schema
+            .instantiate_shape(shape_values)
+            .map_err(MechError::from)?;
+        finalize_draft_with_construction(
+            self.binding.schema,
+            &shape,
             self.binding.schemas.as_ref(),
             data,
             construction,

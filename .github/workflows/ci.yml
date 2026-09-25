@@ -352,6 +352,8 @@ jobs:
           cargo build --locked --bin mech
       - name: Verify resident rendering without browser errors
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+      - name: Smoke test rich served documents before full validation
+        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-rich-document-browser.sh
 
       - name: Remove generated browser package
         if: always()
@@ -605,6 +607,7 @@ jobs:
       release_channel: stable
       validation_ref: ${{ github.event.pull_request.head.sha }}
       native_plan_in_caller: true
+      rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}
 
   pr-gate:
     name: PR gate
