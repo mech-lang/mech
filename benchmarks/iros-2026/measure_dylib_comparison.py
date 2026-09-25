@@ -85,9 +85,13 @@ def measure(
 
 
 def summary(values: list[float | int]) -> dict[str, float | list[float | int]]:
+    median = statistics.median(values)
     return {
         "samples": values,
-        "median": statistics.median(values),
+        "median": median,
+        "median_absolute_deviation": statistics.median(
+            abs(value - median) for value in values
+        ),
         "observed_range": [min(values), max(values)],
     }
 

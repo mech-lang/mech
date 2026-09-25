@@ -256,6 +256,18 @@ def main() -> None:
             "retained_process_runs_per_implementation"
         ]
         close(statistics.median(throughput_samples), throughput["median"], 0.0000005)
+        close(
+            statistics.median(
+                abs(sample - throughput["median"]) for sample in throughput_samples
+            ),
+            throughput["median_absolute_deviation"],
+            0.0000005,
+        )
+        close(
+            throughput["median_absolute_deviation"],
+            dylib_summary[f"{prefix}_throughput_mad"],
+            0.0000005,
+        )
         close(min(throughput_samples), throughput["observed_range"][0], 0.0000005)
         close(max(throughput_samples), throughput["observed_range"][1], 0.0000005)
         close(
@@ -268,6 +280,9 @@ def main() -> None:
         ]
         memory = row["maximum_resident_set_bytes"]
         assert statistics.median(memory["samples"]) == memory["median"]
+        assert statistics.median(
+            abs(sample - memory["median"]) for sample in memory["samples"]
+        ) == memory["median_absolute_deviation"]
         assert [min(memory["samples"]), max(memory["samples"])] == memory[
             "observed_range"
         ]

@@ -182,11 +182,11 @@ is a matched language comparison. These rows diagnose generated code, AOT
 artifact size, and whole-process RSS. The headline language comparison is the
 matched four-wide/eight-worker checked and unchecked result above.
 
-| Implementation | n | Median throughput | Observed min-max | Library bytes | Median peak RSS | RSS min-max |
+| Implementation | n | Median throughput ± MAD | Observed min-max | Library bytes | Median peak RSS ± MAD | RSS min-max |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Mech scalar Cranelift AOT | 7 | 14.671 M turns/s | 14.458-14.679 | 33,544 | 2,818,048 B | 2,818,048-3,014,656 B |
-| Optimized Rust `cdylib` | 7 | 21.121 M turns/s | 21.097-21.129 | 50,016 | 2,818,048 B | 2,818,048-2,916,352 B |
-| Mech four-lane Cranelift AOT | 7 | 34.863 M turns/s | 34.847-34.927 | 33,864 | 2,818,048 B | 2,818,048-2,818,048 B |
+| Mech scalar Cranelift AOT | 7 | 14.671 ± 0.008 M turns/s | 14.458-14.679 | 33,544 | 2,818,048 ± 0 B | 2,818,048-3,014,656 B |
+| Optimized Rust `cdylib` | 7 | 21.121 ± 0.005 M turns/s | 21.097-21.129 | 50,016 | 2,818,048 ± 0 B | 2,818,048-2,916,352 B |
+| Mech four-lane Cranelift AOT | 7 | 34.863 ± 0.010 M turns/s | 34.847-34.927 | 33,864 | 2,818,048 ± 0 B | 2,818,048-2,818,048 B |
 
 Rust is 43.96% faster than scalar AOT, while four-lane AOT is 65.07% faster than
 the scalar Rust control and 137.63% faster than scalar AOT. Those deltas reflect

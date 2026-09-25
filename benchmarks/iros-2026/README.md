@@ -9,6 +9,10 @@ on `origin/integration/v0.4`. It preserves the broad cross-language benchmark,
 the matched Rust–Mech comparison, the exact source-size audit, the benchmark
 programs, raw result records, and the scripts used to inspect them.
 
+The [four-story evidence ledger](EVIDENCE.md) maps the Embeddable, Numerical,
+Reactive, and Heterogeneous claims to exact artifacts and lists the remaining
+experiments or integration work required before publication.
+
 ## The same-source result: CPU and Metal from one application
 
 ![One EKF source per system across CPU and Metal](charts/post-portable-combo.svg)
@@ -227,11 +231,11 @@ optimization: LLVM applies local SLP vectorization and combines sine/cosine
 calls in the Rust kernel, while scalar Cranelift AOT does not. Conversely,
 four-lane Mech AOT uses packed cross-filter SIMD that the Rust dylib does not.
 
-| Implementation | Steady-state throughput, median (observed min-max), n=7 | Library size | Peak process RSS, median (observed min-max), n=7 |
+| Implementation | Steady-state throughput, median ± MAD (observed min-max), n=7 | Library size | Peak process RSS, median ± MAD (observed min-max), n=7 |
 | --- | ---: | ---: | ---: |
-| Mech scalar Cranelift AOT | 14.671 M/s (14.458-14.679) | 33,544 B | 2,818,048 B (2,818,048-3,014,656) |
-| Optimized Rust `cdylib` | 21.121 M/s (21.097-21.129) | 50,016 B | 2,818,048 B (2,818,048-2,916,352) |
-| Mech four-lane Cranelift AOT | 34.863 M/s (34.847-34.927) | 33,864 B | 2,818,048 B (2,818,048-2,818,048) |
+| Mech scalar Cranelift AOT | 14.671 ± 0.008 M/s (14.458-14.679) | 33,544 B | 2,818,048 ± 0 B (2,818,048-3,014,656) |
+| Optimized Rust `cdylib` | 21.121 ± 0.005 M/s (21.097-21.129) | 50,016 B | 2,818,048 ± 0 B (2,818,048-2,916,352) |
+| Mech four-lane Cranelift AOT | 34.863 ± 0.010 M/s (34.847-34.927) | 33,864 B | 2,818,048 ± 0 B (2,818,048-2,818,048) |
 
 Rust is 43.96% ahead of scalar AOT because of that code-generation and
 hand-specialization gap, not because dynamic libraries favor Rust or because
