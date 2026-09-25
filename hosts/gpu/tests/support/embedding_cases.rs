@@ -77,8 +77,9 @@ fn backends_share_named_state_and_checked_turn_semantics() {
         assert_eq!(kernel.instances(), 8, "{backend:?}");
         if matches!(backend, Backend::Scalar | Backend::Simd) {
             assert!(kernel.library_path().is_none());
-        } else {
-            assert!(kernel.library_path().unwrap().is_file());
+        }
+        if let Some(path) = kernel.library_path() {
+            assert!(path.is_file());
         }
         let mut session = kernel.start().unwrap();
         assert_eq!(session.instances(), 8);
@@ -280,7 +281,7 @@ fn ekf_kernel(backend: Backend) -> Kernel {
 }
 
 #[test]
-fn real_ekf_matches_across_scalar_simd_and_aot_backends() {
+fn real_ekf_matches_across_enabled_backends() {
     let reference_kernel = ekf_kernel(Backend::Scalar);
     let mut reference = reference_kernel.start().unwrap();
     let mut sessions = backends()
@@ -360,10 +361,15 @@ fn concurrent_aot_compilation_reuses_one_complete_library() {
     use std::sync::{Arc, Barrier};
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    for backend in backends()
-        .into_iter()
-        .filter(|backend| !matches!(backend, Backend::Scalar | Backend::Simd))
-    {
+    for backend in backends() {
+        if counter_builder()
+            .compile(backend)
+            .unwrap()
+            .library_path()
+            .is_none()
+        {
+            continue;
+        }
         let directory = std::env::temp_dir().join(format!(
             "mech-embedding-concurrency-{}-{}-{backend:?}",
             std::process::id(),

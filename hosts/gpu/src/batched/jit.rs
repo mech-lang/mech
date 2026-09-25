@@ -29,9 +29,16 @@ struct NativeKernel {
     turn: NativeTurn,
 }
 
+/// Reusable scalar JIT code; sessions retain the executable allocation.
+#[derive(Clone)]
+pub struct BatchedJitCpuArtifact {
+    program: Arc<FixedShapeKernel>,
+    kernel: Arc<NativeKernel>,
+}
+
 pub struct BatchedJitCpuSession {
     program: Arc<FixedShapeKernel>,
-    kernel: NativeKernel,
+    kernel: Arc<NativeKernel>,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
@@ -42,31 +49,47 @@ pub struct BatchedJitCpuSession {
 }
 
 impl FixedShapeKernel {
+    pub fn compile_jit_cpu(&self) -> Result<BatchedJitCpuArtifact, BatchedExecutionError> {
+        Ok(BatchedJitCpuArtifact {
+            program: Arc::new(self.clone()),
+            kernel: Arc::new(NativeKernel::compile(self)?),
+        })
+    }
+
     pub fn prepare_jit_cpu(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
-        let inputs = self.expand_inputs(inputs)?;
-        let state = self.initial_state();
+        self.compile_jit_cpu()?.prepare(inputs)
+    }
+}
+
+impl BatchedJitCpuArtifact {
+    pub fn prepare(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
+        let inputs = self.program.expand_inputs(inputs)?;
+        let state = self.program.initial_state();
         let next_state = state
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
-        let kernel = NativeKernel::compile(self)?;
         let input_pointers = self
+            .program
             .inputs
             .iter()
             .map(|input| inputs[&input.slot].as_ptr())
             .collect();
         let mut session = BatchedJitCpuSession {
-            program: Arc::new(self.clone()),
-            kernel,
+            program: Arc::clone(&self.program),
+            kernel: Arc::clone(&self.kernel),
             inputs,
             state,
             next_state,
             input_pointers,
-            state_pointers: Vec::with_capacity(self.states.len()),
-            next_state_pointers: Vec::with_capacity(self.states.len()),
+            state_pointers: Vec::with_capacity(self.program.states.len()),
+            next_state_pointers: Vec::with_capacity(self.program.states.len()),
             faults: BatchedFaultRecorder::default(),
         };
         session.refresh_state_pointers();
@@ -79,16 +102,19 @@ impl BatchedJitCpuSession {
         &mut self,
         updates: &BTreeMap<String, Vec<f32>>,
     ) -> Result<(), BatchedExecutionError> {
-        for (name, values) in updates {
-            let input = self
-                .program
-                .inputs
-                .iter()
-                .find(|input| input.name == *name)
-                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
-            self.inputs
-                .insert(input.slot, self.program.expand_input(input, values)?);
-        }
+        let replacements = updates
+            .iter()
+            .map(|(name, values)| {
+                let input = self
+                    .program
+                    .inputs
+                    .iter()
+                    .find(|input| input.name == *name)
+                    .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+                Ok((input.slot, self.program.expand_input(input, values)?))
+            })
+            .collect::<Result<BTreeMap<_, _>, BatchedExecutionError>>()?;
+        self.inputs.extend(replacements);
         self.input_pointers = self
             .program
             .inputs

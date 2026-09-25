@@ -5,15 +5,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let kernel = Kernel::from_source(source)
         .input("bearing", [-0.55; 4])
         .export("state")
-        .compile(Backend::AotSimd)?;
+        .compile(Backend::Jit)?;
     let mut ekf = kernel.start()?;
     ekf.turn([("bearing", [-0.54; 4])])?;
     let state = ekf.state("state")?;
     // POSTER-END
 
-    if let Some(path) = kernel.library_path() {
-        println!("AOT library: {}", path.display());
-    }
     println!("{} filter instances", kernel.instances());
     for (instance, pose) in state.chunks_exact(3).enumerate() {
         println!(

@@ -21,6 +21,16 @@ required-features = ["cli_core"]
 [[example]]
 name = "embedded_ekf"
 path = "examples/embedded_ekf/main.rs"
+required-features = ["kernel-jit"]
+
+[[example]]
+name = "embedded_ekf_aot_build"
+path = "examples/embedded_ekf/build.rs"
+required-features = ["kernel-aot"]
+
+[[example]]
+name = "embedded_ekf_aot_load"
+path = "examples/embedded_ekf/load.rs"
 required-features = ["kernel-aot"]
 
 [[example]]
@@ -64,7 +74,8 @@ opt-level = 3
 
 [features]
 kernel = ["dep:mech-gpu", "mech-gpu/embedding"]
-kernel-aot = ["kernel", "mech-gpu/aot"]
+kernel-jit = ["kernel", "mech-gpu/jit"]
+kernel-aot = ["kernel-jit", "mech-gpu/aot"]
 kernel-benchmarks = ["kernel-aot", "mech-runtime", "mech-gpu/metal-native", "mech-gpu/benchmark-probes"]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-syntax/no_std"]
 

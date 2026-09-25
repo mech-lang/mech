@@ -29,7 +29,7 @@ let source = include_str!("ekf.mec");
 let kernel = Kernel::from_source(source)
     .input("bearing", [-0.55; 4])
     .export("state")
-    .compile(Backend::AotSimd)?;
+    .compile(Backend::Jit)?;
 let mut ekf = kernel.start()?;
 ekf.turn([("bearing", [-0.54; 4])])?;
 let state = ekf.state("state")?;
@@ -37,19 +37,38 @@ let state = ekf.state("state")?;
 
 These are implemented calls, excerpted from the runnable example. The
 [interface documentation](../../docs/embedding-kernels.md) explains input
-shapes, independent sessions, exported state, AOT library emission, and rejected
-turns. The embedding API's 12 tests pass. The API compiles source and retains its
-kernel metadata; it does not load arbitrary pre-existing dylibs. The standalone
-dylib size/RSS experiment below uses a different, minimal ABI loader.
+shapes, independent sessions, exported state, JIT/AOT compilation, and rejected
+turns. The embedding API's 21 integration tests pass. JIT code is compiled once
+and reused across sessions.
+
+The [AOT producer](../../examples/embedded_ekf/build.rs) compiles the same source
+and saves a dylib with its typed interface metadata. A separate
+[Rust consumer](../../examples/embedded_ekf/load.rs) loads that trusted bundle
+without parsing, lowering, compiling, or linking:
+
+```rust
+let kernel = unsafe { Kernel::load_bundle("ekf.bundle")? };
+let mut ekf = kernel.start()?;
+ekf.turn([("bearing", [-0.54; 4])])?;
+```
+
+Loading native code requires trusting the complete bundle and using compatible
+hardware and Mech builds. Integrity digests detect corruption and mismatched
+files, not malicious code. The current consumer feature still includes compiler
+dependencies, although loading does not invoke them. Arbitrary standalone dylibs
+without matching metadata and generated-kernel `rlib` emission are not supported.
+The archived dylib size/RSS experiment uses a separate minimal ABI loader and
+does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-hand-drawn-arrow.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-hand-drawn-arrow.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-hand-drawn-arrow.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-integrated.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-integrated.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-integrated.png).
 
 The reactive diagram uses one build/activation path ending in the resident
-instance, aligned publication/rejection outcomes, and a white Rust logo. The
+instance, an input/program/output/failure key, activation failure, aligned
+publication/rejection outcomes, and a white Rust logo. The
 turn-800 example state has a matching angled position-covariance ellipse with
 unequal axes. The [example output and reproduction](poster/reactive-output/README.md)
 record its inputs and provenance. These illustrative values are separate from
@@ -59,7 +78,7 @@ Rust logo © Rust Foundation, [CC BY 4.0](https://creativecommons.org/licenses/b
 recolored white from the [official artwork](https://github.com/rust-lang/rust-artwork/blob/main/logo/rust-logo-single-path.svg).
 
 The native Mech chart explicitly sets its logarithmic baseline to 0.1 and
-preserves the evaluator bars' series colors. The PDF and PNG show the intended
+preserves the interpreter bars' series colors. The PDF and PNG show the intended
 layout. The in-app PPTX preview has rendered this logarithmic chart as linear,
 so use the linked PDF/PNG for the visual reference. This revision still needs
 a visual check in Microsoft PowerPoint.

@@ -44,6 +44,7 @@ struct SimdAotKernel {
     _library: libloading::Library,
     turn: NativeSimdAotTurn,
     path: PathBuf,
+    sha256: String,
 }
 
 /// A reusable four-lane Cranelift AOT library for a fixed-shape Mech region.
@@ -102,6 +103,9 @@ impl FixedShapeKernel {
 }
 
 impl BatchedAotSimdCpuArtifact {
+    pub(crate) fn library_sha256(&self) -> &str {
+        &self.kernel.sha256
+    }
     pub fn path(&self) -> &Path {
         &self.kernel.path
     }
@@ -360,6 +364,11 @@ fn compile_math_helper(object_path: &Path) -> Result<(), BatchedExecutionError> 
 }
 
 fn load_simd_aot_library(path: PathBuf) -> Result<SimdAotKernel, BatchedExecutionError> {
+    use sha2::{Digest, Sha256};
+    let sha256 = Sha256::digest(fs::read(&path).map_err(aot_error)?)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
     // SAFETY: this process emitted the library for the current host target and
     // retains its handle for the lifetime of the copied entry-point pointer.
     let library = unsafe { libloading::Library::new(&path) }.map_err(aot_error)?;
@@ -372,6 +381,7 @@ fn load_simd_aot_library(path: PathBuf) -> Result<SimdAotKernel, BatchedExecutio
         _library: library,
         turn,
         path,
+        sha256,
     })
 }
 

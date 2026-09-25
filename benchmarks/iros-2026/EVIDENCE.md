@@ -16,16 +16,26 @@ not a confidence interval.
 
 A Rust application can compile a fixed-shape Mech kernel through
 `mech::kernel`, declare live inputs and named state exports, then start a
-persistent session and submit checked turns. Scalar and four-lane AOT modes
-emit a reusable native dynamic library. The [runnable Rust example](../../examples/embedded_ekf/main.rs)
+persistent session and submit checked turns. Scalar JIT compiles once and reuses
+its code across sessions. Scalar and four-lane AOT modes emit a reusable native
+dynamic library. The [runnable Rust example](../../examples/embedded_ekf/main.rs)
 and [interface documentation](../../docs/embedding-kernels.md) demonstrate this
-path with the real EKF source; the embedding API's 12 tests pass.
+path with the real EKF source; the embedding API's 21 integration tests pass.
 
 The separate minimal benchmark loader calls the emitted library's C ABI with
 contiguous buffers and executes checked turns without including the parser or
 compiler. The source-compiling `mech::kernel` example includes those compilation
-facilities. Loading an arbitrary existing dylib without its compiled kernel
-metadata is not part of that interface.
+facilities. `Kernel::save_bundle` persists AOT code and versioned interface
+metadata. `unsafe Kernel::load_bundle` loads a trusted, compatible saved bundle
+without parsing, lowering, compiling, or linking. Tests verify relocation,
+state/covariance agreement, rejected-turn rollback, corruption/mismatch errors,
+code lifetime, and fresh-process loading without compiler/linker tools. The
+current consumer Cargo feature still includes compiler dependencies.
+
+Loading an arbitrary existing dylib without matching kernel metadata is not
+part of that interface. A generated-kernel `rlib` emitter is also not implemented.
+The new ergonomic bundle wrapper has not been performance-measured; the table
+below retains the archived minimal-ABI loader results.
 
 The current evidence does **not** show that arbitrary Rust data structures cross
 the dynamic-library boundary unchanged. The measured ABI is a pointer table of

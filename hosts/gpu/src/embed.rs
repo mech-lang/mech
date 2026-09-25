@@ -19,6 +19,11 @@ use mech_core::{CellSlotId, ComputePlacement, MechCode, Program, SectionElement}
 use mech_runtime::RuntimeBuilder;
 
 #[cfg(feature = "aot")]
+mod bundle;
+#[cfg(feature = "jit")]
+use crate::{BatchedJitCpuArtifact, BatchedJitCpuSession};
+
+#[cfg(feature = "aot")]
 use crate::{
     BatchedAotCpuArtifact, BatchedAotCpuSession, BatchedAotSimdCpuArtifact,
     BatchedAotSimdCpuSession,
@@ -35,6 +40,9 @@ pub enum Backend {
     Scalar,
     /// Evaluate lowered instructions in four-instance SIMD groups on one thread.
     Simd,
+    /// Compile scalar machine code once in memory with Cranelift.
+    #[cfg(feature = "jit")]
+    Jit,
     /// Emit and load a scalar Cranelift native library.
     #[cfg(feature = "aot")]
     Aot,
@@ -56,6 +64,7 @@ pub enum Error {
     InvalidExport(String),
     UnknownState(String),
     ArtifactDirectoryRequiresAot,
+    Bundle(String),
 }
 
 impl fmt::Display for Error {
@@ -75,6 +84,7 @@ impl fmt::Display for Error {
             Self::ArtifactDirectoryRequiresAot => {
                 write!(f, "an artifact directory requires an AOT backend")
             }
+            Self::Bundle(message) => write!(f, "native kernel bundle: {message}"),
         }
     }
 }
@@ -130,7 +140,12 @@ impl KernelBuilder {
     /// Compile source, validate the interface, and prepare the selected backend.
     /// AOT emits and loads a native library here, before any session starts.
     pub fn compile(self, backend: Backend) -> Result<Kernel, Error> {
-        if self.artifact_directory.is_some() && matches!(backend, Backend::Scalar | Backend::Simd) {
+        let is_aot = match backend {
+            #[cfg(feature = "aot")]
+            Backend::Aot | Backend::AotSimd => true,
+            _ => false,
+        };
+        if self.artifact_directory.is_some() && !is_aot {
             return Err(Error::ArtifactDirectoryRequiresAot);
         }
         let mut inputs = BTreeMap::new();
@@ -191,6 +206,8 @@ impl KernelBuilder {
         let compiled = match backend {
             Backend::Scalar => Compiled::Scalar,
             Backend::Simd => Compiled::Simd,
+            #[cfg(feature = "jit")]
+            Backend::Jit => Compiled::Jit(program.compile_jit_cpu()?),
             #[cfg(feature = "aot")]
             Backend::Aot => Compiled::Aot(match self.artifact_directory {
                 Some(directory) => program.compile_aot_cpu_to(directory)?,
@@ -203,7 +220,7 @@ impl KernelBuilder {
             }),
         };
         Ok(Kernel {
-            program,
+            program: Some(program),
             compiled,
             initial_inputs: inputs,
             interface: Arc::new(Interface {
@@ -258,15 +275,19 @@ struct Interface {
 enum Compiled {
     Scalar,
     Simd,
+    #[cfg(feature = "jit")]
+    Jit(BatchedJitCpuArtifact),
     #[cfg(feature = "aot")]
     Aot(BatchedAotCpuArtifact),
     #[cfg(feature = "aot")]
     AotSimd(BatchedAotSimdCpuArtifact),
+    #[cfg(feature = "aot")]
+    Bundle(bundle::NativeBundle),
 }
 
 /// An immutable compiled kernel. Start any number of independent sessions.
 pub struct Kernel {
-    program: FixedShapeKernel,
+    program: Option<FixedShapeKernel>,
     compiled: Compiled,
     initial_inputs: BTreeMap<String, Vec<f32>>,
     interface: Arc<Interface>,
@@ -283,7 +304,14 @@ impl Kernel {
     }
 
     pub fn instances(&self) -> u32 {
-        self.program.instances()
+        #[cfg(feature = "aot")]
+        if let Compiled::Bundle(bundle) = &self.compiled {
+            return bundle.instances();
+        }
+        self.program
+            .as_ref()
+            .expect("source-compiled kernel")
+            .instances()
     }
 
     /// Saved library path for AOT backends; absent for instruction evaluators.
@@ -292,10 +320,14 @@ impl Kernel {
     pub fn library_path(&self) -> Option<&Path> {
         match &self.compiled {
             Compiled::Scalar | Compiled::Simd => None,
+            #[cfg(feature = "jit")]
+            Compiled::Jit(_) => None,
             #[cfg(feature = "aot")]
             Compiled::Aot(artifact) => Some(artifact.path()),
             #[cfg(feature = "aot")]
             Compiled::AotSimd(artifact) => Some(artifact.path()),
+            #[cfg(feature = "aot")]
+            Compiled::Bundle(bundle) => Some(bundle.path()),
         }
     }
 
@@ -303,14 +335,28 @@ impl Kernel {
     /// Does not recompile or emit another library. A session may outlive this kernel.
     pub fn start(&self) -> Result<Session, Error> {
         let backend = match &self.compiled {
-            Compiled::Scalar => Execution::Scalar(self.program.prepare_cpu(&self.initial_inputs)?),
-            Compiled::Simd => Execution::Simd(self.program.prepare_simd_cpu(&self.initial_inputs)?),
+            Compiled::Scalar => Execution::Scalar(
+                self.program
+                    .as_ref()
+                    .expect("source kernel")
+                    .prepare_cpu(&self.initial_inputs)?,
+            ),
+            Compiled::Simd => Execution::Simd(
+                self.program
+                    .as_ref()
+                    .expect("source kernel")
+                    .prepare_simd_cpu(&self.initial_inputs)?,
+            ),
+            #[cfg(feature = "jit")]
+            Compiled::Jit(artifact) => Execution::Jit(artifact.prepare(&self.initial_inputs)?),
             #[cfg(feature = "aot")]
             Compiled::Aot(artifact) => Execution::Aot(artifact.prepare(&self.initial_inputs)?),
             #[cfg(feature = "aot")]
             Compiled::AotSimd(artifact) => {
                 Execution::AotSimd(artifact.prepare(&self.initial_inputs)?)
             }
+            #[cfg(feature = "aot")]
+            Compiled::Bundle(bundle) => Execution::Bundle(bundle.start()?),
         };
         Ok(Session {
             backend,
@@ -323,10 +369,14 @@ impl Kernel {
 enum Execution {
     Scalar(BatchedCpuSession),
     Simd(BatchedSimdCpuSession),
+    #[cfg(feature = "jit")]
+    Jit(BatchedJitCpuSession),
     #[cfg(feature = "aot")]
     Aot(BatchedAotCpuSession),
     #[cfg(feature = "aot")]
     AotSimd(BatchedAotSimdCpuSession),
+    #[cfg(feature = "aot")]
+    Bundle(bundle::NativeSession),
 }
 
 /// Mutable resident numerical state and inputs for one kernel instance batch.
@@ -341,10 +391,14 @@ macro_rules! with_session {
         match $execution {
             Execution::Scalar($session) => $body,
             Execution::Simd($session) => $body,
+            #[cfg(feature = "jit")]
+            Execution::Jit($session) => $body,
             #[cfg(feature = "aot")]
             Execution::Aot($session) => $body,
             #[cfg(feature = "aot")]
             Execution::AotSimd($session) => $body,
+            #[cfg(feature = "aot")]
+            Execution::Bundle($session) => $body,
         }
     };
 }

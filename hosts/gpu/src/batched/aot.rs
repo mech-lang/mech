@@ -24,6 +24,7 @@ struct AotKernel {
     _library: libloading::Library,
     turn: NativeTurn,
     path: PathBuf,
+    sha256: String,
 }
 
 /// A reusable native library emitted from one fixed-shape Mech compute region.
@@ -78,6 +79,9 @@ impl FixedShapeKernel {
 }
 
 impl BatchedAotCpuArtifact {
+    pub(crate) fn library_sha256(&self) -> &str {
+        &self.kernel.sha256
+    }
     /// Returns the saved native library loaded by this artifact.
     pub fn path(&self) -> &Path {
         &self.kernel.path
@@ -253,6 +257,10 @@ fn emit_aot_library(
 }
 
 fn load_aot_library(path: PathBuf) -> Result<AotKernel, BatchedExecutionError> {
+    let sha256 = Sha256::digest(fs::read(&path).map_err(aot_error)?)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
     // SAFETY: The path was produced by `emit_aot_library` for this process's
     // host target. The library remains owned by `AotKernel` for the lifetime
     // of the copied function pointer.
@@ -266,6 +274,7 @@ fn load_aot_library(path: PathBuf) -> Result<AotKernel, BatchedExecutionError> {
         _library: library,
         turn,
         path,
+        sha256,
     })
 }
 

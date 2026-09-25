@@ -819,6 +819,20 @@ impl FixedShapeKernel {
             .map(|state| (state.slot, state.shape.elements()))
     }
 
+    #[cfg(all(feature = "embedding", feature = "aot"))]
+    pub(crate) fn native_input_layout(&self) -> impl Iterator<Item = (CellSlotId, &str, usize)> {
+        self.inputs
+            .iter()
+            .map(|input| (input.slot, input.name.as_str(), input.shape.elements()))
+    }
+
+    #[cfg(all(feature = "embedding", feature = "aot"))]
+    pub(crate) fn native_state_initializers(&self) -> impl Iterator<Item = (CellSlotId, &[f32])> {
+        self.states
+            .iter()
+            .map(|state| (state.slot, state.initializer.as_slice()))
+    }
+
     /// Materializes the backend-neutral physical input plan used by both the
     /// native wgpu session and the browser WebGPU bridge.
     pub fn physical_inputs(
