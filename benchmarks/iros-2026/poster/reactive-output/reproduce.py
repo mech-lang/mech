@@ -16,7 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library", type=Path, required=True,
                         help="Trusted library exporting the checked Rust mech_fixed_numeric_turn ABI")
-    parser.add_argument("--turns", type=int, default=40)
+    parser.add_argument("--turns", type=int, default=800)
     args = parser.parse_args()
     if args.turns < 1:
         parser.error("--turns must be positive")
@@ -81,7 +81,7 @@ def main():
     angle = math.degrees(.5 * math.atan2(2 * b, a - d))
     result = {
         "schema_version": 1,
-        "purpose": "Illustrative poster output; not a benchmark sample or new Mech execution",
+        "purpose": "Illustrative poster output from repeated inputs; not a benchmark sample, recorded robot trajectory, or new Mech execution",
         "backend": "Rust checked f32 ABI control",
         "turn": args.turns,
         "instances": 1,

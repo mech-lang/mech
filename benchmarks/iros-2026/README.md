@@ -44,13 +44,14 @@ dylib size/RSS experiment below uses a different, minimal ABI loader.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-reactive-diagram.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-reactive-diagram.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-reactive-diagram.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-reactive-simplified.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-reactive-simplified.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-reactive-simplified.png).
 
-The reactive diagram includes aligned live stages, curved branches, a white Rust
-logo, and an example numerical state with its matching robot pose and positional
-covariance ellipse. The [example output and reproduction](poster/reactive-output/README.md)
+The reactive diagram uses one build/activation path ending in the resident
+instance, aligned publication/rejection outcomes, and a white Rust logo. The
+turn-800 example state has a matching angled position-covariance ellipse with
+unequal axes. The [example output and reproduction](poster/reactive-output/README.md)
 record its inputs and provenance. These illustrative values are separate from
 the throughput measurements.
 

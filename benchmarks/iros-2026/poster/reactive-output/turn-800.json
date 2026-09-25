@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "purpose": "Illustrative poster output from repeated inputs; not a benchmark sample, recorded robot trajectory, or new Mech execution",
+  "backend": "Rust checked f32 ABI control",
+  "turn": 800,
+  "instances": 1,
+  "source_revision": "b6ad82ca0203b9f026f05e293e29644623d73b3b",
+  "source_sha256": {
+    "examples/embedded_ekf/ekf.mec": "da531cddcb25d002d49f1a77800122e84b573e2685e191c1955908ef6fccd625",
+    "examples/embedded_ekf/main.rs": "1e034a6ac387a7352f26ccc668e9e7d42f00d03c31f62b82b00c7fbd5e338724",
+    "benchmarks/iros-2026/rust-dylib/rust-ekf-dylib.rs": "5e32fcc5e2b17bf923718860756b233d4da145b20cff48a20d0c18ec51ccc9a7"
+  },
+  "library_sha256": "165672d40d46d551705528561de4a4500d17893ade5d80a5095f99fcbe9a7fcd",
+  "environment": {"python": "3.12.14", "numpy": "2.3.5"},
+  "fixture": {
+    "input_order": ["dt", "linear_velocity", "angular_velocity", "bearing", "measurement_noise"],
+    "inputs_decimal": [0.1, 1.0, 0.015, -0.54, 0.25],
+    "initial_mean": [55, 25, 0.4],
+    "initial_covariance_rows": [[100, 0, 0], [0, 100, 0], [0, 0, 0.15]],
+    "landmark": [140, 12],
+    "process_covariance_rows": [[0.01, 0], [0, 0.0025]]
+  },
+  "inputs_f32": [0.10000000149011612, 1.0, 0.014999999664723873, -0.5400000214576721, 0.25],
+  "result": {
+    "all_status_codes_zero": true,
+    "mean": [98.23776245117188, 55.18589401245117, -0.034165628254413605],
+    "covariance_rows": [
+      [107.88896942138672, -28.88761329650879, -0.9072326421737671],
+      [-28.88755226135254, 19.884502410888672, 0.10412274301052094],
+      [-0.9072338342666626, 0.10412327200174332, 0.012010792270302773]
+    ]
+  },
+  "independent_cross_check": {
+    "method": "NumPy f32 matrix equations",
+    "mean": [98.23773193359375, 55.18578338623047, -0.034163620322942734],
+    "covariance_rows": [
+      [107.88916778564453, -28.887554168701172, -0.9072341918945312],
+      [-28.88755226135254, 19.884462356567383, 0.10412190109491348],
+      [-0.907234251499176, 0.10412175208330154, 0.012010818347334862]
+    ],
+    "maximum_mean_absolute_difference": 0.000110626220703125,
+    "maximum_covariance_absolute_difference": 0.0001983642578125
+  },
+  "scene": {
+    "covariance_block": "Symmetric part of the 2x2 position block",
+    "position_eigenvalues": [116.52407050158219, 11.249401330693203],
+    "two_sigma_semiaxes": [21.58926311865064, 6.7080254414225955],
+    "world_major_axis_angle_degrees": -16.642502461815663,
+    "svg_major_axis_angle_degrees": 16.642502461815663,
+    "robot_heading_radians": -0.034165628254413605,
+    "svg_robot_heading_degrees": 1.9575463033908176
+  }
+}
