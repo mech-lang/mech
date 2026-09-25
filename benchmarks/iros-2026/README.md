@@ -44,9 +44,9 @@ dylib size/RSS experiment below uses a different, minimal ABI loader.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-footer-numerical-v3.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-footer-numerical-v3.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-footer-numerical-v3.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-chart-labels-v3.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-chart-labels-v3.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-chart-labels-v3.png).
 
 ![Matched Mech backend checked and unchecked throughput, with one paired row per backend](charts/post-mech-backend-pairs.svg)
 
