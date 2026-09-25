@@ -188,6 +188,31 @@ impl ProgramCompiler {
             .compile_tree_artifact_with_inputs(tree, inputs, external_input_names)
     }
 
+    /// Compiles one parsed tree with an explicit live input and named output
+    /// interface. Only `external_input_names` remain replaceable at activation;
+    /// `exported_names` retain selected lexical root symbols for host queries.
+    ///
+    /// Existing document outputs are preserved. Other intermediate symbols are
+    /// not exported, and unknown input or output names are compilation errors.
+    pub fn compile_tree_artifact_with_interface(
+        &mut self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        external_input_names: &BTreeSet<String>,
+        exported_names: &[&str],
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.view()
+            .compile_tree_artifact_with_input_initializers_and_compute(
+                tree,
+                inputs,
+                external_input_names,
+                exported_names,
+                None,
+                false,
+            )
+            .map(|(product, _, _)| product)
+    }
+
     /// Compiles one parsed tree and captures the declaration-time values of
     /// its explicitly live inputs during the same short-lived planning pass.
     ///
@@ -471,6 +496,7 @@ impl<'a> ProgramCompilerView<'a> {
             tree,
             inputs,
             external_input_names,
+            &[],
             None,
             false,
         )
@@ -482,6 +508,7 @@ impl<'a> ProgramCompilerView<'a> {
         tree: &mech_core::Program,
         inputs: &BTreeMap<String, RuntimeHostInputValue>,
         external_input_names: &BTreeSet<String>,
+        exported_names: &[&str],
         compute_interface: Option<&ComputeRegionInterface>,
         retain_root_symbols: bool,
     ) -> MResult<(
@@ -525,6 +552,7 @@ impl<'a> ProgramCompilerView<'a> {
         if retain_root_symbols {
             program.publish_compiler_root_symbols();
         }
+        program.publish_compiler_named_root_symbols(exported_names)?;
         let input_names = external_input_names
             .iter()
             .map(String::as_str)
@@ -572,6 +600,7 @@ impl<'a> ProgramCompilerView<'a> {
                 &partition.coordinator,
                 &BTreeMap::new(),
                 &BTreeSet::new(),
+                &[],
                 Some(&compute.interface),
                 true,
             )?;
@@ -2325,4 +2354,61 @@ fn classify_source_planning(error: mech_core::MechError) -> mech_core::MechError
         ResidentRouteFailureClass::InvalidArtifact
     };
     route_failure(class, format!("resident source planning failed: {error:?}"))
+}
+
+#[cfg(all(
+    test,
+    feature = "f64",
+    feature = "variable_define",
+    feature = "variable_assign"
+))]
+mod embedding_interface_tests {
+    use super::*;
+
+    #[test]
+    fn explicit_interface_retains_only_selected_named_symbols() {
+        let tree = mech_syntax::parse(
+            "input := 1.0\nprivate := input + 2.0\n~state := 0.0\nstate = state + private\nstate",
+        )
+        .unwrap();
+        let artifact = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_tree_artifact_with_interface(
+                &tree,
+                &BTreeMap::new(),
+                &BTreeSet::from(["input".to_owned()]),
+                &["state"],
+            )
+            .unwrap()
+            .into_artifact();
+
+        assert_eq!(artifact.inputs().len(), 1);
+        assert_eq!(artifact.inputs()[0].name, "input");
+        let named = artifact
+            .outputs()
+            .iter()
+            .filter_map(|output| output.interactive_binding.as_ref())
+            .collect::<Vec<_>>();
+        assert_eq!(named.len(), 1);
+        assert_eq!(named[0].lexical_name, "state");
+    }
+
+    #[test]
+    fn explicit_interface_rejects_unknown_export() {
+        let tree = mech_syntax::parse("~state := 0.0\nstate").unwrap();
+        let error = crate::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_tree_artifact_with_interface(
+                &tree,
+                &BTreeMap::new(),
+                &BTreeSet::new(),
+                &["missing"],
+            )
+            .unwrap_err();
+        assert_eq!(error.kind_name(), "ProgramOutputNotFound");
+    }
 }

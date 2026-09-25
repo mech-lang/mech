@@ -12,8 +12,15 @@ rust-version = "1.92"
 
 [features]
 default = []
+embedding = [
+  "runtime-host",
+  "mech-runtime/full_compiler", "mech-runtime/compute",
+  "dep:mech-syntax", "dep:mech-stdlib",
+]
 runtime-host = ["dep:mech-runtime"]
 native = ["runtime-host", "dep:bytemuck", "dep:pollster", "dep:wgpu"]
+metal-native = ["native", "dep:metal", "dep:naga"]
+benchmark-probes = []
 jit = [
   "mech-engine/runtime",
   "dep:cranelift-codegen",
@@ -33,6 +40,8 @@ mech-compute = { version = "0.3.5", path = "../../src/compute" }
 mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["range"] }
 mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["resident-artifact"] }
 mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string", "f64"], optional = true }
+mech-syntax = { version = "0.3.5", path = "../../src/syntax", default-features = false, features = ["full"], optional = true }
+mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"], optional = true }
 bytemuck = { version = "1.24.0", optional = true }
 pollster = { version = "0.3.0", optional = true }
 web-time = "1.1.0"
@@ -40,6 +49,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = { version = "0.11.0", default-features = false }
 wgpu = { version = "0.20.1", optional = true }
+naga = { version = "0.20.0", optional = true, features = ["wgsl-in", "msl-out"] }
 wide = "0.7.33"
 cranelift-codegen = { version = "=0.131.3", optional = true }
 cranelift-frontend = { version = "=0.131.3", optional = true }
@@ -48,6 +58,9 @@ cranelift-module = { version = "=0.131.3", optional = true }
 cranelift-native = { version = "=0.131.3", optional = true }
 cranelift-object = { version = "=0.131.3", optional = true }
 libloading = { version = "0.8.9", optional = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+metal = { version = "0.28.0", optional = true }
 
 [[example]]
 name = "particle_benchmark"

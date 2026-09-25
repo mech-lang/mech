@@ -125,16 +125,21 @@ impl BatchedAotCpuSession {
         &mut self,
         updates: &BTreeMap<String, Vec<f32>>,
     ) -> Result<(), BatchedExecutionError> {
-        for (name, values) in updates {
-            let input = self
-                .program
-                .inputs
-                .iter()
-                .find(|input| input.name == *name)
-                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
-            self.inputs
-                .insert(input.slot, self.program.expand_input(input, values)?);
-        }
+        // Validate and allocate every replacement before modifying a buffer.
+        // An error must leave both the inputs and their raw pointer table intact.
+        let replacements = updates
+            .iter()
+            .map(|(name, values)| {
+                let input = self
+                    .program
+                    .inputs
+                    .iter()
+                    .find(|input| input.name == *name)
+                    .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+                Ok((input.slot, self.program.expand_input(input, values)?))
+            })
+            .collect::<Result<BTreeMap<_, _>, BatchedExecutionError>>()?;
+        self.inputs.extend(replacements);
         self.input_pointers = self
             .program
             .inputs
@@ -213,6 +218,7 @@ fn emit_aot_library(
     fs::create_dir_all(directory).map_err(aot_error)?;
     let key = artifact_key(program, b"scalar-v1", &[]);
     let library_path = directory.join(format!("mech-{key}.{}", dynamic_library_extension()));
+    let _cache_lock = lock_cache_entry(&library_path)?;
     if library_path.is_file() {
         return Ok(library_path);
     }
@@ -283,6 +289,21 @@ pub(super) fn artifact_key(
         .collect()
 }
 
+/// Serialize writers for one content-addressed artifact, across threads and
+/// processes. Keep the lock file in place: unlinking it could let a new writer
+/// lock a different inode while an existing waiter still uses the old one.
+pub(super) fn lock_cache_entry(library_path: &Path) -> Result<fs::File, BatchedExecutionError> {
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(library_path.with_extension("lock"))
+        .map_err(aot_error)?;
+    file.lock().map_err(aot_error)?;
+    Ok(file)
+}
+
 pub(super) fn link_dynamic_library(
     object_paths: &[&Path],
     library_path: &Path,
@@ -348,4 +369,68 @@ pub(super) const fn object_extension() -> &'static str {
 
 pub(super) fn aot_error(error: impl std::fmt::Display) -> BatchedExecutionError {
     BatchedExecutionError::Native(format!("Cranelift AOT: {error}"))
+}
+
+#[cfg(test)]
+pub(super) mod tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    pub(in crate::batched) fn input_update_test_kernel()
+    -> (FixedShapeKernel, BTreeMap<String, Vec<f32>>) {
+        let tree = mech_syntax::parse(
+            "Input updates @compute\n\
+             -------------------------------------------------------------------------------\n\
+             a := 1f32\nz := 2f32\n~value := 0f32\nvalue = value + a + z\nvalue\n",
+        )
+        .unwrap();
+        let artifact = mech_runtime::RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()
+            .unwrap()
+            .compile_tree_artifact_with_inputs(
+                &tree,
+                &BTreeMap::new(),
+                &BTreeSet::from(["a".to_owned(), "z".to_owned()]),
+            )
+            .unwrap()
+            .into_artifact();
+        let inputs = BTreeMap::from([
+            ("a".to_owned(), vec![1.0; 4]),
+            ("z".to_owned(), vec![2.0; 4]),
+        ]);
+        let program = crate::ComputeLowerer
+            .compile_broadcast(&artifact, &inputs)
+            .unwrap();
+        (program, inputs)
+    }
+
+    #[test]
+    fn scalar_aot_input_updates_are_atomic() {
+        let (program, inputs) = input_update_test_kernel();
+        let mut session = program.prepare_aot_cpu(&inputs).unwrap();
+        let original_inputs = session.inputs.clone();
+        let original_pointers = session.input_pointers.clone();
+        for (name, values) in [("zzz", vec![3.0]), ("z", vec![3.0; 3])] {
+            let updates =
+                BTreeMap::from([("a".to_owned(), vec![9.0; 4]), (name.to_owned(), values)]);
+            assert!(session.update_inputs(&updates).is_err());
+            assert_eq!(session.inputs, original_inputs);
+            assert_eq!(session.input_pointers, original_pointers);
+        }
+        session.dispatch_turns(1).unwrap();
+        let mut reference = program.prepare_cpu(&inputs).unwrap();
+        reference.dispatch_turns(1).unwrap();
+        assert_eq!(session.state(), reference.state());
+
+        let updates = BTreeMap::from([
+            ("a".to_owned(), vec![7.0]),
+            ("z".to_owned(), vec![3.0, 4.0, 5.0, 6.0]),
+        ]);
+        session.update_inputs(&updates).unwrap();
+        reference.update_inputs(&updates).unwrap();
+        session.dispatch_turns(1).unwrap();
+        reference.dispatch_turns(1).unwrap();
+        assert_eq!(session.state(), reference.state());
+    }
 }

@@ -17,6 +17,10 @@ pub extern crate mech_engine as engine;
 pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
+/// Source-to-session embedding for fixed-shape numerical kernels.
+#[cfg(feature = "kernel")]
+pub use mech_gpu::embed as kernel;
+
 pub use mech_engine::*;
 #[cfg(not(feature = "no_std"))]
 pub use mech_syntax::print_err_report;

@@ -29,6 +29,16 @@ use super::{
 mod jit;
 #[cfg(feature = "jit")]
 pub use jit::*;
+#[cfg(feature = "jit")]
+mod simd_jit;
+#[cfg(feature = "jit")]
+pub use simd_jit::*;
+#[cfg(all(feature = "metal-native", target_os = "macos"))]
+mod metal;
+#[cfg(all(feature = "metal-native", target_os = "macos"))]
+mod metal_layout;
+#[cfg(all(feature = "metal-native", target_os = "macos"))]
+pub use metal::*;
 #[cfg(feature = "aot")]
 mod aot;
 #[cfg(feature = "aot")]
@@ -868,6 +878,79 @@ impl FixedShapeKernel {
 
     pub fn integrity_constraints(&self) -> impl Iterator<Item = IntegrityConstraintId> + '_ {
         self.constraints.iter().map(|constraint| constraint.id)
+    }
+
+    /// Benchmark-only removal of explicitly named application predicates.
+    /// State, input layout and per-turn publication remain unchanged. Other
+    /// constraints (including internal numerical validity checks) are retained.
+    /// Dead instructions used only by the removed predicates are pruned for
+    /// every backend, including the scalar instruction evaluator.
+    #[cfg(feature = "benchmark-probes")]
+    pub fn without_named_integrity_constraints(
+        &self,
+        names: &[&str],
+    ) -> Result<Self, BatchedExecutionError> {
+        let selected = names.iter().copied().collect::<BTreeSet<_>>();
+        for name in &selected {
+            if !self
+                .constraints
+                .iter()
+                .any(|constraint| constraint.name.as_ref() == *name)
+            {
+                return Err(BatchedExecutionError::IntegrityConfiguration(format!(
+                    "unknown application predicate `{name}`"
+                )));
+            }
+        }
+        let mut storage = self
+            .compute
+            .fixed_shape_storage()
+            .expect("fixed-shape storage")
+            .clone();
+        storage.constraints = storage
+            .constraints
+            .into_vec()
+            .into_iter()
+            .filter(|constraint| !selected.contains(constraint.name.as_ref()))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let mut live = BTreeSet::new();
+        for state in &storage.states {
+            for operand in &state.update {
+                collect_operand_register(*operand, &mut live);
+            }
+        }
+        for constraint in &storage.constraints {
+            constraint.predicate.collect_registers(&mut live);
+        }
+        let mut instructions = self
+            .fixed_ir()
+            .instructions
+            .iter()
+            .rev()
+            .filter_map(|instruction| {
+                if !live.contains(&instruction.output) {
+                    return None;
+                }
+                instruction.computation.collect_registers(&mut live);
+                Some(instruction.clone())
+            })
+            .collect::<Vec<_>>();
+        instructions.reverse();
+        let compute = ComputeProgram::new(
+            self.compute.interface().clone(),
+            self.compute.plan().clone(),
+            ComputeKernel::FixedShape(FixedShapeIr {
+                register_count: self.fixed_ir().register_count,
+                instructions: instructions.into_boxed_slice(),
+            }),
+        )
+        .with_fixed_shape_storage(storage);
+        let mut kernel = Self::from_compute_program(&compute).map_err(|error| {
+            BatchedExecutionError::Native(format!("unchecked benchmark lowering: {error}"))
+        })?;
+        kernel.concrete_cases = self.concrete_cases.clone();
+        Ok(kernel)
     }
 
     pub fn named_integrity_constraints(

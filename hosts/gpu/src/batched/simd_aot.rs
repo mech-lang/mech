@@ -25,7 +25,8 @@ use super::{
     ComparisonOperation, ElementwiseOperation, FixedShapeKernel, LogicOperation, ScalarComputation,
     ScalarInstruction, ScalarOperand, ScalarPredicate, UnaryOperation,
     aot::{
-        aot_error, artifact_key, dynamic_library_extension, link_dynamic_library, object_extension,
+        aot_error, artifact_key, dynamic_library_extension, link_dynamic_library, lock_cache_entry,
+        object_extension,
     },
 };
 
@@ -169,19 +170,25 @@ impl BatchedAotSimdCpuSession {
         &mut self,
         updates: &BTreeMap<String, Vec<f32>>,
     ) -> Result<(), BatchedExecutionError> {
-        for (name, values) in updates {
-            let input = self
-                .program
-                .inputs
-                .iter()
-                .find(|input| input.name == *name)
-                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
-            let expanded = self.program.expand_input(input, values)?;
-            self.inputs.insert(
-                input.slot,
-                pack_simd_instances(&expanded, input.shape.elements()),
-            );
-        }
+        // Validate and pack every replacement before modifying a buffer.
+        // An error must leave both the inputs and their raw pointer table intact.
+        let replacements = updates
+            .iter()
+            .map(|(name, values)| {
+                let input = self
+                    .program
+                    .inputs
+                    .iter()
+                    .find(|input| input.name == *name)
+                    .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+                let expanded = self.program.expand_input(input, values)?;
+                Ok((
+                    input.slot,
+                    pack_simd_instances(&expanded, input.shape.elements()),
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>, BatchedExecutionError>>()?;
+        self.inputs.extend(replacements);
         self.input_pointers = self
             .program
             .inputs
@@ -192,6 +199,29 @@ impl BatchedAotSimdCpuSession {
     }
 
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
+        self.dispatch_turns_inner(turns, true)
+    }
+
+    /// Benchmark resident execution without converting the final packed state
+    /// to a host-facing layout. Publication and integrity checks still occur
+    /// on every turn. Call `read_state` before inspecting the updated host state.
+    #[cfg(feature = "benchmark-probes")]
+    pub fn dispatch_turns_resident(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
+        self.dispatch_turns_inner(turns, false)
+    }
+
+    /// Materialize the host-facing state after resident benchmark dispatch.
+    #[cfg(feature = "benchmark-probes")]
+    pub fn read_state(&mut self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        self.unpack_state();
+        &self.state
+    }
+
+    fn dispatch_turns_inner(
+        &mut self,
+        turns: u32,
+        readback: bool,
+    ) -> Result<(), BatchedExecutionError> {
         if turns == 0 {
             return Err(BatchedExecutionError::ZeroTurns);
         }
@@ -212,12 +242,16 @@ impl BatchedAotSimdCpuSession {
                 .program
                 .failed_packed_constraint(packed_fault, attempted_turn)
             {
-                self.unpack_state();
+                if readback {
+                    self.unpack_state();
+                }
                 return Err(self.faults.record(fault));
             }
             mem::swap(&mut self.packed_state, &mut self.packed_next_state);
         }
-        self.unpack_state();
+        if readback {
+            self.unpack_state();
+        }
         Ok(())
     }
 
@@ -276,6 +310,7 @@ fn emit_simd_aot_library(
     fs::create_dir_all(directory).map_err(aot_error)?;
     let key = artifact_key(program, b"simd4-sincos-v1", include_bytes!("aot_math.c"));
     let library_path = directory.join(format!("mech-simd-{key}.{}", dynamic_library_extension()));
+    let _cache_lock = lock_cache_entry(&library_path)?;
     if library_path.is_file() {
         return Ok(library_path);
     }
@@ -1122,5 +1157,39 @@ fn unpack_simd_instances(packed: &[f32], elements: usize, values: &mut [f32]) {
                     packed[(group * elements + component) * SIMD_LANES + lane];
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simd_aot_input_updates_are_atomic() {
+        let (program, inputs) = super::super::aot::tests::input_update_test_kernel();
+        let mut session = program.prepare_aot_simd_cpu(&inputs).unwrap();
+        let original_inputs = session.inputs.clone();
+        let original_pointers = session.input_pointers.clone();
+        for (name, values) in [("zzz", vec![3.0]), ("z", vec![3.0; 3])] {
+            let updates =
+                BTreeMap::from([("a".to_owned(), vec![9.0; 4]), (name.to_owned(), values)]);
+            assert!(session.update_inputs(&updates).is_err());
+            assert_eq!(session.inputs, original_inputs);
+            assert_eq!(session.input_pointers, original_pointers);
+        }
+        session.dispatch_turns(1).unwrap();
+        let mut reference = program.prepare_cpu(&inputs).unwrap();
+        reference.dispatch_turns(1).unwrap();
+        assert_eq!(session.state(), reference.state());
+
+        let updates = BTreeMap::from([
+            ("a".to_owned(), vec![7.0]),
+            ("z".to_owned(), vec![3.0, 4.0, 5.0, 6.0]),
+        ]);
+        session.update_inputs(&updates).unwrap();
+        reference.update_inputs(&updates).unwrap();
+        session.dispatch_turns(1).unwrap();
+        reference.dispatch_turns(1).unwrap();
+        assert_eq!(session.state(), reference.state());
     }
 }

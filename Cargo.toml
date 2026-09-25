@@ -18,6 +18,21 @@ name = "mech"
 path = "src/bin/mech.rs"
 required-features = ["cli_core"]
 
+[[example]]
+name = "embedded_ekf"
+path = "examples/embedded_ekf/main.rs"
+required-features = ["kernel-aot"]
+
+[[example]]
+name = "mech_backend_pairs"
+path = "benchmarks/iros-2026/mech_backend_pairs.rs"
+required-features = ["kernel-benchmarks"]
+
+[[test]]
+name = "kernel_embedding"
+path = "tests/kernel_embedding.rs"
+required-features = ["kernel-aot"]
+
 [profile.release]
 debug = false
 
@@ -27,7 +42,30 @@ debug = false
 debug = false
 strip = "symbols"
 
+# Benchmark the optimized numerical executors without optimizing the large
+# source compiler/catalog, which runs before the measurement window.
+[profile.kernel-bench]
+inherits = "dev"
+debug = false
+incremental = false
+strip = "symbols"
+
+[profile.kernel-bench.package.mech]
+opt-level = 3
+
+[profile.kernel-bench.package.mech-gpu]
+opt-level = 3
+
+[profile.kernel-bench.package.mech-compute]
+opt-level = 3
+
+[profile.kernel-bench.package.wide]
+opt-level = 3
+
 [features]
+kernel = ["dep:mech-gpu", "mech-gpu/embedding"]
+kernel-aot = ["kernel", "mech-gpu/aot"]
+kernel-benchmarks = ["kernel-aot", "mech-runtime", "mech-gpu/metal-native", "mech-gpu/benchmark-probes"]
 no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-syntax/no_std"]
 
 standard_runtime = [

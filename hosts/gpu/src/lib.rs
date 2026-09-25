@@ -34,6 +34,8 @@ use mech_engine::{
 use serde::{Deserialize, Serialize};
 
 mod batched;
+#[cfg(feature = "embedding")]
+pub mod embed;
 pub use batched::*;
 #[cfg(feature = "native")]
 mod native;

@@ -448,6 +448,26 @@ impl CompilerPlanningProgram {
         });
     }
 
+    /// Retains only the requested lexical root symbols as named artifact
+    /// outputs, in caller order. Intermediate symbols remain private unless
+    /// another source output or dependency already requires them.
+    ///
+    /// Every requested name is resolved before publication is changed, so an
+    /// unknown symbol leaves the existing output interface intact.
+    pub fn publish_compiler_named_root_symbols(&mut self, names: &[&str]) -> MResult<()> {
+        let cells = self.compiler_root_symbol_cells(names)?;
+        self.published_outputs
+            .extend(
+                cells
+                    .into_iter()
+                    .map(|(name, cell)| PublishedPlanningOutput {
+                        name: Some(name),
+                        source: CompilerValueSource::Cell(cell),
+                    }),
+            );
+        Ok(())
+    }
+
     /// Retain every named root symbol as a live artifact output for an
     /// interactive host. The ordinary result remains first, while explicit
     /// names may alias one shared register without losing lexical identity.
@@ -1558,6 +1578,52 @@ mod root_symbol_snapshot_tests {
             compiled.published_outputs[left],
             compiled.published_outputs[right]
         );
+    }
+
+    #[test]
+    fn named_root_symbol_publication_is_selective_and_preserves_order() {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program
+            .plan_source_for_test("a := 1.0\nb := 2.0\nc := 3.0")
+            .unwrap();
+        let a = program.compiler_root_symbol_cell("a").unwrap();
+        let c = program.compiler_root_symbol_cell("c").unwrap();
+        let previous = program.published_outputs.len();
+
+        program
+            .publish_compiler_named_root_symbols(&["c", "a"])
+            .unwrap();
+
+        let selected = &program.published_outputs[previous..];
+        assert_eq!(selected.len(), 2);
+        for (output, name, original) in [(&selected[0], "c", c), (&selected[1], "a", a)] {
+            assert_eq!(output.name.as_deref(), Some(name));
+            let CompilerValueSource::Cell(cell) = &output.source else {
+                panic!("named root symbols retain their compiler cells")
+            };
+            assert!(cell.same_cell(&original));
+        }
+        let compiled = compile_bytecode(&mut program).unwrap();
+        let names = compiled
+            .published_output_names
+            .iter()
+            .filter_map(Option::as_deref)
+            .collect::<Vec<_>>();
+        assert_eq!(names, ["c", "a"]);
+    }
+
+    #[test]
+    fn unknown_named_root_symbol_does_not_publish_partial_interface() {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test("a := 1.0").unwrap();
+        let previous = program.published_outputs.len();
+
+        let error = program
+            .publish_compiler_named_root_symbols(&["a", "missing"])
+            .unwrap_err();
+
+        assert!(error.kind_as::<ProgramOutputNotFound>().is_some());
+        assert_eq!(program.published_outputs.len(), previous);
     }
 
     #[test]
