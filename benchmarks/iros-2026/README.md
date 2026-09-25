@@ -62,15 +62,22 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-motivation.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-motivation.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-motivation.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-editorial.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-editorial.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-editorial.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
-code. Its Motivation section has two equal-length paragraphs covering Rust and
-Mech, including standalone use, native Rust embedding, browser embedding through
-WebAssembly, and reactive subsystems. A note directs readers to the QR code for
-a fuller demonstration beyond the EKF case study.
+code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
+diagram labels and measurements. Motivation covers Rust numerical kernels and
+Mech's reactive semantics. Embeddable covers standalone use, native Rust embedding
+and browser embedding through WebAssembly. A note directs readers to the QR code
+for a fuller demonstration, including first-class state machines and pattern
+matching. The notation legend includes library imports. Status and Future Work
+describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.0
+target for 2028.
+
+Footnotes adapt the warm text and yellow monospace markers from the
+[Mechdown page](https://mech-lang.org/post/2025-11-12-mechdown/).
 
 Earlier typography examples are retained: [Segoe UI PowerPoint](poster/IROS-2026-Mech-Poster-refined.pptx)
 and [Avenir Next PowerPoint](poster/IROS-2026-Mech-Poster-avenir.pptx).
