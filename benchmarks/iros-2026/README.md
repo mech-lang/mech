@@ -78,7 +78,8 @@ target for 2028, including additional hosts and language features. The header
 links to the website and GitHub repository. The footer invites contributions
 and bug reports.
 
-The current layout uses informational callouts, a shape marker for the
+The current layout uses informational callouts with matching medium-gold accent
+bars, a shape marker for the
 normalization note, a larger dylib dagger, and one paragraph introducing both
 performance charts. The timeline has additional label spacing and the bottom
 content margin matches the top of the header separator. The single-line scope
