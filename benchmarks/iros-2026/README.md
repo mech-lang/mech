@@ -44,9 +44,15 @@ dylib size/RSS experiment below uses a different, minimal ABI loader.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-chart-labels-v3.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-chart-labels-v3.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-chart-labels-v3.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-log-baseline.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-log-baseline.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-log-baseline.png).
+
+The native Mech chart explicitly sets its logarithmic baseline to 0.1 and
+preserves the evaluator bars' series colors. The PDF and PNG show the intended
+layout. The in-app PPTX preview has rendered this logarithmic chart as linear,
+so use the linked PDF/PNG for the visual reference. This revision still needs
+a visual check in Microsoft PowerPoint.
 
 ![Matched Mech backend checked and unchecked throughput, with one paired row per backend](charts/post-mech-backend-pairs.svg)
 
