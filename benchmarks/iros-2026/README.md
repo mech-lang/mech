@@ -62,9 +62,9 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-editorial.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-editorial.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-editorial.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-reflow.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-reflow.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-reflow.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
 code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
@@ -75,6 +75,12 @@ for a fuller demonstration, including first-class state machines and pattern
 matching. The notation legend includes library imports. Status and Future Work
 describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.0
 target for 2028.
+
+The current layout uses informational callouts, a shape marker for the
+normalization note, a larger dylib dagger, and one paragraph introducing both
+performance charts. The timeline has additional label spacing and the bottom
+content margin matches the top of the header separator. The bundle caption
+identifies its metadata for named inputs, exported state and initial values.
 
 Footnotes adapt the warm text and yellow monospace markers from the
 [Mechdown page](https://mech-lang.org/post/2025-11-12-mechdown/).
