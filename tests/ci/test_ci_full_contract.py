@@ -201,6 +201,10 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("--profile browser-compute-canary", compute)
         self.assertIn("Verify report-only particle WebGPU execution", compute)
         self.assertIn("Verify scalar and WebGPU EKF rendering", compute)
+        self.assertIn("Smoke test rich served documents before full validation", standard)
+        self.assertIn("smoke-served-rich-document-browser.sh", standard)
+        project_browser = job_block(FULL, "project-browser")
+        self.assertIn("!inputs.rich_browser_smoke_in_caller", project_browser)
         for dependency in (
             "browser-standard-canary",
             "browser-nbody-reference",
@@ -217,10 +221,19 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("smoke-served-resident-ekf-browser.sh", compute)
         self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
 
+    def test_engine_owner_runs_source_semantics_before_full_validation(self):
+        owners = (ROOT / ".github/ci/owners.toml").read_text(encoding="utf-8")
+        engine = owners.split("[owners.mech-engine]", 1)[1].split("\n[owners.", 1)[0]
+        self.assertIn('"--test", "canonical_source_semantics"', engine)
+
     def test_pr_full_validation_receives_exact_head(self):
         block = job_block(CI, "full-validation")
         self.assertIn(
             "validation_ref: ${{ github.event.pull_request.head.sha }}", block
+        )
+        self.assertIn(
+            "rich_browser_smoke_in_caller: ${{ needs.impact.outputs.browser_canary_required == 'true' }}",
+            block,
         )
 
     def test_reusable_workflow_declares_ref_and_falls_back_for_other_invocations(self):

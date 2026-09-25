@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: false
+      rich_browser_smoke_in_caller:
+        description: The calling workflow already ran the rich browser smoke test
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       release_channel:
@@ -42,6 +47,11 @@ on:
         required: false
         type: string
         default: ""
+      rich_browser_smoke_in_caller:
+        description: The calling workflow already ran the rich browser smoke test
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-full-${{ inputs.validation_ref || github.sha }}
@@ -1507,6 +1517,7 @@ jobs:
             bash scripts/smoke-served-fizzbuzz-browser.sh
 
       - name: Smoke test rich standalone documents in Chrome
+        if: ${{ !inputs.rich_browser_smoke_in_caller }}
         run: |
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
             bash scripts/smoke-served-rich-document-browser.sh
