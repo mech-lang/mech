@@ -62,9 +62,18 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-integrated.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-integrated.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-integrated.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-refined.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-refined.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-refined.png).
+
+Body-type comparison: [Avenir Next PowerPoint](poster/IROS-2026-Mech-Poster-avenir.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-avenir.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-avenir.png).
+This is an optional typography example, with unchanged headings, code, tables,
+chart measurements and numerical evidence. The baseline PowerPoint specifies
+Segoe UI for prose, but the local PDF renderer substitutes Arial. The alternative
+PDF uses the installed Avenir Next font for prose. Both retain Fira Code for
+headings and code.
 
 The reactive diagram uses one build/activation path ending in the resident
 instance, an input/program/output/failure key, activation failure, aligned
