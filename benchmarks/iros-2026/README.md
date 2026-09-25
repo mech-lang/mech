@@ -62,9 +62,9 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-spacing.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-spacing.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-spacing.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-callouts.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-callouts.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-callouts.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
 code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
@@ -88,13 +88,26 @@ content margin matches the top of the header separator. The single-line scope
 callout ends with a dotted hook toward the QR corner. Reactive has more space
 around its two execution phases. The benchmark setup uses a double-dagger
 reference and hanging footnote gutter. The operator legend uses aligned columns.
+Its eight entries align with eight successive code baselines, beginning at `Q :=`.
 Mojo's unchecked bar is opaque dark orange to distinguish it from Rust.
-The EKF panel ends with `variance! := Σ₊[1,1] > 0`, a representative integrity
-constraint on one candidate variance. Its orange name follows `--mech-warning`
+The EKF panel ends with `variance! := all(Σ₊[[1 5 9]] > 0)`, an illustrative
+integrity constraint on all three diagonal variances. Linear indices 1, 5 and 9
+select the diagonal of this 3×3 covariance matrix. Positive diagonal entries
+alone do not establish finiteness, symmetry or positive definiteness.
+The import is displayed on one line as `+> math/*, logic/all`.
+Implementation and verification of `logic/all` and comma-separated module
+imports are deferred; this poster notation is not yet a verified runnable example.
+Its orange name follows `--mech-warning`
 in `include/palette.css` (`#FFAA80`), and the operator legend includes `x!`.
 The benchmark still uses its full three-guard contract documented below, not
-only this illustrative single-component check. The code panel and chart
+only this illustrative diagonal check. The code panel and chart
 dimensions are unchanged.
+Both chart subtitles use the same “Median ± MAD” style, and the left chart's
+measurement labels are slightly smaller. The implementation note states that
+performance specialists may optimize these illustrative implementations further.
+Both notes beneath the charts use medium-gold accent bars and inset text.
+The backend footnote relates JIT and AOT compilation and qualifies worker scaling
+by host support; the measured AOT row remains single-worker.
 The bundle caption
 identifies its metadata for named inputs, exported state and initial values.
 
