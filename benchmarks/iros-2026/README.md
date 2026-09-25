@@ -1,8 +1,12 @@
-# One EKF, many machines: why Mech for robotics?
+# Embedded numerical kernels for Rust: IROS workshop evidence
 
-Rust can match Mech's performance. That is not the surprising result here.
-The useful result is that the Mech program does not have to turn into a
-hand-written SIMD and worker-pool implementation to get there.
+Rust's memory safety and systems-level control are useful in robotics.
+Numerical kernels can still require substantial application code, especially
+when SIMD layouts, worker coordination, and GPU execution are implemented
+separately. Mech complements Rust with typed matrix equations, reusable backend
+lowering, and checked state publication for successive input updates. This
+repository studies those features using a bearing-only extended Kalman filter
+(EKF), including its Rust embedding interface and measured backend implementations.
 
 This repository snapshot puts the IROS workshop evidence on one branch based
 on `origin/integration/v0.4`. It preserves the broad cross-language benchmark,
@@ -13,7 +17,73 @@ The [four-story evidence ledger](EVIDENCE.md) maps the Embeddable, Numerical,
 Reactive, and Heterogeneous claims to exact artifacts and lists the remaining
 experiments or integration work required before publication.
 
-## The same-source result: CPU and Metal from one application
+## Embedding the EKF in Rust
+
+The [checked-in Rust consumer](../../examples/embedded_ekf/main.rs) compiles the
+[Mech kernel](../../examples/embedded_ekf/ekf.mec), starts an independent resident
+session, submits a measurement update, and reads a source-named state export:
+
+```rust
+use mech::kernel::{Backend, Kernel};
+let source = include_str!("ekf.mec");
+let kernel = Kernel::from_source(source)
+    .input("bearing", [-0.55; 4])
+    .export("state")
+    .compile(Backend::AotSimd)?;
+let mut ekf = kernel.start()?;
+ekf.turn([("bearing", [-0.54; 4])])?;
+let state = ekf.state("state")?;
+```
+
+These are implemented calls, excerpted from the runnable example. The
+[interface documentation](../../docs/embedding-kernels.md) explains input
+shapes, independent sessions, exported state, AOT library emission, and rejected
+turns. The embedding API's 12 tests pass. The API compiles source and retains its
+kernel metadata; it does not load arbitrary pre-existing dylibs. The standalone
+dylib size/RSS experiment below uses a different, minimal ABI loader.
+
+## Mech backends: matched checked and unchecked
+
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-backend-pairs.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-backend-pairs.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-backend-pairs.png).
+
+![Matched Mech backend checked and unchecked throughput, with one paired row per backend](charts/post-mech-backend-pairs.svg)
+
+The 2026-09-25 campaign runs all five implementations from source revision
+`f4b69052cc6d1d618e1c80acac947795ab2e8472`. Every row uses the same f32 EKF,
+seven live input bindings, 500,000 filters, five warmup turns followed by 40
+timed turns in the same session, and publication after every turn. There are ten
+fresh processes per backend/mode, scheduled in ten shuffled rounds. Values are
+median ± unscaled MAD in million filter-turns/s; no samples were removed.
+
+| Backend | Checked | Unchecked |
+| --- | ---: | ---: |
+| Evaluator, one worker | 0.695 ± 0.001 | 0.828 ± 0.001 |
+| Scalar JIT, one worker | 13.224 ± 0.005 | 15.949 ± 0.033 |
+| SIMD AOT, one worker | 34.617 ± 0.010 | 37.059 ± 0.085 |
+| SIMD JIT, eight workers | 121.071 ± 0.528 | 141.645 ± 0.832 |
+| Metal GPU | 420.896 ± 2.291 | 420.747 ± 2.283 |
+
+All 100 measured samples and ten full-state numerical preflights passed. The
+five checked implementations also rejected an injected NaN while preserving
+all published state. The completed-record audit passed. The machine was an
+Apple M1 running macOS 15.6.1, with Rust 1.96.0-nightly, LLVM 22.1.0, and Apple
+Clang 17.0.0. The custom `kernel-bench` profile optimizes the numerical executors
+at level 3 while leaving source compiler dependencies at level 0. Compilation,
+allocation, warmup, and state readback are outside the timed interval.
+
+See the [raw campaign](results/apple-m1-mech-backend-pairs-n10-2026-09-25.json),
+[methods and reproduction](MECH-BACKEND-PAIRS.md), and
+[read-only auditor](audit_mech_backend_pairs.py). This is a comparison of
+execution strategies for this kernel, not a universal performance ranking.
+The lower evaluator, scalar JIT, and SIMD JIT values relative to some archived
+rows do not isolate a regression: the new campaign uses a common workload,
+per-turn publication, seven live bindings, and five preceding turns. Some older
+CPU kernels embedded four bindings as constants and used different timing
+windows or fused execution.
+
+## Archived same-source CPU and Metal comparison, 2026-09-24
 
 ![One EKF source per system across CPU and Metal](charts/post-portable-combo.svg)
 
@@ -22,8 +92,8 @@ select both CPU and Apple Metal execution for this EKF from the same
 application source. The equations and publication contract stay in one `.mec`,
 `.py`, or `.cpp` file; a backend choice and schedule select the device. The
 standalone [CPU chart](charts/post-portable-cpu-comparison.svg) and [Metal
-chart](charts/post-portable-metal-comparison.svg) are poster-ready versions of
-the two panels above.
+chart](charts/post-portable-metal-comparison.svg) retain the two panels above.
+This archived ecosystem comparison is separate from the new Mech-only campaign.
 
 For this workload on this Apple M1, Mech has the highest fresh n=10 median in
 both CPU modes and checked Metal. On unchecked Metal, Taichi's 410.771 M/s
@@ -31,8 +101,7 @@ median is 0.08% above Mech's 410.439 M/s, far below either row's MAD. The CPU
 medians are Mech 141.362/166.407 M/s, Taichi 88.344/95.363 M/s, and Halide
 22.526/23.490 M/s checked/unchecked. Metal measures Mech 409.765/410.439,
 Taichi 342.872/410.771, and Halide 293.291/398.765 M/s. These are descriptive
-results for the measured implementations—not evidence that Mech is
-intrinsically faster. Compiler lowering, schedules, fault-status observation,
+results for the measured implementations. Compiler lowering, schedules, fault-status observation,
 and system state differ and are called out directly in the figure.
 
 All rows use 500,000 filters × 40 turns, f32 state, resident ping-pong
@@ -45,7 +114,7 @@ prefixes are intentionally omitted from the chart; the legend and bar order
 identify checked and unchecked. No samples were removed; every raw process
 record remains in JSON.
 
-## The cross-language CPU result: checked and unchecked
+## Archived cross-language CPU comparison, 2026-09-24
 
 ![Full checked and unchecked CPU EKF comparison across eight implementations](charts/post-cross-language-comparison.svg)
 
@@ -76,7 +145,7 @@ The other implementations match workload, CPU, worker count, and precision,
 but their fault interfaces are not identical. Mech, Rust, Mojo, Julia,
 Futhark, and Numba fuse the 40-turn worker-local block; Taichi and Halide
 synchronize publication after each turn. NumPy/Numba means an LLVM-compiled
-Numba kernel launched from Python—not interpreted Python or eager NumPy. Read
+Numba kernel launched from Python, rather than interpreted Python or eager NumPy. Read
 this full chart as an implementation landscape, not a strict language ranking.
 MAD whiskers are robust descriptive spread, not confidence intervals.
 
@@ -184,9 +253,12 @@ launch geometry, host API overhead, and campaign dates can still move results.
 Use medians and MAD as a backend landscape; do not turn small gaps into a
 ranking.
 
-## The Mech result: one EKF across execution backends
+## Archived backend overview and AOT diagnostics
 
-![One Mech EKF across eight execution backends](charts/post-mech-backend-stack.svg)
+![Archived mixed-workload Mech backend overview](charts/post-mech-backend-stack.svg)
+
+The five-backend paired campaign above supersedes this mixed-workload overview
+for the poster. These older measurements remain available as historical evidence.
 
 These eight rows use the same high-level Mech EKF and change the execution
 backend: the scalar artifact evaluator, Cranelift JIT, scalar and four-lane
@@ -218,9 +290,9 @@ from whether the library was loaded from disk.
 
 ### AOT code-generation diagnostic
 
-The direct dynamic-library control uses a longer, steadier campaign than the
-backend overview: 10,000 filters × 200 checked turns, preceded by 100 untimed
-turns and a full state reset. The same minimal loader measures scalar Mech AOT,
+The separate, archived dynamic-library control uses 10,000 filters × 200
+checked turns, preceded by 100 untimed turns and a full state reset.
+The same minimal loader measures scalar Mech AOT,
 four-lane Mech AOT, and a hand-specialized Rust `cdylib`; compiler/build time,
 allocation, packing, warmup, and reset are outside the timed region. All rows
 use one host thread and checked publication after every turn.
@@ -243,9 +315,8 @@ Mech is intrinsically slower. Scalar AOT and scalar JIT are effectively tied
 in the matched Mech-only measurement above, demonstrating that AOT packaging
 does not itself impose the gap.
 
-Changing only the Mech backend reverses that result. Four-lane AOT is 65.07%
-faster than the scalar Rust control and 137.63% faster than scalar AOT in this
-campaign. This is likewise not a language ranking: its packed state and
+Four-lane AOT is 65.07% faster than the scalar Rust control and 137.63% faster
+than scalar AOT in this campaign. Its packed state and
 four-filter vector body are a different physical strategy. Rust can and does
 use the same strategy in the matched checked/unchecked comparison above. The
 result demonstrated here is that Mech can select AOT packaging and SIMD
@@ -260,25 +331,22 @@ complete final states agreed within 4.09e-4 after 200 turns. See the [raw
 seven-process record](results/apple-m1-aot-vs-rust-dylib-2026-09-24.json) and
 the [common-loader control](rust-dylib/README.md).
 
-That span is the point. In these campaigns the medians range from 1.032 million
-EKF turns/s in the scalar evaluator to 422.702 million in direct Metal. Mech
-changes the physical execution strategy without requiring the user-level EKF
-to be rewritten around SIMD adapters, worker dispatch, or GPU kernels.
-
-## Why Mech if Rust can match it?
+## Numerical source and backend-specific application code
 
 The matched comparison answers the performance question in both modes: Rust
 and Mech are comparable when workload, SIMD width, worker count, fusion, and
-integrity contract are aligned. Checked Rust is 0.64% ahead at the median;
-unchecked Mech is 1.20% ahead. Both observed ranges overlap, so neither small
-gap supports a winner.
+integrity contract are aligned. The retained n=10 fused comparison reports
+151.323/149.941 M/s for checked Mech/Rust and 184.137/170.490 M/s unchecked.
+Observed ranges overlap in both modes. These are the archived cross-language
+values, not the new per-turn backend rates.
 
 The engineering difference is how much application code is required to reach
 that execution shape. The audited Rust SIMD/eight-worker application contains
 5,243 normalized characters; the unchanged Mech application contains 1,079.
-The Rust implementation is therefore 4.86× the size at this boundary, while
-Mech expresses it with 79.4% fewer normalized source characters. The same Mech
-source also supplies the scalar, JIT, AOT, SIMD AOT, WGPU, and Metal rows.
+In this case the optimized Rust source is almost five times as long, with much
+of the additional code devoted to SIMD adapters, worker dispatch, and rollback.
+The audit counts the archived application sources; it does not count the newly
+added Rust embedding example or assign its source size to the new campaign.
 
 The source metric removes comments and nonliteral whitespace and counts every
 programmer-chosen identifier occurrence as one character, so long descriptive
@@ -291,9 +359,10 @@ compiler/runtime/library internals.
 This is a result about these audited implementations, not a proof that every
 Rust EKF must be five times larger. A different Rust matrix or parallelism
 library would move code across the application/library boundary. The reason to
-use Mech is that the language makes that boundary stable: the same 1,079-character
-program supplies both the textbook and SIMD/eight-worker Mech columns, while
-backend selection and execution plumbing remain reusable runtime concerns.
+use Mech in this setting is to keep those numerical equations in application
+source while moving backend-specific packing, dispatch, and publication code
+into reusable implementations. The audited 1,079-character program supplies
+both the textbook and SIMD/eight-worker Mech columns.
 
 ## Where the extra Rust source goes
 
@@ -312,9 +381,8 @@ The audit partitions every normalized character:
 The SIMD adapters plus dispatch/rollback account for 87.5% of Rust's growth
 from the publication-normalized textbook control to the SIMD/eight-worker
 control. The EKF update itself grows by only 95 normalized characters. This is
-the engineering leverage Mech is intended to provide: changing where and how
-the program executes without rewriting the numerical application around the
-new execution model.
+an example of the application code needed to specialize this Rust kernel for
+the selected parallel backend.
 
 ## What is included
 
@@ -345,7 +413,7 @@ statistics policy.
 
 The Mojo, Halide, and Taichi rows are not measurements imported from another
 computer. Their raw records identify this Mac mini (Macmini9,1), Apple M1,
-8 GB, macOS 15.6.1, arm64—the same identity reported by the machine on
+8 GB, macOS 15.6.1, arm64, the same identity reported by the machine on
 2026-09-24.
 
 The filesystem audit also found the Halide 21.0.0_1 installation with an
@@ -474,17 +542,19 @@ A concise claim supported by this package is:
 > and 8.125/1.720 unchecked; the observed ranges overlap in both modes. The
 > audited Mech application
 > used 1,079 normalized source characters versus 5,243 for the Rust SIMD
-> implementation—same workload and execution shape with about one-fifth of the
+> implementation, with the same workload and execution shape and about one-fifth of the
 > application source. The result compares implementations and compiler paths,
 > not the intrinsic speed of either language.
 
 The Mech backend chart supports a different claim:
 
-> A single high-level Mech EKF source can target scalar, SIMD, JIT, scalar AOT,
-> SIMD AOT, WGPU, and native Metal execution. The retained rows span more than
-> two orders of magnitude in normalized throughput; because the workloads and
-> campaigns differ, that span demonstrates backend reach rather than a fine
-> ranking.
+> At revision `f4b69052c`, the same Mech EKF source and seven live inputs were
+> measured across five backends with 500,000 filters and 40 timed turns after
+> five warmup turns. Each backend has ten checked and ten unchecked fresh-process
+> samples with per-turn publication. Checked medians were 0.695 M filter-turns/s
+> for the evaluator, 13.224 for scalar JIT, 34.617 for SIMD AOT, 121.071 for
+> eight-worker SIMD JIT, and 420.896 for Metal. The paired results report median
+> and MAD and describe this workload and these implementations.
 
 The 14.671 M/s scalar Mech AOT and 21.121 M/s scalar-ABI Rust dylib values must
 not be quoted as the language comparison: the generated optimization

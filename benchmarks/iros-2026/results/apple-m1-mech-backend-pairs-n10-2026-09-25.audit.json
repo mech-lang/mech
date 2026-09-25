@@ -1,0 +1,119 @@
+{
+  "status": "passed",
+  "measured_samples": 100,
+  "cases": 10,
+  "samples_per_case": 10,
+  "preflight_samples": 10,
+  "checked_nan_rollback_tests": 5,
+  "preflight_components_compared_per_case": 49104,
+  "checks": {
+    "structure_and_schedule": true,
+    "timing_and_workload": true,
+    "all_preflights": true,
+    "summaries_recomputed": true,
+    "embedded_source_hashes": true,
+    "per_mode_aot_identity": true
+  },
+  "provenance": {
+    "git_revision": "f4b69052cc6d1d618e1c80acac947795ab2e8472",
+    "binary_sha256": "2cd25bc77c5d87a6562cd7c62aa4009e3ccd7fe95af38bde498ce05e701185b1",
+    "source_hashes_verified": 5,
+    "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "aot_libraries": {
+    "checked": {
+      "sha256": "013c2140594d20ad327195e2f4894f91237d2ae3806cc02afaf62d10b842b80b",
+      "size_bytes": 33864
+    },
+    "unchecked": {
+      "sha256": "bf499224dbc8f45e6d08648418774d77f03ccd67b77fb1d9b8d0dda6b0bcbafa",
+      "size_bytes": 33864
+    }
+  },
+  "maximum_within_case_checksum_mismatch": 0.0,
+  "maximum_within_case_state_sum_mismatch": 0.0,
+  "warnings": [],
+  "checked_unchecked_state_sum_diagnostics": {
+    "evaluator": [
+      {
+        "slot": 7,
+        "components": 1500000,
+        "checked_median_sum": 42932225.950008154,
+        "unchecked_median_sum": 42932225.950008154,
+        "absolute_difference": 0.0
+      },
+      {
+        "slot": 8,
+        "components": 4500000,
+        "checked_median_sum": 90846577.79135159,
+        "unchecked_median_sum": 90846577.79135159,
+        "absolute_difference": 0.0
+      }
+    ],
+    "scalar-jit": [
+      {
+        "slot": 7,
+        "components": 1500000,
+        "checked_median_sum": 42932225.950008154,
+        "unchecked_median_sum": 42932225.950008154,
+        "absolute_difference": 0.0
+      },
+      {
+        "slot": 8,
+        "components": 4500000,
+        "checked_median_sum": 90846577.79135159,
+        "unchecked_median_sum": 90846577.79135159,
+        "absolute_difference": 0.0
+      }
+    ],
+    "simd-aot": [
+      {
+        "slot": 7,
+        "components": 1500000,
+        "checked_median_sum": 42932225.94974467,
+        "unchecked_median_sum": 42932225.94974467,
+        "absolute_difference": 0.0
+      },
+      {
+        "slot": 8,
+        "components": 4500000,
+        "checked_median_sum": 90846577.79055133,
+        "unchecked_median_sum": 90846577.79055133,
+        "absolute_difference": 0.0
+      }
+    ],
+    "simd-jit-8w": [
+      {
+        "slot": 7,
+        "components": 1500000,
+        "checked_median_sum": 42932225.957555085,
+        "unchecked_median_sum": 42932225.957555085,
+        "absolute_difference": 0.0
+      },
+      {
+        "slot": 8,
+        "components": 4500000,
+        "checked_median_sum": 90846577.78715566,
+        "unchecked_median_sum": 90846577.78715566,
+        "absolute_difference": 0.0
+      }
+    ],
+    "metal": [
+      {
+        "slot": 7,
+        "components": 1500000,
+        "checked_median_sum": 42932225.9651255,
+        "unchecked_median_sum": 42932225.9651255,
+        "absolute_difference": 0.0
+      },
+      {
+        "slot": 8,
+        "components": 4500000,
+        "checked_median_sum": 90846577.73315561,
+        "unchecked_median_sum": 90846577.73315561,
+        "absolute_difference": 0.0
+      }
+    ]
+  },
+  "diagnostic_scope": "State sums can hide compensating errors; component-wise preflight is the numerical correctness check. Recorded binary hashes are not live-file/build attestations."
+}

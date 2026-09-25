@@ -14,11 +14,18 @@ not a confidence interval.
 
 ### Publishable claim
 
-A fixed-shape Mech compute region can be compiled ahead of time to a reusable
-native dynamic library. A Rust process can load its exported C ABI entry point,
-pass typed contiguous buffers, and execute repeated checked EKF turns without
-shipping the parser, compiler, or Mech runtime in the calling process. The same
-Mech source can select scalar or four-lane AOT lowering.
+A Rust application can compile a fixed-shape Mech kernel through
+`mech::kernel`, declare live inputs and named state exports, then start a
+persistent session and submit checked turns. Scalar and four-lane AOT modes
+emit a reusable native dynamic library. The [runnable Rust example](../../examples/embedded_ekf/main.rs)
+and [interface documentation](../../docs/embedding-kernels.md) demonstrate this
+path with the real EKF source; the embedding API's 12 tests pass.
+
+The separate minimal benchmark loader calls the emitted library's C ABI with
+contiguous buffers and executes checked turns without including the parser or
+compiler. The source-compiling `mech::kernel` example includes those compilation
+facilities. Loading an arbitrary existing dylib without its compiled kernel
+metadata is not part of that interface.
 
 The current evidence does **not** show that arbitrary Rust data structures cross
 the dynamic-library boundary unchanged. The measured ABI is a pointer table of
@@ -61,23 +68,34 @@ AOT emit/link/load was 202.029 ms; cached load median was 3.283 ms.
 - Rust control library: `rust-dylib/rust-ekf-dylib.rs`
 - Mech scalar AOT implementation: `../../hosts/gpu/src/batched/aot.rs`
 - Mech SIMD AOT implementation: `../../hosts/gpu/src/batched/simd_aot.rs`
+- Public Rust interface: `../../hosts/gpu/src/embed.rs`, re-exported as `mech::kernel`
+- Runnable consumer and kernel: `../../examples/embedded_ekf/main.rs` and `ekf.mec`
+- Interface contract and test suite: `../../docs/embedding-kernels.md` and
+  `../../tests/kernel_embedding.rs`
 - Rust-to-Mech extension surface:
   `../../src/core/src/function/catalog.rs` and
   `../../src/core/src/function/mod.rs`
 
 ### Evidence still needed for the post
 
-1. Add a tiny checked-in Rust consumer that links or loads a generated Mech
-   library and runs one known vector. The benchmark loader proves the mechanism,
-   but a minimal example will make the API story legible.
+The previously missing minimal Rust consumer is implemented and tested. Its
+example imports `mech::kernel::{Backend, Kernel}`, compiles source with named
+inputs/exports, starts a resident session, submits a turn, and reads `state`.
+It does not require the caller to construct pointer tables or invent artifact
+metadata.
+
+Remaining scope decisions and diagnostics:
+
+1. Keep the source-compiling API example distinct from the standalone ABI
+   loader when discussing binary dependencies and size.
 2. Record `nm` exports and `otool -L` dependencies for both libraries. This is
    the direct proof for exported symbols and what is or is not self-contained.
 3. Decide whether the post wants dynamic loading only or also static/object
    linking. The present implementation emits a PIC object and links a dylib;
    it does not expose a supported static-link packaging command.
-4. If checked versus unchecked is part of this panel, implement both modes in
-   the AOT ABI and Rust control, then run equal n=10 windows. The retained dylib
-   campaign is checked only.
+4. The new same-workload campaign measures checked and unchecked Mech SIMD AOT.
+   A matched Rust dylib checked/unchecked control is still a separate experiment;
+   the retained Rust/Mech dylib campaign is checked only, n=7.
 5. If memory is kept in the table, retain the present whole-process RSS label.
    A private-library memory claim would require a different metric.
 
@@ -105,7 +123,8 @@ are excluded. The counter and all 17 tests pass on this branch.
 | Mech SIMD-4 / eight workers | 1,079 |
 | Rust SIMD-4 / eight workers | 5,243 |
 
-The matched optimized Rust source is 4.86x the normalized Mech source. Of the
+The matched optimized Rust source is almost five times as long under this
+normalized-character metric. Of the
 2,888-character growth from textbook Rust to optimized Rust, SIMD wrappers and
 adapters plus batch dispatch/workers/rollback account for 2,526 characters
 (87.47%). This result describes these implementations; it is not a lower bound
@@ -230,10 +249,12 @@ parallel f32 EKF charts.
 
 ### Cross-language CPU figure: ready
 
-The post-facing CPU comparison fixes 500,000 filters x 40 turns, f32 state,
-four-wide SIMD where the system exposes it, eight workers, fused execution,
-block-atomic checked/unchecked publication, ten fresh processes per row,
-deterministically shuffled run order, and no removed samples.
+The archived CPU comparison fixes 500,000 filters x 40 turns, f32 state,
+four-wide SIMD where the system exposes it, eight workers, ten fresh processes
+per row, deterministically shuffled run order, and no removed samples. The
+selected Mech, Rust, Mojo, Julia, Futhark, and Numba rows fuse the 40-turn block;
+the supplemental Taichi and Halide rows synchronize publication each turn.
+The matched Mech/Rust pair uses block-atomic checked rollback.
 
 Use these rows in the main cross-language figure: Mech, Rust, Mojo, Julia,
 Futhark, Taichi, and NumPy/Numba. Halide is retained in the evidence package but
@@ -247,26 +268,36 @@ Exact evidence:
 - `charts/post-cross-language-comparison.svg`
 - `STATISTICS.md`
 
-### Same-source/backend figure: partly ready
+### Same-source/backend figure: integrated and measured
 
-The strongest heterogeneous claim is that one high-level Mech EKF can be
-lowered to multiple physical strategies without rewriting the equations. The
-repository has evidence for the scalar evaluator, Cranelift JIT, scalar AOT,
-four-lane AOT, one- and eight-worker SIMD/JIT, WGPU on Metal, and direct Metal.
+Revision `f4b69052cc6d1d618e1c80acac947795ab2e8472` contains the scalar evaluator,
+scalar JIT, four-lane SIMD AOT, eight-worker SIMD JIT, and direct Metal paths.
+The completed 2026-09-25 campaign compiles the same f32 EKF with seven live
+inputs for every row. Each process runs five warmup turns and 40 timed turns in
+the same resident session, using 500,000 filters and per-turn publication.
+Ten shuffled rounds provide ten fresh processes for each backend/mode pair.
 
-The existing stack chart is a range illustration, not a controlled ranking:
-its rows mix 10,000 x 20, 10,000 x 200, and 500,000 x 40 campaigns. A new
-publication run must use one population and turn count for every selected row.
+| Backend | Checked median ± MAD, M filter-turns/s | Unchecked median ± MAD, M filter-turns/s |
+| --- | ---: | ---: |
+| Evaluator, one worker | 0.695 ± 0.001 | 0.828 ± 0.001 |
+| Scalar JIT, one worker | 13.224 ± 0.005 | 15.949 ± 0.033 |
+| SIMD AOT, one worker | 34.617 ± 0.010 | 37.059 ± 0.085 |
+| SIMD JIT, eight workers | 121.071 ± 0.528 | 141.645 ± 0.832 |
+| Metal GPU | 420.896 ± 2.291 | 420.747 ± 2.283 |
 
-Recommended final rows:
+All 100 measured processes reported zero faults. All ten 4,092-filter,
+45-turn full-state preflights passed, as did all five checked NaN-rejection
+tests. The completed-record audit passed and confirmed exact within-case
+checksum and per-state-sum repeatability. Raw samples are retained without
+outlier removal. See [methods and reproduction](MECH-BACKEND-PAIRS.md),
+[raw evidence](results/apple-m1-mech-backend-pairs-n10-2026-09-25.json), and the
+[read-only auditor](audit_mech_backend_pairs.py).
 
-| Label | Current implementation status |
-| --- | --- |
-| Scalar evaluator | Implemented; one host thread |
-| Cranelift scalar JIT | Implemented; one host thread |
-| Cranelift SIMD AOT | Implemented; four lanes, one host thread |
-| SIMD/JIT, eight workers | Implemented; four lanes, persistent worker pool |
-| Direct Metal | Implemented on the retained Metal revision |
+These pairs replace the mixed-workload Mech overview. Keep the archived
+cross-language figure separate: its selected CPU rows use fused blocks, and
+some older Mech kernels specialized four of the seven current live bindings
+as constants. The new evaluator, scalar JIT, and SIMD JIT values cannot be
+substituted into that historical comparison or treated as isolated regressions.
 
 There is not yet an eight-worker SIMD AOT implementation. Do not label the AOT
 row “8 core.” AOT and multithreading are independent properties.
@@ -286,19 +317,13 @@ benchmark API; they are not all stable `.mcfg` product choices on this branch.
 
 ### Evidence still needed for the post
 
-1. Repair the consolidated HEAD so it contains both the newer direct-Metal and
-   parallel-JIT implementation and the later AOT implementation. The current
-   branch packages both result sets, but the AOT fork replaced the Metal path
-   in `parallel_ekf_benchmark.rs`; the published Metal implementation is only
-   reachable at retained revision `45a21a62d`.
-2. After that integration, run every selected Mech backend at the same workload
-   with ten fresh processes, deterministic shuffled order, median +/- MAD, raw
-   ranges, hashes, and zero-fault validation. Use a workload small enough that
-   the scalar evaluator is practical while still amortizing timer noise.
-3. Decide whether to productize SIMD/JIT/AOT/direct-Metal backend IDs in `.mcfg`.
+Integration and the five-backend, two-mode n=10 campaign are complete. Remaining
+presentation/product scope:
+
+1. Decide whether to productize SIMD/JIT/AOT/direct-Metal backend IDs in `.mcfg`.
    Until then, present backend selection as compiler/registry capability rather
    than claiming every measured backend is a stable configuration toggle.
-4. Keep the Metal ecosystem comparison in the evidence archive, not the main
+2. Keep the Metal ecosystem comparison in the evidence archive, not the main
    four-story poster. It is useful generated-versus-hand-written backend
    evidence but is not needed for the requested cross-language CPU story.
 
@@ -309,6 +334,10 @@ Verified on 2026-09-25:
 - `python3 benchmarks/iros-2026/verify.py`
 - `python3 measure.py` in the source-size audit directory
 - `python3 -m unittest -v test_measure` (17 tests)
+- `cargo test --offline --profile kernel-bench --no-default-features --features kernel-benchmarks --test kernel_embedding -j 2`
+  (12 tests)
+- `python3 benchmarks/iros-2026/audit_mech_backend_pairs.py --input benchmarks/iros-2026/results/apple-m1-mech-backend-pairs-n10-2026-09-25.json`
+  (100 measured samples, ten passing preflights, five passing NaN rollback tests)
 
 The first command verifies the result hashes, raw sample contracts, source-size
 values, AOT sizes/RSS, and chart statistics. No source-size audit assertion or

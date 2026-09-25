@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="849.6pt" height="489.6pt" viewBox="0 0 849.6 489.6" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <title>Mech backend comparison</title>
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title>Mech backend comparison</dc:title>
+    <dc:description>Paired checked and unchecked Mech EKF backend throughput, logarithmic axis. Every value is the median of ten raw fresh-process samples; ± is unscaled MAD, not a confidence interval. GPU bars have parallel diagonal hatching. Numerical labels are editable SVG text. Evidence: apple-m1-mech-backend-pairs-n10-2026-09-25.json; SHA-256 8bd64d4ef6dc480f7e5d49c59af4a4dc2342eb30a5171fc8b151b4a1df64d62f; binary SHA-256 2cd25bc77c5d87a6562cd7c62aa4009e3ccd7fe95af38bde498ce05e701185b1.</dc:description>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 489.6 
+L 849.6 489.6 
+L 849.6 0 
+L 0 0 
+z
+" style="fill: #0b1113"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 161.424 369.648 
+L 641.448 369.648 
+L 641.448 93.024 
+L 161.424 93.024 
+z
+" style="fill: #0b1113"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 161.424 369.648 
+L 161.424 93.024 
+" clip-path="url(#p94822b1d2d)" style="fill: none; stroke: #314147; stroke-width: 0.65; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2"/>
+     <g id="text_1">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #afbec5" x="161.424" y="387.765187" transform="rotate(-0 161.424 387.765187)">0.1</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 281.43 369.648 
+L 281.43 93.024 
+" clip-path="url(#p94822b1d2d)" style="fill: none; stroke: #314147; stroke-width: 0.65; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4"/>
+     <g id="text_2">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #afbec5" x="281.43" y="387.765187" transform="rotate(-0 281.43 387.765187)">1</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 401.436 369.648 
+L 401.436 93.024 
+" clip-path="url(#p94822b1d2d)" style="fill: none; stroke: #314147; stroke-width: 0.65; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_3">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #afbec5" x="401.436" y="387.765187" transform="rotate(-0 401.436 387.765187)">10</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 521.442 369.648 
+L 521.442 93.024 
+" clip-path="url(#p94822b1d2d)" style="fill: none; stroke: #314147; stroke-width: 0.65; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_4">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #afbec5" x="521.442" y="387.765187" transform="rotate(-0 521.442 387.765187)">100</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 641.448 369.648 
+L 641.448 93.024 
+" clip-path="url(#p94822b1d2d)" style="fill: none; stroke: #314147; stroke-width: 0.65; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_5">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #afbec5" x="641.448" y="387.765187" transform="rotate(-0 641.448 387.765187)">1000</text>
+     </g>
+    </g>
+    <g id="text_6">
+     <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #afbec5" x="401.436" y="411.766125" transform="rotate(-0 401.436 411.766125)">M filter-turns/s (logarithmic)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_11"/>
+     <g id="text_7">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="152.424" y="127.415062" transform="rotate(-0 152.424 127.415062)">Metal GPU</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_12"/>
+     <g id="text_8">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="152.424" y="181.654594" transform="rotate(-0 152.424 181.654594)">SIMD JIT 8w</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_13"/>
+     <g id="text_9">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="152.424" y="235.894594" transform="rotate(-0 152.424 235.894594)">SIMD AOT 1w</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_14"/>
+     <g id="text_10">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="152.424" y="290.135063" transform="rotate(-0 152.424 290.135063)">Scalar JIT</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_15"/>
+     <g id="text_11">
+      <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="152.424" y="344.375063" transform="rotate(-0 152.424 344.375063)">Evaluator</text>
+     </g>
+    </g>
+   </g>
+   <g id="bar-metal-checked">
+    <path d="M 161.424 123.8052 
+L 596.346741 123.8052 
+L 596.346741 138.7212 
+L 161.424 138.7212 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: url(#h9b4e58f319); stroke: #0b1113; stroke-width: 0.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="bar-metal-unchecked">
+    <path d="M 161.424 106.9908 
+L 596.32824 106.9908 
+L 596.32824 121.9068 
+L 161.424 121.9068 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: url(#h7ac66715c6); stroke: #0b1113; stroke-width: 0.3; stroke-linejoin: miter"/>
+   </g>
+   <g id="bar-simd-jit-8w-checked">
+    <path d="M 161.424 178.0452 
+L 531.407389 178.0452 
+L 531.407389 192.9612 
+L 161.424 192.9612 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #f6c04e"/>
+   </g>
+   <g id="bar-simd-jit-8w-unchecked">
+    <path d="M 161.424 161.2308 
+L 539.587068 161.2308 
+L 539.587068 176.1468 
+L 161.424 176.1468 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #996900"/>
+   </g>
+   <g id="bar-simd-aot-checked">
+    <path d="M 161.424 232.2852 
+L 466.153364 232.2852 
+L 466.153364 247.2012 
+L 161.424 247.2012 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #f6c04e"/>
+   </g>
+   <g id="bar-simd-aot-unchecked">
+    <path d="M 161.424 215.4708 
+L 469.706873 215.4708 
+L 469.706873 230.3868 
+L 161.424 230.3868 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #996900"/>
+   </g>
+   <g id="bar-scalar-jit-checked">
+    <path d="M 161.424 286.5252 
+L 416.000599 286.5252 
+L 416.000599 301.4412 
+L 161.424 301.4412 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #f6c04e"/>
+   </g>
+   <g id="bar-scalar-jit-unchecked">
+    <path d="M 161.424 269.7108 
+L 425.76423 269.7108 
+L 425.76423 284.6268 
+L 161.424 284.6268 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #996900"/>
+   </g>
+   <g id="bar-evaluator-checked">
+    <path d="M 161.424 340.7652 
+L 262.470384 340.7652 
+L 262.470384 355.6812 
+L 161.424 355.6812 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #f6c04e"/>
+   </g>
+   <g id="bar-evaluator-unchecked">
+    <path d="M 161.424 323.9508 
+L 271.586018 323.9508 
+L 271.586018 338.8668 
+L 161.424 338.8668 
+z
+" clip-path="url(#p94822b1d2d)" style="fill: #996900"/>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="value-metal-checked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="134.380387" transform="rotate(-0 826.74576 134.380387)">420.90 ± 2.29</text>
+   </g>
+   <g id="value-metal-unchecked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="117.565988" transform="rotate(-0 826.74576 117.565988)">420.75 ± 2.28</text>
+   </g>
+   <g id="value-simd-jit-8w-checked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="188.620387" transform="rotate(-0 826.74576 188.620387)">121.07 ± 0.53</text>
+   </g>
+   <g id="value-simd-jit-8w-unchecked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="171.805988" transform="rotate(-0 826.74576 171.805988)">141.65 ± 0.83</text>
+   </g>
+   <g id="value-simd-aot-checked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="242.860388" transform="rotate(-0 826.74576 242.860388)">34.62 ± 0.01</text>
+   </g>
+   <g id="value-simd-aot-unchecked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="226.045987" transform="rotate(-0 826.74576 226.045987)">37.06 ± 0.08</text>
+   </g>
+   <g id="value-scalar-jit-checked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="297.100388" transform="rotate(-0 826.74576 297.100388)">13.224 ± 0.005</text>
+   </g>
+   <g id="value-scalar-jit-unchecked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="280.285988" transform="rotate(-0 826.74576 280.285988)">15.95 ± 0.03</text>
+   </g>
+   <g id="value-evaluator-checked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="351.340388" transform="rotate(-0 826.74576 351.340388)">0.695 ± 0.001</text>
+   </g>
+   <g id="value-evaluator-unchecked">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: end; fill: #e8edf0" x="826.74576" y="334.525988" transform="rotate(-0 826.74576 334.525988)">0.828 ± 0.001</text>
+   </g>
+  </g>
+  <g id="text_12">
+   <text style="font-weight: 700; font-size: 22px; font-family: 'Fira Code'; text-anchor: start; fill: #e8edf0" x="38.232" y="29.376" transform="rotate(-0 38.232 29.376)">Mech backends</text>
+  </g>
+  <g id="text_13">
+   <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #afbec5" x="38.232" y="56.304" transform="rotate(-0 38.232 56.304)">Same EKF source; checked and unchecked execution</text>
+  </g>
+  <g id="text_14">
+   <text style="font-size: 11px; font-family: 'Fira Code'; text-anchor: end; fill: #afbec5" x="826.6608" y="80.784" transform="rotate(-0 826.6608 80.784)">median ± MAD</text>
+  </g>
+  <g id="text_15">
+   <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #afbec5" x="38.232" y="450.9216" transform="rotate(-0 38.232 450.9216)">500,000 filters · 5 warmup turns + 40 timed turns</text>
+  </g>
+  <g id="text_16">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #afbec5" x="38.232" y="469.5264" transform="rotate(-0 38.232 469.5264)">Resident state; publication after each turn. ± denotes median absolute deviation. 1w / 8w: one / eight CPU workers.</text>
+  </g>
+  <g id="legend_1">
+   <g id="patch_3">
+    <path d="M 40.536 420.383587 
+L 62.136 420.383587 
+L 62.136 409.643587 
+L 40.536 409.643587 
+z
+" style="fill: #f6c04e"/>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #e8edf0" x="71.736" y="419.123587" transform="rotate(-0 71.736 419.123587)">checked</text>
+   </g>
+   <g id="patch_4">
+    <path d="M 151.444125 420.383587 
+L 173.044125 420.383587 
+L 173.044125 409.643587 
+L 151.444125 409.643587 
+z
+" style="fill: #996900"/>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 12px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #e8edf0" x="182.644125" y="419.123587" transform="rotate(-0 182.644125 419.123587)">unchecked</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p94822b1d2d">
+   <rect x="161.424" y="93.024" width="480.024" height="276.624"/>
+  </clipPath>
+ </defs>
+ <defs>
+  <pattern id="h9b4e58f319" patternUnits="userSpaceOnUse" x="0" y="0" width="72" height="72">
+   <rect x="0" y="0" width="73" height="73" fill="#f6c04e"/>
+   <path d="M -36 36 
+L 36 -36 
+M -33 39 
+L 39 -33 
+M -30 42 
+L 42 -30 
+M -27 45 
+L 45 -27 
+M -24 48 
+L 48 -24 
+M -21 51 
+L 51 -21 
+M -18 54 
+L 54 -18 
+M -15 57 
+L 57 -15 
+M -12 60 
+L 60 -12 
+M -9 63 
+L 63 -9 
+M -6 66 
+L 66 -6 
+M -3 69 
+L 69 -3 
+M 0 72 
+L 72 0 
+M 3 75 
+L 75 3 
+M 6 78 
+L 78 6 
+M 9 81 
+L 81 9 
+M 12 84 
+L 84 12 
+M 15 87 
+L 87 15 
+M 18 90 
+L 90 18 
+M 21 93 
+L 93 21 
+M 24 96 
+L 96 24 
+M 27 99 
+L 99 27 
+M 30 102 
+L 102 30 
+M 33 105 
+L 105 33 
+M 36 108 
+L 108 36 
+" style="fill: #0b1113; stroke: #0b1113; stroke-width: 0.75; stroke-linecap: butt; stroke-linejoin: miter"/>
+  </pattern>
+  <pattern id="h7ac66715c6" patternUnits="userSpaceOnUse" x="0" y="0" width="72" height="72">
+   <rect x="0" y="0" width="73" height="73" fill="#996900"/>
+   <path d="M -36 36 
+L 36 -36 
+M -33 39 
+L 39 -33 
+M -30 42 
+L 42 -30 
+M -27 45 
+L 45 -27 
+M -24 48 
+L 48 -24 
+M -21 51 
+L 51 -21 
+M -18 54 
+L 54 -18 
+M -15 57 
+L 57 -15 
+M -12 60 
+L 60 -12 
+M -9 63 
+L 63 -9 
+M -6 66 
+L 66 -6 
+M -3 69 
+L 69 -3 
+M 0 72 
+L 72 0 
+M 3 75 
+L 75 3 
+M 6 78 
+L 78 6 
+M 9 81 
+L 81 9 
+M 12 84 
+L 84 12 
+M 15 87 
+L 87 15 
+M 18 90 
+L 90 18 
+M 21 93 
+L 93 21 
+M 24 96 
+L 96 24 
+M 27 99 
+L 99 27 
+M 30 102 
+L 102 30 
+M 33 105 
+L 105 33 
+M 36 108 
+L 108 36 
+" style="fill: #0b1113; stroke: #0b1113; stroke-width: 0.75; stroke-linecap: butt; stroke-linejoin: miter"/>
+  </pattern>
+ </defs>
+</svg>
