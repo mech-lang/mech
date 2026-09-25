@@ -44,9 +44,18 @@ dylib size/RSS experiment below uses a different, minimal ABI loader.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-log-baseline.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-log-baseline.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-log-baseline.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-reactive-diagram.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-reactive-diagram.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-reactive-diagram.png).
+
+The reactive diagram includes aligned live stages, curved branches, a white Rust
+logo, and an example numerical state with its matching robot pose and positional
+covariance ellipse. The [example output and reproduction](poster/reactive-output/README.md)
+record its inputs and provenance. These illustrative values are separate from
+the throughput measurements.
+
+Rust logo © Rust Foundation, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/),
+recolored white from the [official artwork](https://github.com/rust-lang/rust-artwork/blob/main/logo/rust-logo-single-path.svg).
 
 The native Mech chart explicitly sets its logarithmic baseline to 0.1 and
 preserves the evaluator bars' series colors. The PDF and PNG show the intended

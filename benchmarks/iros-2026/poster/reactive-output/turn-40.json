@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "purpose": "Illustrative poster output; not a benchmark sample or new Mech execution",
+  "backend": "Rust checked f32 ABI control",
+  "turn": 40,
+  "instances": 1,
+  "source_revision": "17f78526f0512d69a351ba998638e446783309aa",
+  "source_sha256": {
+    "examples/embedded_ekf/ekf.mec": "da531cddcb25d002d49f1a77800122e84b573e2685e191c1955908ef6fccd625",
+    "examples/embedded_ekf/main.rs": "1e034a6ac387a7352f26ccc668e9e7d42f00d03c31f62b82b00c7fbd5e338724",
+    "benchmarks/iros-2026/rust-dylib/rust-ekf-dylib.rs": "5e32fcc5e2b17bf923718860756b233d4da145b20cff48a20d0c18ec51ccc9a7"
+  },
+  "library_sha256": "165672d40d46d551705528561de4a4500d17893ade5d80a5095f99fcbe9a7fcd",
+  "environment": {"python": "3.12.14", "numpy": "2.3.5"},
+  "fixture": {
+    "input_order": ["dt", "linear_velocity", "angular_velocity", "bearing", "measurement_noise"],
+    "inputs_decimal": [0.1, 1.0, 0.015, -0.54, 0.25],
+    "initial_mean": [55, 25, 0.4],
+    "initial_covariance_rows": [[100, 0, 0], [0, 100, 0], [0, 0, 0.15]],
+    "landmark": [140, 12],
+    "process_covariance_rows": [[0.01, 0], [0, 0.0025]]
+  },
+  "inputs_f32": [0.10000000149011612, 1.0, 0.014999999664723873, -0.5400000214576721, 0.25],
+  "result": {
+    "all_status_codes_zero": true,
+    "mean": [58.62745666503906, 26.12272834777832, 0.4107450842857361],
+    "covariance_rows": [
+      [100.34984588623047, -0.386091947555542, -0.19330543279647827],
+      [-0.38609224557876587, 84.99566650390625, -0.9534116983413696],
+      [-0.19330540299415588, -0.9534116983413696, 0.01763802021741867]
+    ]
+  },
+  "independent_cross_check": {
+    "method": "NumPy f32 matrix equations",
+    "mean": [58.6274528503418, 26.12272834777832, 0.4107450842857361],
+    "covariance_rows": [
+      [100.34984588623047, -0.38609182834625244, -0.1933053880929947],
+      [-0.3860921859741211, 84.99568176269531, -0.9534117579460144],
+      [-0.19330540299415588, -0.9534119367599487, 0.01763802208006382]
+    ],
+    "maximum_mean_absolute_difference": 0.000003814697265625,
+    "maximum_covariance_absolute_difference": 0.0000152587890625
+  },
+  "scene": {
+    "covariance_block": "Symmetric part of the 2x2 position block",
+    "position_eigenvalues": [100.35954832398528, 84.98596406615144],
+    "two_sigma_semiaxes": [20.035922571619732, 18.437566440954342],
+    "world_major_axis_angle_degrees": -1.4395315600772587,
+    "svg_major_axis_angle_degrees": 1.4395315600772587,
+    "robot_heading_radians": 0.4107450842857361,
+    "svg_robot_heading_degrees": -23.53395978531795
+  }
+}
