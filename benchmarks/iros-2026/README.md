@@ -62,24 +62,37 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-reflow.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-reflow.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-reflow.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-spacing.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-spacing.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-spacing.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
 code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
 diagram labels and measurements. Motivation covers Rust numerical kernels and
-Mech's reactive semantics. Embeddable covers standalone use, native Rust embedding
+Mech's open-source implementation and reactive semantics. Embeddable covers standalone use, native Rust embedding
 and browser embedding through WebAssembly. A note directs readers to the QR code
 for a fuller demonstration, including first-class state machines and pattern
 matching. The notation legend includes library imports. Status and Future Work
 describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.0
-target for 2028.
+target for 2028, including additional hosts and language features. The header
+links to the website and GitHub repository. The footer invites contributions
+and bug reports.
 
 The current layout uses informational callouts, a shape marker for the
 normalization note, a larger dylib dagger, and one paragraph introducing both
 performance charts. The timeline has additional label spacing and the bottom
-content margin matches the top of the header separator. The bundle caption
+content margin matches the top of the header separator. The single-line scope
+callout ends with a dotted hook toward the QR corner. Reactive has more space
+around its two execution phases. The benchmark setup uses a double-dagger
+reference and hanging footnote gutter. The operator legend uses aligned columns.
+Mojo's unchecked bar is opaque dark orange to distinguish it from Rust.
+The EKF panel ends with `variance! := Σ₊[1,1] > 0`, a representative integrity
+constraint on one candidate variance. Its orange name follows `--mech-warning`
+in `include/palette.css` (`#FFAA80`), and the operator legend includes `x!`.
+The benchmark still uses its full three-guard contract documented below, not
+only this illustrative single-component check. The code panel and chart
+dimensions are unchanged.
+The bundle caption
 identifies its metadata for named inputs, exported state and initial values.
 
 Footnotes adapt the warm text and yellow monospace markers from the
@@ -100,6 +113,9 @@ the throughput measurements.
 
 Rust logo © Rust Foundation, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/),
 recolored white from the [official artwork](https://github.com/rust-lang/rust-artwork/blob/main/logo/rust-logo-single-path.svg).
+The GitHub Invertocat uses the original white asset from the
+[GitHub Brand Toolkit](https://brand.github.com/foundations/logo), linking to
+the Mech repository.
 
 The native Mech chart explicitly sets its logarithmic baseline to 0.1 and
 preserves the interpreter bars' series colors. The PDF and PNG show the intended
