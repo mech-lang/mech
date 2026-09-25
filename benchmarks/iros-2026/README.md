@@ -72,7 +72,9 @@ diagram labels and measurements. Motivation covers Rust numerical kernels and
 Mech's open-source implementation and reactive semantics. Embeddable covers standalone use, native Rust embedding
 and browser embedding through WebAssembly. A note directs readers to the QR code
 for a fuller demonstration, including first-class state machines and pattern
-matching. The notation legend includes library imports. Status and Future Work
+matching. Selective soft hyphens improve the Motivation column line endings
+without changing column widths or font sizes. The notation legend includes
+library imports. Status and Future Work
 describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.0
 target for 2028, including additional hosts and language features. The header
 links to the website and GitHub repository. The footer invites contributions
@@ -105,7 +107,8 @@ The earlier Segoe UI PDF uses Arial substitution in the local renderer.
 The current PDF uses the installed Avenir Next font for prose.
 
 The reactive diagram uses one build/activation path ending in the resident
-instance, an input/program/output/failure key, activation failure, aligned
+computation, with the same name in the live-execution lane, an
+input/program/output/failure key, activation failure, aligned
 publication/rejection outcomes, and a white Rust logo. The
 turn-800 example state has a matching angled position-covariance ellipse with
 unequal axes. The [example output and reproduction](poster/reactive-output/README.md)
