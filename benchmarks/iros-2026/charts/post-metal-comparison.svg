@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="900" viewBox="0 0 1800 900" role="img" aria-labelledby="metal-title metal-desc">
 <title id="metal-title">Apple M1 Metal EKF throughput across six implementation ecosystems</title>
-<desc id="metal-desc">Paired horizontal hatched bars show median checked and unchecked Metal throughput for Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide. Thin whiskers and value labels report median absolute deviation from equal three-process windows.</desc>
+<desc id="metal-desc">Paired horizontal hatched bars show median checked and unchecked Metal throughput for Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide. Thin whiskers and value labels report median absolute deviation from equal fresh-process windows.</desc>
 <defs>
 <pattern id="metal-mech" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#f4c430"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
 <pattern id="metal-rust" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#dea584"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
@@ -13,7 +13,7 @@
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>
 <text x="42" y="48" font-size="28" font-weight="700">Apple M1 Metal EKF throughput</text>
 <text x="42" y="80" class="muted" font-size="16">500,000 filters × 40 turns · f32 · resident GPU state · synchronized publication after every turn</text>
-<text x="42" y="112" class="muted" font-size="13">Equal three-process windows. Bars are medians; whiskers and ± labels are MAD, not confidence intervals. Diagonal hatch denotes GPU.</text>
+<text x="42" y="112" class="muted" font-size="13">Bars are medians; whiskers and ± labels are MAD, not confidence intervals. No samples removed. Diagonal hatch denotes GPU.</text>
 <rect x="1125" y="136" width="24" height="14" rx="2" fill="url(#metal-mech)" opacity="0.95"/><text x="1160" y="149" class="muted" font-size="14">checked</text>
 <rect x="1245" y="136" width="24" height="14" rx="2" fill="url(#metal-mech)" opacity="0.48"/><text x="1280" y="149" class="muted" font-size="14">unchecked</text>
 <text x="1435" y="150" class="muted" font-size="13">median ± MAD · M turns/s</text>
@@ -39,76 +39,76 @@
 <text x="1426.2" y="792" text-anchor="middle" class="axis">450</text>
 <line x1="355" y1="233" x2="1450" y2="233" class="row-guide"/>
 <text x="331" y="186" text-anchor="end" class="label">Mech · generated MSL</text>
-<rect x="355" y="168" width="1000.7" height="18" rx="3" fill="url(#metal-mech)" opacity="0.95"><title>Mech · checked median: 420.404 million turns/s</title></rect>
-<line x1="1347.4" y1="177" x2="1364.1" y2="177" class="whisker"/>
-<line x1="1347.4" y1="171" x2="1347.4" y2="183" class="whisker"/>
-<line x1="1364.1" y1="171" x2="1364.1" y2="183" class="whisker"/>
-<text x="1435" y="182" class="value">420.4 ±3.5</text>
-<rect x="355" y="194" width="998.6" height="18" rx="3" fill="url(#metal-mech)" opacity="0.48"><title>Mech · unchecked median: 419.523 million turns/s</title></rect>
-<line x1="1346.6" y1="203" x2="1360.6" y2="203" class="whisker"/>
-<line x1="1346.6" y1="197" x2="1346.6" y2="209" class="whisker"/>
-<line x1="1360.6" y1="197" x2="1360.6" y2="209" class="whisker"/>
-<text x="1435" y="208" class="value">419.5 ±2.9</text>
+<rect x="355" y="168" width="975.4" height="18" rx="3" fill="url(#metal-mech)" opacity="0.95"><title>Mech · checked median: 409.764 million turns/s</title></rect>
+<line x1="1323.4" y1="177" x2="1337.4" y2="177" class="whisker"/>
+<line x1="1323.4" y1="171" x2="1323.4" y2="183" class="whisker"/>
+<line x1="1337.4" y1="171" x2="1337.4" y2="183" class="whisker"/>
+<text x="1435" y="182" class="value">409.8 ±3.0</text>
+<rect x="355" y="194" width="977.0" height="18" rx="3" fill="url(#metal-mech)" opacity="0.48"><title>Mech · unchecked median: 410.439 million turns/s</title></rect>
+<line x1="1320.3" y1="203" x2="1343.7" y2="203" class="whisker"/>
+<line x1="1320.3" y1="197" x2="1320.3" y2="209" class="whisker"/>
+<line x1="1343.7" y1="197" x2="1343.7" y2="209" class="whisker"/>
+<text x="1435" y="208" class="value">410.4 ±4.9</text>
 <line x1="355" y1="325" x2="1450" y2="325" class="row-guide"/>
 <text x="331" y="278" text-anchor="end" class="label">Rust · hand-written MSL</text>
-<rect x="355" y="260" width="996.5" height="18" rx="3" fill="url(#metal-rust)" opacity="0.95"><title>Rust + MSL · checked median: 418.602 million turns/s</title></rect>
-<line x1="1351.3" y1="269" x2="1351.6" y2="269" class="whisker"/>
-<line x1="1351.3" y1="263" x2="1351.3" y2="275" class="whisker"/>
-<line x1="1351.6" y1="263" x2="1351.6" y2="275" class="whisker"/>
-<text x="1435" y="274" class="value">418.60 ±0.07</text>
-<rect x="355" y="286" width="996.3" height="18" rx="3" fill="url(#metal-rust)" opacity="0.48"><title>Rust + MSL · unchecked median: 418.519 million turns/s</title></rect>
-<line x1="1346.9" y1="295" x2="1355.6" y2="295" class="whisker"/>
-<line x1="1346.9" y1="289" x2="1346.9" y2="301" class="whisker"/>
-<line x1="1355.6" y1="289" x2="1355.6" y2="301" class="whisker"/>
-<text x="1435" y="300" class="value">418.5 ±1.8</text>
+<rect x="355" y="260" width="1012.1" height="18" rx="3" fill="url(#metal-rust)" opacity="0.95"><title>Rust + MSL · checked median: 425.180 million turns/s</title></rect>
+<line x1="1359.8" y1="269" x2="1374.5" y2="269" class="whisker"/>
+<line x1="1359.8" y1="263" x2="1359.8" y2="275" class="whisker"/>
+<line x1="1374.5" y1="263" x2="1374.5" y2="275" class="whisker"/>
+<text x="1435" y="274" class="value">425.2 ±3.1</text>
+<rect x="355" y="286" width="1006.7" height="18" rx="3" fill="url(#metal-rust)" opacity="0.48"><title>Rust + MSL · unchecked median: 422.890 million turns/s</title></rect>
+<line x1="1350.0" y1="295" x2="1373.4" y2="295" class="whisker"/>
+<line x1="1350.0" y1="289" x2="1350.0" y2="301" class="whisker"/>
+<line x1="1373.4" y1="289" x2="1373.4" y2="301" class="whisker"/>
+<text x="1435" y="300" class="value">422.9 ±4.9</text>
 <line x1="355" y1="417" x2="1450" y2="417" class="row-guide"/>
 <text x="331" y="370" text-anchor="end" class="label">Mojo · native Metal</text>
-<rect x="355" y="352" width="963.9" height="18" rx="3" fill="url(#metal-mojo)" opacity="0.95"><title>Mojo · checked median: 404.932 million turns/s</title></rect>
-<line x1="1313.2" y1="361" x2="1324.6" y2="361" class="whisker"/>
-<line x1="1313.2" y1="355" x2="1313.2" y2="367" class="whisker"/>
-<line x1="1324.6" y1="355" x2="1324.6" y2="367" class="whisker"/>
-<text x="1435" y="366" class="value">404.9 ±2.4</text>
-<rect x="355" y="378" width="956.6" height="18" rx="3" fill="url(#metal-mojo)" opacity="0.48"><title>Mojo · unchecked median: 401.865 million turns/s</title></rect>
-<line x1="1310.6" y1="387" x2="1312.7" y2="387" class="whisker"/>
-<line x1="1310.6" y1="381" x2="1310.6" y2="393" class="whisker"/>
-<line x1="1312.7" y1="381" x2="1312.7" y2="393" class="whisker"/>
-<text x="1435" y="392" class="value">401.9 ±0.4</text>
+<rect x="355" y="352" width="966.5" height="18" rx="3" fill="url(#metal-mojo)" opacity="0.95"><title>Mojo · checked median: 406.038 million turns/s</title></rect>
+<line x1="1309.3" y1="361" x2="1333.8" y2="361" class="whisker"/>
+<line x1="1309.3" y1="355" x2="1309.3" y2="367" class="whisker"/>
+<line x1="1333.8" y1="355" x2="1333.8" y2="367" class="whisker"/>
+<text x="1435" y="366" class="value">406.0 ±5.2</text>
+<rect x="355" y="378" width="964.9" height="18" rx="3" fill="url(#metal-mojo)" opacity="0.48"><title>Mojo · unchecked median: 405.355 million turns/s</title></rect>
+<line x1="1303.4" y1="387" x2="1336.4" y2="387" class="whisker"/>
+<line x1="1303.4" y1="381" x2="1303.4" y2="393" class="whisker"/>
+<line x1="1336.4" y1="381" x2="1336.4" y2="393" class="whisker"/>
+<text x="1435" y="392" class="value">405.4 ±6.9</text>
 <line x1="355" y1="509" x2="1450" y2="509" class="row-guide"/>
 <text x="331" y="462" text-anchor="end" class="label">Julia · Metal.jl</text>
-<rect x="355" y="444" width="967.5" height="18" rx="3" fill="url(#metal-julia)" opacity="0.95"><title>Julia · checked median: 406.432 million turns/s</title></rect>
-<line x1="1321.0" y1="453" x2="1324.0" y2="453" class="whisker"/>
-<line x1="1321.0" y1="447" x2="1321.0" y2="459" class="whisker"/>
-<line x1="1324.0" y1="447" x2="1324.0" y2="459" class="whisker"/>
-<text x="1435" y="458" class="value">406.4 ±0.6</text>
-<rect x="355" y="470" width="975.7" height="18" rx="3" fill="url(#metal-julia)" opacity="0.48"><title>Julia · unchecked median: 409.896 million turns/s</title></rect>
-<line x1="1319.3" y1="479" x2="1342.2" y2="479" class="whisker"/>
-<line x1="1319.3" y1="473" x2="1319.3" y2="485" class="whisker"/>
-<line x1="1342.2" y1="473" x2="1342.2" y2="485" class="whisker"/>
-<text x="1435" y="484" class="value">409.9 ±4.8</text>
+<rect x="355" y="444" width="977.0" height="18" rx="3" fill="url(#metal-julia)" opacity="0.95"><title>Julia · checked median: 410.420 million turns/s</title></rect>
+<line x1="1320.7" y1="453" x2="1343.3" y2="453" class="whisker"/>
+<line x1="1320.7" y1="447" x2="1320.7" y2="459" class="whisker"/>
+<line x1="1343.3" y1="447" x2="1343.3" y2="459" class="whisker"/>
+<text x="1435" y="458" class="value">410.4 ±4.7</text>
+<rect x="355" y="470" width="979.3" height="18" rx="3" fill="url(#metal-julia)" opacity="0.48"><title>Julia · unchecked median: 411.398 million turns/s</title></rect>
+<line x1="1302.4" y1="479" x2="1366.2" y2="479" class="whisker"/>
+<line x1="1302.4" y1="473" x2="1302.4" y2="485" class="whisker"/>
+<line x1="1366.2" y1="473" x2="1366.2" y2="485" class="whisker"/>
+<text x="1435" y="484" class="value">411.4 ±13.4</text>
 <line x1="355" y1="601" x2="1450" y2="601" class="row-guide"/>
 <text x="331" y="554" text-anchor="end" class="label">Taichi · native Metal</text>
-<rect x="355" y="536" width="791.7" height="18" rx="3" fill="url(#metal-taichi)" opacity="0.95"><title>Taichi · checked median: 332.584 million turns/s</title></rect>
-<line x1="1145.3" y1="545" x2="1148.1" y2="545" class="whisker"/>
-<line x1="1145.3" y1="539" x2="1145.3" y2="551" class="whisker"/>
-<line x1="1148.1" y1="539" x2="1148.1" y2="551" class="whisker"/>
-<text x="1435" y="550" class="value">332.6 ±0.6</text>
-<rect x="355" y="562" width="974.9" height="18" rx="3" fill="url(#metal-taichi)" opacity="0.48"><title>Taichi · unchecked median: 409.530 million turns/s</title></rect>
-<line x1="1323.4" y1="571" x2="1336.3" y2="571" class="whisker"/>
-<line x1="1323.4" y1="565" x2="1323.4" y2="577" class="whisker"/>
-<line x1="1336.3" y1="565" x2="1336.3" y2="577" class="whisker"/>
-<text x="1435" y="576" class="value">409.5 ±2.7</text>
+<rect x="355" y="536" width="816.2" height="18" rx="3" fill="url(#metal-taichi)" opacity="0.95"><title>Taichi · checked median: 342.872 million turns/s</title></rect>
+<line x1="1166.4" y1="545" x2="1176.0" y2="545" class="whisker"/>
+<line x1="1166.4" y1="539" x2="1166.4" y2="551" class="whisker"/>
+<line x1="1176.0" y1="539" x2="1176.0" y2="551" class="whisker"/>
+<text x="1435" y="550" class="value">342.9 ±2.0</text>
+<rect x="355" y="562" width="977.8" height="18" rx="3" fill="url(#metal-taichi)" opacity="0.48"><title>Taichi · unchecked median: 410.771 million turns/s</title></rect>
+<line x1="1323.8" y1="571" x2="1341.8" y2="571" class="whisker"/>
+<line x1="1323.8" y1="565" x2="1323.8" y2="577" class="whisker"/>
+<line x1="1341.8" y1="565" x2="1341.8" y2="577" class="whisker"/>
+<text x="1435" y="576" class="value">410.8 ±3.8</text>
 <line x1="355" y1="693" x2="1450" y2="693" class="row-guide"/>
 <text x="331" y="646" text-anchor="end" class="label">Halide · Metal schedule</text>
-<rect x="355" y="628" width="696.3" height="18" rx="3" fill="url(#metal-halide)" opacity="0.95"><title>Halide · checked median: 292.500 million turns/s</title></rect>
-<line x1="1049.9" y1="637" x2="1052.7" y2="637" class="whisker"/>
-<line x1="1049.9" y1="631" x2="1049.9" y2="643" class="whisker"/>
-<line x1="1052.7" y1="631" x2="1052.7" y2="643" class="whisker"/>
-<text x="1435" y="642" class="value">292.5 ±0.6</text>
-<rect x="355" y="654" width="938.5" height="18" rx="3" fill="url(#metal-halide)" opacity="0.48"><title>Halide · unchecked median: 394.263 million turns/s</title></rect>
-<line x1="1293.4" y1="663" x2="1293.6" y2="663" class="whisker"/>
-<line x1="1293.4" y1="657" x2="1293.4" y2="669" class="whisker"/>
-<line x1="1293.6" y1="657" x2="1293.6" y2="669" class="whisker"/>
-<text x="1435" y="668" class="value">394.26 ±0.05</text>
+<rect x="355" y="628" width="698.2" height="18" rx="3" fill="url(#metal-halide)" opacity="0.95"><title>Halide · checked median: 293.291 million turns/s</title></rect>
+<line x1="1039.9" y1="637" x2="1066.5" y2="637" class="whisker"/>
+<line x1="1039.9" y1="631" x2="1039.9" y2="643" class="whisker"/>
+<line x1="1066.5" y1="631" x2="1066.5" y2="643" class="whisker"/>
+<text x="1435" y="642" class="value">293.3 ±5.6</text>
+<rect x="355" y="654" width="949.2" height="18" rx="3" fill="url(#metal-halide)" opacity="0.48"><title>Halide · unchecked median: 398.765 million turns/s</title></rect>
+<line x1="1279.5" y1="663" x2="1329.0" y2="663" class="whisker"/>
+<line x1="1279.5" y1="657" x2="1279.5" y2="669" class="whisker"/>
+<line x1="1329.0" y1="657" x2="1329.0" y2="669" class="whisker"/>
+<text x="1435" y="668" class="value">398.8 ±10.4</text>
 <line x1="355" y1="765" x2="1450" y2="765" class="grid"/>
 <text x="902.5" y="823" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>
 <text x="42" y="850" class="footnote">All six paths use resident packed SoA with ping-pong publication and one synchronized turn boundary.</text>

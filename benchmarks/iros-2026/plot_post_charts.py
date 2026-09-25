@@ -51,6 +51,19 @@ def load(name: str) -> dict:
     return json.loads((RESULTS / name).read_text(encoding="utf-8"))
 
 
+def campaign_rows(device: str) -> dict:
+    filename = {
+        "cpu": "apple-m1-cpu-equal-n10-2026-09-24.json",
+        "metal": "apple-m1-metal-equal-n10-2026-09-24.json",
+    }[device]
+    data = json.loads((HERE / "results" / filename).read_text(encoding="utf-8"))
+    return data["campaigns"][device]["rows"]
+
+
+def campaign_samples(rows: dict, row: str, mode: str) -> list[float]:
+    return rows[row][mode]["samples_million_ekf_turns_per_second"]
+
+
 def write_svg(name: str, lines: list[str]) -> None:
     CHARTS.mkdir(parents=True, exist_ok=True)
     (CHARTS / name).write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -119,71 +132,49 @@ def equalize(rows: list[ModePairRow], count: int) -> list[ModePairRow]:
 
 def portable_rows() -> tuple[list[ModePairRow], list[ModePairRow]]:
     """Return the systems that select both CPU and Metal from one source file."""
-    runtime = load("apple-m1-mech-taichi-runtime-2026-08-31.json")
-    runtime_rows = {row["label"]: row for row in runtime["rows"]}
-    metal = load("apple-m1-mech-metal-2026-09-04.json")
-    mech_metal = metal["rows"]["Mech direct Metal generated from generic scalar IR"]
-    taichi_cpu = json.loads(
-        (HERE / "results/apple-m1-taichi-cpu-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    taichi_metal = json.loads(
-        (HERE / "results/apple-m1-taichi-metal-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    halide_cpu = json.loads(
-        (HERE / "results/apple-m1-halide-cpu-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    halide_metal = json.loads(
-        (HERE / "results/apple-m1-halide-metal-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    cpu_campaign = campaign_rows("cpu")
+    metal_campaign = campaign_rows("metal")
     cpu = [
         ModePairRow(
             "Mech · Cranelift SIMD/JIT",
             "same .mec source",
-            runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["samples"],
-            runtime_rows["Mech SIMD/JIT CPU, unchecked (8 workers)"]["samples"],
+            campaign_samples(cpu_campaign, "Mech per-turn SIMD/JIT", "checked"),
+            campaign_samples(cpu_campaign, "Mech per-turn SIMD/JIT", "unchecked"),
         ),
         ModePairRow(
             "Taichi · LLVM CPU",
             "same .py source",
-            taichi_cpu["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            taichi_cpu["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(cpu_campaign, "Taichi LLVM CPU", "checked"),
+            campaign_samples(cpu_campaign, "Taichi LLVM CPU", "unchecked"),
         ),
         ModePairRow(
             "Halide · native CPU",
             "same .cpp source",
-            halide_cpu["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            halide_cpu["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(cpu_campaign, "Halide native CPU", "checked"),
+            campaign_samples(cpu_campaign, "Halide native CPU", "unchecked"),
         ),
     ]
     gpu = [
         ModePairRow(
             "Mech · generated MSL",
             "same .mec source",
-            mech_metal["checked"]["samples_million_ekf_turns_per_second"],
-            mech_metal["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(metal_campaign, "Mech generated MSL", "checked"),
+            campaign_samples(metal_campaign, "Mech generated MSL", "unchecked"),
         ),
         ModePairRow(
             "Taichi · native Metal",
             "same .py source",
-            taichi_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            taichi_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(metal_campaign, "Taichi native Metal", "checked"),
+            campaign_samples(metal_campaign, "Taichi native Metal", "unchecked"),
         ),
         ModePairRow(
             "Halide · Metal schedule",
             "same .cpp source",
-            halide_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            halide_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(metal_campaign, "Halide Metal schedule", "checked"),
+            campaign_samples(metal_campaign, "Halide Metal schedule", "unchecked"),
         ),
     ]
-    return equalize(cpu, 3), equalize(gpu, 3)
+    return equalize(cpu, 10), equalize(gpu, 10)
 
 
 def render_portable_chart(
@@ -267,15 +258,17 @@ def render_portable_chart(
                 f'<text x="1418" y="{mode_y + 5}" class="value">{spread_label(samples)}</text>'
             )
     device_note = (
-        "Diagonal hatch denotes GPU. " if gpu else ""
-    ) + "Highest retained median in both modes is Mech; this is a descriptive result, not a language-speed claim."
+        "Diagonal hatch denotes GPU. Mech leads checked; Taichi is 0.08% higher unchecked, below either MAD. Descriptive only."
+        if gpu
+        else "Highest retained median in both CPU modes is Mech; this is a descriptive result, not a language-speed claim."
+    )
     lines.extend(
         [
             f'<line x1="{left}" y1="{axis_y}" x2="{plot_right}" y2="{axis_y}" class="grid"/>',
             f'<text x="{left + chart_width / 2:.1f}" y="{axis_y + 58}" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>',
             '<text x="42" y="620" class="footnote">Same application source within each system: Mech .mec, Taichi .py, Halide .cpp; CPU/Metal selected without rewriting EKF equations.</text>',
             f'<text x="42" y="647" class="footnote">{esc(device_note)}</text>',
-            '<text x="42" y="674" class="footnote">Equal three-process windows. Toolchains, lowering, schedules, status observation, and system state differ.</text>',
+            '<text x="42" y="674" class="footnote">Toolchains, lowering, schedules, status observation, and system state differ. No samples were removed.</text>',
             "</svg>",
         ]
     )
@@ -288,7 +281,7 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="portable-combo-title portable-combo-desc">',
         '<title id="portable-combo-title">One EKF source per system, two execution backends</title>',
-        '<desc id="portable-combo-desc">A two-panel poster chart compares checked and unchecked EKF throughput on CPU and Metal for Mech, Taichi, and Halide. Each system selects both backends from the same application source. Mech has the highest measured median in both panels; notes state that the result is descriptive and not a general language ranking.</desc>',
+        '<desc id="portable-combo-desc">A two-panel poster chart compares checked and unchecked EKF throughput on CPU and Metal for Mech, Taichi, and Halide. Each system selects both backends from the same application source. Mech leads both CPU modes and checked Metal; Taichi is 0.08 percent higher on unchecked Metal, below either median absolute deviation. The notes state that this is descriptive and not a general language ranking.</desc>',
         '<defs>',
     ]
     for row in gpu:
@@ -310,7 +303,7 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
     )
 
     panels = [
-        (cpu, 42, "CPU · eight workers", 130.0, 20, False),
+        (cpu, 42, "CPU · eight workers", 200.0, 25, False),
         (gpu, 920, "GPU · Apple Metal", 450.0, 50, True),
     ]
     for rows, panel_x, panel_title, maximum, tick_step, is_gpu in panels:
@@ -373,13 +366,13 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
     lines.extend(
         [
             '<text x="42" y="750" font-size="22" font-weight="700">What these measurements support</text>',
-            '<text x="42" y="784" class="note">• Mech has the highest retained median in both panels, checked and unchecked, for this EKF on this Apple M1.</text>',
-            '<text x="42" y="812" class="note">• That is a descriptive measurement—not evidence that Mech is intrinsically faster than Taichi or Halide.</text>',
+            '<text x="42" y="784" class="note">• Mech leads both CPU modes and checked Metal; Taichi is 0.08% higher unchecked, below either MAD.</text>',
+            '<text x="42" y="812" class="note">• These are descriptive implementation measurements—not evidence that one language is intrinsically faster.</text>',
             '<text x="42" y="840" class="note">• Same-source means one application file per system: Mech .mec to Cranelift SIMD/JIT or generated MSL;</text>',
             '<text x="62" y="864" class="note">Taichi .py to LLVM CPU or Metal; Halide .cpp to native CPU schedule or Metal schedule.</text>',
             '<text x="42" y="908" font-size="18" font-weight="700">Poster notes</text>',
             '<text x="42" y="936" class="muted" font-size="13">Workload: 500,000 filters × 40 turns, f32, resident ping-pong state, one synchronized publication per turn; CPU uses eight workers.</text>',
-            '<text x="42" y="962" class="muted" font-size="13">Statistic: median ± median absolute deviation; three-process windows for every row. No confidence interval or p-value.</text>',
+            '<text x="42" y="962" class="muted" font-size="13">Statistic: median ± median absolute deviation over equal fresh-process windows. No confidence interval or p-value.</text>',
             '<text x="42" y="988" class="muted" font-size="13">Toolchains: Mech v0.4 integration / Cranelift / direct Metal; Taichi 1.7.4 / LLVM 15 / Python 3.12.14; Halide 21.0.0_1 / Apple clang 17.</text>',
             '<text x="42" y="1014" class="muted" font-size="13">Differences: compiler lowering, schedules, compact versus per-lane fault observation, campaign dates, and system state. All samples reported zero faults.</text>',
             '<text x="42" y="1060" class="muted" font-size="13">Diagonal hatch denotes GPU. Raw samples, source hashes, exact commands, and provenance are retained in this repository.</text>',
@@ -390,79 +383,64 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
 
 
 def render_cross_language() -> None:
-    fused = load("apple-m1-fused-reference-controls-2026-08-31.json")
-    mech_unchecked = load("apple-m1-mech-persistent-simd-2026-08-31.json")
-    mojo = load("apple-m1-mojo-advanced-2026-09-04.json")
-    futhark = load("apple-m1-futhark-ispc-fixed-2026-08-31.json")
-    taichi = json.loads(
-        (HERE / "results/apple-m1-taichi-cpu-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    halide = json.loads(
-        (HERE / "results/apple-m1-halide-cpu-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    campaign = campaign_rows("cpu")
     rows = [
         ModePairRow(
             "Mech",
             "SIMD/JIT · f32x4",
-            fused["rows"]["mech_fused_checked"]["throughput_millions"],
-            mech_unchecked["rows"]["fused_unchecked_block"]["throughput_millions"],
+            campaign_samples(campaign, "Mech fused SIMD/JIT", "checked"),
+            campaign_samples(campaign, "Mech fused SIMD/JIT", "unchecked"),
         ),
         ModePairRow(
             "Rust",
             "packed SIMD · f32x4",
-            fused["rows"]["rust_fused_checked"]["throughput_millions"],
-            fused["rows"]["rust_fused"]["throughput_millions"],
+            campaign_samples(campaign, "Rust packed SIMD", "checked"),
+            campaign_samples(campaign, "Rust packed SIMD", "unchecked"),
         ),
         ModePairRow(
             "Mojo",
             "explicit SIMD-4",
-            mojo["rows"]["Mojo fused SIMD-4, 8 workers"]["checked"]
-            ["samples_million_ekf_turns_per_second"],
-            mojo["rows"]["Mojo fused SIMD-4, 8 workers"]["unchecked"]
-            ["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Mojo SIMD-4", "checked"),
+            campaign_samples(campaign, "Mojo SIMD-4", "unchecked"),
         ),
         ModePairRow(
             "Julia",
             "SIMD.jl",
-            fused["rows"]["julia_fused_checked"]["throughput_millions"],
-            fused["rows"]["julia_fused"]["throughput_millions"],
+            campaign_samples(campaign, "Julia SIMD.jl", "checked"),
+            campaign_samples(campaign, "Julia SIMD.jl", "unchecked"),
         ),
         ModePairRow(
             "Futhark",
             "ISPC AOT",
-            futhark["rows"]["checked"]["throughput_millions"],
-            futhark["rows"]["unchecked"]["throughput_millions"],
+            campaign_samples(campaign, "Futhark ISPC AOT", "checked"),
+            campaign_samples(campaign, "Futhark ISPC AOT", "unchecked"),
         ),
         ModePairRow(
             "Taichi",
             "LLVM CPU · per-turn",
-            taichi["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            taichi["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Taichi LLVM CPU", "checked"),
+            campaign_samples(campaign, "Taichi LLVM CPU", "unchecked"),
         ),
         ModePairRow(
             "NumPy/Numba",
             "compiled parallel kernel",
-            fused["rows"]["numba_fused_checked"]["throughput_millions"],
-            fused["rows"]["numba_fused"]["throughput_millions"],
+            campaign_samples(campaign, "NumPy/Numba", "checked"),
+            campaign_samples(campaign, "NumPy/Numba", "unchecked"),
         ),
         ModePairRow(
             "Halide",
             "native CPU · per-turn",
-            halide["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            halide["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Halide native CPU", "checked"),
+            campaign_samples(campaign, "Halide native CPU", "unchecked"),
         ),
     ]
-    rows = equalize(rows, 3)
+    rows = equalize(rows, 10)
 
     width, height = 1800, 1100
     left, plot_right, top = 355, 1450, 190
     axis_y = 925
     chart_width = plot_right - left
-    maximum = 185.0
+    maximum = 205.0
 
     def x(value: float) -> float:
         return left + chart_width * value / maximum
@@ -470,18 +448,18 @@ def render_cross_language() -> None:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="cross-title cross-desc">',
         '<title id="cross-title">Full checked and unchecked CPU EKF comparison across eight implementations</title>',
-        '<desc id="cross-desc">Paired horizontal bars show median checked and unchecked throughput for Mech, Rust, Mojo, Julia, Futhark, Taichi, NumPy with Numba, and Halide on one Apple M1. Thin whiskers and value labels report median absolute deviation from equal three-process windows.</desc>',
+        '<desc id="cross-desc">Paired horizontal bars show median checked and unchecked throughput for Mech, Rust, Mojo, Julia, Futhark, Taichi, NumPy with Numba, and Halide on one Apple M1. Thin whiskers and value labels report median absolute deviation from equal fresh-process windows.</desc>',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>',
         '<text x="42" y="48" font-size="28" font-weight="700">Full CPU EKF comparison across eight implementations</text>',
         '<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers</text>',
-        '<text x="42" y="112" class="muted" font-size="13">Equal three-process windows. Bars are medians; thin whiskers and ± labels are median absolute deviation, not confidence intervals.</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; thin whiskers and ± labels are median absolute deviation, not confidence intervals. No samples removed.</text>',
         '<rect x="1125" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="1160" y="149" class="muted" font-size="14">checked</text>',
         '<rect x="1245" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="1280" y="149" class="muted" font-size="14">unchecked</text>',
         '<text x="1435" y="150" class="muted" font-size="13">median ± MAD · M turns/s</text>',
     ]
 
-    for tick in range(0, 181, 20):
+    for tick in range(0, 201, 20):
         tick_x = x(float(tick))
         lines.append(
             f'<line x1="{tick_x:.1f}" y1="{top - 25}" x2="{tick_x:.1f}" y2="{axis_y}" class="grid"/>'
@@ -535,72 +513,46 @@ def render_cross_language() -> None:
 
 
 def render_metal_comparison() -> None:
-    mech = load("apple-m1-mech-metal-2026-09-04.json")
-    mojo = json.loads(
-        (HERE / "results/apple-m1-mojo-metal-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    julia = json.loads(
-        (HERE / "results/apple-m1-julia-metal-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    taichi = json.loads(
-        (HERE / "results/apple-m1-taichi-metal-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    halide = json.loads(
-        (HERE / "results/apple-m1-halide-metal-matched-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    rust = json.loads(
-        (HERE / "results/apple-m1-rust-metal-2026-09-24.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    mech_row = mech["rows"]["Mech direct Metal generated from generic scalar IR"]
+    campaign = campaign_rows("metal")
     rows = [
         ModePairRow(
             "Mech · generated MSL",
             "",
-            mech_row["checked"]["samples_million_ekf_turns_per_second"],
-            mech_row["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Mech generated MSL", "checked"),
+            campaign_samples(campaign, "Mech generated MSL", "unchecked"),
         ),
         ModePairRow(
             "Rust · hand-written MSL",
             "",
-            rust["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            rust["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Rust + hand-written MSL", "checked"),
+            campaign_samples(campaign, "Rust + hand-written MSL", "unchecked"),
         ),
         ModePairRow(
             "Mojo · native Metal",
             "",
-            mojo["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            mojo["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Mojo native Metal", "checked"),
+            campaign_samples(campaign, "Mojo native Metal", "unchecked"),
         ),
         ModePairRow(
             "Julia · Metal.jl",
             "",
-            julia["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            julia["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Julia Metal.jl", "checked"),
+            campaign_samples(campaign, "Julia Metal.jl", "unchecked"),
         ),
         ModePairRow(
             "Taichi · native Metal",
             "",
-            taichi["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            taichi["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Taichi native Metal", "checked"),
+            campaign_samples(campaign, "Taichi native Metal", "unchecked"),
         ),
         ModePairRow(
             "Halide · Metal schedule",
             "",
-            halide["rows"]["checked"]["samples_million_ekf_turns_per_second"],
-            halide["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(campaign, "Halide Metal schedule", "checked"),
+            campaign_samples(campaign, "Halide Metal schedule", "unchecked"),
         ),
     ]
-    rows = equalize(rows, 3)
+    rows = equalize(rows, 10)
 
     width, height = 1800, 900
     left, plot_right, top = 355, 1450, 190
@@ -623,13 +575,13 @@ def render_metal_comparison() -> None:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="metal-title metal-desc">',
         '<title id="metal-title">Apple M1 Metal EKF throughput across six implementation ecosystems</title>',
-        '<desc id="metal-desc">Paired horizontal hatched bars show median checked and unchecked Metal throughput for Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide. Thin whiskers and value labels report median absolute deviation from equal three-process windows.</desc>',
+        '<desc id="metal-desc">Paired horizontal hatched bars show median checked and unchecked Metal throughput for Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide. Thin whiskers and value labels report median absolute deviation from equal fresh-process windows.</desc>',
         *patterns,
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>',
         '<text x="42" y="48" font-size="28" font-weight="700">Apple M1 Metal EKF throughput</text>',
         '<text x="42" y="80" class="muted" font-size="16">500,000 filters × 40 turns · f32 · resident GPU state · synchronized publication after every turn</text>',
-        '<text x="42" y="112" class="muted" font-size="13">Equal three-process windows. Bars are medians; whiskers and ± labels are MAD, not confidence intervals. Diagonal hatch denotes GPU.</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; whiskers and ± labels are MAD, not confidence intervals. No samples removed. Diagonal hatch denotes GPU.</text>',
         '<rect x="1125" y="136" width="24" height="14" rx="2" fill="url(#metal-mech)" opacity="0.95"/><text x="1160" y="149" class="muted" font-size="14">checked</text>',
         '<rect x="1245" y="136" width="24" height="14" rx="2" fill="url(#metal-mech)" opacity="0.48"/><text x="1280" y="149" class="muted" font-size="14">unchecked</text>',
         '<text x="1435" y="150" class="muted" font-size="13">median ± MAD · M turns/s</text>',
@@ -686,7 +638,8 @@ def render_metal_comparison() -> None:
 
 
 def render_mech_backends() -> None:
-    metal = load("apple-m1-mech-metal-2026-09-04.json")
+    metal_campaign = campaign_rows("metal")
+    cpu_campaign = campaign_rows("cpu")
     runtime = load("apple-m1-mech-taichi-runtime-2026-08-31.json")
     simd = load("apple-m1-mech-simd-jit-neon-strict-2026-09-01.json")
     scalar = load("apple-m1-mech-scalar-checked-matched-2026-09-09.json")
@@ -704,8 +657,7 @@ def render_mech_backends() -> None:
             "Direct Metal GPU",
             "500k filters × 40 turns",
             "#f4c430",
-            metal["rows"]["Mech direct Metal generated from generic scalar IR"]
-            ["checked"]["samples_million_ekf_turns_per_second"],
+            campaign_samples(metal_campaign, "Mech generated MSL", "checked"),
         ),
         Row(
             "WGPU on Metal",
@@ -717,7 +669,7 @@ def render_mech_backends() -> None:
             "SIMD/JIT CPU · 8 workers",
             "500k filters × 40 turns",
             "#f4c430",
-            runtime_rows["Mech SIMD/JIT CPU, checked (8 workers)"]["samples"],
+            campaign_samples(cpu_campaign, "Mech per-turn SIMD/JIT", "checked"),
         ),
         Row(
             "SIMD/JIT CPU · 1 worker",
@@ -841,8 +793,8 @@ def main() -> None:
         cpu,
         "Same-source CPU backends: Mech, Taichi, and Halide",
         "Apple M1 · 500,000 filters × 40 turns · f32 · eight workers · synchronized publication after every turn",
-        130.0,
-        20,
+        200.0,
+        25,
         False,
     )
     render_portable_chart(

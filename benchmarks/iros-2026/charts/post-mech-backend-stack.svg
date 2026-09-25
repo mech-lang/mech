@@ -29,11 +29,11 @@
 <line x1="430" y1="197" x2="1435" y2="197" class="row-guide"/>
 <text x="404" y="157" text-anchor="end" class="label">Direct Metal GPU</text>
 <text x="404" y="179" text-anchor="end" class="detail">500k filters × 40 turns</text>
-<rect x="430.0" y="150" width="944.7" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Direct Metal GPU median: 422.702 million turns/s</title></rect>
-<line x1="1373.9" y1="160" x2="1375.4" y2="160" class="whisker"/>
-<line x1="1373.9" y1="149" x2="1373.9" y2="171" class="whisker"/>
-<line x1="1375.4" y1="149" x2="1375.4" y2="171" class="whisker"/>
-<text x="1393.4" y="165" class="value">422.7 ±2.3</text>
+<rect x="430.0" y="150" width="940.3" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Direct Metal GPU median: 409.764 million turns/s</title></rect>
+<line x1="1369.3" y1="160" x2="1371.3" y2="160" class="whisker"/>
+<line x1="1369.3" y1="149" x2="1369.3" y2="171" class="whisker"/>
+<line x1="1371.3" y1="149" x2="1371.3" y2="171" class="whisker"/>
+<text x="1389.3" y="165" class="value">409.8 ±3.0</text>
 <line x1="430" y1="275" x2="1435" y2="275" class="row-guide"/>
 <text x="404" y="235" text-anchor="end" class="label">WGPU on Metal</text>
 <text x="404" y="257" text-anchor="end" class="detail">500k filters × 40 turns</text>
@@ -45,11 +45,11 @@
 <line x1="430" y1="353" x2="1435" y2="353" class="row-guide"/>
 <text x="404" y="313" text-anchor="end" class="label">SIMD/JIT CPU · 8 workers</text>
 <text x="404" y="335" text-anchor="end" class="detail">500k filters × 40 turns</text>
-<rect x="430.0" y="306" width="749.2" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>SIMD/JIT CPU · 8 workers median: 104.783 million turns/s</title></rect>
-<line x1="1170.8" y1="316" x2="1187.1" y2="316" class="whisker"/>
-<line x1="1170.8" y1="305" x2="1170.8" y2="327" class="whisker"/>
-<line x1="1187.1" y1="305" x2="1187.1" y2="327" class="whisker"/>
-<text x="1205.1" y="321" class="value">104.8 ±6.1</text>
+<rect x="430.0" y="306" width="791.2" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>SIMD/JIT CPU · 8 workers median: 141.362 million turns/s</title></rect>
+<line x1="1217.8" y1="316" x2="1224.5" y2="316" class="whisker"/>
+<line x1="1217.8" y1="305" x2="1217.8" y2="327" class="whisker"/>
+<line x1="1224.5" y1="305" x2="1224.5" y2="327" class="whisker"/>
+<text x="1242.5" y="321" class="value">141.4 ±3.4</text>
 <line x1="430" y1="431" x2="1435" y2="431" class="row-guide"/>
 <text x="404" y="391" text-anchor="end" class="label">SIMD/JIT CPU · 1 worker</text>
 <text x="404" y="413" text-anchor="end" class="detail">10k filters × 20 turns</text>

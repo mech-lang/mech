@@ -1,15 +1,17 @@
 # Benchmark statistics and uncertainty
 
-The publication figures use medians, never raw arithmetic averages. Comparison
-panels use equal, deterministic process windows: the first three retained runs
-per row. Their whiskers and `±` labels are
-median absolute deviation (MAD), which prevents an isolated interference run
-from dominating the plotted spread. The raw JSON retains every sample.
+The publication figures use medians, never raw arithmetic averages. Every CPU
+and Metal comparison row contains ten fresh processes. Each round schedules
+every implementation/mode once in a deterministic shuffled order. Whiskers and
+`±` labels report median absolute deviation (MAD), which prevents an isolated
+interference run from dominating the plotted spread. No samples were removed
+or replaced; the raw JSON retains the process order, command, stdout, checksum,
+fault count, and throughput for every run.
 
-MAD is a robust descriptive error bar, not a confidence interval. Three
-charted runs are too few to justify a precise distributional claim. No
-p-value or claim of statistical significance is made. Evidence tables outside
-the poster charts may still report all runs and observed min-max ranges.
+MAD is a robust descriptive error bar, not a confidence interval. Ten processes
+are enough to make these poster summaries substantially less fragile than the
+old n=3 windows, but still do not justify p-values or claims of statistical
+significance. Tables below also report observed min-max where useful.
 
 ## Headline matched comparison
 
@@ -22,17 +24,16 @@ unchecked rows omit those checks.
 
 | Mode | Implementation | n | Median | Observed min-max |
 | --- | --- | ---: | ---: | ---: |
-| Checked | Mech SIMD/JIT | 3 | 145.573 M turns/s | 139.668-147.381 |
-| Checked | Rust packed SIMD | 3 | 146.509 M turns/s | 141.568-146.999 |
-| Unchecked | Mech SIMD/JIT | 3 | 165.830 M turns/s | 163.526-171.894 |
-| Unchecked | Rust packed SIMD | 3 | 163.866 M turns/s | 162.420-169.581 |
+| Checked | Mech SIMD/JIT | 10 | 151.323 M turns/s | 141.186-154.585 |
+| Checked | Rust packed SIMD | 10 | 149.941 M turns/s | 138.559-155.125 |
+| Unchecked | Mech SIMD/JIT | 10 | 184.137 M turns/s | 125.852-199.403 |
+| Unchecked | Rust packed SIMD | 10 | 170.490 M turns/s | 142.441-172.268 |
 
-Rust's checked median is 0.64% higher; Mech's unchecked median is 1.20% higher.
-The observed ranges overlap in both modes. The supported conclusion is that
-these retained runs show comparable throughput; they do not establish that
-either implementation is faster. Relative to unchecked execution, validation
-reduces median throughput by 12.2% for Mech and 10.6% for Rust in these
-campaigns.
+Mech's median is 0.92% higher checked and 8.00% higher unchecked. The observed
+ranges overlap in both modes. These are implementation/compiler results, not a
+claim that either language is intrinsically faster. Relative to unchecked
+execution, validation reduces median throughput by 17.8% for Mech and 12.1%
+for Rust in this campaign.
 
 ## Same-source CPU and Metal figure
 
@@ -43,36 +44,35 @@ and a synchronization boundary after every turn; CPU uses eight workers.
 
 | Device | Implementation | Checked median ± MAD | Unchecked median ± MAD |
 | --- | --- | ---: | ---: |
-| CPU | Mech Cranelift SIMD/JIT | 104.783 ± 6.092 | 110.469 ± 10.279 |
-| CPU | Taichi LLVM | 87.723 ± 0.441 | 95.759 ± 0.023 |
-| CPU | Halide native | 23.426 ± 0.026 | 23.940 ± 0.044 |
-| Metal | Mech generated MSL | 420.404 ± 3.491 | 419.523 ± 2.940 |
-| Metal | Taichi native Metal | 332.584 ± 0.581 | 409.530 ± 2.704 |
-| Metal | Halide Metal schedule | 292.500 ± 0.583 | 394.263 ± 0.053 |
+| CPU | Mech Cranelift SIMD/JIT | 141.362 ± 3.379 | 166.407 ± 4.134 |
+| CPU | Taichi LLVM | 88.344 ± 0.421 | 95.363 ± 0.316 |
+| CPU | Halide native | 22.526 ± 0.649 | 23.490 ± 0.092 |
+| Metal | Mech generated MSL | 409.765 ± 2.954 | 410.439 ± 4.921 |
+| Metal | Taichi native Metal | 342.872 ± 2.030 | 410.771 ± 3.794 |
+| Metal | Halide Metal schedule | 293.291 ± 5.583 | 398.765 ± 10.403 |
 
-Mech has the highest retained median in both modes on both devices. This is a
-descriptive result for the measured programs and sessions, not a claim that
-Mech is intrinsically faster. The compilers, CPU/GPU schedules, fault-status
-observation mechanisms, campaign dates, and system state differ. The figure
-puts that claim limit in-frame rather than relying on surrounding prose.
+Mech has the highest CPU and checked-Metal median. Taichi's unchecked-Metal
+median is 0.08% above Mech's, far below either MAD. This is descriptive, not a
+claim that any language is intrinsically faster. Compilers, schedules, and
+fault-status observation mechanisms differ.
 
 ## Cross-language CPU publication figure
 
 The full CPU figure extends the matched Mech–Rust anchor with Mojo, Julia,
 Futhark, Taichi, NumPy/Numba, and Halide. All eight run on the Apple M1 CPU
 with 500,000 filters × 40 turns, f32 state, and eight workers. Checked and
-unchecked modes remain separate, and every row uses the first three processes.
+unchecked modes remain separate, and every row uses ten fresh processes.
 
 | Implementation | Checked median ± MAD | Unchecked median ± MAD |
 | --- | ---: | ---: |
-| Rust | 146.509 ± 0.490 | 163.866 ± 1.446 |
-| Mech | 145.573 ± 1.808 | 165.830 ± 2.304 |
-| Mojo | 143.986 ± 0.144 | 145.219 ± 13.294 |
-| Julia | 128.544 ± 0.106 | 133.605 ± 3.149 |
-| Futhark | 108.903 ± 0.372 | 152.479 ± 1.386 |
-| Taichi | 87.723 ± 0.441 | 95.759 ± 0.023 |
-| NumPy/Numba | 80.323 ± 0.036 | 81.972 ± 0.270 |
-| Halide | 23.426 ± 0.026 | 23.940 ± 0.044 |
+| Mech | 151.323 ± 2.564 | 184.137 ± 8.125 |
+| Rust | 149.941 ± 2.494 | 170.490 ± 1.720 |
+| Julia | 129.047 ± 2.844 | 136.402 ± 1.077 |
+| Mojo | 119.291 ± 0.442 | 128.152 ± 0.229 |
+| Futhark | 97.897 ± 1.162 | 149.931 ± 1.370 |
+| Taichi | 88.344 ± 0.421 | 95.363 ± 0.316 |
+| NumPy/Numba | 79.380 ± 0.550 | 81.557 ± 0.350 |
+| Halide | 22.526 ± 0.649 | 23.490 ± 0.092 |
 
 Mech and Rust additionally match block-atomic rollback and fault metadata.
 Fault interfaces differ elsewhere. Taichi and Halide publish every turn while
@@ -86,66 +86,66 @@ The Metal figure fixes the Apple M1 GPU workload at 500,000 filters × 40 turns,
 resident f32 state, and synchronization after every turn. It compares complete
 compiler/runtime paths rather than isolated kernel languages.
 
-Every Metal row uses the first three retained processes.
+Every Metal row uses ten fresh processes.
 
 | Implementation | Checked median ± MAD | Unchecked median ± MAD |
 | --- | ---: | ---: |
-| Mech generated MSL | 420.404 ± 3.491 | 419.523 ± 2.940 |
-| Rust host + hand-written MSL | 418.602 ± 0.067 | 418.519 ± 1.816 |
-| Mojo native Metal, matched packed SoA | 404.932 ± 2.388 | 401.865 ± 0.444 |
-| Julia Metal.jl, matched packed SoA | 406.432 ± 0.626 | 409.896 ± 4.804 |
-| Taichi native Metal, matched packed SoA | 332.584 ± 0.581 | 409.530 ± 2.704 |
-| Halide Metal, matched packed SoA | 292.500 ± 0.583 | 394.263 ± 0.053 |
+| Rust host + hand-written MSL | 425.180 ± 3.083 | 422.890 ± 4.917 |
+| Julia Metal.jl, matched packed SoA | 410.420 ± 4.744 | 411.398 ± 13.386 |
+| Mech generated MSL | 409.765 ± 2.954 | 410.439 ± 4.921 |
+| Mojo native Metal, matched packed SoA | 406.038 ± 5.165 | 405.355 ± 6.941 |
+| Taichi native Metal, matched packed SoA | 342.872 ± 2.030 | 410.771 ± 3.794 |
+| Halide Metal, matched packed SoA | 293.291 ± 5.583 | 398.765 ± 10.403 |
 
 The Rust control adopts the direct Mech backend's resident SoA, 64-thread
 threadgroups, ping-pong publication, compact shared fault status, and per-turn
-command/wait boundary. The raw ranges overlap Mech's in both modes. This supports
-comparable generated-versus-hand-written Metal execution, not a Rust-to-Metal
-compiler claim: stable Rust hosts a hand-written MSL kernel here.
+command/wait boundary. Rust's median is 3.76% above Mech checked and 3.03%
+above it unchecked; raw observed ranges overlap. This supports comparable
+generated-versus-hand-written Metal execution, not a Rust-to-Metal compiler
+claim: stable Rust hosts a hand-written MSL kernel here.
 
 The new Julia control uses a component-major packed SoA and gives checked and
 unchecked modes identical resident buffers, bindings, 64-thread launch
 geometry, publication, and synchronization. Checked adds only the candidate
-predicates and shared two-word fault status. Its median checking cost is 0.09%
+predicates and shared two-word fault status. Its median checking cost is 0.24%
 and the observed ranges overlap. This replaces the older Julia path whose
 checked mode paid for extra bindings and host fault-array transport.
 
 The matched Mojo control uses the same physical strategy and reads its
 two-word status directly from Apple unified memory. Its checked and unchecked
-medians differ by 0.76%, with checked nominally higher, so no checking penalty
-is resolved. Matching the path raises checked performance from the archived
-244.493 result to 404.932 M turns/s in the equal window. The retained 215.945
-M/s unchecked interference sample remains in JSON but does not control the MAD
-whisker. Mojo remains 3.68% below Mech checked and 4.21% below unchecked.
+medians differ by 0.17%, so no checking penalty is resolved. Matching the path
+raises checked performance from the archived 244.493 result to 406.038 M/s.
+Mojo is 0.91% below Mech checked and 1.24% below unchecked, less than the
+reported MADs.
 
 The new Taichi control gives both modes the same packed component-major state,
 resident double buffers, launch geometry, and publication boundary. Its
 cumulative two-word fault status avoids a reset transfer but still requires a
 compact host-visible read after every synchronized checked turn. Checked is
-18.79% below unchecked at the median; this is a measured protocol/API cost,
+16.53% below unchecked at the median; this is a measured protocol/API cost,
 not an in-place-versus-ping-pong comparison.
 
 That exact source also targets the eight-worker LLVM CPU backend by changing
 one runtime option and selecting a CPU-contiguous packed axis order. The equal
-window measures 87.723 ± 0.441 M turns/s checked and 95.759 ± 0.023 unchecked.
+window measures 88.344 ± 0.421 M turns/s checked and 95.363 ± 0.316 unchecked.
 The result corroborates the archived 86.047 M/s Taichi CPU row. Its per-turn
 synchronization differs from the fused rows and is labeled accordingly in the
 full CPU panel.
 
 The matched Halide control raises the unchecked median from the archived
-212.283 to 394.263 M turns/s through packed resident state and ping-pong
+212.283 to 398.765 M turns/s through packed resident state and ping-pong
 publication. Halide 21's generated Metal interface uses a per-lane fault plane
 rather than the compact device-wide atomic status available to the other
 matched controls, leaving a 25.81% checked penalty that is visible in the
 reported result.
 
 The same Halide source selects an eight-worker host schedule. The equal window
-measures 23.426 ± 0.026 M turns/s checked and 23.940 ± 0.044 unchecked.
+measures 22.526 ± 0.649 M turns/s checked and 23.490 ± 0.092 unchecked.
 Alongside the same-source Taichi
 CPU/Metal pair and Mech's unchanged high-level EKF, this supports a focused
-backend-portability comparison. Mech has the highest retained median on both
-devices in these runs; the result remains descriptive because schedules,
-compiler versions, and status-observation APIs differ.
+backend-portability comparison. Mech leads both CPU modes and checked Metal;
+Taichi is 0.08% higher on unchecked Metal, far below either MAD. The result
+remains descriptive because schedules, compilers, and status APIs differ.
 
 ## Mech backend publication figure
 
@@ -157,9 +157,9 @@ fine rankings between rows.
 
 | Backend | Workload | n | Median | Observed min-max |
 | --- | --- | ---: | ---: | ---: |
-| Direct Metal GPU | 500k × 40 | 5 | 422.702 M turns/s | 401.943-428.966 |
+| Direct Metal GPU | 500k × 40 | 10 | 409.765 M turns/s | 365.479-423.398 |
 | WGPU on Metal | 500k × 40 | 3 | 152.972 M turns/s | 152.314-160.313 |
-| SIMD/JIT CPU, 8 workers | 500k × 40 | 3 | 104.783 M turns/s | 98.691-128.144 |
+| SIMD/JIT CPU, 8 workers | 500k × 40 | 10 | 141.362 M turns/s | 122.781-144.882 |
 | SIMD/JIT CPU, 1 worker | 10k × 20 | 3 | 41.496 M turns/s | 41.202-41.508 |
 | Cranelift SIMD AOT CPU | 10k × 200 | 7 | 34.863 M turns/s | 34.847-34.927 |
 | Cranelift JIT CPU | 10k × 20 | 5 | 14.618 M turns/s | 14.068-14.641 |

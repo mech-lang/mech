@@ -57,17 +57,61 @@ def close(actual: float, expected: float, tolerance: float = 0.005) -> None:
         raise AssertionError(f"expected {expected}, found {actual}")
 
 
-def first_samples(samples: list[float], count: int) -> list[float]:
-    if len(samples) < count:
-        raise AssertionError(f"need {count} chart samples, found {len(samples)}")
-    return samples[:count]
-
-
 def check_distribution(samples: list[float], expected: dict, prefix: str) -> None:
     close(statistics.median(samples), expected[f"{prefix}_million_turns_per_second"], 0.0005)
+    mad_key = f"{prefix}_median_absolute_deviation_million_turns_per_second"
+    if mad_key in expected:
+        median = statistics.median(samples)
+        close(
+            statistics.median(abs(sample - median) for sample in samples),
+            expected[mad_key],
+            0.0005,
+        )
     observed = expected[f"{prefix}_observed_range_million_turns_per_second"]
     close(min(samples), observed[0], 0.0005)
     close(max(samples), observed[1], 0.0005)
+
+
+def check_campaign(data: dict, device: str) -> dict:
+    """Validate the complete fresh-process campaign, including every raw sample."""
+    configuration = data["configuration"]
+    assert configuration["samples_per_implementation_mode"] == 10
+    assert configuration["outlier_policy"] == "No samples removed or replaced."
+    assert configuration["instances"] == 500_000
+    assert configuration["turns"] == 40
+    assert configuration["workers"] == 8
+    for source, expected_hash in data["sources"].items():
+        if sha256(ROOT / source) != expected_hash:
+            raise AssertionError(f"n=10 campaign source hash changed: {source}")
+
+    campaign = data["campaigns"][device]
+    assert len(campaign["run_order"]) == 10
+    assert all(len(order) == len(campaign["run_order"][0]) for order in campaign["run_order"])
+    for name, row in campaign["rows"].items():
+        for mode in ("checked", "unchecked"):
+            lane = row[mode]
+            samples = lane["samples_million_ekf_turns_per_second"]
+            assert len(samples) == 10
+            assert len(lane["records"]) == 10
+            assert lane["faults"] == [0] * 10
+            assert [record["round"] for record in lane["records"]] == list(range(1, 11))
+            assert samples == [
+                record["throughput_million_ekf_turns_per_second"]
+                for record in lane["records"]
+            ]
+            close(statistics.median(samples), lane["median_million_ekf_turns_per_second"], 0.0000005)
+            mad = statistics.median(
+                abs(sample - statistics.median(samples)) for sample in samples
+            )
+            close(
+                mad,
+                lane["median_absolute_deviation_million_ekf_turns_per_second"],
+                0.0000005,
+            )
+            assert [min(samples), max(samples)] == lane[
+                "observed_range_million_ekf_turns_per_second"
+            ]
+    return campaign["rows"]
 
 
 def main() -> None:
@@ -86,30 +130,56 @@ def main() -> None:
     assert counts["ekf.mec"]["normalized_characters"] == matched["mech_normalized_source_characters"]
     assert counts["rust_simd.rs"]["normalized_characters"] == matched["rust_normalized_source_characters"]
 
+    equal_cpu = load_json(ROOT / manifest["selected_evidence"]["equal_n10_cpu"])
+    equal_cpu_rows = check_campaign(equal_cpu, "cpu")
+    equal_metal = load_json(ROOT / manifest["selected_evidence"]["equal_n10_metal"])
+    equal_metal_rows = check_campaign(equal_metal, "metal")
     fused = load_json(ARCHIVE / "results/apple-m1-fused-reference-controls-2026-08-31.json")
-    mech_samples = fused["rows"]["mech_fused_checked"]["throughput_millions"]
-    rust_samples = fused["rows"]["rust_fused_checked"]["throughput_millions"]
-    assert mech_samples == matched["mech_samples_million_turns_per_second"]
-    assert rust_samples == matched["rust_samples_million_turns_per_second"]
+    mech_samples = equal_cpu_rows["Mech fused SIMD/JIT"]["checked"][
+        "samples_million_ekf_turns_per_second"
+    ]
+    rust_samples = equal_cpu_rows["Rust packed SIMD"]["checked"][
+        "samples_million_ekf_turns_per_second"
+    ]
+    for actual, expected in zip(
+        mech_samples, matched["mech_samples_million_turns_per_second"], strict=True
+    ):
+        close(actual, expected, 0.0000005)
+    for actual, expected in zip(
+        rust_samples, matched["rust_samples_million_turns_per_second"], strict=True
+    ):
+        close(actual, expected, 0.0000005)
     assert len(mech_samples) == matched["retained_process_runs_per_implementation"]
     assert len(rust_samples) == matched["retained_process_runs_per_implementation"]
     check_distribution(mech_samples, matched, "mech")
     check_distribution(rust_samples, matched, "rust")
     mech = statistics.median(mech_samples)
     rust = statistics.median(rust_samples)
+    close(
+        (mech / rust - 1.0) * 100.0,
+        matched["mech_throughput_advantage_percent"],
+        0.0001,
+    )
 
     matched_unchecked = manifest["matched_unchecked_comparison"]
-    persistent = load_json(ROOT / manifest["selected_evidence"]["matched_mech_unchecked"])
-    mech_unchecked_samples = persistent["rows"]["fused_unchecked_block"][
-        "throughput_millions"
+    mech_unchecked_samples = equal_cpu_rows["Mech fused SIMD/JIT"]["unchecked"][
+        "samples_million_ekf_turns_per_second"
     ]
-    rust_unchecked_samples = fused["rows"]["rust_fused"]["throughput_millions"]
-    assert mech_unchecked_samples == matched_unchecked[
-        "mech_samples_million_turns_per_second"
+    rust_unchecked_samples = equal_cpu_rows["Rust packed SIMD"]["unchecked"][
+        "samples_million_ekf_turns_per_second"
     ]
-    assert rust_unchecked_samples == matched_unchecked[
-        "rust_samples_million_turns_per_second"
-    ]
+    for actual, expected in zip(
+        mech_unchecked_samples,
+        matched_unchecked["mech_samples_million_turns_per_second"],
+        strict=True,
+    ):
+        close(actual, expected, 0.0000005)
+    for actual, expected in zip(
+        rust_unchecked_samples,
+        matched_unchecked["rust_samples_million_turns_per_second"],
+        strict=True,
+    ):
+        close(actual, expected, 0.0000005)
     assert len(mech_unchecked_samples) == matched_unchecked[
         "retained_process_runs_per_implementation"
     ]
@@ -235,6 +305,7 @@ def main() -> None:
     mojo = load_json(ROOT / manifest["selected_evidence"]["matched_mojo_cpu"])
     mojo_cpu = mojo["rows"]["Mojo fused SIMD-4, 8 workers"]
     futhark = load_json(ROOT / manifest["selected_evidence"]["matched_futhark_cpu"])
+    persistent = load_json(ROOT / manifest["selected_evidence"]["matched_mech_unchecked"])
     assert fused["configuration"]["instances"] == 500_000
     assert fused["configuration"]["turns"] == 40
     assert fused["configuration"]["workers"] == 8
@@ -246,61 +317,21 @@ def main() -> None:
     assert futhark["configuration"]["instances"] == 500_000
     assert futhark["configuration"]["turns"] == 40
     assert futhark["configuration"]["workers"] == 8
-    chart_taichi_cpu = load_json(ROOT / manifest["selected_evidence"]["taichi_cpu"])
-    chart_halide_cpu = load_json(ROOT / manifest["selected_evidence"]["halide_cpu"])
     cross_samples = {
-        "Mech · checked": first_samples(mech_samples, 3),
-        "Mech · unchecked": first_samples(mech_unchecked_samples, 3),
-        "Rust · checked": first_samples(rust_samples, 3),
-        "Rust · unchecked": first_samples(rust_unchecked_samples, 3),
-        "Mojo · checked": first_samples(
-            mojo_cpu["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Mojo · unchecked": first_samples(
-            mojo_cpu["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Julia · checked": first_samples(
-            fused["rows"]["julia_fused_checked"]["throughput_millions"], 3
-        ),
-        "Julia · unchecked": first_samples(
-            fused["rows"]["julia_fused"]["throughput_millions"], 3
-        ),
-        "Futhark · checked": first_samples(
-            futhark["rows"]["checked"]["throughput_millions"], 3
-        ),
-        "Futhark · unchecked": first_samples(
-            futhark["rows"]["unchecked"]["throughput_millions"], 3
-        ),
-        "Taichi · checked": first_samples(
-            chart_taichi_cpu["rows"]["checked"][
-                "samples_million_ekf_turns_per_second"
-            ],
-            3,
-        ),
-        "Taichi · unchecked": first_samples(
-            chart_taichi_cpu["rows"]["unchecked"][
-                "samples_million_ekf_turns_per_second"
-            ],
-            3,
-        ),
-        "NumPy/Numba · checked": first_samples(
-            fused["rows"]["numba_fused_checked"]["throughput_millions"], 3
-        ),
-        "NumPy/Numba · unchecked": first_samples(
-            fused["rows"]["numba_fused"]["throughput_millions"], 3
-        ),
-        "Halide · checked": first_samples(
-            chart_halide_cpu["rows"]["checked"][
-                "samples_million_ekf_turns_per_second"
-            ],
-            3,
-        ),
-        "Halide · unchecked": first_samples(
-            chart_halide_cpu["rows"]["unchecked"][
-                "samples_million_ekf_turns_per_second"
-            ],
-            3,
-        ),
+        f"{chart_label} · {mode}": equal_cpu_rows[campaign_label][mode][
+            "samples_million_ekf_turns_per_second"
+        ]
+        for chart_label, campaign_label in (
+            ("Mech", "Mech fused SIMD/JIT"),
+            ("Rust", "Rust packed SIMD"),
+            ("Mojo", "Mojo SIMD-4"),
+            ("Julia", "Julia SIMD.jl"),
+            ("Futhark", "Futhark ISPC AOT"),
+            ("Taichi", "Taichi LLVM CPU"),
+            ("NumPy/Numba", "NumPy/Numba"),
+            ("Halide", "Halide native CPU"),
+        )
+        for mode in ("checked", "unchecked")
     }
 
     rust_metal = load_json(ROOT / manifest["selected_evidence"]["rust_metal"])
@@ -430,42 +461,18 @@ def main() -> None:
     assert halide_cpu["configuration"]["instances"] == 500_000
     assert halide_cpu["configuration"]["turns"] == 40
     metal_samples = {
-        "Mech · checked": first_samples(
-            direct_row["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Mech · unchecked": first_samples(
-            direct_row["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Rust + MSL · checked": first_samples(
-            rust_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Rust + MSL · unchecked": first_samples(
-            rust_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Mojo · checked": first_samples(
-            mojo_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Mojo · unchecked": first_samples(
-            mojo_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Julia · checked": first_samples(
-            julia_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Julia · unchecked": first_samples(
-            julia_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Taichi · checked": first_samples(
-            taichi_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Taichi · unchecked": first_samples(
-            taichi_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Halide · checked": first_samples(
-            halide_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
-        ),
-        "Halide · unchecked": first_samples(
-            halide_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
-        ),
+        f"{chart_label} · {mode}": equal_metal_rows[campaign_label][mode][
+            "samples_million_ekf_turns_per_second"
+        ]
+        for chart_label, campaign_label in (
+            ("Mech", "Mech generated MSL"),
+            ("Rust + MSL", "Rust + hand-written MSL"),
+            ("Mojo", "Mojo native Metal"),
+            ("Julia", "Julia Metal.jl"),
+            ("Taichi", "Taichi native Metal"),
+            ("Halide", "Halide Metal schedule"),
+        )
+        for mode in ("checked", "unchecked")
     }
 
     runtime = load_json(ROOT / manifest["selected_evidence"]["mech_runtime_backends"])
@@ -474,11 +481,13 @@ def main() -> None:
     scalar = load_json(ROOT / manifest["selected_evidence"]["mech_scalar_and_jit"])
     aot = load_json(ROOT / manifest["selected_evidence"]["mech_aot"])
     mech_backend_samples = {
-        "Direct Metal GPU": direct_row["checked"]["samples_million_ekf_turns_per_second"],
+        "Direct Metal GPU": equal_metal_rows["Mech generated MSL"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
         "WGPU on Metal": runtime_rows["Mech WGPU GPU, checked"]["samples"],
-        "SIMD/JIT CPU · 8 workers": runtime_rows[
-            "Mech SIMD/JIT CPU, checked (8 workers)"
-        ]["samples"],
+        "SIMD/JIT CPU · 8 workers": equal_cpu_rows["Mech per-turn SIMD/JIT"][
+            "checked"
+        ]["samples_million_ekf_turns_per_second"],
         "SIMD/JIT CPU · 1 worker": simd["rows"]["checked"]["throughput_millions"],
         "Cranelift SIMD AOT CPU": dylib["rows"]["Mech Cranelift SIMD AOT"]
         ["throughput_million_ekf_turns_per_second"]["samples"],
@@ -492,44 +501,26 @@ def main() -> None:
         ],
     }
     portable_cpu_samples = {
-        "Mech · checked": first_samples(runtime_rows[
-            "Mech SIMD/JIT CPU, checked (8 workers)"
-        ]["samples"], 3),
-        "Mech · unchecked": first_samples(runtime_rows[
-            "Mech SIMD/JIT CPU, unchecked (8 workers)"
-        ]["samples"], 3),
-        "Taichi · checked": first_samples(taichi_cpu["rows"]["checked"][
+        f"{chart_label} · {mode}": equal_cpu_rows[campaign_label][mode][
             "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Taichi · unchecked": first_samples(taichi_cpu["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Halide · checked": first_samples(halide_cpu["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Halide · unchecked": first_samples(halide_cpu["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
+        ]
+        for chart_label, campaign_label in (
+            ("Mech", "Mech per-turn SIMD/JIT"),
+            ("Taichi", "Taichi LLVM CPU"),
+            ("Halide", "Halide native CPU"),
+        )
+        for mode in ("checked", "unchecked")
     }
     portable_metal_samples = {
-        "Mech · checked": first_samples(direct_row["checked"][
+        f"{chart_label} · {mode}": equal_metal_rows[campaign_label][mode][
             "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Mech · unchecked": first_samples(direct_row["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Taichi · checked": first_samples(taichi_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Taichi · unchecked": first_samples(taichi_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Halide · checked": first_samples(halide_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
-        "Halide · unchecked": first_samples(halide_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ], 3),
+        ]
+        for chart_label, campaign_label in (
+            ("Mech", "Mech generated MSL"),
+            ("Taichi", "Taichi native Metal"),
+            ("Halide", "Halide Metal schedule"),
+        )
+        for mode in ("checked", "unchecked")
     }
 
     for chart_name, samples_by_row in (
@@ -567,14 +558,14 @@ def main() -> None:
                 f"rendered chart must rely on the legend, not C/U or n labels: {chart_name}"
             )
 
-    if {len(samples) for samples in cross_samples.values()} != {3}:
-        raise AssertionError("full CPU chart must use equal three-process windows")
-    if {len(samples) for samples in metal_samples.values()} != {3}:
-        raise AssertionError("Metal chart must use equal three-process windows")
-    if {len(samples) for samples in portable_cpu_samples.values()} != {3}:
-        raise AssertionError("portable CPU chart must use equal three-process windows")
-    if {len(samples) for samples in portable_metal_samples.values()} != {3}:
-        raise AssertionError("portable Metal chart must use equal three-process windows")
+    if {len(samples) for samples in cross_samples.values()} != {10}:
+        raise AssertionError("full CPU chart must use equal ten-process windows")
+    if {len(samples) for samples in metal_samples.values()} != {10}:
+        raise AssertionError("Metal chart must use equal ten-process windows")
+    if {len(samples) for samples in portable_cpu_samples.values()} != {10}:
+        raise AssertionError("portable CPU chart must use equal ten-process windows")
+    if {len(samples) for samples in portable_metal_samples.values()} != {10}:
+        raise AssertionError("portable Metal chart must use equal ten-process windows")
 
     readme = (HERE / "README.md").read_text(encoding="utf-8")
     embedded_figures = re.findall(r"^!\[.*?\]\((.*?)\)$", readme, flags=re.MULTILINE)

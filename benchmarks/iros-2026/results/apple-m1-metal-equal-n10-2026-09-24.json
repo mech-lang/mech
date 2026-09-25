@@ -1,0 +1,2662 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24T23:07:36.476519-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "device": "Apple M1 CPU and integrated GPU"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "workers": 8,
+    "samples_per_implementation_mode": 10,
+    "summary_statistic": "median",
+    "uncertainty_statistic": "median absolute deviation",
+    "measurement_order": "Each round contains every implementation/mode once in deterministic shuffled order; CPU and Metal are separate campaigns.",
+    "warmup_turns": 5,
+    "outlier_policy": "No samples removed or replaced."
+  },
+  "mech_evidence_revisions": {
+    "cpu_fused_and_per_turn": "eedc1c75b5a780a92d3f50f094be873f93bca6b9",
+    "direct_metal": "45a21a62d4f0e68adc40bb537a8f26e1d11df7d5",
+    "cpu_harness_patch": "benchmarks/iros-2026/mech-cpu-n10-validation-tolerance.patch",
+    "cpu_harness_patch_scope": "Raises only the untimed 40-turn scalar-vs-SIMD validation tolerance from 1e-4 to 2e-4; measured code and timed regions are unchanged."
+  },
+  "binary_sha256": {
+    "mech_cpu": "5bd671420b19d8d9e402182f222b88e5ae051bb5326ab7596ffe93235f2ae5fd",
+    "mech_metal": "a1123e758e3094c525d08faa39c429505846971cbb71859c666cd109142aa4bf",
+    "rust_cpu": "00ab6c4fc8430d7d2d4d766ef991f3e3ff8346f8cf174c94d0b736817771da9c",
+    "rust_metal": "ac9c95ea7f8ed1f63d26f6bd35ad36d2d9e96dcc39085b79a642bfd4f87d1637",
+    "mojo_cpu": "182652fdf62ae0d6f28017bd71ede35dcff236f568c49aaaa8519aba1e7a1e40",
+    "mojo_metal": "6da55befca6fc55d5b00e3613070d01bdf8a27009425d39aa1fa91220ed92f62",
+    "futhark_cpu": "d26c63c5a38f26486da8a68637f55f189de0920371b4afd0d8c6b2901d417bf9",
+    "halide": "d09d1ee8b579d322de7b0f044a5faa9e227830a368862d677c635b71b79842db"
+  },
+  "toolchains": {
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "julia": "julia version 1.12.6",
+    "futhark": "Futhark 0.27.1.\nCompiled with GHC 9.14.1.\n\nCopyright (C) DIKU, University of Copenhagen, released under the ISC license.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.",
+    "ispc": "Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.31.0 (build commit  @ 20260625, LLVM 22.1.8)",
+    "python": "Python 3.12.14",
+    "python_packages": "numpy 2.2.6; numba 0.61.2; taichi 1.7.4",
+    "halide": "halide 21.0.0_1",
+    "mojo": "Mojo 1.1.0 (8189361e); MAX 26.6.0"
+  },
+  "sources": {
+    "benchmarks/archive/compute/parallel-ekf/minimal/rust_simd.rs": "3027bd5f68d7bc98f1b81c1bb43fc85acc0b6b915e10a9edd535d56cdc673a9e",
+    "benchmarks/archive/compute/parallel-ekf/minimal/julia_simd_threads.jl": "02eea78d3a802241577fcf68bb16feef7b08f121125c71cbf01f56e6a513acba",
+    "benchmarks/archive/compute/parallel-ekf/minimal/numpy_numba.py": "de3c6036e87b833e489916bef855665b0af5f8ef172b3cb7686ca39d7c149260",
+    "benchmarks/archive/compute/parallel-ekf/minimal/futhark_ekf.fut": "8f662c6bc6c9534551d3c7a8de451931e8076c94b2953531133fcd26eac4a963",
+    "benchmarks/archive/compute/parallel-ekf/mojo_simd.mojo": "1a43326cae3cd2cf1a692599c6eaffca7d35b8430f2c79f903d5e3cfd71ecabd",
+    "benchmarks/iros-2026/taichi-metal-matched.py": "01afd8a4f8fa564f5c078453df42fd1a72ecb8e29c9a8e88de1ed7743884e635",
+    "benchmarks/iros-2026/halide-metal-matched.cpp": "5941d8acbe6e9d04956799d818524d687166102035813c2967b0ab8bb5a99e89",
+    "benchmarks/iros-2026/mojo-metal-matched.mojo": "b0c9626f0ce10c145cdd20b885e3425030341ebc982ab3258d1a8d2c0f3054c2",
+    "benchmarks/iros-2026/julia-metal-matched.jl": "c81d575432fa346d7ed4837f3b67d832e840d734a2a3a8c10a69cece23f5566e",
+    "benchmarks/iros-2026/rust-metal/src/main.rs": "61ea88b8f921e5fab233e7334d2a5a15d96ec3fd9e397735c216fbf3f4044d1c",
+    "benchmarks/iros-2026/rust-metal/src/ekf.metal": "04df6a6bc2bd225aa62dd868a6214f8bf55d0b6d6d5673720c95f3a60155e923"
+  },
+  "campaigns": {
+    "metal": {
+      "random_seed": 20261924,
+      "run_order": [
+        [
+          "Taichi checked",
+          "Rust + MSL unchecked",
+          "Rust + MSL checked",
+          "Halide unchecked",
+          "Julia checked",
+          "Halide checked",
+          "Taichi unchecked",
+          "Julia unchecked",
+          "Mojo unchecked",
+          "Mojo checked",
+          "Mech paired modes"
+        ],
+        [
+          "Taichi checked",
+          "Julia checked",
+          "Julia unchecked",
+          "Rust + MSL unchecked",
+          "Mojo checked",
+          "Mech paired modes",
+          "Mojo unchecked",
+          "Halide unchecked",
+          "Halide checked",
+          "Taichi unchecked",
+          "Rust + MSL checked"
+        ],
+        [
+          "Rust + MSL unchecked",
+          "Mojo checked",
+          "Rust + MSL checked",
+          "Taichi unchecked",
+          "Taichi checked",
+          "Halide unchecked",
+          "Mech paired modes",
+          "Julia checked",
+          "Mojo unchecked",
+          "Halide checked",
+          "Julia unchecked"
+        ],
+        [
+          "Mech paired modes",
+          "Julia checked",
+          "Julia unchecked",
+          "Mojo checked",
+          "Halide checked",
+          "Rust + MSL unchecked",
+          "Halide unchecked",
+          "Taichi checked",
+          "Mojo unchecked",
+          "Taichi unchecked",
+          "Rust + MSL checked"
+        ],
+        [
+          "Mojo checked",
+          "Halide unchecked",
+          "Rust + MSL checked",
+          "Julia unchecked",
+          "Taichi checked",
+          "Julia checked",
+          "Mech paired modes",
+          "Rust + MSL unchecked",
+          "Halide checked",
+          "Mojo unchecked",
+          "Taichi unchecked"
+        ],
+        [
+          "Rust + MSL unchecked",
+          "Halide checked",
+          "Taichi checked",
+          "Halide unchecked",
+          "Julia unchecked",
+          "Rust + MSL checked",
+          "Mojo checked",
+          "Mech paired modes",
+          "Julia checked",
+          "Mojo unchecked",
+          "Taichi unchecked"
+        ],
+        [
+          "Rust + MSL unchecked",
+          "Taichi unchecked",
+          "Julia checked",
+          "Taichi checked",
+          "Mojo unchecked",
+          "Mojo checked",
+          "Rust + MSL checked",
+          "Mech paired modes",
+          "Halide checked",
+          "Halide unchecked",
+          "Julia unchecked"
+        ],
+        [
+          "Mojo unchecked",
+          "Halide checked",
+          "Rust + MSL unchecked",
+          "Mojo checked",
+          "Rust + MSL checked",
+          "Julia unchecked",
+          "Halide unchecked",
+          "Taichi unchecked",
+          "Julia checked",
+          "Taichi checked",
+          "Mech paired modes"
+        ],
+        [
+          "Julia checked",
+          "Taichi checked",
+          "Julia unchecked",
+          "Halide unchecked",
+          "Mojo unchecked",
+          "Mech paired modes",
+          "Halide checked",
+          "Taichi unchecked",
+          "Mojo checked",
+          "Rust + MSL unchecked",
+          "Rust + MSL checked"
+        ],
+        [
+          "Julia unchecked",
+          "Taichi unchecked",
+          "Mojo checked",
+          "Taichi checked",
+          "Mojo unchecked",
+          "Halide unchecked",
+          "Mech paired modes",
+          "Rust + MSL checked",
+          "Halide checked",
+          "Rust + MSL unchecked",
+          "Julia checked"
+        ]
+      ],
+      "rows": {
+        "Taichi native Metal": {
+          "checked": {
+            "samples_million_ekf_turns_per_second": [
+              342.2376965836366,
+              321.8948842265505,
+              344.1250016385122,
+              324.4867850919482,
+              343.50686137786226,
+              342.0104224866613,
+              345.2877176031121,
+              340.1261743089119,
+              346.97248076480395,
+              344.51747409543765
+            ],
+            "median_million_ekf_turns_per_second": 342.87227898074946,
+            "median_absolute_deviation_million_ekf_turns_per_second": 2.030316868525432,
+            "observed_range_million_ekf_turns_per_second": [
+              321.8948842265505,
+              346.97248076480395
+            ],
+            "checksums": [
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 342.2376965836366,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.058438916\nthroughput_million_ekf_turns_per_second: 342.2376965836366\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 1,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 321.8948842265505,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.062132084\nthroughput_million_ekf_turns_per_second: 321.8948842265505\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 2,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 344.1250016385122,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.058118416\nthroughput_million_ekf_turns_per_second: 344.1250016385122\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 3,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 324.4867850919482,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.061635792\nthroughput_million_ekf_turns_per_second: 324.4867850919482\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 4,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 343.50686137786226,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.058223000\nthroughput_million_ekf_turns_per_second: 343.50686137786226\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 5,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 342.0104224866613,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.058477750\nthroughput_million_ekf_turns_per_second: 342.0104224866613\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 6,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 345.2877176031121,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.057922709\nthroughput_million_ekf_turns_per_second: 345.2877176031121\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 7,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 340.1261743089119,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.058801708\nthroughput_million_ekf_turns_per_second: 340.1261743089119\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 8,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 346.97248076480395,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.057641459\nthroughput_million_ekf_turns_per_second: 346.97248076480395\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 9,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 344.51747409543765,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "checked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.058052208\nthroughput_million_ekf_turns_per_second: 344.51747409543765\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 10,
+                "schedule_position": 4
+              }
+            ]
+          },
+          "unchecked": {
+            "samples_million_ekf_turns_per_second": [
+              410.7127609426498,
+              417.7902001460351,
+              413.4014425818153,
+              404.4087343215743,
+              418.0634773631382,
+              410.82981228220325,
+              409.03036751234566,
+              384.2191586308377,
+              407.9693381018964,
+              415.5563535738861
+            ],
+            "median_million_ekf_turns_per_second": 410.77128661242654,
+            "median_absolute_deviation_million_ekf_turns_per_second": 3.7935077359948366,
+            "observed_range_million_ekf_turns_per_second": [
+              384.2191586308377,
+              418.0634773631382
+            ],
+            "checksums": [
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167,
+              133818339.99595167
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 410.7127609426498,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.048695833\nthroughput_million_ekf_turns_per_second: 410.7127609426498\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 1,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 417.7902001460351,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.047870917\nthroughput_million_ekf_turns_per_second: 417.7902001460351\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 2,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 413.4014425818153,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.048379125\nthroughput_million_ekf_turns_per_second: 413.4014425818153\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 3,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 404.4087343215743,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.049454916\nthroughput_million_ekf_turns_per_second: 404.4087343215743\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 4,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 418.0634773631382,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.047839625\nthroughput_million_ekf_turns_per_second: 418.0634773631382\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 5,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 410.82981228220325,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.048681959\nthroughput_million_ekf_turns_per_second: 410.82981228220325\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 6,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 409.03036751234566,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.048896125\nthroughput_million_ekf_turns_per_second: 409.03036751234566\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 7,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 384.2191586308377,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.052053625\nthroughput_million_ekf_turns_per_second: 384.2191586308377\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 8,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 407.9693381018964,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.049023292\nthroughput_million_ekf_turns_per_second: 407.9693381018964\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 9,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 415.5563535738861,
+                "checksum": 133818339.99595167,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-python/bin/python",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/taichi-metal-matched.py",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "--arch",
+                  "metal",
+                  "--block-dim",
+                  "64",
+                  "--cpu-threads",
+                  "8"
+                ],
+                "stdout": "[Taichi] version 1.7.4, llvm 15.0.7, commit b4b956fd, osx, python 3.12.14\n[Taichi] Starting on arch=metal\nimplementation: Taichi metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\ncpu_threads: 0\nelapsed_s: 0.048128250\nthroughput_million_ekf_turns_per_second: 415.5563535738861\nchecksum: 133818339.99595167\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 10,
+                "schedule_position": 2
+              }
+            ]
+          }
+        },
+        "Rust + hand-written MSL": {
+          "unchecked": {
+            "samples_million_ekf_turns_per_second": [
+              423.881482737,
+              399.146497062,
+              425.492679037,
+              408.785486873,
+              431.83564957,
+              424.828390041,
+              425.447431896,
+              391.941679078,
+              421.8982845,
+              415.658556115
+            ],
+            "median_million_ekf_turns_per_second": 422.8898836185,
+            "median_absolute_deviation_million_ekf_turns_per_second": 4.917061461000003,
+            "observed_range_million_ekf_turns_per_second": [
+              391.941679078,
+              431.83564957
+            ],
+            "checksums": [
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 423.881482737,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047183000\nthroughput_million_ekf_turns_per_second: 423.881482737\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 1,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 399.146497062,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.050106916\nthroughput_million_ekf_turns_per_second: 399.146497062\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 2,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 425.492679037,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047004334\nthroughput_million_ekf_turns_per_second: 425.492679037\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 3,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 408.785486873,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048925416\nthroughput_million_ekf_turns_per_second: 408.785486873\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 4,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 431.83564957,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.046313916\nthroughput_million_ekf_turns_per_second: 431.835649570\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 5,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 424.828390041,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047077833\nthroughput_million_ekf_turns_per_second: 424.828390041\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 6,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 425.447431896,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047009333\nthroughput_million_ekf_turns_per_second: 425.447431896\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 7,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 391.941679078,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.051028000\nthroughput_million_ekf_turns_per_second: 391.941679078\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 8,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 421.8982845,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047404791\nthroughput_million_ekf_turns_per_second: 421.898284500\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 9,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 415.658556115,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048116416\nthroughput_million_ekf_turns_per_second: 415.658556115\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 10,
+                "schedule_position": 10
+              }
+            ]
+          },
+          "checked": {
+            "samples_million_ekf_turns_per_second": [
+              427.369074522,
+              422.818454969,
+              431.858961082,
+              426.954335974,
+              428.983948729,
+              427.18763965,
+              423.406253346,
+              394.49644324,
+              415.699584884,
+              416.976497578
+            ],
+            "median_million_ekf_turns_per_second": 425.18029466,
+            "median_absolute_deviation_million_ekf_turns_per_second": 3.082746880000002,
+            "observed_range_million_ekf_turns_per_second": [
+              394.49644324,
+              431.858961082
+            ],
+            "checksums": [
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112,
+              133818339.14086112
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 427.369074522,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.046797958\nthroughput_million_ekf_turns_per_second: 427.369074522\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 1,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 422.818454969,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047301625\nthroughput_million_ekf_turns_per_second: 422.818454969\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 2,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 431.858961082,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.046311416\nthroughput_million_ekf_turns_per_second: 431.858961082\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 3,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 426.954335974,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.046843417\nthroughput_million_ekf_turns_per_second: 426.954335974\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 4,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 428.983948729,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.046621791\nthroughput_million_ekf_turns_per_second: 428.983948729\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 5,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 427.18763965,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.046817834\nthroughput_million_ekf_turns_per_second: 427.187639650\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 6,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 423.406253346,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047235958\nthroughput_million_ekf_turns_per_second: 423.406253346\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 7,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 394.49644324,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.050697542\nthroughput_million_ekf_turns_per_second: 394.496443240\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 8,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 415.699584884,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048111667\nthroughput_million_ekf_turns_per_second: 415.699584884\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 9,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 416.976497578,
+                "checksum": 133818339.14086112,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/rust-metal/target/release/iros-rust-metal-ekf",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "implementation: Rust host + hand-written MSL\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047964334\nthroughput_million_ekf_turns_per_second: 416.976497578\nchecksum: 133818339.140861124\nfaults: 0\nstate_bytes: 24000000\n",
+                "round": 10,
+                "schedule_position": 8
+              }
+            ]
+          }
+        },
+        "Halide Metal schedule": {
+          "unchecked": {
+            "samples_million_ekf_turns_per_second": [
+              400.1313791370259,
+              406.56466135491286,
+              411.4097669460351,
+              386.4612946936449,
+              407.267003616307,
+              405.5170595958009,
+              372.8250922024415,
+              380.1239496771389,
+              368.5537620521457,
+              397.39836800014814
+            ],
+            "median_million_ekf_turns_per_second": 398.764873568587,
+            "median_absolute_deviation_million_ekf_turns_per_second": 10.40285446133106,
+            "observed_range_million_ekf_turns_per_second": [
+              368.5537620521457,
+              411.4097669460351
+            ],
+            "checksums": [
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 400.1313791370259,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.049983583\nthroughput: 400131379.137025893\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 1,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 406.56466135491286,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.049192667\nthroughput: 406564661.354912877\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 2,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 411.4097669460351,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.048613333\nthroughput: 411409766.946035147\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 3,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 386.4612946936449,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.051751625\nthroughput: 386461294.693644881\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 4,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 407.267003616307,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.049107833\nthroughput: 407267003.616307020\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 5,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 405.5170595958009,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.049319750\nthroughput: 405517059.595800877\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 6,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 372.8250922024415,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.053644458\nthroughput: 372825092.202441514\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 7,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 380.1239496771389,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.052614417\nthroughput: 380123949.677138925\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 8,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 368.5537620521457,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.054266167\nthroughput: 368553762.052145720\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 9,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 397.39836800014814,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.050327333\nthroughput: 397398368.000148118\nchecksum: 133818339.748587012\nvalidation: unchecked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 10,
+                "schedule_position": 6
+              }
+            ]
+          },
+          "checked": {
+            "samples_million_ekf_turns_per_second": [
+              292.90742679815025,
+              299.9656944233573,
+              276.8974093852189,
+              283.72785431391816,
+              294.8906508605277,
+              297.78226509181735,
+              278.79793815542433,
+              278.88249330765683,
+              293.67461730489725,
+              294.8419262506583
+            ],
+            "median_million_ekf_turns_per_second": 293.2910220515238,
+            "median_absolute_deviation_million_ekf_turns_per_second": 5.582957706063553,
+            "observed_range_million_ekf_turns_per_second": [
+              276.8974093852189,
+              299.9656944233573
+            ],
+            "checksums": [
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701,
+              133818339.74858701
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 292.90742679815025,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.068280959\nthroughput: 292907426.798150241\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 1,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 299.9656944233573,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.066674291\nthroughput: 299965694.423357308\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 2,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 276.8974093852189,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.072228917\nthroughput: 276897409.385218918\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 3,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 283.72785431391816,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.070490083\nthroughput: 283727854.313918173\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 4,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 294.8906508605277,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.067821750\nthroughput: 294890650.860527754\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 5,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 297.78226509181735,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.067163167\nthroughput: 297782265.091817379\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 6,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 278.79793815542433,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.071736542\nthroughput: 278797938.155424356\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 7,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 278.88249330765683,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.071714792\nthroughput: 278882493.307656825\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 8,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 293.67461730489725,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.068102583\nthroughput: 293674617.304897249\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 9,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 294.8419262506583,
+                "checksum": 133818339.74858701,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-halide",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Halide metal matched packed SoA\ninstances: 500000\nturns: 40\nelapsed_s: 0.067832958\nthroughput: 294841926.250658274\nchecksum: 133818339.748587012\nvalidation: checked\nfaults: 0\nfault_word: 4294967295\nthreadgroup_size: 256\n",
+                "round": 10,
+                "schedule_position": 9
+              }
+            ]
+          }
+        },
+        "Julia Metal.jl": {
+          "checked": {
+            "samples_million_ekf_turns_per_second": [
+              413.83697873016564,
+              383.6439759350109,
+              376.9453939751272,
+              408.8422354471329,
+              418.212458327481,
+              416.48914684468133,
+              410.46024270801473,
+              413.01905446887037,
+              410.37882520771626,
+              400.95326639084425
+            ],
+            "median_million_ekf_turns_per_second": 410.4195339578655,
+            "median_absolute_deviation_million_ekf_turns_per_second": 4.743528829557988,
+            "observed_range_million_ekf_turns_per_second": [
+              376.9453939751272,
+              418.212458327481
+            ],
+            "checksums": [
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 413.83697873016564,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048328209\nthroughput: 4.1383697873016566e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 1,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 383.6439759350109,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.052131667\nthroughput: 3.8364397593501085e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 2,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 376.9453939751272,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.053058083\nthroughput: 3.769453939751272e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 3,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 408.8422354471329,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048918625\nthroughput: 4.088422354471329e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 4,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 418.212458327481,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.047822583\nthroughput: 4.18212458327481e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 5,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 416.48914684468133,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048020459\nthroughput: 4.164891468446813e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 6,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 410.46024270801473,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048725791\nthroughput: 4.104602427080147e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 7,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 413.01905446887037,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048423916\nthroughput: 4.1301905446887034e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 8,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 410.37882520771626,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048735458\nthroughput: 4.103788252077163e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 9,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 400.95326639084425,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "checked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.049881125\nthroughput: 4.009532663908442e8\nchecksum: 1.338183390170114e8\nvalidation: checked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 10,
+                "schedule_position": 11
+              }
+            ]
+          },
+          "unchecked": {
+            "samples_million_ekf_turns_per_second": [
+              423.8485417925364,
+              393.68173878515876,
+              425.7198656853824,
+              418.69618301695846,
+              419.3549766909924,
+              406.8106861926032,
+              389.89806855803874,
+              391.63180735631397,
+              380.68318355829336,
+              415.98599225409123
+            ],
+            "median_million_ekf_turns_per_second": 411.3983392233472,
+            "median_absolute_deviation_million_ekf_turns_per_second": 13.385864515612212,
+            "observed_range_million_ekf_turns_per_second": [
+              380.68318355829336,
+              425.7198656853824
+            ],
+            "checksums": [
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114,
+              133818339.0170114
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 423.8485417925364,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.047186667\nthroughput: 4.2384854179253644e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 1,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 393.68173878515876,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.050802458\nthroughput: 3.9368173878515875e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 2,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 425.7198656853824,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.04697925\nthroughput: 4.2571986568538237e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 3,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 418.69618301695846,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.047767333\nthroughput: 4.186961830169585e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 4,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 419.3549766909924,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.047692292\nthroughput: 4.1935497669099236e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 5,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 406.8106861926032,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.049162917\nthroughput: 4.0681068619260323e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 6,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 389.89806855803874,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.051295458\nthroughput: 3.898980685580388e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 7,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 391.63180735631397,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.051068375\nthroughput: 3.9163180735631394e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 8,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 380.68318355829336,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.052537125\nthroughput: 3.8068318355829334e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 9,
+                "schedule_position": 3
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 415.98599225409123,
+                "checksum": 133818339.0170114,
+                "faults": 0,
+                "command": [
+                  "/opt/homebrew/bin/julia",
+                  "--startup-file=no",
+                  "/private/tmp/mech-iros-workshop-20260924/benchmarks/iros-2026/julia-metal-matched.jl",
+                  "500000",
+                  "40",
+                  "unchecked"
+                ],
+                "stdout": "lane: Julia Metal GPU, matched packed SoA resident\ninstances: 500000\nturns: 40\nelapsed_s: 0.048078542\nthroughput: 4.159859922540912e8\nchecksum: 1.338183390170114e8\nvalidation: unchecked\nfaults: 0\nfault_word: 2147483647\nthreadgroup_size: 64\npublication: double-buffered in both modes\nfault_status: shared host-visible two-word buffer\n",
+                "round": 10,
+                "schedule_position": 1
+              }
+            ]
+          }
+        },
+        "Mojo native Metal": {
+          "unchecked": {
+            "samples_million_ekf_turns_per_second": [
+              410.5174572548698,
+              410.72822113607424,
+              370.9130023552976,
+              387.1916986099818,
+              412.8819157720892,
+              411.7090040759191,
+              403.1201499606958,
+              381.5264874763931,
+              364.99014526607783,
+              407.5893130082129
+            ],
+            "median_million_ekf_turns_per_second": 405.35473148445436,
+            "median_absolute_deviation_million_ekf_turns_per_second": 6.940728439549787,
+            "observed_range_million_ekf_turns_per_second": [
+              364.99014526607783,
+              412.8819157720892
+            ],
+            "checksums": [
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 410.5174572548698,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048719\nthroughput_million_ekf_turns_per_second: 410.5174572548698\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 1,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 410.72822113607424,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048694\nthroughput_million_ekf_turns_per_second: 410.72822113607424\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 2,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 370.9130023552976,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.053921\nthroughput_million_ekf_turns_per_second: 370.9130023552976\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 3,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 387.1916986099818,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.051654\nthroughput_million_ekf_turns_per_second: 387.1916986099818\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 4,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 412.8819157720892,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.04844\nthroughput_million_ekf_turns_per_second: 412.8819157720892\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 5,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 411.7090040759191,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048578\nthroughput_million_ekf_turns_per_second: 411.7090040759191\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 6,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 403.1201499606958,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049613\nthroughput_million_ekf_turns_per_second: 403.1201499606958\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 7,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 381.5264874763931,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.052421\nthroughput_million_ekf_turns_per_second: 381.5264874763931\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 8,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 364.99014526607783,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.054796\nthroughput_million_ekf_turns_per_second: 364.99014526607783\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 9,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 407.5893130082129,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "unchecked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: unchecked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049069\nthroughput_million_ekf_turns_per_second: 407.5893130082129\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 0\nresident_bytes: 54000008\n",
+                "round": 10,
+                "schedule_position": 5
+              }
+            ]
+          },
+          "checked": {
+            "samples_million_ekf_turns_per_second": [
+              405.03868119405405,
+              380.37999961962,
+              413.97582381188937,
+              401.72742794014255,
+              412.05678142448033,
+              420.35351730805604,
+              405.53144896386715,
+              377.90752602838086,
+              406.54538062811264,
+              407.67239446380887
+            ],
+            "median_million_ekf_turns_per_second": 406.03841479598987,
+            "median_absolute_deviation_million_ekf_turns_per_second": 5.1646767421688935,
+            "observed_range_million_ekf_turns_per_second": [
+              377.90752602838086,
+              420.35351730805604
+            ],
+            "checksums": [
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915,
+              133818338.61191915
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 405.03868119405405,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049378\nthroughput_million_ekf_turns_per_second: 405.03868119405405\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 1,
+                "schedule_position": 10
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 380.37999961962,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.052579\nthroughput_million_ekf_turns_per_second: 380.37999961962\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 2,
+                "schedule_position": 5
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 413.97582381188937,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048312\nthroughput_million_ekf_turns_per_second: 413.97582381188937\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 3,
+                "schedule_position": 2
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 401.72742794014255,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049785\nthroughput_million_ekf_turns_per_second: 401.72742794014255\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 4,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 412.05678142448033,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.048537\nthroughput_million_ekf_turns_per_second: 412.05678142448033\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 5,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 420.35351730805604,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.047579\nthroughput_million_ekf_turns_per_second: 420.35351730805604\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 6,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 405.53144896386715,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049318\nthroughput_million_ekf_turns_per_second: 405.53144896386715\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 7,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 377.90752602838086,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.052923\nthroughput_million_ekf_turns_per_second: 377.90752602838086\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 8,
+                "schedule_position": 4
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 406.54538062811264,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049195\nthroughput_million_ekf_turns_per_second: 406.54538062811264\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 9,
+                "schedule_position": 9
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 407.67239446380887,
+                "checksum": 133818338.61191915,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mojo-metal",
+                  "500000",
+                  "40",
+                  "checked",
+                  "64"
+                ],
+                "stdout": "implementation: Mojo native Metal matched\nmode: checked\ninstances: 500000\nturns: 40\nthreadgroup_size: 64\nelapsed_s: 0.049059\nthroughput_million_ekf_turns_per_second: 407.67239446380887\nchecksum: 133818338.61191915\nfaults: 0\nfault_word: 2147483647\nresident_bytes: 54000008\n",
+                "round": 10,
+                "schedule_position": 3
+              }
+            ]
+          }
+        },
+        "Mech generated MSL": {
+          "checked": {
+            "samples_million_ekf_turns_per_second": [
+              408.023,
+              385.481,
+              421.406,
+              423.398,
+              412.791,
+              411.06,
+              406.883,
+              412.606,
+              365.479,
+              408.469
+            ],
+            "median_million_ekf_turns_per_second": 409.7645,
+            "median_absolute_deviation_million_ekf_turns_per_second": 2.9540000000000077,
+            "observed_range_million_ekf_turns_per_second": [
+              365.479,
+              423.398
+            ],
+            "checksums": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 408.023,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 668.815 ms\nMetal pipeline/session setup: 237.114 ms\nMech direct Metal checked: 1.225 ms/turn\nMech direct Metal unchecked: 1.217 ms/turn\nMech direct Metal checked throughput: 408.023 million EKF-turns/s\nMech direct Metal unchecked throughput: 411.008 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 1,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 385.481,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 674.765 ms\nMetal pipeline/session setup: 250.638 ms\nMech direct Metal checked: 1.297 ms/turn\nMech direct Metal unchecked: 1.284 ms/turn\nMech direct Metal checked throughput: 385.481 million EKF-turns/s\nMech direct Metal unchecked throughput: 389.330 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 2,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 421.406,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 654.317 ms\nMetal pipeline/session setup: 232.267 ms\nMech direct Metal checked: 1.187 ms/turn\nMech direct Metal unchecked: 1.205 ms/turn\nMech direct Metal checked throughput: 421.406 million EKF-turns/s\nMech direct Metal unchecked throughput: 414.778 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 3,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 423.398,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 653.064 ms\nMetal pipeline/session setup: 234.491 ms\nMech direct Metal checked: 1.181 ms/turn\nMech direct Metal unchecked: 1.202 ms/turn\nMech direct Metal checked throughput: 423.398 million EKF-turns/s\nMech direct Metal unchecked throughput: 415.941 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 4,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 412.791,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 673.486 ms\nMetal pipeline/session setup: 240.197 ms\nMech direct Metal checked: 1.211 ms/turn\nMech direct Metal unchecked: 1.226 ms/turn\nMech direct Metal checked throughput: 412.791 million EKF-turns/s\nMech direct Metal unchecked throughput: 407.989 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 5,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 411.06,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 651.883 ms\nMetal pipeline/session setup: 234.648 ms\nMech direct Metal checked: 1.216 ms/turn\nMech direct Metal unchecked: 1.187 ms/turn\nMech direct Metal checked throughput: 411.060 million EKF-turns/s\nMech direct Metal unchecked throughput: 421.263 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 6,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 406.883,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 654.787 ms\nMetal pipeline/session setup: 234.964 ms\nMech direct Metal checked: 1.229 ms/turn\nMech direct Metal unchecked: 1.182 ms/turn\nMech direct Metal checked throughput: 406.883 million EKF-turns/s\nMech direct Metal unchecked throughput: 422.929 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 7,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 412.606,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 655.441 ms\nMetal pipeline/session setup: 237.132 ms\nMech direct Metal checked: 1.212 ms/turn\nMech direct Metal unchecked: 1.220 ms/turn\nMech direct Metal checked throughput: 412.606 million EKF-turns/s\nMech direct Metal unchecked throughput: 409.870 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 8,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 365.479,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 676.486 ms\nMetal pipeline/session setup: 263.110 ms\nMech direct Metal checked: 1.368 ms/turn\nMech direct Metal unchecked: 1.363 ms/turn\nMech direct Metal checked throughput: 365.479 million EKF-turns/s\nMech direct Metal unchecked throughput: 366.729 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 9,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 408.469,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 664.078 ms\nMetal pipeline/session setup: 246.855 ms\nMech direct Metal checked: 1.224 ms/turn\nMech direct Metal unchecked: 1.225 ms/turn\nMech direct Metal checked throughput: 408.469 million EKF-turns/s\nMech direct Metal unchecked throughput: 408.083 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 10,
+                "schedule_position": 7
+              }
+            ]
+          },
+          "unchecked": {
+            "samples_million_ekf_turns_per_second": [
+              411.008,
+              389.33,
+              414.778,
+              415.941,
+              407.989,
+              421.263,
+              422.929,
+              409.87,
+              366.729,
+              408.083
+            ],
+            "median_million_ekf_turns_per_second": 410.43899999999996,
+            "median_absolute_deviation_million_ekf_turns_per_second": 4.9205000000000325,
+            "observed_range_million_ekf_turns_per_second": [
+              366.729,
+              422.929
+            ],
+            "checksums": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "faults": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "records": [
+              {
+                "throughput_million_ekf_turns_per_second": 411.008,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 668.815 ms\nMetal pipeline/session setup: 237.114 ms\nMech direct Metal checked: 1.225 ms/turn\nMech direct Metal unchecked: 1.217 ms/turn\nMech direct Metal checked throughput: 408.023 million EKF-turns/s\nMech direct Metal unchecked throughput: 411.008 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 1,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 389.33,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 674.765 ms\nMetal pipeline/session setup: 250.638 ms\nMech direct Metal checked: 1.297 ms/turn\nMech direct Metal unchecked: 1.284 ms/turn\nMech direct Metal checked throughput: 385.481 million EKF-turns/s\nMech direct Metal unchecked throughput: 389.330 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 2,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 414.778,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 654.317 ms\nMetal pipeline/session setup: 232.267 ms\nMech direct Metal checked: 1.187 ms/turn\nMech direct Metal unchecked: 1.205 ms/turn\nMech direct Metal checked throughput: 421.406 million EKF-turns/s\nMech direct Metal unchecked throughput: 414.778 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 3,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 415.941,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 653.064 ms\nMetal pipeline/session setup: 234.491 ms\nMech direct Metal checked: 1.181 ms/turn\nMech direct Metal unchecked: 1.202 ms/turn\nMech direct Metal checked throughput: 423.398 million EKF-turns/s\nMech direct Metal unchecked throughput: 415.941 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 4,
+                "schedule_position": 1
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 407.989,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 673.486 ms\nMetal pipeline/session setup: 240.197 ms\nMech direct Metal checked: 1.211 ms/turn\nMech direct Metal unchecked: 1.226 ms/turn\nMech direct Metal checked throughput: 412.791 million EKF-turns/s\nMech direct Metal unchecked throughput: 407.989 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 5,
+                "schedule_position": 7
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 421.263,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 651.883 ms\nMetal pipeline/session setup: 234.648 ms\nMech direct Metal checked: 1.216 ms/turn\nMech direct Metal unchecked: 1.187 ms/turn\nMech direct Metal checked throughput: 411.060 million EKF-turns/s\nMech direct Metal unchecked throughput: 421.263 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 6,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 422.929,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 654.787 ms\nMetal pipeline/session setup: 234.964 ms\nMech direct Metal checked: 1.229 ms/turn\nMech direct Metal unchecked: 1.182 ms/turn\nMech direct Metal checked throughput: 406.883 million EKF-turns/s\nMech direct Metal unchecked throughput: 422.929 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 7,
+                "schedule_position": 8
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 409.87,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 655.441 ms\nMetal pipeline/session setup: 237.132 ms\nMech direct Metal checked: 1.212 ms/turn\nMech direct Metal unchecked: 1.220 ms/turn\nMech direct Metal checked throughput: 412.606 million EKF-turns/s\nMech direct Metal unchecked throughput: 409.870 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 8,
+                "schedule_position": 11
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 366.729,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 676.486 ms\nMetal pipeline/session setup: 263.110 ms\nMech direct Metal checked: 1.368 ms/turn\nMech direct Metal unchecked: 1.363 ms/turn\nMech direct Metal checked throughput: 365.479 million EKF-turns/s\nMech direct Metal unchecked throughput: 366.729 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 9,
+                "schedule_position": 6
+              },
+              {
+                "throughput_million_ekf_turns_per_second": 408.083,
+                "checksum": null,
+                "faults": 0,
+                "command": [
+                  "/private/tmp/iros-n10-mech-metal",
+                  "500000",
+                  "40",
+                  "1",
+                  "40"
+                ],
+                "stdout": "Mech direct Metal-only benchmark (no WGPU session)\nEKF instances: 500000\nturns: 40\nadapter: Apple Metal (direct command encoder)\nsource + artifact + scalarization: 664.078 ms\nMetal pipeline/session setup: 246.855 ms\nMech direct Metal checked: 1.224 ms/turn\nMech direct Metal unchecked: 1.225 ms/turn\nMech direct Metal checked throughput: 408.469 million EKF-turns/s\nMech direct Metal unchecked throughput: 408.083 million EKF-turns/s\nmaximum scalar/direct Metal checked absolute error: 1.221e-4\nmaximum scalar/direct Metal unchecked absolute error: 1.221e-4\nMech direct Metal unchecked checksum: 133818338.344719559\n",
+                "round": 10,
+                "schedule_position": 7
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

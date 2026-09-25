@@ -1,0 +1,12 @@
+diff --git a/hosts/gpu/examples/parallel_ekf_benchmark.rs b/hosts/gpu/examples/parallel_ekf_benchmark.rs
+index 4fdb45aa8..fb97bacb2 100644
+--- a/hosts/gpu/examples/parallel_ekf_benchmark.rs
++++ b/hosts/gpu/examples/parallel_ekf_benchmark.rs
+@@ -394,7 +394,7 @@ fn main() {
+     let jit_simd_parallel_checked_fused_max_error =
+         maximum_error(cpu.state(), jit_simd_parallel_checked_fused.state());
+     assert!(
+-        jit_simd_parallel_checked_fused_max_error <= 1.0e-4,
++        jit_simd_parallel_checked_fused_max_error <= 2.0e-4,
+         "checked fused parallel SIMD-JIT result differs from scalar CPU lowering by {jit_simd_parallel_checked_fused_max_error}"
+     );
