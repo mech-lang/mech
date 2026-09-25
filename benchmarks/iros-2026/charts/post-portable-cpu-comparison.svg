@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="700" viewBox="0 0 1800 700" role="img" aria-labelledby="portable-cpu-title portable-cpu-desc">
+<title id="portable-cpu-title">Same-source CPU backends: Mech, Taichi, and Halide</title>
+<desc id="portable-cpu-desc">Paired horizontal bars compare checked and unchecked median EKF throughput for Mech, Taichi, and Halide, each selecting this backend from the same application source used for its other device. Whiskers show observed minimum to maximum.</desc>
+<defs>
+</defs>
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>
+<text x="42" y="48" font-size="28" font-weight="700">Same-source CPU backends: Mech, Taichi, and Halide</text>
+<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers · synchronized publication after every turn</text>
+<text x="42" y="112" class="muted" font-size="13">Bars are medians; +high/−low and whiskers are the full observed process min–max, not confidence intervals.</text>
+<rect x="1090" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="1125" y="149" class="muted" font-size="14">checked</text>
+<rect x="1210" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="1245" y="149" class="muted" font-size="14">unchecked</text>
+<text x="1418" y="150" class="muted" font-size="13">median +high/−low M turns/s</text>
+<line x1="385.0" y1="177" x2="385.0" y2="512" class="grid"/>
+<text x="385.0" y="539" text-anchor="middle" class="axis">0</text>
+<line x1="539.6" y1="177" x2="539.6" y2="512" class="grid"/>
+<text x="539.6" y="539" text-anchor="middle" class="axis">20</text>
+<line x1="694.2" y1="177" x2="694.2" y2="512" class="grid"/>
+<text x="694.2" y="539" text-anchor="middle" class="axis">40</text>
+<line x1="848.8" y1="177" x2="848.8" y2="512" class="grid"/>
+<text x="848.8" y="539" text-anchor="middle" class="axis">60</text>
+<line x1="1003.5" y1="177" x2="1003.5" y2="512" class="grid"/>
+<text x="1003.5" y="539" text-anchor="middle" class="axis">80</text>
+<line x1="1158.1" y1="177" x2="1158.1" y2="512" class="grid"/>
+<text x="1158.1" y="539" text-anchor="middle" class="axis">100</text>
+<line x1="1312.7" y1="177" x2="1312.7" y2="512" class="grid"/>
+<text x="1312.7" y="539" text-anchor="middle" class="axis">120</text>
+<line x1="385" y1="249" x2="1390" y2="249" class="row-guide"/>
+<text x="361" y="201" text-anchor="end" class="label">Mech · Cranelift SIMD/JIT</text>
+<text x="361" y="223" text-anchor="end" class="detail">same .mec source</text>
+<rect x="385" y="183" width="810.1" height="18" rx="3" fill="#f4c430" opacity="0.95"><title>Mech · checked median: 104.783 million turns/s</title></rect>
+<line x1="1148.0" y1="192" x2="1375.7" y2="192" class="whisker"/>
+<line x1="1148.0" y1="186" x2="1148.0" y2="198" class="whisker"/>
+<line x1="1375.7" y1="186" x2="1375.7" y2="198" class="whisker"/>
+<text x="1418" y="197" class="value">C 104.8 +23.4/−6.1 · n=3</text>
+<rect x="385" y="209" width="854.0" height="18" rx="3" fill="#f4c430" opacity="0.48"><title>Mech · unchecked median: 110.469 million turns/s</title></rect>
+<line x1="1159.5" y1="218" x2="1417.2" y2="218" class="whisker"/>
+<line x1="1159.5" y1="212" x2="1159.5" y2="224" class="whisker"/>
+<line x1="1417.2" y1="212" x2="1417.2" y2="224" class="whisker"/>
+<text x="1418" y="223" class="value">U 110.5 +23.1/−10.3 · n=3</text>
+<line x1="385" y1="345" x2="1390" y2="345" class="row-guide"/>
+<text x="361" y="297" text-anchor="end" class="label">Taichi · LLVM CPU</text>
+<text x="361" y="319" text-anchor="end" class="detail">same .py source</text>
+<rect x="385" y="279" width="680.4" height="18" rx="3" fill="#e36b6b" opacity="0.95"><title>Taichi · checked median: 88.016 million turns/s</title></rect>
+<line x1="1058.3" y1="288" x2="1070.8" y2="288" class="whisker"/>
+<line x1="1058.3" y1="282" x2="1058.3" y2="294" class="whisker"/>
+<line x1="1070.8" y1="282" x2="1070.8" y2="294" class="whisker"/>
+<text x="1418" y="293" class="value">C 88.0 +0.7/−0.9 · n=7</text>
+<rect x="385" y="305" width="738.0" height="18" rx="3" fill="#e36b6b" opacity="0.48"><title>Taichi · unchecked median: 95.462 million turns/s</title></rect>
+<line x1="1054.2" y1="314" x2="1125.5" y2="314" class="whisker"/>
+<line x1="1054.2" y1="308" x2="1054.2" y2="320" class="whisker"/>
+<line x1="1125.5" y1="308" x2="1125.5" y2="320" class="whisker"/>
+<text x="1418" y="319" class="value">U 95.5 +0.3/−8.9 · n=7</text>
+<line x1="385" y1="441" x2="1390" y2="441" class="row-guide"/>
+<text x="361" y="393" text-anchor="end" class="label">Halide · native CPU</text>
+<text x="361" y="415" text-anchor="end" class="detail">same .cpp source</text>
+<rect x="385" y="375" width="179.6" height="18" rx="3" fill="#BD5E9E" opacity="0.95"><title>Halide · checked median: 23.234 million turns/s</title></rect>
+<line x1="558.6" y1="384" x2="566.7" y2="384" class="whisker"/>
+<line x1="558.6" y1="378" x2="558.6" y2="390" class="whisker"/>
+<line x1="566.7" y1="378" x2="566.7" y2="390" class="whisker"/>
+<text x="1418" y="389" class="value">C 23.2 +0.3/−0.8 · n=7</text>
+<rect x="385" y="401" width="184.1" height="18" rx="3" fill="#BD5E9E" opacity="0.48"><title>Halide · unchecked median: 23.809 million turns/s</title></rect>
+<line x1="568.0" y1="410" x2="570.4" y2="410" class="whisker"/>
+<line x1="568.0" y1="404" x2="568.0" y2="416" class="whisker"/>
+<line x1="570.4" y1="404" x2="570.4" y2="416" class="whisker"/>
+<text x="1418" y="415" class="value">U 23.8 +0.2/−0.1 · n=7</text>
+<line x1="385" y1="512" x2="1390" y2="512" class="grid"/>
+<text x="887.5" y="570" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>
+<text x="42" y="620" class="footnote">Same application source within each system: Mech .mec, Taichi .py, Halide .cpp; CPU/Metal selected without rewriting EKF equations.</text>
+<text x="42" y="647" class="footnote">Highest retained median in both modes is Mech; this is a descriptive result, not a language-speed claim.</text>
+<text x="42" y="674" class="footnote">Toolchains, compiler lowering, schedules, status observation, campaign dates, and system state differ. All samples reported zero faults.</text>
+</svg>

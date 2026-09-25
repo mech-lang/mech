@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="700" viewBox="0 0 1800 700" role="img" aria-labelledby="portable-gpu-title portable-gpu-desc">
+<title id="portable-gpu-title">Same-source Metal backends: Mech, Taichi, and Halide</title>
+<desc id="portable-gpu-desc">Paired horizontal bars compare checked and unchecked median EKF throughput for Mech, Taichi, and Halide, each selecting this backend from the same application source used for its other device. Whiskers show observed minimum to maximum.</desc>
+<defs>
+<pattern id="portable-gpu-mech" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#f4c430"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
+<pattern id="portable-gpu-taichi" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#e36b6b"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
+<pattern id="portable-gpu-halide" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect width="8" height="8" fill="#BD5E9E"/><path d="M0 0V8" stroke="#080c14" stroke-opacity="0.52" stroke-width="2"/></pattern>
+</defs>
+<rect width="100%" height="100%" fill="#080c14"/>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>
+<text x="42" y="48" font-size="28" font-weight="700">Same-source Metal backends: Mech, Taichi, and Halide</text>
+<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · resident GPU state · synchronized publication after every turn</text>
+<text x="42" y="112" class="muted" font-size="13">Bars are medians; +high/−low and whiskers are the full observed process min–max, not confidence intervals.</text>
+<rect x="1090" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="1125" y="149" class="muted" font-size="14">checked</text>
+<rect x="1210" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="1245" y="149" class="muted" font-size="14">unchecked</text>
+<text x="1418" y="150" class="muted" font-size="13">median +high/−low M turns/s</text>
+<line x1="385.0" y1="177" x2="385.0" y2="512" class="grid"/>
+<text x="385.0" y="539" text-anchor="middle" class="axis">0</text>
+<line x1="496.7" y1="177" x2="496.7" y2="512" class="grid"/>
+<text x="496.7" y="539" text-anchor="middle" class="axis">50</text>
+<line x1="608.3" y1="177" x2="608.3" y2="512" class="grid"/>
+<text x="608.3" y="539" text-anchor="middle" class="axis">100</text>
+<line x1="720.0" y1="177" x2="720.0" y2="512" class="grid"/>
+<text x="720.0" y="539" text-anchor="middle" class="axis">150</text>
+<line x1="831.7" y1="177" x2="831.7" y2="512" class="grid"/>
+<text x="831.7" y="539" text-anchor="middle" class="axis">200</text>
+<line x1="943.3" y1="177" x2="943.3" y2="512" class="grid"/>
+<text x="943.3" y="539" text-anchor="middle" class="axis">250</text>
+<line x1="1055.0" y1="177" x2="1055.0" y2="512" class="grid"/>
+<text x="1055.0" y="539" text-anchor="middle" class="axis">300</text>
+<line x1="1166.7" y1="177" x2="1166.7" y2="512" class="grid"/>
+<text x="1166.7" y="539" text-anchor="middle" class="axis">350</text>
+<line x1="1278.3" y1="177" x2="1278.3" y2="512" class="grid"/>
+<text x="1278.3" y="539" text-anchor="middle" class="axis">400</text>
+<line x1="1390.0" y1="177" x2="1390.0" y2="512" class="grid"/>
+<text x="1390.0" y="539" text-anchor="middle" class="axis">450</text>
+<line x1="385" y1="249" x2="1390" y2="249" class="row-guide"/>
+<text x="361" y="201" text-anchor="end" class="label">Mech · generated MSL</text>
+<text x="361" y="223" text-anchor="end" class="detail">same .mec source</text>
+<rect x="385" y="183" width="944.0" height="18" rx="3" fill="url(#portable-gpu-mech)" opacity="0.95"><title>Mech · checked median: 422.702 million turns/s</title></rect>
+<line x1="1282.7" y1="192" x2="1343.0" y2="192" class="whisker"/>
+<line x1="1282.7" y1="186" x2="1282.7" y2="198" class="whisker"/>
+<line x1="1343.0" y1="186" x2="1343.0" y2="198" class="whisker"/>
+<text x="1418" y="197" class="value">C 422.7 +6.3/−20.8 · n=5</text>
+<rect x="385" y="209" width="941.7" height="18" rx="3" fill="url(#portable-gpu-mech)" opacity="0.48"><title>Mech · unchecked median: 421.651 million turns/s</title></rect>
+<line x1="1201.8" y1="218" x2="1328.5" y2="218" class="whisker"/>
+<line x1="1201.8" y1="212" x2="1201.8" y2="224" class="whisker"/>
+<line x1="1328.5" y1="212" x2="1328.5" y2="224" class="whisker"/>
+<text x="1418" y="223" class="value">U 421.7 +0.8/−55.9 · n=5</text>
+<line x1="385" y1="345" x2="1390" y2="345" class="row-guide"/>
+<text x="361" y="297" text-anchor="end" class="label">Taichi · native Metal</text>
+<text x="361" y="319" text-anchor="end" class="detail">same .py source</text>
+<rect x="385" y="279" width="742.8" height="18" rx="3" fill="url(#portable-gpu-taichi)" opacity="0.95"><title>Taichi · checked median: 332.584 million turns/s</title></rect>
+<line x1="1124.8" y1="288" x2="1134.5" y2="288" class="whisker"/>
+<line x1="1124.8" y1="282" x2="1124.8" y2="294" class="whisker"/>
+<line x1="1134.5" y1="282" x2="1134.5" y2="294" class="whisker"/>
+<text x="1418" y="293" class="value">C 332.6 +3.0/−1.3 · n=7</text>
+<rect x="385" y="305" width="905.2" height="18" rx="3" fill="url(#portable-gpu-taichi)" opacity="0.48"><title>Taichi · unchecked median: 405.305 million turns/s</title></rect>
+<line x1="1276.4" y1="314" x2="1305.7" y2="314" class="whisker"/>
+<line x1="1276.4" y1="308" x2="1276.4" y2="320" class="whisker"/>
+<line x1="1305.7" y1="308" x2="1305.7" y2="320" class="whisker"/>
+<text x="1418" y="319" class="value">U 405.3 +6.9/−6.2 · n=7</text>
+<line x1="385" y1="441" x2="1390" y2="441" class="row-guide"/>
+<text x="361" y="393" text-anchor="end" class="label">Halide · Metal schedule</text>
+<text x="361" y="415" text-anchor="end" class="detail">same .cpp source</text>
+<rect x="385" y="375" width="653.2" height="18" rx="3" fill="url(#portable-gpu-halide)" opacity="0.95"><title>Halide · checked median: 292.500 million turns/s</title></rect>
+<line x1="1018.1" y1="384" x2="1042.0" y2="384" class="whisker"/>
+<line x1="1018.1" y1="378" x2="1018.1" y2="390" class="whisker"/>
+<line x1="1042.0" y1="378" x2="1042.0" y2="390" class="whisker"/>
+<text x="1418" y="389" class="value">C 292.5 +1.7/−9.0 · n=7</text>
+<rect x="385" y="401" width="878.3" height="18" rx="3" fill="url(#portable-gpu-halide)" opacity="0.48"><title>Halide · unchecked median: 393.264 million turns/s</title></rect>
+<line x1="1257.2" y1="410" x2="1266.1" y2="410" class="whisker"/>
+<line x1="1257.2" y1="404" x2="1257.2" y2="416" class="whisker"/>
+<line x1="1266.1" y1="404" x2="1266.1" y2="416" class="whisker"/>
+<text x="1418" y="415" class="value">U 393.3 +1.3/−2.7 · n=7</text>
+<line x1="385" y1="512" x2="1390" y2="512" class="grid"/>
+<text x="887.5" y="570" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>
+<text x="42" y="620" class="footnote">Same application source within each system: Mech .mec, Taichi .py, Halide .cpp; CPU/Metal selected without rewriting EKF equations.</text>
+<text x="42" y="647" class="footnote">Diagonal hatch denotes GPU. Highest retained median in both modes is Mech; this is a descriptive result, not a language-speed claim.</text>
+<text x="42" y="674" class="footnote">Toolchains, compiler lowering, schedules, status observation, campaign dates, and system state differ. All samples reported zero faults.</text>
+</svg>

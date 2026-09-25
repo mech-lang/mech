@@ -287,22 +287,102 @@ def main() -> None:
             "observed_range_million_ekf_turns_per_second"
         ]
         assert row["faults"] == [0] * len(lane_samples)
+
+    mojo_metal = load_json(ROOT / manifest["selected_evidence"]["mojo_metal"])
+    mojo_source = ROOT / mojo_metal["sources"]["kernel_and_host"]
+    if sha256(mojo_source) != mojo_metal["sources"]["kernel_and_host_sha256"]:
+        raise AssertionError(f"Mojo Metal source hash changed: {mojo_source}")
+    for mode in ("checked", "unchecked"):
+        row = mojo_metal["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(
+            statistics.median(lane_samples),
+            row["median_million_ekf_turns_per_second"],
+            0.0000005,
+        )
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
+
     taichi_metal = load_json(ROOT / manifest["selected_evidence"]["taichi_metal"])
+    taichi_source = ROOT / taichi_metal["sources"]["kernel_and_host"]
+    if sha256(taichi_source) != taichi_metal["sources"]["kernel_and_host_sha256"]:
+        raise AssertionError(f"Taichi Metal source hash changed: {taichi_source}")
+    for mode in ("checked", "unchecked"):
+        row = taichi_metal["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(
+            statistics.median(lane_samples),
+            row["median_million_ekf_turns_per_second"],
+            0.0000005,
+        )
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
+    taichi_cpu = load_json(ROOT / manifest["selected_evidence"]["taichi_cpu"])
+    assert taichi_cpu["sources"] == taichi_metal["sources"]
+    assert taichi_cpu["configuration"]["cpu_threads"] == 8
+    for mode in ("checked", "unchecked"):
+        row = taichi_cpu["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(
+            statistics.median(lane_samples),
+            row["median_million_ekf_turns_per_second"],
+            0.0000005,
+        )
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
     halide_metal = load_json(ROOT / manifest["selected_evidence"]["halide_metal"])
+    halide_source = ROOT / halide_metal["sources"]["kernel_and_host"]
+    if sha256(halide_source) != halide_metal["sources"]["kernel_and_host_sha256"]:
+        raise AssertionError(f"Halide Metal source hash changed: {halide_source}")
+    for mode in ("checked", "unchecked"):
+        row = halide_metal["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(
+            statistics.median(lane_samples),
+            row["median_million_ekf_turns_per_second"],
+            0.0000005,
+        )
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
+    halide_cpu = load_json(ROOT / manifest["selected_evidence"]["halide_cpu"])
+    assert halide_cpu["sources"] == halide_metal["sources"]
+    assert halide_cpu["configuration"]["cpu_threads"] == 8
+    for mode in ("checked", "unchecked"):
+        row = halide_cpu["rows"][mode]
+        lane_samples = row["samples_million_ekf_turns_per_second"]
+        close(
+            statistics.median(lane_samples),
+            row["median_million_ekf_turns_per_second"],
+            0.0000005,
+        )
+        assert [min(lane_samples), max(lane_samples)] == row[
+            "observed_range_million_ekf_turns_per_second"
+        ]
+        assert row["faults"] == [0] * len(lane_samples)
     assert direct_metal["workload"]["instances"] == 500_000
     assert direct_metal["workload"]["turns"] == 40
     assert rust_metal["configuration"]["instances"] == 500_000
     assert rust_metal["configuration"]["turns"] == 40
-    assert mojo["workload"]["instances"] == 500_000
-    assert mojo["workload"]["turns"] == 40
+    assert mojo_metal["configuration"]["instances"] == 500_000
+    assert mojo_metal["configuration"]["turns"] == 40
     assert julia_metal["configuration"]["instances"] == 500_000
     assert julia_metal["configuration"]["turns"] == 40
     assert taichi_metal["configuration"]["instances"] == 500_000
     assert taichi_metal["configuration"]["turns"] == 40
+    assert taichi_cpu["configuration"]["instances"] == 500_000
+    assert taichi_cpu["configuration"]["turns"] == 40
     assert halide_metal["configuration"]["instances"] == 500_000
     assert halide_metal["configuration"]["turns"] == 40
-    taichi_metal_rows = {row["mode"]: row for row in taichi_metal["rows"]}
-    mojo_metal = mojo["rows"]["Mojo native Metal resident kernel"]
+    assert halide_cpu["configuration"]["instances"] == 500_000
+    assert halide_cpu["configuration"]["turns"] == 40
     metal_samples = {
         "Mech · checked": direct_row["checked"]["samples_million_ekf_turns_per_second"],
         "Mech · unchecked": direct_row["unchecked"]["samples_million_ekf_turns_per_second"],
@@ -312,23 +392,29 @@ def main() -> None:
         "Rust + MSL · unchecked": rust_metal["rows"]["unchecked"][
             "samples_million_ekf_turns_per_second"
         ],
-        "Mojo · checked": mojo_metal["checked"]["samples_million_ekf_turns_per_second"],
-        "Mojo · unchecked": mojo_metal["unchecked"]["samples_million_ekf_turns_per_second"],
+        "Mojo · checked": mojo_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Mojo · unchecked": mojo_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
         "Julia · checked": julia_metal["rows"]["checked"][
             "samples_million_ekf_turns_per_second"
         ],
         "Julia · unchecked": julia_metal["rows"]["unchecked"][
             "samples_million_ekf_turns_per_second"
         ],
-        "Taichi · checked": taichi_metal_rows["checked"]["samples_millions"],
-        "Taichi · unchecked": taichi_metal_rows["unchecked"]["samples_millions"],
-        "Halide · checked": [
-            value / 1_000_000.0
-            for value in halide_metal["rows"]["Halide GPU Metal checked"]["throughput"]
+        "Taichi · checked": taichi_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
         ],
-        "Halide · unchecked": [
-            value / 1_000_000.0
-            for value in halide_metal["rows"]["Halide GPU Metal unchecked"]["throughput"]
+        "Taichi · unchecked": taichi_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Halide · checked": halide_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Halide · unchecked": halide_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
         ],
     }
 
@@ -355,11 +441,53 @@ def main() -> None:
             for sample in scalar["samples"]
         ],
     }
+    portable_cpu_samples = {
+        "Mech · checked": runtime_rows[
+            "Mech SIMD/JIT CPU, checked (8 workers)"
+        ]["samples"],
+        "Mech · unchecked": runtime_rows[
+            "Mech SIMD/JIT CPU, unchecked (8 workers)"
+        ]["samples"],
+        "Taichi · checked": taichi_cpu["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Taichi · unchecked": taichi_cpu["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Halide · checked": halide_cpu["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Halide · unchecked": halide_cpu["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+    }
+    portable_metal_samples = {
+        "Mech · checked": direct_row["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Mech · unchecked": direct_row["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Taichi · checked": taichi_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Taichi · unchecked": taichi_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Halide · checked": halide_metal["rows"]["checked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+        "Halide · unchecked": halide_metal["rows"]["unchecked"][
+            "samples_million_ekf_turns_per_second"
+        ],
+    }
 
     for chart_name, samples_by_row in (
         ("cross_language", cross_samples),
         ("metal", metal_samples),
         ("mech_backends", mech_backend_samples),
+        ("portable_cpu", portable_cpu_samples),
+        ("portable_metal", portable_metal_samples),
     ):
         chart = manifest["post_charts"][chart_name]
         expected = chart["rows_median_million_turns_per_second"]
@@ -383,12 +511,22 @@ def main() -> None:
     readme = (HERE / "README.md").read_text(encoding="utf-8")
     embedded_figures = re.findall(r"^!\[.*?\]\((.*?)\)$", readme, flags=re.MULTILINE)
     expected_figures = [
+        "charts/post-portable-combo.svg",
         "charts/post-cross-language-comparison.svg",
         "charts/post-metal-comparison.svg",
         "charts/post-mech-backend-stack.svg",
     ]
     if embedded_figures != expected_figures:
-        raise AssertionError(f"README must embed exactly the three post charts: {embedded_figures}")
+        raise AssertionError(
+            f"README must embed the focused combo plus the three broad post charts: {embedded_figures}"
+        )
+
+    combo_path = ROOT / manifest["post_charts"]["portable_combo"]["file"]
+    combo_root = ET.parse(combo_path).getroot()
+    if not any(node.tag.endswith("title") for node in combo_root.iter()):
+        raise AssertionError("portable combo chart is missing an accessible title")
+    if not any(node.tag.endswith("desc") for node in combo_root.iter()):
+        raise AssertionError("portable combo chart is missing an accessible description")
 
     charts = {
         "checked": ARCHIVE / "charts/parallel-ekf-cross-language-checked.svg",
@@ -430,7 +568,8 @@ def main() -> None:
         "  current-head Rust diagnostic: "
         f"median {current_rust:.3f}, range {min(samples):.3f}-{max(samples):.3f} M turns/s"
     )
-    print("  same-machine Halide/Taichi/Mojo rerun samples: verified")
+    print("  matched Mojo/Taichi/Halide Metal source hashes and samples: verified")
+    print("  same-machine historical rerun samples: verified")
     print(
         "  AOT/Rust dylib: "
         f"scalar Mech {dylib_summary['scalar_aot_throughput_million_turns_per_second']:.3f}, "
@@ -438,7 +577,7 @@ def main() -> None:
         f"SIMD Mech {dylib_summary['simd_aot_throughput_million_turns_per_second']:.3f} M turns/s; "
         "size and peak RSS verified"
     )
-    print("  three post-facing charts: raw samples, medians, and observed ranges verified")
+    print("  six post-facing charts: medians, observed ranges, and accessibility verified")
     print("  checked and unchecked mega-chart assertions: passed")
 
 

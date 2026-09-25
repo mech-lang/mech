@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "platform": {
+    "system": "Darwin",
+    "release": "24.6.0",
+    "architecture": "arm64",
+    "device": "Apple M1 GPU"
+  },
+  "toolchain": {
+    "taichi": "Taichi 1.7.4, LLVM 15.0.7, Python 3.12.14",
+    "backend": "native Metal"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples_per_mode": 7,
+    "warmup_turns": 5,
+    "threadgroup_size": 64,
+    "cpu_threads": null,
+    "state": "one packed component-major f32 field with identical resident double buffers in both modes and backend-specialized axis order",
+    "boundary": "one Taichi Metal kernel and explicit synchronization per turn",
+    "checked_status": "two-word device status; cumulative fault count avoids a per-turn reset transfer",
+    "checked_difference": "candidate predicates, atomics on fault only, and one compact status read after synchronization",
+    "publication": "the destination state is published only when the cumulative fault count did not change during the turn",
+    "measurement_order": "checked and unchecked process order alternated by sample"
+  },
+  "sources": {
+    "kernel_and_host": "benchmarks/iros-2026/taichi-metal-matched.py",
+    "kernel_and_host_sha256": "01afd8a4f8fa564f5c078453df42fd1a72ecb8e29c9a8e88de1ed7743884e635"
+  },
+  "rows": {
+    "checked": {
+      "samples_million_ekf_turns_per_second": [
+        335.6122355932223,
+        332.0027879015887,
+        332.5840993599117,
+        333.54782648815564,
+        331.2515113272471,
+        332.53110240505276,
+        334.9471262828714
+      ],
+      "median_million_ekf_turns_per_second": 332.5840993599117,
+      "observed_range_million_ekf_turns_per_second": [
+        331.2515113272471,
+        335.6122355932223
+      ],
+      "checksums": [
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "fault_words": [
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647
+      ],
+      "resident_bytes": 54000008
+    },
+    "unchecked": {
+      "samples_million_ekf_turns_per_second": [
+        405.30475929694217,
+        412.2337211191247,
+        409.52975618906083,
+        401.77584930553775,
+        408.9603208726158,
+        399.1338790208752,
+        400.9445612581021
+      ],
+      "median_million_ekf_turns_per_second": 405.30475929694217,
+      "observed_range_million_ekf_turns_per_second": [
+        399.1338790208752,
+        412.2337211191247
+      ],
+      "checksums": [
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174,
+        133818339.99595174
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "fault_words": [
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647
+      ],
+      "resident_bytes": 54000008
+    }
+  }
+}

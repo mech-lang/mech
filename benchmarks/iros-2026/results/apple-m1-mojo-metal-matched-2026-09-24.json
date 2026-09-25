@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "platform": {
+    "system": "Darwin",
+    "release": "24.6.0",
+    "architecture": "arm64",
+    "device": "Apple M1 GPU"
+  },
+  "toolchain": {
+    "mojo": "Mojo 1.1.0 (8189361e)",
+    "max": "26.6.0",
+    "backend": "native Metal"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples_per_mode": 7,
+    "warmup_turns": 5,
+    "threadgroup_size": 64,
+    "state": "one packed component-major f32 state buffer with identical resident double buffers in both modes",
+    "boundary": "one native Mojo Metal submission and synchronization per turn",
+    "math": "fast AIR sin, cos, and atan2 intrinsics, matching the hand-written MSL control's default transcendental lowering",
+    "checked_status": "two-word device status accessed zero-copy through unsafe_host_ptr on Apple unified memory",
+    "checked_difference": "candidate predicates and two compact atomics on fault only; allocation, binding layout, publication buffers, and synchronization match unchecked mode",
+    "publication": "the destination state is published only after a zero fault count; otherwise the source remains current",
+    "measurement_order": "checked and unchecked process order alternated by sample"
+  },
+  "sources": {
+    "kernel_and_host": "benchmarks/iros-2026/mojo-metal-matched.mojo",
+    "kernel_and_host_sha256": "b0c9626f0ce10c145cdd20b885e3425030341ebc982ab3258d1a8d2c0f3054c2"
+  },
+  "rows": {
+    "checked": {
+      "samples_million_ekf_turns_per_second": [
+        420.30934767989237,
+        402.54407857660414,
+        404.93207264481384,
+        403.94247859104865,
+        396.4478274659055,
+        397.47997694616134,
+        399.32115403813515
+      ],
+      "median_million_ekf_turns_per_second": 402.54407857660414,
+      "observed_range_million_ekf_turns_per_second": [
+        396.4478274659055,
+        420.30934767989237
+      ],
+      "checksums": [
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "fault_words": [
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647,
+        2147483647
+      ],
+      "resident_bytes": 54000008
+    },
+    "unchecked": {
+      "samples_million_ekf_turns_per_second": [
+        402.74673271713084,
+        401.86465198521137,
+        401.42103044778514,
+        215.94540900060463,
+        396.3535473642489,
+        405.7124310288867,
+        397.8120338140229
+      ],
+      "median_million_ekf_turns_per_second": 401.42103044778514,
+      "observed_range_million_ekf_turns_per_second": [
+        215.94540900060463,
+        405.7124310288867
+      ],
+      "checksums": [
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915,
+        133818338.61191915
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "fault_words": [0, 0, 0, 0, 0, 0, 0],
+      "resident_bytes": 54000008
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-24",
+  "platform": {
+    "system": "Darwin",
+    "release": "24.6.0",
+    "architecture": "arm64",
+    "device": "Apple M1 CPU"
+  },
+  "toolchain": {
+    "halide": "halide 21.0.0_1",
+    "compiler": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+    "backend": "native CPU"
+  },
+  "configuration": {
+    "instances": 500000,
+    "turns": 40,
+    "samples_per_mode": 7,
+    "warmup_turns": 5,
+    "threadgroup_size": null,
+    "cpu_threads": 8,
+    "state": "one packed component-major f32 buffer with identical resident double buffers in both modes",
+    "boundary": "one Halide cpu callable and completed publication per turn",
+    "checked_status": "resident per-lane fault plane copied and scanned after synchronization; publication buffer swaps only when clear",
+    "checked_difference": "candidate predicates plus fault-plane observation; state layout, allocation, launch geometry, and synchronization match unchecked mode",
+    "measurement_order": "checked and unchecked process order alternated by sample"
+  },
+  "sources": {
+    "kernel_and_host": "benchmarks/iros-2026/halide-metal-matched.cpp",
+    "kernel_and_host_sha256": "5941d8acbe6e9d04956799d818524d687166102035813c2967b0ab8bb5a99e89"
+  },
+  "rows": {
+    "checked": {
+      "samples_million_ekf_turns_per_second": [
+        23.42608207269289,
+        23.50829119681752,
+        23.400139757334703,
+        22.45471797291884,
+        23.23386222223514,
+        22.960077265619375,
+        23.1549943617473
+      ],
+      "median_million_ekf_turns_per_second": 23.23386222223514,
+      "observed_range_million_ekf_turns_per_second": [
+        22.45471797291884,
+        23.50829119681752
+      ],
+      "checksums": [
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "fault_words": [
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295
+      ]
+    },
+    "unchecked": {
+      "samples_million_ekf_turns_per_second": [
+        23.940012323695907,
+        23.98385169184296,
+        23.843860871009824,
+        23.808929748382624,
+        23.68750964473967,
+        23.70136634869198,
+        23.670749335573607
+      ],
+      "median_million_ekf_turns_per_second": 23.808929748382624,
+      "observed_range_million_ekf_turns_per_second": [
+        23.670749335573607,
+        23.98385169184296
+      ],
+      "checksums": [
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626,
+        133818349.21107626
+      ],
+      "faults": [0, 0, 0, 0, 0, 0, 0],
+      "fault_words": [
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295,
+        4294967295
+      ]
+    }
+  }
+}

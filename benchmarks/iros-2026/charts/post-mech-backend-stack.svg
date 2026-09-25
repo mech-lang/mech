@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="988" viewBox="0 0 1600 988" role="img" aria-labelledby="mech-title mech-desc">
 <title id="mech-title">One Mech EKF across eight execution backends</title>
-<desc id="mech-desc">Eight checked execution backends for the same high-level Mech EKF on one Apple M1. Every retained process sample is shown with its median and observed minimum-to-maximum range. A logarithmic scale keeps the scalar and GPU backends visible together.</desc>
+<desc id="mech-desc">Eight checked execution backends for the same high-level Mech EKF on one Apple M1. Horizontal bars show medians and thin whiskers show observed minimum-to-maximum ranges. A logarithmic scale keeps the scalar and GPU backends visible together.</desc>
 <rect width="100%" height="100%" fill="#080c14"/>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.minor-grid{stroke:#1a2538;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:18px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker{stroke:#e8edf5;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>
 <text x="42" y="48" font-size="28" font-weight="700">One Mech EKF across eight execution backends</text>
 <text x="42" y="80" class="muted" font-size="16">Checked publication after every turn · same Apple M1 · raw retained process samples · workload shown per row</text>
-<text x="42" y="112" class="muted" font-size="13">Circles are samples; diamonds are medians; whiskers are observed min–max ranges, not confidence intervals. Logarithmic throughput scale.</text>
+<text x="42" y="112" class="muted" font-size="13">Bars are medians; whiskers and +/− labels are observed min–max ranges, not confidence intervals. Logarithmic throughput scale.</text>
 <line x1="430.0" y1="135" x2="430.0" y2="798" class="minor-grid"/>
 <text x="430.0" y="825" text-anchor="middle" class="axis">0.5</text>
 <line x1="527.2" y1="135" x2="527.2" y2="798" class="grid"/>
@@ -29,103 +29,67 @@
 <line x1="430" y1="197" x2="1435" y2="197" class="row-guide"/>
 <text x="404" y="157" text-anchor="end" class="label">Direct Metal GPU</text>
 <text x="404" y="179" text-anchor="end" class="detail">500k filters × 40 turns</text>
+<rect x="430.0" y="150" width="944.7" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Direct Metal GPU median: 422.702 million turns/s</title></rect>
 <line x1="1367.6" y1="160" x2="1376.7" y2="160" class="whisker"/>
 <line x1="1367.6" y1="149" x2="1367.6" y2="171" class="whisker"/>
 <line x1="1376.7" y1="149" x2="1376.7" y2="171" class="whisker"/>
-<circle cx="1367.6" cy="150" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Direct Metal GPU sample: 401.943 million turns/s</title></circle>
-<circle cx="1373.9" cy="155" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Direct Metal GPU sample: 420.404 million turns/s</title></circle>
-<circle cx="1374.7" cy="160" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Direct Metal GPU sample: 422.702 million turns/s</title></circle>
-<circle cx="1375.1" cy="165" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Direct Metal GPU sample: 423.895 million turns/s</title></circle>
-<circle cx="1376.7" cy="170" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Direct Metal GPU sample: 428.966 million turns/s</title></circle>
-<path d="M 1374.7 150 L 1384.7 160 L 1374.7 170 L 1364.7 160 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Direct Metal GPU median: 422.702 million turns/s</title></path>
-<text x="1394.7" y="165" class="value">422.702 · n=5</text>
+<text x="1394.7" y="165" class="value">422.7 +6.3/−20.8 · n=5</text>
 <line x1="430" y1="275" x2="1435" y2="275" class="row-guide"/>
 <text x="404" y="235" text-anchor="end" class="label">WGPU on Metal</text>
 <text x="404" y="257" text-anchor="end" class="detail">500k filters × 40 turns</text>
+<rect x="430.0" y="228" width="802.2" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>WGPU on Metal median: 152.972 million turns/s</title></rect>
 <line x1="1231.6" y1="238" x2="1238.8" y2="238" class="whisker"/>
 <line x1="1231.6" y1="227" x2="1231.6" y2="249" class="whisker"/>
 <line x1="1238.8" y1="227" x2="1238.8" y2="249" class="whisker"/>
-<circle cx="1231.6" cy="230" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>WGPU on Metal sample: 152.314 million turns/s</title></circle>
-<circle cx="1232.2" cy="238" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>WGPU on Metal sample: 152.972 million turns/s</title></circle>
-<circle cx="1238.8" cy="246" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>WGPU on Metal sample: 160.313 million turns/s</title></circle>
-<path d="M 1232.2 228 L 1242.2 238 L 1232.2 248 L 1222.2 238 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>WGPU on Metal median: 152.972 million turns/s</title></path>
-<text x="1256.8" y="243" class="value">152.972 · n=3</text>
+<text x="1256.8" y="243" class="value">153.0 +7.3/−0.7 · n=3</text>
 <line x1="430" y1="353" x2="1435" y2="353" class="row-guide"/>
 <text x="404" y="313" text-anchor="end" class="label">SIMD/JIT CPU · 8 workers</text>
 <text x="404" y="335" text-anchor="end" class="detail">500k filters × 40 turns</text>
+<rect x="430.0" y="306" width="749.2" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>SIMD/JIT CPU · 8 workers median: 104.783 million turns/s</title></rect>
 <line x1="1170.8" y1="316" x2="1207.4" y2="316" class="whisker"/>
 <line x1="1170.8" y1="305" x2="1170.8" y2="327" class="whisker"/>
 <line x1="1207.4" y1="305" x2="1207.4" y2="327" class="whisker"/>
-<circle cx="1170.8" cy="308" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 8 workers sample: 98.691 million turns/s</title></circle>
-<circle cx="1179.2" cy="316" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 8 workers sample: 104.783 million turns/s</title></circle>
-<circle cx="1207.4" cy="324" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 8 workers sample: 128.144 million turns/s</title></circle>
-<path d="M 1179.2 306 L 1189.2 316 L 1179.2 326 L 1169.2 316 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 8 workers median: 104.783 million turns/s</title></path>
-<text x="1225.4" y="321" class="value">104.783 · n=3</text>
+<text x="1225.4" y="321" class="value">104.8 +23.4/−6.1 · n=3</text>
 <line x1="430" y1="431" x2="1435" y2="431" class="row-guide"/>
 <text x="404" y="391" text-anchor="end" class="label">SIMD/JIT CPU · 1 worker</text>
 <text x="404" y="413" text-anchor="end" class="detail">10k filters × 20 turns</text>
+<rect x="430.0" y="384" width="619.4" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>SIMD/JIT CPU · 1 worker median: 41.496 million turns/s</title></rect>
 <line x1="1048.4" y1="394" x2="1049.4" y2="394" class="whisker"/>
 <line x1="1048.4" y1="383" x2="1048.4" y2="405" class="whisker"/>
 <line x1="1049.4" y1="383" x2="1049.4" y2="405" class="whisker"/>
-<circle cx="1048.4" cy="386" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 1 worker sample: 41.202 million turns/s</title></circle>
-<circle cx="1049.4" cy="394" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 1 worker sample: 41.496 million turns/s</title></circle>
-<circle cx="1049.4" cy="402" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 1 worker sample: 41.508 million turns/s</title></circle>
-<path d="M 1049.4 384 L 1059.4 394 L 1049.4 404 L 1039.4 394 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>SIMD/JIT CPU · 1 worker median: 41.496 million turns/s</title></path>
-<text x="1067.4" y="399" class="value">41.496 · n=3</text>
+<text x="1067.4" y="399" class="value">41.5 +0.0/−0.3 · n=3</text>
 <line x1="430" y1="509" x2="1435" y2="509" class="row-guide"/>
 <text x="404" y="469" text-anchor="end" class="label">Cranelift SIMD AOT CPU</text>
 <text x="404" y="491" text-anchor="end" class="detail">10k filters × 200 turns</text>
+<rect x="430.0" y="462" width="594.9" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Cranelift SIMD AOT CPU median: 34.863 million turns/s</title></rect>
 <line x1="1024.9" y1="472" x2="1025.2" y2="472" class="whisker"/>
 <line x1="1024.9" y1="461" x2="1024.9" y2="483" class="whisker"/>
 <line x1="1025.2" y1="461" x2="1025.2" y2="483" class="whisker"/>
-<circle cx="1024.9" cy="460" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.847 million turns/s</title></circle>
-<circle cx="1024.9" cy="464" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.853 million turns/s</title></circle>
-<circle cx="1024.9" cy="468" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.859 million turns/s</title></circle>
-<circle cx="1024.9" cy="472" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.863 million turns/s</title></circle>
-<circle cx="1025.0" cy="476" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.871 million turns/s</title></circle>
-<circle cx="1025.0" cy="480" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.874 million turns/s</title></circle>
-<circle cx="1025.2" cy="484" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU sample: 34.927 million turns/s</title></circle>
-<path d="M 1024.9 462 L 1034.9 472 L 1024.9 482 L 1014.9 472 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Cranelift SIMD AOT CPU median: 34.863 million turns/s</title></path>
-<text x="1043.2" y="477" class="value">34.863 · n=7</text>
+<text x="1043.2" y="477" class="value">34.9 +0.1/−0.0 · n=7</text>
 <line x1="430" y1="587" x2="1435" y2="587" class="row-guide"/>
 <text x="404" y="547" text-anchor="end" class="label">Cranelift JIT CPU</text>
 <text x="404" y="569" text-anchor="end" class="detail">10k filters × 20 turns</text>
+<rect x="430.0" y="540" width="473.1" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Cranelift JIT CPU median: 14.618 million turns/s</title></rect>
 <line x1="897.7" y1="550" x2="903.3" y2="550" class="whisker"/>
 <line x1="897.7" y1="539" x2="897.7" y2="561" class="whisker"/>
 <line x1="903.3" y1="539" x2="903.3" y2="561" class="whisker"/>
-<circle cx="897.7" cy="540" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift JIT CPU sample: 14.068 million turns/s</title></circle>
-<circle cx="902.8" cy="545" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift JIT CPU sample: 14.586 million turns/s</title></circle>
-<circle cx="903.1" cy="550" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift JIT CPU sample: 14.618 million turns/s</title></circle>
-<circle cx="903.2" cy="555" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift JIT CPU sample: 14.623 million turns/s</title></circle>
-<circle cx="903.3" cy="560" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift JIT CPU sample: 14.641 million turns/s</title></circle>
-<path d="M 903.1 540 L 913.1 550 L 903.1 560 L 893.1 550 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Cranelift JIT CPU median: 14.618 million turns/s</title></path>
-<text x="921.3" y="555" class="value">14.618 · n=5</text>
+<text x="921.3" y="555" class="value">14.6 +0.0/−0.6 · n=5</text>
 <line x1="430" y1="665" x2="1435" y2="665" class="row-guide"/>
 <text x="404" y="625" text-anchor="end" class="label">Cranelift AOT CPU</text>
 <text x="404" y="647" text-anchor="end" class="detail">10k filters × 20 turns</text>
+<rect x="430.0" y="618" width="472.9" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Cranelift AOT CPU median: 14.593 million turns/s</title></rect>
 <line x1="897.9" y1="628" x2="903.4" y2="628" class="whisker"/>
 <line x1="897.9" y1="617" x2="897.9" y2="639" class="whisker"/>
 <line x1="903.4" y1="617" x2="903.4" y2="639" class="whisker"/>
-<circle cx="897.9" cy="618" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift AOT CPU sample: 14.089 million turns/s</title></circle>
-<circle cx="902.8" cy="623" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift AOT CPU sample: 14.587 million turns/s</title></circle>
-<circle cx="902.9" cy="628" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift AOT CPU sample: 14.593 million turns/s</title></circle>
-<circle cx="903.0" cy="633" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift AOT CPU sample: 14.602 million turns/s</title></circle>
-<circle cx="903.4" cy="638" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Cranelift AOT CPU sample: 14.644 million turns/s</title></circle>
-<path d="M 902.9 618 L 912.9 628 L 902.9 638 L 892.9 628 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Cranelift AOT CPU median: 14.593 million turns/s</title></path>
-<text x="921.4" y="633" class="value">14.593 · n=5</text>
+<text x="921.4" y="633" class="value">14.6 +0.1/−0.5 · n=5</text>
 <line x1="430" y1="743" x2="1435" y2="743" class="row-guide"/>
 <text x="404" y="703" text-anchor="end" class="label">Scalar artifact evaluator</text>
 <text x="404" y="725" text-anchor="end" class="detail">10k filters × 20 turns</text>
+<rect x="430.0" y="696" width="101.6" height="20" rx="3" fill="#f4c430" opacity="0.9"><title>Scalar artifact evaluator median: 1.032 million turns/s</title></rect>
 <line x1="531.4" y1="706" x2="532.0" y2="706" class="whisker"/>
 <line x1="531.4" y1="695" x2="531.4" y2="717" class="whisker"/>
 <line x1="532.0" y1="695" x2="532.0" y2="717" class="whisker"/>
-<circle cx="531.4" cy="696" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Scalar artifact evaluator sample: 1.031 million turns/s</title></circle>
-<circle cx="531.6" cy="701" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Scalar artifact evaluator sample: 1.032 million turns/s</title></circle>
-<circle cx="531.6" cy="706" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Scalar artifact evaluator sample: 1.032 million turns/s</title></circle>
-<circle cx="531.7" cy="711" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Scalar artifact evaluator sample: 1.033 million turns/s</title></circle>
-<circle cx="532.0" cy="716" r="6" fill="#f4c430" stroke="#080c14" stroke-width="2"><title>Scalar artifact evaluator sample: 1.035 million turns/s</title></circle>
-<path d="M 531.6 696 L 541.6 706 L 531.6 716 L 521.6 706 Z" fill="#ffffff" stroke="#080c14" stroke-width="2"><title>Scalar artifact evaluator median: 1.032 million turns/s</title></path>
-<text x="550.0" y="711" class="value">1.032 · n=5</text>
+<text x="550.0" y="711" class="value">1.0 +0.0/−0.0 · n=5</text>
 <line x1="430" y1="798" x2="1435" y2="798" class="grid"/>
 <text x="932.5" y="856" text-anchor="middle" class="muted" font-size="15">million EKF turns per second (log scale)</text>
 <text x="42" y="909" class="footnote">Rows combine retained same-machine campaigns. Workload size changes where needed; all values are normalized throughput.</text>

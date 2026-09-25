@@ -33,6 +33,28 @@ either implementation is faster. Relative to unchecked execution, validation
 reduces median throughput by 12.2% for Mech and 10.6% for Rust in these
 campaigns.
 
+## Same-source CPU and Metal figure
+
+The focused poster figure includes only the systems measured here that select
+both CPU and Apple Metal from one application file: Mech, Taichi, and Halide.
+The workload is 500,000 filters × 40 turns with f32 resident ping-pong state
+and a synchronization boundary after every turn; CPU uses eight workers.
+
+| Device | Implementation | Checked median (observed min-max) | Unchecked median (observed min-max) |
+| --- | --- | ---: | ---: |
+| CPU | Mech Cranelift SIMD/JIT | 104.783 (98.691-128.144), n=3 | 110.469 (100.190-133.520), n=3 |
+| CPU | Taichi LLVM | 88.016 (87.095-88.710), n=7 | 95.462 (86.566-95.782), n=7 |
+| CPU | Halide native | 23.234 (22.455-23.508), n=7 | 23.809 (23.671-23.984), n=7 |
+| Metal | Mech generated MSL | 422.702 (401.943-428.966), n=5 | 421.651 (365.737-422.463), n=5 |
+| Metal | Taichi native Metal | 332.584 (331.252-335.612), n=7 | 405.305 (399.134-412.234), n=7 |
+| Metal | Halide Metal schedule | 292.500 (283.456-294.175), n=7 | 393.264 (390.533-394.516), n=7 |
+
+Mech has the highest retained median in both modes on both devices. This is a
+descriptive result for the measured programs and sessions, not a claim that
+Mech is intrinsically faster. The compilers, CPU/GPU schedules, fault-status
+observation mechanisms, campaign dates, and system state differ. The figure
+puts that claim limit in-frame rather than relying on surrounding prose.
+
 ## Cross-language CPU publication figure
 
 The publication-facing CPU figure extends the matched Mech–Rust anchor with
@@ -64,10 +86,10 @@ compiler/runtime paths rather than isolated kernel languages.
 | --- | ---: | ---: |
 | Mech generated MSL | 422.702 (401.943-428.966), n=5 | 421.651 (365.737-422.463), n=5 |
 | Rust host + hand-written MSL | 416.215 (401.396-424.149), n=7 | 418.697 (410.126-420.335), n=7 |
-| Mojo native Metal | 244.493 (242.386-247.933), n=5 | 405.047 (393.600-407.075), n=5 |
+| Mojo native Metal, matched packed SoA | 402.544 (396.448-420.309), n=7 | 401.421 (215.945-405.712), n=7 |
 | Julia Metal.jl, matched packed SoA | 406.432 (402.129-407.495), n=7 | 406.803 (405.092-414.707), n=7 |
-| Taichi native Metal | 168.798 (136.096-171.660), n=5 | 217.297 (202.628-285.400), n=5 |
-| Halide Metal | 111.474 (97.001-120.741), n=5 | 212.283 (175.664-309.115), n=5 |
+| Taichi native Metal, matched packed SoA | 332.584 (331.252-335.612), n=7 | 405.305 (399.134-412.234), n=7 |
+| Halide Metal, matched packed SoA | 292.500 (283.456-294.175), n=7 | 393.264 (390.533-394.516), n=7 |
 
 The Rust control adopts the direct Mech backend's resident SoA, 64-thread
 threadgroups, ping-pong publication, compact shared fault status, and per-turn
@@ -82,11 +104,49 @@ predicates and shared two-word fault status. Its median checking cost is 0.09%
 and the observed ranges overlap. This replaces the older Julia path whose
 checked mode paid for extra bindings and host fault-array transport.
 
+The matched Mojo control uses the same physical strategy and reads its
+two-word status directly from Apple unified memory. Its checked and unchecked
+medians differ by 0.28%, with checked nominally higher, so no checking penalty
+is resolved. Matching the path raises checked performance from the archived
+244.493 result to 402.544 M turns/s. The retained 215.945 M/s unchecked sample
+is an interference event; it is not trimmed, and the median plus full range
+make its effect explicit. Mojo remains 4.77% below Mech checked and 4.80% below
+unchecked at the medians, while their observed ranges overlap.
+
+The new Taichi control gives both modes the same packed component-major state,
+resident double buffers, launch geometry, and publication boundary. Its
+cumulative two-word fault status avoids a reset transfer but still requires a
+compact host-visible read after every synchronized checked turn. Checked is
+17.94% below unchecked at the median; this is a measured protocol/API cost,
+not an in-place-versus-ping-pong comparison.
+
+That exact source also targets the eight-worker LLVM CPU backend by changing
+one runtime option and selecting a CPU-contiguous packed axis order. Seven
+fresh processes measured 88.016 (87.095-88.710) M turns/s checked and 95.462
+(86.566-95.782) unchecked. The result corroborates the archived 86.047 M/s
+Taichi CPU row, but its per-turn synchronization differs from the fused CPU
+language panel and is therefore documented rather than inserted into it.
+
+The matched Halide control raises the unchecked median from the archived
+212.283 to 393.264 M turns/s through packed resident state and ping-pong
+publication. Halide 21's generated Metal interface uses a per-lane fault plane
+rather than the compact device-wide atomic status available to the other
+matched controls, leaving a 25.62% checked penalty that is visible in the
+reported result.
+
+The same Halide source selects an eight-worker host schedule and measured
+23.234 (22.455-23.508) M turns/s checked and 23.809 (23.671-23.984)
+unchecked over seven fresh processes. Alongside the same-source Taichi
+CPU/Metal pair and Mech's unchanged high-level EKF, this supports a focused
+backend-portability comparison. Mech has the highest retained median on both
+devices in these runs; the result remains descriptive because schedules,
+compiler versions, and status-observation APIs differ.
+
 ## Mech backend publication figure
 
 The backend figure stacks eight backends for the same high-level Mech EKF. All
-rows use checked publication after every turn and show every retained process
-sample, but they combine 10,000-filter × 20-turn and 500,000-filter × 40-turn
+rows use checked publication after every turn and retain every process sample
+in the evidence, but they combine 10,000-filter × 20-turn and 500,000-filter × 40-turn
 campaigns. The logarithmic scale shows backend reach; it is not evidence for
 fine rankings between rows.
 

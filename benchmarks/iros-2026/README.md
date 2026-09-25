@@ -9,6 +9,34 @@ on `origin/integration/v0.4`. It preserves the broad cross-language benchmark,
 the matched Rust–Mech comparison, the exact source-size audit, the benchmark
 programs, raw result records, and the scripts used to inspect them.
 
+## The same-source result: CPU and Metal from one application
+
+![One EKF source per system across CPU and Metal](charts/post-portable-combo.svg)
+
+Mech, Taichi, and Halide are the three measured systems in this package that
+select both CPU and Apple Metal execution for this EKF from the same
+application source. The equations and publication contract stay in one `.mec`,
+`.py`, or `.cpp` file; a backend choice and schedule select the device. The
+standalone [CPU chart](charts/post-portable-cpu-comparison.svg) and [Metal
+chart](charts/post-portable-metal-comparison.svg) are poster-ready versions of
+the two panels above.
+
+For this workload on this Apple M1, Mech has the highest retained median in
+both modes on both devices: CPU 104.783 M turns/s checked and 110.469 M/s
+unchecked; Metal 422.702 and 421.651 M/s. Taichi measures 88.016/95.462 on CPU
+and 332.584/405.305 on Metal; Halide measures 23.234/23.809 and
+292.500/393.264. Those are descriptive results for these implementations and
+campaigns—not evidence that Mech is intrinsically faster than either language.
+Compiler lowering, schedules, fault-status observation, campaign dates, and
+system state all differ and are called out directly in the figure.
+
+All rows use 500,000 filters × 40 turns, f32 state, resident ping-pong
+publication, and a synchronization boundary after every turn; CPU rows use
+eight workers. Bars report medians. Whiskers and the `+high/−low` number beside
+each bar report the full observed process minimum-to-maximum range, not a
+confidence interval. The sample counts are shown in-frame and every raw sample
+is retained in the linked JSON evidence.
+
 ## The cross-language CPU result: checked and unchecked
 
 ![Comparable checked and unchecked CPU EKF throughput across six implementations](charts/post-cross-language-comparison.svg)
@@ -37,8 +65,8 @@ The other four implementations match workload, CPU, worker count, precision,
 and fused successful-path execution, but their fault reporting and rollback
 interfaces are not identical. NumPy/Numba means an LLVM-compiled Numba kernel
 launched from Python—not interpreted Python and not ordinary eager NumPy.
-Every retained sample is visible; diamonds are medians and whiskers are
-descriptive minimum-to-maximum ranges, not confidence intervals.
+Every retained sample is preserved in the raw evidence. Bars are medians and
+whiskers are descriptive minimum-to-maximum ranges, not confidence intervals.
 
 The larger archive also contains Halide CPU, Taichi CPU, CPython, PyPy, and
 other controls. They remain in the mega charts when their retained evidence
@@ -61,10 +89,10 @@ hand-written MSL, Mojo, Julia/Metal.jl, Taichi, and Halide.
 | --- | --- | ---: | ---: |
 | Mech | generated MSL, direct Metal | 422.702 M/s (401.943-428.966), n=5 | 421.651 M/s (365.737-422.463), n=5 |
 | Rust + MSL | hand-written MSL, `metal-rs` host | 416.215 M/s (401.396-424.149), n=7 | 418.697 M/s (410.126-420.335), n=7 |
-| Mojo | native Metal kernel | 244.493 M/s (242.386-247.933), n=5 | 405.047 M/s (393.600-407.075), n=5 |
+| Mojo | native Metal, matched packed SoA | 402.544 M/s (396.448-420.309), n=7 | 401.421 M/s (215.945-405.712), n=7 |
 | Julia | Metal.jl, matched packed SoA | 406.432 M/s (402.129-407.495), n=7 | 406.803 M/s (405.092-414.707), n=7 |
-| Taichi | optimized native Metal | 168.798 M/s (136.096-171.660), n=5 | 217.297 M/s (202.628-285.400), n=5 |
-| Halide | fused tuple, Metal schedule | 111.474 M/s (97.001-120.741), n=5 | 212.283 M/s (175.664-309.115), n=5 |
+| Taichi | native Metal, matched packed SoA | 332.584 M/s (331.252-335.612), n=7 | 405.305 M/s (399.134-412.234), n=7 |
+| Halide | packed SoA, native Metal | 292.500 M/s (283.456-294.175), n=7 | 393.264 M/s (390.533-394.516), n=7 |
 
 The Rust control was added specifically to test whether Mech's 422.702 M/s
 result depended on an unavailable trick. It uses resident SoA buffers, one GPU
@@ -76,19 +104,76 @@ to a hand-written Metal kernel; it does not show that Metal itself favors Mech.
 
 Stable Rust does not directly compile Rust kernels to Apple Metal, so that row
 is accurately labeled “Rust + MSL”: Rust owns the host and a hand-written MSL
-kernel owns GPU execution. Julia compiles its Julia kernel through Metal.jl.
-The matched Julia control gives both modes the same component-major packed SoA,
-resident ping-pong buffers, 64-thread launch geometry, and per-turn
-synchronization. Checked mode adds only the candidate predicates and a shared
-two-word fault status. Its checked median is 0.09% below unchecked and the
-observed ranges overlap, replacing the earlier host-transport-heavy path with
-a like-for-like measurement of checking.
+kernel owns GPU execution.
 
-All rows share the successful-path workload. Mech, Rust + MSL, and Julia also
-share the resident SoA, ping-pong publication, compact fault status, and
-per-turn synchronization strategy. Compiler contraction, transcendental
-lowering, launch geometry, and campaign dates can still move results. Use
-medians and ranges as a backend landscape; do not turn small gaps into a
+The matched Mojo control now uses the same component-major packed SoA,
+resident ping-pong publication, fast device transcendentals, 64-thread launch
+geometry, and per-turn synchronization as the Mech and Rust paths. Checked
+mode adds candidate predicates and a two-word device fault status; after the
+required synchronization, Mojo reads those eight status bytes directly from
+Apple unified memory. That removes the old checked path's full host mapping
+and raises its median from 244.493 to 402.544 M turns/s. The new checked and
+unchecked medians differ by only 0.28%, in the opposite direction, so this
+session does not resolve any checking cost. All seven unchecked samples are
+retained, including the 215.945 M/s interference event; the median is robust
+to it and the long min-max whisker makes it visible.
+
+The matched Mojo median remains 4.77% below Mech in checked mode and 4.80%
+below it unchecked. A checked Mojo sample reached 420.309 M/s, and the observed
+ranges overlap, so the remaining 402/401-to-423/422 separation is too small
+and session-sensitive to support a ranking. Matching state layout, publication,
+math lowering, launch geometry, and fault transport closed the large checked
+gap but did not erase this final few percent; it can still come from compiler
+code generation and host dispatch overhead.
+
+Julia compiles its Julia kernel through Metal.jl. The matched Julia control
+gives both modes the same component-major packed SoA, resident ping-pong
+buffers, 64-thread launch geometry, and per-turn synchronization. Checked mode
+adds only the candidate predicates and a shared two-word fault status. Its
+checked median is 0.09% below unchecked and the observed ranges overlap,
+replacing the earlier host-transport-heavy path with a like-for-like
+measurement of checking.
+
+The matched Halide control likewise replaces its older fixed-shape tuple path
+with packed resident state, ping-pong publication, and a 256-thread Metal
+schedule. Unchecked throughput rises from 212.283 to 393.264 M turns/s. Halide
+21's generated Metal path does not expose the compact device-wide atomic status
+used by the other matched controls, so checked mode uses a resident per-lane
+fault plane that must be observed after each turn; that remaining interface
+cost is reported rather than hidden.
+
+That exact Halide source also selects an eight-worker CPU schedule. Seven
+fresh processes measured 23.234 M turns/s checked (22.455-23.508) and 23.809
+M/s unchecked (23.671-23.984). Together with the same-source Taichi result and
+Mech's unchanged high-level EKF, this supplies the focused portability story:
+all three target CPU and Metal from one application source; Mech has the
+highest retained median on both devices in these measurements. Toolchain,
+schedule, and status-observation differences make that a descriptive result,
+not a general language-speed claim.
+
+The matched Taichi control replaces the archived comparison in this figure.
+Both modes now use one packed component-major field, identical resident double
+buffers, a 64-thread launch, and the same synchronized ping-pong publication.
+Checked mode adds the integrity predicates, atomics only on fault, and one
+compact cumulative-status read after synchronization; the cumulative counter
+avoids a per-turn reset transfer while preserving whole-turn rollback. Its
+332.584 M turns/s checked median versus 405.305 M/s unchecked is therefore a
+17.94% measured cost of Taichi's checked protocol, not a comparison between
+different state layouts or in-place versus double-buffered execution.
+
+The same Taichi source selects its LLVM CPU backend with one option and uses a
+backend-specialized packed axis order without changing the EKF equations or
+publication contract. Seven fresh eight-worker CPU processes measured 88.016
+M turns/s checked (87.095-88.710) and 95.462 M/s unchecked
+(86.566-95.782). This per-turn synchronized result documents Taichi's
+same-source backend portability; it is not inserted into the fused CPU panel,
+where NumPy/Numba retains the Python-ecosystem row.
+
+All rows share the successful-path workload and resident packed SoA,
+ping-pong publication, and per-turn synchronization; all but Halide use a
+compact shared fault status. Compiler contraction, transcendental lowering,
+launch geometry, host API overhead, and campaign dates can still move results.
+Use medians and ranges as a backend landscape; do not turn small gaps into a
 ranking.
 
 ## The Mech result: one EKF across execution backends
@@ -233,14 +318,14 @@ publication story should lead with only these representative sources:
   plus the [Rust-hosted MSL control](rust-metal/README.md).
 - [NumPy/Numba](../archive/compute/parallel-ekf/minimal/numpy_numba.py),
   [Julia](../archive/compute/parallel-ekf/minimal/julia_simd_threads.jl),
-  [Taichi](../archive/compute/parallel-ekf/minimal/taichi_optimized.py),
-  [Halide](../archive/compute/parallel-ekf/minimal/halide_ekf.cpp), and
+  [matched Taichi Metal](taichi-metal-matched.py),
+  [matched Halide Metal](halide-metal-matched.cpp), and
   [Futhark](../archive/compute/parallel-ekf/minimal/futhark_ekf.fut) optimized controls.
 - [Mojo fixed-matrix](../archive/compute/parallel-ekf/mojo_textbook_fixed.mojo),
-  [Mojo Metal](../archive/compute/parallel-ekf/mojo_metal.mojo), and the
+  [matched Mojo Metal](mojo-metal-matched.mojo), and the
   identical-source [CPython/PyPy control](../archive/compute/parallel-ekf/pypy_optimized.py).
 - [Matched Julia Metal.jl](julia-metal-matched.jl)
-  and the retained Metal records for Mech, Mojo, Taichi, and Halide.
+  and the retained direct-Metal record for Mech.
 - [Raw benchmark evidence](../archive/compute/parallel-ekf/results/) and the
   complete [source-size audit](../archive/compute/parallel-ekf/source-size-audit/README.md).
 
@@ -257,18 +342,20 @@ computer. Their raw records identify this Mac mini (Macmini9,1), Apple M1,
 
 The filesystem audit also found the Halide 21.0.0_1 installation with an
 August 31 install timestamp, the Taichi 1.7.4 compiled-kernel cache populated
-during the August/September campaigns, the exact Mojo nightly compiler cache,
-and a surviving Mojo native-Metal executable. The Taichi and Mojo executables
-had originally lived in named temporary environments, so those particular
-environment directories no longer existed. Taichi 1.7.4 was reconstructed
-exactly; Mojo 1.1.0 release was reconstructed as a compatibility diagnostic,
-not substituted for the archived nightly result.
+during the August/September campaigns, and the exact Mojo nightly compiler
+cache. The temporary Mojo environment itself no longer existed. Taichi 1.7.4
+was reconstructed exactly. The publication Metal figure now uses a fresh,
+matched Mojo control built with Mojo 1.1.0 and MAX 26.6.0; this is a new
+measurement with its toolchain pinned in the raw record, not a relabeling of
+the archived nightly result.
 
-Fresh seven-process reruns of Halide and Taichi confirmed that the sources and
-toolchains still execute correctly, but their medians moved materially from
-the original campaigns. That is useful evidence about benchmark sensitivity,
-not a reason to overwrite the retained results. Full raw samples and the audit
-are in [the same-machine rerun record](results/same-machine-reruns-2026-09-24.json).
+Fresh seven-process reruns of the historical Halide and Taichi programs
+confirmed that the sources and toolchains still execute correctly, but their
+medians moved materially from the original campaigns. That is useful evidence
+about benchmark sensitivity, not a reason to overwrite the retained results.
+The publication chart instead uses separately recorded matched Mojo, Taichi,
+and Halide implementations. Historical rerun samples and the audit remain in
+[the same-machine rerun record](results/same-machine-reruns-2026-09-24.json).
 
 ## Reproduce and verify
 
@@ -295,6 +382,18 @@ Rerun the matched Julia/Metal.jl control:
 
 ```sh
 python3 benchmarks/iros-2026/measure_julia_metal.py \
+  --samples 7 --instances 500000 --turns 40
+```
+
+Rebuild and rerun the matched Mojo, Taichi, and Halide Metal controls:
+
+```sh
+python3 benchmarks/iros-2026/measure_mojo_metal.py \
+  --mojo /path/to/mojo --samples 7 --instances 500000 --turns 40
+python3 benchmarks/iros-2026/measure_taichi_metal.py \
+  --python /path/to/taichi-python --arch metal \
+  --samples 7 --instances 500000 --turns 40
+python3 benchmarks/iros-2026/measure_halide_metal.py \
   --samples 7 --instances 500000 --turns 40
 ```
 
