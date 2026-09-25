@@ -104,7 +104,9 @@ pub(super) fn all_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur(_) => {}
+                        | crate::ControlOperationBody::Recur(_)
+                        | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append_match(nested, output),
                         crate::ControlOperationBody::Comprehension(nested) => {
                             append_comprehension(nested, output)
@@ -148,7 +150,9 @@ pub(super) fn all_local_definitions(
                             append_comprehension(nested, output)
                         }
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur(_) => {}
+                        | crate::ControlOperationBody::Recur(_)
+                        | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Publish => {}
                     }
                 }
                 crate::ComprehensionStep::Filter(_) => {}
@@ -179,7 +183,9 @@ pub(super) fn all_match_local_definitions(
                     output.push((false, false, block.id.0, operation.node, operation.schema));
                     match &operation.body {
                         crate::ControlOperationBody::Operation { .. }
-                        | crate::ControlOperationBody::Recur(_) => {}
+                        | crate::ControlOperationBody::Recur(_)
+                        | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(nested) => append(nested, output),
                         crate::ControlOperationBody::Comprehension(nested) => {
                             output.extend(all_local_definitions(nested));
@@ -295,6 +301,7 @@ fn pattern_components_addressable(
                 return true;
             };
             match (payload.as_deref(), variant.payload.as_ref()) {
+                (Some(crate::CollectionPattern::Wildcard), Some(_)) => true,
                 (Some(pattern), Some(body)) => {
                     canonical_component_schema_id(&enum_parent, body, schemas).is_some_and(
                         |schema| pattern_components_addressable(pattern, schema, schemas),
@@ -741,6 +748,7 @@ pub(super) fn bind_inner(
                             memory_node,
                             nested,
                             &input_sources,
+                            &input_reads,
                             output_slot,
                             layout,
                         )?;
@@ -751,6 +759,7 @@ pub(super) fn bind_inner(
                             owner,
                             nested,
                             &input_sources,
+                            &input_reads,
                             layout,
                             steps,
                             reads,
@@ -841,7 +850,9 @@ pub(super) fn bind_inner(
                         });
                         continue;
                     }
-                    crate::ControlOperationBody::Recur(_) => {
+                    crate::ControlOperationBody::Recur(_)
+                    | crate::ControlOperationBody::Suspend
+                    | crate::ControlOperationBody::Publish => {
                         return Err(ResidentActivationError::UnsupportedControlLayout {
                             node: owner,
                         });

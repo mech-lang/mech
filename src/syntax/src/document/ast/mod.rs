@@ -23,6 +23,7 @@ pub use crate::document::red::{
 };
 pub use control_operators::*;
 pub use declarations::*;
+pub use document::{FsmArmBodySyntax, FsmBodyTransitionSyntax};
 pub use document_core::*;
 pub use grammar::*;
 pub use imports::*;

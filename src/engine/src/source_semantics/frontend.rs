@@ -2210,6 +2210,7 @@ enum PendingValue {
     UnresolvedEmpty(SourceSemanticAnchor),
     Constant(usize),
     Input(u32),
+    LexicalInput(u32),
     State(u32),
     Node(u32),
 }
@@ -2262,11 +2263,14 @@ enum PendingNodeBody {
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
     RecursiveCall(u8),
+
+    Suspend,
+    Publish,
 }
 
 struct PendingMatch {
     partial: bool,
-    captures: Vec<(u16, SchemaDraft)>,
+    captures: Vec<(u16, SchemaDraft, bool)>,
     arms: Vec<PendingMatchArm>,
 }
 
@@ -2288,7 +2292,9 @@ impl PendingMatch {
                             nested.visit_schemas(visit)
                         }
                         PendingControlOperationBody::Operation { .. }
-                        | PendingControlOperationBody::Recur(_) => {}
+                        | PendingControlOperationBody::Recur(_)
+                        | PendingControlOperationBody::Suspend
+                        | PendingControlOperationBody::Publish => {}
                     }
                 }
             }
@@ -2678,6 +2684,9 @@ enum PendingControlOperationBody {
     Match(PendingMatch),
     Comprehension(PendingComprehension),
     Recur(u8),
+
+    Suspend,
+    Publish,
 }
 
 struct PendingControlBlock {
@@ -2774,10 +2783,12 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
+    local_fsms: BTreeMap<String, document_lowering::document_fsms::DeclaredFsm>,
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
-    active_recursive_outputs: Vec<(String, SchemaDraft)>,
+    active_fsms: Vec<String>,
+    active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -2959,9 +2970,11 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
+            local_fsms: BTreeMap::new(),
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
+            active_fsms: Vec::new(),
             active_recursive_outputs: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
@@ -6376,6 +6389,9 @@ impl SemanticBuilder {
     }
 
     fn fsm_pipe(&mut self, pipe: &FsmPipeSyntax) -> Result<PendingValue, SourceSemanticError> {
+        if let Some(value) = self.inline_document_fsm(pipe)? {
+            return Ok(value);
+        }
         let instance = self.required(pipe.instance(), pipe.syntax(), "an FSM instance")?;
         let name = self.required(instance.name(), instance.syntax(), "an FSM name")?;
         let mut inputs = Vec::new();
@@ -6613,7 +6629,9 @@ impl SemanticBuilder {
     fn schema_draft(&self, value: PendingValue) -> Result<&SchemaDraft, SourceSemanticError> {
         Ok(match value.resolved()? {
             PendingValue::Constant(index) => &self.constants[index].schema,
-            PendingValue::Input(index) => &self.inputs[index as usize].schema,
+            PendingValue::Input(index) | PendingValue::LexicalInput(index) => {
+                &self.inputs[index as usize].schema
+            }
             PendingValue::State(index) => {
                 &self.nodes[self.states[index as usize].producer_node as usize].schema
             }
@@ -7313,7 +7331,10 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall(_) => {
+                    PendingNodeBody::CollectionBinding
+                    | PendingNodeBody::RecursiveCall(_)
+                    | PendingNodeBody::Suspend
+                    | PendingNodeBody::Publish => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
@@ -7437,7 +7458,9 @@ fn pending_schema(
     match value {
         PendingValue::UnresolvedEmpty(_) => unreachable!("unresolved source cannot cross finish"),
         PendingValue::Constant(index) => constants[index],
-        PendingValue::Input(index) => schemas.input_id(index as usize),
+        PendingValue::Input(index) | PendingValue::LexicalInput(index) => {
+            schemas.input_id(index as usize)
+        }
         PendingValue::State(index) => {
             let node = nodes
                 .iter()
@@ -7453,7 +7476,7 @@ fn resolve_value(value: PendingValue, constants: &[mech_core::ConstantId]) -> So
     match value {
         PendingValue::UnresolvedEmpty(_) => unreachable!("unresolved source cannot cross finish"),
         PendingValue::Constant(index) => SourceValue::Constant(constants[index]),
-        PendingValue::Input(index) => SourceValue::Input(index),
+        PendingValue::Input(index) | PendingValue::LexicalInput(index) => SourceValue::Input(index),
         PendingValue::State(index) => SourceValue::State(index),
         PendingValue::Node(node) => SourceValue::NodeOutput {
             node,
@@ -8962,13 +8985,8 @@ impl SemanticBuilder {
         expected_result: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
         self.match_depth += 1;
-        let result = self.lower_match_expression_inner(
-            scrutinee,
-            arms,
-            syntax,
-            partial,
-            expected_result,
-        );
+        let result =
+            self.lower_match_expression_inner(scrutinee, arms, syntax, partial, expected_result);
         self.match_depth -= 1;
         result
     }
@@ -9278,15 +9296,47 @@ impl SemanticBuilder {
         pattern_bindings: &BTreeMap<u32, u32>,
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft)>,
+        captures: &mut Vec<(u16, SchemaDraft, bool)>,
         expected: Option<&SchemaDraft>,
+    ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
+        self.control_block_with(
+            expression.syntax(),
+            pattern,
+            pattern_bindings,
+            scrutinee,
+            inputs,
+            captures,
+            |builder| {
+                let (value, _) = builder.expression(expression)?;
+                expected.map_or(Ok(value), |expected| {
+                    builder.conform_schema_draft(
+                        value,
+                        expected,
+                        expression.syntax(),
+                        "source-semantics/incompatible-function-output",
+                        "function arm does not satisfy its declared output kind",
+                    )
+                })
+            },
+        )
+    }
+
+    fn control_block_with(
+        &mut self,
+        syntax: &SyntaxNode,
+        pattern: &crate::MatchPattern<usize, SchemaDraft>,
+        pattern_bindings: &BTreeMap<u32, u32>,
+        scrutinee: PendingValue,
+        inputs: &mut Vec<PendingValue>,
+        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let unsupported = || SourceSemanticError {
             code: "source-semantics/unsupported-match-block",
             message:
                 "match blocks require pure maintained operations and closed final value schemas"
                     .to_owned(),
-            anchor: SourceSemanticAnchor::for_node(expression.syntax()),
+            anchor: SourceSemanticAnchor::for_node(syntax),
         };
         let id = self.next_control_block;
         self.next_control_block = id
@@ -9295,18 +9345,8 @@ impl SemanticBuilder {
             .ok_or_else(unsupported)?;
         let start = self.nodes.len();
         self.control_depth += 1;
-        let result = self.expression(expression).and_then(|(value, _)| {
-            let value = expected.map_or(Ok(value), |expected| {
-                self.conform_schema_draft(
-                    value,
-                    expected,
-                    expression.syntax(),
-                    "source-semantics/incompatible-function-output",
-                    "function arm does not satisfy its declared output kind",
-                )
-            })?;
-            self.schema_draft_of(value).map(|schema| (value, schema))
-        });
+        let result =
+            build(self).and_then(|value| self.schema_draft_of(value).map(|schema| (value, schema)));
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
@@ -9372,11 +9412,15 @@ impl SemanticBuilder {
                                 let input = u16::try_from(input).map_err(|_| unsupported())?;
                                 let capture = match captures
                                     .iter()
-                                    .position(|(existing, _)| *existing == input)
+                                    .position(|(existing, _, _)| *existing == input)
                                 {
                                     Some(index) => index,
                                     None => {
-                                        captures.push((input, schema.clone()));
+                                        captures.push((
+                                            input,
+                                            schema.clone(),
+                                            !matches!(value, PendingValue::Input(_)),
+                                        ));
                                         captures.len() - 1
                                     }
                                 };
@@ -9420,6 +9464,9 @@ impl SemanticBuilder {
                 PendingNodeBody::RecursiveCall(ancestor) => {
                     PendingControlOperationBody::Recur(ancestor)
                 }
+
+                PendingNodeBody::Suspend => PendingControlOperationBody::Suspend,
+                PendingNodeBody::Publish => PendingControlOperationBody::Publish,
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -9510,6 +9557,12 @@ fn resolve_pending_match(
                         PendingControlOperationBody::Recur(ancestor) => {
                             crate::ControlOperationBody::Recur(*ancestor)
                         }
+                        PendingControlOperationBody::Suspend => {
+                            crate::ControlOperationBody::Suspend
+                        }
+                        PendingControlOperationBody::Publish => {
+                            crate::ControlOperationBody::Publish
+                        }
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
                     schema: schema(&operation.schema),
@@ -9524,9 +9577,10 @@ fn resolve_pending_match(
         captures: control
             .captures
             .iter()
-            .map(|(input, draft)| crate::ControlCapture {
+            .map(|(input, draft, freeze_on_suspend)| crate::ControlCapture {
                 input: *input,
                 schema: schema(draft),
+                freeze_on_suspend: *freeze_on_suspend,
             })
             .collect(),
         arms: control

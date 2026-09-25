@@ -1953,6 +1953,1202 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
 }
 
 #[test]
+fn declared_fsm_runs_through_canonical_recursive_control() {
+    let source = "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(41)\nresult\n";
+    execute_document(
+        source,
+        [
+            (
+                vec![],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
+            ),
+            (
+                vec![],
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
+            ),
+        ],
+    );
+
+    let named = source.replace("#Increment(41)", "#Increment(value: 41)");
+    execute_document(
+        &named,
+        [(
+            vec![],
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0)),
+        )],
+    );
+}
+
+#[test]
+fn declared_fsm_diagnostics_reject_invalid_declarations_calls_and_transitions() {
+    let assert_code = |source: &str, expected: &str| {
+        let error = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .err()
+            .unwrap_or_else(|| panic!("{expected}: source unexpectedly compiled"));
+        assert_eq!(error.code, expected, "{source}\n{error:?}");
+    };
+    let specification = "#Machine(left<u64>, right<u64>) => <u64>\n  | :Start(left<u64>, right<u64>)\n  | :Done(value<u64>).\n";
+    let implementation = "#Machine(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n";
+
+    assert_code("#Missing(1u64)\n", "source-semantics/unknown-fsm");
+    assert_code(
+        &format!("{specification}{implementation}#Machine(1u64)\n"),
+        "source-semantics/missing-fsm-argument",
+    );
+    assert_code(
+        &format!("{specification}{implementation}#Machine(left: 1u64, left: 2u64)\n"),
+        "source-semantics/duplicate-fsm-argument",
+    );
+    assert_code(
+        &format!("{specification}{implementation}#Machine(left: 1u64, extra: 2u64)\n"),
+        "source-semantics/unknown-fsm-argument",
+    );
+    assert_code(
+        &format!("{specification}{implementation}#Machine(true, 2u64)\n"),
+        "source-semantics/incompatible-fsm-argument",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, right) -> :Missing\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/unknown-fsm-state",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, right) -> :Start(true, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/incompatible-fsm-state-payload",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => true.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/incompatible-fsm-output",
+    );
+    assert_code(
+        &format!("{specification}{specification}{implementation}#Machine(1u64, 2u64)\n"),
+        "source-semantics/duplicate-fsm-specification",
+    );
+    assert_code(
+        &format!(
+            "{specification}#Machine(left, left) -> :Start(left, left)\n  :Start(left, right) -> :Done(left + right)\n  :Done(value) => value.\n#Machine(1u64, 2u64)\n"
+        ),
+        "source-semantics/duplicate-fsm-implementation-parameter",
+    );
+    assert_code(
+        "#Partial(value<u64>) => <u64>\n  | :Start(value<u64>)\n  | :Done(value<u64>).\n#Partial(value) -> :Start(value)\n  :Start(value)\n    | value == 0u64 -> :Done(value)\n  :Done(value) => value.\n#Partial(1u64)\n",
+        "source-semantics/non-exhaustive-fsm",
+    );
+    assert_code(
+        "#Partial(value<u64>) => <u64>\n  | :Start(value<u64>)\n  | :Done(value<u64>).\n#Partial(value) -> :Start(value)\n  :Start(0u64) -> :Done(0u64)\n  :Done(value) => value.\n#Partial(1u64)\n",
+        "source-semantics/non-exhaustive-fsm",
+    );
+    assert_code(
+        "#PartialPair() => <u64>\n  | :Pair(left<u64>, right<u64>)\n  | :Done(value<u64>).\n#PartialPair() -> :Pair(1u64, 0u64)\n  :Pair(x, y)\n    | x == 0u64 -> :Done(y)\n  :Pair(y, x)\n    | x > 0u64 -> :Done(y)\n  :Done(value) => value.\n#PartialPair()\n",
+        "source-semantics/non-exhaustive-fsm",
+    );
+    assert_code(
+        "#Loop() => <u64>\n  | :Start.\n#Loop() -> :Start\n  :Start => #Loop().\n#Loop()\n",
+        "source-semantics/recursive-fsm-invocation",
+    );
+    assert_code(
+        "#First() => <u64>\n  | :Start.\n#Second() => <u64>\n  | :Start.\n#First() -> :Start\n  :Start => #Second().\n#Second() -> :Start\n  :Start => #First().\n#First()\n",
+        "source-semantics/recursive-fsm-invocation",
+    );
+}
+
+#[test]
+fn declared_fsm_guards_and_multi_value_states_use_one_control_owner() {
+    let traffic = "#TrafficLight(steps<u64>) => <u64>\n  | :Red(steps<u64>)\n  | :Green(steps<u64>)\n  | :Yellow(steps<u64>)\n  | :Done(out<u64>).\n#TrafficLight(steps) -> :Red(steps)\n  :Red(steps)\n    | steps > 0u64 -> :Green(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Green(steps)\n    | steps > 0u64 -> :Yellow(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Yellow(steps)\n    | steps > 0u64 -> :Red(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Done(out) => out.\n#TrafficLight(6u64)\n";
+    execute_document(traffic, [(vec![], ValueDataDraft::U64(0))]);
+
+    let fibonacci = "#Fibonacci(n<u64>) => <u64>\n  | :Compute(n<u64>, a<u64>, b<u64>)\n  | :Done(n<u64>).\n#Fibonacci(n) -> :Compute(n, 0u64, 1u64)\n  :Compute(n, a, b)\n    | n > 0u64 -> :Compute(n - 1u64, b, a + b)\n    | n == 0u64 -> :Done(a)\n  :Done(n) => n.\n#Fibonacci(10u64)\n";
+    execute_document(fibonacci, [(vec![], ValueDataDraft::U64(55))]);
+}
+
+#[test]
+fn declared_fsm_lowers_structured_state_and_output_values_recursively() {
+    let source = "#Pair(left<u64>, right<u64>) => <(u64,u64)>\n  | :Start(left<u64>, right<u64>)\n  | :Later(pair<(u64,u64)>).\n#Pair(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Later((left, right))\n  :Later((left, right)) => (left, right).\n#Pair(20u64, 22u64)\n";
+    execute_document(
+        source,
+        [(
+            vec![],
+            ValueDataDraft::Tuple([ValueDataDraft::U64(20), ValueDataDraft::U64(22)].into()),
+        )],
+    );
+}
+
+#[test]
+fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical async FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 20 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+
+        let epoch = instance.published_epoch();
+        let prepared = instance.prepare_turn(&[]).unwrap();
+        assert!(prepared.copied_output(0).is_err());
+        prepared.abort();
+        assert_eq!(instance.published_epoch(), epoch);
+        assert!(!instance.has_ready_continuation());
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(instance.ready_continuation_count(), 1);
+        assert!(instance.output_borrow(0).is_none());
+        assert!(instance.copied_output(0).is_err());
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(instance.ready_continuation_count(), 1);
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(!instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(42)
+        );
+    }
+}
+
+#[test]
+fn interactive_constant_aliases_keep_output_readiness_aligned() {
+    let source = "selected := 40\n~counter := 0\ncounter += 1\n1\n";
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    let compiled = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog(&document(source), catalog.clone())
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let selected = artifact
+            .outputs()
+            .iter()
+            .position(|output| {
+                output
+                    .interactive_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.lexical_name == "selected")
+            })
+            .unwrap();
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 70 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert!(
+            (0..artifact.outputs().len()).all(|output| instance.output_borrow(output).is_some())
+        );
+        assert_eq!(
+            instance
+                .copied_output(selected)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(40.0))
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_publishes_output_and_continuation_atomically() {
+    let source = "#Publishing() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9u64.\n#Publishing()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical publishing FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 25 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+
+        let epoch = instance.published_epoch();
+        let prepared = instance.prepare_turn(&[]).unwrap();
+        assert!(prepared.output_borrow(0).is_some());
+        assert_eq!(
+            prepared
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(7)
+        );
+        prepared.abort();
+        assert_eq!(instance.published_epoch(), epoch);
+        assert!(!instance.has_ready_continuation());
+        assert!(instance.output_borrow(0).is_none());
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(7)
+        );
+
+        instance.turn(&[]).unwrap();
+        assert!(instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(7)
+        );
+
+        instance.turn(&[]).unwrap();
+        assert!(!instance.has_ready_continuation());
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::U64(9)
+        );
+    }
+}
+
+#[test]
+fn fsm_publication_admission_counts_live_arm_bindings() {
+    let source = "#Publishing(kept<string>, published<string>) => <string>\n  | :Start(kept<string>)\n  | :Later.\n#Publishing(kept, published) -> :Start(kept)\n  :Start(kept)\n    => published\n    ~> :Later\n  :Later => published.\n#Publishing(kept<string>, published<string>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 86),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let kept = ["k".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let published = ["p".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let inputs = [
+        CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::String(&kept),
+        },
+        CapturedSignalInput {
+            slot: instance.plan.inputs[1].slot,
+            value: ResidentValueRef::String(&published),
+        },
+    ];
+
+    let epoch = instance.published_epoch();
+    assert!(instance.turn(&inputs).is_err());
+    assert_eq!(instance.published_epoch(), epoch);
+    assert!(!instance.has_ready_continuation());
+}
+
+#[test]
+fn fsm_publication_replacement_admission_counts_the_previous_value() {
+    let source = "#Publishing() => <string>\n  | :Start\n  | :Middle\n  | :Later.\n#Publishing() -> :Start\n  :Start\n    => signal<string>\n    ~> :Middle\n  :Middle\n    => signal\n    ~> :Later\n  :Later => signal.\n#Publishing()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 87),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let first = ["a".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let first_input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&first),
+    }];
+    instance.turn(&first_input).unwrap();
+    assert!(instance.has_ready_continuation());
+
+    let second = ["b".repeat((mech_core::RESIDENT_MAX_BYTES * 3 / 8) as usize)];
+    let second_input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&second),
+    }];
+    let published_epoch = instance.published_epoch();
+    assert!(instance.turn(&second_input).is_err());
+    assert_eq!(instance.published_epoch(), published_epoch);
+    assert!(instance.has_ready_continuation());
+}
+
+#[test]
+fn declared_fsm_retains_its_last_publication_across_later_suspensions() {
+    let source = "#Publishing() => <f64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9.\nvalue := #Publishing()\nvalue + signal<f64>\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical publishing FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 90 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for (input, expected) in [(1.0, 8.0), (2.0, 9.0)] {
+            instance
+                .turn(&[CapturedSignalInput {
+                    slot: instance.plan.inputs[0].slot,
+                    value: ResidentValueRef::F64(&[input]),
+                }])
+                .unwrap();
+            assert_eq!(
+                instance
+                    .copied_output(0)
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(expected))
+            );
+            assert!(instance.has_ready_continuation());
+        }
+    }
+}
+
+#[test]
+fn declared_fsm_bytecode_rejects_malformed_typed_continuation_operations() {
+    let source = "#Publishing() => <u64>\n  | :Start\n  | :Later.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Later\n  :Later => 9u64.\n#Publishing()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    mech_engine::decode_program_artifact_sections(&sections).unwrap();
+    let graph = String::from_utf8(sections.nodes.clone()).unwrap();
+    assert!(graph.contains("\"body\":\"Publish\""), "{graph}");
+
+    for malformed in ["Suspend", "Recur"] {
+        let mut sections = sections.clone();
+        sections.nodes = graph
+            .replacen(
+                "\"body\":\"Publish\"",
+                &format!("\"body\":\"{malformed}\""),
+                1,
+            )
+            .into_bytes();
+        assert!(
+            mech_engine::decode_program_artifact_sections(&sections).is_err(),
+            "malformed {malformed} operation must fail typed artifact admission"
+        );
+    }
+
+    fn reference_publish_local(value: &mut serde_json::Value) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                let block = object.get("id").and_then(serde_json::Value::as_u64);
+                if let (Some(block), Some(operations)) = (
+                    block,
+                    object
+                        .get_mut("operations")
+                        .and_then(serde_json::Value::as_array_mut),
+                ) && let Some(publish_index) = operations.iter().position(|operation| {
+                    operation.get("body").is_some_and(|body| body == "Publish")
+                }) {
+                    let publish_node = operations[publish_index]["node"].as_u64().unwrap();
+                    let insert = publish_index + 1;
+                    for operation in &mut operations[insert..] {
+                        let node = operation["node"].as_u64().unwrap();
+                        operation["node"] = serde_json::json!(node + 1);
+                    }
+                    let mut duplicate = operations[publish_index].clone();
+                    duplicate["node"] = serde_json::json!(insert);
+                    duplicate["inputs"] = serde_json::json!([
+                        {"Local": {"block": block, "node": publish_node}}
+                    ]);
+                    operations.insert(insert, duplicate);
+                    if let Some(local) = object
+                        .get_mut("yield_value")
+                        .and_then(|yielded| yielded.get_mut("Local"))
+                        && local["node"]
+                            .as_u64()
+                            .is_some_and(|node| node >= insert as u64)
+                    {
+                        local["node"] = serde_json::json!(local["node"].as_u64().unwrap() + 1);
+                    }
+                    return true;
+                }
+                object.values_mut().any(reference_publish_local)
+            }
+            serde_json::Value::Array(values) => values.iter_mut().any(reference_publish_local),
+            _ => false,
+        }
+    }
+
+    let mut publish_local = sections.clone();
+    let mut graph: serde_json::Value = serde_json::from_slice(&publish_local.nodes).unwrap();
+    assert!(reference_publish_local(&mut graph));
+    publish_local.nodes = serde_json::to_vec(&graph).unwrap();
+    let error = mech_engine::decode_program_artifact_sections(&publish_local).unwrap_err();
+    assert!(
+        format!("{error:?}").contains("publication locals cannot be referenced"),
+        "{error:?}"
+    );
+}
+
+#[test]
+fn declared_fsm_continuation_retains_lexical_captures() {
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Captured(signal<f64>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical captured FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 30 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        let first = [10.0];
+        let changed = [99.0];
+        let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+            let inputs = [CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(value),
+            }];
+            instance.turn(&inputs).unwrap();
+        };
+
+        turn(&mut instance, &first);
+        assert!(instance.output_borrow(0).is_none());
+        turn(&mut instance, &changed);
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(10.0))
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_continuation_freezes_derived_capture_locations() {
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value + 1.\nderived := signal<f64> + 1\n#Captured(derived)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 83),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for value in [10.0, 99.0] {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&[value]),
+            }])
+            .unwrap();
+    }
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(12.0))
+    );
+}
+
+#[test]
+fn resident_activation_rejects_non_input_live_fsm_captures() {
+    use mech_engine::__resident::ResidentActivationError;
+
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\nderived := signal<f64> + 1\n#Captured(derived)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    fn mark_derived_capture_live(value: &mut serde_json::Value) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                if let Some(captures) = object
+                    .get_mut("Match")
+                    .and_then(|matched| matched.get_mut("captures"))
+                    .and_then(serde_json::Value::as_array_mut)
+                    && let Some(capture) = captures.iter_mut().find(|capture| {
+                        capture
+                            .as_array()
+                            .and_then(|fields| fields.get(2))
+                            .and_then(serde_json::Value::as_bool)
+                            == Some(true)
+                    })
+                {
+                    capture[2] = serde_json::Value::Bool(false);
+                    return true;
+                }
+                object.values_mut().any(mark_derived_capture_live)
+            }
+            serde_json::Value::Array(values) => values.iter_mut().any(mark_derived_capture_live),
+            _ => false,
+        }
+    }
+    assert!(mark_derived_capture_live(&mut graph));
+    sections.nodes = serde_json::to_vec(&graph).unwrap();
+    let artifact = mech_engine::decode_program_artifact_sections(&sections).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    assert!(matches!(
+        activate(
+            ReactiveInstanceId::new(0x540, 84),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        ),
+        Err(ResidentActivationError::UnsupportedControlLayout { .. })
+    ));
+}
+
+#[test]
+fn replacement_continuation_admission_counts_the_retained_frame() {
+    let source = "#Repeat(value<string>) => <string>\n  | :Start\n  | :Again.\n#Repeat(value) -> :Start\n  :Start ~> :Again\n  :Again ~> :Again.\n#Repeat(signal<string>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 85),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let payload = ["x".repeat((mech_core::RESIDENT_MAX_BYTES / 2 + 1024) as usize)];
+    let input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&payload),
+    }];
+
+    instance.turn(&input).unwrap();
+    let suspended_epoch = instance.published_epoch();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.turn(&[]).is_err());
+    assert_eq!(instance.published_epoch(), suspended_epoch);
+    assert!(instance.has_ready_continuation());
+}
+
+#[test]
+fn resumed_fsm_body_admission_counts_the_active_frame() {
+    let source = "#Captured(value<string>) => <string>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Captured(signal<string>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 88),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let payload = ["x".repeat((mech_core::RESIDENT_MAX_BYTES / 2 + 1024) as usize)];
+    let input = [CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::String(&payload),
+    }];
+
+    instance.turn(&input).unwrap();
+    let suspended_epoch = instance.published_epoch();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.turn(&[]).is_err());
+    assert_eq!(instance.published_epoch(), suspended_epoch);
+    assert!(instance.has_ready_continuation());
+}
+
+#[test]
+fn declared_fsm_resume_keeps_arguments_and_reads_external_inputs_live() {
+    let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value + signal.\n#Captured(signal<f64>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 81 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        for value in [10.0, 99.0] {
+            let input = [value];
+            let inputs = [CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&input),
+            }];
+            instance.turn(&inputs).unwrap();
+        }
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(109.0))
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_continuation_owns_managed_composite_captures() {
+    let source = "#CapturedTuple(value<(f64,f64)>) => <(f64,f64)>\n  | :Start\n  | :Later.\n#CapturedTuple(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#CapturedTuple((10, 20))\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap_or_else(|error| panic!("canonical tuple FSM did not compile: {error:?}"));
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let expected = ValueDataDraft::Tuple(
+        [10.0, 20.0]
+            .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+            .into(),
+    );
+
+    for (ordinal, artifact) in [&artifact, &decoded].into_iter().enumerate() {
+        let mut instance = activate(
+            ReactiveInstanceId::new(0x540, 35 + ordinal as u32),
+            artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        )
+        .unwrap();
+        instance.turn(&[]).unwrap();
+        assert!(instance.output_borrow(0).is_none());
+        assert!(instance.has_ready_continuation());
+        instance.turn(&[]).unwrap();
+        assert_eq!(
+            instance
+                .copied_output(0)
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn declared_fsm_statement_and_block_transitions_share_the_arm_control_block() {
+    let source = "#Code() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Code() -> :Start\n  :Start\n    -> x := 40u64\n    -> {y := x + 1u64\n        z := y + 1u64}\n    -> :Done(z)\n  :Done(value) => value.\n#Code()\n";
+    execute_document(source, [(vec![], ValueDataDraft::U64(42))]);
+}
+
+#[test]
+fn declared_fsm_failed_yields_and_resumes_preserve_the_published_continuation() {
+    let source = "#Atomic(seed<f64>) => <f64>\n  | :Start\n  | :Later(value<f64>)\n  | :Done(value<f64>).\n#Atomic(seed) -> :Start\n  :Start ~> :Later(seed)\n  :Later(value) -> :Done(value + 1)\n  :Done(value) => value.\n#Atomic(signal<f64>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let encoded = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let artifact = mech_engine::decode_program_artifact_bytecode_v1(&encoded).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let budget = ManagedMemoryBudget::new(8 * 1024 * 1024);
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(0x540, 40),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            memory_budget: Some(budget.clone()),
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+        let input = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(value),
+        }];
+        instance.turn(&input)
+    };
+
+    let epoch = instance.published_epoch();
+    budget.inject_snapshot_import_failure_after(0);
+    assert!(turn(&mut instance, &[41.0]).is_err());
+    assert_eq!(instance.published_epoch(), epoch);
+    assert!(!instance.has_ready_continuation());
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, &[41.0]).unwrap();
+    let suspended_epoch = instance.published_epoch();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.output_borrow(0).is_none());
+
+    budget.inject_snapshot_import_failure_after(0);
+    assert!(turn(&mut instance, &[99.0]).is_err());
+    assert_eq!(instance.published_epoch(), suspended_epoch);
+    assert!(instance.has_ready_continuation());
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, &[99.0]).unwrap();
+    assert!(!instance.has_ready_continuation());
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0))
+    );
+}
+
+#[test]
+fn declared_fsm_wakeup_rejects_reset_and_replacement_generations() {
+    use mech_engine::__resident::StateMigrationPolicy;
+
+    let source = "#Resettable() => <u64>\n  | :Start\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Resettable() -> :Start\n  :Start ~> :Later(41u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Resettable()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 50),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    let stale = instance.continuation_wakeup().unwrap();
+    assert!(instance.accepts_continuation_wakeup(stale));
+
+    let reset = activate(
+        instance.id.checked_next_generation().unwrap(),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    assert!(!reset.accepts_continuation_wakeup(stale));
+
+    let replacement_source = source.replace("value + 1u64", "value + 2u64");
+    let replacement = CanonicalSourceFrontend
+        .compile_document(&document(&replacement_source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    instance
+        .reactivate(
+            &replacement,
+            &catalog,
+            &ActivationFacts::default(),
+            StateMigrationPolicy::PreserveCompatibleResetIncompatible,
+        )
+        .unwrap();
+    assert!(!instance.accepts_continuation_wakeup(stale));
+    assert!(!instance.has_ready_continuation());
+}
+
+#[test]
+fn declared_fsm_wakeup_drains_are_bounded_and_fair_across_instances() {
+    use mech_engine::resident::ResidentContinuationScheduler;
+
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 42u64.\n#Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut left = activate(
+        ReactiveInstanceId::new(0x540, 60),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let mut right = activate(
+        ReactiveInstanceId::new(0x540, 61),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    left.turn(&[]).unwrap();
+    right.turn(&[]).unwrap();
+
+    let mut scheduler = ResidentContinuationScheduler::new();
+    let first = scheduler.collect_ready(&[&left, &right], 1);
+    assert_eq!(first.len(), 1);
+    assert_eq!(first[0].instance(), left.id);
+    assert!(left.accepts_continuation_wakeup(first[0]));
+    left.turn(&[]).unwrap();
+    assert!(left.has_ready_continuation());
+    assert!(right.has_ready_continuation());
+
+    let second = scheduler.collect_ready(&[&left, &right], 1);
+    assert_eq!(second.len(), 1);
+    assert_eq!(second[0].instance(), right.id);
+    assert!(right.accepts_continuation_wakeup(second[0]));
+    right.turn(&[]).unwrap();
+    assert!(left.has_ready_continuation());
+    assert!(right.has_ready_continuation());
+
+    let third = scheduler.collect_ready(&[&left, &right], 1);
+    assert_eq!(third.len(), 1);
+    assert_eq!(third[0].instance(), left.id);
+    assert!(left.accepts_continuation_wakeup(third[0]));
+}
+
+#[test]
+fn one_turn_resumes_only_one_of_two_ready_fsm_nodes() {
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 72),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 1);
+}
+
+#[test]
+fn completed_fsm_roots_do_not_restart_during_the_same_continuation_drain() {
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 84),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 1);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 0);
+}
+
+#[test]
+fn repeated_fsm_yields_rotate_ready_roots_within_one_instance() {
+    let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 73),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    let first = instance.continuation_wakeup().unwrap();
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.ready_continuation_count(), 2);
+    assert_ne!(instance.continuation_wakeup().unwrap(), first);
+    instance.turn(&[]).unwrap();
+    assert_eq!(instance.continuation_wakeup().unwrap(), first);
+}
+
+#[test]
+fn downstream_fsm_output_stays_unavailable_until_resume() {
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\nresult := #Deferred()\nplus := result + 1u64\n";
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = std::sync::Arc::new(catalog.build().unwrap());
+    let artifact = CanonicalSourceFrontend
+        .compile_interactive_document_with_catalog(&document(source), catalog.clone())
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let plus = artifact
+        .outputs()
+        .iter()
+        .position(|output| {
+            output
+                .interactive_binding
+                .as_ref()
+                .is_some_and(|binding| binding.lexical_name == "plus")
+        })
+        .unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 74),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    instance.turn(&[]).unwrap();
+    assert!(instance.has_ready_continuation());
+    assert!(instance.output_borrow(plus).is_none());
+    assert!(instance.copied_output(plus).is_err());
+    instance.turn(&[]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(plus)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(42)
+    );
+}
+
+#[test]
+fn state_writers_wait_for_unpublished_fsm_dependencies() {
+    let source = "#Deferred() => <f64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41.\nlive := signal<f64>\ndeferred := #Deferred()\n~total<f64> := 0.0\ntotal += deferred + live\ntotal\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 85),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    for value in [1.0, 1.0] {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&[value]),
+            }])
+            .unwrap();
+    }
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0))
+    );
+}
+
+#[test]
+fn fresh_fsm_waits_for_an_unpublished_upstream_continuation() {
+    let source = "#Inner() => <f64>\n  | :Start\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Done\n  :Done => 41.\n#Outer(value<f64>, live<f64>) => <f64>\n  | :Start(value<f64>, live<f64>)\n  | :Done(value<f64>).\n#Outer(value, live) -> :Start(value, live)\n  :Start(value, live) ~> :Done(value + live)\n  :Done(value) => value.\n#Outer(#Inner(), signal<f64>)\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 75),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: f64| {
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::F64(&[value]),
+            }])
+            .unwrap();
+    };
+
+    turn(&mut instance, 1.0);
+    assert_eq!(instance.ready_continuation_count(), 1);
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, 1.0);
+    assert_eq!(instance.ready_continuation_count(), 1);
+    assert!(instance.output_borrow(0).is_none());
+
+    turn(&mut instance, 99.0);
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(42.0))
+    );
+}
+
+#[test]
+fn nested_fsm_suspension_is_rejected_during_source_admission() {
+    let source = "#Inner() => <u64>\n  | :Start\n  | :Later\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Later\n  :Later -> :Done\n  :Done => 7u64.\n#Outer() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Outer() -> :Start\n  :Start -> :Done(#Inner())\n  :Done(value) => value.\n#Outer()\n";
+    let error = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .err()
+        .unwrap();
+    assert_eq!(
+        error.code,
+        "source-semantics/unsupported-nested-fsm-suspension"
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn nested_synchronous_fsm_publications_lower_to_the_nested_owner() {
+    use mech_core::{FunctionCatalogBuilder, ReactiveInstanceId, ValueDataDraft};
+    use mech_engine::__resident::{ActivationFacts, activate};
+
+    let source = "#Inner() => <u64>\n  | :Start\n  | :Later.\n#Inner() -> :Start\n  :Start\n    => 7u64\n    -> :Later\n  :Later => 9u64.\n#Outer() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Outer() -> :Start\n  :Start -> :Done(#Inner())\n  :Done(value) => value.\n#Outer()\n";
+    let artifact = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 88),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+
+    instance.turn(&[]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::U64(9)
+    );
+}
+
+#[test]
 fn maximum_depth_structured_fsm_values_roundtrip() {
     let nested_value = |wrappers| {
         let mut value = ":x".to_owned();
@@ -2009,6 +3205,36 @@ fn fsm_values_predeclare_late_input_annotations() {
     compiled
         .compile_artifact()
         .expect("FSM value annotations must be occurrence-order independent");
+}
+
+#[test]
+fn declared_fsm_bodies_predeclare_late_input_annotations() {
+    let source = "#Reads() => <u8>\n  | :Start\n  | :Later.\n#Reads() -> :Start\n  :Start\n    => signal\n    ~> :Later\n  :Later => signal<u8>.\n#Reads()\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .expect("declared FSM inputs must be occurrence-order independent");
+    assert_eq!(compiled.program().inputs.len(), 1);
+    assert!(matches!(
+        compiled
+            .schemas()
+            .get(compiled.program().inputs[0].schema)
+            .unwrap()
+            .body(),
+        SchemaBody::UnsignedInteger(IntegerWidth::W8)
+    ));
+    compiled
+        .compile_artifact()
+        .expect("declared FSM input annotations must close the control block");
+}
+
+#[test]
+fn declared_fsm_input_predeclaration_preserves_every_lexical_scope() {
+    let source = "#Scoped(seed<u8>) => <u8>\n  | :Start(value<u8>).\n#Scoped(seed) -> :Start(seed)\n  :Start(value)\n    local := seed<u8> + value<u8>\n    => local<u8>.\n#Scoped(7u8)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .expect("FSM parameters, state binders, and preceding locals must remain lexical");
+    assert!(compiled.program().inputs.is_empty());
+    compiled.compile_artifact().unwrap();
 }
 
 #[cfg(feature = "resident-artifact")]
@@ -2246,11 +3472,14 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     let mech_engine::SourceNodeBody::Match(control) = &typed_pattern.program().nodes[0].body else {
         panic!("typed match");
     };
-    assert_eq!(control.arms[0].pattern, mech_engine::MatchPattern::Bind);
+    assert!(matches!(
+        control.arms[0].pattern,
+        mech_engine::MatchPattern::Structural(mech_engine::CollectionPattern::Bind { .. })
+    ));
     let parameter = &control.arms[0].body.parameters[0];
     assert_eq!(
         parameter.source,
-        mech_engine::ControlParameterSource::Scrutinee
+        mech_engine::ControlParameterSource::PatternBinding(0)
     );
     assert_eq!(
         typed_pattern

@@ -259,6 +259,134 @@ fn typed_match_rejects_invalid_scope_coverage_schema_and_writer() {
 }
 
 #[test]
+fn typed_match_rejects_fsm_publication_nested_inside_a_guard() {
+    let mut draft = fixture();
+    let boolean = draft.inputs[0].schema;
+    let scalar = draft.outputs[0].schema;
+    let true_ = (0..draft.constants.len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| {
+            matches!(
+                draft.constants.get(*id).unwrap().data(),
+                mech_core::ValueData::Bool(true)
+            )
+        })
+        .unwrap();
+    let scalar_constant = (0..draft.constants.len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| draft.constants.get(*id).unwrap().schema() == scalar)
+        .unwrap();
+    let nested = MatchDeclaration {
+        scrutinee: 0,
+        partial: false,
+        captures: Box::new([]),
+        arms: vec![ControlMatchArm {
+            pattern: MatchPattern::Wildcard,
+            guard: None,
+            body: ControlBlock {
+                id: ControlBlockId(1),
+                parameters: Box::new([]),
+                operations: vec![ControlOperation {
+                    node: 0,
+                    body: ControlOperationBody::Publish,
+                    inputs: vec![ControlValue::Constant(true_)].into_boxed_slice(),
+                    schema: boolean,
+                }]
+                .into_boxed_slice(),
+                yield_value: ControlValue::Local {
+                    block: ControlBlockId(1),
+                    node: 0,
+                },
+            },
+        }]
+        .into_boxed_slice(),
+    };
+    let matched = control(&mut draft);
+    matched.arms[0].guard = Some(ControlBlock {
+        id: ControlBlockId(0),
+        parameters: Box::new([]),
+        operations: vec![ControlOperation {
+            node: 0,
+            body: ControlOperationBody::Match(nested),
+            inputs: vec![ControlValue::Constant(true_)].into_boxed_slice(),
+            schema: boolean,
+        }]
+        .into_boxed_slice(),
+        yield_value: ControlValue::Local {
+            block: ControlBlockId(0),
+            node: 0,
+        },
+    });
+    matched.arms[0].body.id = ControlBlockId(2);
+    matched.arms[0].body.yield_value = ControlValue::Constant(scalar_constant);
+    matched.arms[1].body.id = ControlBlockId(3);
+
+    assert!(matches!(
+        draft.finalize(),
+        Err(ArtifactBuildError::InvalidControl {
+            reason: "FSM publication cannot execute inside a guard or comprehension",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn typed_match_accepts_fsm_publication_nested_inside_another_match() {
+    let mut draft = fixture();
+    let scalar = draft.outputs[0].schema;
+    let true_ = (0..draft.constants.len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| {
+            matches!(
+                draft.constants.get(*id).unwrap().data(),
+                mech_core::ValueData::Bool(true)
+            )
+        })
+        .unwrap();
+    let scalar_constant = (0..draft.constants.len())
+        .map(|id| ConstantId::new(id as u32))
+        .find(|id| draft.constants.get(*id).unwrap().schema() == scalar)
+        .unwrap();
+    let nested = MatchDeclaration {
+        scrutinee: 0,
+        partial: false,
+        captures: Box::new([]),
+        arms: vec![ControlMatchArm {
+            pattern: MatchPattern::Wildcard,
+            guard: None,
+            body: ControlBlock {
+                id: ControlBlockId(1),
+                parameters: Box::new([]),
+                operations: vec![ControlOperation {
+                    node: 0,
+                    body: ControlOperationBody::Publish,
+                    inputs: vec![ControlValue::Constant(scalar_constant)].into_boxed_slice(),
+                    schema: scalar,
+                }]
+                .into_boxed_slice(),
+                yield_value: ControlValue::Constant(scalar_constant),
+            },
+        }]
+        .into_boxed_slice(),
+    };
+    let matched = control(&mut draft);
+    matched.arms[0].body.operations = vec![ControlOperation {
+        node: 0,
+        body: ControlOperationBody::Match(nested),
+        inputs: vec![ControlValue::Constant(true_)].into_boxed_slice(),
+        schema: scalar,
+    }]
+    .into_boxed_slice();
+    matched.arms[0].body.yield_value = ControlValue::Local {
+        block: matched.arms[0].body.id,
+        node: 0,
+    };
+    matched.arms[1].body.id = ControlBlockId(2);
+
+    draft.finalize().unwrap();
+}
+
+#[test]
 fn typed_match_rejects_scalar_schema_for_array_rest_binding() {
     let artifact = compile("[1 2 3] ? | [head | rest], flag<bool> => rest[1] + rest[2] | * => 0")
         .compile_artifact()
@@ -322,13 +450,15 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
     }
     for key in ["revision", "pattern"] {
         let mut sections = sections.clone();
-        let text = String::from_utf8(sections.nodes.clone()).unwrap();
-        let text = if key == "revision" {
-            text.replace("\"revision\":9", "\"revision\":8")
+        sections.nodes = if key == "revision" {
+            let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+            let revision = graph["revision"].as_u64().unwrap();
+            graph["revision"] = serde_json::Value::from(revision - 1);
+            serde_json::to_vec(&graph).unwrap()
         } else {
-            text.replace("\"Literal\":", "\"Unknown\":")
+            let text = String::from_utf8(sections.nodes).unwrap();
+            text.replace("\"Literal\":", "\"Unknown\":").into_bytes()
         };
-        sections.nodes = text.into_bytes();
         assert!(
             decode_program_artifact_sections(&sections).is_err(),
             "{key}"
@@ -1743,6 +1873,103 @@ fn comprehension_match_comprehension_maps_inner_operation_contract() {
     )
     .unwrap();
     assert_eq!(decoded.nodes().len(), artifact.nodes().len());
+}
+
+#[test]
+fn comprehension_rejects_suspend_hidden_in_a_nested_match() {
+    let program = compile("[(item ? | value => value) | item <- [1]]");
+    let mut graph = program.program().clone();
+    let SourceNodeBody::Comprehension(root) = &mut graph.nodes[0].body else {
+        panic!("expected comprehension root")
+    };
+    let nested = root
+        .steps
+        .iter_mut()
+        .find_map(|step| match step {
+            ComprehensionStep::Operation(operation) => match &mut operation.body {
+                ControlOperationBody::Match(nested) => Some(nested),
+                _ => None,
+            },
+            _ => None,
+        })
+        .expect("expected nested match");
+    let body = &mut nested.arms[0].body;
+    let output_schema = body.parameters[0].schema;
+    body.operations = vec![ControlOperation {
+        node: 0,
+        body: ControlOperationBody::Suspend,
+        inputs: vec![ControlValue::Parameter {
+            block: body.id,
+            ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        schema: output_schema,
+    }]
+    .into_boxed_slice();
+    body.yield_value = ControlValue::Local {
+        block: body.id,
+        node: 0,
+    };
+
+    let result = compile_source_program_with_control_contracts(
+        &graph,
+        &mut ArtifactBuildContext::new(program.schemas(), program.constants()),
+        &[None],
+    );
+    assert!(
+        matches!(
+            result,
+            Err(ArtifactBuildError::InvalidControl {
+                reason: "suspension must be the terminal FSM body yield",
+                ..
+            })
+        ),
+        "{result:?}"
+    );
+}
+
+#[test]
+fn artifact_rejects_suspend_hidden_in_a_nested_match() {
+    let program = compile(
+        "signal<bool> ? | true => (signal<bool> ? | true => true | false => false) | false => false",
+    );
+    let mut graph = program.program().clone();
+    let SourceNodeBody::Match(root) = &mut graph.nodes[0].body else {
+        panic!("expected outer match")
+    };
+    let ControlOperationBody::Match(nested) = &mut root.arms[0].body.operations[0].body else {
+        panic!("expected nested match")
+    };
+    let body = &mut nested.arms[0].body;
+    let schema = body.parameters[0].schema;
+    body.operations = vec![ControlOperation {
+        node: 0,
+        body: ControlOperationBody::Suspend,
+        inputs: vec![ControlValue::Parameter {
+            block: body.id,
+            ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        schema,
+    }]
+    .into_boxed_slice();
+    body.yield_value = ControlValue::Local {
+        block: body.id,
+        node: 0,
+    };
+
+    let result = compile_source_program_with_control_contracts(
+        &graph,
+        &mut ArtifactBuildContext::new(program.schemas(), program.constants()),
+        &[None],
+    );
+    assert!(matches!(
+        result,
+        Err(ArtifactBuildError::InvalidControl {
+            reason: "suspension must be the terminal FSM body yield",
+            ..
+        })
+    ));
 }
 
 #[cfg(feature = "resident-artifact")]

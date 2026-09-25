@@ -2530,6 +2530,88 @@ fn ordered_retained_roots_link_live_exports_and_preserve_caller_output_order() {
 }
 
 #[test]
+fn ordered_root_registers_declared_fsm_before_its_invocation() {
+    use mech_engine::CanonicalOrderedDocument;
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let source = "#Deferred() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Done(42u64)\n  :Done(value) => value.\n#Deferred()\n";
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x591), Revision(1), source).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    let root = CanonicalOrderedDocument {
+        identity: 0,
+        document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+        nominal_origin: None,
+        nominal_package_id: None,
+        input_schemas: BTreeMap::new(),
+        resource_writes: BTreeMap::new(),
+        imports: BTreeMap::new(),
+        resolved_modules: BTreeSet::new(),
+    };
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let program = CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(
+            &[root],
+            std::sync::Arc::new(catalog.build().unwrap()),
+        )
+        .unwrap();
+    let artifact = program.compile_artifact().unwrap();
+    assert!(artifact.nodes().iter().any(|node| matches!(
+        &node.body,
+        mech_engine::ExecutableNodeBody::Match(control) if control.arms.iter().any(|arm| {
+            arm.body.operations.iter().any(|operation| {
+                matches!(operation.body, mech_engine::ControlOperationBody::Suspend)
+            })
+        })
+    )));
+}
+
+#[test]
+fn ordered_roots_namespace_same_named_fsm_state_schemas() {
+    use mech_engine::CanonicalOrderedDocument;
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let root = |identity, source: &str| {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x598 + identity as u64), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        CanonicalOrderedDocument {
+            identity,
+            document: DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            nominal_origin: None,
+            nominal_package_id: None,
+            input_schemas: BTreeMap::new(),
+            resource_writes: BTreeMap::new(),
+            imports: BTreeMap::new(),
+            resolved_modules: BTreeSet::new(),
+        }
+    };
+    let first = root(
+        1,
+        "#Machine() => <u64>\n  | :First\n  | :Done.\n#Machine() -> :First\n  :First -> :Done\n  :Done => 1u64.\n#Machine()\n",
+    );
+    let second = root(
+        2,
+        "#Machine() => <u64>\n  | :Second(value<u64>)\n  | :Done(value<u64>).\n#Machine() -> :Second(2u64)\n  :Second(value) -> :Done(value)\n  :Done(value) => value.\n#Machine()\n",
+    );
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    CanonicalSourceFrontend
+        .compile_ordered_documents_with_catalog(
+            &[first, second],
+            std::sync::Arc::new(catalog.build().unwrap()),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+}
+
+#[test]
 fn ordered_roots_reject_same_nominal_path_from_distinct_sources() {
     use mech_engine::CanonicalOrderedDocument;
     use std::collections::{BTreeMap, BTreeSet};
