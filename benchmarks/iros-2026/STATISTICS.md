@@ -1,14 +1,15 @@
 # Benchmark statistics and uncertainty
 
-The publication figures use medians, never raw arithmetic averages. Every
-headline comparison reports the number of retained process runs and the
-observed minimum-to-maximum range. When a figure has room, it also shows every
-retained sample.
+The publication figures use medians, never raw arithmetic averages. Comparison
+panels use equal, deterministic process windows: the first three retained runs
+per row. Their whiskers and `±` labels are
+median absolute deviation (MAD), which prevents an isolated interference run
+from dominating the plotted spread. The raw JSON retains every sample.
 
-The range whiskers are descriptive error bars. They are not confidence
-intervals. Three to seven runs are too few to justify a precise distributional
-claim, and a bootstrap interval for a three-sample median would mostly restate
-the sample range. No p-value or claim of statistical significance is made.
+MAD is a robust descriptive error bar, not a confidence interval. Three
+charted runs are too few to justify a precise distributional claim. No
+p-value or claim of statistical significance is made. Evidence tables outside
+the poster charts may still report all runs and observed min-max ranges.
 
 ## Headline matched comparison
 
@@ -40,14 +41,14 @@ both CPU and Apple Metal from one application file: Mech, Taichi, and Halide.
 The workload is 500,000 filters × 40 turns with f32 resident ping-pong state
 and a synchronization boundary after every turn; CPU uses eight workers.
 
-| Device | Implementation | Checked median (observed min-max) | Unchecked median (observed min-max) |
+| Device | Implementation | Checked median ± MAD | Unchecked median ± MAD |
 | --- | --- | ---: | ---: |
-| CPU | Mech Cranelift SIMD/JIT | 104.783 (98.691-128.144), n=3 | 110.469 (100.190-133.520), n=3 |
-| CPU | Taichi LLVM | 88.016 (87.095-88.710), n=7 | 95.462 (86.566-95.782), n=7 |
-| CPU | Halide native | 23.234 (22.455-23.508), n=7 | 23.809 (23.671-23.984), n=7 |
-| Metal | Mech generated MSL | 422.702 (401.943-428.966), n=5 | 421.651 (365.737-422.463), n=5 |
-| Metal | Taichi native Metal | 332.584 (331.252-335.612), n=7 | 405.305 (399.134-412.234), n=7 |
-| Metal | Halide Metal schedule | 292.500 (283.456-294.175), n=7 | 393.264 (390.533-394.516), n=7 |
+| CPU | Mech Cranelift SIMD/JIT | 104.783 ± 6.092 | 110.469 ± 10.279 |
+| CPU | Taichi LLVM | 87.723 ± 0.441 | 95.759 ± 0.023 |
+| CPU | Halide native | 23.426 ± 0.026 | 23.940 ± 0.044 |
+| Metal | Mech generated MSL | 420.404 ± 3.491 | 419.523 ± 2.940 |
+| Metal | Taichi native Metal | 332.584 ± 0.581 | 409.530 ± 2.704 |
+| Metal | Halide Metal schedule | 292.500 ± 0.583 | 394.263 ± 0.053 |
 
 Mech has the highest retained median in both modes on both devices. This is a
 descriptive result for the measured programs and sessions, not a claim that
@@ -57,24 +58,27 @@ puts that claim limit in-frame rather than relying on surrounding prose.
 
 ## Cross-language CPU publication figure
 
-The publication-facing CPU figure extends the matched Mech–Rust anchor with
-the closest retained Mojo, Julia, Futhark, and NumPy/Numba rows. All six run on
-the Apple M1 CPU with 500,000 filters × 40 turns, f32 state, eight workers, and
-fused execution. Checked and unchecked modes remain separate.
+The full CPU figure extends the matched Mech–Rust anchor with Mojo, Julia,
+Futhark, Taichi, NumPy/Numba, and Halide. All eight run on the Apple M1 CPU
+with 500,000 filters × 40 turns, f32 state, and eight workers. Checked and
+unchecked modes remain separate, and every row uses the first three processes.
 
-| Implementation | Checked median (observed min-max) | Unchecked median (observed min-max) |
+| Implementation | Checked median ± MAD | Unchecked median ± MAD |
 | --- | ---: | ---: |
-| Mech | 145.573 (139.668-147.381), n=3 | 165.830 (163.526-171.894), n=3 |
-| Rust | 146.509 (141.568-146.999), n=3 | 163.866 (162.420-169.581), n=3 |
-| Mojo | 143.519 (138.764-144.131), n=5 | 158.512 (121.695-159.013), n=5 |
-| Julia | 128.544 (126.952-128.650), n=3 | 133.605 (108.763-136.755), n=3 |
-| Futhark | 108.718 (107.497-109.275), n=5 | 152.330 (151.093-154.089), n=5 |
-| NumPy/Numba | 80.323 (80.111-80.358), n=3 | 81.972 (79.427-82.242), n=3 |
+| Rust | 146.509 ± 0.490 | 163.866 ± 1.446 |
+| Mech | 145.573 ± 1.808 | 165.830 ± 2.304 |
+| Mojo | 143.986 ± 0.144 | 145.219 ± 13.294 |
+| Julia | 128.544 ± 0.106 | 133.605 ± 3.149 |
+| Futhark | 108.903 ± 0.372 | 152.479 ± 1.386 |
+| Taichi | 87.723 ± 0.441 | 95.759 ± 0.023 |
+| NumPy/Numba | 80.323 ± 0.036 | 81.972 ± 0.270 |
+| Halide | 23.426 ± 0.026 | 23.940 ± 0.044 |
 
 Mech and Rust additionally match block-atomic rollback and fault metadata.
-The other implementations match the successful-path physical shape but expose
-different fault interfaces. NumPy/Numba is a Numba-compiled parallel kernel,
-not interpreted Python. All samples reported zero faults.
+Fault interfaces differ elsewhere. Taichi and Halide publish every turn while
+the other six fuse the 40-turn worker-local block. NumPy/Numba is a
+Numba-compiled parallel kernel, not interpreted Python. All samples reported
+zero faults.
 
 ## Metal publication figure
 
@@ -82,18 +86,20 @@ The Metal figure fixes the Apple M1 GPU workload at 500,000 filters × 40 turns,
 resident f32 state, and synchronization after every turn. It compares complete
 compiler/runtime paths rather than isolated kernel languages.
 
-| Implementation | Checked median (observed min-max) | Unchecked median (observed min-max) |
+Every Metal row uses the first three retained processes.
+
+| Implementation | Checked median ± MAD | Unchecked median ± MAD |
 | --- | ---: | ---: |
-| Mech generated MSL | 422.702 (401.943-428.966), n=5 | 421.651 (365.737-422.463), n=5 |
-| Rust host + hand-written MSL | 416.215 (401.396-424.149), n=7 | 418.697 (410.126-420.335), n=7 |
-| Mojo native Metal, matched packed SoA | 402.544 (396.448-420.309), n=7 | 401.421 (215.945-405.712), n=7 |
-| Julia Metal.jl, matched packed SoA | 406.432 (402.129-407.495), n=7 | 406.803 (405.092-414.707), n=7 |
-| Taichi native Metal, matched packed SoA | 332.584 (331.252-335.612), n=7 | 405.305 (399.134-412.234), n=7 |
-| Halide Metal, matched packed SoA | 292.500 (283.456-294.175), n=7 | 393.264 (390.533-394.516), n=7 |
+| Mech generated MSL | 420.404 ± 3.491 | 419.523 ± 2.940 |
+| Rust host + hand-written MSL | 418.602 ± 0.067 | 418.519 ± 1.816 |
+| Mojo native Metal, matched packed SoA | 404.932 ± 2.388 | 401.865 ± 0.444 |
+| Julia Metal.jl, matched packed SoA | 406.432 ± 0.626 | 409.896 ± 4.804 |
+| Taichi native Metal, matched packed SoA | 332.584 ± 0.581 | 409.530 ± 2.704 |
+| Halide Metal, matched packed SoA | 292.500 ± 0.583 | 394.263 ± 0.053 |
 
 The Rust control adopts the direct Mech backend's resident SoA, 64-thread
 threadgroups, ping-pong publication, compact shared fault status, and per-turn
-command/wait boundary. Its ranges overlap Mech's in both modes. This supports
+command/wait boundary. The raw ranges overlap Mech's in both modes. This supports
 comparable generated-versus-hand-written Metal execution, not a Rust-to-Metal
 compiler claim: stable Rust hosts a hand-written MSL kernel here.
 
@@ -106,37 +112,36 @@ checked mode paid for extra bindings and host fault-array transport.
 
 The matched Mojo control uses the same physical strategy and reads its
 two-word status directly from Apple unified memory. Its checked and unchecked
-medians differ by 0.28%, with checked nominally higher, so no checking penalty
+medians differ by 0.76%, with checked nominally higher, so no checking penalty
 is resolved. Matching the path raises checked performance from the archived
-244.493 result to 402.544 M turns/s. The retained 215.945 M/s unchecked sample
-is an interference event; it is not trimmed, and the median plus full range
-make its effect explicit. Mojo remains 4.77% below Mech checked and 4.80% below
-unchecked at the medians, while their observed ranges overlap.
+244.493 result to 404.932 M turns/s in the equal window. The retained 215.945
+M/s unchecked interference sample remains in JSON but does not control the MAD
+whisker. Mojo remains 3.68% below Mech checked and 4.21% below unchecked.
 
 The new Taichi control gives both modes the same packed component-major state,
 resident double buffers, launch geometry, and publication boundary. Its
 cumulative two-word fault status avoids a reset transfer but still requires a
 compact host-visible read after every synchronized checked turn. Checked is
-17.94% below unchecked at the median; this is a measured protocol/API cost,
+18.79% below unchecked at the median; this is a measured protocol/API cost,
 not an in-place-versus-ping-pong comparison.
 
 That exact source also targets the eight-worker LLVM CPU backend by changing
-one runtime option and selecting a CPU-contiguous packed axis order. Seven
-fresh processes measured 88.016 (87.095-88.710) M turns/s checked and 95.462
-(86.566-95.782) unchecked. The result corroborates the archived 86.047 M/s
-Taichi CPU row, but its per-turn synchronization differs from the fused CPU
-language panel and is therefore documented rather than inserted into it.
+one runtime option and selecting a CPU-contiguous packed axis order. The equal
+window measures 87.723 ± 0.441 M turns/s checked and 95.759 ± 0.023 unchecked.
+The result corroborates the archived 86.047 M/s Taichi CPU row. Its per-turn
+synchronization differs from the fused rows and is labeled accordingly in the
+full CPU panel.
 
 The matched Halide control raises the unchecked median from the archived
-212.283 to 393.264 M turns/s through packed resident state and ping-pong
+212.283 to 394.263 M turns/s through packed resident state and ping-pong
 publication. Halide 21's generated Metal interface uses a per-lane fault plane
 rather than the compact device-wide atomic status available to the other
-matched controls, leaving a 25.62% checked penalty that is visible in the
+matched controls, leaving a 25.81% checked penalty that is visible in the
 reported result.
 
-The same Halide source selects an eight-worker host schedule and measured
-23.234 (22.455-23.508) M turns/s checked and 23.809 (23.671-23.984)
-unchecked over seven fresh processes. Alongside the same-source Taichi
+The same Halide source selects an eight-worker host schedule. The equal window
+measures 23.426 ± 0.026 M turns/s checked and 23.940 ± 0.044 unchecked.
+Alongside the same-source Taichi
 CPU/Metal pair and Mech's unchanged high-level EKF, this supports a focused
 backend-portability comparison. Mech has the highest retained median on both
 devices in these runs; the result remains descriptive because schedules,

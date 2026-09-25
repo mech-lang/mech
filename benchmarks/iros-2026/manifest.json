@@ -1,5 +1,5 @@
 {
-  "schema_version": 10,
+  "schema_version": 11,
   "title": "IROS 2026 parallel EKF benchmark package",
   "integration_base": "1ee1a6a94d1fffc80d685f4a2dd3e8f456204513",
   "evidence_revisions": {
@@ -123,46 +123,50 @@
   "post_charts": {
     "cross_language": {
       "file": "benchmarks/iros-2026/charts/post-cross-language-comparison.svg",
-      "selection": "six compiled f32 CPU implementations on the same Apple M1 with 500,000 filters x 40 turns, eight workers, and fused execution; checked and unchecked shown separately",
-      "error_bars": "observed minimum to maximum; every retained process sample is preserved in the linked evidence",
+      "selection": "eight compiled f32 CPU implementations on the same Apple M1 with 500,000 filters x 40 turns and eight workers; equal first-three-process windows, with checked and unchecked shown separately",
+      "error_bars": "median absolute deviation over the fixed three-process chart window; raw samples remain preserved in the linked evidence",
       "rows_median_million_turns_per_second": {
         "Mech · checked": 145.573,
         "Mech · unchecked": 165.83,
         "Rust · checked": 146.508742,
         "Rust · unchecked": 163.865925,
-        "Mojo · checked": 143.5194,
-        "Mojo · unchecked": 158.5125,
+        "Mojo · checked": 143.9864,
+        "Mojo · unchecked": 145.219,
         "Julia · checked": 128.544239,
         "Julia · unchecked": 133.605332,
-        "Futhark · checked": 108.717514,
-        "Futhark · unchecked": 152.329886,
+        "Futhark · checked": 108.902804,
+        "Futhark · unchecked": 152.478539,
+        "Taichi · checked": 87.722616646,
+        "Taichi · unchecked": 95.759203620,
         "NumPy/Numba · checked": 80.322749,
-        "NumPy/Numba · unchecked": 81.971832
+        "NumPy/Numba · unchecked": 81.971832,
+        "Halide · checked": 23.426082073,
+        "Halide · unchecked": 23.940012324
       }
     },
     "metal": {
       "file": "benchmarks/iros-2026/charts/post-metal-comparison.svg",
-      "selection": "six Apple M1 Metal implementation ecosystems with 500,000 filters x 40 turns, resident f32 state, and synchronization after every turn; checked and unchecked shown separately",
-      "error_bars": "observed minimum to maximum; every retained process sample is preserved in the linked evidence",
+      "selection": "six Apple M1 Metal implementation ecosystems with 500,000 filters x 40 turns, resident f32 state, synchronization after every turn, and equal first-three-process windows",
+      "error_bars": "median absolute deviation over the fixed three-process chart window; raw samples remain preserved in the linked evidence",
       "rows_median_million_turns_per_second": {
-        "Mech · checked": 422.702,
-        "Mech · unchecked": 421.651,
-        "Rust + MSL · checked": 416.215047327,
-        "Rust + MSL · unchecked": 418.696542396,
-        "Mojo · checked": 402.544078577,
-        "Mojo · unchecked": 401.421030448,
+        "Mech · checked": 420.404,
+        "Mech · unchecked": 419.523,
+        "Rust + MSL · checked": 418.601976978,
+        "Rust + MSL · unchecked": 418.519128239,
+        "Mojo · checked": 404.932072645,
+        "Mojo · unchecked": 401.864651985,
         "Julia · checked": 406.432121599,
-        "Julia · unchecked": 406.802759140,
+        "Julia · unchecked": 409.896256487,
         "Taichi · checked": 332.584099360,
-        "Taichi · unchecked": 405.304759297,
+        "Taichi · unchecked": 409.529756189,
         "Halide · checked": 292.499757774,
-        "Halide · unchecked": 393.263722770
+        "Halide · unchecked": 394.263466562
       }
     },
     "mech_backends": {
       "file": "benchmarks/iros-2026/charts/post-mech-backend-stack.svg",
       "selection": "same high-level Mech EKF with checked per-turn publication across retained scalar, JIT, scalar AOT, SIMD AOT, SIMD/JIT, WGPU, and direct Metal backends",
-      "error_bars": "observed minimum to maximum; every retained process sample is preserved in the linked evidence",
+      "error_bars": "median absolute deviation; every retained process sample is preserved in the linked evidence",
       "rows_median_million_turns_per_second": {
         "Direct Metal GPU": 422.702,
         "WGPU on Metal": 152.972,
@@ -176,28 +180,28 @@
     },
     "portable_cpu": {
       "file": "benchmarks/iros-2026/charts/post-portable-cpu-comparison.svg",
-      "selection": "Mech, Taichi, and Halide selecting an eight-worker CPU backend from the same application source each system also uses for Metal; 500,000 filters x 40 turns with synchronized per-turn publication",
-      "error_bars": "observed process minimum to maximum; descriptive only, with no confidence interval or significance test",
+      "selection": "Mech, Taichi, and Halide selecting an eight-worker CPU backend from the same application source each system also uses for Metal; 500,000 filters x 40 turns, synchronized per-turn publication, and equal first-three-process windows",
+      "error_bars": "median absolute deviation over the fixed three-process chart window; descriptive only, with no confidence interval or significance test",
       "rows_median_million_turns_per_second": {
         "Mech · checked": 104.783,
         "Mech · unchecked": 110.469,
-        "Taichi · checked": 88.016046642,
-        "Taichi · unchecked": 95.462052449,
-        "Halide · checked": 23.233862222,
-        "Halide · unchecked": 23.808929748
+        "Taichi · checked": 87.722616646,
+        "Taichi · unchecked": 95.759203620,
+        "Halide · checked": 23.426082073,
+        "Halide · unchecked": 23.940012324
       }
     },
     "portable_metal": {
       "file": "benchmarks/iros-2026/charts/post-portable-metal-comparison.svg",
-      "selection": "Mech, Taichi, and Halide selecting Apple Metal from the same application source each system also uses for CPU; 500,000 filters x 40 turns with resident state and synchronized per-turn publication",
-      "error_bars": "observed process minimum to maximum; descriptive only, with no confidence interval or significance test",
+      "selection": "Mech, Taichi, and Halide selecting Apple Metal from the same application source each system also uses for CPU; 500,000 filters x 40 turns, resident state, synchronized per-turn publication, and equal first-three-process windows",
+      "error_bars": "median absolute deviation over the fixed three-process chart window; descriptive only, with no confidence interval or significance test",
       "rows_median_million_turns_per_second": {
-        "Mech · checked": 422.702,
-        "Mech · unchecked": 421.651,
+        "Mech · checked": 420.404,
+        "Mech · unchecked": 419.523,
         "Taichi · checked": 332.584099360,
-        "Taichi · unchecked": 405.304759297,
+        "Taichi · unchecked": 409.529756189,
         "Halide · checked": 292.499757774,
-        "Halide · unchecked": 393.263722770
+        "Halide · unchecked": 394.263466562
       }
     },
     "portable_combo": {

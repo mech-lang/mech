@@ -12,7 +12,7 @@
 <text x="42" y="87" class="muted" font-size="16">Mech, Taichi, and Halide each select CPU or Metal without rewriting the EKF equations</text>
 <rect x="42" y="111" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="77" y="124" class="muted" font-size="14">checked</text>
 <rect x="162" y="111" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="197" y="124" class="muted" font-size="14">unchecked</text>
-<text x="312" y="124" class="muted" font-size="13">bars: median · whiskers/+−: observed process min–max</text>
+<text x="312" y="124" class="muted" font-size="13">bars: median · whiskers/±: median absolute deviation</text>
 <rect x="42" y="153" width="838" height="536" rx="14" class="panel"/>
 <text x="66" y="195" font-size="22" font-weight="700">CPU · eight workers</text>
 <text x="66" y="221" class="muted" font-size="13">500,000 filters × 40 turns · f32 · synchronized after every turn</text>
@@ -33,39 +33,39 @@
 <text x="214" y="271" text-anchor="end" class="label">Mech</text>
 <text x="214" y="290" text-anchor="end" class="detail">Cranelift SIMD/JIT</text>
 <rect x="230" y="252" width="380.4" height="18" rx="3" fill="#f4c430" opacity="0.95"><title>Mech CPU · eight workers checked: 104.783 million turns/s</title></rect>
-<line x1="588.3" y1="261" x2="695.3" y2="261" class="whisker"/>
+<line x1="588.3" y1="261" x2="632.6" y2="261" class="whisker"/>
 <line x1="588.3" y1="256" x2="588.3" y2="266" class="whisker"/>
-<line x1="695.3" y1="256" x2="695.3" y2="266" class="whisker"/>
-<text x="716" y="265" class="value">C 104.8 +23.4/−6.1 · n=3</text>
+<line x1="632.6" y1="256" x2="632.6" y2="266" class="whisker"/>
+<text x="716" y="265" class="value">104.8 ±6.1</text>
 <rect x="230" y="278" width="401.1" height="18" rx="3" fill="#f4c430" opacity="0.48"><title>Mech CPU · eight workers unchecked: 110.469 million turns/s</title></rect>
-<line x1="593.8" y1="287" x2="714.8" y2="287" class="whisker"/>
+<line x1="593.8" y1="287" x2="668.4" y2="287" class="whisker"/>
 <line x1="593.8" y1="282" x2="593.8" y2="292" class="whisker"/>
-<line x1="714.8" y1="282" x2="714.8" y2="292" class="whisker"/>
-<text x="716" y="291" class="value">U 110.5 +23.1/−10.3 · n=3</text>
+<line x1="668.4" y1="282" x2="668.4" y2="292" class="whisker"/>
+<text x="716" y="291" class="value">110.5 ±10.3</text>
 <text x="214" y="359" text-anchor="end" class="label">Taichi</text>
 <text x="214" y="378" text-anchor="end" class="detail">LLVM CPU</text>
-<rect x="230" y="340" width="319.6" height="18" rx="3" fill="#e36b6b" opacity="0.95"><title>Taichi CPU · eight workers checked: 88.016 million turns/s</title></rect>
-<line x1="546.2" y1="349" x2="552.1" y2="349" class="whisker"/>
-<line x1="546.2" y1="344" x2="546.2" y2="354" class="whisker"/>
-<line x1="552.1" y1="344" x2="552.1" y2="354" class="whisker"/>
-<text x="716" y="353" class="value">C 88.0 +0.7/−0.9 · n=7</text>
-<rect x="230" y="366" width="346.6" height="18" rx="3" fill="#e36b6b" opacity="0.48"><title>Taichi CPU · eight workers unchecked: 95.462 million turns/s</title></rect>
-<line x1="544.3" y1="375" x2="577.8" y2="375" class="whisker"/>
-<line x1="544.3" y1="370" x2="544.3" y2="380" class="whisker"/>
+<rect x="230" y="340" width="318.5" height="18" rx="3" fill="#e36b6b" opacity="0.95"><title>Taichi CPU · eight workers checked: 87.723 million turns/s</title></rect>
+<line x1="546.9" y1="349" x2="550.1" y2="349" class="whisker"/>
+<line x1="546.9" y1="344" x2="546.9" y2="354" class="whisker"/>
+<line x1="550.1" y1="344" x2="550.1" y2="354" class="whisker"/>
+<text x="716" y="353" class="value">87.7 ±0.4</text>
+<rect x="230" y="366" width="347.7" height="18" rx="3" fill="#e36b6b" opacity="0.48"><title>Taichi CPU · eight workers unchecked: 95.759 million turns/s</title></rect>
+<line x1="577.6" y1="375" x2="577.8" y2="375" class="whisker"/>
+<line x1="577.6" y1="370" x2="577.6" y2="380" class="whisker"/>
 <line x1="577.8" y1="370" x2="577.8" y2="380" class="whisker"/>
-<text x="716" y="379" class="value">U 95.5 +0.3/−8.9 · n=7</text>
+<text x="716" y="379" class="value">95.76 ±0.02</text>
 <text x="214" y="447" text-anchor="end" class="label">Halide</text>
 <text x="214" y="466" text-anchor="end" class="detail">native CPU</text>
-<rect x="230" y="428" width="84.4" height="18" rx="3" fill="#BD5E9E" opacity="0.95"><title>Halide CPU · eight workers checked: 23.234 million turns/s</title></rect>
-<line x1="311.5" y1="437" x2="315.4" y2="437" class="whisker"/>
-<line x1="311.5" y1="432" x2="311.5" y2="442" class="whisker"/>
-<line x1="315.4" y1="432" x2="315.4" y2="442" class="whisker"/>
-<text x="716" y="441" class="value">C 23.2 +0.3/−0.8 · n=7</text>
-<rect x="230" y="454" width="86.4" height="18" rx="3" fill="#BD5E9E" opacity="0.48"><title>Halide CPU · eight workers unchecked: 23.809 million turns/s</title></rect>
-<line x1="315.9" y1="463" x2="317.1" y2="463" class="whisker"/>
-<line x1="315.9" y1="458" x2="315.9" y2="468" class="whisker"/>
+<rect x="230" y="428" width="85.1" height="18" rx="3" fill="#BD5E9E" opacity="0.95"><title>Halide CPU · eight workers checked: 23.426 million turns/s</title></rect>
+<line x1="315.0" y1="437" x2="315.1" y2="437" class="whisker"/>
+<line x1="315.0" y1="432" x2="315.0" y2="442" class="whisker"/>
+<line x1="315.1" y1="432" x2="315.1" y2="442" class="whisker"/>
+<text x="716" y="441" class="value">23.43 ±0.03</text>
+<rect x="230" y="454" width="86.9" height="18" rx="3" fill="#BD5E9E" opacity="0.48"><title>Halide CPU · eight workers unchecked: 23.940 million turns/s</title></rect>
+<line x1="316.8" y1="463" x2="317.1" y2="463" class="whisker"/>
+<line x1="316.8" y1="458" x2="316.8" y2="468" class="whisker"/>
 <line x1="317.1" y1="458" x2="317.1" y2="468" class="whisker"/>
-<text x="716" y="467" class="value">U 23.8 +0.2/−0.1 · n=7</text>
+<text x="716" y="467" class="value">23.94 ±0.04</text>
 <text x="461.0" y="664" text-anchor="middle" class="muted" font-size="13">million EKF turns per second</text>
 <rect x="920" y="153" width="838" height="536" rx="14" class="panel"/>
 <text x="944" y="195" font-size="22" font-weight="700">GPU · Apple Metal</text>
@@ -92,40 +92,40 @@
 <text x="1580.0" y="583" text-anchor="middle" class="axis">450</text>
 <text x="1092" y="271" text-anchor="end" class="label">Mech</text>
 <text x="1092" y="290" text-anchor="end" class="detail">generated MSL</text>
-<rect x="1108" y="252" width="443.4" height="18" rx="3" fill="url(#combo-gpu-mech)" opacity="0.95"><title>Mech GPU · Apple Metal checked: 422.702 million turns/s</title></rect>
-<line x1="1529.6" y1="261" x2="1557.9" y2="261" class="whisker"/>
-<line x1="1529.6" y1="256" x2="1529.6" y2="266" class="whisker"/>
-<line x1="1557.9" y1="256" x2="1557.9" y2="266" class="whisker"/>
-<text x="1594" y="265" class="value">C 422.7 +6.3/−20.8 · n=5</text>
-<rect x="1108" y="278" width="442.3" height="18" rx="3" fill="url(#combo-gpu-mech)" opacity="0.48"><title>Mech GPU · Apple Metal unchecked: 421.651 million turns/s</title></rect>
-<line x1="1491.6" y1="287" x2="1551.1" y2="287" class="whisker"/>
-<line x1="1491.6" y1="282" x2="1491.6" y2="292" class="whisker"/>
+<rect x="1108" y="252" width="441.0" height="18" rx="3" fill="url(#combo-gpu-mech)" opacity="0.95"><title>Mech GPU · Apple Metal checked: 420.404 million turns/s</title></rect>
+<line x1="1545.3" y1="261" x2="1552.6" y2="261" class="whisker"/>
+<line x1="1545.3" y1="256" x2="1545.3" y2="266" class="whisker"/>
+<line x1="1552.6" y1="256" x2="1552.6" y2="266" class="whisker"/>
+<text x="1594" y="265" class="value">420.4 ±3.5</text>
+<rect x="1108" y="278" width="440.0" height="18" rx="3" fill="url(#combo-gpu-mech)" opacity="0.48"><title>Mech GPU · Apple Metal unchecked: 419.523 million turns/s</title></rect>
+<line x1="1544.9" y1="287" x2="1551.1" y2="287" class="whisker"/>
+<line x1="1544.9" y1="282" x2="1544.9" y2="292" class="whisker"/>
 <line x1="1551.1" y1="282" x2="1551.1" y2="292" class="whisker"/>
-<text x="1594" y="291" class="value">U 421.7 +0.8/−55.9 · n=5</text>
+<text x="1594" y="291" class="value">419.5 ±2.9</text>
 <text x="1092" y="359" text-anchor="end" class="label">Taichi</text>
 <text x="1092" y="378" text-anchor="end" class="detail">native Metal</text>
 <rect x="1108" y="340" width="348.8" height="18" rx="3" fill="url(#combo-gpu-taichi)" opacity="0.95"><title>Taichi GPU · Apple Metal checked: 332.584 million turns/s</title></rect>
-<line x1="1455.4" y1="349" x2="1460.0" y2="349" class="whisker"/>
-<line x1="1455.4" y1="344" x2="1455.4" y2="354" class="whisker"/>
-<line x1="1460.0" y1="344" x2="1460.0" y2="354" class="whisker"/>
-<text x="1594" y="353" class="value">C 332.6 +3.0/−1.3 · n=7</text>
-<rect x="1108" y="366" width="425.1" height="18" rx="3" fill="url(#combo-gpu-taichi)" opacity="0.48"><title>Taichi GPU · Apple Metal unchecked: 405.305 million turns/s</title></rect>
-<line x1="1526.6" y1="375" x2="1540.4" y2="375" class="whisker"/>
-<line x1="1526.6" y1="370" x2="1526.6" y2="380" class="whisker"/>
+<line x1="1456.2" y1="349" x2="1457.5" y2="349" class="whisker"/>
+<line x1="1456.2" y1="344" x2="1456.2" y2="354" class="whisker"/>
+<line x1="1457.5" y1="344" x2="1457.5" y2="354" class="whisker"/>
+<text x="1594" y="353" class="value">332.6 ±0.6</text>
+<rect x="1108" y="366" width="429.6" height="18" rx="3" fill="url(#combo-gpu-taichi)" opacity="0.48"><title>Taichi GPU · Apple Metal unchecked: 409.530 million turns/s</title></rect>
+<line x1="1534.7" y1="375" x2="1540.4" y2="375" class="whisker"/>
+<line x1="1534.7" y1="370" x2="1534.7" y2="380" class="whisker"/>
 <line x1="1540.4" y1="370" x2="1540.4" y2="380" class="whisker"/>
-<text x="1594" y="379" class="value">U 405.3 +6.9/−6.2 · n=7</text>
+<text x="1594" y="379" class="value">409.5 ±2.7</text>
 <text x="1092" y="447" text-anchor="end" class="label">Halide</text>
 <text x="1092" y="466" text-anchor="end" class="detail">Metal schedule</text>
 <rect x="1108" y="428" width="306.8" height="18" rx="3" fill="url(#combo-gpu-halide)" opacity="0.95"><title>Halide GPU · Apple Metal checked: 292.500 million turns/s</title></rect>
-<line x1="1405.3" y1="437" x2="1416.6" y2="437" class="whisker"/>
-<line x1="1405.3" y1="432" x2="1405.3" y2="442" class="whisker"/>
-<line x1="1416.6" y1="432" x2="1416.6" y2="442" class="whisker"/>
-<text x="1594" y="441" class="value">C 292.5 +1.7/−9.0 · n=7</text>
-<rect x="1108" y="454" width="412.5" height="18" rx="3" fill="url(#combo-gpu-halide)" opacity="0.48"><title>Halide GPU · Apple Metal unchecked: 393.264 million turns/s</title></rect>
-<line x1="1517.6" y1="463" x2="1521.8" y2="463" class="whisker"/>
-<line x1="1517.6" y1="458" x2="1517.6" y2="468" class="whisker"/>
-<line x1="1521.8" y1="458" x2="1521.8" y2="468" class="whisker"/>
-<text x="1594" y="467" class="value">U 393.3 +1.3/−2.7 · n=7</text>
+<line x1="1414.2" y1="437" x2="1415.4" y2="437" class="whisker"/>
+<line x1="1414.2" y1="432" x2="1414.2" y2="442" class="whisker"/>
+<line x1="1415.4" y1="432" x2="1415.4" y2="442" class="whisker"/>
+<text x="1594" y="441" class="value">292.5 ±0.6</text>
+<rect x="1108" y="454" width="413.5" height="18" rx="3" fill="url(#combo-gpu-halide)" opacity="0.48"><title>Halide GPU · Apple Metal unchecked: 394.263 million turns/s</title></rect>
+<line x1="1521.5" y1="463" x2="1521.6" y2="463" class="whisker"/>
+<line x1="1521.5" y1="458" x2="1521.5" y2="468" class="whisker"/>
+<line x1="1521.6" y1="458" x2="1521.6" y2="468" class="whisker"/>
+<text x="1594" y="467" class="value">394.26 ±0.05</text>
 <text x="1339.0" y="664" text-anchor="middle" class="muted" font-size="13">million EKF turns per second</text>
 <text x="42" y="750" font-size="22" font-weight="700">What these measurements support</text>
 <text x="42" y="784" class="note">• Mech has the highest retained median in both panels, checked and unchecked, for this EKF on this Apple M1.</text>
@@ -134,7 +134,7 @@
 <text x="62" y="864" class="note">Taichi .py to LLVM CPU or Metal; Halide .cpp to native CPU schedule or Metal schedule.</text>
 <text x="42" y="908" font-size="18" font-weight="700">Poster notes</text>
 <text x="42" y="936" class="muted" font-size="13">Workload: 500,000 filters × 40 turns, f32, resident ping-pong state, one synchronized publication per turn; CPU uses eight workers.</text>
-<text x="42" y="962" class="muted" font-size="13">Statistic: median; +high/−low is full observed process min–max. n=3 Mech CPU, n=5 Mech GPU, n=7 Taichi/Halide. No CI or p-value.</text>
+<text x="42" y="962" class="muted" font-size="13">Statistic: median ± median absolute deviation; three-process windows for every row. No confidence interval or p-value.</text>
 <text x="42" y="988" class="muted" font-size="13">Toolchains: Mech v0.4 integration / Cranelift / direct Metal; Taichi 1.7.4 / LLVM 15 / Python 3.12.14; Halide 21.0.0_1 / Apple clang 17.</text>
 <text x="42" y="1014" class="muted" font-size="13">Differences: compiler lowering, schedules, compact versus per-lane fault observation, campaign dates, and system state. All samples reported zero faults.</text>
 <text x="42" y="1060" class="muted" font-size="13">Diagonal hatch denotes GPU. Raw samples, source hashes, exact commands, and provenance are retained in this repository.</text>

@@ -57,6 +57,12 @@ def close(actual: float, expected: float, tolerance: float = 0.005) -> None:
         raise AssertionError(f"expected {expected}, found {actual}")
 
 
+def first_samples(samples: list[float], count: int) -> list[float]:
+    if len(samples) < count:
+        raise AssertionError(f"need {count} chart samples, found {len(samples)}")
+    return samples[:count]
+
+
 def check_distribution(samples: list[float], expected: dict, prefix: str) -> None:
     close(statistics.median(samples), expected[f"{prefix}_million_turns_per_second"], 0.0005)
     observed = expected[f"{prefix}_observed_range_million_turns_per_second"]
@@ -240,21 +246,61 @@ def main() -> None:
     assert futhark["configuration"]["instances"] == 500_000
     assert futhark["configuration"]["turns"] == 40
     assert futhark["configuration"]["workers"] == 8
+    chart_taichi_cpu = load_json(ROOT / manifest["selected_evidence"]["taichi_cpu"])
+    chart_halide_cpu = load_json(ROOT / manifest["selected_evidence"]["halide_cpu"])
     cross_samples = {
-        "Mech · checked": mech_samples,
-        "Mech · unchecked": mech_unchecked_samples,
-        "Rust · checked": rust_samples,
-        "Rust · unchecked": rust_unchecked_samples,
-        "Mojo · checked": mojo_cpu["checked"]["samples_million_ekf_turns_per_second"],
-        "Mojo · unchecked": mojo_cpu["unchecked"]["samples_million_ekf_turns_per_second"],
-        "Julia · checked": fused["rows"]["julia_fused_checked"]["throughput_millions"],
-        "Julia · unchecked": fused["rows"]["julia_fused"]["throughput_millions"],
-        "Futhark · checked": futhark["rows"]["checked"]["throughput_millions"],
-        "Futhark · unchecked": futhark["rows"]["unchecked"]["throughput_millions"],
-        "NumPy/Numba · checked": fused["rows"]["numba_fused_checked"][
-            "throughput_millions"
-        ],
-        "NumPy/Numba · unchecked": fused["rows"]["numba_fused"]["throughput_millions"],
+        "Mech · checked": first_samples(mech_samples, 3),
+        "Mech · unchecked": first_samples(mech_unchecked_samples, 3),
+        "Rust · checked": first_samples(rust_samples, 3),
+        "Rust · unchecked": first_samples(rust_unchecked_samples, 3),
+        "Mojo · checked": first_samples(
+            mojo_cpu["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Mojo · unchecked": first_samples(
+            mojo_cpu["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Julia · checked": first_samples(
+            fused["rows"]["julia_fused_checked"]["throughput_millions"], 3
+        ),
+        "Julia · unchecked": first_samples(
+            fused["rows"]["julia_fused"]["throughput_millions"], 3
+        ),
+        "Futhark · checked": first_samples(
+            futhark["rows"]["checked"]["throughput_millions"], 3
+        ),
+        "Futhark · unchecked": first_samples(
+            futhark["rows"]["unchecked"]["throughput_millions"], 3
+        ),
+        "Taichi · checked": first_samples(
+            chart_taichi_cpu["rows"]["checked"][
+                "samples_million_ekf_turns_per_second"
+            ],
+            3,
+        ),
+        "Taichi · unchecked": first_samples(
+            chart_taichi_cpu["rows"]["unchecked"][
+                "samples_million_ekf_turns_per_second"
+            ],
+            3,
+        ),
+        "NumPy/Numba · checked": first_samples(
+            fused["rows"]["numba_fused_checked"]["throughput_millions"], 3
+        ),
+        "NumPy/Numba · unchecked": first_samples(
+            fused["rows"]["numba_fused"]["throughput_millions"], 3
+        ),
+        "Halide · checked": first_samples(
+            chart_halide_cpu["rows"]["checked"][
+                "samples_million_ekf_turns_per_second"
+            ],
+            3,
+        ),
+        "Halide · unchecked": first_samples(
+            chart_halide_cpu["rows"]["unchecked"][
+                "samples_million_ekf_turns_per_second"
+            ],
+            3,
+        ),
     }
 
     rust_metal = load_json(ROOT / manifest["selected_evidence"]["rust_metal"])
@@ -384,38 +430,42 @@ def main() -> None:
     assert halide_cpu["configuration"]["instances"] == 500_000
     assert halide_cpu["configuration"]["turns"] == 40
     metal_samples = {
-        "Mech · checked": direct_row["checked"]["samples_million_ekf_turns_per_second"],
-        "Mech · unchecked": direct_row["unchecked"]["samples_million_ekf_turns_per_second"],
-        "Rust + MSL · checked": rust_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Rust + MSL · unchecked": rust_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Mojo · checked": mojo_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Mojo · unchecked": mojo_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Julia · checked": julia_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Julia · unchecked": julia_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Taichi · checked": taichi_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Taichi · unchecked": taichi_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Halide · checked": halide_metal["rows"]["checked"][
-            "samples_million_ekf_turns_per_second"
-        ],
-        "Halide · unchecked": halide_metal["rows"]["unchecked"][
-            "samples_million_ekf_turns_per_second"
-        ],
+        "Mech · checked": first_samples(
+            direct_row["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Mech · unchecked": first_samples(
+            direct_row["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Rust + MSL · checked": first_samples(
+            rust_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Rust + MSL · unchecked": first_samples(
+            rust_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Mojo · checked": first_samples(
+            mojo_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Mojo · unchecked": first_samples(
+            mojo_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Julia · checked": first_samples(
+            julia_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Julia · unchecked": first_samples(
+            julia_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Taichi · checked": first_samples(
+            taichi_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Taichi · unchecked": first_samples(
+            taichi_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Halide · checked": first_samples(
+            halide_metal["rows"]["checked"]["samples_million_ekf_turns_per_second"], 3
+        ),
+        "Halide · unchecked": first_samples(
+            halide_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"], 3
+        ),
     }
 
     runtime = load_json(ROOT / manifest["selected_evidence"]["mech_runtime_backends"])
@@ -442,44 +492,44 @@ def main() -> None:
         ],
     }
     portable_cpu_samples = {
-        "Mech · checked": runtime_rows[
+        "Mech · checked": first_samples(runtime_rows[
             "Mech SIMD/JIT CPU, checked (8 workers)"
-        ]["samples"],
-        "Mech · unchecked": runtime_rows[
+        ]["samples"], 3),
+        "Mech · unchecked": first_samples(runtime_rows[
             "Mech SIMD/JIT CPU, unchecked (8 workers)"
-        ]["samples"],
-        "Taichi · checked": taichi_cpu["rows"]["checked"][
+        ]["samples"], 3),
+        "Taichi · checked": first_samples(taichi_cpu["rows"]["checked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Taichi · unchecked": taichi_cpu["rows"]["unchecked"][
+        ], 3),
+        "Taichi · unchecked": first_samples(taichi_cpu["rows"]["unchecked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Halide · checked": halide_cpu["rows"]["checked"][
+        ], 3),
+        "Halide · checked": first_samples(halide_cpu["rows"]["checked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Halide · unchecked": halide_cpu["rows"]["unchecked"][
+        ], 3),
+        "Halide · unchecked": first_samples(halide_cpu["rows"]["unchecked"][
             "samples_million_ekf_turns_per_second"
-        ],
+        ], 3),
     }
     portable_metal_samples = {
-        "Mech · checked": direct_row["checked"][
+        "Mech · checked": first_samples(direct_row["checked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Mech · unchecked": direct_row["unchecked"][
+        ], 3),
+        "Mech · unchecked": first_samples(direct_row["unchecked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Taichi · checked": taichi_metal["rows"]["checked"][
+        ], 3),
+        "Taichi · checked": first_samples(taichi_metal["rows"]["checked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Taichi · unchecked": taichi_metal["rows"]["unchecked"][
+        ], 3),
+        "Taichi · unchecked": first_samples(taichi_metal["rows"]["unchecked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Halide · checked": halide_metal["rows"]["checked"][
+        ], 3),
+        "Halide · checked": first_samples(halide_metal["rows"]["checked"][
             "samples_million_ekf_turns_per_second"
-        ],
-        "Halide · unchecked": halide_metal["rows"]["unchecked"][
+        ], 3),
+        "Halide · unchecked": first_samples(halide_metal["rows"]["unchecked"][
             "samples_million_ekf_turns_per_second"
-        ],
+        ], 3),
     }
 
     for chart_name, samples_by_row in (
@@ -507,6 +557,24 @@ def main() -> None:
             raise AssertionError(f"rendered post chart rows changed: {chart_name}")
         for label, value in chart_medians.items():
             close(value, expected[label], 0.0005)
+        value_labels = [
+            node.text or ""
+            for node in root.iter()
+            if node.tag.endswith("text") and node.attrib.get("class") == "value"
+        ]
+        if any(label.startswith(("C ", "U ")) or "n=" in label for label in value_labels):
+            raise AssertionError(
+                f"rendered chart must rely on the legend, not C/U or n labels: {chart_name}"
+            )
+
+    if {len(samples) for samples in cross_samples.values()} != {3}:
+        raise AssertionError("full CPU chart must use equal three-process windows")
+    if {len(samples) for samples in metal_samples.values()} != {3}:
+        raise AssertionError("Metal chart must use equal three-process windows")
+    if {len(samples) for samples in portable_cpu_samples.values()} != {3}:
+        raise AssertionError("portable CPU chart must use equal three-process windows")
+    if {len(samples) for samples in portable_metal_samples.values()} != {3}:
+        raise AssertionError("portable Metal chart must use equal three-process windows")
 
     readme = (HERE / "README.md").read_text(encoding="utf-8")
     embedded_figures = re.findall(r"^!\[.*?\]\((.*?)\)$", readme, flags=re.MULTILINE)
@@ -527,6 +595,13 @@ def main() -> None:
         raise AssertionError("portable combo chart is missing an accessible title")
     if not any(node.tag.endswith("desc") for node in combo_root.iter()):
         raise AssertionError("portable combo chart is missing an accessible description")
+    combo_values = [
+        node.text or ""
+        for node in combo_root.iter()
+        if node.tag.endswith("text") and node.attrib.get("class") == "value"
+    ]
+    if any(label.startswith(("C ", "U ")) or "n=" in label for label in combo_values):
+        raise AssertionError("portable combo must rely on its legend, not C/U or n labels")
 
     charts = {
         "checked": ARCHIVE / "charts/parallel-ekf-cross-language-checked.svg",
@@ -577,7 +652,7 @@ def main() -> None:
         f"SIMD Mech {dylib_summary['simd_aot_throughput_million_turns_per_second']:.3f} M turns/s; "
         "size and peak RSS verified"
     )
-    print("  six post-facing charts: medians, observed ranges, and accessibility verified")
+    print("  six post-facing charts: equal windows, medians, MAD, and accessibility verified")
     print("  checked and unchecked mega-chart assertions: passed")
 
 

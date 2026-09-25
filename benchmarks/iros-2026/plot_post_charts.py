@@ -88,7 +88,33 @@ def slug(value: str) -> str:
 
 def spread_label(samples: list[float]) -> str:
     median = statistics.median(samples)
-    return f"{median:.1f} +{max(samples) - median:.1f}/−{median - min(samples):.1f}"
+    mad = statistics.median(abs(sample - median) for sample in samples)
+    digits = 2 if mad < 0.1 else 1
+    return f"{median:.{digits}f} ±{mad:.{digits}f}"
+
+
+def robust_bounds(samples: list[float]) -> tuple[float, float]:
+    median = statistics.median(samples)
+    mad = statistics.median(abs(sample - median) for sample in samples)
+    return max(0.0, median - mad), median + mad
+
+
+def first_samples(samples: list[float], count: int) -> list[float]:
+    if len(samples) < count:
+        raise ValueError(f"need {count} samples, found {len(samples)}")
+    return list(samples[:count])
+
+
+def equalize(rows: list[ModePairRow], count: int) -> list[ModePairRow]:
+    return [
+        ModePairRow(
+            row.label,
+            row.detail,
+            first_samples(row.checked, count),
+            first_samples(row.unchecked, count),
+        )
+        for row in rows
+    ]
 
 
 def portable_rows() -> tuple[list[ModePairRow], list[ModePairRow]]:
@@ -157,7 +183,7 @@ def portable_rows() -> tuple[list[ModePairRow], list[ModePairRow]]:
             halide_metal["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
         ),
     ]
-    return cpu, gpu
+    return equalize(cpu, 3), equalize(gpu, 3)
 
 
 def render_portable_chart(
@@ -188,16 +214,16 @@ def render_portable_chart(
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="{prefix}-title {prefix}-desc">',
         f'<title id="{prefix}-title">{esc(title)}</title>',
-        f'<desc id="{prefix}-desc">Paired horizontal bars compare checked and unchecked median EKF throughput for Mech, Taichi, and Halide, each selecting this backend from the same application source used for its other device. Whiskers show observed minimum to maximum.</desc>',
+        f'<desc id="{prefix}-desc">Paired horizontal bars compare checked and unchecked median EKF throughput for Mech, Taichi, and Halide, each selecting this backend from the same application source used for its other device. Whiskers show median absolute deviation from equal-sized sample windows.</desc>',
         *patterns,
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>',
         f'<text x="42" y="48" font-size="28" font-weight="700">{esc(title)}</text>',
         f'<text x="42" y="80" class="muted" font-size="16">{esc(subtitle)}</text>',
-        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; +high/−low and whiskers are the full observed process min–max, not confidence intervals.</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; ± values and whiskers are median absolute deviation (MAD), not confidence intervals.</text>',
         '<rect x="1090" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="1125" y="149" class="muted" font-size="14">checked</text>',
         '<rect x="1210" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="1245" y="149" class="muted" font-size="14">unchecked</text>',
-        '<text x="1418" y="150" class="muted" font-size="13">median +high/−low M turns/s</text>',
+        '<text x="1418" y="150" class="muted" font-size="13">median ± MAD · M turns/s</text>',
     ]
     for tick in range(0, int(maximum) + 1, tick_step):
         tick_x = x(float(tick))
@@ -222,7 +248,8 @@ def render_portable_chart(
             ("checked", row.checked, y - 13, 0.95),
             ("unchecked", row.unchecked, y + 13, 0.48),
         ):
-            median, low, high = statistics.median(samples), min(samples), max(samples)
+            median = statistics.median(samples)
+            low, high = robust_bounds(samples)
             fill = series_color(row.label)
             if gpu:
                 fill = f"url(#{prefix}-{slug(series_name(row.label))})"
@@ -237,7 +264,7 @@ def render_portable_chart(
                     f'<line x1="{x(endpoint):.1f}" y1="{mode_y - 6}" x2="{x(endpoint):.1f}" y2="{mode_y + 6}" class="whisker"/>'
                 )
             lines.append(
-                f'<text x="1418" y="{mode_y + 5}" class="value">{mode[0].upper()} {spread_label(samples)} · n={len(samples)}</text>'
+                f'<text x="1418" y="{mode_y + 5}" class="value">{spread_label(samples)}</text>'
             )
     device_note = (
         "Diagonal hatch denotes GPU. " if gpu else ""
@@ -248,7 +275,7 @@ def render_portable_chart(
             f'<text x="{left + chart_width / 2:.1f}" y="{axis_y + 58}" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>',
             '<text x="42" y="620" class="footnote">Same application source within each system: Mech .mec, Taichi .py, Halide .cpp; CPU/Metal selected without rewriting EKF equations.</text>',
             f'<text x="42" y="647" class="footnote">{esc(device_note)}</text>',
-            '<text x="42" y="674" class="footnote">Toolchains, compiler lowering, schedules, status observation, campaign dates, and system state differ. All samples reported zero faults.</text>',
+            '<text x="42" y="674" class="footnote">Equal three-process windows. Toolchains, lowering, schedules, status observation, and system state differ.</text>',
             "</svg>",
         ]
     )
@@ -278,7 +305,7 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
             '<text x="42" y="87" class="muted" font-size="16">Mech, Taichi, and Halide each select CPU or Metal without rewriting the EKF equations</text>',
             '<rect x="42" y="111" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="77" y="124" class="muted" font-size="14">checked</text>',
             '<rect x="162" y="111" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="197" y="124" class="muted" font-size="14">unchecked</text>',
-            '<text x="312" y="124" class="muted" font-size="13">bars: median · whiskers/+−: observed process min–max</text>',
+            '<text x="312" y="124" class="muted" font-size="13">bars: median · whiskers/±: median absolute deviation</text>',
         ]
     )
 
@@ -322,7 +349,8 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
                 ("checked", row.checked, y - 13, 0.95),
                 ("unchecked", row.unchecked, y + 13, 0.48),
             ):
-                median, low, high = statistics.median(samples), min(samples), max(samples)
+                median = statistics.median(samples)
+                low, high = robust_bounds(samples)
                 fill = series_color(row.label)
                 if is_gpu:
                     fill = f"url(#combo-gpu-{slug(series_name(row.label))})"
@@ -337,7 +365,7 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
                         f'<line x1="{px(endpoint):.1f}" y1="{mode_y - 5}" x2="{px(endpoint):.1f}" y2="{mode_y + 5}" class="whisker"/>'
                     )
                 lines.append(
-                    f'<text x="{panel_x + 674}" y="{mode_y + 4}" class="value">{mode[0].upper()} {spread_label(samples)} · n={len(samples)}</text>'
+                    f'<text x="{panel_x + 674}" y="{mode_y + 4}" class="value">{spread_label(samples)}</text>'
                 )
         lines.append(
             f'<text x="{panel_x + panel_w / 2:.1f}" y="{panel_y + panel_h - 25}" text-anchor="middle" class="muted" font-size="13">million EKF turns per second</text>'
@@ -351,7 +379,7 @@ def render_portable_combo(cpu: list[ModePairRow], gpu: list[ModePairRow]) -> Non
             '<text x="62" y="864" class="note">Taichi .py to LLVM CPU or Metal; Halide .cpp to native CPU schedule or Metal schedule.</text>',
             '<text x="42" y="908" font-size="18" font-weight="700">Poster notes</text>',
             '<text x="42" y="936" class="muted" font-size="13">Workload: 500,000 filters × 40 turns, f32, resident ping-pong state, one synchronized publication per turn; CPU uses eight workers.</text>',
-            '<text x="42" y="962" class="muted" font-size="13">Statistic: median; +high/−low is full observed process min–max. n=3 Mech CPU, n=5 Mech GPU, n=7 Taichi/Halide. No CI or p-value.</text>',
+            '<text x="42" y="962" class="muted" font-size="13">Statistic: median ± median absolute deviation; three-process windows for every row. No confidence interval or p-value.</text>',
             '<text x="42" y="988" class="muted" font-size="13">Toolchains: Mech v0.4 integration / Cranelift / direct Metal; Taichi 1.7.4 / LLVM 15 / Python 3.12.14; Halide 21.0.0_1 / Apple clang 17.</text>',
             '<text x="42" y="1014" class="muted" font-size="13">Differences: compiler lowering, schedules, compact versus per-lane fault observation, campaign dates, and system state. All samples reported zero faults.</text>',
             '<text x="42" y="1060" class="muted" font-size="13">Diagonal hatch denotes GPU. Raw samples, source hashes, exact commands, and provenance are retained in this repository.</text>',
@@ -366,6 +394,16 @@ def render_cross_language() -> None:
     mech_unchecked = load("apple-m1-mech-persistent-simd-2026-08-31.json")
     mojo = load("apple-m1-mojo-advanced-2026-09-04.json")
     futhark = load("apple-m1-futhark-ispc-fixed-2026-08-31.json")
+    taichi = json.loads(
+        (HERE / "results/apple-m1-taichi-cpu-matched-2026-09-24.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    halide = json.loads(
+        (HERE / "results/apple-m1-halide-cpu-matched-2026-09-24.json").read_text(
+            encoding="utf-8"
+        )
+    )
     rows = [
         ModePairRow(
             "Mech",
@@ -400,16 +438,29 @@ def render_cross_language() -> None:
             futhark["rows"]["unchecked"]["throughput_millions"],
         ),
         ModePairRow(
+            "Taichi",
+            "LLVM CPU · per-turn",
+            taichi["rows"]["checked"]["samples_million_ekf_turns_per_second"],
+            taichi["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+        ),
+        ModePairRow(
             "NumPy/Numba",
             "compiled parallel kernel",
             fused["rows"]["numba_fused_checked"]["throughput_millions"],
             fused["rows"]["numba_fused"]["throughput_millions"],
         ),
+        ModePairRow(
+            "Halide",
+            "native CPU · per-turn",
+            halide["rows"]["checked"]["samples_million_ekf_turns_per_second"],
+            halide["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
+        ),
     ]
+    rows = equalize(rows, 3)
 
-    width, height = 1800, 900
+    width, height = 1800, 1100
     left, plot_right, top = 355, 1450, 190
-    axis_y = 765
+    axis_y = 925
     chart_width = plot_right - left
     maximum = 185.0
 
@@ -418,16 +469,16 @@ def render_cross_language() -> None:
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="cross-title cross-desc">',
-        '<title id="cross-title">Comparable checked and unchecked CPU EKF throughput across six implementations</title>',
-        '<desc id="cross-desc">Paired horizontal bars show median checked and unchecked throughput for Mech, Rust, Mojo, Julia, Futhark, and NumPy with Numba on one Apple M1. Thin whiskers and value labels report the observed minimum-to-maximum spread.</desc>',
+        '<title id="cross-title">Full checked and unchecked CPU EKF comparison across eight implementations</title>',
+        '<desc id="cross-desc">Paired horizontal bars show median checked and unchecked throughput for Mech, Rust, Mojo, Julia, Futhark, Taichi, NumPy with Numba, and Halide on one Apple M1. Thin whiskers and value labels report median absolute deviation from equal three-process windows.</desc>',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>',
-        '<text x="42" y="48" font-size="28" font-weight="700">Comparable CPU EKF throughput across six implementations</text>',
-        '<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers · fused CPU execution</text>',
-        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; thin whiskers and +/− labels are observed min–max spread, not confidence intervals.</text>',
+        '<text x="42" y="48" font-size="28" font-weight="700">Full CPU EKF comparison across eight implementations</text>',
+        '<text x="42" y="80" class="muted" font-size="16">Apple M1 · 500,000 filters × 40 turns · f32 · eight workers</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Equal three-process windows. Bars are medians; thin whiskers and ± labels are median absolute deviation, not confidence intervals.</text>',
         '<rect x="1125" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.95"/><text x="1160" y="149" class="muted" font-size="14">checked</text>',
         '<rect x="1245" y="136" width="24" height="14" rx="2" fill="#e8edf5" opacity="0.48"/><text x="1280" y="149" class="muted" font-size="14">unchecked</text>',
-        '<text x="1435" y="150" class="muted" font-size="13">median +high/−low M turns/s</text>',
+        '<text x="1435" y="150" class="muted" font-size="13">median ± MAD · M turns/s</text>',
     ]
 
     for tick in range(0, 181, 20):
@@ -440,7 +491,7 @@ def render_cross_language() -> None:
         )
 
     for index, row in enumerate(rows):
-        y = top + index * 92
+        y = top + index * 88
         lines.append(
             f'<line x1="{left}" y1="{y + 43}" x2="{plot_right}" y2="{y + 43}" class="row-guide"/>'
         )
@@ -455,7 +506,7 @@ def render_cross_language() -> None:
             ("unchecked", row.unchecked, y + 13, 0.48),
         ):
             median = statistics.median(samples)
-            low, high = min(samples), max(samples)
+            low, high = robust_bounds(samples)
             color = series_color(row.label)
             lines.append(
                 f'<rect x="{left}" y="{mode_y - 9}" width="{max(1.0, x(median) - left):.1f}" height="18" rx="3" fill="{color}" opacity="{opacity}"><title>{esc(series_name(row.label))} · {mode} median: {median:.3f} million turns/s</title></rect>'
@@ -468,15 +519,15 @@ def render_cross_language() -> None:
                     f'<line x1="{x(endpoint):.1f}" y1="{mode_y - 6}" x2="{x(endpoint):.1f}" y2="{mode_y + 6}" class="whisker"/>'
             )
             lines.append(
-                f'<text x="1435" y="{mode_y + 5}" class="value">{mode[0].upper()} {spread_label(samples)} · n={len(samples)}</text>'
+                f'<text x="1435" y="{mode_y + 5}" class="value">{spread_label(samples)}</text>'
             )
 
     lines.extend(
         [
             f'<line x1="{left}" y1="{axis_y}" x2="{plot_right}" y2="{axis_y}" class="grid"/>',
             f'<text x="{left + chart_width / 2:.1f}" y="{axis_y + 58}" text-anchor="middle" class="muted" font-size="15">million EKF turns per second</text>',
-            '<text x="42" y="850" class="footnote">All rows match workload, CPU, worker count, and fused execution. Mech/Rust additionally match block-atomic rollback; other fault interfaces differ.</text>',
-            '<text x="42" y="875" class="footnote">NumPy/Numba is compiled by Numba, not interpreted Python. All measured samples reported zero faults.</text>',
+            '<text x="42" y="1030" class="footnote">Mech/Rust/Mojo/Julia/Futhark/Numba use fused blocks; Taichi/Halide synchronize publication every turn. Read the figure as a landscape, not a rank.</text>',
+            '<text x="42" y="1057" class="footnote">NumPy/Numba is compiled by Numba, not interpreted Python. Raw samples remain in the evidence; all measured samples reported zero faults.</text>',
             '</svg>',
         ]
     )
@@ -549,6 +600,7 @@ def render_metal_comparison() -> None:
             halide["rows"]["unchecked"]["samples_million_ekf_turns_per_second"],
         ),
     ]
+    rows = equalize(rows, 3)
 
     width, height = 1800, 900
     left, plot_right, top = 355, 1450, 190
@@ -571,16 +623,16 @@ def render_metal_comparison() -> None:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="metal-title metal-desc">',
         '<title id="metal-title">Apple M1 Metal EKF throughput across six implementation ecosystems</title>',
-        '<desc id="metal-desc">Paired horizontal hatched bars show median checked and unchecked Metal throughput for Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide. Thin whiskers and value labels report observed minimum-to-maximum spread.</desc>',
+        '<desc id="metal-desc">Paired horizontal hatched bars show median checked and unchecked Metal throughput for Mech, a Rust host with hand-written MSL, Mojo, Julia, Taichi, and Halide. Thin whiskers and value labels report median absolute deviation from equal three-process windows.</desc>',
         *patterns,
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:19px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:13px;font-variant-numeric:tabular-nums}.whisker{stroke:#eef3fa;stroke-width:2}.footnote{fill:#aab5c5;font-size:13px}</style>',
         '<text x="42" y="48" font-size="28" font-weight="700">Apple M1 Metal EKF throughput</text>',
         '<text x="42" y="80" class="muted" font-size="16">500,000 filters × 40 turns · f32 · resident GPU state · synchronized publication after every turn</text>',
-        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; thin whiskers and +/− labels are observed min–max spread, not confidence intervals. Diagonal hatch denotes GPU.</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Equal three-process windows. Bars are medians; whiskers and ± labels are MAD, not confidence intervals. Diagonal hatch denotes GPU.</text>',
         '<rect x="1125" y="136" width="24" height="14" rx="2" fill="url(#metal-mech)" opacity="0.95"/><text x="1160" y="149" class="muted" font-size="14">checked</text>',
         '<rect x="1245" y="136" width="24" height="14" rx="2" fill="url(#metal-mech)" opacity="0.48"/><text x="1280" y="149" class="muted" font-size="14">unchecked</text>',
-        '<text x="1435" y="150" class="muted" font-size="13">median +high/−low M turns/s</text>',
+        '<text x="1435" y="150" class="muted" font-size="13">median ± MAD · M turns/s</text>',
     ]
 
     for tick in range(0, 451, 50):
@@ -605,7 +657,7 @@ def render_metal_comparison() -> None:
             ("unchecked", row.unchecked, y + 13, 0.48),
         ):
             median = statistics.median(samples)
-            low, high = min(samples), max(samples)
+            low, high = robust_bounds(samples)
             fill = f"url(#metal-{slug(series_name(row.label))})"
             lines.append(
                 f'<rect x="{left}" y="{mode_y - 9}" width="{max(1.0, x(median) - left):.1f}" height="18" rx="3" fill="{fill}" opacity="{opacity}"><title>{esc(evidence_name(row.label))} · {mode} median: {median:.3f} million turns/s</title></rect>'
@@ -618,7 +670,7 @@ def render_metal_comparison() -> None:
                     f'<line x1="{x(endpoint):.1f}" y1="{mode_y - 6}" x2="{x(endpoint):.1f}" y2="{mode_y + 6}" class="whisker"/>'
             )
             lines.append(
-                f'<text x="1435" y="{mode_y + 5}" class="value">{mode[0].upper()} {spread_label(samples)} · n={len(samples)}</text>'
+                f'<text x="1435" y="{mode_y + 5}" class="value">{spread_label(samples)}</text>'
             )
 
     lines.extend(
@@ -719,12 +771,12 @@ def render_mech_backends() -> None:
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="mech-title mech-desc">',
         '<title id="mech-title">One Mech EKF across eight execution backends</title>',
-        '<desc id="mech-desc">Eight checked execution backends for the same high-level Mech EKF on one Apple M1. Horizontal bars show medians and thin whiskers show observed minimum-to-maximum ranges. A logarithmic scale keeps the scalar and GPU backends visible together.</desc>',
+        '<desc id="mech-desc">Eight checked execution backends for the same high-level Mech EKF on one Apple M1. Horizontal bars show medians and thin whiskers show median absolute deviation. A logarithmic scale keeps the scalar and GPU backends visible together.</desc>',
         '<rect width="100%" height="100%" fill="#080c14"/>',
         '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#e8edf5}.muted{fill:#9aa8ba}.grid{stroke:#2a374c;stroke-width:1}.minor-grid{stroke:#1a2538;stroke-width:1}.row-guide{stroke:#182235;stroke-width:1}.axis{fill:#9aa8ba;font-size:14px}.label{font-size:18px;font-weight:600}.detail{fill:#9aa8ba;font-size:13px}.value{font-size:14px;font-variant-numeric:tabular-nums}.whisker{stroke:#e8edf5;stroke-width:2.5}.footnote{fill:#aab5c5;font-size:13px}</style>',
         '<text x="42" y="48" font-size="28" font-weight="700">One Mech EKF across eight execution backends</text>',
         '<text x="42" y="80" class="muted" font-size="16">Checked publication after every turn · same Apple M1 · raw retained process samples · workload shown per row</text>',
-        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; whiskers and +/− labels are observed min–max ranges, not confidence intervals. Logarithmic throughput scale.</text>',
+        '<text x="42" y="112" class="muted" font-size="13">Bars are medians; whiskers and ± labels are median absolute deviation, not confidence intervals. Logarithmic throughput scale.</text>',
     ]
 
     ticks = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500]
@@ -742,7 +794,7 @@ def render_mech_backends() -> None:
     for index, row in enumerate(rows):
         y = top + index * 78
         median = statistics.median(row.samples)
-        low, high = min(row.samples), max(row.samples)
+        low, high = robust_bounds(row.samples)
         lines.append(
             f'<line x1="{left}" y1="{y + 37}" x2="{width - right}" y2="{y + 37}" class="row-guide"/>'
         )
@@ -764,7 +816,7 @@ def render_mech_backends() -> None:
                 f'<line x1="{x(endpoint):.1f}" y1="{y - 11}" x2="{x(endpoint):.1f}" y2="{y + 11}" class="whisker"/>'
             )
         lines.append(
-            f'<text x="{x(high) + 18:.1f}" y="{y + 5}" class="value">{spread_label(row.samples)} · n={len(row.samples)}</text>'
+            f'<text x="{x(high) + 18:.1f}" y="{y + 5}" class="value">{spread_label(row.samples)}</text>'
         )
 
     lines.extend(
