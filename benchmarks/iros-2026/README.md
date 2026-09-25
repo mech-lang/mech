@@ -44,9 +44,9 @@ dylib size/RSS experiment below uses a different, minimal ABI loader.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-backend-pairs.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-backend-pairs.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-backend-pairs.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-layout-memory-v3.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-layout-memory-v3.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-layout-memory-v3.png).
 
 ![Matched Mech backend checked and unchecked throughput, with one paired row per backend](charts/post-mech-backend-pairs.svg)
 
@@ -322,8 +322,12 @@ use the same strategy in the matched checked/unchecked comparison above. The
 result demonstrated here is that Mech can select AOT packaging and SIMD
 lowering together without changing the user-level EKF source.
 
-Both generated Mech libraries are about one-third smaller than the Rust
-library. All three median peak-RSS values are identical and their observed
+Both generated Mech libraries are about one-third smaller on disk than the Rust
+library. A [follow-up size audit](DYLIB-SIZE-AUDIT.md) reproduced the Rust file
+size and found that the gap is primarily Mach-O linker and segment layout:
+Rust has an additional 16 KiB data segment containing 24 bytes of lazy-linking
+data. It is not evidence that Mech produces smaller numerical machine code.
+All three median peak-RSS values are identical and their observed
 ranges overlap, so these seven processes do not establish a memory-use
 difference. Peak RSS includes the common loader and live buffers; it is not
 private library memory. All runs reported zero faults, and
