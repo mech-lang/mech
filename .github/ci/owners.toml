@@ -20,7 +20,7 @@ cross_cutting = true
 
 [owners.mech-engine]
 paths = ["src/engine/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--test", "r6_memory_runtime", "--no-default-features", "--features", "full_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-engine", "--lib", "--test", "r6_memory_runtime", "--test", "canonical_source_semantics", "--no-default-features", "--features", "full_compiler"]
 standard = true
 cross_cutting = true
 

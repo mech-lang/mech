@@ -39,6 +39,7 @@ const state = {
   pendingPagePosition: null,
   pagePositionRestore: null,
   consoleSizeObserver: null,
+  consoleWorkspaceObserver: null,
   errorBadgeObserver: null,
   tocUpdateFrame: null,
   tocEventCleanup: null,
@@ -814,6 +815,8 @@ function stopRuntime(nextLifecycle = "stopped") {
   finishPagePositionRestore();
   state.consoleSizeObserver?.disconnect();
   state.consoleSizeObserver = null;
+  state.consoleWorkspaceObserver?.disconnect();
+  state.consoleWorkspaceObserver = null;
   state.errorBadgeObserver?.disconnect();
   state.errorBadgeObserver = null;
   state.replHostOffsetObserver?.disconnect();
@@ -3393,6 +3396,12 @@ function initializeWorkspaceResizers() {
   const refresh = () => refreshWorkspaceResizers(pane);
   addRuntimeEventListener(window, "resize", refresh);
   addRuntimeEventListener(window.visualViewport, "resize", refresh);
+  const panels = pane.querySelector(":scope > .console-panels");
+  if (typeof ResizeObserver === "function" && panels) {
+    state.consoleWorkspaceObserver?.disconnect();
+    state.consoleWorkspaceObserver = new ResizeObserver(refresh);
+    state.consoleWorkspaceObserver.observe(panels);
+  }
 }
 
 function setFullscreenState(pane, toggle, active, mode = null) {
