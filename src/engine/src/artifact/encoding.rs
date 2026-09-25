@@ -123,6 +123,7 @@ impl CanonicalArtifactWriter {
 
     fn match_declaration(&mut self, control: &super::MatchDeclaration) {
         self.u16(control.scrutinee);
+        self.u8(u8::from(control.partial));
         self.u64(control.captures.len() as u64);
         for capture in &control.captures {
             self.u16(capture.input);
@@ -294,6 +295,7 @@ impl CanonicalArtifactWriter {
         self.u8(match control.kind {
             super::ComprehensionKind::Matrix => 0,
             super::ComprehensionKind::Set => 1,
+            super::ComprehensionKind::MatrixPreserveShape => 2,
         });
         self.u64(control.steps.len() as u64);
         for step in &control.steps {

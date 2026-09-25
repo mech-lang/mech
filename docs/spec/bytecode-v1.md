@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:9,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:10,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 9)
+### Typed graph bodies (graph revision 10)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
-A control body is `{"Match":{"scrutinee":input_ordinal,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 9 and typed bodies; earlier graph representations
+A control body is `{"Match":{"scrutinee":input_ordinal,"partial":bool,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
+The decoder requires revision 10 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -466,8 +466,10 @@ Global schema, constant, operation, and contract IDs refer to the enclosing
 artifact tables.
 
 Finalization checks scope and dominance, closed value schemas, pure ordinary
-operation contracts, Boolean guard yields, identical arm result schemas, and
-an unguarded wildcard/binding or coverage of both Boolean values. It rejects cross-block references
+operation contracts, Boolean guard yields, and identical arm result schemas.
+When `partial` is false, it also requires an unguarded wildcard/binding or
+coverage of both Boolean values. When `partial` is true, an unmatched value
+fails execution instead of producing a result. It rejects cross-block references
 and undeclared captures. Decoder admission counts nested control arrays before
 allocating them: defaults allow 4,096 arms, 8,192 blocks, 65,536 local operations,
 and 262,144 operands across the artifact. Mixed control nesting is limited to eight
@@ -476,8 +478,11 @@ wire arrays are allocated. Literal comparison still requires a scalar scrutinee.
 Existing section and aggregate byte
 limits also apply. Every control field participates in the artifact revision.
 
-A collection body is `{"Comprehension":{"id":block_id,"kind":0_or_1,"steps":[...],"yield_value":value}}`.
-Kind 0 constructs a row matrix; kind 1 constructs a canonical set. Values are
+A collection body is `{"Comprehension":{"id":block_id,"kind":0_or_1_or_2,"steps":[...],"yield_value":value}}`.
+Kind 0 constructs a row matrix; kind 1 constructs a canonical set; kind 2
+constructs a matrix with the live dimensions of its source generator. The
+kind 2 result must contain exactly one yielded element per source element.
+Values are
 `Constant(id)`, `Input(ordinal)`, or `Local(id)`. Steps are tagged `Generator`
 (`source`, `pattern`), `Operation` (`local`, `body`, `inputs`, `schema`), or
 `Filter(value)`. An operation body uses the same recursive `Operation`, `Match`,
@@ -504,7 +509,7 @@ Arguments retain their optional canonical name and input ordinal. Each ordered s
 retains a state, asynchronous, or output kind plus a recursively typed value made
 from input ordinals, tuples, arrays, atom structures, or tuple structures. Machine
 and structure names must be canonical source identifiers. The FSM variant introduced by
-graph revision 6 remains part of revision 9; earlier readers must reject the current graph
+graph revision 6 remains part of revision 10; earlier readers must reject the current graph
 instead of treating the changed grammar as their own representation. FSM value depth, stage count, and
 aggregate control populations are bounded during decoder admission.
 
