@@ -62,18 +62,20 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-refined.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-refined.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-refined.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-motivation.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-motivation.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-motivation.png).
 
-Body-type comparison: [Avenir Next PowerPoint](poster/IROS-2026-Mech-Poster-avenir.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-avenir.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-avenir.png).
-This is an optional typography example, with unchanged headings, code, tables,
-chart measurements and numerical evidence. The baseline PowerPoint specifies
-Segoe UI for prose, but the local PDF renderer substitutes Arial. The alternative
-PDF uses the installed Avenir Next font for prose. Both retain Fira Code for
-headings and code.
+The current poster uses Avenir Next for prose and Fira Code for headings and
+code. Its Motivation section has two equal-length paragraphs covering Rust and
+Mech, including standalone use, native Rust embedding, browser embedding through
+WebAssembly, and reactive subsystems. A note directs readers to the QR code for
+a fuller demonstration beyond the EKF case study.
+
+Earlier typography examples are retained: [Segoe UI PowerPoint](poster/IROS-2026-Mech-Poster-refined.pptx)
+and [Avenir Next PowerPoint](poster/IROS-2026-Mech-Poster-avenir.pptx).
+The earlier Segoe UI PDF uses Arial substitution in the local renderer.
+The current PDF uses the installed Avenir Next font for prose.
 
 The reactive diagram uses one build/activation path ending in the resident
 instance, an input/program/output/failure key, activation failure, aligned
