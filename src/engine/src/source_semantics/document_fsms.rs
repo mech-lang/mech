@@ -1148,9 +1148,14 @@ impl SemanticBuilder {
                     };
                     pattern_bindings.insert(*index, local);
                 });
-                let pattern = crate::MatchPattern::Structural(
-                    self.resolve_structural_match_pattern(&source, binding_start)?,
-                );
+                let pattern =
+                    crate::MatchPattern::Structural(self.resolve_structural_match_pattern(
+                        &source,
+                        binding_start,
+                        false,
+                        &mut inputs,
+                        &mut captures,
+                    )?);
                 let guard = if let Some(condition) = &arm.guard {
                     let (block, schema) = self.control_block(
                         condition,

@@ -11,7 +11,7 @@ pub use execution::*;
 
 use core::ops::Range;
 use core::sync::atomic::{AtomicU64, Ordering};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirementId, BoundCall, BoundResidentKernel,
@@ -374,6 +374,7 @@ pub struct ActivatedOutput {
 struct ActivatedOutputMaterialization {
     target: CellSlotId,
     source: ResidentReadLocation,
+    producer: Option<ActivatedNodeIndex>,
 }
 
 fn output_materialization_depends_on_match(
@@ -428,6 +429,7 @@ fn read_location_depends_on_match(
 pub struct ActivatedConstraint {
     pub artifact_id: IntegrityConstraintId,
     pub predicate: ResidentReadLocation,
+    pub producer: Option<ActivatedNodeIndex>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -477,9 +479,25 @@ pub struct ActivatedPlan {
     pub external_admission: ResidentExternalAdmission,
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
+    /// Artifact input slots that schedule a turn. Inputs used only as
+    /// activation captures are retained as sampled values instead.
+    pub turn_trigger_inputs: Box<[CellSlotId]>,
+    /// Per-activation input roots. Runtime turns use this to schedule exactly
+    /// the scopes whose trigger observations arrived in the admitted batch.
+    activation_turn_inputs: Box<
+        [(
+            ActivatedNodeIndex,
+            Box<[CellSlotId]>,
+            Box<[ActivatedNodeIndex]>,
+            Box<[ActivatedNodeIndex]>,
+        )],
+    >,
     pub outputs: Box<[ActivatedOutput]>,
     output_materializations: Box<[ActivatedOutputMaterialization]>,
     pub constraints: Box<[ActivatedConstraint]>,
+    /// Artifact nodes evaluated once while the resident instance is
+    /// activated. This is not the set of reactive activation scopes; use
+    /// [`Self::has_activation_scopes`] for that scheduling distinction.
     pub activation_nodes: Box<[NodeId]>,
     activation_steps: Box<[ActivatedOnceNode]>,
     pub(crate) schemas: std::sync::Arc<mech_core::SchemaTable>,
@@ -505,6 +523,19 @@ impl ActivatedPlan {
 
     pub fn has_external_steps(&self) -> bool {
         self.external_step_count != 0
+    }
+
+    /// Reports whether the resident plan owns any reactive activation scopes.
+    /// This is distinct from `activation_nodes`, which contains closed
+    /// computations evaluated once while the resident instance is activated.
+    pub fn has_activation_scopes(&self) -> bool {
+        !self.activation_turn_inputs.is_empty()
+    }
+
+    pub fn has_input_free_activation_roots(&self) -> bool {
+        self.activation_turn_inputs
+            .iter()
+            .any(|(_, inputs, _, _)| inputs.is_empty())
     }
 
     pub(crate) fn has_observation_inputs(&self) -> bool {
@@ -1259,6 +1290,7 @@ pub struct TurnWorkspace {
     pub(crate) input: TypedResidentArena,
     pub(crate) scratch: TypedResidentArena,
     pub(crate) dirty_bits: Box<[u64]>,
+    pub(crate) suppressed_activation_bits: Box<[u64]>,
     pub(crate) executed_bits: Box<[u64]>,
     pub(crate) initialized_output_bits: Box<[u64]>,
     pub(crate) all_outputs_initialized: bool,
@@ -1304,6 +1336,7 @@ impl TurnWorkspace {
                 memory,
             )?,
             dirty_bits: vec![0; words].into_boxed_slice(),
+            suppressed_activation_bits: vec![0; words].into_boxed_slice(),
             executed_bits: vec![0; words].into_boxed_slice(),
             initialized_output_bits: vec![0; plan.steps.len().div_ceil(64)].into_boxed_slice(),
             all_outputs_initialized: false,
@@ -2140,8 +2173,10 @@ fn resident_concrete_execution_cases(
             )?;
             continue;
         }
-        let crate::ExecutableNodeBody::Match(control) = &node.body else {
-            continue;
+        let control = match &node.body {
+            crate::ExecutableNodeBody::Match(control)
+            | crate::ExecutableNodeBody::Activation(control) => control,
+            _ => continue,
         };
         let sources = node_inputs(artifact, node.node)?
             .into_iter()
@@ -2877,6 +2912,12 @@ fn classify_nodes(
     loop {
         let before = activation.len();
         for node in artifact.nodes() {
+            // Activation scopes are turn owners even when their trigger and
+            // captures are closed. Loading may allocate their lexical control
+            // but must never execute the scope body.
+            if matches!(&node.body, crate::ExecutableNodeBody::Activation(_)) {
+                continue;
+            }
             if matches!(
                 classes[node.node.get() as usize],
                 NodeClass::Observation | NodeClass::External
@@ -3994,6 +4035,9 @@ fn build_layout(
             crate::ExecutableNodeBody::Match(control) => {
                 comprehension::all_match_local_definitions(control)
             }
+            crate::ExecutableNodeBody::Activation(control) => {
+                comprehension::all_match_local_definitions(control)
+            }
             crate::ExecutableNodeBody::Comprehension(control) => {
                 comprehension::all_local_definitions(control)
             }
@@ -4601,6 +4645,46 @@ fn bind_resident_operation(
     Ok((kernel, memory_plan))
 }
 
+fn continuation_dependency_node(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    visiting: &mut BTreeSet<NodeId>,
+) -> Result<Option<NodeId>, ResidentActivationError> {
+    let ArtifactSource::Slot(slot) = source else {
+        return Ok(None);
+    };
+    let declaration = &artifact.slots()[slot.get() as usize];
+    // Mutable state is a retained turn boundary. Its current published value
+    // does not depend on whether the node that produced an older version is
+    // presently suspended.
+    if declaration.role == SlotRole::State {
+        return Ok(None);
+    }
+    let node = match declaration.producer {
+        ProducerReference::Output { source, .. } => {
+            return continuation_dependency_node(artifact, source, visiting);
+        }
+        ProducerReference::NodeOutput { node, .. } => node,
+        ProducerReference::Input(_) => return Ok(None),
+    };
+    if !visiting.insert(node) {
+        return Ok(None);
+    }
+    let declaration = &artifact.nodes()[node.get() as usize];
+    if matches!(&declaration.body, crate::ExecutableNodeBody::Fsm(_))
+        || matches!(&declaration.body, crate::ExecutableNodeBody::Match(control) if control.contains_suspend())
+        || matches!(&declaration.body, crate::ExecutableNodeBody::Comprehension(control) if control.contains_suspend())
+    {
+        return Ok(Some(node));
+    }
+    for input in node_inputs(artifact, node)? {
+        if let Some(node) = continuation_dependency_node(artifact, input, visiting)? {
+            return Ok(Some(node));
+        }
+    }
+    Ok(None)
+}
+
 fn build_plan(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
@@ -4678,10 +4762,12 @@ fn build_plan(
             continue;
         }
         let Some(node) = node.as_operation() else {
-            let crate::ExecutableNodeBody::Match(control) = &node.body else {
-                unreachable!()
+            let control = match &node.body {
+                crate::ExecutableNodeBody::Match(control)
+                | crate::ExecutableNodeBody::Activation(control) => control,
+                _ => unreachable!(),
             };
-            let input_sources = node_inputs(artifact, node.node)?;
+            let input_sources = control_input_sources(artifact, node.node)?;
             let input_reads = input_sources
                 .iter()
                 .copied()
@@ -4906,10 +4992,12 @@ fn build_plan(
             ));
             continue;
         }
-        let crate::ExecutableNodeBody::Match(control) = &node.body else {
-            continue;
+        let control = match &node.body {
+            crate::ExecutableNodeBody::Match(control)
+            | crate::ExecutableNodeBody::Activation(control) => control,
+            _ => continue,
         };
-        let input_sources = node_inputs(artifact, node.node)?;
+        let input_sources = control_input_sources(artifact, node.node)?;
         let input_reads = input_sources
             .iter()
             .copied()
@@ -4953,7 +5041,7 @@ fn build_plan(
         &artifact_to_activated,
         &topology,
         options.integrity,
-    );
+    )?;
     let mut execution_node_mask = vec![0_u64; topology.word_len()].into_boxed_slice();
     for node in &execution_node_order {
         set_bit(&mut execution_node_mask, node.get() as usize);
@@ -4978,6 +5066,338 @@ fn build_plan(
         })
         .collect::<Vec<_>>()
         .into_boxed_slice();
+    let input_slots = inputs
+        .iter()
+        .map(|input| input.artifact_slot)
+        .collect::<BTreeSet<_>>();
+    let mut consumers = BTreeMap::<CellSlotId, Vec<(NodeId, usize)>>::new();
+    for node in artifact.nodes() {
+        for (ordinal, source) in control_input_sources(artifact, node.node)?
+            .into_iter()
+            .enumerate()
+        {
+            if let ArtifactSource::Slot(slot) = source {
+                consumers
+                    .entry(slot)
+                    .or_default()
+                    .push((node.node, ordinal));
+            }
+        }
+    }
+    let mut published = artifact
+        .outputs()
+        .iter()
+        .map(|output| output.source)
+        .collect::<BTreeSet<_>>();
+    published.extend(artifact.outputs().iter().filter_map(|output| {
+        match artifact.slots()[output.source.get() as usize].producer {
+            ProducerReference::Output {
+                source: ArtifactSource::Slot(source),
+                ..
+            } => Some(source),
+            ProducerReference::Input(_)
+            | ProducerReference::NodeOutput { .. }
+            | ProducerReference::Output {
+                source: ArtifactSource::Constant(_),
+                ..
+            } => None,
+        }
+    }));
+    published.extend(
+        artifact
+            .constraints()
+            .iter()
+            .flat_map(|constraint| constraint.inputs.iter().copied())
+            .map(|source| forwarded_output_source(artifact, source))
+            .filter_map(|source| match source {
+                Ok(ArtifactSource::Slot(slot)) => Some(Ok(slot)),
+                Ok(ArtifactSource::Constant(_)) => None,
+                Err(error) => Some(Err(error)),
+            })
+            .collect::<Result<BTreeSet<_>, ResidentActivationError>>()?,
+    );
+    let output_materialization_source =
+        |output_slot: CellSlotId| -> Result<ArtifactSource, ResidentActivationError> {
+            let source = forwarded_output_source(artifact, ArtifactSource::Slot(output_slot))?;
+            for state in artifact
+                .slots()
+                .iter()
+                .filter(|slot| slot.role == SlotRole::State)
+            {
+                let ProducerReference::NodeOutput { node, .. } = state.producer else {
+                    continue;
+                };
+                let Some(operation) = artifact.nodes()[node.get() as usize].as_operation() else {
+                    continue;
+                };
+                if operation.operation.module_path.as_ref() != ["core"]
+                    || operation.operation.operation_name != "assign"
+                {
+                    continue;
+                }
+                let source_region = match source {
+                    ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].region,
+                    ArtifactSource::Constant(constant) => {
+                        layout.constant_regions[constant.get() as usize]
+                    }
+                };
+                let state_region = layout.slots[state.slot.get() as usize].region;
+                // Assignments may normalize a snapshot into typed lanes. The
+                // state slot can replace the source only when a direct arena
+                // copy will preserve the output's physical representation.
+                if node_inputs(artifact, node)?.first().copied() == Some(source)
+                    && source_region.kind == state_region.kind
+                    && source_region.shape == state_region.shape
+                {
+                    return Ok(ArtifactSource::Slot(state.slot));
+                }
+            }
+            Ok(source)
+        };
+    published.extend(
+        artifact
+            .outputs()
+            .iter()
+            .map(|output| output_materialization_source(output.source))
+            .filter_map(|source| match source {
+                Ok(ArtifactSource::Slot(slot)) => Some(Ok(slot)),
+                Ok(ArtifactSource::Constant(_)) => None,
+                Err(error) => Some(Err(error)),
+            })
+            .collect::<Result<BTreeSet<_>, ResidentActivationError>>()?,
+    );
+    let output_sources = artifact
+        .outputs()
+        .iter()
+        .map(|output| output_materialization_source(output.source))
+        .filter_map(|source| match source {
+            Ok(ArtifactSource::Slot(slot)) => Some(Ok(slot)),
+            Ok(ArtifactSource::Constant(_)) => None,
+            Err(error) => Some(Err(error)),
+        })
+        .collect::<Result<BTreeSet<_>, ResidentActivationError>>()?;
+    let activation_sample_edge = |node: NodeId, ordinal: usize| {
+        matches!(
+            &artifact.nodes()[node.get() as usize].body,
+            crate::ExecutableNodeBody::Activation(control)
+                if ordinal != control.scrutinee as usize
+        )
+    };
+    let node_is_pure = |node: &crate::artifact::NodeDeclaration| match &node.body {
+        crate::ExecutableNodeBody::Operation(operation) => matches!(
+            artifact.contracts().get(operation.contract),
+            Some(mech_core::ResolvedOperationContract::Declared(contract))
+                if contract.interaction == ExternalInteraction::Pure
+        ),
+        crate::ExecutableNodeBody::Match(_) | crate::ExecutableNodeBody::Comprehension(_) => true,
+        crate::ExecutableNodeBody::Activation(_) | crate::ExecutableNodeBody::Fsm(_) => false,
+    };
+    // Pure nodes used only to compute an activation capture belong to that
+    // capture's sampled dependency cone. Host updates may refresh their input
+    // snapshots, but only the activation scrutinee schedules their execution.
+    let mut sampled_nodes = BTreeMap::<NodeId, BTreeSet<NodeId>>::new();
+    loop {
+        let before = sampled_nodes.len();
+        for node in artifact.nodes().iter().rev() {
+            if sampled_nodes.contains_key(&node.node) {
+                continue;
+            }
+            if !node_is_pure(node) {
+                continue;
+            }
+            let output = node_output_slot(artifact, node.node)?;
+            if published.contains(&output)
+                || artifact.slots()[output.get() as usize].role != SlotRole::Derived
+            {
+                continue;
+            }
+            let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
+            if !uses.is_empty()
+                && uses.iter().all(|(consumer, ordinal)| {
+                    activation_sample_edge(*consumer, *ordinal)
+                        || sampled_nodes.contains_key(consumer)
+                })
+            {
+                let owners = uses
+                    .iter()
+                    .flat_map(|(consumer, ordinal)| {
+                        if activation_sample_edge(*consumer, *ordinal) {
+                            vec![*consumer]
+                        } else {
+                            sampled_nodes
+                                .get(consumer)
+                                .into_iter()
+                                .flat_map(|owners| owners.iter().copied())
+                                .collect()
+                        }
+                    })
+                    .collect();
+                sampled_nodes.insert(node.node, owners);
+            }
+        }
+        if sampled_nodes.len() == before {
+            break;
+        }
+    }
+    for node in artifact.nodes() {
+        if node_is_pure(node)
+            || classes[node.node.get() as usize] == NodeClass::Observation
+            || sampled_nodes.contains_key(&node.node)
+        {
+            continue;
+        }
+        // Outputless effects are scheduling roots, not value producers. They
+        // cannot form a capture-only derived-value cone.
+        if node.output_bindings.is_empty() {
+            continue;
+        }
+        let output = node_output_slot(artifact, node.node)?;
+        if published.contains(&output)
+            || artifact.slots()[output.get() as usize].role != SlotRole::Derived
+        {
+            continue;
+        }
+        let uses = consumers.get(&output).map(Vec::as_slice).unwrap_or(&[]);
+        if !uses.is_empty()
+            && uses.iter().all(|(consumer, ordinal)| {
+                activation_sample_edge(*consumer, *ordinal) || sampled_nodes.contains_key(consumer)
+            })
+        {
+            return Err(ResidentActivationError::InvalidDependency { node: node.node });
+        }
+    }
+    let turn_trigger_inputs = inputs
+        .iter()
+        .filter(|input| {
+            if published.contains(&input.artifact_slot) {
+                return true;
+            }
+            let uses = consumers
+                .get(&input.artifact_slot)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            uses.is_empty()
+                || !uses.iter().all(|(consumer, ordinal)| {
+                    activation_sample_edge(*consumer, *ordinal)
+                        || sampled_nodes.contains_key(consumer)
+                })
+        })
+        .map(|input| input.artifact_slot)
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let mut activation_turn_inputs = Vec::new();
+    let mut activation_update_owners = BTreeMap::<u32, NodeId>::new();
+    for node in artifact.nodes() {
+        let crate::ExecutableNodeBody::Activation(control) = &node.body else {
+            continue;
+        };
+        let activation_inputs = node_inputs(artifact, node.node)?
+            .into_iter()
+            .map(|source| forwarded_output_source(artifact, source))
+            .collect::<Result<Vec<_>, _>>()?;
+        for source in activation_inputs.iter().copied() {
+            if let Some(node) =
+                continuation_dependency_node(artifact, source, &mut BTreeSet::new())?
+            {
+                return Err(ResidentActivationError::InvalidDependency { node });
+            }
+        }
+        let source = *activation_inputs
+            .get(control.scrutinee as usize)
+            .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+        let mut dependencies = BTreeSet::new();
+        collect_resident_input_dependencies(
+            artifact,
+            source,
+            &input_slots,
+            &mut BTreeSet::new(),
+            &mut dependencies,
+        )?;
+        let activated = artifact_to_activated[node.node.get() as usize]
+            .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?;
+        let is_state_writer = |candidate: ActivatedNodeIndex| {
+            let artifact_node = steps[candidate.get() as usize].artifact_node();
+            node_output_slot(artifact, artifact_node)
+                .is_ok_and(|slot| artifact.slots()[slot.get() as usize].role == SlotRole::State)
+        };
+        // Follow every direct activation path, but stop expanding at retained
+        // state. A descendant can also be reachable along a second direct
+        // path; tracking reachability rather than writer ancestry preserves
+        // that path when the graph converges again at an effect or output.
+        let mut pre_state = vec![false; steps.len()];
+        pre_state[activated.get() as usize] = true;
+        let mut pending = VecDeque::from([activated]);
+        while let Some(parent) = pending.pop_front() {
+            for child in topology.same_turn_downstream(parent).iter().copied() {
+                let index = child.get() as usize;
+                if pre_state[index] {
+                    continue;
+                }
+                pre_state[index] = true;
+                if !is_state_writer(child) {
+                    pending.push_back(child);
+                }
+            }
+        }
+        // State publication, integrity checks, effects, and output
+        // materialization are suppression boundaries. Walk backward only
+        // through the pre-state subgraph so ordinary consumers of published
+        // state remain eligible on unrelated turns.
+        let mut protected = vec![false; steps.len()];
+        for candidate in topology.linear_node_order.iter().copied() {
+            let index = candidate.get() as usize;
+            if !pre_state[index] {
+                continue;
+            }
+            let artifact_node = steps[index].artifact_node();
+            let constrained = topology
+                .mandatory_candidate_mask
+                .get(index / 64)
+                .is_some_and(|word| word & (1_u64 << (index % 64)) != 0);
+            let effect = matches!(steps[index], ActivatedTurnStep::External(_));
+            let output = node_output_slot(artifact, artifact_node)
+                .is_ok_and(|slot| output_sources.contains(&slot));
+            protected[index] = is_state_writer(candidate) || constrained || effect || output;
+        }
+        for candidate in topology.linear_node_order.iter().rev().copied() {
+            let index = candidate.get() as usize;
+            if !pre_state[index] || protected[index] {
+                continue;
+            }
+            protected[index] = topology
+                .same_turn_downstream(candidate)
+                .iter()
+                .any(|child| protected[child.get() as usize]);
+        }
+        let update_nodes = topology
+            .linear_node_order
+            .iter()
+            .copied()
+            .filter(|candidate| protected[candidate.get() as usize])
+            .collect::<Vec<_>>();
+        for update in &update_nodes {
+            if activation_update_owners
+                .insert(update.get(), node.node)
+                .is_some_and(|owner| owner != node.node)
+            {
+                return Err(ResidentActivationError::InvalidDependency { node: node.node });
+            }
+        }
+        activation_turn_inputs.push((
+            activated,
+            dependencies
+                .into_iter()
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            sampled_nodes
+                .iter()
+                .filter(|(_, owners)| owners.contains(&node.node))
+                .filter_map(|(sampled, _)| artifact_to_activated[sampled.get() as usize])
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            update_nodes.into_boxed_slice(),
+        ));
+    }
     let outputs = artifact
         .outputs()
         .iter()
@@ -4997,14 +5417,28 @@ fn build_plan(
     let output_materializations = artifact
         .slots()
         .iter()
-        .filter_map(|slot| match (slot.role, slot.producer) {
-            (SlotRole::Output, ProducerReference::Output { source, .. }) => Some(
+        .filter_map(|slot| match slot.role {
+            SlotRole::Output => Some(output_materialization_source(slot.slot).and_then(|source| {
+                let producer = match source {
+                    ArtifactSource::Slot(source)
+                        if artifact.slots()[source.get() as usize].role != SlotRole::State =>
+                    {
+                        match artifact.slots()[source.get() as usize].producer {
+                            ProducerReference::NodeOutput { node, .. } => {
+                                artifact_to_activated[node.get() as usize]
+                            }
+                            ProducerReference::Input(_) | ProducerReference::Output { .. } => None,
+                        }
+                    }
+                    ArtifactSource::Slot(_) | ArtifactSource::Constant(_) => None,
+                };
                 resolve_read(&layout, source).map(|source| ActivatedOutputMaterialization {
                     target: slot.slot,
                     source,
-                }),
-            ),
-            _ => None,
+                    producer,
+                })
+            })),
+            SlotRole::Input | SlotRole::State | SlotRole::Derived => None,
         })
         .collect::<Result<Vec<_>, ResidentActivationError>>()?
         .into_boxed_slice();
@@ -5020,10 +5454,23 @@ fn build_plan(
                     constraint: constraint.constraint,
                 });
             }
-            let predicate = resolve_read(&layout, constraint.inputs[0])?;
-            let layout =
-                source_port_layout(artifact, &layout, constraint.inputs[0], static_selectors)?;
-            if layout.kind != ResidentValueKind::Bool || layout.shape != ResidentShape::SCALAR {
+            let predicate_source = match constraint.inputs[0] {
+                ArtifactSource::Slot(slot)
+                    if matches!(
+                        artifact.slots()[slot.get() as usize].producer,
+                        ProducerReference::Output { .. }
+                    ) =>
+                {
+                    output_materialization_source(slot)?
+                }
+                source => source,
+            };
+            let predicate = resolve_read(&layout, predicate_source)?;
+            let predicate_layout =
+                source_port_layout(artifact, &layout, predicate_source, static_selectors)?;
+            if predicate_layout.kind != ResidentValueKind::Bool
+                || predicate_layout.shape != ResidentShape::SCALAR
+            {
                 return Err(ResidentActivationError::InvalidConstraint {
                     constraint: constraint.constraint,
                 });
@@ -5031,6 +5478,19 @@ fn build_plan(
             Ok(ActivatedConstraint {
                 artifact_id: constraint.constraint,
                 predicate,
+                producer: match predicate_source {
+                    ArtifactSource::Slot(slot)
+                        if artifact.slots()[slot.get() as usize].role != SlotRole::State =>
+                    {
+                        match artifact.slots()[slot.get() as usize].producer {
+                            ProducerReference::NodeOutput { node, .. } => {
+                                artifact_to_activated[node.get() as usize]
+                            }
+                            ProducerReference::Input(_) | ProducerReference::Output { .. } => None,
+                        }
+                    }
+                    ArtifactSource::Slot(_) | ArtifactSource::Constant(_) => None,
+                },
             })
         })
         .collect::<Result<Vec<_>, _>>()?
@@ -5179,6 +5639,8 @@ fn build_plan(
         external_admission: options.external,
         topology,
         inputs,
+        turn_trigger_inputs,
+        activation_turn_inputs: activation_turn_inputs.into_boxed_slice(),
         outputs,
         output_materializations,
         constraints,
@@ -5272,13 +5734,16 @@ fn build_execution_node_order(
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
     topology: &DependencyTopology,
     integrity: ResidentIntegrityMode,
-) -> Box<[ActivatedNodeIndex]> {
+) -> Result<Box<[ActivatedNodeIndex]>, ResidentActivationError> {
     if integrity == ResidentIntegrityMode::Checked {
-        return topology.linear_node_order.clone();
+        return Ok(topology.linear_node_order.clone());
     }
     let mut omitted = vec![false; steps.len()];
     for constraint in artifact.constraints() {
-        let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
+        let Some(source) = constraint.inputs.first().copied() else {
+            continue;
+        };
+        let ArtifactSource::Slot(slot) = forwarded_output_source(artifact, source)? else {
             continue;
         };
         let ProducerReference::NodeOutput { node, .. } =
@@ -5297,13 +5762,13 @@ fn build_execution_node_order(
             }
         }
     }
-    topology
+    Ok(topology
         .linear_node_order
         .iter()
         .copied()
         .filter(|node| !omitted[node.get() as usize])
         .collect::<Vec<_>>()
-        .into_boxed_slice()
+        .into_boxed_slice())
 }
 
 fn build_f64_read_tape(reads: &[ResidentReadLocation]) -> Option<Box<[F64ReadTapeEntry]>> {
@@ -5790,6 +6255,7 @@ fn build_topology(
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
 ) -> Result<DependencyTopology, ResidentActivationError> {
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
+    let mut sample_ordering = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
     let mut prior_state_consumers = Vec::<ActivatedNodeIndex>::new();
@@ -5801,7 +6267,33 @@ fn build_topology(
             continue;
         }
         let current = artifact_to_activated[node.node.get() as usize].unwrap();
-        for source in node_inputs(artifact, node.node)? {
+        let activation_scrutinee = match &node.body {
+            crate::ExecutableNodeBody::Activation(control) => Some(control.scrutinee as usize),
+            _ => None,
+        };
+        for (ordinal, source) in control_input_sources(artifact, node.node)?
+            .into_iter()
+            .enumerate()
+        {
+            if activation_scrutinee.is_some_and(|scrutinee| ordinal != scrutinee) {
+                // Sample captures are read by the activation body, but they do
+                // not schedule it or form dirty-propagation edges into it.
+                // A computed sample must nevertheless run before its owner
+                // when both are selected for the same turn.
+                if let ArtifactSource::Slot(slot_id) = source {
+                    let slot = &artifact.slots()[slot_id.get() as usize];
+                    if slot.role != SlotRole::State {
+                        if let ProducerReference::NodeOutput { node: parent, .. } = slot.producer {
+                            if let Some(parent) = artifact_to_activated[parent.get() as usize] {
+                                if !sample_ordering[parent.get() as usize].contains(&current) {
+                                    sample_ordering[parent.get() as usize].push(current);
+                                }
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
             let ArtifactSource::Slot(slot_id) = source else {
                 continue;
             };
@@ -5874,9 +6366,11 @@ fn build_topology(
     roots.sort_by_key(|node| node.get());
     let order_source = downstream
         .iter()
-        .map(|children| {
+        .zip(&sample_ordering)
+        .map(|(children, samples)| {
             children
                 .iter()
+                .chain(samples)
                 .map(|child| child.get() as usize)
                 .collect::<Vec<_>>()
         })
@@ -5921,7 +6415,10 @@ fn build_topology(
     }
     let mut mandatory = vec![0_u64; words].into_boxed_slice();
     for constraint in artifact.constraints() {
-        let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
+        let Some(source) = constraint.inputs.first().copied() else {
+            continue;
+        };
+        let ArtifactSource::Slot(slot) = forwarded_output_source(artifact, source)? else {
             continue;
         };
         let ProducerReference::NodeOutput { node, .. } =
@@ -6169,6 +6666,106 @@ fn node_inputs(
             }
         })
         .collect()
+}
+
+fn control_input_sources(
+    artifact: &ProgramArtifact,
+    node: NodeId,
+) -> Result<Vec<ArtifactSource>, ResidentActivationError> {
+    let normalize_forwarded = matches!(
+        artifact
+            .nodes()
+            .get(node.get() as usize)
+            .map(|node| &node.body),
+        Some(crate::ExecutableNodeBody::Activation(_))
+    );
+    node_inputs(artifact, node)?
+        .into_iter()
+        .map(|source| {
+            if normalize_forwarded {
+                forwarded_output_source(artifact, source)
+            } else {
+                Ok(source)
+            }
+        })
+        .collect()
+}
+
+fn forwarded_output_source(
+    artifact: &ProgramArtifact,
+    mut source: ArtifactSource,
+) -> Result<ArtifactSource, ResidentActivationError> {
+    let mut remaining = artifact.slots().len();
+    while let ArtifactSource::Slot(slot) = source {
+        let declaration = artifact.slots().get(slot.get() as usize).ok_or(
+            ResidentActivationError::InvalidDependency {
+                node: NodeId::new(slot.get()),
+            },
+        )?;
+        let ProducerReference::Output { source: next, .. } = declaration.producer else {
+            break;
+        };
+        let Some(next_remaining) = remaining.checked_sub(1) else {
+            return Err(ResidentActivationError::InvalidDependency {
+                node: NodeId::new(slot.get()),
+            });
+        };
+        remaining = next_remaining;
+        source = next;
+    }
+    Ok(source)
+}
+
+fn collect_resident_input_dependencies(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    input_slots: &BTreeSet<CellSlotId>,
+    visited_nodes: &mut BTreeSet<NodeId>,
+    dependencies: &mut BTreeSet<CellSlotId>,
+) -> Result<(), ResidentActivationError> {
+    let ArtifactSource::Slot(slot) = source else {
+        return Ok(());
+    };
+    if input_slots.contains(&slot) {
+        dependencies.insert(slot);
+        return Ok(());
+    }
+    let declaration = artifact.slots().get(slot.get() as usize).ok_or(
+        ResidentActivationError::InvalidDependency {
+            node: NodeId::new(slot.get()),
+        },
+    )?;
+    if declaration.role == SlotRole::State {
+        // Retained state is sampled from the previous publication. Its
+        // historical writer inputs do not trigger this activation.
+        return Ok(());
+    }
+    let node = match declaration.producer {
+        ProducerReference::Output { source, .. } => {
+            return collect_resident_input_dependencies(
+                artifact,
+                source,
+                input_slots,
+                visited_nodes,
+                dependencies,
+            );
+        }
+        ProducerReference::NodeOutput { node, .. } => node,
+        ProducerReference::Input(_) => return Ok(()),
+    };
+    if !visited_nodes.insert(node) {
+        return Ok(());
+    }
+    for input in node_inputs(artifact, node)? {
+        collect_resident_input_dependencies(
+            artifact,
+            input,
+            input_slots,
+            visited_nodes,
+            dependencies,
+        )?;
+    }
+    Ok(())
 }
 
 fn activated_input_source(artifact: &ProgramArtifact, slot: CellSlotId) -> ActivatedInputSource {
@@ -6777,6 +7374,7 @@ fn prepare_match_node(
         }
     }
     let output = &layout.slots[output_slot.get() as usize];
+    let suspends = control.contains_suspend();
     Ok(ActivatedMatchNode {
         artifact_node: owner,
         budget_node,
@@ -6806,6 +7404,9 @@ fn prepare_match_node(
             .iter()
             .map(|capture| {
                 let source = input_reads[capture.input as usize];
+                if !suspends {
+                    return Ok(source);
+                }
                 match (capture.freeze_on_suspend, source) {
                     (true, ResidentReadLocation::Input(region)) => {
                         Ok(ResidentReadLocation::LexicalInput(region))
@@ -6866,6 +7467,7 @@ fn activate_match_pattern(
     owner: NodeId,
     owner_block: u32,
     pattern: &crate::MatchPattern,
+    inputs: &[ArtifactSource],
     layout: &LayoutBuild,
 ) -> Result<ActivatedMatchPattern, ResidentActivationError> {
     fn structural(
@@ -6873,6 +7475,7 @@ fn activate_match_pattern(
         owner: NodeId,
         owner_block: u32,
         pattern: &crate::CollectionPattern<SchemaId, crate::MatchPatternValue>,
+        inputs: &[ArtifactSource],
         layout: &LayoutBuild,
     ) -> Result<
         crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
@@ -6906,19 +7509,36 @@ fn activate_match_pattern(
                     schema: slot.schema,
                 })
             }
+            crate::CollectionPattern::Equal(crate::MatchPatternValue::Input(input)) => {
+                let source = *inputs
+                    .get(*input as usize)
+                    .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+                let schema = match source {
+                    ArtifactSource::Constant(constant) => artifact
+                        .constants()
+                        .get(constant)
+                        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?
+                        .schema(),
+                    ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].schema,
+                };
+                crate::CollectionPattern::Equal(ActivatedPatternValue {
+                    location: resolve_read(layout, source)?,
+                    schema,
+                })
+            }
             crate::CollectionPattern::Enum { ordinal, payload } => crate::CollectionPattern::Enum {
                 ordinal: *ordinal,
                 payload: payload
                     .as_deref()
                     .map(|item| {
-                        structural(artifact, owner, owner_block, item, layout).map(Box::new)
+                        structural(artifact, owner, owner_block, item, inputs, layout).map(Box::new)
                     })
                     .transpose()?,
             },
             crate::CollectionPattern::Tuple(items) => crate::CollectionPattern::Tuple(
                 items
                     .iter()
-                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .map(|item| structural(artifact, owner, owner_block, item, inputs, layout))
                     .collect::<Result<_, _>>()?,
             ),
             crate::CollectionPattern::Array {
@@ -6928,17 +7548,17 @@ fn activate_match_pattern(
             } => crate::CollectionPattern::Array {
                 prefix: prefix
                     .iter()
-                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .map(|item| structural(artifact, owner, owner_block, item, inputs, layout))
                     .collect::<Result<_, _>>()?,
                 rest: rest
                     .as_deref()
                     .map(|item| {
-                        structural(artifact, owner, owner_block, item, layout).map(Box::new)
+                        structural(artifact, owner, owner_block, item, inputs, layout).map(Box::new)
                     })
                     .transpose()?,
                 suffix: suffix
                     .iter()
-                    .map(|item| structural(artifact, owner, owner_block, item, layout))
+                    .map(|item| structural(artifact, owner, owner_block, item, inputs, layout))
                     .collect::<Result<_, _>>()?,
             },
         })
@@ -6952,7 +7572,7 @@ fn activate_match_pattern(
         crate::MatchPattern::Structural(pattern) => {
             let metrics = crate::pattern_metrics(pattern)
                 .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
-            let pattern = structural(artifact, owner, owner_block, pattern, layout)?;
+            let pattern = structural(artifact, owner, owner_block, pattern, inputs, layout)?;
             let snapshot_finalization_count = snapshot_pattern_finalization_count(&pattern)
                 .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
             ActivatedMatchPattern::Structural {
@@ -6997,8 +7617,14 @@ fn bind_match_arms(
         .iter()
         .map(|arm| {
             let owner_block = arm.body.id.0;
-            let pattern =
-                activate_match_pattern(artifact, owner, owner_block, &arm.pattern, layout)?;
+            let pattern = activate_match_pattern(
+                artifact,
+                owner,
+                owner_block,
+                &arm.pattern,
+                captures,
+                layout,
+            )?;
             fn collect_binding_regions(
                 pattern: &crate::CollectionPattern<ActivatedPatternBinding, ActivatedPatternValue>,
                 bindings: &mut Vec<(u32, ResidentRegion)>,

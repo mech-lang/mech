@@ -25,7 +25,7 @@ impl MechRuntime {
             if let crate::runtime::program::ActiveProgramExecution::ResidentExternal(execution) =
                 &self.active_program
             {
-                for source in execution.trigger_sources.iter() {
+                for source in execution.input_sources.iter() {
                     let mut driven = false;
                     for driver in &self.input_drivers[..self.attached_input_driver_count] {
                         if extension::invoke_extension_value("host input driver", "drives", || {
@@ -120,33 +120,33 @@ impl MechRuntime {
             })? {
                 continue;
             }
-            let has_driven_input =
-                {
-                    #[cfg(feature = "resident-routing")]
-                    let resident =
-                        {
-                            let driver = &self.input_drivers[index];
-                            match &self.active_program {
-                    crate::runtime::program::ActiveProgramExecution::ResidentExternal(
-                        execution,
-                    ) => execution
-                        .trigger_sources
-                        .iter()
-                        .try_fold(false, |driven, source| {
-                            if driven {
-                                return Ok(true);
-                            }
-                            extension::invoke_extension_value("host input driver", "drives", || {
-                                driver.drives(source)
-                            })
-                        })?,
+            let has_driven_input = {
+                #[cfg(feature = "resident-routing")]
+                let resident = {
+                    let driver = &self.input_drivers[index];
+                    match &self.active_program {
+                        crate::runtime::program::ActiveProgramExecution::ResidentExternal(
+                            execution,
+                        ) => execution
+                            .input_sources
+                            .iter()
+                            .try_fold(false, |driven, source| {
+                                if driven {
+                                    return Ok(true);
+                                }
+                                extension::invoke_extension_value(
+                                    "host input driver",
+                                    "drives",
+                                    || driver.drives(source),
+                                )
+                            })?,
                         _ => false,
                     }
-                        };
-                    #[cfg(not(feature = "resident-routing"))]
-                    let resident = false;
-                    resident
                 };
+                #[cfg(not(feature = "resident-routing"))]
+                let resident = false;
+                resident
+            };
             if !has_driven_input {
                 continue;
             }

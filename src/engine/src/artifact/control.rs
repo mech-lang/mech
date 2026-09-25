@@ -15,6 +15,9 @@ pub struct ControlBlockId(pub u32);
 pub enum MatchPatternValue<C = ConstantId> {
     Literal(C),
     Binding(u32),
+    /// Ordinal in the enclosing node's input bindings. Activation scopes use
+    /// this for pattern expressions sampled on the triggering turn.
+    Input(u16),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -162,6 +165,8 @@ fn validate_structural_pattern(
     pattern: &super::CollectionPattern<SchemaId, MatchPatternValue>,
     expected: &mech_core::Schema,
     bindings: &mut Vec<SchemaId>,
+    inputs: &[SchemaId],
+    allow_sampled_input: bool,
 ) -> Option<()> {
     use mech_core::SchemaBody;
     let compatible = |schema: &mech_core::Schema| {
@@ -190,7 +195,29 @@ fn validate_structural_pattern(
                 return None;
             }
         }
+        super::CollectionPattern::Equal(MatchPatternValue::Input(input)) => {
+            if !allow_sampled_input {
+                return None;
+            }
+            let schema = draft.schemas.get(*inputs.get(*input as usize)?)?;
+            if !compatible(schema) {
+                return None;
+            }
+        }
         super::CollectionPattern::Enum { ordinal, payload } => {
+            if matches!(expected.body(), SchemaBody::Dynamic) {
+                if let Some(pattern) = payload {
+                    validate_structural_pattern(
+                        draft,
+                        pattern,
+                        &component_schema(expected, &SchemaBody::Dynamic)?,
+                        bindings,
+                        inputs,
+                        allow_sampled_input,
+                    )?;
+                }
+                return Some(());
+            }
             let enum_expected = match expected.body() {
                 SchemaBody::Enum { .. } => expected.clone(),
                 SchemaBody::Option(body) if matches!(body.as_ref(), SchemaBody::Enum { .. }) => {
@@ -208,6 +235,8 @@ fn validate_structural_pattern(
                     pattern,
                     &component_schema(&enum_expected, schema)?,
                     bindings,
+                    inputs,
+                    allow_sampled_input,
                 )?,
                 (None, None) => {}
                 _ => return None,
@@ -228,6 +257,8 @@ fn validate_structural_pattern(
                         fields.map_or(&SchemaBody::Dynamic, |fields| &fields[index]),
                     )?,
                     bindings,
+                    inputs,
+                    allow_sampled_input,
                 )?;
             }
         }
@@ -247,6 +278,8 @@ fn validate_structural_pattern(
                     item,
                     &component_schema(expected, element)?,
                     bindings,
+                    inputs,
+                    allow_sampled_input,
                 )?;
             }
             if let Some(rest) = rest {
@@ -255,6 +288,8 @@ fn validate_structural_pattern(
                     rest,
                     &super::comprehension::array_rest_schema(expected, element, None)?,
                     bindings,
+                    inputs,
+                    allow_sampled_input,
                 )?;
             }
             for item in suffix {
@@ -263,6 +298,8 @@ fn validate_structural_pattern(
                     item,
                     &component_schema(expected, element)?,
                     bindings,
+                    inputs,
+                    allow_sampled_input,
                 )?;
             }
         }
@@ -568,14 +605,46 @@ pub(super) fn validate_match(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
+    let input = *inputs.get(declaration.scrutinee as usize).ok_or(
+        super::ArtifactBuildError::InvalidControl {
+            node,
+            reason: "unknown scrutinee input",
+        },
+    )?;
     validate_match_inner(
         draft,
         node,
         declaration,
         inputs,
         output,
+        Some((input, output)),
+        false,
         &mut 0,
         &[],
+        false,
+        false,
+        true,
+    )
+}
+
+pub(super) fn validate_activation(
+    draft: &super::ProgramArtifactDraft,
+    node: mech_core::NodeId,
+    declaration: &MatchDeclaration,
+    inputs: &[SchemaId],
+    output: SchemaId,
+) -> Result<(), super::ArtifactBuildError> {
+    validate_match_inner(
+        draft,
+        node,
+        declaration,
+        inputs,
+        output,
+        None,
+        true,
+        &mut 0,
+        &[],
+        false,
         false,
         false,
     )
@@ -587,10 +656,13 @@ pub(super) fn validate_match_inner(
     declaration: &MatchDeclaration,
     inputs: &[SchemaId],
     output: SchemaId,
+    lexical_signature: Option<(SchemaId, SchemaId)>,
+    allow_sampled_pattern: bool,
     next_block: &mut u32,
-    enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
+    enclosing_matches: &[(SchemaId, SchemaId, bool, bool, bool)],
     inside_comprehension: bool,
     enclosing_guard: bool,
+    recursive_target_eligible: bool,
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -630,6 +702,7 @@ pub(super) fn validate_match_inner(
             .captures
             .iter()
             .any(|capture| capture.input == declaration.scrutinee),
+        recursive_target_eligible,
     ));
     if !closed_value(output)
         || (!scalar(scrutinee)
@@ -689,8 +762,15 @@ pub(super) fn validate_match_inner(
                 .schemas
                 .get(scrutinee)
                 .ok_or_else(|| invalid("unknown structural scrutinee schema"))?;
-            validate_structural_pattern(draft, pattern, schema, &mut pattern_bindings)
-                .ok_or_else(|| invalid("invalid structural match pattern"))?;
+            validate_structural_pattern(
+                draft,
+                pattern,
+                schema,
+                &mut pattern_bindings,
+                inputs,
+                allow_sampled_pattern,
+            )
+            .ok_or_else(|| invalid("invalid structural match pattern"))?;
         }
         for (block, is_guard) in arm
             .guard
@@ -793,10 +873,13 @@ pub(super) fn validate_match_inner(
                             nested,
                             &inputs,
                             operation.schema,
+                            lexical_signature,
+                            false,
                             next_block,
                             &match_schemas,
                             inside_comprehension,
                             guarded,
+                            true,
                         )?,
                         ControlOperationBody::Comprehension(nested) => {
                             super::comprehension::validate_comprehension_inner(
@@ -815,6 +898,11 @@ pub(super) fn validate_match_inner(
                                 .checked_sub(usize::from(*ancestor) + 1)
                                 .and_then(|index| match_schemas.get(index))
                                 .ok_or_else(|| invalid("unknown recursive lexical target"))?;
+                            if !target.4 {
+                                return Err(invalid(
+                                    "recursive target cannot be an activation scope",
+                                ));
+                            }
                             if inputs.as_slice() != [target.0] || operation.schema != target.1 {
                                 return Err(invalid(
                                     "recursive call must preserve its lexical target input and output schemas",
@@ -832,7 +920,14 @@ pub(super) fn validate_match_inner(
                             }
                         }
                         ControlOperationBody::Suspend => {
-                            if inputs.as_slice() != [scrutinee] || operation.schema != output {
+                            let Some((lexical_input, lexical_output)) = lexical_signature else {
+                                return Err(invalid(
+                                    "suspended control requires an enclosing lexical signature",
+                                ));
+                            };
+                            if inputs.as_slice() != [lexical_input]
+                                || operation.schema != lexical_output
+                            {
                                 return Err(invalid(
                                     "suspended control must preserve the enclosing input and output schemas",
                                 ));
@@ -853,7 +948,14 @@ pub(super) fn validate_match_inner(
                             }
                         }
                         ControlOperationBody::Publish => {
-                            if inputs.as_slice() != [output] || operation.schema != output {
+                            let Some((_, lexical_output)) = lexical_signature else {
+                                return Err(invalid(
+                                    "FSM publication requires an enclosing lexical signature",
+                                ));
+                            };
+                            if inputs.as_slice() != [lexical_output]
+                                || operation.schema != lexical_output
+                            {
                                 return Err(invalid(
                                     "FSM publication must preserve the enclosing output schema",
                                 ));
@@ -1181,8 +1283,10 @@ pub(super) fn validate_control_counts(
             }
             continue;
         }
-        let super::ExecutableNodeBody::Match(control) = &node.body else {
-            continue;
+        let control = match &node.body {
+            super::ExecutableNodeBody::Match(control)
+            | super::ExecutableNodeBody::Activation(control) => control,
+            _ => continue,
         };
         let control_counts = match_counts(control).ok_or_else(invalid)?;
         for (index, count) in control_counts[..4].iter().copied().enumerate() {

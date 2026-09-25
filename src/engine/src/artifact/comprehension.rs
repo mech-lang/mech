@@ -476,10 +476,13 @@ pub(super) fn validate_comprehension_inner(
                             nested,
                             &operation_inputs,
                             operation.schema,
+                            None,
+                            false,
                             next_block,
                             &[],
                             true,
                             enclosing_guard,
+                            true,
                         )?;
                     }
                     super::ControlOperationBody::Comprehension(nested) => {

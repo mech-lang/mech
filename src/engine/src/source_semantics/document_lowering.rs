@@ -2,9 +2,9 @@
 //! slots as expression compilation. Each mutable binding retains one writer.
 
 use mech_syntax::document::{
-    CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation, CodeFenceScope,
-    EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax, OpAssignSyntax,
-    SliceRefSyntax, VariableAssignSyntax,
+    ActivationScopeSyntax, CanonicalOpAssign, CodeBlockSyntax, CodeFencePresentation,
+    CodeFenceScope, EvalInlineMechCodeSyntax, ExportDeclarationSyntax, InvariantDefineSyntax,
+    OpAssignSyntax, SliceRefSyntax, VariableAssignSyntax,
 };
 
 use super::*;
@@ -27,6 +27,7 @@ enum DocumentUnit {
     Enum(mech_syntax::document::EnumDefineSyntax),
     FsmSpecification(mech_syntax::document::FsmSpecificationSyntax),
     FsmImplementation(mech_syntax::document::FsmImplementationSyntax),
+    Activation(ActivationScopeSyntax),
     Function(SyntaxNode),
     Statement(SyntaxNode),
     ResourceSend(mech_syntax::document::ContextSendSyntax),
@@ -837,6 +838,10 @@ fn collect_document_units(
         output.push(DocumentUnit::FsmImplementation(implementation));
         return Ok(());
     }
+    if let Some(activation) = ActivationScopeSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::Activation(activation));
+        return Ok(());
+    }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
     if matches!(
@@ -847,8 +852,7 @@ fn collect_document_units(
     }
     if matches!(
         node.kind(),
-        SyntaxKind::ActivationScope
-            | SyntaxKind::Fsm
+        SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
             // An expression owns a pipe's semantics. A bare pipe in a document
             // must not be traversed as unrelated child expressions.
@@ -893,6 +897,9 @@ fn declare_document_inputs(
             DocumentUnit::FsmImplementation(implementation) => {
                 builder.declare_document_fsm_input_annotations(implementation, bindings)?
             }
+            DocumentUnit::Activation(activation) => {
+                builder.declare_input_annotations(activation.syntax(), bindings)?
+            }
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
@@ -922,6 +929,7 @@ fn declare_document_inline_inputs(
             | DocumentUnit::Enum(_)
             | DocumentUnit::FsmSpecification(_)
             | DocumentUnit::FsmImplementation(_)
+            | DocumentUnit::Activation(_)
             | DocumentUnit::Statement(_)
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
@@ -981,6 +989,18 @@ fn compile_document_units_inner(
             | DocumentUnit::FsmImplementation(_)
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
+            DocumentUnit::Activation(activation) => {
+                let value = builder.document_activation(&activation)?;
+                value.resolved()?;
+                if last.is_none() {
+                    last = Some(CompiledDocumentValue {
+                        value,
+                        syntax: activation.syntax().clone(),
+                        program_visible: false,
+                    });
+                }
+                refresh_deferred_inline(builder, deferred_inline, presentation, &mut last)?;
+            }
             DocumentUnit::Statement(unit) => {
                 let result = match unit.kind() {
                     SyntaxKind::VariableDefine => {
@@ -1273,6 +1293,374 @@ fn inline_local_references(
 }
 
 impl SemanticBuilder {
+    fn activation_item_value(
+        &self,
+        mut item: SyntaxNode,
+    ) -> Result<SyntaxNode, SourceSemanticError> {
+        while item.kind() == SyntaxKind::Statement {
+            item = self.required(
+                item.children().next(),
+                &item,
+                "an activation statement body",
+            )?;
+        }
+        Ok(item)
+    }
+
+    pub(super) fn pack_activation_values(
+        &mut self,
+        values: Vec<PendingValue>,
+        syntax: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        if values.is_empty() {
+            return Ok(self.constant_exact(
+                SchemaBody::Tuple(Box::new([])),
+                ValueDataDraft::Tuple(Box::new([])),
+            ));
+        }
+        let mut parameters = Vec::new();
+        let items = values
+            .iter()
+            .map(|value| {
+                embed_schema_draft(
+                    &self.schema_draft_of(*value)?,
+                    &mut parameters,
+                    SourceSemanticAnchor::for_node(syntax),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(self.emit_with_schema_draft(
+            "core/composite-pack",
+            values,
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Tuple(items.into_boxed_slice()),
+            },
+            syntax,
+            "activation-registers",
+            None,
+        ))
+    }
+
+    fn activation_assignment_state(
+        &self,
+        syntax: &SyntaxNode,
+        trigger_name: &str,
+    ) -> Result<Option<u32>, SourceSemanticError> {
+        let target = match syntax.kind() {
+            SyntaxKind::VariableAssign => VariableAssignSyntax::cast(syntax.clone())
+                .and_then(|assignment| assignment.target()),
+            SyntaxKind::OpAssign => {
+                OpAssignSyntax::cast(syntax.clone()).and_then(|assignment| assignment.target())
+            }
+            _ => return Ok(None),
+        }
+        .ok_or_else(|| missing_kind_child(syntax, "an assignment target"))?;
+        let stem = self.required(target.stem(), target.syntax(), "an assignment target stem")?;
+        let name = node_text(stem.syntax())?;
+        if name == trigger_name {
+            return Err(SourceSemanticError {
+                code: "source-semantics/activation-trigger-write",
+                message: "an activation scope cannot write its own trigger".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(syntax),
+            });
+        }
+        self.assignment_state(&target).map(Some)
+    }
+
+    fn claim_activation_states(
+        &mut self,
+        states: &[u32],
+        syntax: &SyntaxNode,
+    ) -> Result<(), SourceSemanticError> {
+        for state in states {
+            if self.ordinary_written_states.contains(state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/activation-state-writer-conflict",
+                    message:
+                        "mutable state cannot have both ordinary and activation-scoped assignments"
+                            .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            if !self.activation_owned_states.insert(*state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/multiple-activation-state-owners",
+                    message: "mutable state can be assigned by only one activation scope"
+                        .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn document_activation(
+        &mut self,
+        activation: &ActivationScopeSyntax,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let trigger_syntax = self.required(
+            activation.trigger(),
+            activation.syntax(),
+            "a stable trigger",
+        )?;
+        let trigger_variable =
+            standalone_pattern_variable(&trigger_syntax).ok_or_else(|| SourceSemanticError {
+                code: "source-semantics/invalid-activation-trigger",
+                message: "an activation trigger must be a stable variable reference".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(trigger_syntax.syntax()),
+            })?;
+        let trigger_stem = self.required(
+            trigger_variable.stem(),
+            trigger_variable.syntax(),
+            "a stable trigger name",
+        )?;
+        let VariableStemSyntax::Identifier(trigger_identifier) = trigger_stem else {
+            return Err(SourceSemanticError {
+                code: "source-semantics/invalid-activation-trigger",
+                message: "an activation trigger must be a local variable reference".to_owned(),
+                anchor: SourceSemanticAnchor::for_node(trigger_variable.syntax()),
+            });
+        };
+        let trigger_name = node_text(trigger_identifier.syntax())?;
+        let trigger = self.expression(&trigger_syntax)?.0;
+        trigger.resolved()?;
+
+        let activation_arms = activation.arms();
+        if !activation_arms.is_empty() {
+            let mut states = Vec::new();
+            let mut source_arms = Vec::new();
+            for arm in activation_arms {
+                let items = if let Some(body) = arm.body() {
+                    body.items()
+                        .into_iter()
+                        .filter_map(|item| item.value())
+                        .map(|item| self.activation_item_value(item))
+                        .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    vec![
+                        self.required(arm.value(), arm.syntax(), "an activation arm result")?
+                            .syntax()
+                            .clone(),
+                    ]
+                };
+                for item in &items {
+                    match item.kind() {
+                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                            let state = self
+                                .activation_assignment_state(item, &trigger_name)?
+                                .expect("assignment has one state target");
+                            if !states.contains(&state) {
+                                states.push(state);
+                            }
+                        }
+                        SyntaxKind::VariableDefine => {
+                            let definition = VariableDefineSyntax::cast(item.clone()).unwrap();
+                            if definition.mutability_marker().is_some() {
+                                return Err(SourceSemanticError {
+                                    code: "source-semantics/activation-mutable-definition",
+                                    message: "an activation arm cannot declare mutable state"
+                                        .to_owned(),
+                                    anchor: SourceSemanticAnchor::for_node(item),
+                                });
+                            }
+                        }
+                        SyntaxKind::Expression | SyntaxKind::TupleDestructure => {}
+                        _ => {
+                            return Err(SourceSemanticError {
+                                code: "source-semantics/activation-definition-unsupported",
+                                message:
+                                    "activation arms admit local values and register assignments"
+                                        .to_owned(),
+                                anchor: SourceSemanticAnchor::for_node(item),
+                            });
+                        }
+                    }
+                }
+                source_arms.push((
+                    self.required(arm.pattern(), arm.syntax(), "an activation pattern")?,
+                    arm.guard(),
+                    items,
+                    arm.syntax().clone(),
+                ));
+            }
+            self.claim_activation_states(&states, activation.syntax())?;
+            let source_arms = source_arms
+                .into_iter()
+                .map(|(pattern, guard, items, syntax)| SourceMatchArm {
+                    pattern: Some(pattern),
+                    guard,
+                    body: SourceMatchBody::Activation {
+                        items,
+                        states: states.clone(),
+                        syntax: syntax.clone(),
+                    },
+                    syntax,
+                })
+                .collect::<Vec<_>>();
+            self.activation_assignment_depth += 1;
+            let value = self.lower_match_expression(
+                trigger,
+                &source_arms,
+                activation.syntax(),
+                false,
+                None,
+                true,
+            );
+            self.activation_assignment_depth -= 1;
+            let value = value?;
+            for (ordinal, state) in states.iter().copied().enumerate() {
+                let selector = self.constant_exact(
+                    SchemaBody::Index,
+                    ValueDataDraft::Index((ordinal + 1) as u64),
+                );
+                let selected =
+                    self.select_values(value, vec![Some(selector)], activation.syntax())?;
+                let writer = self.states[state as usize].producer_node as usize;
+                self.nodes[writer].inputs[0] = selected;
+            }
+            return Ok(value);
+        }
+        let items = activation
+            .body()
+            .map(|body| {
+                body.items()
+                    .into_iter()
+                    .filter_map(|item| item.value())
+                    .map(|item| self.activation_item_value(item))
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .transpose()?
+            .unwrap_or_default();
+        let mut states = Vec::new();
+        for item in &items {
+            match item.kind() {
+                SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                    let state = self
+                        .activation_assignment_state(item, &trigger_name)?
+                        .expect("assignment has one state target");
+                    if !states.contains(&state) {
+                        states.push(state);
+                    }
+                }
+                SyntaxKind::VariableDefine => {
+                    let definition = VariableDefineSyntax::cast(item.clone()).unwrap();
+                    if definition.mutability_marker().is_some() {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/activation-mutable-definition",
+                            message: "an activation body cannot declare mutable state".to_owned(),
+                            anchor: SourceSemanticAnchor::for_node(item),
+                        });
+                    }
+                }
+                SyntaxKind::Expression | SyntaxKind::TupleDestructure => {}
+                _ => {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/activation-definition-unsupported",
+                        message: "activation bodies admit local values and register assignments"
+                            .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(item),
+                    });
+                }
+            }
+        }
+
+        self.claim_activation_states(&states, activation.syntax())?;
+
+        if self.control_depth == 0 {
+            self.next_control_block = 0;
+        }
+        let saved_bindings = self.bindings.clone();
+        let saved_definitions = self.scope_definitions.clone();
+        let saved_writer_inputs = states
+            .iter()
+            .map(|state| {
+                let writer = self.states[*state as usize].producer_node as usize;
+                (*state, self.nodes[writer].inputs[0])
+            })
+            .collect::<Vec<_>>();
+        let pattern = crate::MatchPattern::Wildcard;
+        let mut inputs = vec![trigger];
+        let mut captures = Vec::new();
+        self.activation_assignment_depth += 1;
+        let result = self.control_block_with(
+            activation.syntax(),
+            &pattern,
+            &BTreeMap::new(),
+            trigger,
+            &mut inputs,
+            &mut captures,
+            |builder| {
+                for item in &items {
+                    match item.kind() {
+                        SyntaxKind::VariableDefine => {
+                            builder
+                                .definition(&VariableDefineSyntax::cast(item.clone()).unwrap())?;
+                        }
+                        SyntaxKind::TupleDestructure => {
+                            builder.document_tuple_destructure(item)?;
+                        }
+                        SyntaxKind::VariableAssign | SyntaxKind::OpAssign => {
+                            builder.document_assignment(item)?;
+                        }
+                        SyntaxKind::Expression => {
+                            builder.expression(&ExpressionSyntax::cast(item.clone()).unwrap())?;
+                        }
+                        _ => unreachable!("activation body was preflighted"),
+                    }
+                }
+                let values = states
+                    .iter()
+                    .map(|state| builder.current_state_value(*state))
+                    .collect();
+                builder.pack_activation_values(values, activation.syntax())
+            },
+        );
+        self.activation_assignment_depth -= 1;
+        self.bindings = saved_bindings;
+        self.scope_definitions = saved_definitions;
+        for (state, value) in saved_writer_inputs {
+            let writer = self.states[state as usize].producer_node as usize;
+            self.nodes[writer].inputs[0] = value;
+        }
+        let (block, schema) = result?;
+        let index = self.nodes.len() as u32;
+        self.nodes.push(PendingNode {
+            body: PendingNodeBody::Activation(PendingMatch {
+                partial: false,
+                captures,
+                arms: vec![PendingMatchArm {
+                    pattern,
+                    guard: None,
+                    body: block,
+                }],
+            }),
+            inferable_projection: false,
+            inputs,
+            schema,
+            exposes_output: true,
+            state: None,
+            semantic: SourceSemanticNode {
+                operation: "activation".to_owned(),
+                role: "activation",
+                detail: Some(trigger_name),
+                anchor: SourceSemanticAnchor::for_node(activation.syntax()),
+            },
+        });
+        let activation_value = PendingValue::Node(index);
+        for (ordinal, state) in states.iter().copied().enumerate() {
+            let selector = self.constant_exact(
+                SchemaBody::Index,
+                ValueDataDraft::Index((ordinal + 1) as u64),
+            );
+            let selected =
+                self.select_values(activation_value, vec![Some(selector)], activation.syntax())?;
+            let writer = self.states[state as usize].producer_node as usize;
+            self.nodes[writer].inputs[0] = selected;
+        }
+        Ok(activation_value)
+    }
+
     /// A state reference in a statement reads the latest candidate produced by
     /// preceding statements. The writer's original self input denotes the
     /// committed value from the previous turn.
@@ -1347,7 +1735,7 @@ impl SemanticBuilder {
         }
     }
 
-    fn current_state_value(&self, state: u32) -> PendingValue {
+    pub(super) fn current_state_value(&self, state: u32) -> PendingValue {
         let writer = self.states[state as usize].producer_node as usize;
         self.nodes[writer].inputs[0]
     }
@@ -1412,6 +1800,18 @@ impl SemanticBuilder {
             return Ok((value, syntax.clone()));
         }
         let state = self.assignment_state(&target)?;
+        if self.activation_assignment_depth == 0 {
+            if self.activation_owned_states.contains(&state) {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/activation-state-writer-conflict",
+                    message:
+                        "mutable state cannot have both ordinary and activation-scoped assignments"
+                            .to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            self.ordinary_written_states.insert(state);
+        }
         let expected = self.schema_draft_of(PendingValue::State(state))?;
         let mut value = self.expression(&expression)?.0;
         if let Some(subscripts) = target.subscripts() {
@@ -1488,7 +1888,7 @@ fn fence_presentation(
 }
 
 impl SemanticBuilder {
-    fn document_tuple_destructure(
+    pub(super) fn document_tuple_destructure(
         &mut self,
         syntax: &SyntaxNode,
     ) -> Result<(PendingValue, SyntaxNode), SourceSemanticError> {

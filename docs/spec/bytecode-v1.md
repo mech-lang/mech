@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:12,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:13,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,7 +424,7 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 12)
+### Typed graph bodies (graph revision 13)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"Match":{"scrutinee":input_ordinal,"partial":bool,"captures":[[input_ordinal,schema_id,freeze_on_suspend]],"arms":[...]}}`.
@@ -433,7 +433,9 @@ suspension; a false capture reads the current external input when execution
 resumes. Resident activation rejects a false capture unless its resolved source
 is an external input; derived scratch and state captures must be frozen. The
 flag participates in artifact identity.
-The decoder requires revision 12 and typed bodies; earlier graph representations
+An activation body uses the same declaration as `{"Activation":{...}}`; input zero is
+its exhaustive trigger and its remaining inputs are retained samples.
+The decoder requires revision 13 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -443,7 +445,7 @@ grammar:
 
 - `"Wildcard"`
 - `{"Bind":{"local":local_id,"schema":schema_id}}`
-- `{"Equal":{"Literal":constant_id}}` or `{"Equal":{"Binding":local_id}}`
+- `{"Equal":{"Literal":constant_id}}`, `{"Equal":{"Binding":local_id}}`, or `{"Equal":{"Input":input_ordinal}}`
 - `{"Enum":{"ordinal":variant_ordinal,"payload":structural_pattern_or_null}}`
 - `{"Tuple":[structural_pattern,...]}`
 - `{"Array":{"prefix":[structural_pattern,...],"rest":structural_pattern_or_null,"suffix":[structural_pattern,...]}}`
@@ -463,7 +465,8 @@ input; artifact finalization rejects either layout.
 guards and operations after it are rejected.
 
 Structural binding IDs are dense within their arm. A binding equality refers to an earlier binding
-in that arm. Array prefixes and suffixes match in source order; a present rest consumes the middle
+in that arm. An input equality samples a typed enclosing activation input when its trigger runs;
+capture-only input updates do not select an arm or execute its body. Array prefixes and suffixes match in source order; a present rest consumes the middle
 subsequence. Literal constants must have the scrutinee's exact schema. Structural binding schemas,
 equality literals, and all nested components are validated against the corresponding scrutinee
 component. A guard is a block or null. A block has
@@ -528,7 +531,7 @@ Arguments retain their optional canonical name and input ordinal. Each ordered s
 retains a state, asynchronous, or output kind plus a recursively typed value made
 from input ordinals, tuples, arrays, atom structures, or tuple structures. Machine
 and structure names must be canonical source identifiers. The FSM variant introduced by
-graph revision 6 remains part of revision 12; earlier readers must reject the current graph
+graph revision 6 remains part of revision 13; earlier readers must reject the current graph
 instead of treating the changed grammar as their own representation. FSM value depth, stage count, and
 aggregate control populations are bounded during decoder admission.
 

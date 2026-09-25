@@ -4,6 +4,27 @@ use mech_core::{
 
 use crate::turn_record::{AccountedRecord, OwnedTurnRecord, sealed::Sealed};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(u8)]
+pub enum ResidentExternalTurnMode {
+    Ordinary = 0,
+    InitialPublication = 1,
+    DriverlessBootstrap = 2,
+    ExplicitStep = 3,
+    ContinuationDrain = 4,
+    ExplicitSnapshotStep = 5,
+}
+
+impl ResidentExternalTurnMode {
+    pub const fn reuses_input_snapshot(self) -> bool {
+        matches!(self, Self::ExplicitStep | Self::ContinuationDrain)
+    }
+
+    pub const fn admits_trigger_facts(self) -> bool {
+        matches!(self, Self::Ordinary | Self::DriverlessBootstrap)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResidentTurnReceiptV1 {
     pub version: u16,
@@ -12,6 +33,7 @@ pub struct ResidentTurnReceiptV1 {
     pub plan_generation: PlanGeneration,
     pub layout_generation: LayoutGeneration,
     pub input_batch_hash: [u8; 32],
+    pub mode: ResidentExternalTurnMode,
     pub before_epoch: InstanceEpoch,
     pub after_epoch: Option<InstanceEpoch>,
     pub state_hash: u64,

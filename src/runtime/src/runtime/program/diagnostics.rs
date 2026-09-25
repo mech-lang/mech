@@ -73,6 +73,9 @@ pub(crate) fn activation_failure_for_artifact(
                         mech_engine::ExecutableNodeBody::Operation(operation) =>
                             operation.operation.canonical_name(),
                         mech_engine::ExecutableNodeBody::Match(_) => "Typed match".to_owned(),
+                        mech_engine::ExecutableNodeBody::Activation(_) => {
+                            "Activation scope".to_owned()
+                        }
                         mech_engine::ExecutableNodeBody::Comprehension(control) => match control
                             .kind
                         {
