@@ -72,6 +72,12 @@ pub enum ControlOperationBody<C = OperationContractId> {
     },
     Match(MatchDeclaration<C>),
     Comprehension(super::ComprehensionDeclaration<C>),
+    /// Invoke the enclosing function match with the operation's single input.
+    ///
+    /// This is a lexical back-edge, not a graph edge and not a source-level
+    /// callable lookup. Activation binds it to the enclosing match and the
+    /// resident executor admits a bounded call frame before following it.
+    Recur,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -549,7 +555,7 @@ pub(super) fn validate_match(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
-    validate_match_inner(draft, node, declaration, inputs, output, &mut 0)
+    validate_match_inner(draft, node, declaration, inputs, output, &mut 0, &[])
 }
 
 pub(super) fn validate_match_inner(
@@ -559,6 +565,7 @@ pub(super) fn validate_match_inner(
     inputs: &[SchemaId],
     output: SchemaId,
     next_block: &mut u32,
+    enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -586,6 +593,19 @@ pub(super) fn validate_match_inner(
     let scrutinee = *inputs
         .get(declaration.scrutinee as usize)
         .ok_or_else(|| invalid("unknown scrutinee input"))?;
+    let mut match_schemas = enclosing_matches.to_vec();
+    match_schemas.push((
+        scrutinee,
+        output,
+        declaration
+            .arms
+            .iter()
+            .any(|arm| matches!(&arm.pattern, MatchPattern::Bind)),
+        declaration
+            .captures
+            .iter()
+            .any(|capture| capture.input == declaration.scrutinee),
+    ));
     if !closed_value(output)
         || (!scalar(scrutinee)
             && declaration
@@ -744,6 +764,7 @@ pub(super) fn validate_match_inner(
                             &inputs,
                             operation.schema,
                             next_block,
+                            &match_schemas,
                         )?,
                         ControlOperationBody::Comprehension(nested) => {
                             super::comprehension::validate_comprehension_inner(
@@ -754,6 +775,28 @@ pub(super) fn validate_match_inner(
                                 operation.schema,
                                 next_block,
                             )?
+                        }
+                        ControlOperationBody::Recur(ancestor) => {
+                            let target = match_schemas
+                                .len()
+                                .checked_sub(usize::from(*ancestor) + 1)
+                                .and_then(|index| match_schemas.get(index))
+                                .ok_or_else(|| invalid("unknown recursive lexical target"))?;
+                            if inputs.as_slice() != [target.0] || operation.schema != target.1 {
+                                return Err(invalid(
+                                    "recursive call must preserve its lexical target input and output schemas",
+                                ));
+                            }
+                            if target.2 {
+                                return Err(invalid(
+                                    "recursive target cannot use a direct bind pattern",
+                                ));
+                            }
+                            if target.3 {
+                                return Err(invalid(
+                                    "recursive target cannot capture its own scrutinee",
+                                ));
+                            }
                         }
                         ControlOperationBody::Operation { .. } => unreachable!(),
                     }
@@ -917,7 +960,8 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
-                                ControlOperationBody::Operation { .. } => {}
+                                ControlOperationBody::Operation { .. }
+                                | ControlOperationBody::Recur(_) => {}
                             }
                         }
                     }
@@ -945,7 +989,8 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     ControlRef::Comprehension(nested),
                                     depth.checked_add(1)?,
                                 )),
-                                ControlOperationBody::Operation { .. } => {}
+                                ControlOperationBody::Operation { .. }
+                                | ControlOperationBody::Recur(_) => {}
                             }
                         }
                     }
@@ -1127,6 +1172,9 @@ impl<C> MatchDeclaration<C> {
                                             },
                                         )?,
                                     )
+                                }
+                                ControlOperationBody::Recur(ancestor) => {
+                                    ControlOperationBody::Recur(*ancestor)
                                 }
                             },
                             inputs: operation.inputs.clone(),

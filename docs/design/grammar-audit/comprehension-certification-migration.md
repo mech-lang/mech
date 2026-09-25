@@ -90,6 +90,11 @@ calls may publish a partial declaration and fail execution when no ordered arm
 matches, without a synthetic fallback value. Revision 9 remains rejected without
 a compatibility reader.
 
+Graph payload revision 11 gives recursive pattern functions one typed lexical
+`Recur` operation. Its input and output must exactly match the enclosing
+function match; execution binds it to admitted resident call frames. Revision
+10 remains rejected without a compatibility reader.
+
 ## Complete syntax evidence
 
 Clean-tree fingerprints use canonical-clean-tree-v2: an explicit traversal

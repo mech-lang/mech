@@ -2261,6 +2261,7 @@ enum PendingNodeBody {
     Comprehension(PendingComprehension),
     Fsm(crate::FsmDeclaration),
     CollectionBinding,
+    RecursiveCall(u8),
 }
 
 struct PendingMatch {
@@ -2286,7 +2287,8 @@ impl PendingMatch {
                         PendingControlOperationBody::Comprehension(nested) => {
                             nested.visit_schemas(visit)
                         }
-                        PendingControlOperationBody::Operation { .. } => {}
+                        PendingControlOperationBody::Operation { .. }
+                        | PendingControlOperationBody::Recur(_) => {}
                     }
                 }
             }
@@ -2675,6 +2677,7 @@ enum PendingControlOperationBody {
     },
     Match(PendingMatch),
     Comprehension(PendingComprehension),
+    Recur(u8),
 }
 
 struct PendingControlBlock {
@@ -2752,6 +2755,8 @@ struct SemanticBuilder {
     function_environment: Option<crate::FunctionEnvironment>,
     input_schema_overrides: BTreeMap<String, SchemaDraft>,
     control_depth: usize,
+    match_depth: usize,
+    comprehension_depth: usize,
     next_control_block: u32,
     anchor: SourceSemanticAnchor,
     constants: Vec<PendingConstant>,
@@ -2772,6 +2777,7 @@ struct SemanticBuilder {
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
+    active_recursive_outputs: Vec<(String, SchemaDraft)>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -2934,6 +2940,8 @@ impl SemanticBuilder {
             function_environment: None,
             input_schema_overrides: BTreeMap::new(),
             control_depth: 0,
+            match_depth: 0,
+            comprehension_depth: 0,
             next_control_block: 0,
             anchor,
             constants: Vec::new(),
@@ -2954,6 +2962,7 @@ impl SemanticBuilder {
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
             active_functions: Vec::new(),
+            active_recursive_outputs: Vec::new(),
             patterns: Vec::new(),
             resource_writes: BTreeMap::new(),
         }
@@ -7304,7 +7313,7 @@ impl SemanticBuilder {
                         contracts.push(None);
                         crate::SourceNodeBody::Fsm(control.clone())
                     }
-                    PendingNodeBody::CollectionBinding => {
+                    PendingNodeBody::CollectionBinding | PendingNodeBody::RecursiveCall(_) => {
                         unreachable!("lexical bindings cannot escape collection lowering")
                     }
                     PendingNodeBody::Match(control) => {
@@ -8635,6 +8644,7 @@ mod tests {
             dimension_parameters: Box::new([]),
         };
         let nested = PendingMatch {
+            partial: false,
             captures: Vec::new(),
             arms: vec![PendingMatchArm {
                 pattern: crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
@@ -8668,6 +8678,7 @@ mod tests {
             yield_value: comprehension::PendingCollectionValue::Local(0),
         };
         let root = PendingMatch {
+            partial: false,
             captures: Vec::new(),
             arms: vec![PendingMatchArm {
                 pattern: crate::MatchPattern::Wildcard,
@@ -8950,6 +8961,26 @@ impl SemanticBuilder {
         partial: bool,
         expected_result: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
+        self.match_depth += 1;
+        let result = self.lower_match_expression_inner(
+            scrutinee,
+            arms,
+            syntax,
+            partial,
+            expected_result,
+        );
+        self.match_depth -= 1;
+        result
+    }
+
+    fn lower_match_expression_inner(
+        &mut self,
+        scrutinee: PendingValue,
+        arms: &[SourceMatchArm],
+        syntax: &SyntaxNode,
+        partial: bool,
+        expected_result: Option<&SchemaDraft>,
+    ) -> Result<PendingValue, SourceSemanticError> {
         let error = |message: &str, syntax: &SyntaxNode| SourceSemanticError {
             code: "source-semantics/unsupported-match",
             message: message.to_owned(),
@@ -9004,11 +9035,35 @@ impl SemanticBuilder {
                                         ));
                                     }
                                 }
+                                // Give a lexical binding its own call-local region. Besides
+                                // making ordinary matches explicit, this lets a recursive
+                                // invocation bind the new scrutinee without aliasing the
+                                // caller's frame.
+                                let node = self.nodes.len() as u32;
+                                let value = PendingValue::Node(node);
+                                self.nodes.push(PendingNode {
+                                    body: PendingNodeBody::CollectionBinding,
+                                    inferable_projection: variable.annotation().is_none(),
+                                    inputs: Vec::new(),
+                                    schema: scrutinee_schema.clone(),
+                                    exposes_output: true,
+                                    state: None,
+                                    semantic: SourceSemanticNode {
+                                        operation: String::new(),
+                                        role: "match-binding",
+                                        detail: None,
+                                        anchor: SourceSemanticAnchor::for_node(variable.syntax()),
+                                    },
+                                });
                                 self.bindings.insert(
                                     node_text(identifier.syntax())?,
-                                    PendingBinding::Value(scrutinee),
+                                    PendingBinding::Value(value),
                                 );
-                                crate::MatchPattern::Bind
+                                pattern_bindings.insert(node, 0);
+                                crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
+                                    local: 0,
+                                    schema: scrutinee_schema.clone(),
+                                })
                             } else {
                                 let start = self.nodes.len();
                                 let literal = self
@@ -9362,6 +9417,9 @@ impl SemanticBuilder {
                 PendingNodeBody::Comprehension(control) => {
                     PendingControlOperationBody::Comprehension(control)
                 }
+                PendingNodeBody::RecursiveCall(ancestor) => {
+                    PendingControlOperationBody::Recur(ancestor)
+                }
                 _ => return Err(unsupported()),
             };
             operations.push(PendingControlOperation {
@@ -9448,6 +9506,9 @@ fn resolve_pending_match(
                             crate::ControlOperationBody::Comprehension(resolve_comprehension(
                                 nested, schemas, constants,
                             ))
+                        }
+                        PendingControlOperationBody::Recur(ancestor) => {
+                            crate::ControlOperationBody::Recur(*ancestor)
                         }
                     },
                     inputs: operation.inputs.iter().copied().map(value).collect(),
