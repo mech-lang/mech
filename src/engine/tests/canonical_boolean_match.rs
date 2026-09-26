@@ -111,6 +111,7 @@ fn fixture() -> ProgramArtifactDraft {
             node: NodeId(0),
             body: ExecutableNodeBody::Match(MatchDeclaration {
                 scrutinee: 0,
+                partial: false,
                 captures: Box::new([]),
                 arms: vec![
                     ControlMatchArm {
@@ -321,13 +322,20 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
     }
     for key in ["revision", "pattern"] {
         let mut sections = sections.clone();
-        let text = String::from_utf8(sections.nodes.clone()).unwrap();
-        let text = if key == "revision" {
-            text.replace("\"revision\":9", "\"revision\":8")
+        let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+        if key == "revision" {
+            graph["revision"] = serde_json::json!(0);
         } else {
-            text.replace("\"Literal\":", "\"Unknown\":")
-        };
-        sections.nodes = text.into_bytes();
+            let pattern = graph
+                .pointer_mut("/nodes/0/body/Match/arms/0/pattern")
+                .and_then(serde_json::Value::as_object_mut)
+                .expect("fixture must encode the first match pattern as an object");
+            let literal = pattern
+                .remove("Literal")
+                .expect("fixture must encode the first match pattern as Literal");
+            assert!(pattern.insert("Unknown".to_owned(), literal).is_none());
+        }
+        sections.nodes = serde_json::to_vec(&graph).unwrap();
         assert!(
             decode_program_artifact_sections(&sections).is_err(),
             "{key}"
