@@ -45,7 +45,7 @@ for(const [file,token,title] of [['ekf.mec','BLOGEKFSOURCE','Complete executable
   copyFileSync(join(root,'source',file),join(out,'source',file));
 }
 slot('BLOGLIVEDEMO',read(join(root,'demo.html')));
-literate=literate.replace('BLOGLIVEDEMO','The interactive figure is provided by the browser host: [run the EKF](https://about.mech-lang.org/#live-demo). Its controls, source editor, and timing implementation are included in the article repository.');
+literate=literate.replace('BLOGLIVEDEMO','The interactive figure is provided by the browser host: [run the EKF](https://mech-lang.org/iros-r4r-2026/index.html#live-demo). Its controls, source editor, and timing implementation are included in the article repository.');
 for(const [name,token,label] of [['functions','BLOGFUNCTIONS','Functions and broadcasting'],['matching','BLOGMATCHING','Pattern matching']]) {
   const file=name+'.mec', raw=read(join(root,'source',file));
   const formatted=namespaceFragment(render(join(root,'source',file),join(root,'fragment.html'),join(temporary,file+'.html')),name+'-');

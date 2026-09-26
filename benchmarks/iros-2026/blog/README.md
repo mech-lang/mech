@@ -2,8 +2,9 @@
 
 This directory builds the workshop article, its executable browser examples,
 and four charts from retained measurements. Building or serving `dist/` does
-not publish the site. At this handoff the work is a local preview; publication
-is a separate review and authorization step.
+not publish the site. The publication destination is
+<https://mech-lang.org/iros-r4r-2026/index.html>; publication is a separate
+review and authorization step.
 
 ## Files and generated output
 
@@ -280,45 +281,33 @@ not private library memory. The scalar Rust dylib is not the packed SIMD Rust
 implementation from the CPU chart. Browser throughput and edited examples
 never replace or modify these archived results.
 
-## Publication handoff: the QR destination
+## Publication destination
 
-The authoritative destination is the separate public
-[mech-lang/web/about](https://gitlab.com/mech-lang/web/about) repository,
-not `mech-lang/web/website` and not the local `mech-explore` Sites project.
-The inspected local clone is `/private/tmp/mech-about-discovery-20260926`.
-Its expected inspected `main` HEAD is:
+The user confirmed the exact URL on 2026-09-26:
+<https://mech-lang.org/iros-r4r-2026/index.html>.
+The destination repository is
+[mech-lang/web/website](https://gitlab.com/mech-lang/web/website), and the
+complete generated bundle belongs only in `public/iros-r4r-2026/`.
+Do not replace `public/index.html` or publish to the separate About repository.
 
-```text
-c56cc3a365288e7cbd168cb542e8599e62a86116
-```
-
-On 2026-09-26, the live `https://about.mech-lang.org/` returned HTTP 200 and
-matched that checkout's `public/index.html` SHA-256 exactly:
-
-```text
-8c58ce2f4d115e250f52662d610253cc2bf5c0c64f7710a426f210ab8b04eb32
-```
-
-Its `.gitlab-ci.yml` publishes the checked-in `public/` directory through a
-GitLab Pages job on `main`. The matching existing pipeline was
-[2798092408](https://gitlab.com/mech-lang/web/about/-/pipelines/2798092408).
-DNS already points this subdomain to GitLab Pages. This discovery identifies
-the route; it is not a claim that this new article has been deployed.
+The earlier About destination was an unverified assumption, not a decoded QR
+result. That mistaken publication was reverted by About commit `10bf996`.
+The restored About repository tree matches its pre-publication revision
+`c56cc3a` exactly. The obsolete About staging script has been removed.
 
 After explicit publication approval:
 
-1. Refresh the About repository and compare its current `main` with the
-   inspected revision above. Preserve any intervening changes.
-2. Prepare a reviewed branch containing the complete generated `dist/` tree
-   under `public/`, including `_mech/pkg/`, source downloads, assets, evidence
-   and the build manifest. Preserve or deliberately retire old page assets;
-   do not mix its old Fibonacci runtime with the new browser host.
-3. Review the exact file changes and local browser results before merging the
-   approved update into `main`. The current CI deploys `main`, not a preview
-   branch. Do not force-push or alter DNS to perform this update.
-4. Observe the successful Pages job, then verify the live HTML, WASM, source
-   hash, module requests and browser checks. The existing page sends a
-   ten-minute cache lifetime, so distinguish cached content from the new build.
+1. Refresh the website repository and preserve any intervening changes.
+2. Create a review branch and run
+   `node benchmarks/iros-2026/blog/stage-website.mjs /path/to/website-checkout`.
+   The script requires a clean checkout and an absent workshop directory.
+   It copies only into `public/iros-r4r-2026/` and does not push.
+3. Review the complete file list, verify that all changes are under that
+   directory, and test the page at its nested path before publishing to `main`.
+   Do not change DNS, the homepage, or the existing Pages configuration.
+4. Observe the successful Pages job, then verify the exact public URL, WASM,
+   source hashes and browser checks. Confirm the main homepage and About page
+   are unchanged.
 
 The current development browser package is approximately 49 MB uncompressed
 (49,325,199 bytes in the inspected build). The builder also emits
