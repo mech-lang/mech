@@ -23,7 +23,7 @@ NATIVE_PLANNING_OWNER_COUNTS = {"standard": 6, "full": 6}
 MACHINE_OPERATION_FEATURES = {
     "mech-combinatorics": {"n_choose_k"},
     "mech-compare": {"eq", "gt", "gte", "lt", "lte", "max", "min", "neq", "seq", "sneq"},
-    "mech-logic": {"and", "not", "or", "xor"},
+    "mech-logic": {"all", "and", "not", "or", "xor"},
     "mech-math": {
         "abs", "acos", "acosh", "acot", "acsc", "add", "add_assign", "asec",
         "asin", "asinh", "atan", "atan2", "atanh", "cbrt", "ceil", "copysign",
