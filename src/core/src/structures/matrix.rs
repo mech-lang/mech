@@ -1135,6 +1135,14 @@ where
         }
     }
 
+    /// Construct a dynamic matrix even when a fixed-size backing for these
+    /// dimensions is enabled by another crate. Elements are column-major,
+    /// matching `from_vec`; callers must supply `rows * cols` elements.
+    #[cfg(feature = "matrixd")]
+    pub fn from_dynamic_vec(vec: Vec<T>, rows: usize, cols: usize) -> Matrix<T> {
+        Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, vec)))
+    }
+
     pub fn from_vec(vec: Vec<T>, rows: usize, cols: usize) -> Matrix<T> {
         match (rows, cols) {
             #[cfg(feature = "matrix1")]

@@ -1354,6 +1354,87 @@ function formattedValueElement(kind, value) {
   return rendered;
 }
 
+// Render a scene snapshot produced by Mech; application geometry remains in Mech.
+function renderSceneSvg(scene) {
+  const namespace = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(namespace, "svg");
+  svg.classList.add("mech-repl-scene");
+  svg.dataset.mechRichScene = "true";
+  svg.dataset.mechScenePointerSurface = "true";
+  svg.setAttribute("viewBox", `0 0 ${scene.width} ${scene.height}`);
+  svg.setAttribute("width", String(scene.width));
+  svg.setAttribute("height", String(scene.height));
+  svg.setAttribute("role", "img");
+  const background = document.createElementNS(namespace, "rect");
+  background.setAttribute("x", "0");
+  background.setAttribute("y", "0");
+  background.setAttribute("width", String(scene.width));
+  background.setAttribute("height", String(scene.height));
+  background.setAttribute("fill", scene.background || "transparent");
+  svg.append(background);
+  for (const circle of scene.circles || []) {
+    const element = document.createElementNS(namespace, "circle");
+    element.dataset.mechSceneId = circle.id;
+    for (const [name, value] of [
+      ["cx", circle.x], ["cy", circle.y], ["r", circle.radius],
+      ["fill", circle.fill], ["stroke", circle.stroke],
+      ["stroke-width", circle.stroke_width], ["opacity", circle.opacity],
+    ]) {
+      element.setAttribute(name, String(value));
+    }
+    svg.append(element);
+  }
+  for (const line of scene.lines || []) {
+    const element = document.createElementNS(namespace, "line");
+    element.dataset.mechSceneId = line.id;
+    for (const [name, value] of [
+      ["x1", line.x1], ["y1", line.y1], ["x2", line.x2], ["y2", line.y2],
+      ["stroke", line.stroke], ["stroke-width", line.stroke_width],
+      ["stroke-linecap", line.line_cap], ["opacity", line.opacity],
+    ]) {
+      element.setAttribute(name, String(value));
+    }
+    element.setAttribute(
+      "transform",
+      `rotate(${line.rotation} ${line.origin_x} ${line.origin_y})`,
+    );
+    svg.append(element);
+  }
+  for (const strip of scene.line_strips || []) {
+    const element = document.createElementNS(namespace, "polyline");
+    element.dataset.mechSceneId = strip.id;
+    const points = [...(strip.positions || [])];
+    if (strip.closed && points.length > 0) {
+      points.push(points[0]);
+    }
+    for (const [name, value] of [
+      ["points", points.map(point => `${point[0]},${point[1]}`).join(" ")],
+      ["fill", strip.fill ?? "none"], ["stroke", strip.stroke],
+      ["stroke-width", strip.stroke_width], ["stroke-linecap", strip.line_cap],
+      ["stroke-dasharray", (strip.stroke_dasharray || []).join(" ")],
+      ["stroke-linejoin", strip.line_join], ["opacity", strip.opacity],
+    ]) {
+      element.setAttribute(name, String(value));
+    }
+    svg.append(element);
+  }
+  for (const text of scene.texts || []) {
+    const element = document.createElementNS(namespace, "text");
+    element.dataset.mechSceneId = text.id;
+    for (const [name, value] of [
+      ["x", text.x], ["y", text.y], ["fill", text.fill],
+      ["font-size", text.font_size], ["font-family", text.font_family],
+      ["font-weight", text.font_weight], ["text-anchor", text.text_anchor],
+      ["opacity", text.opacity],
+    ]) {
+      element.setAttribute(name, String(value));
+    }
+    element.textContent = text.value;
+    svg.append(element);
+  }
+  return svg;
+}
+
 function outputContentElement(content) {
   const body = document.createElement("div");
   body.className = `mech-repl-output-content mech-repl-output-${content?.kind || "unknown"}`;
@@ -1437,82 +1518,7 @@ function outputContentElement(content) {
     if (typeof encoded === "string") {
       try {
         const scene = JSON.parse(encoded);
-        const namespace = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(namespace, "svg");
-        svg.classList.add("mech-repl-scene");
-        svg.dataset.mechRichScene = "true";
-        svg.dataset.mechScenePointerSurface = "true";
-        svg.setAttribute("viewBox", `0 0 ${scene.width} ${scene.height}`);
-        svg.setAttribute("width", String(scene.width));
-        svg.setAttribute("height", String(scene.height));
-        svg.setAttribute("role", "img");
-        const background = document.createElementNS(namespace, "rect");
-        background.setAttribute("x", "0");
-        background.setAttribute("y", "0");
-        background.setAttribute("width", String(scene.width));
-        background.setAttribute("height", String(scene.height));
-        background.setAttribute("fill", scene.background || "transparent");
-        svg.append(background);
-        for (const circle of scene.circles || []) {
-          const element = document.createElementNS(namespace, "circle");
-          element.dataset.mechSceneId = circle.id;
-          for (const [name, value] of [
-            ["cx", circle.x], ["cy", circle.y], ["r", circle.radius],
-            ["fill", circle.fill], ["stroke", circle.stroke],
-            ["stroke-width", circle.stroke_width], ["opacity", circle.opacity],
-          ]) {
-            element.setAttribute(name, String(value));
-          }
-          svg.append(element);
-        }
-        for (const line of scene.lines || []) {
-          const element = document.createElementNS(namespace, "line");
-          element.dataset.mechSceneId = line.id;
-          for (const [name, value] of [
-            ["x1", line.x1], ["y1", line.y1], ["x2", line.x2], ["y2", line.y2],
-            ["stroke", line.stroke], ["stroke-width", line.stroke_width],
-            ["stroke-linecap", line.line_cap], ["opacity", line.opacity],
-          ]) {
-            element.setAttribute(name, String(value));
-          }
-          element.setAttribute(
-            "transform",
-            `rotate(${line.rotation} ${line.origin_x} ${line.origin_y})`,
-          );
-          svg.append(element);
-        }
-        for (const strip of scene.line_strips || []) {
-          const element = document.createElementNS(namespace, "polyline");
-          element.dataset.mechSceneId = strip.id;
-          const points = [...(strip.positions || [])];
-          if (strip.closed && points.length > 0) {
-            points.push(points[0]);
-          }
-          for (const [name, value] of [
-            ["points", points.map(point => `${point[0]},${point[1]}`).join(" ")],
-            ["fill", "none"], ["stroke", strip.stroke],
-            ["stroke-width", strip.stroke_width], ["stroke-linecap", strip.line_cap],
-            ["stroke-linejoin", strip.line_join], ["opacity", strip.opacity],
-          ]) {
-            element.setAttribute(name, String(value));
-          }
-          svg.append(element);
-        }
-        for (const text of scene.texts || []) {
-          const element = document.createElementNS(namespace, "text");
-          element.dataset.mechSceneId = text.id;
-          for (const [name, value] of [
-            ["x", text.x], ["y", text.y], ["fill", text.fill],
-            ["font-size", text.font_size], ["font-family", text.font_family],
-            ["font-weight", text.font_weight], ["text-anchor", text.text_anchor],
-            ["opacity", text.opacity],
-          ]) {
-            element.setAttribute(name, String(value));
-          }
-          element.textContent = text.value;
-          svg.append(element);
-        }
-        body.append(svg);
+        body.append(renderSceneSvg(scene));
         return body;
       } catch (error) {
         console.error("failed to render Mech scene output", error);
@@ -2147,6 +2153,7 @@ function activeDocumentController(operation, method = null) {
 }
 
 globalThis.MechDocumentController = Object.freeze({
+  renderSceneSvg,
   // Application output uses the existing drawer/workspace and fullscreen
   // controls. Opening a presentation panel does not require a ready WASM host.
   showOutput() {

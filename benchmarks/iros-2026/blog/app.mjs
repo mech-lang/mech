@@ -1,15 +1,15 @@
 import initializeRuntime, { WasmKernel, WasmRepl } from './runtime.mjs';
-import { RobotScene } from './drawing.mjs';
+import { MechScene } from './drawing.mjs';
 import { verifyKernel } from './verify.mjs';
 
 const $ = id => document.getElementById(id);
 const text = (id, value) => { $(id).textContent = value; };
-const scene = new RobotScene($('robot-scene'));
+let scene;
 const MEAN = 'μ', COVARIANCE = 'Σ';
 function bindKernelListing() {
   // The live kernel is separate from the document REPL. Do not offer root
   // symbol inspection for values whose state is held by that kernel.
-  for(const element of document.querySelectorAll('[data-workshop-kernel-listing] .mech-var-name')) {
+  for(const element of document.querySelectorAll('[data-workshop-kernel-listing] .mech-var-name, [data-workshop-scene-listing] .mech-var-name')) {
     element.dataset.mechValueInteractive='false';
     element.classList.remove('mech-clickable');
     element.removeAttribute('tabindex');
@@ -38,7 +38,7 @@ function openOutputFromHash() {
 }
 openOutputFromHash();
 for(const event of ['mech:console-ready','mech:document-ready','hashchange']) window.addEventListener(event,openOutputFromHash);
-let source, repl, kernel, device, manifest, adapter, active = 0;
+let source, sceneSource, repl, kernel, device, manifest, adapter, active = 0;
 let mode = 'paused', busy = false, running = false, generation = 0, samples = [], accepted = 0, rejected = 0;
 let state, covariance, frames = [], ready = false;
 let committedBackend = 'cpu', committedInstances = '4096';
@@ -49,7 +49,7 @@ const median = values => {
 };
 function controls() {
   for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 'fault';
-  for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy;
+  for (const id of ['reset','instances','backend','verify','landmark','camera-range','velocity','omega','noise']) $(id).disabled = !ready || busy;
   $('pause').disabled = !running;
   $('run').disabled ||= running;
 }
@@ -98,14 +98,16 @@ async function dispose(oldDevice, oldKernel) {
 }
 async function compile() {
   running = false; generation++; busy = true; controls(); error('');
-  let nextKernel, nextDevice;
+  let nextKernel, nextDevice, nextScene;
   try {
     text('runtime-status', 'Compiling the displayed Mech source…');
     await new Promise(resolve => requestAnimationFrame(resolve));
     const n = Number($('instances').value);
+    nextScene=new MechScene(sceneSource,n,[55,25,.4],[100,0,0,0,100,0,0,0,.15],sensorControls());
+    const initial=nextScene.observation(sensorControls());
     nextKernel = WasmKernel.fromSource(source, {
       bearing: new Float32Array(n).fill(-0.55),
-      v: [Number($('velocity').value)], w: [Number($('omega').value)]
+      u:initial.inputs.u, m:initial.inputs.m,
     }, [MEAN, COVARIANCE]);
     if (nextKernel.stateWidth(MEAN)!==3 || nextKernel.stateWidth(COVARIANCE)!==9) throw new Error('The robot view requires a three-value state and a 3×3 covariance.');
     const nextManifest = $('backend').value === 'gpu' ? nextKernel.computeManifest() : null;
@@ -115,31 +117,44 @@ async function compile() {
       nextDevice = await MechBrowserCompute.Device.create(nextManifest, freshAdapter, nextManifest.exports.map(x=>x.outputName));
     }
     await dispose(device, kernel);
+    scene?.dispose();
+    scene=nextScene;
     kernel = nextKernel; device = nextDevice; manifest = nextManifest; active = 0;
     committedBackend = $('backend').value; committedInstances = $('instances').value;
     state = kernel.stateSample(MEAN,0); covariance = rowMajor(kernel.stateSample(COVARIANCE,0));
     accepted = rejected = 0; samples = []; frames = [];
-    scene.reset(); scene.draw(state,covariance); transition('reset');
+    scene.draw(); transition('reset');
     text('fps','—'); text('turn-ms','—'); text('throughput','—'); telemetry();
-    text('runtime-status', device ? 'WebGPU · generated WGSL · checked turns' : 'CPU · Rust/WASM scalar interpreter · checked turns');
+    text('runtime-status', device ? 'GPU · Mech-generated WGSL / WebGPU · checked turns' : 'CPU · Mech interpreter (WebAssembly) · checked turns');
   } catch (e) {
     if (nextKernel !== kernel) await dispose(nextDevice,nextKernel);
+    if (nextScene && nextScene!==scene) nextScene.dispose();
     $('backend').value = committedBackend; $('instances').value = committedInstances;
     error(String(e));
     text('runtime-status', kernel ? 'Compilation failed. The previous kernel is paused.' : 'The kernel could not be compiled.');
   } finally { busy = false; controls(); }
 }
+function sensorControls() {
+  return {velocity:Number($('velocity').value),omega:Number($('omega').value),
+    noise:Number($('noise').value),landmark:Number($('landmark').value),range:Number($('camera-range').value)};
+}
 async function turn(invalid = false) {
   if (busy || !kernel || mode === 'fault') return;
   busy = true; controls(); error('');
-  const observation = scene.observation(Number($('velocity').value),Number($('omega').value),Number($('noise').value),kernel.instances(),invalid);
-  const begin = performance.now();
+  let phase = 'preparation', published = false, integrityRejected = false;
   try {
+    const observation = scene.observation(sensorControls(),invalid);
+    const begin = performance.now();
+    phase = 'execution';
     if (device) {
       const submission = device.submit({inputs: kernel.gpuInputs(observation.inputs)},active);
       const result = await device.finish(submission);
-      if (result.integrity) throw new Error(`Integrity rejection: constraint ${result.integrity.constraint}, filter ${result.integrity.instance}`);
+      if (result.integrity) {
+        integrityRejected = true;
+        throw new Error(`Integrity rejection: constraint ${result.integrity.constraint}, filter ${result.integrity.instance}`);
+      }
       active = submission.outputIndex;
+      published = true; accepted++; phase = 'readback';
       const output = name => {
         const binding = manifest.exports.find(x=>x.name===name);
         const found = result.outputs.find(x=>x.name===binding.outputName);
@@ -148,27 +163,56 @@ async function turn(invalid = false) {
       };
       state = output(MEAN); covariance = output(COVARIANCE);
     } else {
-      kernel.turn(observation.inputs);
+      const faultsBefore = kernel.faultCount();
+      try { kernel.turn(observation.inputs); }
+      catch(e) { integrityRejected = kernel.faultCount() > faultsBefore; throw e; }
+      published = true; accepted++; phase = 'readback';
       state = kernel.stateSample(MEAN,0); covariance = rowMajor(kernel.stateSample(COVARIANCE,0));
     }
     const duration = performance.now()-begin;
-    accepted++;
     if (accepted > 5) { samples.push(duration); if(samples.length>60) samples.shift(); }
-    scene.accepted(observation.next,state,covariance);
+    phase = 'scene/display update';
+    scene.accepted(state,covariance);
     const now=performance.now(); frames.push(now); frames=frames.filter(t=>now-t<=1000);
     if(frames.length>1) text('fps', `${((frames.length-1)*1000/(now-frames[0])).toFixed(1)} FPS`);
+    phase = 'telemetry display';
+    telemetry();
   } catch(e) {
-    rejected++; running = false; generation++; transition('rejected'); error(String(e));
-  } finally { telemetry(); busy = false; controls(); }
+    running = false; generation++; transition('rejected');
+    let diagnostic;
+    if (integrityRejected) {
+      rejected++;
+      diagnostic = String(e);
+    } else {
+      const detail = published
+        ? `The EKF accepted turn ${accepted}, but its ${phase} failed. The numerical state was not rolled back.`
+        : phase === 'preparation'
+          ? 'Camera/scene preparation failed before the EKF was submitted.'
+          : 'EKF execution failed without a reported integrity rejection; publication status is unavailable.';
+      text('behavior-message','Execution stopped. Reset is required to resynchronize the filter and scene.');
+      diagnostic = `${detail} Reset is required. ${String(e)}`;
+    }
+    error(diagnostic);
+    if (phase !== 'telemetry display') {
+      try { telemetry(); }
+      catch(displayError) { error(`${diagnostic} Telemetry display also failed: ${String(displayError)}`); }
+    }
+  } finally {
+    busy = false; controls();
+  }
 }
 async function loop(token) {
   if(!running || token!==generation) return;
   await turn();
   if(running && token===generation) requestAnimationFrame(()=>loop(token));
 }
-for (const [id,label] of [['velocity','velocity-label'],['omega','omega-label'],['noise','noise-label']]) {
+for (const [id,label] of [['velocity','velocity-label'],['omega','omega-label'],['noise','noise-label'],['camera-range','camera-range-label']]) {
   $(id).addEventListener('input',()=>text(label,$(id).value));
 }
+for(const id of ['landmark','camera-range']) $(id).addEventListener('change',()=>{
+  if(!scene || busy) return;
+  try {scene.observation(sensorControls());scene.draw();} catch(e){error(String(e));}
+});
 $('run').onclick=()=>{transition('run');running=mode==='patrol';frames=[];const token=++generation;controls();requestAnimationFrame(()=>loop(token));};
 $('pause').onclick=()=>{running=false;generation++;transition('pause');controls();};
 $('step').onclick=()=>turn();
@@ -186,7 +230,10 @@ $('verify').onclick=async()=>{
 };
 
 try {
-  [source] = await Promise.all([fetch('source/ekf.mec').then(r=>{if(!r.ok)throw new Error('EKF source unavailable');return r.text();}), initializeRuntime()]);
+  [source,sceneSource] = await Promise.all([
+    fetch('source/ekf.mec').then(r=>{if(!r.ok)throw new Error('EKF source unavailable');return r.text();}),
+    fetch('source/scene.mec').then(r=>{if(!r.ok)throw new Error('Mech scene source unavailable');return r.text();}),
+    initializeRuntime()]);
   repl=new WasmRepl();
   const behavior=await fetch('source/behavior.mec').then(r=>r.text());
   const behaviorResult = repl.submit(behavior);
@@ -195,7 +242,7 @@ try {
   if(navigator.gpu) {
     try { adapter=await navigator.gpu.requestAdapter(); }
     catch { adapter=null; }
-    if(adapter) { const option=$('backend').querySelector('[value=gpu]');option.disabled=false;option.textContent='GPU · WebGPU';text('gpu-support',`WebGPU is available${adapter.info?.description ? ': '+adapter.info.description : ''}.`); }
+    if(adapter) { const option=$('backend').querySelector('[value=gpu]');option.disabled=false;option.textContent='GPU · Mech / WebGPU';text('gpu-support',`WebGPU is available${adapter.info?.description ? ': '+adapter.info.description : ''}.`); }
   }
   if(!adapter) text('gpu-support','WebGPU is unavailable in this browser. CPU execution is available; try a browser with WebGPU support to compare devices.');
   ready=true; await compile();

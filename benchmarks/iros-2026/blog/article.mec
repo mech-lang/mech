@@ -3,7 +3,7 @@ Mech for Robotics: Embedded Numerical and Reactive Computation
 author: Corey Montella, Aung Khant Ko, Steven McPhillimey
 date: September 27, 2026
 kicker: IROS 2026: Rust for Robotics Workshop
-hero: ![Pittsburgh skyline and river confluence from West End Overlook](assets/pittsburgh-hero.jpg)
+hero: ![Pittsburgh skyline and the yellow Fort Pitt Bridge above the Monongahela River](assets/pittsburgh-hero.jpg)
 summary: A bearing-only extended Kalman filter demonstrates Rust embedding, checked reactive updates, and backend specialization, with executable examples and retained benchmark evidence.
 ===============================================================================
 
@@ -45,11 +45,17 @@ BLOGLIVEDEMO
 
 The browser demonstration makes successive state updates visible. A pose marker represents the estimated position and heading, while an angled ellipse represents the position covariance. The ellipse uses the covariance's principal axes rather than an arbitrary drawing scale. A radius-two covariance ellipse in two dimensions is not a 95% probability region; it encloses approximately 86.5% under the Gaussian model.
 
-Start with Run or advance One turn at a time. Change the forward and angular velocities to alter the simulated motion, then vary the bearing-noise scale to change the observations supplied to the filter. The noise control changes the synthetic measurement, not the kernel's declared measurement covariance. The drawing and telemetry show the first filter; selecting a larger batch executes additional independent filters. Compare CPU and GPU where WebGPU is available. Changing the backend or batch size starts a new episode rather than migrating a running session between devices.
+Start with Run or advance One turn at a time. Change the forward and angular velocities to alter the simulated motion, then vary the bearing-noise scale to change the observations supplied to the filter. The robot carries a simulated camera that measures the bearing to the selected known landmark. Its maximum range determines whether a measurement is available: outside that range, the EKF predicts motion without a correction; corrections resume when the landmark returns to range. The noise control changes the synthetic measurement, not the kernel's declared measurement covariance. The drawing and telemetry show the first filter; selecting a larger batch executes additional independent filters. Compare CPU and GPU where WebGPU is available. Changing the backend or batch size starts a new episode rather than migrating a running session between devices.
 
 Inject an invalid bearing to exercise rejection in the last filter of the batch. The accepted state stays visible and the behavior enters Fault; Reset starts a new episode. The displayed source is read-only, and the source links provide complete downloadable examples. The verification control separately checks CPU/GPU numerical agreement, rejection, rollback, and recovery, and reports when WebGPU is unavailable.
 
-Both browser routes parse the displayed Mech source and construct the same fixed-shape numerical program. The CPU route executes its lowered instructions in the Rust runtime compiled to WebAssembly. It is an instruction interpreter, not native Cranelift JIT code. The GPU route generates WGSL and a binding manifest from that program; the browser host submits it through WebGPU and observes completion and integrity status before accepting the result. JavaScript supplies synthetic measurements and draws the SVG scene. It does not implement a second EKF.
+Both browser routes parse the displayed Mech source and construct the same fixed-shape numerical program. The CPU route executes its lowered instructions in the Mech interpreter, whose Rust implementation is compiled to WebAssembly. The GPU route generates WGSL and a binding manifest from that program; the browser host submits it through WebGPU and observes completion and integrity status before accepting the result. A separate resident Mech program computes camera measurements, scene geometry, covariance ellipses, and trails. JavaScript binds the controls, schedules execution, and passes the resulting drawing tables to the shared scene renderer.
+
+(1.1) Drawing with Mech Tables
+
+The scene uses the same table-based drawing interface as the repository's EKF example. Columns describe properties of each primitive, and expressions connect those properties to the accepted filter state. These rows draw the selectable landmarks and the camera's range circle; lines and line strips describe the sensor ray, headings, trails, and covariance ellipse. The supporting calculations are in the downloadable scene program rather than repeated throughout the article.
+
+BLOGSCENESOURCE
 
 Browser results describe the browser and device running this page. The live summary uses the latest accepted turns after warmup, rather than independent process trials. Turn time includes input binding, execution, validation, synchronization, and one filter's readback; drawing and compilation are excluded. WebAssembly CPU and WebGPU have different timing boundaries from the native programs in the archived charts. A browser may translate WebGPU to Metal, Vulkan, or another platform API, which does not make its timings interchangeable with direct-Metal measurements.
 
@@ -212,7 +218,7 @@ BLOGMATCHING
 
 This article is itself a Mechdown document: prose explains the code, and executable blocks supply results alongside it. [Download the complete `.mec` document](article.mec) to inspect the prose and expanded examples together. The EKF blocks share a namespace and are compiled as one numerical kernel; the other examples are available in the document REPL.
 
-The Output pane presents the running EKF application, while the source links expose the JavaScript that generates synthetic sensor measurements and draws its SVG scene. Those support routines are kept outside the main explanation. Mechdown also supports hidden executable blocks when the helpers are written in Mech, allowing a document to present selected code without displaying every supporting calculation.
+The Output pane presents the running EKF application. Its camera simulation and drawing tables are written in [Mech](source/scene.mec), while the browser host supplies UI events and measured filter state. The article shows selected scene rows alongside the numerical kernel; the source link provides the complete supporting program. Mechdown also supports hidden executable blocks, so a document can present selected calculations without displaying every helper.
 
 [^SOURCE]: The complete live source and regression tests are supplied with this article. The five-backend native measurements use the archived source identified by SHA-256 `da531cddcb25d002d49f1a77800122e84b573e2685e191c1955908ef6fccd625`. The live example's symmetry correction is separate from those measurements; its exact source and runtime hashes are recorded in the build manifest.
 

@@ -243,7 +243,10 @@ fn point_set(id: &str) -> ValueCell {
     ])
 }
 fn line_strip(id: &str) -> ValueCell {
-    record(vec![
+    styled_line_strip(id, vec![])
+}
+fn styled_line_strip(id: &str, style: Vec<(&str, ValueCell)>) -> ValueCell {
+    let mut fields = vec![
         ("id", s(id)),
         (
             "positions",
@@ -255,6 +258,16 @@ fn line_strip(id: &str) -> ValueCell {
         ("line-join", s("round")),
         ("opacity", f(0.5)),
         ("closed", b(true)),
+    ];
+    fields.extend(style);
+    record(fields)
+}
+fn scene_with_strips(strips: ValueCell) -> ValueCell {
+    record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("line-strips", strips),
     ])
 }
 
@@ -422,6 +435,8 @@ fn line_strip_keeps_matrix_rows_as_one_closed_path() {
         vec![[10.0, 40.0], [20.0, 50.0], [30.0, 60.0]]
     );
     assert!(scene.line_strips[0].closed);
+    assert_eq!(scene.line_strips[0].fill, "none");
+    assert!(scene.line_strips[0].stroke_dasharray.is_empty());
 }
 
 #[test]
@@ -439,6 +454,99 @@ fn line_strip_table_keeps_each_matrix_as_one_path() {
     assert_eq!(scene.line_strips.len(), 2);
     assert_eq!(scene.line_strips[1].id, "orbit-b");
     assert_eq!(scene.line_strips[1].positions.len(), 3);
+}
+
+#[test]
+fn line_strip_optional_styles_work_in_records_and_tables() {
+    for strips in [
+        styled_line_strip(
+            "covariance",
+            vec![
+                ("fill", s("rgba(183, 126, 182, 0.22)")),
+                ("stroke-dasharray", points(1, 2, vec![0.0, 5.0])),
+            ],
+        ),
+        table(vec![styled_line_strip(
+            "covariance",
+            vec![
+                ("fill", s("rgba(183, 126, 182, 0.22)")),
+                ("stroke-dasharray", points(2, 1, vec![0.0, 5.0])),
+            ],
+        )]),
+    ] {
+        let scene = scene_snapshot(&scene_with_strips(strips)).unwrap();
+        assert_eq!(scene.line_strips[0].fill, "rgba(183, 126, 182, 0.22)");
+        assert_eq!(scene.line_strips[0].stroke_dasharray, [0.0, 5.0]);
+        let mut backend = RecordingSceneBackend::new();
+        backend.replace_scene(scene.clone()).unwrap();
+        assert_eq!(backend.latest().unwrap(), scene);
+    }
+}
+
+#[test]
+fn line_strip_optional_fields_are_independent() {
+    let filled = scene_snapshot(&scene_with_strips(styled_line_strip(
+        "area",
+        vec![("fill", f(0xb77eb6 as f64))],
+    )))
+    .unwrap();
+    assert_eq!(filled.line_strips[0].fill, "#b77eb6");
+    assert!(filled.line_strips[0].stroke_dasharray.is_empty());
+    let dashed = scene_snapshot(&scene_with_strips(styled_line_strip(
+        "trail",
+        vec![("stroke-dasharray", points(1, 3, vec![1.0, 2.0, 3.0]))],
+    )))
+    .unwrap();
+    assert_eq!(dashed.line_strips[0].fill, "none");
+    // SVG and canvas repeat an odd-length pattern; it is not an invalid schema.
+    assert_eq!(dashed.line_strips[0].stroke_dasharray, [1.0, 2.0, 3.0]);
+    let solid = scene_snapshot(&scene_with_strips(styled_line_strip(
+        "solid",
+        vec![("stroke-dasharray", points(1, 1, vec![0.0]))],
+    )))
+    .unwrap();
+    assert_eq!(solid.line_strips[0].stroke_dasharray, [0.0]);
+}
+
+#[test]
+fn line_strip_rejects_invalid_dash_patterns_and_fill_types() {
+    for pattern in [
+        points(1, 2, vec![-1.0, 3.0]),
+        points(1, 2, vec![f64::NAN, 3.0]),
+        points(1, 2, vec![1.0, f64::INFINITY]),
+        points(2, 2, vec![1.0, 2.0, 3.0, 4.0]),
+        s("1 3"),
+    ] {
+        let result = scene_snapshot(&scene_with_strips(styled_line_strip(
+            "bad",
+            vec![("stroke-dasharray", pattern)],
+        )));
+        assert!(result.is_err(), "invalid dash patterns must be rejected");
+    }
+    assert!(
+        scene_snapshot(&scene_with_strips(styled_line_strip(
+            "bad",
+            vec![("fill", b(true)),]
+        )))
+        .is_err()
+    );
+}
+
+#[cfg(feature = "rich-output")]
+#[test]
+fn line_strip_json_defaults_preserve_older_snapshots_and_styles_round_trip() {
+    let legacy = r#"{"id":"trail","positions":[[0,0],[2,3]],"stroke":"gold",
+        "stroke_width":1,"line_cap":"round","line_join":"round","opacity":1,"closed":false}"#;
+    let mut strip: LineStripElement = serde_json::from_str(legacy).unwrap();
+    assert_eq!(strip.fill, "none");
+    assert!(strip.stroke_dasharray.is_empty());
+    strip.fill = "#b77eb6".to_string();
+    strip.stroke_dasharray = vec![0.0, 5.0];
+    let encoded = serde_json::to_string(&strip).unwrap();
+    assert_eq!(
+        serde_json::from_str::<LineStripElement>(&encoded).unwrap(),
+        strip
+    );
 }
 
 #[test]

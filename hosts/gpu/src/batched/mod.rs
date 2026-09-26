@@ -2178,15 +2178,21 @@ impl<'a> BatchCompiler<'a> {
         output: CellSlotId,
         inputs: &[ArtifactSource],
     ) -> Result<(), String> {
-        if inputs.len() != 1 || self.shape(output)?.elements() != 1 {
-            return Err("absolute value requires one scalar input and output".to_owned());
+        if inputs.len() != 1 {
+            return Err("absolute value requires one input".to_owned());
         }
-        self.reserve_scalar_instructions(1, 1, 1)?;
-        self.emit(
-            output,
-            0,
-            ScalarComputation::Absolute(self.operand(inputs[0], 0)?),
-        );
+        let shape = self.shape(output)?;
+        if self.source_shape(inputs[0])? != shape {
+            return Err("absolute value input shape differs from output shape".to_owned());
+        }
+        self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
+        for component in 0..shape.elements() {
+            self.emit(
+                output,
+                component,
+                ScalarComputation::Absolute(self.operand(inputs[0], component)?),
+            );
+        }
         Ok(())
     }
 

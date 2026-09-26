@@ -5,7 +5,7 @@
  * This owns a separate kernel/device; it never advances the displayed demo.
  * `passed` requires real WebGPU execution. `status` is passed/failed/unsupported;
  * unsupported may still have cpuPassed=true. No measured GPU error is reported
- * when there were no GPU comparisons. The exact paper source hash is enforced.
+ * when there were no GPU comparisons. The exact live source hash is enforced.
  *
  * Twenty deterministic turns compare lane zero, with elementwise f32 tolerance
  * abs=1e-4, rel=1e-4. Test-only full GPU readbacks then prove bitwise whole-batch
@@ -13,7 +13,7 @@
  * part of the demo's FPS measurement. CPU and GPU matrix layouts are reconciled
  * through the existing Device output-layout conversion, not EKF code in JS.
  */
-const PAPER_SHA256 = "f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b";
+const LIVE_SHA256 = "69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689";
 const NAMES = ["μ", "Σ"];
 const WIDTHS = { μ: 3, Σ: 9 };
 const TURNS = 20;
@@ -59,8 +59,8 @@ function deterministicInputs(turn, instances) {
   return {
     bearing: Float32Array.from({ length: instances }, (_, lane) =>
       -0.55 + 0.008 * Math.sin(turn * 0.17) + lane * 0.000001),
-    v: [1 + 0.08 * Math.sin(turn * 0.11)],
-    w: [0.015 + 0.003 * Math.cos(turn * 0.13)],
+    u: [1 + 0.08 * Math.sin(turn * 0.11),0.015 + 0.003 * Math.cos(turn * 0.13),turn>=5&&turn<=8?0:1],
+    m: turn>=11?[35,110]:[140,12],
   };
 }
 
@@ -121,11 +121,11 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
   try {
     requireThat(Number.isInteger(instances) && instances >= 2 && instances <= 4096,
       "instances must be an integer from 2 through 4096");
-    requireThat(typeof source === "string", "source must be the complete paper EKF document");
+    requireThat(typeof source === "string", "source must be the complete live EKF document");
     requireThat(typeof WasmKernel?.fromSource === "function", "WasmKernel is not initialized");
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source));
     report.sourceSha256 = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
-    requireThat(report.sourceSha256 === PAPER_SHA256, "source differs from the complete paper EKF document");
+    requireThat(report.sourceSha256 === LIVE_SHA256, "source differs from the complete live EKF document");
 
     stage = "source compilation";
     kernel = WasmKernel.fromSource(source, deterministicInputs(0, instances), NAMES);
@@ -137,7 +137,7 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
       requireThat(typeof exported[name]?.outputName === "string", `GPU export ${name} is missing`);
       requireThat(manifest.outputs.some(value => value.name === exported[name].outputName), `GPU output ${name} is missing`);
     }
-    requireThat(manifest.bindings.length === 8, "three-input paper kernel must use eight GPU storage bindings");
+    requireThat(manifest.bindings.length === 8, "three-input live kernel must use eight GPU storage bindings");
 
     stage = "WebGPU availability";
     if (adapter === undefined) adapter = await globalThis.navigator?.gpu?.requestAdapter();
@@ -179,11 +179,21 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
       report.comparedTurns += 1;
     };
 
-    stage = "20 deterministic turns";
+    stage = "20 deterministic turns including prediction-only and landmark changes";
+    report.predictionOnlyTurns=0;
     const initial = cpuSnapshot(kernel, instances);
     for (let turn = 1; turn <= TURNS; turn += 1) {
       const updates = deterministicInputs(turn, instances);
+      const previousMean=kernel.stateSample('μ',0);
       kernel.turn(updates);
+      if(updates.u[2]===0) {
+        const prediction=[previousMean[0]+updates.u[0]*.1*Math.cos(previousMean[2]),
+          previousMean[1]+updates.u[0]*.1*Math.sin(previousMean[2]),previousMean[2]+updates.u[1]*.1];
+        const actual=kernel.stateSample('μ',0);
+        requireThat(prediction.every((x,i)=>Math.abs(x-actual[i])<=1e-4+1e-4*Math.abs(x)),
+          'missing-camera turn must perform motion prediction without correction');
+        report.predictionOnlyTurns++;
+      }
       if (resource) compareSample(await gpuTurn(updates), turn);
     }
     const beforeCpu = cpuSnapshot(kernel, instances);

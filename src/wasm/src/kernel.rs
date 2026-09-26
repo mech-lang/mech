@@ -405,6 +405,7 @@ mod tests {
     use super::*;
 
     const PAPER: &str = include_str!("../tests/fixtures/paper-ekf.mec");
+    const LIVE_EKF: &str = include_str!("../../../benchmarks/iros-2026/blog/source/ekf.mec");
 
     fn build() -> KernelCore {
         KernelCore::from_source(
@@ -480,7 +481,11 @@ mod tests {
         // The compact document uses both fmax and its negation. Its shortest
         // Rust decimal exceeds WGSL's f32 range, so emit the exact endpoint.
         assert!(plan.wgsl.contains("bitcast<f32>(0x7f7fffffu)"));
-        assert!(!plan.wgsl.contains("340282350000000000000000000000000000000"));
+        assert!(
+            !plan
+                .wgsl
+                .contains("340282350000000000000000000000000000000")
+        );
         assert_eq!(plan.dispatch_elements, 4);
         assert_eq!(plan.states.len(), 2);
         assert_eq!(plan.constraints.len(), 3);
@@ -491,6 +496,303 @@ mod tests {
                     .iter()
                     .any(|output| output.slot == export.slot.get())
             );
+        }
+    }
+
+    fn live_inputs(instances: usize, visible: f32) -> BTreeMap<String, Vec<f32>> {
+        BTreeMap::from([
+            ("bearing".into(), vec![-0.55; instances]),
+            ("u".into(), vec![1.0, 0.015, visible]),
+            ("m".into(), vec![140.0, 12.0]),
+        ])
+    }
+
+    fn live_kernel(instances: usize, visible: f32) -> KernelCore {
+        KernelCore::from_source(
+            LIVE_EKF,
+            live_inputs(instances, visible),
+            vec!["μ".into(), "Σ".into()],
+        )
+        .unwrap()
+    }
+
+    fn named_bits(core: &KernelCore, names: &[&str]) -> Vec<u32> {
+        names
+            .iter()
+            .flat_map(|name| {
+                core.state(name)
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.to_bits())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn live_ekf_camera_visibility_selects_prediction_and_resumes_correction() {
+        let mut hidden = live_kernel(256, 0.0);
+        let bearings = (0..256).map(|lane| -2.0 + lane as f32 * 0.02).collect();
+        hidden
+            .turn(BTreeMap::from([
+                ("bearing".into(), bearings),
+                ("u".into(), vec![2.0, 0.1, 0.0]),
+            ]))
+            .unwrap();
+        let mean = hidden.state("μ").unwrap();
+        let covariance = hidden.state("Σ").unwrap();
+        for lane in 1..256 {
+            assert_eq!(&mean[lane * 3..(lane + 1) * 3], &mean[..3]);
+            assert_eq!(&covariance[lane * 9..(lane + 1) * 9], &covariance[..9]);
+        }
+        let (sin, cos) = 0.4_f32.sin_cos();
+        let d = 0.2_f32;
+        let expected_mean = [55.0 + d * cos, 25.0 + d * sin, 0.41];
+        for (actual, expected) in mean[..3].iter().zip(expected_mean) {
+            assert!((actual - expected).abs() <= 1e-5, "{actual} vs {expected}");
+        }
+        // G P G' + V Q V', independently expanded for the initial diagonal P.
+        let xy = -0.15 * d * d * sin * cos + 0.0001 * sin * cos;
+        let expected_covariance = [
+            100.0 + 0.15 * d * d * sin * sin + 0.0001 * cos * cos,
+            xy,
+            -0.15 * d * sin,
+            xy,
+            100.0 + 0.15 * d * d * cos * cos + 0.0001 * sin * sin,
+            0.15 * d * cos,
+            -0.15 * d * sin,
+            0.15 * d * cos,
+            0.150025,
+        ];
+        for (actual, expected) in covariance[..9].iter().zip(expected_covariance) {
+            assert!((actual - expected).abs() <= 2e-5, "{actual} vs {expected}");
+        }
+        let mut corrected = live_kernel(256, 0.0);
+        corrected.turn(hidden.current_inputs.clone()).unwrap();
+        assert_eq!(
+            named_bits(&corrected, &["μ", "Σ"]),
+            named_bits(&hidden, &["μ", "Σ"])
+        );
+        corrected
+            .turn(BTreeMap::from([
+                ("bearing".into(), vec![-0.3]),
+                ("u".into(), vec![2.0, 0.1, 1.0]),
+            ]))
+            .unwrap();
+        hidden
+            .turn(BTreeMap::from([("bearing".into(), vec![-0.3])]))
+            .unwrap();
+        assert_ne!(corrected.state("μ").unwrap(), hidden.state("μ").unwrap());
+        let trace = |core: &KernelCore| {
+            let p = core.state("Σ").unwrap();
+            p[0] + p[4] + p[8]
+        };
+        assert!(trace(&corrected) < trace(&hidden));
+    }
+
+    #[test]
+    fn live_ekf_switches_landmark_and_rejects_nan_atomically_then_recovers() {
+        let mut changed = live_kernel(256, 1.0);
+        let mut reference = live_kernel(256, 1.0);
+        changed
+            .turn(BTreeMap::from([("m".into(), vec![35.0, 110.0])]))
+            .unwrap();
+        reference.turn(BTreeMap::new()).unwrap();
+        assert_ne!(
+            named_bits(&changed, &["μ", "Σ"]),
+            named_bits(&reference, &["μ", "Σ"])
+        );
+        reference.reset().unwrap();
+        reference
+            .turn(BTreeMap::from([("m".into(), vec![35.0, 110.0])]))
+            .unwrap();
+        let accepted = named_bits(&changed, &["μ", "Σ"]);
+        let mut bearings = vec![-0.5; 256];
+        bearings[127] = f32::NAN;
+        let error = changed
+            .turn(BTreeMap::from([("bearing".into(), bearings)]))
+            .unwrap_err();
+        assert!(error.contains("finite-candidate!"), "{error}");
+        assert_eq!(changed.cpu.last_fault().unwrap().instance, 127);
+        assert_eq!(named_bits(&changed, &["μ", "Σ"]), accepted);
+        let update = BTreeMap::from([("bearing".into(), vec![-0.5])]);
+        changed.turn(update.clone()).unwrap();
+        reference.turn(update).unwrap();
+        assert_eq!(
+            named_bits(&changed, &["μ", "Σ"]),
+            named_bits(&reference, &["μ", "Σ"])
+        );
+    }
+
+    #[test]
+    fn live_ekf_vector_tolerance_matches_scalar_formula_state_shapes_and_faults() {
+        const VECTOR: &str = "τ := ε + ρ * abs(Σraw[[4 7 8]]) + ρ * abs(Σraw[[2 3 6]])";
+        const SCALAR: &str = "τxy := ε + ρ * abs(Σraw[4]) + ρ * abs(Σraw[2])\nτxθ := ε + ρ * abs(Σraw[7]) + ρ * abs(Σraw[3])\nτyθ := ε + ρ * abs(Σraw[8]) + ρ * abs(Σraw[6])\nτ := [τxy τxθ τyθ]'";
+        assert_eq!(LIVE_EKF.matches(VECTOR).count(), 1);
+        // Test-only persistent copies expose the two intermediates without
+        // changing production exports or numerical operations.
+        let instrumented = LIVE_EKF.replace("~μ<[f32]>",
+            "~tolerance-snapshot<[f32]> := [0 0 0]'\n~symmetry-snapshot<[f32]> := [0 0 0]'\n~μ<[f32]>")
+            .replace("(μ, Σ)", "tolerance-snapshot = τ\nsymmetry-snapshot = ΔΣ\n(μ, Σ)");
+        let scalar_source = instrumented.replace(VECTOR, SCALAR);
+        let names = ["μ", "Σ", "tolerance-snapshot", "symmetry-snapshot"];
+        let build = |source: &str| {
+            let mut inputs = live_inputs(256, 1.0);
+            inputs.insert("ε".into(), vec![0.0001]);
+            KernelCore::from_source(
+                source,
+                inputs,
+                names.iter().map(|name| (*name).into()).collect(),
+            )
+            .unwrap()
+        };
+        let mut vector = build(&instrumented);
+        let mut scalar = build(&scalar_source);
+        for core in [&vector, &scalar] {
+            for name in &names[2..] {
+                let slot = core.exports[*name].slot;
+                let storage = core
+                    .program
+                    .compute_program()
+                    .fixed_shape_storage()
+                    .unwrap();
+                let state = storage
+                    .states
+                    .iter()
+                    .find(|state| state.slot == slot)
+                    .unwrap();
+                assert_eq!((state.shape.rows, state.shape.columns), (3, 1));
+            }
+        }
+        for turn in 0..40 {
+            let updates = BTreeMap::from([
+                (
+                    "bearing".into(),
+                    (0..256)
+                        .map(|lane| -0.55 + 0.02 * (turn as f32 * 1.73 + lane as f32 * 0.37).sin())
+                        .collect(),
+                ),
+                (
+                    "u".into(),
+                    vec![
+                        1.0 + turn as f32 * 0.01,
+                        0.015,
+                        if turn % 7 == 0 { 0.0 } else { 1.0 },
+                    ],
+                ),
+                (
+                    "m".into(),
+                    if turn < 20 {
+                        vec![140.0, 12.0]
+                    } else {
+                        vec![35.0, 110.0]
+                    },
+                ),
+            ]);
+            vector.turn(updates.clone()).unwrap();
+            scalar.turn(updates).unwrap();
+            assert_eq!(
+                named_bits(&vector, &names),
+                named_bits(&scalar, &names),
+                "turn {turn}"
+            );
+        }
+        for (updates, expected_constraint) in [
+            (
+                BTreeMap::from([("ε".into(), vec![-0.01])]),
+                "symmetric-covariance!",
+            ),
+            (
+                BTreeMap::from([("bearing".into(), {
+                    let mut values = vec![-0.55; 256];
+                    values[129] = f32::NAN;
+                    values
+                })]),
+                "finite-candidate!",
+            ),
+        ] {
+            let before = named_bits(&vector, &names);
+            let vector_error = vector.turn(updates.clone()).unwrap_err();
+            let scalar_error = scalar.turn(updates).unwrap_err();
+            assert!(vector_error.contains(expected_constraint), "{vector_error}");
+            assert_eq!(vector_error, scalar_error);
+            assert_eq!(vector.cpu.last_fault(), scalar.cpu.last_fault());
+            assert_eq!(named_bits(&vector, &names), before);
+            assert_eq!(named_bits(&scalar, &names), before);
+            let recovery =
+                BTreeMap::from([("ε".into(), vec![0.0001]), ("bearing".into(), vec![-0.55])]);
+            vector.turn(recovery.clone()).unwrap();
+            scalar.turn(recovery).unwrap();
+            assert_eq!(named_bits(&vector, &names), named_bits(&scalar, &names));
+        }
+    }
+
+    #[test]
+    fn elementwise_absolute_preserves_scalar_vector_and_nonsquare_matrix_shapes() {
+        for (literal, rows, columns) in [
+            ("0f32", 1, 1),
+            ("[0f32 0f32 0f32 0f32 0f32]", 1, 5),
+            ("[0f32; 0f32; 0f32; 0f32]", 4, 1),
+            ("[0f32 0f32 0f32; 0f32 0f32 0f32]", 2, 3),
+        ] {
+            let elements = rows * columns;
+            let source = format!(
+                "+> math/abs\n\nAbsolute @compute\n------------------\ninput := {literal}\n~output := {literal}\noutput = abs(input)\noutput"
+            );
+            // Five instances exercise the SIMD tail as well as each component
+            // in column-major storage. Negative zero tests abs sign handling.
+            let input: Vec<f32> = (0..5 * elements).map(|index| -(index as f32)).collect();
+            let expected: Vec<u32> = input.iter().map(|value| value.abs().to_bits()).collect();
+            let mut core = KernelCore::from_source(
+                &source,
+                BTreeMap::from([("input".into(), input)]),
+                vec!["output".into()],
+            )
+            .unwrap();
+            let slot = core.exports["output"].slot;
+            let storage = core
+                .program
+                .compute_program()
+                .fixed_shape_storage()
+                .unwrap();
+            let output = storage
+                .states
+                .iter()
+                .find(|state| state.slot == slot)
+                .unwrap();
+            assert_eq!((output.shape.rows, output.shape.columns), (rows, columns));
+            let mech_compute::ComputeKernel::FixedShape(ir) =
+                core.program.compute_program().kernel()
+            else {
+                panic!("expected scalarized fixed-shape program");
+            };
+            assert_eq!(
+                ir.instructions
+                    .iter()
+                    .filter(|instruction| matches!(
+                        instruction.computation,
+                        mech_compute::ScalarComputation::Absolute(_)
+                    ))
+                    .count(),
+                elements
+            );
+            let mut simd = core.program.prepare_simd_cpu(&core.initial_inputs).unwrap();
+            core.turn(BTreeMap::new()).unwrap();
+            simd.dispatch_turns(1).unwrap();
+            assert_eq!(named_bits(&core, &["output"]), expected);
+            assert_eq!(
+                simd.state()[&slot]
+                    .iter()
+                    .map(|value| value.to_bits())
+                    .collect::<Vec<_>>(),
+                expected
+            );
+            let gpu = mech_gpu::GpuExecutionPlan::build(
+                GpuKernelPlanSource::FixedShape(&core.program),
+                &core.initial_inputs,
+            )
+            .unwrap();
+            assert!(gpu.wgsl.matches("abs(").count() >= elements);
+            assert_eq!(gpu.dispatch_elements, 5);
         }
     }
 }

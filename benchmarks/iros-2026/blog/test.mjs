@@ -21,6 +21,7 @@ assert(html.includes('id="contentShell"')&&html.includes('id="articleLayout"'),'
 assert(!html.includes('class="contents"'),'do not nest the canonical TOC inside a custom wrapper');
 assert(html.includes('data-mech-console-pane')&&html.includes('data-mech-repl-mount'),'real document console mounts');
 assert(html.includes('src="assets/pittsburgh-hero.jpg"'),'licensed Pittsburgh hero photograph');
+assert(html.includes('Photo: Georg Pflueger / Unsplash'),'retain the replacement photograph credit');
 assert(html.includes('class="github-button"')&&html.includes('aria-label="Star mech-lang/mech on GitHub"'),'canonical GitHub star button');
 assert(html.includes('class="mika-separator"')&&html.includes('class="footer-main"'),'blog separator and complete footer');
 assert(html.includes('IROS 2026: Rust for Robotics Workshop')&&html.includes('September 27, 2026'),'workshop metadata');
@@ -28,6 +29,11 @@ assert(html.includes('Why an EKF?')&&html.includes('HYTRADBOI'),'explain the rep
 for(const structure of ['set','table','tuple','map']) assert(html.includes(`https://docs.mech-lang.org/reference/${structure}.html`),'link numerical-syntax callout to data-structure references');
 assert(html.includes('evidence/ekf-long-horizon-diagnostic.md'),'retain the integrity-constraint case-study evidence');
 const blogCss=readFileSync(join(repo,'include/blog.css'),'utf8');
+assert.match(blogCss,/grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1\.05fr\)/,'hero needs balanced title and artwork columns');
+assert.match(blogCss,/font-size: clamp\(34px, 4\.2cqw, 52px\)/,'title size follows the article pane, not the viewport');
+const articleCss=readFileSync(join(out,'assets/article.css'),'utf8');
+assert.match(articleCss,/aspect-ratio:4 \/ 3/,'skyline uses a photographic crop rather than a thin panorama');
+assert(!articleCss.includes('saturate(.78)'),'do not desaturate the Pittsburgh photograph');
 assert.match(blogCss,/\.hero:has\(> \.hero-visual:empty\)\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,'empty hero must use the full title width');
 assert.match(blogCss,/\.hero > \.hero-visual:empty\s*\{\s*display: none;/,'empty artwork must not reserve vertical space');
 assert.match(readFileSync(join(out,'assets/app.mjs'),'utf8'),/if \(event.defaultPrevented\) return;/,'demo anchor handling must defer to the shared TOC');
@@ -44,9 +50,12 @@ assert.equal(new Set(structuralIds).size,structuralIds.length,'duplicate structu
 for(const id of ['backend','run','pause','reset','step','inject','verify','state-values']) assert(ids.includes(id),`missing control ${id}`);
 for(const id of ['source-editor','compile','restore','functions-source','matching-source','modified-source']) assert(!ids.includes(id),`source editing must be removed: ${id}`);
 assert(!/<textarea|contenteditable="true"|data-run-example/.test(html),'no static inline source editors');
-assert.equal([...html.matchAll(/class="mech-fenced-mech-block"/g)].length,7,'four connected EKF sections plus three native language examples');
-assert.equal([...html.matchAll(/class="mech-code-block-namespace"/g)].length,7,'seven standard label pills');
-assert.equal([...html.matchAll(/data-workshop-kernel-listing/g)].length,4,'all EKF sections share the same kernel host');
+assert.equal([...html.matchAll(/class="mech-fenced-mech-block"/g)].length,8,'four EKF stages, one scene table and three language examples');
+assert.equal([...html.matchAll(/class="mech-code-block-namespace"/g)].length,8,'eight standard label pills');
+assert.equal([...html.matchAll(/data-workshop-kernel-listing/g)].length,4,'four EKF listings use their live kernel bindings');
+assert.equal([...html.matchAll(/data-workshop-scene-listing/g)].length,1,'scene excerpt uses its separate resident program');
+assert(html.includes('CPU · Mech interpreter (WebAssembly)'),'identify the language and CPU execution mode');
+for(const id of ['landmark','camera-range','measurement-status'])assert(ids.includes(id),`missing camera control ${id}`);
 assert.match(html,/data-mech-output-region="application">\s*<section class="live-demo"[^>]*id="ekf-app"/,'working app belongs in the Output pane');
 assert(html.includes('data-mech-output-host="application"'),'app output survives REPL refresh');
 assert(html.includes('data-workshop-fullscreen'),'article opens existing output fullscreen');
@@ -74,7 +83,8 @@ for(const [,target,number] of citationReferences) {
   assert.equal(citationNumbers.get(target),number,`inline citation [${number}] disagrees with Works Cited target ${target}`);
 }
 const kernel=readFileSync(join(out,'source/ekf.mec'));
-assert.equal(createHash('sha256').update(kernel).digest('hex'),'f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b');
+assert.equal(createHash('sha256').update(kernel).digest('hex'),'69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689');
+assert.equal(readFileSync(join(out,'source/scene.mec'),'utf8'),readFileSync(join(root,'source/scene.mec'),'utf8'),'scene download is its actual executed source');
 assert.equal(kernel.toString(),readFileSync(join(root,'source/ekf.mec'),'utf8'));
 const article=readFileSync(join(out,'article.mec'),'utf8');
 assert(article.includes(`${publishedUrl}#live-demo`),'download must link to the workshop demo');

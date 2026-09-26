@@ -28,6 +28,9 @@ mod mixed_compute;
 #[cfg(feature = "browser_compute")]
 mod kernel;
 
+#[cfg(all(feature = "browser_project_core", feature = "browser_host_scene"))]
+mod scene_program;
+
 #[cfg(feature = "browser_project_core")]
 pub use project::*;
 
@@ -35,4 +38,6 @@ pub use project::*;
 pub use mixed_compute::*;
 #[cfg(feature = "browser_compute")]
 pub use kernel::*;
+#[cfg(all(feature = "browser_project_core", feature = "browser_host_scene"))]
+pub use scene_program::*;
 pub use repl::*;

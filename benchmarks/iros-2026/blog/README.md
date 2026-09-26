@@ -10,14 +10,15 @@ review and authorization step.
 
 - `article.mec` is the authoring template. `BLOG...` tokens are build-time
   insertion points, not public source examples.
-- `source/ekf.mec`, `behavior.mec`, `functions.mec`, and `matching.mec` are the
+- `source/ekf.mec`, `scene.mec`, `behavior.mec`, `functions.mec`, and `matching.mec` are the
   complete downloadable Mech examples. The displayed listings retain their
   computational lines. The EKF is presented as four connected stages with
   explanatory prose; its downloadable source remains one compute program.
 - `standard-examples.mjs` expands the listings into native, read-only Mech
   fences before the complete document is parsed. Behavior, functions, and
   matching use root scope; all four EKF stages use the same native `mech:ekf`
-  namespace. The behavior
+  namespace. A `mech:scene` fence displays a table extracted from the separately
+  executed camera and scene program. The behavior
   listing adds a commented example invocation, `#Robot(:paused, :run)`; its download is
   unchanged. The three root-scope filename pills use native namespace-label
   markup only as presentation; each EKF pill identifies its shared namespace
@@ -64,10 +65,11 @@ review and authorization step.
   the actual Mech WASM kernel and the demo's sensor source. JavaScript draws
   the resulting state and covariance; it does not implement another EKF.
   This retained diagram is not the current article hero. The article uses
-  `vendor/pittsburgh-hero.jpg`, a CC0 photograph with a light CSS color treatment whose
+  `vendor/pittsburgh-hero.jpg`, an Unsplash-licensed photograph with a warm CSS color treatment whose
   provenance is in `vendor/PITTSBURGH.md`.
-- `app.mjs` connects the browser controls to Mech; `drawing.mjs` supplies
-  synthetic observations and SVG rendering; `verify.mjs` checks CPU/GPU parity.
+- `app.mjs` connects the browser controls to Mech; `drawing.mjs` binds inputs
+  to the resident Mech scene and forwards its tables to the shared SVG renderer;
+  `verify.mjs` checks CPU/GPU parity.
 - `dist/index.html` is the deployable page. `dist/article.mec` is the expanded,
   downloadable article with the complete Mech and Rust listings, rather than
   the template tokens. Its live UI is supplied by the accompanying browser
@@ -112,7 +114,7 @@ license. The adapted footer card identifies the workshop's v0.4.0-beta build
 and links to its build manifest; it does not claim that a matching public
 release or repository tag has been published.
 
-The Pittsburgh hero is a photograph by Cbaile19 released under CC0.
+The Pittsburgh hero is a photograph by Georg Pflueger under the Unsplash license.
 [vendor/PITTSBURGH.md](vendor/PITTSBURGH.md) records the source, license,
 resize, and CSS treatment. The builder copies that notice to
 `dist/assets/PITTSBURGH.md` beside the image.
@@ -155,8 +157,8 @@ CARGO_BUILD_JOBS=2 \
   --no-default-features --features browser_compute_canary --offline
 ```
 
-The crate's release metadata disables `wasm-opt`. The rebuilt v0.4.0-beta WASM
-SHA-256 is
+The crate's release metadata disables `wasm-opt`. The earlier v0.4.0-beta WASM
+used before the scene integration had SHA-256
 `18224e2cf04b246148029bff7bf498ed77c92780495a5e7cfc493a9cd94a8871`.
 Its actual `:version` response reports `0.4.0-beta` for all 13 installed
 product, library, and host components; these values come from compiled Rust
@@ -235,7 +237,7 @@ page.
 The current presentation source has SHA-256:
 
 ```text
-f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b
+69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689
 ```
 
 `build.mjs` and `verify.mjs` enforce this identity. The source includes every
@@ -248,8 +250,13 @@ source used to collect the archived timing or source-count measurements.
 The September 26 source revision infers all matrix dimensions, uses the
 poster-style Unicode mathematical names in the actual source, and writes
 column vectors as transposed rows, such as `[0 1 1]'`. The public numerical
-exports are `μ` and `Σ`; the live input names `bearing`, `v`, and `w` are
-unchanged. Element-kind annotations
+exports are `μ` and `Σ`. The live camera revision binds `bearing`, `u`, and
+`m`; `u` contains velocity, angular velocity, and measurement availability,
+and `m` is the selected known landmark. Packing these controls keeps the GPU
+program within eight storage bindings. The preceding camera-free revision was
+`f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b`.
+The symmetry tolerance now uses vector gathers instead of three separate
+scalar expressions. Element-kind annotations
 remain where they are needed to select f32 arithmetic; mixing one f32 literal
 with otherwise untyped f64 literals is not supported by the current compiler.
 The preceding presentation source was identified by SHA-256
@@ -286,7 +293,7 @@ submits them through `MechBrowserCompute.Device`. The browser supplies its
 platform GPU backend. This is not a fresh measurement of the native Metal
 chart.
 
-The host binds `bearing`, `v`, and `w`; other source values are constants for
+The host binds `bearing`, `u`, and `m`; the other source values are constants for
 the selected compilation. Three live inputs give the GPU path eight storage
 bindings. The displayed pose and covariance are the first filter in the
 selected batch. Backend/batch changes reset the episode; cross-device state
@@ -296,7 +303,7 @@ there are no inline kernel, function, or matching editors.
 The behavior, function, and matching fences execute in the resident root
 scope. The EKF's four native named fences belong to the separate checked
 kernel integration; only their final publication-stage output is populated
-from the numerical host's actual accepted state. All seven native blocks
+from the numerical host's actual accepted state. All eight native blocks
 retain their formatter-generated IDs.
 The full expanded Mechdown source, encoded AST, and rendered listings come
 from one parse. The EKF's stage headings become introductory prose between
@@ -308,9 +315,14 @@ altering its download or the demo's initial mode.
 
 The EKF and behavior transitions execute in Mech. The host passes named mode
 and event atoms into the typed Mech state machine and uses its result to schedule
-updates. `drawing.mjs` is hand-written JavaScript for sensor simulation and SVG
-drawing, not a second EKF implementation and not hidden executable Mech drawing
-code. Its source is linked from the expandable demo details. Functions,
+updates. `source/scene.mec` implements sensor simulation, geometry, trails,
+camera range, and drawing tables in a resident Mech program. `drawing.mjs`
+only binds numeric inputs to `WasmSceneProgram` and forwards its scene snapshot
+to the shared `MechDocumentController.renderSceneSvg` renderer. It prepares
+measurements without advancing state, then commits truth and trails only after
+the numerical kernel accepts its turn. Missing camera measurements set the
+filter gain to zero for prediction-only operation. Its source is linked from
+the expandable demo details. Functions,
 matching, and the behavior example are registered in the resident document
 REPL; readers can submit further expressions there.
 The demo's scheduling state machine uses a separate `WasmRepl` session so
@@ -322,7 +334,40 @@ readback. It uses up to the latest 60 accepted turns after five warmup turns.
 These correlated animation samples are not independent benchmark trials;
 FPS additionally reflects browser scheduling and display limits.
 
-## Verification
+## Current scene integration verification
+
+`evidence/scene-browser-verification.json` records the browser run for the
+camera/scene integration and vectorized covariance tolerance. It identifies
+the exact numerical source, scene source, and WASM module. Chrome exercised
+real WebGPU and the Mech interpreter at 1, 256, 4,096, and 65,536 filters.
+The test covers range loss, prediction-only turns, landmark changes, range
+reentry, scene styling, rejected-turn retention, and Reset. Its independent
+256-filter parity check covers 20 turns, four without measurements, followed
+by whole-batch rollback and recovery checks.
+
+Reproduce against an isolated Chrome remote-debugging session and local HTTP
+preview (port defaults shown; no browser is launched by the test):
+
+```sh
+IROS_CDP_PORT=9227 IROS_URL=http://127.0.0.1:8768/index.html \
+  node benchmarks/iros-2026/blog/test-browser-scene.mjs
+node benchmarks/iros-2026/blog/test-document-runtime.mjs
+node benchmarks/iros-2026/blog/test-app-turns.mjs
+node benchmarks/iros-2026/blog/test-drawing.mjs
+node hosts/scene/tests/document-renderer.mjs
+```
+
+`test-app-turns.mjs` isolates the browser host's error paths, including a
+display failure after numerical acceptance; that condition must not increment
+the integrity-rejection count or claim rollback. It is a mocked host regression,
+separate from the real browser and WASM tests. The source-integration notes in
+`evidence/scene-source-integration.md` describe native scene tests and current
+source-language limitations. None of these checks reruns the archived benchmarks.
+Additional tested source-cleanup candidates are recorded in
+`evidence/vectorization-audit.md`; those audit candidates have not been applied
+to the live source or archived experiments.
+
+## Earlier numerical bridge verification
 
 The native bridge tests passed all three cases, and the finite-endpoint
 emitter/Naga regressions passed both cases during this implementation. The

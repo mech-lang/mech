@@ -9,7 +9,7 @@ This record preserves the earlier browser checks and distinguishes them from
 the newer read-only native-block/resident-REPL integration below. Historical
 source-editor checks describe a superseded build, not controls present in the
 current article. Do not treat an earlier browser pass as validation of a
-subsequent rebuilt page. The current-source records are the final two sections;
+subsequent rebuilt page. The current camera/scene record is the final section;
 earlier sections retain their original source and runtime identities.
 
 ## Source and environment
@@ -367,7 +367,7 @@ EKF stability, or long-horizon CPU/GPU numerical equivalence. Diagnostic
 elapsed times are not benchmark measurements. Article build/browser layout
 and production publication remain separate checks.
 
-## Current page and embedding verification
+## Earlier stabilized page and embedding verification
 
 The rebuilt page's actual verification button passed with source `f18e37…`
 and WASM `18224e2c…`. It dispatched WebGPU, compared 20 paired turns and
@@ -394,3 +394,57 @@ The shared fullscreen handlers passed simulated unsupported/rejected native
 requests, native entry, and external exit. In the in-app browser, the native
 fullscreen session did not persist after the automated click; successful
 interactive fullscreen on another browser is not claimed by this record.
+
+## Current Mech camera, scene tables, and vectorized tolerance
+
+The local browser run on September 26 used Chrome 153.0.8010.53 and real
+WebGPU. Its complete report is
+[scene-browser-verification.json](evidence/scene-browser-verification.json).
+The checked artifacts are:
+
+- Numerical source: `69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689`.
+- Camera/scene source: `dd99c4bea1ecdaeab20d9d1d6bb0889ca9c511a04df653e0959fc201d4f2c87d`.
+- WASM: `ba2fe6330931fdeb32f0417dfd903185cee392d1bb4bbae026876415168ba880`.
+
+Eight UI cases passed: CPU and GPU, each at 1, 256, 4,096, and 65,536 filters.
+Every case checked an accepted turn, camera range loss, a prediction-only turn,
+a selected-landmark change and correction, injected last-lane rejection, and
+Reset. Editing a control did not advance the numerical state or trail;
+rejection preserved both. The actual scene snapshot used the dotted muted-gold
+trail and gray heading requested for the figure. No uncaught browser exceptions
+were recorded. Layout checks at 390, 900, and 1,920 pixels found no page-level
+horizontal overflow. Visual inspection confirmed the taller, warmer Pittsburgh
+photograph and removal of the pink application-output border.
+
+The independent 256-filter verifier passed 20 paired turns, including four
+prediction-only turns and a landmark change, then fault injection and recovery.
+Maximum absolute CPU/GPU differences were `1.9073486328125e-5` for the mean and
+`5.340576171875e-5` for covariance, within the existing componentwise tolerance.
+Whole-batch accepted state was bitwise unchanged after rejection on both paths,
+and the GPU publication buffer did not advance. All 256 recovered filters were
+compared. These are correctness checks, not new benchmark samples.
+
+The native numerical regressions compare the new gathered/vectorized tolerance
+with its preceding scalar form bit for bit, including fault and recovery
+behavior. Elementwise `abs` lowering is covered for scalar, row, column, and
+non-square matrix shapes. The built WASM document test executes the actual Mech
+camera and scene source for 40 turns and preserves the separate historical
+source-equivalence fixtures. Scene-specific native checks and discovered source
+limitations are described in
+[scene-source-integration.md](evidence/scene-source-integration.md).
+
+The browser-host error regression covers 14 CPU/GPU scenarios. Preparation
+errors and display errors after numerical publication stop the application and
+require Reset; they do not count as integrity rejection or claim numerical
+rollback. The one-filter case also exercises the runtime's dynamic-matrix
+fallback when dependency feature unification selects an unavailable fixed
+matrix backing. No feature profile or unsafe-policy exemptions were added.
+
+Final native checks passed all eight scene/interface tests and all seven
+numerical-kernel tests under `browser_compute_canary`; standard and full
+distribution-contract checks also passed. The generic scene renderer passed
+its JavaScript regression, and the shared application-output host, TOC,
+presentation mode, language examples, and mobile-chart tests passed.
+The three exact downloadable Rust programs also compiled and ran against this
+source: JIT embedding, AOT bundle production, and bundle loading. Their four
+exported states agreed within f32 tolerance.

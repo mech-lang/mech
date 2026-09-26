@@ -157,6 +157,16 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
   width: auto;
 }
 
+.hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(20px, 3cqw, 36px);
+}
+
+.hero h1 {
+  font-size: clamp(34px, 4.2cqw, 52px);
+  text-wrap: balance;
+}
+
 .hero-visual {
   min-width: 0;
 }
@@ -308,7 +318,7 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
   }
 
   .hero h1 {
-    font-size: clamp(34px, 7.5vw, 56px);
+    font-size: clamp(32px, 5.7cqw, 48px);
   }
 
   .mech-hero-img figure img {

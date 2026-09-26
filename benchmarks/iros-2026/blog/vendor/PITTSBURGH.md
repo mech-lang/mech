@@ -1,15 +1,15 @@
 # Pittsburgh hero photograph
 
-- Photograph: *Pittsburgh skyline from West End Overlook, 2021-11-17, 03.jpg*
-- Photographer: [Cbaile19](https://commons.wikimedia.org/wiki/User:Cbaile19)
-- Date: November 17, 2021
-- Source and license declaration: [Wikimedia Commons file page](https://commons.wikimedia.org/wiki/File:Pittsburgh_skyline_from_West_End_Overlook,_2021-11-17,_03.jpg)
-- License: [CC0 1.0 Universal Public Domain Dedication](https://creativecommons.org/publicdomain/zero/1.0/)
-- Original: https://upload.wikimedia.org/wikipedia/commons/0/05/Pittsburgh_skyline_from_West_End_Overlook%2C_2021-11-17%2C_03.jpg
+- Photograph: *A view of a city and a bridge over a river*, Pittsburgh
+- Photographer: Georg Pflueger
+- Published: April 19, 2022
+- Source: [Unsplash photograph page](https://unsplash.com/photos/a-view-of-a-city-and-a-bridge-over-a-river-EEZ1OTVVt8M)
+- License: [Unsplash License](https://unsplash.com/license), allowing free use and modification
+- Original: https://images.unsplash.com/photo-1650361866009-cfbb15acec1e
 
-The original 9,820 × 3,200 JPEG was downloaded on September 26, 2026 and
-resized to 2,560 pixels wide for this page. The photograph has not been
-generatively altered. The page applies a restrained saturation, contrast,
-and warmth adjustment using CSS; the downloaded image retains its colors.
-The full panorama is visible on narrow screens, while the desktop hero can
-crop the sides to fit its shared blog layout. Credit is included in the footer.
+The original is 6,000 × 4,000 pixels. A 2,400 × 1,600 JPEG was downloaded on
+September 26, 2026 for this page. The photograph has not been generatively
+altered. CSS presents a centered 4:3 crop and increases saturation, contrast,
+brightness, and warmth; the downloaded image retains its original colors.
+The taller composition preserves the central skyline and Fort Pitt Bridge
+without the previous panorama's severe side cropping. Credit is in the footer.

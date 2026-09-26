@@ -1,7 +1,7 @@
 <section class="live-demo" aria-labelledby="live-title" id="ekf-app">
-  <div class="demo-heading"><div><p class="kicker" id="source-origin">Executing the article's EKF source</p><h3 id="live-title">Bearing-only localization</h3></div><span id="runtime-status" role="status">Loading Rust / WebAssembly runtime…</span></div>
+  <div class="demo-heading"><div><p class="kicker" id="source-origin">Executing the article's Mech source</p><h3 id="live-title">Bearing-only localization</h3></div><span id="runtime-status" role="status">Loading the Mech WebAssembly runtime…</span></div>
   <div class="demo-controls">
-    <label>Compute backend<select id="backend"><option value="cpu">CPU · Rust / WebAssembly</option><option value="gpu" disabled>GPU · WebGPU (checking availability)</option></select></label>
+    <label>Compute backend<select id="backend"><option value="cpu">CPU · Mech interpreter (WebAssembly)</option><option value="gpu" disabled>GPU · Mech / WebGPU (checking availability)</option></select></label>
     <label>Independent filters<select id="instances"><option value="1">1</option><option value="256">256</option><option value="4096" selected>4,096</option><option value="65536">65,536</option></select></label>
     <button id="run" disabled>Run</button><button id="pause" disabled>Pause</button><button id="step" disabled>One turn</button><button id="reset" disabled>Reset</button>
   </div>
@@ -19,7 +19,10 @@
       <p class="small" id="sample-window">Timing begins after five completed warmup turns.</p>
     </div>
   </div>
+  <p class="small" id="measurement-status" role="status">Preparing the Mech camera model…</p>
   <div class="sensor-controls">
+    <label>Observed landmark<select id="landmark"><option value="1">Landmark 1</option><option value="2">Landmark 2</option><option value="3">Landmark 3</option><option value="4">Landmark 4</option></select></label>
+    <label>Camera maximum range <output id="camera-range-label">100</output><input id="camera-range" type="range" min="10" max="200" step="1" value="100"></label>
     <label>Forward velocity <output id="velocity-label">1.0</output><input id="velocity" type="range" min="0" max="12" step="0.1" value="1"></label>
     <label>Angular velocity <output id="omega-label">0.015</output><input id="omega" type="range" min="-0.4" max="0.4" step="0.001" value="0.015"></label>
     <label>Bearing noise scale <output id="noise-label">0.02</output><input id="noise" type="range" min="0" max="0.3" step="0.01" value="0.02"></label>
@@ -32,7 +35,7 @@
   <p class="small">The kernel checks the raw covariance update and stores its symmetric part. A constraint violation stops the episode without publishing the candidate; Reset starts from the source initial state. The Reactive section describes the long-run symmetry fault that led to this formulation.</p>
   <details><summary>Timing and drawing support</summary>
     <p>FPS includes animation scheduling and is capped by the display. Completed-turn time includes input binding, execution, validation, synchronization, and one filter's state readback; it excludes drawing and compilation. Throughput is batch size divided by median turn time. The summary uses the latest 60 accepted turns after five warmups, not independent benchmark trials.</p>
-    <p><a href="source/ekf.mec">Download the live kernel</a> · <a href="source/behavior.mec">Robot state machine</a> · <a href="assets/drawing.mjs">Drawing and sensor simulation support</a> · <a href="assets/app.mjs">Browser host integration</a></p>
+    <p><a href="source/ekf.mec">Download the live kernel</a> · <a href="source/scene.mec">Mech camera and drawing tables</a> · <a href="source/behavior.mec">Robot state machine</a> · <a href="assets/app.mjs">Browser host integration</a></p>
   </details>
   <pre id="runtime-error" class="error" role="alert" hidden></pre>
 </section>

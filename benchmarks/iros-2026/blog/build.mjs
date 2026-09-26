@@ -24,7 +24,7 @@ for(const [name,path] of [['logo.png','img/logo.png'],['FiraCode-Regular.ttf','f
   }
   copyFileSync(dest,join(out,'assets',name));
 }
-const expected='f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b';
+const expected='69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689';
 if(hash(join(root,'source/ekf.mec'))!==expected) throw new Error('The presentation EKF has changed; update its provenance and tests intentionally.');
 const renderer=join(root,'render/target/debug/mech-iros-blog-render');
 if(!existsSync(renderer)) throw new Error('Build render/Cargo.toml first.');

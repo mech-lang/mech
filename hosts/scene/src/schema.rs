@@ -40,12 +40,22 @@ pub struct LineElement {
 pub struct LineStripElement {
     pub id: String,
     pub positions: Vec<[f64; 2]>,
+    /// Interior paint. Omitted scene fields and older snapshots remain unfilled.
+    #[cfg_attr(feature = "rich-output", serde(default = "unfilled_paint"))]
+    pub fill: String,
     pub stroke: String,
     pub stroke_width: f64,
+    /// Alternating dash and gap lengths in scene units. Empty means solid.
+    #[cfg_attr(feature = "rich-output", serde(default))]
+    pub stroke_dasharray: Vec<f64>,
     pub line_cap: String,
     pub line_join: String,
     pub opacity: f64,
     pub closed: bool,
+}
+
+fn unfilled_paint() -> String {
+    "none".to_string()
 }
 
 #[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
@@ -434,7 +444,7 @@ fn point_set_circles(value: &CanonicalNode) -> MResult<Vec<CircleElement>> {
         return Ok(circles);
     }
     if value.is_table() {
-        let records = table_records(&value, "point-set", POINT_SET_FIELDS)?;
+        let records = table_records(&value, "point-set", POINT_SET_FIELDS, POINT_SET_FIELDS)?;
         let mut circles = Vec::new();
         for (row, record) in records.iter().enumerate() {
             circles.extend(point_set_from_record(record).map_err(|error| {
@@ -549,18 +559,23 @@ fn line_strips_from_value(value: &CanonicalNode) -> MResult<Vec<LineStripElement
         return tuple.iter().map(line_strip_from_record_value).collect();
     }
     if value.is_table() {
-        return table_records(&value, "line-strip", LINE_STRIP_FIELDS)?
-            .iter()
-            .enumerate()
-            .map(|(row, record)| {
-                line_strip_from_record(record).map_err(|error| {
-                    scene_error(
-                        "SceneSchema",
-                        format!("line-strip table row {}: {error:?}", row + 1),
-                    )
-                })
+        return table_records(
+            &value,
+            "line-strip",
+            LINE_STRIP_REQUIRED_FIELDS,
+            LINE_STRIP_FIELDS,
+        )?
+        .iter()
+        .enumerate()
+        .map(|(row, record)| {
+            line_strip_from_record(record).map_err(|error| {
+                scene_error(
+                    "SceneSchema",
+                    format!("line-strip table row {}: {error:?}", row + 1),
+                )
             })
-            .collect();
+        })
+        .collect();
     }
     if value.as_record().is_some() {
         return Ok(vec![line_strip_from_record_value(&value)?]);
@@ -574,11 +589,24 @@ fn line_strips_from_value(value: &CanonicalNode) -> MResult<Vec<LineStripElement
     ))
 }
 
-const LINE_STRIP_FIELDS: &[&str] = &[
+const LINE_STRIP_REQUIRED_FIELDS: &[&str] = &[
     "id",
     "positions",
     "stroke",
     "stroke-width",
+    "line-cap",
+    "line-join",
+    "opacity",
+    "closed",
+];
+
+const LINE_STRIP_FIELDS: &[&str] = &[
+    "id",
+    "positions",
+    "fill",
+    "stroke",
+    "stroke-width",
+    "stroke-dasharray",
     "line-cap",
     "line-join",
     "opacity",
@@ -631,16 +659,48 @@ fn line_strip_from_record(record: &CanonicalRecord) -> MResult<LineStripElement>
     validate_line_cap(&id, &line_cap)?;
     let line_join = required_string(record, "line-join", &format!("line-strip `{id}` line-join"))?;
     validate_line_join(&id, &line_join)?;
+    let fill = record_value(record, "fill")
+        .map(|_| required_paint(record, "fill", "line-strip.fill"))
+        .transpose()?
+        .unwrap_or_else(unfilled_paint);
+    let stroke_dasharray = record_value(record, "stroke-dasharray")
+        .map(|value| stroke_dasharray_from_value(value, &id))
+        .transpose()?
+        .unwrap_or_default();
     Ok(LineStripElement {
         id,
         positions,
+        fill,
         stroke: required_paint(record, "stroke", "line-strip.stroke")?,
         stroke_width,
+        stroke_dasharray,
         line_cap,
         line_join,
         opacity,
         closed: required_bool(record, "closed", "line-strip.closed")?,
     })
+}
+
+fn stroke_dasharray_from_value(value: &CanonicalNode, id: &str) -> MResult<Vec<f64>> {
+    let label = format!("line-strip `{id}` stroke-dasharray");
+    let matrix = matrix_f64_values(value, &label)?;
+    if matrix.rows > 1 && matrix.columns > 1 {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("{label} must be a row or column vector"),
+        ));
+    }
+    if matrix
+        .values
+        .iter()
+        .any(|length| !length.is_finite() || *length < 0.0)
+    {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("{label} lengths must be finite and non-negative"),
+        ));
+    }
+    Ok(matrix.values)
 }
 
 struct F64MatrixValues {
@@ -761,6 +821,7 @@ fn table_records(
     table: &CanonicalNode,
     kind: &str,
     required_fields: &[&str],
+    allowed_fields: &[&str],
 ) -> MResult<Vec<CanonicalRecord>> {
     let (ValueData::Table(table_data), SchemaBody::Table { columns, .. }) =
         (&table.data, &table.schema)
@@ -777,7 +838,7 @@ fn table_records(
     }
     let rows = table_data.column(0).map(sequence_len).unwrap_or_default();
     for (column_index, column) in columns.iter().enumerate() {
-        if !required_fields.contains(&column.name.as_str()) {
+        if !allowed_fields.contains(&column.name.as_str()) {
             return Err(scene_error(
                 "SceneSchema",
                 format!("{kind} table unknown column `{}`", column.name),

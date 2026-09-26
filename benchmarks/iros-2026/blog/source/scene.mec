@@ -1,0 +1,201 @@
+Bearing-only Camera and Scene
+===============================================================================
++> math/*
+
+The robot carries a simulated bearing camera. Each row of `landmarks` is a known
+point that the camera can observe; `camera-index` chooses that point. The camera
+reports its direction relative to the robot's heading, matching the displayed
+bearing-only EKF. Measurements are used only within the configured camera range;
+outside it, the filter predicts without a bearing correction. This example does
+not perform image detection or occlusion.
+
+The browser supplies controls and the accepted filter state. A prepare turn uses
+`commit = 0` to calculate measurements without advancing the simulation. After
+the filter accepts those measurements, a `commit = 1` turn advances the truth and
+trails and publishes the scene. A rejected filter turn leaves these unchanged.
+
+@input := input://browser/frame{
+  :read(commit), :read(velocity), :read(omega), :read(noise),
+  :read(lane-indices), :read(estimate), :read(covariance), :read(camera-index),
+  :read(camera-range)
+}
+@scene := scene://view/frame{:write(replace)}
+
+Camera Measurements
+-------------------------------------------------------------------------------
+
+  π := 3.141592653589793
+  Δt := 0.1
+  commit := @input/commit
+  landmarks := [140.0 12.0
+                 35.0 110.0
+                170.0 110.0
+                 10.0 10.0]
+  camera-position := landmarks[@input/camera-index,:]'
+  ~truth := [55.0 25.0 0.4]'
+  ~accepted-turns := 0.0
+  candidate-truth := truth + Δt * [@input/velocity * cos(truth[3])
+                                  @input/velocity * sin(truth[3])
+                                  @input/omega]
+  camera-offset := camera-position - candidate-truth[1..=2]
+  camera-distance := sqrt(camera-offset[1] ^ 2 + camera-offset[2] ^ 2)
+  -- A zero/one range gate: include the boundary, with no distance fade.
+  camera-range-excess := camera-distance - @input/camera-range
+  camera-positive-excess := (camera-range-excess + abs(camera-range-excess)) / 2.0
+  measurement-visible := 1.0 - ceil(camera-positive-excess / (abs(camera-range-excess) + 1.0))
+  noiseless-bearing := atan2(camera-offset[2], camera-offset[1]) - candidate-truth[3]
+  lanes := @input/lane-indices'
+  readings := noiseless-bearing + @input/noise * sin((accepted-turns + 1.0) * 1.73 + (lanes - 1.0) * 0.37)
+  next-truth := truth + commit * (candidate-truth - truth)
+  next-accepted-turns := accepted-turns + commit
+
+Scene Geometry
+-------------------------------------------------------------------------------
+
+World positions use an upward y axis. The scene transform changes only the
+display coordinates; the measurements and filter retain world coordinates.
+
+  estimate := @input/estimate
+  covariance := @input/covariance
+  screen-origin := [0.0 130.0]'
+  screen-axis := [1.0 -1.0]'
+  truth-screen := screen-origin + screen-axis * next-truth[1..=2]
+  estimate-screen := screen-origin + screen-axis * estimate[1..=2]
+  landmark-screen := screen-origin' + landmarks * screen-axis'
+  landmark-distance := abs([1.0 2.0 3.0 4.0] - @input/camera-index)
+  landmark-selection := (1.0 - landmark-distance + abs(1.0 - landmark-distance)) / 2.0
+  landmark-opacity := 0.3 + 0.7 * landmark-selection
+  selected-landmark-screen := screen-origin + screen-axis * camera-position
+  display-camera-offset := camera-position - next-truth[1..=2]
+  display-camera-distance := sqrt(display-camera-offset[1] ^ 2 + display-camera-offset[2] ^ 2)
+  display-range-excess := display-camera-distance - @input/camera-range
+  display-positive-excess := (display-range-excess + abs(display-range-excess)) / 2.0
+  landmark-visible := 1.0 - ceil(display-positive-excess / (abs(display-range-excess) + 1.0))
+  camera-ray-opacity := 0.65 * landmark-visible
+  truth-heading := truth-screen + 3.1 * screen-axis * [cos(next-truth[3]) sin(next-truth[3])]'
+  estimate-heading := estimate-screen + 3.1 * screen-axis * [cos(estimate[3]) sin(estimate[3])]'
+  robot-samples := 0.0..=24.0
+  robot-angle := robot-samples' * (2.0 * π / 24.0)
+  robot-outline := 1.7 * cos(robot-angle ** [1.0 1.0] - [0.0 π / 2.0])
+  truth-outline := truth-screen' + robot-outline
+  estimate-outline := estimate-screen' + robot-outline
+  truth-heading-line := [truth-screen'; truth-heading']
+  estimate-heading-line := [estimate-screen'; estimate-heading']
+  camera-outline := truth-heading' + robot-outline * (0.6 / 1.7)
+
+The position covariance determines the ellipse's axes and orientation. Clamping
+tiny negative eigenvalues to zero is a drawing operation, not a filter update.
+
+  ellipse-a := covariance[1,1]
+  ellipse-b := (covariance[1,2] + covariance[2,1]) / 2.0
+  ellipse-c := covariance[2,2]
+  ellipse-root := sqrt(((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2)
+  ellipse-eigenvalues := (ellipse-a + ellipse-c) / 2.0 + [1.0 -1.0]' * ellipse-root
+  ellipse-nonnegative := (ellipse-eigenvalues + abs(ellipse-eigenvalues)) / 2.0
+  ellipse-axes := 2.0 * sqrt(ellipse-nonnegative)
+  ellipse-rotation := 0.5 * atan2(2.0 * ellipse-b, ellipse-a - ellipse-c)
+  ellipse-samples := 0.0..=64.0
+  ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
+  ellipse-phase := ellipse-angle ** [1.0 1.0] - [0.0 π / 2.0]
+  ellipse-points := cos(ellipse-phase) * ellipse-axes'
+  ellipse-direction := cos(ellipse-rotation - [0.0 π / 2.0])
+  ellipse-matrix := [ellipse-direction; -ellipse-direction[2] ellipse-direction[1]]
+  covariance-ellipse := estimate-screen' + (ellipse-points ** ellipse-matrix) * screen-axis'
+
+  trail-samples := 1.0..=350.0
+  ~truth-path := (trail-samples' * 0.0) ** [1.0 1.0] + [55.0 105.0]
+  ~estimate-path := (trail-samples' * 0.0) ** [1.0 1.0] + [55.0 105.0]
+  advanced-truth-path := [truth-path[2..=350,:]; truth-screen']
+  advanced-estimate-path := [estimate-path[2..=350,:]; estimate-screen']
+  next-truth-path := truth-path + commit * (advanced-truth-path - truth-path)
+  next-estimate-path := estimate-path + commit * (advanced-estimate-path - estimate-path)
+
+Scene Tables
+-------------------------------------------------------------------------------
+
+The generic scene host draws these tables. Robot geometry, sensor locations,
+covariance, and trail history are computed by Mech rather than by the renderer.
+
+  scene-circles :=
+    | id<string>   x<f64>               y<f64>               radius<f64> fill<*>  stroke<*> stroke-width<f64> opacity<f64>       |
+    | "target-1"   landmark-screen[1,1] landmark-screen[1,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[1] |
+    | "target-2"   landmark-screen[2,1] landmark-screen[2,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[2] |
+    | "target-3"   landmark-screen[3,1] landmark-screen[3,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[3] |
+    | "target-4"   landmark-screen[4,1] landmark-screen[4,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[4] |
+    | "camera-range" truth-screen[1]   truth-screen[2]      @input/camera-range "none" 0x687780 0.35              0.45               |
+
+  scene-lines :=
+    | id<string>    x1<f64>              y1<f64>              x2<f64>                     y2<f64>                     stroke<f64> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64> |
+    | "grid-x-0"    0.0                  0.0                  0.0                         130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-10"   10.0                 0.0                  10.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-20"   20.0                 0.0                  20.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-30"   30.0                 0.0                  30.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-40"   40.0                 0.0                  40.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-50"   50.0                 0.0                  50.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-60"   60.0                 0.0                  60.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-70"   70.0                 0.0                  70.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-80"   80.0                 0.0                  80.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-90"   90.0                 0.0                  90.0                        130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-100"  100.0                0.0                  100.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-110"  110.0                0.0                  110.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-120"  120.0                0.0                  120.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-130"  130.0                0.0                  130.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-140"  140.0                0.0                  140.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-150"  150.0                0.0                  150.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-160"  160.0                0.0                  160.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-170"  170.0                0.0                  170.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-180"  180.0                0.0                  180.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-190"  190.0                0.0                  190.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-x-200"  200.0                0.0                  200.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-0"    0.0                  0.0                  200.0                       0.0                         0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-10"   0.0                  10.0                 200.0                       10.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-20"   0.0                  20.0                 200.0                       20.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-30"   0.0                  30.0                 200.0                       30.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-40"   0.0                  40.0                 200.0                       40.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-50"   0.0                  50.0                 200.0                       50.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-60"   0.0                  60.0                 200.0                       60.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-70"   0.0                  70.0                 200.0                       70.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-80"   0.0                  80.0                 200.0                       80.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-90"   0.0                  90.0                 200.0                       90.0                        0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-100"  0.0                  100.0                200.0                       100.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-110"  0.0                  110.0                200.0                       110.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-120"  0.0                  120.0                200.0                       120.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "grid-y-130"  0.0                  130.0                200.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
+    | "camera-ray"  truth-screen[1]      truth-screen[2]      selected-landmark-screen[1] selected-landmark-screen[2] 0x687780    0.3               "round"          camera-ray-opacity 0.0 0.0 0.0 |
+
+  scene-line-strips :=
+    | id<string>        positions<*>       fill<*>  stroke<*> stroke-width<f64> stroke-dasharray<*> line-cap<string> line-join<string> opacity<f64> closed<bool> |
+    | "ellipse-fill"    covariance-ellipse 0xc08cc7 "none"    0.0               [0.0]               "round"          "round"           0.3          true         |
+    | "covariance"      covariance-ellipse "none"   0xc08cc7 0.55              [0.0]               "round"          "round"           1.0          true         |
+    | "truth-path"      next-truth-path    "none"   0x78858d 0.6               [0.1 1.5]           "round"          "round"           1.0          false        |
+    | "estimate-path"   next-estimate-path "none"   0xad9159 0.6               [0.1 1.5]           "round"          "round"           1.0          false        |
+    | "truth"           truth-outline      0x10171a 0xacb9c1 0.45              [0.0]               "round"          "round"           1.0          true         |
+    | "estimate"        estimate-outline   0xf6c04e 0xf6c04e 0.45              [0.0]               "round"          "round"           1.0          true         |
+    | "truth-heading"   truth-heading-line "none"   0x687780 0.7               [0.0]               "round"          "round"           1.0          false        |
+    | "estimate-heading" estimate-heading-line "none" 0x687780 0.7            [0.0]               "round"          "round"           1.0          false        |
+    | "camera"          camera-outline     0x62b4a4 "none"    0.0               [0.0]               "round"          "round"           1.0          true         |
+
+  font := "Inter, ui-sans-serif, system-ui, sans-serif"
+  scene-texts :=
+    | id<string> x<f64>                        y<f64>                        fill<f64> font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>       value<string> |
+    | "label-1" landmark-screen[1,1] + 3.0    landmark-screen[1,2] + 1.0    0x91cabc  2.8            font                400              "start"             landmark-opacity[1] "Landmark 1" |
+    | "label-2" landmark-screen[2,1] + 3.0    landmark-screen[2,2] + 1.0    0x91cabc  2.8            font                400              "start"             landmark-opacity[2] "Landmark 2" |
+    | "label-3" landmark-screen[3,1] - 3.0    landmark-screen[3,2] + 1.0    0x91cabc  2.8            font                400              "end"               landmark-opacity[3] "Landmark 3" |
+    | "label-4" landmark-screen[4,1] + 3.0    landmark-screen[4,2] + 1.0    0x91cabc  2.8            font                400              "start"             landmark-opacity[4] "Landmark 4" |
+    | "scale"   5.0                           126.0                         0xa9bcc5  2.7            font                400              "start"             1.0                "World coordinates · grid spacing 10" |
+
+  field-presentation := {
+    width: 200.0
+    height: 130.0
+    background: 0x080d10<f64>
+    circles: scene-circles
+    lines: scene-lines
+    line-strips: scene-line-strips
+    texts: scene-texts
+  }
+
+  truth = next-truth
+  accepted-turns = next-accepted-turns
+  truth-path = next-truth-path
+  estimate-path = next-estimate-path
+  @scene/replace <- field-presentation

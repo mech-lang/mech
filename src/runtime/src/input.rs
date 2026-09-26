@@ -368,6 +368,16 @@ where
         ValueMatrix::DVector(reference) => exact!(reference),
         #[cfg(feature = "matrixd")]
         ValueMatrix::DMatrix(reference) => exact!(reference),
+        // Dependency feature unification can select a core fixed backing that
+        // this runtime profile does not expose. Preserve the exact matrix
+        // shape and values using the runtime's available dynamic backing.
+        #[cfg(feature = "matrixd")]
+        matrix => exact_matrix_input(
+            ValueMatrix::from_dynamic_vec(matrix.as_vec(), rows, columns),
+            rows,
+            columns,
+        ),
+        #[cfg(not(feature = "matrixd"))]
         _ => Err(input_error(
             "RuntimeHostInputValueUnsupported",
             "host matrix storage is unavailable in this runtime feature profile",
@@ -771,6 +781,36 @@ mod tests {
                 panic!("Boolean round trip changed its element schema");
             };
             assert_eq!(actual, values);
+        }
+    }
+
+    #[cfg(all(feature = "matrixd", feature = "f64"))]
+    #[test]
+    fn dynamic_profile_preserves_singleton_and_nonsquare_host_matrices() {
+        for (rows, columns) in [(1, 1), (1, 3), (3, 1), (2, 3)] {
+            let values = (0..rows * columns)
+                .map(|index| if index == 0 { -0.0 } else { index as f64 + 0.25 })
+                .collect::<Vec<_>>();
+            let value = RuntimeHostInputValue::F64Matrix {
+                rows,
+                columns,
+                values: values.clone(),
+            }
+            .into_value()
+            .unwrap();
+            let RuntimeHostInputValue::F64Matrix {
+                rows: actual_rows,
+                columns: actual_columns,
+                values: actual,
+            } = RuntimeHostInputValue::from_numeric_value(&value).unwrap()
+            else {
+                panic!("a 1x1 matrix must not collapse to a scalar");
+            };
+            assert_eq!((actual_rows, actual_columns), (rows, columns));
+            assert_eq!(
+                actual.iter().map(|value| value.to_bits()).collect::<Vec<_>>(),
+                values.iter().map(|value| value.to_bits()).collect::<Vec<_>>()
+            );
         }
     }
 

@@ -342,6 +342,8 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     ctx.set_transform(ratio, 0.0, 0.0, ratio, 0.0, 0.0)
         .map_err(|_| scene_error("BrowserScene", "failed to set canvas transform"))?;
     ctx.set_global_alpha(1.0);
+    ctx.set_line_dash(&js_sys::Array::new())
+        .map_err(|_| scene_error("BrowserScene", "failed to reset canvas line dash"))?;
     ctx.set_fill_style_str(&scene.background);
     ctx.fill_rect(0.0, 0.0, scene.width, scene.height);
     for c in &scene.circles {
@@ -390,7 +392,19 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         let Some(first) = strip.positions.first() else {
             continue;
         };
+        let dash = strip
+            .stroke_dasharray
+            .iter()
+            .map(|length| wasm_bindgen::JsValue::from_f64(*length))
+            .collect::<js_sys::Array>();
+        ctx.set_line_dash(&dash).map_err(|_| {
+            scene_error(
+                "BrowserScene",
+                format!("failed to set line-strip `{}` dash", strip.id),
+            )
+        })?;
         ctx.set_global_alpha(strip.opacity);
+        ctx.set_fill_style_str(&strip.fill);
         ctx.set_stroke_style_str(&strip.stroke);
         ctx.set_line_width(strip.stroke_width);
         ctx.set_line_cap(&strip.line_cap);
@@ -403,7 +417,12 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         if strip.closed {
             ctx.close_path();
         }
-        ctx.stroke();
+        if strip.fill != "none" {
+            ctx.fill();
+        }
+        if strip.stroke != "none" && strip.stroke_width > 0.0 {
+            ctx.stroke();
+        }
     }
     for text in &scene.texts {
         ctx.set_global_alpha(text.opacity);
@@ -478,9 +497,19 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         keep.insert(strip.id.clone());
         let el = upsert(&doc, &root, ns, "polyline", &strip.id)?;
         set_attr(&el, "points", &line_strip_points(strip))?;
-        set_attr(&el, "fill", "none")?;
+        set_attr(&el, "fill", &strip.fill)?;
         set_attr(&el, "stroke", &strip.stroke)?;
         set_attr(&el, "stroke-width", &strip.stroke_width.to_string())?;
+        set_attr(
+            &el,
+            "stroke-dasharray",
+            &strip
+                .stroke_dasharray
+                .iter()
+                .map(f64::to_string)
+                .collect::<Vec<_>>()
+                .join(" "),
+        )?;
         set_attr(&el, "stroke-linecap", &strip.line_cap)?;
         set_attr(&el, "stroke-linejoin", &strip.line_join)?;
         set_attr(&el, "opacity", &strip.opacity.to_string())?;

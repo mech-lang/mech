@@ -42,7 +42,7 @@ try {
   assert.strictEqual(runtime.default(), first, 'concurrent hosts must share the initialization promise');
   await first;
   assert.equal(requests.length, 1, 'one runtime download for both hosts');
-  for (const name of ['WasmDocument', 'WasmKernel', 'replInputAction', 'replStepLimit']) {
+  for (const name of ['WasmDocument', 'WasmKernel', 'WasmSceneProgram', 'replInputAction', 'replStepLimit']) {
     assert.equal(typeof runtime[name], 'function', `missing actual runtime export ${name}`);
   }
   document = runtime.WasmDocument.fromEncodedWithBundle(encoded, bundle.rootSpecifier, sourceMap, bundle.resolutions);
@@ -59,32 +59,40 @@ try {
   }
   const outputIds = [...html.matchAll(/class="mech-block-output" id="(\d+):(\d+)"/g)];
   const residentOutputs = outputIds.filter(([, , namespace]) => namespace === '0');
-  const kernelOutputs = outputIds.filter(([, , namespace]) => namespace !== '0');
+  const kernelOutput = html.match(/class="mech-block-output" id="(\d+):(\d+)" data-workshop-kernel-output/);
+  assert(kernelOutput, 'the live EKF output must retain its native namespace');
+  const kernelOutputs = outputIds.filter(([, , namespace]) => namespace === kernelOutput[2]);
+  const hostedOutputs = outputIds.filter(([, , namespace]) => namespace !== '0');
+  const sceneOutputs = hostedOutputs.filter(([, , namespace]) => namespace !== kernelOutput[2]);
   assert.equal(residentOutputs.length, 3, 'behavior, functions, and matching belong to the resident document');
   assert.equal(kernelOutputs.length, 4, 'the four named EKF sections belong to the live kernel host');
+  assert.equal(sceneOutputs.length, 1, 'the extracted scene table belongs to its separate Mech scene host');
   assert.equal((html.match(/data-workshop-kernel-output/g) || []).length, 1,
     'exactly one native output must be connected to the live kernel');
-  assert.equal((html.match(/data-workshop-kernel-listing/g) || []).length, 4,
-    'every named EKF listing must retain its kernel ownership marker');
+  assert.equal((html.match(/data-workshop-kernel-listing/g) || []).length, kernelOutputs.length,
+    'every EKF listing must retain its separate kernel marker');
+  assert.equal((html.match(/data-workshop-scene-listing/g) || []).length, sceneOutputs.length,
+    'the scene table must retain its separate scene-host marker');
   assert(kernelOutputs.some(([, id, namespace]) => html.includes(`id="${id}:${namespace}" data-workshop-kernel-output`)),
     'the live kernel marker must preserve the native EKF output identity');
   for (const [, id] of residentOutputs) {
     const output = document.renderedOutput(BigInt(id));
     assert(output?.blockHtml, `native document output ${id} did not render`);
   }
-  for (const [, id] of kernelOutputs) {
+  for (const [, id] of hostedOutputs) {
     assert.equal(document.renderedOutput(BigInt(id)), null,
-      'the document must not claim an independently hosted EKF output');
+      'the document must not claim independently hosted EKF or scene output');
   }
   const instances = 256;
   const inputs = { bearing: new Float32Array(instances).fill(-0.55), v: [1], w: [0.015] };
+  const liveInputs = { bearing: inputs.bearing, u: [1, 0.015, 1], m: [140, 12] };
   const historicalSource = readFileSync(join(root, 'evidence/ekf-before-symmetry-stabilization.mec'), 'utf8');
   assert.equal(createHash('sha256').update(historicalSource).digest('hex'),
     'cefe87b0ee184f1f30c34c66e626948f6d43236c8449dca0054a68e9e5cd932f',
     'historical Unicode equivalence fixture must remain unchanged');
   const kernel = runtime.WasmKernel.fromSource(historicalSource, inputs, ['μ', 'Σ']);
-  const liveKernel = runtime.WasmKernel.fromSource(readFileSync(join(out, 'source/ekf.mec'), 'utf8'), inputs, ['μ', 'Σ']);
-  let referenceKernel, candidateKernel;
+  const liveKernel = runtime.WasmKernel.fromSource(readFileSync(join(out, 'source/ekf.mec'), 'utf8'), liveInputs, ['μ', 'Σ']);
+  let referenceKernel, candidateKernel, simulation;
   try {
     const previousSource = readFileSync(join(root, '../../../src/wasm/tests/fixtures/paper-ekf.mec'), 'utf8');
     assert.equal(createHash('sha256').update(previousSource).digest('hex'),
@@ -113,19 +121,44 @@ try {
     };
     compare('source revision must preserve initial exported-state bits');
     compareStabilized('live Unicode stabilization must match the tested candidate initially');
-    const { RobotScene } = await import(pathToFileURL(join(out, 'assets/drawing.mjs')));
-    const simulation = { truth: [55, 25, 0.4], turn: 0 };
+    const rowMajorCovariance = values => [
+      values[0], values[3], values[6],
+      values[1], values[4], values[7],
+      values[2], values[5], values[8],
+    ];
+    simulation = runtime.WasmSceneProgram.fromSource(readFileSync(join(out, 'source/scene.mec'), 'utf8'), {
+      commit: 0, 'lane-indices': Float64Array.from({ length: instances }, (_, index) => index + 1),
+      velocity: 1, omega: 0.015, noise: 0.02, 'camera-index': 1, 'camera-range': 100,
+      estimate: Array.from(liveKernel.stateSample('μ', 0)),
+      covariance: { rows: 3, columns: 3, values: rowMajorCovariance(liveKernel.stateSample('Σ', 0)) },
+    });
+    simulation.turn({ commit: 0 });
     for (let turn = 0; turn < 40; turn++) {
-      const observation = RobotScene.prototype.observation.call(simulation, 1, 0.015, 0.02, instances);
-      referenceKernel.turn(observation.inputs);
-      kernel.turn(observation.inputs);
-      liveKernel.turn(observation.inputs);
-      candidateKernel.turn(observation.inputs);
+      simulation.turn({ commit: 0 });
+      const bearing = Float32Array.from(simulation.readNumbers('readings'));
+      assert.equal(bearing.length, instances, 'Mech must generate one camera reading per filter');
+      assert.equal(simulation.readNumbers('measurement-visible')[0], 1,
+        'the historical comparison must keep its original visible landmark');
+      // Archived kernels retain their original public inputs. Only the live
+      // kernel accepts the control/visibility vector and selected landmark.
+      const observation = { bearing, v: [1], w: [0.015] };
+      referenceKernel.turn(observation);
+      kernel.turn(observation);
+      liveKernel.turn({ bearing, u: [1, 0.015, 1], m: Float32Array.from(simulation.readNumbers('camera-position')) });
+      candidateKernel.turn(observation);
       compare(`source revision changed exported-state bits at accepted turn ${turn + 1}`);
       compareStabilized(`live stabilization differs from tested candidate at turn ${turn + 1}`);
-      simulation.truth = observation.next;
-      simulation.turn++;
+      simulation.turn({
+        commit: 1, estimate: Array.from(liveKernel.stateSample('μ', 0)),
+        covariance: { rows: 3, columns: 3, values: rowMajorCovariance(liveKernel.stateSample('Σ', 0)) },
+      });
+      assert.equal(simulation.readNumbers('accepted-turns')[0], turn + 1,
+        'the Mech scene must advance once for each accepted filter turn');
     }
+    const scene = simulation.scene();
+    const estimateTrail = scene.line_strips.find(strip => strip.id === 'estimate-path');
+    assert(estimateTrail, 'the published scene must include the Mech trail table');
+    assert.deepEqual(estimateTrail.stroke_dasharray, [0.1, 1.5]);
     for (const invalid of [NaN, Infinity, -Infinity]) {
       const accepted = currentSnapshot();
       const stabilizedAccepted = liveSnapshot();
@@ -150,6 +183,8 @@ try {
     assert(Array.from(kernel.state('μ')).every(Number.isFinite));
     assert.equal(kernel.stateSample('Σ', 0).length, 9);
   } finally {
+    simulation?.stop();
+    simulation?.free();
     referenceKernel?.free();
     candidateKernel?.free();
     liveKernel.free();
@@ -183,7 +218,7 @@ try {
   }
   assert.equal(invoke('iros-decision-probe := decision\niros-decision-probe', 'iros-decision-probe'), '&quot;correct&quot;',
     'the REPL must retain the article pattern matching result');
-  console.log(`PASS: 13 compiled v0.4.0-beta component versions, shared WASM initialization, resident document REPL, ${residentOutputs.length} resident output blocks, historical EKF equivalence and 256-filter stabilized-source equivalence/rollback/recovery.`);
+  console.log(`PASS: 13 compiled v0.4.0-beta component versions, shared WASM initialization, resident document REPL, ${residentOutputs.length} resident output blocks, Mech camera/scene execution, historical EKF equivalence and 256-filter stabilized-source equivalence/rollback/recovery.`);
 } finally {
   document?.stop();
   document?.free();

@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const definitions = [
   {token: 'BLOGEKFSOURCE', file: 'ekf.mec', language: 'mech', namespace: 'ekf'},
+  {token: 'BLOGSCENESOURCE', file: 'scene.mec', language: 'mech', namespace: 'scene'},
   {token: 'BLOGBEHAVIORSOURCE', file: 'behavior.mec', language: 'mech'},
   {token: 'BLOGFUNCTIONS', file: 'functions.mec', language: 'mech'},
   {token: 'BLOGMATCHING', file: 'matching.mec', language: 'mech'},
@@ -65,9 +66,9 @@ export function ekfSections(source) {
   const boundaries = [...normalized.matchAll(/^-- \((\d+)\) (.+)$/gm)];
   if (boundaries.length !== 4) throw new Error('Expected four EKF sections');
   const introductions = [
-    '**Initialization.** The imports, motion inputs, measurement covariance, and initial state establish the filter. Matrix shapes are inferred from their values.',
+    '**Initialization.** The imports, motion inputs, measurement covariance, and initial state establish the filter. The control vector `u` carries forward velocity, angular velocity, and a measurement-availability flag. Matrix shapes are inferred from their values.',
     '**Time update.** The motion model predicts the next pose, and its Jacobians propagate the state and process-noise covariance.',
-    '**Measurement update.** The observed bearing corrects the prediction. Wrapping the angular innovation avoids a discontinuity at a full revolution; the Joseph form updates the covariance.',
+    '**Measurement update.** An available bearing corrects the prediction. When the selected landmark is outside camera range, `visible` is zero and the gain is zero, giving a prediction-only update. Wrapping the angular innovation avoids a discontinuity at a full revolution; the Joseph form updates the covariance.',
     '**Checked publication.** Integrity predicates validate the candidate before the new mean and covariance replace the accepted state.',
   ];
   return boundaries.map((boundary, index) => ({
@@ -81,7 +82,7 @@ export function ekfSections(source) {
 }
 
 /**
- * Expand all seven source slots before the single native document render/encode.
+ * Expand the source slots before the single native document render/encode.
  * `downloads` contains the exact file contents the caller should publish at `href`.
  * `examples` stays in document order for strict native block decoration below.
  */
@@ -98,7 +99,7 @@ export function expandStandardExamples(article, {
   }
   const examples = [];
   const downloads = [];
-  const source = article.replace(/^BLOG(?:EKFSOURCE|BEHAVIORSOURCE|FUNCTIONS|MATCHING|RUSTJIT|RUSTBUILD|RUSTLOAD)[ \t]*$/gm, token => {
+  const source = article.replace(/^BLOG(?:EKFSOURCE|SCENESOURCE|BEHAVIORSOURCE|FUNCTIONS|MATCHING|RUSTJIT|RUSTBUILD|RUSTLOAD)[ \t]*$/gm, token => {
     const definition = byToken.get(token.trim());
     const {file, language} = definition;
     const path = language === 'mech' ? join(blogRoot, 'source', file)
@@ -111,6 +112,12 @@ export function expandStandardExamples(article, {
     if (/^\s*```/m.test(code)) throw new Error(`Nested fence in ${file}`);
     const href = `source/${file}`;
     downloads.push({file, href, source: downloadable});
+    if(file==='scene.mec') {
+      const table=original.match(/^  scene-circles :=[\s\S]*?(?=\n  scene-lines :=)/m)?.[0]?.trim();
+      if(!table) throw new Error('Missing live scene-circle table');
+      examples.push({...definition,label:'scene · drawing table',href});
+      return `\`\`\`mech:scene\n${table}\n\`\`\`\n\n(i)> [Download the complete camera and scene program](${href}). The table above is extracted from this file, which supplies the live drawing.`;
+    }
     if (file === 'ekf.mec') {
       const sections = ekfSections(original);
       for (const section of sections) examples.push({...definition, ...section, label: `ekf · ${section.title.toLowerCase()}`, href});
@@ -142,7 +149,8 @@ export function decorateStandardExamples(html, examples) {
     const pill = label => `<div class="mech-code-block-namespace"><a href="#${escapeHtml(id)}">${escapeHtml(label)}</a></div>`;
     if (example.namespace) {
       if (!body.includes(pill(example.namespace))) throw new Error(`Missing native namespace pill for ${example.file}`);
-      return block.replace(opening, opening.replace(' data-mech-source', ' data-workshop-kernel-listing data-mech-source'))
+      const marker=example.namespace==='ekf'?'data-workshop-kernel-listing':'data-workshop-scene-listing';
+      return block.replace(opening, opening.replace(' data-mech-source', ` ${marker} data-mech-source`))
         .replace(pill(example.namespace), pill(example.label))
         .replace(/(<div class="mech-block-output" id="[^"]+")>/,
           example.stage === 'publication' ? '$1 data-workshop-kernel-output>' : '$1 hidden>');

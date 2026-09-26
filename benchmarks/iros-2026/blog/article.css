@@ -1,8 +1,15 @@
 /* Workshop components only. Page typography, hero, headings, TOC, tables,
  * footnotes and scrolling come from the shared include/ stylesheets. */
 .workshop-links { display:flex; flex-wrap:wrap; gap:12px 28px; margin:0 0 36px; color:var(--mech-link); font-size:14px; }
-/* Color treatment only: preserve the licensed photograph's actual skyline. */
-.hero-visual .mech-image[src="assets/pittsburgh-hero.jpg"] { filter:saturate(.78) contrast(1.08) sepia(.09); object-position:48% center; }
+/* A photographic crop and warm color treatment, with no generated scenery. */
+.hero-visual .mech-image[src="assets/pittsburgh-hero.jpg"] {
+  width:100%;
+  height:auto;
+  aspect-ratio:4 / 3;
+  object-fit:cover;
+  object-position:50% 50%;
+  filter:saturate(1.22) contrast(1.07) brightness(1.04) sepia(.06);
+}
 .hero-visual .mech-hero-img:has(img[src="assets/pittsburgh-hero.jpg"]) { min-height:0; }
 /* Keep the article's shared gutters while the black footer spans its pane. */
 .workshop-footer-shell { --workshop-page-gutter:32px; flex-direction:column; align-items:center; justify-content:flex-start; padding-inline:0; }
@@ -35,7 +42,8 @@
 .demo-launcher-actions { display:flex; flex-wrap:wrap; gap:12px; }
 .demo-launcher button { font:inherit; color:var(--mech-brand); background:var(--mech-panel-raised); border:1px solid var(--mech-border); border-radius:5px; padding:9px 15px; cursor:pointer; }
 .demo-launcher button:focus-visible { outline:2px solid var(--mech-brand); outline-offset:3px; }
-.mech-output-region-application { container-type:inline-size; }
+.mech-output-region-application { container-type:inline-size; border:0; outline:0; box-shadow:none; }
+.mech-block-output { border:0; }
 .mech-output-region-application .live-demo { margin:0; padding:20px; border:0; border-radius:0; font-family:var(--font-family, sans-serif); }
 .mech-output-region-application .demo-heading .kicker { margin:0 0 8px; font-size:12px; }
 .mech-output-region-application .demo-heading h3 { margin:0 0 12px; }
