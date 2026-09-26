@@ -78,7 +78,7 @@ AOT emit/link/load was 202.029 ms; cached load median was 3.283 ms.
 - Rust control library: `rust-dylib/rust-ekf-dylib.rs`
 - Mech scalar AOT implementation: `../../hosts/gpu/src/batched/aot.rs`
 - Mech SIMD AOT implementation: `../../hosts/gpu/src/batched/simd_aot.rs`
-- Public Rust interface: `../../hosts/gpu/src/embed.rs`, re-exported as `mech::kernel`
+- Public Rust interface: `../../hosts/gpu/src/embed/mod.rs`, re-exported as `mech::kernel`
 - Runnable consumer and kernel: `../../examples/embedded_ekf/main.rs` and `ekf.mec`
 - Interface contract and test suite: `../../docs/embedding-kernels.md` and
   `../../tests/kernel_embedding.rs`

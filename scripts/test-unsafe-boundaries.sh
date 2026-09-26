@@ -83,6 +83,18 @@ UNSAFE_BOUNDARY_ROOT="$fixture" \
 grep -Fq "unsafe boundary audit passed" "$output"
 
 reset_fixture
+mkdir -p "$fixture/src/benchmarks"
+printf 'fn main() { unsafe {} }\n' > "$fixture/src/benchmarks/allowed.rs"
+printf 'src/benchmarks/allowed.rs|benchmark-kernel|owner|scoped fixture|exact benchmark boundary\n' > "$allowlist"
+printf 'fn main() { unsafe {} }\n' > "$fixture/src/benchmarks/unlisted.rs"
+expect_rejection "allowlisting a benchmark does not permit a sibling" "outside the exact allowlist: src/benchmarks/unlisted.rs"
+
+reset_fixture
+printf 'struct Marker;\nunsafe impl Send for Marker {}\n' > "$fixture/src/allowed.rs"
+printf 'src/allowed.rs|ffi|owner|fixture|global prohibition still applies\n' > "$allowlist"
+expect_rejection "exact allowlist does not override global prohibitions" "globally prohibited runtime architecture or manual safety promise"
+
+reset_fixture
 mkdir -p "$fixture/src/core/src"
 printf '%s\n' \
   'pub struct OperationId(u64);' \

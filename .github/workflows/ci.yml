@@ -125,6 +125,7 @@ jobs:
             --shard-index ${{ matrix.shard }} \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
+            scripts/tests/test_check_production_resident_routing.py \
             scripts/tests/test_check_no_retired_value_system.py \
             scripts/tests/test_check_r1_compatibility_closure.py \
             scripts/tests/test_check_r2_type_memory_boundary.py \

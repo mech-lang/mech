@@ -212,6 +212,7 @@ jobs:
             scripts/tests/test_run_python_unittest_shards.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
+            scripts/tests/test_check_production_resident_routing.py \
             scripts/tests/test_check_compiler_planning_quarantine.py
 
   memory-planner-contract:

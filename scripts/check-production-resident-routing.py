@@ -151,6 +151,45 @@ def feature_closure(features: dict[str, list[str]], root: str) -> set[str]:
     return closure
 
 
+def check_terminal_product_closure(root_manifest: dict, terminal_manifest: dict) -> list[str]:
+    """Keep the terminal closure exact while following the first-party release."""
+    failures: list[str] = []
+    expected_cli_host = [
+        "mech-runtime",
+        "dep:mech-terminal",
+        "mech-terminal/provider",
+    ]
+    if root_manifest.get("features", {}).get("cli_host") != expected_cli_host:
+        failures.append(
+            "Cargo.toml: retained terminal product closure has an invalid cli_host feature"
+        )
+
+    version = root_manifest.get("package", {}).get("version")
+    if not isinstance(version, str) or not version:
+        failures.append("Cargo.toml: terminal product closure requires an explicit package version")
+        return failures
+    terminal_package = terminal_manifest.get("package", {})
+    if (
+        terminal_package.get("name") != "mech-terminal"
+        or terminal_package.get("version") != version
+    ):
+        failures.append(
+            "hosts/terminal/Cargo.toml: retained terminal package must be mech-terminal "
+            f"at root package version {version}"
+        )
+    expected_terminal_dependency = {
+        "version": version,
+        "path": "hosts/terminal",
+        "default-features": False,
+        "optional": True,
+    }
+    if root_manifest.get("dependencies", {}).get("mech-terminal") != expected_terminal_dependency:
+        failures.append(
+            "Cargo.toml: retained terminal product closure has an invalid mech-terminal dependency"
+        )
+    return failures
+
+
 def check_feature_boundaries() -> list[str]:
     failures: list[str] = []
     for manifest in sorted(ROOT.rglob("Cargo.toml")):
@@ -303,26 +342,10 @@ def check_required_product_seams() -> list[str]:
             "src/cli/host_factories.rs: normal mech run must install CliHostFactory"
         )
     root_manifest = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
-    expected_cli_host = [
-        "mech-runtime",
-        "dep:mech-terminal",
-        "mech-terminal/provider",
-    ]
-    if root_manifest.get("features", {}).get("cli_host") != expected_cli_host:
-        failures.append(
-            "Cargo.toml: retained terminal product closure has an invalid cli_host feature"
-        )
-    terminal_dependency = root_manifest.get("dependencies", {}).get("mech-terminal")
-    expected_terminal_dependency = {
-        "version": "0.3.5",
-        "path": "hosts/terminal",
-        "default-features": False,
-        "optional": True,
-    }
-    if terminal_dependency != expected_terminal_dependency:
-        failures.append(
-            "Cargo.toml: retained terminal product closure has an invalid mech-terminal dependency"
-        )
+    terminal_manifest = tomllib.loads(
+        (ROOT / "hosts/terminal/Cargo.toml").read_text(encoding="utf-8")
+    )
+    failures.extend(check_terminal_product_closure(root_manifest, terminal_manifest))
     retired_time_surfaces = {
         "src/cli/app/mod.rs": ('Arg::new("time")', 'get_flag("time")'),
         "src/cli/commands/run.rs": ('Arg::new("time")', 'get_flag("time")'),

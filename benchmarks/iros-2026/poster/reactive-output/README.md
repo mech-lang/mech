@@ -8,7 +8,7 @@ The values in [turn-800.json](turn-800.json) were obtained by executing an exist
 
 Each of eight hundred turns uses `dt=0.1`, linear velocity `1`, angular velocity `0.015`, bearing `-0.54`, and measurement variance `0.25`. The initial mean is `[55, 25, 0.4]`, initial covariance is `diag(100, 100, 0.15)`, landmark is `[140, 12]`, and process covariance is `diag(0.01, 0.0025)`. Inputs are converted to f32 before execution.
 
-The Rust snippet first configures bearing `-0.55`, then replaces it with `-0.54` before its first turn. [`Kernel::start`](../../../../hosts/gpu/src/embed.rs) prepares the initial state without advancing it. This fixture corresponds to the shown `turn()` followed by 799 `advance()` calls with unchanged inputs.
+The Rust snippet first configures bearing `-0.55`, then replaces it with `-0.54` before its first turn. [`Kernel::start`](../../../../hosts/gpu/src/embed/mod.rs) prepares the initial state without advancing it. This fixture corresponds to the shown `turn()` followed by 799 `advance()` calls with unchanged inputs.
 
 The full result is preserved in the JSON. The poster rounds it to:
 
