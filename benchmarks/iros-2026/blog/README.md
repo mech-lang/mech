@@ -15,6 +15,16 @@ review and authorization step.
 - `render/` is a small native `mech-syntax` parser/HTML formatter executable.
 - `build.mjs` formats the article and examples, inserts the actual Rust host
   programs, charts, diagram and UI, and copies their runtime dependencies.
+- `blog-shell.mjs` composes website navigation and the workshop host with
+  `include/blog.html`. It does not replace the shared hero, content columns,
+  metadata, TOC placement, or backmatter markup.
+- `include/palette.css`, `mech-source.css`, `mechdown.css`, `style.css`,
+  `blog.css`, and `document.js` are copied unchanged into the publication.
+  The shared controller's presentation mode supplies TOC expansion, active
+  sections, mobile navigation, and scroll restoration without starting a
+  second Mech runtime. `article.css` styles only workshop examples and figures.
+  Run `node scripts/test-document-presentation.mjs` for the shared startup and
+  scroll-aware TOC regression checks.
 - `charts.mjs` recomputes median and unscaled MAD from all ten retained samples
   for each row/mode and checks them against the archived summaries.
 - `app.mjs` connects the browser controls to Mech; `drawing.mjs` supplies
@@ -130,12 +140,12 @@ use it or choose a different port. Localhost is a secure browser context for
 WebGPU; deployed use requires HTTPS and a browser/device with WebGPU support.
 GPU unavailability must be reported rather than replaced with a CPU result.
 
-To format only the authoring template for syntax inspection:
+After a build, format only the authoring template for syntax inspection:
 
 ```sh
 benchmarks/iros-2026/blog/render/target/debug/mech-iros-blog-render \
   benchmarks/iros-2026/blog/article.mec \
-  benchmarks/iros-2026/blog/shell.html \
+  benchmarks/iros-2026/blog/_build/blog-shell.html \
   /private/tmp/iros-article-syntax-preview.html
 ```
 

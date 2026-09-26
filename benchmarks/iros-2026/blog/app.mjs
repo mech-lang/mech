@@ -6,6 +6,8 @@ const $ = id => document.getElementById(id);
 const text = (id, value) => { $(id).textContent = value; };
 const scene = new RobotScene($('robot-scene'));
 document.addEventListener('click', event => {
+  // The shared document controller handles TOC navigation and compact layouts.
+  if (event.defaultPrevented) return;
   const link=event.target.closest?.('a[href^="#"]');
   if(!link) return;
   const target=document.getElementById(decodeURIComponent(link.getAttribute('href').slice(1)));

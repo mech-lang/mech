@@ -495,11 +495,13 @@ function restorePagePosition() {
   requestAnimationFrame(() => requestAnimationFrame(attempt));
 }
 
-function initializeDocumentLayoutPersistence() {
+function initializeDocumentLayoutPersistence({ restoreConsole = true } = {}) {
   if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
   }
-  restoreConsoleOpeningSize();
+  if (restoreConsole) {
+    restoreConsoleOpeningSize();
+  }
   addRuntimeEventListener(window, "scroll", schedulePagePositionSave, { passive: true });
   addRuntimeEventListener(
     document.querySelector(".content-shell"),
@@ -3861,6 +3863,10 @@ function initializeToc() {
     keepVisible(currentLink);
   };
   const scrollContainer = primarySections[0]?.target.closest(".content-shell") || null;
+  const scrollOffset = (value, extent) => {
+    const amount = Number.parseFloat(value) || 0;
+    return value?.trim().endsWith("%") ? amount * extent / 100 : amount;
+  };
   const scrollMetrics = () => {
     const containerStyle = scrollContainer ? getComputedStyle(scrollContainer) : null;
     const contained = Boolean(
@@ -3874,14 +3880,23 @@ function initializeToc() {
         height: scrollContainer.clientHeight,
         scrollHeight: scrollContainer.scrollHeight,
         viewportTop: scrollContainer.getBoundingClientRect().top,
+        paddingTop: scrollOffset(
+          containerStyle.scrollPaddingTop || containerStyle.scrollPaddingBlockStart,
+          scrollContainer.clientHeight,
+        ),
       };
     }
     const scrolling = document.scrollingElement || document.documentElement;
+    const scrollingStyle = getComputedStyle(scrolling);
     return {
       top: window.scrollY,
       height: window.innerHeight,
       scrollHeight: scrolling.scrollHeight,
       viewportTop: 0,
+      paddingTop: scrollOffset(
+        scrollingStyle.scrollPaddingTop || scrollingStyle.scrollPaddingBlockStart,
+        window.innerHeight,
+      ),
     };
   };
   const update = () => {
@@ -3897,7 +3912,18 @@ function initializeToc() {
       active = primarySections[primarySections.length - 1];
     } else if (metrics.top > 1) {
       for (const section of primarySections) {
-        if (section.target.getBoundingClientRect().top > sectionActivationLine) {
+        // scrollIntoView lands after the scroll owner's padding and the
+        // heading's margin. Use that same line so anchored headings activate.
+        const targetStyle = getComputedStyle(section.target);
+        const marginTop = scrollOffset(
+          targetStyle.scrollMarginTop || targetStyle.scrollMarginBlockStart,
+          metrics.height,
+        );
+        const targetActivationLine = Math.max(
+          sectionActivationLine,
+          metrics.viewportTop + metrics.paddingTop + marginTop + 1,
+        );
+        if (section.target.getBoundingClientRect().top > targetActivationLine) {
           break;
         }
         active = section;
@@ -4164,11 +4190,31 @@ function initializeLayout() {
   initializeFullscreen();
   initializeOutputFullscreen();
   initializeScenePointerInput();
+  initializePageNavigation();
+}
+
+function initializePageNavigation() {
   initializeBreadcrumb();
   addRuntimeEventListener(window, "mech:document-layout-refresh", initializeToc);
   initializeToc();
   initializeOptionalRenderers();
   addRuntimeEventListener(window, "load", initializeOptionalRenderers, { once: true });
+}
+
+// Static articles can share the document's presentation and scroll behavior
+// while an independent application owns their interactive computation.
+async function initializePresentation() {
+  if (state.runtimeLifecycle === "disposed") return;
+  state.root = documentRoot();
+  if (!state.root) {
+    throw new Error("the document controller requires a .mech-root element");
+  }
+  state.runtimeLifecycle = "presentation";
+  initializeDocumentLayoutPersistence({ restoreConsole: false });
+  initializePageNavigation();
+  restorePagePosition();
+  setDocumentStatus("ready");
+  dispatch("mech:presentation-ready");
 }
 
 function servedComputeHostConfig() {
@@ -4821,7 +4867,10 @@ window.addEventListener("beforeunload", () => {
   globalThis.MechDocumentController.dispose();
 });
 
-main().catch(error => {
+const initialize = controllerElement?.dataset.mechDocumentMode === "presentation"
+  ? initializePresentation
+  : main;
+initialize().catch(error => {
   if (state.runtimeLifecycle !== "disposed" && !state.runtimeStopped) {
     showFatalError(error);
   }

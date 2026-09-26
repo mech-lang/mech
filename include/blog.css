@@ -136,6 +136,16 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
   min-width: 0;
 }
 
+/* A document without hero artwork uses the same title and metadata styles
+ * without reserving an empty image column. */
+.hero:has(> .hero-visual:empty) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hero > .hero-visual:empty {
+  display: none;
+}
+
 .mech-hero-img {
   border: 1px solid var(--border);
   border-radius: 12px;

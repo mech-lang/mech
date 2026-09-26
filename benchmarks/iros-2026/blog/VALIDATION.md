@@ -101,3 +101,32 @@ verification above explicitly exercised real WebGPU execution.
 No archived CPU, Metal, dylib, memory, or source-size measurements were rerun
 or changed by these browser checks. The observed live FPS is not a new native
 benchmark claim.
+
+## Shared blog template integration
+
+The article now composes `include/blog.html` and copies the current shared
+palette, source, Mechdown, shell, blog, and document-controller assets unchanged.
+Article-specific CSS is limited to executable examples and workshop figures.
+
+- Inspected the hero, section headings, syntax highlighting, CPU chart, and
+  reactive pipeline at 1,280 × 720. The empty hero-art slot is hidden without
+  reserving a second column.
+- Checked the sticky TOC, expanded subsection links, active-section state,
+  and restoration of the desktop content-shell scroll position after reload.
+- Checked the 390 × 844 responsive layout: Contents opens, Escape closes it,
+  and selecting a subsection closes it and navigates to the section. Page
+  width equals viewport width; wide figures and code scroll within their
+  containers. This is responsive-layout testing, not a physical-phone or
+  mobile-GPU qualification.
+- Repeated the actual CPU/WebGPU numerical verification: 20 paired turns,
+  256 filters, rejected NaN with whole-batch rollback, and successful recovery.
+  Both backends passed; the observed maximum errors matched the earlier record.
+- No browser warnings or errors were reported in this integration pass.
+- The shared presentation/TOC regression script verifies no second WASM
+  runtime, active links for both window and content-shell scrolling, and
+  scroll-margin/padding offsets. All 19 shared style contracts passed.
+
+The first-use fixes hide absent hero artwork, wrap long identifiers in
+footnotes, defer workshop anchor handling to the shared TOC, and contain
+wide workshop figures on narrow displays. The controller's opt-in
+presentation mode preserves ordinary document startup for other pages.

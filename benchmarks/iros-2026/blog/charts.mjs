@@ -193,7 +193,7 @@ function chart({ title, subtitle, panels, archives, notes }) {
 <defs><pattern id="${hatchId}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M-2 2 L2 -2 M0 8 L8 0 M6 10 L10 6" stroke="#101719" stroke-opacity="0.33" stroke-width="1.4"/></pattern></defs>
 <style>
 #${id} text { font-family: Inter, Arial, sans-serif; fill: ${FOREGROUND}; }
-#${id} .title { font-family: 'FiraCodeRegular', monospace; font-size: 20px; font-weight: 600; fill: #f4c653; }
+#${id} .title { font-family: 'Fira Code', monospace; font-size: 20px; font-weight: 600; fill: #f4c653; }
 #${id} .subtitle, #${id} .note, #${id} .tick, #${id} .row-detail, #${id} .axis-label { fill: ${MUTED}; }
 #${id} .subtitle { font-size: 15px; }
 #${id} .row-label { font-size: 17px; }

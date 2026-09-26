@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {gzipSync} from 'node:zlib';
+import {blogShell} from './blog-shell.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url));
 const repo=resolve(root,'../../..');
@@ -29,7 +30,9 @@ function render(file,shim,dest) {execFileSync(renderer,[file,shim,dest],{stdio:'
 function namespaceFragment(fragment,prefix) {
   return fragment.replace(/\s+id="[^"]*:[^"]*"/g,'').replace(/\bid="([^"]+)"/g,(_,id)=>`id="${prefix}${id}"`).replace(/href="#([^"]+)"/g,(_,id)=>`href="#${prefix}${id}"`);
 }
-let html=render(join(root,'article.mec'),join(root,'shell.html'),join(temporary,'article.html'));
+const shellPath=join(temporary,'blog-shell.html');
+writeFileSync(shellPath,blogShell(repo));
+let html=render(join(root,'article.mec'),shellPath,join(temporary,'article.html'));
 let literate=read(join(root,'article.mec'));
 function slot(name,content) {
   const expression=new RegExp(`<span class="mech-code-block" data-mech-source><span class="mech-code"><span class="mech-expression"><span[^>]*>${name}<\\/span><\\/span><\\/span><\\/span>`,'g');
@@ -40,7 +43,7 @@ function slot(name,content) {
 for(const [file,token,title] of [['ekf.mec','BLOGEKFSOURCE','Complete executable paper source'],['behavior.mec','BLOGBEHAVIORSOURCE','Robot behavior executed by Mech']]) {
   const prefix=file.replace('.mec','')+'-';
   const formatted=namespaceFragment(render(join(root,'source',file),join(root,'fragment.html'),join(temporary,file+'.html')),prefix);
-  slot(token,`<div class="source-card"><div class="source-label">${title} · <a href="source/${file}">download .mec</a></div>${formatted}</div>`);
+  slot(token,`<div class="source-card" data-mechdown><div class="source-label">${title} · <a href="source/${file}">download .mec</a></div>${formatted}</div>`);
   literate=literate.replace(token,()=>`\`\`\`mech:${file}\n${read(join(root,'source',file))}\n\`\`\``);
   copyFileSync(join(root,'source',file),join(out,'source',file));
 }
@@ -49,7 +52,7 @@ literate=literate.replace('BLOGLIVEDEMO','The interactive figure is provided by 
 for(const [name,token,label] of [['functions','BLOGFUNCTIONS','Functions and broadcasting'],['matching','BLOGMATCHING','Pattern matching']]) {
   const file=name+'.mec', raw=read(join(root,'source',file));
   const formatted=namespaceFragment(render(join(root,'source',file),join(root,'fragment.html'),join(temporary,file+'.html')),name+'-');
-  slot(token,`<section class="feature-example" data-example="${name}"><div class="source-card"><div class="source-label">${label}</div>${formatted}</div><button data-run-example="${name}" disabled>Run ${label.toLowerCase()}</button><output id="${name}-result" class="feature-result" aria-live="polite"></output><details><summary>Edit this example</summary><label for="${name}-source">${label} source</label><textarea id="${name}-source" spellcheck="false" rows="${raw.split('\n').length}">${escape(raw)}</textarea></details></section>`);
+  slot(token,`<section class="feature-example" data-example="${name}"><div class="source-card" data-mechdown><div class="source-label">${label}</div>${formatted}</div><button data-run-example="${name}" disabled>Run ${label.toLowerCase()}</button><output id="${name}-result" class="feature-result" aria-live="polite"></output><details><summary>Edit this example</summary><label for="${name}-source">${label} source</label><textarea id="${name}-source" spellcheck="false" rows="${raw.split('\n').length}">${escape(raw)}</textarea></details></section>`);
   copyFileSync(join(root,'source',file),join(out,'source',file));
   literate=literate.replace(token,()=>`\`\`\`mech:${file}\n${raw}\n\`\`\``);
 }
@@ -72,7 +75,7 @@ for(const [file,token,label] of [['main.rs','BLOGRUSTJIT','JIT compilation and s
   slot(token,`<div class="source-card"><div class="source-label">${label} · <a href="source/${file}">${file}</a></div><pre><code>${highlightRust(code)}</code></pre></div>`);
   literate=literate.replace(token,()=>`\`\`\`rust\n${code}\`\`\``);
 }
-slot('BLOGPIPELINE',`<figure class="figure"><div class="wide-scroll">${read(join(root,'pipeline.svg'))}</div><figcaption>Poster architecture diagram, adapted for the article. The upper lane runs during build and activation; the lower lane repeats for each accepted or rejected turn. Telemetry values are illustrative, while the live figure above uses the actual computed values.</figcaption></figure>`);
+slot('BLOGPIPELINE',`<figure class="mech-figure workshop-figure"><div class="wide-scroll">${read(join(root,'pipeline.svg'))}</div><figcaption class="mech-figure-caption">Poster architecture diagram, adapted for the article. The upper lane runs during build and activation; the lower lane repeats for each accepted or rejected turn. Telemetry values are illustrative, while the live figure above uses the actual computed values.</figcaption></figure>`);
 literate=literate.replace('BLOGPIPELINE','![Build, activation and checked reactive turns](assets/pipeline.svg)');
 copyFileSync(join(root,'pipeline.svg'),join(out,'assets/pipeline.svg'));
 if(existsSync(join(root,'charts.mjs'))) {
@@ -84,17 +87,16 @@ for(const [file,token,caption] of [
   ['metal','BLOGMETALCHART','Cross-system native Metal campaign, collected September 24. GPU hatching distinguishes device measurements from CPU measurements.'],
   ['portable','BLOGPORTABLECHART','Application-source reuse in Mech, Taichi, and Halide. Each system selects CPU or Metal using its own backend options and schedules.']]) {
   const path=join(out,'assets',`${file}.svg`);
-  slot(token,`<figure class="figure"><div class="wide-scroll">${existsSync(path)?read(path):`<p>Chart build pending: ${file}</p>`}</div><figcaption>${caption}</figcaption></figure>`);
+  slot(token,`<figure class="mech-figure workshop-figure"><div class="wide-scroll">${existsSync(path)?read(path):`<p>Chart build pending: ${file}</p>`}</div><figcaption class="mech-figure-caption">${caption}</figcaption></figure>`);
   literate=literate.replace(token,`![${caption}](assets/${file}.svg)`);
 }
 if(/BLOG[A-Z]+|\{\{[A-Z_]+\}\}/.test(html)) throw new Error('Unfilled article slot.');
 writeFileSync(join(out,'index.html'),html);
 writeFileSync(join(out,'article.mec'),literate);
 for(const file of ['app.mjs','drawing.mjs','verify.mjs','article.css']) copyFileSync(join(root,file),join(out,'assets',file));
-for(const file of ['palette.css','mech-source.css','browser-compute.js']) {
+for(const file of ['palette.css','mech-source.css','mechdown.css','style.css','blog.css','document.js','browser-compute.js']) {
   const input=join(repo,'include',file),dest=join(out,'assets',file);
-  if(file==='mech-source.css') writeFileSync(dest,read(input).replace(/^@import[^\n]*\n/,''));
-  else copyFileSync(input,dest);
+  copyFileSync(input,dest);
 }
 for(const file of ['mech_wasm.js','mech_wasm_bg.wasm','mech_wasm.d.ts']) copyFileSync(join(repo,'src/wasm/pkg',file),join(out,'_mech/pkg',file));
 writeFileSync(join(out,'_mech/pkg/mech_wasm_bg.wasm.gz'),gzipSync(readFileSync(join(out,'_mech/pkg/mech_wasm_bg.wasm')),{level:9}));

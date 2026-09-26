@@ -8,10 +8,24 @@ import {gunzipSync} from 'node:zlib';
 import {buildCharts} from './charts.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url)), out=join(root,'dist');
+const repo=join(root,'../../..');
 const html=readFileSync(join(out,'index.html'),'utf8');
 const publishedUrl='https://mech-lang.org/iros-r4r-2026/index.html';
 assert(html.includes(`<link rel="canonical" href="${publishedUrl}">`),'wrong publication destination');
 assert(!html.includes('href="https://about.mech-lang.org" aria-current="page"'),'article must not identify itself as About');
+assert(html.includes('data-mech-shim="blog"'),'use canonical blog shell');
+assert(html.includes('data-mech-document-mode="presentation"'),'reuse shared document navigation without a second runtime');
+assert(html.includes('id="contentShell"')&&html.includes('id="articleLayout"'),'shared scroll and TOC boundaries');
+assert(!html.includes('class="contents"'),'do not nest the canonical TOC inside a custom wrapper');
+assert(!html.includes('data-mech-console-pane'),'no dormant console');
+assert(html.includes('<div class="hero-visual"></div>'),'no-artwork hero must match the shared :empty fallback');
+const blogCss=readFileSync(join(repo,'include/blog.css'),'utf8');
+assert.match(blogCss,/\.hero:has\(> \.hero-visual:empty\)\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,'empty hero must use the full title width');
+assert.match(blogCss,/\.hero > \.hero-visual:empty\s*\{\s*display: none;/,'empty artwork must not reserve vertical space');
+assert.match(readFileSync(join(out,'assets/app.mjs'),'utf8'),/if \(event.defaultPrevented\) return;/,'demo anchor handling must defer to the shared TOC');
+for(const file of ['palette.css','mech-source.css','mechdown.css','style.css','blog.css','document.js']) {
+  assert.equal(readFileSync(join(out,'assets',file),'utf8'),readFileSync(join(repo,'include',file),'utf8'),`shared layer drift: ${file}`);
+}
 assert(!/BLOG[A-Z]+|\{\{[A-Z_]+\}\}|Chart build pending/.test(html),'unfilled article slot');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
 assert.equal(new Set(ids).size,ids.length,'duplicate DOM IDs');
@@ -37,6 +51,7 @@ for(const name of ['cpu','backends','metal','portable']) {
   const svg=readFileSync(join(chartDir,name+'.svg'),'utf8');
   assert(svg.includes('<title')&&svg.includes('<desc'),'accessible chart');
   assert(svg.includes('unchecked (upper)')&&svg.includes('checked (lower)'),'paired ordering legend');
+  assert(svg.includes("font-family: 'Fira Code'"),'chart title must use the loaded shared font family');
   assert.equal(svg,readFileSync(join(out,'assets',name+'.svg'),'utf8'),'chart build drift');
 }
 const wasm=readFileSync(join(out,'_mech/pkg/mech_wasm_bg.wasm'));
