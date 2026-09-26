@@ -1096,6 +1096,400 @@ fn document_type_environment_rejects_duplicates_cycles_and_unknown_kinds() {
 }
 
 #[test]
+fn pattern_functions_lower_to_ordered_partial_control() {
+    for source in [
+        "first(n<f64>) => <f64>\n  | n => 42\n  | * => 99.\nfirst(7)\n",
+        "plus(x<f64>, y<f64>) => <f64>\n  | (x, y) => x + y.\nplus(y: 2, x: 40)\n",
+        "only-zero(n<f64>) => <f64>\n  | 0 => 42.\nonly-zero(0)\n",
+        "twice(n<f64>) => <f64>\n  | n => n * 2.\ntwice([1 2 3; 4 5 6])\n",
+        "positive(n<f64>) => <bool>\n  | n => n > 0.\npositive([-1 0 2])\n",
+    ] {
+        let compiled = CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let artifact = compiled.compile_artifact().unwrap();
+        let control = artifact
+            .nodes()
+            .iter()
+            .find_map(|node| match &node.body {
+                mech_engine::ExecutableNodeBody::Match(control) => Some(control),
+                mech_engine::ExecutableNodeBody::Comprehension(control) => {
+                    control.steps.iter().find_map(|step| match step {
+                        mech_engine::ComprehensionStep::Operation(operation) => {
+                            match &operation.body {
+                                mech_engine::ControlOperationBody::Match(control) => Some(control),
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    })
+                }
+                _ => None,
+            })
+            .expect("pattern function call lowers to match control");
+        assert!(control.partial);
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+        assert_eq!(decoded.revision(), artifact.revision());
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn pattern_functions_apply_per_matrix_element_and_preserve_source_shape() {
+    let source = "classify(n<f64>) => <f64>\n\
+                    | 0 => 1\n\
+                    | n => n.\n\
+                  result := classify([0 2; 0 3])\n\
+                  result\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let output = artifact
+        .schemas()
+        .get(artifact.outputs()[0].schema)
+        .unwrap();
+    assert!(matches!(
+        output.body(),
+        SchemaBody::Matrix { dimensions, .. }
+            if dimensions.as_ref()
+                == [
+                    mech_core::DimensionExpr::Constant(2),
+                    mech_core::DimensionExpr::Constant(2),
+                ]
+    ));
+    execute_document(
+        source,
+        [(
+            Vec::new(),
+            ValueDataDraft::Matrix(
+                [1.0, 2.0, 1.0, 3.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn pattern_function_lifts_conform_each_collection_element() {
+    let function = "twice(n<f64>) => <f64>\n\
+                    | n => n * 2.\n";
+    execute_document(
+        &format!("{function}twice([1<u8> 2<u8>])\n"),
+        [(
+            Vec::new(),
+            ValueDataDraft::Matrix(
+                [2.0, 4.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+    execute_document(
+        &format!("{function}twice({{1<u8>, 2<u8>}})\n"),
+        [(
+            Vec::new(),
+            ValueDataDraft::Set(
+                [2.0, 4.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+}
+
+#[test]
+fn pattern_function_lifts_annotation_compatible_tuple_elements() {
+    let source = "classify(x<(*,*)>) => <f64>\n\
+                    | (a, b) => 1.\n\
+                  classify(signal<[(f64,bool)]>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let schema = compiled
+        .schemas()
+        .get(compiled.program().outputs[0].schema)
+        .unwrap();
+    assert!(matches!(
+        schema.body(),
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(_))
+    ));
+    compiled.compile_artifact().unwrap();
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn pattern_function_matrix_parameter_consumes_the_whole_matrix() {
+    execute_document(
+        "identity(n<[f64]>) => <[f64]>\n\
+           | n => n.\n\
+         identity([1 2])\n",
+        [(
+            Vec::new(),
+            ValueDataDraft::Matrix(
+                [1.0, 2.0]
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(value)))
+                    .collect(),
+            ),
+        )],
+    );
+}
+
+#[test]
+fn pattern_function_lifts_keep_dynamic_collection_shape_ownership() {
+    for source in [
+        "twice(n<f64>) => <f64>\n  | n => n * 2.\ntwice(signal<[f64]>)\n",
+        "positive(n<f64>) => <bool>\n  | n => n > 0.\npositive(signal<{f64}>)\n",
+    ] {
+        CanonicalSourceFrontend
+            .compile_document(&document(source))
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"))
+            .compile_artifact()
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+    }
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn pattern_function_lift_uses_live_matrix_dimensions_on_each_turn() {
+    let source =
+        "identity(n<(f64,f64)>) => <(f64,f64)>\n  | n => n.\nidentity(signal<[(f64,f64)]>)\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let input_schema = artifact.inputs()[0].schema;
+    let schema = artifact.schemas().get(input_schema).unwrap();
+    let shape_for = |rows, columns| {
+        mech_core::shape_for_schema_components(
+            schema,
+            &[(
+                schema.body(),
+                SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::Tuple(
+                        vec![
+                            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+                        ]
+                        .into_boxed_slice(),
+                    )),
+                    dimensions: vec![
+                        mech_core::DimensionExpr::Constant(rows),
+                        mech_core::DimensionExpr::Constant(columns),
+                    ]
+                    .into_boxed_slice(),
+                },
+            )],
+            None,
+        )
+        .unwrap()
+    };
+    let mut facts = ActivationFacts::default();
+    facts
+        .slot_shapes
+        .insert(artifact.inputs()[0].slot, shape_for(1, 6));
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 16),
+        &artifact,
+        &catalog,
+        &facts,
+    )
+    .unwrap();
+    for (rows, columns) in [(1, 6), (2, 3), (2, 2)] {
+        let shape = shape_for(rows, columns);
+        let input = mech_core::ValueDraft {
+            schema: input_schema,
+            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+            data: ValueDataDraft::Matrix(
+                (0..rows * columns)
+                    .map(|value| {
+                        ValueDataDraft::Tuple(
+                            vec![
+                                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(
+                                    value as f64,
+                                )),
+                                ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0)),
+                            ]
+                            .into_boxed_slice(),
+                        )
+                    })
+                    .collect(),
+            ),
+        }
+        .finalize(&mech_core::snapshot::SnapshotValidationContext::new(
+            artifact.schemas(),
+        ))
+        .unwrap();
+        instance
+            .turn(&[CapturedSignalInput {
+                slot: instance.plan.inputs[0].slot,
+                value: ResidentValueRef::Snapshot(&[Some(input)]),
+            }])
+            .unwrap();
+        let output = instance.copied_output(0).unwrap();
+        let SchemaBody::Matrix { dimensions, .. } = output
+            .schemas()
+            .unwrap()
+            .get(output.schema())
+            .unwrap()
+            .closed_body(output.shape())
+            .unwrap()
+        else {
+            panic!("lift must publish a matrix")
+        };
+        assert_eq!(
+            dimensions.as_ref(),
+            &[
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns)
+            ]
+        );
+    }
+}
+
+#[test]
+fn set_lift_rejects_results_the_resident_cannot_canonicalize() {
+    let source = "render(n<f64>) => <string>\n  | n => \"item\".\nrender({1, 2})\n";
+    let error = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .err()
+        .expect("string set output cannot enter resident canonicalization");
+    assert_eq!(
+        error.code,
+        "source-semantics/unsupported-lifted-set-result-kind"
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn pattern_function_arms_conform_to_the_declared_output_before_joining() {
+    execute_document(
+        "convert(n<f64>) => <f64>\n\
+           | 0 => 1u8\n\
+           | n => n.\n\
+         convert(0)\n",
+        [(
+            Vec::new(),
+            ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(1.0)),
+        )],
+    );
+}
+
+#[test]
+fn refutable_enum_payload_pattern_does_not_make_a_variant_exhaustive() {
+    let source = "<choice> := :some<f64> | :none\n\
+                  classify(value<choice>) => <f64>\n\
+                    | :some(0) => 1\n\
+                    | :none => 0.\n\
+                  classify(:choice/none)\n";
+    let error = CanonicalSourceFrontend
+        .compile_document_with_nominal_origin(&document(source), &nominal_origin())
+        .err()
+        .unwrap();
+    assert_eq!(error.code, "source-semantics/non-exhaustive-match");
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn pattern_functions_lift_over_sets_with_deduplication_and_distinct_output_kind() {
+    let negative = [-2.0];
+    let positive = [3.0];
+    execute_document(
+        "classify(n<f64>) => <bool>\n\
+           | n => n > 0.\n\
+         result := classify({signal<f64>, 0})\n\
+         result\n",
+        [
+            (
+                vec![ResidentValueRef::F64(&negative)],
+                ValueDataDraft::Set(vec![ValueDataDraft::Bool(false)].into_boxed_slice()),
+            ),
+            (
+                vec![ResidentValueRef::F64(&positive)],
+                ValueDataDraft::Set(
+                    vec![ValueDataDraft::Bool(false), ValueDataDraft::Bool(true)]
+                        .into_boxed_slice(),
+                ),
+            ),
+        ],
+    );
+    execute_document(
+        "classify(n<f64>) => <bool>\n\
+           | n => n > 0.\n\
+         empty<{f64}> := {}\n\
+         classify(empty)\n",
+        [(Vec::new(), ValueDataDraft::Set(Box::new([])))],
+    );
+}
+
+#[cfg(feature = "resident-artifact")]
+#[test]
+fn a_failed_set_lift_discards_the_whole_candidate_and_allows_retry() {
+    let source = "only-zero(n<f64>) => <f64>\n\
+                    | 0 => 42.\n\
+                  result := only-zero({signal<f64>})\n\
+                  result\n";
+    let compiled = CanonicalSourceFrontend
+        .compile_document(&document(source))
+        .unwrap();
+    let artifact = compiled.compile_artifact().unwrap();
+    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    let decoded = mech_engine::decode_program_artifact_bytecode_v1(&bytes).unwrap();
+    let mut catalog = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_resident(&mut catalog).unwrap();
+    let catalog = catalog.build().unwrap();
+    let mut instance = activate(
+        ReactiveInstanceId::new(0x540, 4),
+        &decoded,
+        &catalog,
+        &ActivationFacts::default(),
+    )
+    .unwrap();
+    let turn = |instance: &mut mech_engine::__resident::ReactiveInstance, value: &[f64]| {
+        let inputs = [CapturedSignalInput {
+            slot: instance.plan.inputs[0].slot,
+            value: ResidentValueRef::F64(value),
+        }];
+        instance.turn(&inputs)
+    };
+
+    turn(&mut instance, &[0.0]).unwrap();
+    let published = instance.copied_output(0).unwrap();
+    let published_epoch = instance.published_epoch();
+    assert!(turn(&mut instance, &[1.0]).is_err());
+    assert_eq!(instance.published_epoch(), published_epoch);
+    assert_eq!(
+        instance.copied_output(0).unwrap().canonical_data_draft(),
+        published.canonical_data_draft()
+    );
+    turn(&mut instance, &[0.0]).unwrap();
+    assert_eq!(
+        instance
+            .copied_output(0)
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::Set(
+            vec![ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(
+                42.0
+            ))]
+            .into_boxed_slice()
+        )
+    );
+}
+
+#[test]
 fn typed_document_rejects_recovered_source_before_semantics() {
     let document = document("answer :=\n");
     let error = match CanonicalSourceFrontend.compile_document(&document) {
@@ -1472,7 +1866,26 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
     ));
 
     let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
-    let graph = String::from_utf8(sections.nodes.clone()).unwrap();
+    let graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    let identifier_fields = [
+        ("machine", "/nodes/0/body/Fsm/machine"),
+        ("argument", "/nodes/0/body/Fsm/arguments/0/0"),
+        (
+            "structured value",
+            "/nodes/0/body/Fsm/stages/0/value/Tuple/2/AtomStruct/name",
+        ),
+    ];
+    let mutate_identifier = |role: &str, pointer: &str, replacement: &str| {
+        let mut mutated = graph.clone();
+        let field = mutated
+            .pointer_mut(pointer)
+            .unwrap_or_else(|| panic!("missing FSM {role} field at {pointer}"));
+        assert!(field.is_string(), "FSM {role} field must be a string");
+        *field = serde_json::Value::String(replacement.to_owned());
+        let mut sections = sections.clone();
+        sections.nodes = serde_json::to_vec(&mutated).unwrap();
+        sections
+    };
     // Canonical identifier classes are defined over extended grapheme clusters.
     // U+0600 joins the following '=' into one emoji grapheme whose first scalar
     // admits it in machine, named-argument, and structured-value roles.
@@ -1487,31 +1900,15 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             .unwrap()
             .compile_artifact()
             .unwrap();
-        for (original, replacement) in [
-            (
-                "\"machine\":\"machine\"",
-                format!("\"machine\":\"{canonical_identifier}\""),
-            ),
-            (
-                "\"arguments\":[[\"left\",0]",
-                format!("\"arguments\":[[\"{canonical_identifier}\",0]"),
-            ),
-            (
-                "\"name\":\"some\"",
-                format!("\"name\":\"{canonical_identifier}\""),
-            ),
-        ] {
-            let mutated = graph.replacen(original, &replacement, 1);
-            assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-            let mut valid = sections.clone();
-            valid.nodes = mutated.into_bytes();
+        for &(role, pointer) in &identifier_fields {
+            let valid = mutate_identifier(role, pointer, canonical_identifier);
             mech_engine::decode_program_artifact_sections(&valid).unwrap_or_else(|error| {
-                panic!("canonical FSM identifier {replacement}: {error:?}")
+                panic!("canonical FSM {role} identifier {canonical_identifier:?}: {error:?}")
             });
         }
     }
     let mut unsupported_revision = sections.clone();
-    let mut unsupported_graph: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    let mut unsupported_graph = graph.clone();
     unsupported_graph["revision"] = serde_json::Value::from(0);
     unsupported_revision.nodes = serde_json::to_vec(&unsupported_graph).unwrap();
     assert!(mech_engine::decode_program_artifact_sections(&unsupported_revision).is_err());
@@ -1527,40 +1924,24 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             format!("bad{glyph}"),
             format!("b{glyph}ad"),
         ] {
-            for (original, replacement) in [
-                ("\"machine\":\"machine\"", format!("\"machine\":\"{name}\"")),
-                (
-                    "\"arguments\":[[\"left\",0]",
-                    format!("\"arguments\":[[\"{name}\",0]"),
-                ),
-                ("\"name\":\"some\"", format!("\"name\":\"{name}\"")),
-            ] {
-                let mutated = graph.replacen(original, &replacement, 1);
-                assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-                let mut invalid = sections.clone();
-                invalid.nodes = mutated.into_bytes();
+            for &(role, pointer) in &identifier_fields {
+                let invalid = mutate_identifier(role, pointer, &name);
                 assert!(
                     mech_engine::decode_program_artifact_sections(&invalid).is_err(),
-                    "forbidden canonical grapheme in FSM identifier: {replacement}"
+                    "forbidden canonical grapheme in FSM {role} identifier: {name:?}"
                 );
             }
         }
     }
-    for (original, replacement) in [
-        ("\"machine\":\"machine\"", "\"machine\":\" \""),
-        (
-            "\"arguments\":[[\"left\",0]",
-            "\"arguments\":[[\"bad\\u0000name\",0]",
-        ),
-        ("\"name\":\"some\"", "\"name\":\"bad\\u0000name\""),
-    ] {
-        let mutated = graph.replacen(original, replacement, 1);
-        assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-        let mut invalid = sections.clone();
-        invalid.nodes = mutated.into_bytes();
+    for (&(role, pointer), replacement) in
+        identifier_fields
+            .iter()
+            .zip([" ", "bad\0name", "bad\0name"])
+    {
+        let invalid = mutate_identifier(role, pointer, replacement);
         assert!(
             mech_engine::decode_program_artifact_sections(&invalid).is_err(),
-            "noncanonical FSM identifier {replacement}"
+            "noncanonical FSM {role} identifier {replacement:?}"
         );
     }
 }

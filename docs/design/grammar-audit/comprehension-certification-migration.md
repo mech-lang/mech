@@ -82,6 +82,14 @@ variant's recursive payload pattern or no payload. The artifact validator checks
 that the ordinal and payload agree with the scrutinee's exact nominal enum
 schema. Revision 8 remains rejected without a compatibility reader.
 
+## Pattern-function graph revision
+
+Graph payload revision 10 gives every match declaration an explicit partial
+dispatch bit. Ordinary expressions keep exhaustive admission. Pattern-function
+calls may publish a partial declaration and fail execution when no ordered arm
+matches, without a synthetic fallback value. Revision 9 remains rejected without
+a compatibility reader.
+
 ## Complete syntax evidence
 
 Clean-tree fingerprints use canonical-clean-tree-v2: an explicit traversal
