@@ -12,12 +12,12 @@ const turns = 40;
 export async function buildHero(destination = join(root, 'hero.svg')) {
   const source = readFileSync(join(root, 'source/ekf.mec'), 'utf8');
   const sourceHash = createHash('sha256').update(source).digest('hex');
-  assert.equal(sourceHash, 'a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2');
+  assert.equal(sourceHash, 'f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b');
   const runtime = await import(pathToFileURL(join(repo, 'src/wasm/pkg/mech_wasm.js')));
   await runtime.default({ module_or_path: readFileSync(join(repo, 'src/wasm/pkg/mech_wasm_bg.wasm')) });
   const kernel = runtime.WasmKernel.fromSource(source, {
     bearing: new Float32Array([-0.55]), v: [1], w: [0.015],
-  }, ['state', 'covariance']);
+  }, ['μ', 'Σ']);
   const simulation = { truth: [55, 25, 0.4], turn: 0 };
   const trail = [[55, 25]];
   let state, covariance;
@@ -29,8 +29,8 @@ export async function buildHero(destination = join(root, 'hero.svg')) {
       kernel.turn(observation.inputs);
       simulation.truth = observation.next;
       simulation.turn++;
-      state = Array.from(kernel.stateSample('state', 0));
-      const columnMajor = kernel.stateSample('covariance', 0);
+      state = Array.from(kernel.stateSample('μ', 0));
+      const columnMajor = kernel.stateSample('Σ', 0);
       covariance = [columnMajor[0], columnMajor[3], columnMajor[6], columnMajor[1], columnMajor[4], columnMajor[7], columnMajor[2], columnMajor[5], columnMajor[8]];
       trail.push(state.slice(0, 2));
     }

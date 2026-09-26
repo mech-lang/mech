@@ -3,7 +3,7 @@ Mech for Robotics: Embedded Numerical and Reactive Computation
 author: Corey Montella, Aung Khant Ko, Steven McPhillimey
 date: September 27, 2026
 kicker: IROS 2026: Rust for Robotics Workshop
-hero: ![Bearing-only EKF scene](assets/hero.svg)
+hero: ![Pittsburgh skyline and river confluence from West End Overlook](assets/pittsburgh-hero.jpg)
 summary: A bearing-only extended Kalman filter demonstrates Rust embedding, checked reactive updates, and backend specialization, with executable examples and retained benchmark evidence.
 ===============================================================================
 
@@ -18,20 +18,26 @@ Matrix and array notation lets a programmer express an algorithm close to its ma
 
 Mech addresses this problem through typed numerical syntax and a compiler that specializes its dataflow representation. The application describes the equations and state transitions; backend implementations supply storage layout, vectorization, and device execution. This does not remove backend engineering. It places reusable specialization in the compiler and runtime instead of requiring each application to reproduce it. Rust applications can adopt these facilities incrementally, without replacing their drivers or middleware.
 
+(i)> **This is a live Mech document.** Its `.mec` source combines the explanation, executable examples, and their outputs. Press the backtick key to open or close the REPL and evaluate further expressions; the displayed code is read-only. The EKF runs in the console's Output pane, which also has a full-screen control. [Open the EKF](#live-demo), [download this document](article.mec), [download the kernel](source/ekf.mec), or [download the poster (PDF)](poster.pdf). The [build manifest](build-manifest.json) identifies the source and runtime used here.
+
 1. Numerical
 -------------------------------------------------------------------------------
 
 Our example estimates planar position and heading from linear velocity, angular velocity, and a bearing measurement to a known landmark. Its persistent state consists of a three-component mean and a 3×3 covariance matrix. Prediction advances the mean with the motion model and propagates covariance through its Jacobians. Correction compares the predicted and observed bearings, wraps the innovation with `atan2(sin(r), cos(r))`, and applies the Kalman gain. The covariance uses the Joseph update. This is a bearing-only variant, not the range-and-bearing algorithm often used to introduce the EKF.
 
+(i)> **Why an EKF?** It is a representative robotics algorithm that combines matrix operations, nonlinear functions, persistent state, and successive sensor measurements. Here it also serves as a stress test of the current architecture: the same program exercises compilation, Rust embedding, checked reactive updates, and CPU/GPU execution. Earlier Mech implementations demonstrated the underlying reactive approach in the alpha-era LIVE 2019 work and the v0.1 HYTRADBOI 2022 presentation.[LIVE][HYTRADBOI] This case study extends that work to the current implementation; benchmarks and validation of additional algorithms, applications, and robot systems are planned.
+
 BLOGEKFSOURCE
 
 The complete source includes initialization, prediction, correction, integrity constraints, and publication. `:=` defines a binding, `~` marks assignable persistent state, and `=` assigns it. Matrix multiplication uses `**`, a trailing apostrophe transposes a matrix, and `*` applies broadcast multiplication. Types and dimensions are explicit where needed and inferred through the equations. The `+>` line imports numerical functions and the Boolean `all` reduction.
 
+(i)> Alongside matrices, Mech provides [sets](https://docs.mech-lang.org/reference/set.html), [tables](https://docs.mech-lang.org/reference/table.html), [tuples](https://docs.mech-lang.org/reference/tuple.html), [maps](https://docs.mech-lang.org/reference/map.html), and records. Built-in set operators include union, intersection, difference, membership, and subset tests. Tables support row filtering, column selection, and relational joins, including inner, outer, semi, and anti joins. The linked reference pages describe their syntax and operations.
+
 Ordinary Mech matrix storage and operations use Rust's nalgebra library. The accelerated fixed-shape kernel instead lowers the typed graph into specialized instructions or shaders. Alternative Rust numerical libraries could support other execution strategies without requiring a different mathematical notation.
 
-The three named integrity constraints check finite candidate values, positive covariance diagonals, and covariance symmetry within a tolerance. Linear indices `[1 5 9]` select the diagonal of the 3×3 covariance. `all` reduces the comparisons to a single Boolean result. Positive diagonal entries alone do not establish a positive-definite covariance, so this contract should be read as the checks implemented for this experiment, not a complete proof of filter validity.
+The three named integrity constraints check finite candidate values, positive covariance diagonals, and symmetry of the raw Joseph update within an absolute-plus-relative tolerance. Linear indices `[1 5 9]` select the diagonal of the 3×3 covariance, and `all` reduces the comparisons to a single Boolean result. The stored candidate is the symmetric part of that update. Positive diagonal entries alone do not establish a positive-definite covariance; these checks do not constitute a complete proof of filter validity.
 
-This compact document was tested against the archived kernel on five CPU execution paths, including JIT and AOT. The tests check exported-state bits over successive updates, invalid-input rejection, rollback, and recovery. Its mathematical names and array-reduction guards improve the presentation, but the rewritten guards can generate different instructions. The timing and source-size measurements below retain their original, separately identified sources.[^SOURCE]
+An earlier compact presentation of the archived kernel passed state, rejection, rollback, and recovery parity tests on five CPU execution paths, including JIT and AOT. The live source now includes a numerical correction prompted by longer browser runs, described in the Reactive section. It intentionally changes covariance handling. The timing and source-size measurements below retain their original, separately identified sources rather than attributing those measurements to the corrected example.[^SOURCE]
 
 (1.1) Run the Example
 
@@ -115,27 +121,13 @@ During each turn, input changes identify affected computation. The resident grap
 
 The EKF is one numerical component within this model. Its mean and covariance can drive a telemetry view and a robot scene from the same accepted update. The high-throughput kernel experiments below exercise double-buffered state and publication boundaries, but they do not time the complete host admission, recording, and output-delivery lifecycle. A separate retained f64, range-and-bearing EKF experiment measured a resident turn at approximately 315 ns median with zero steady-state allocations on its Apple M3 test machine.[^REACTIVE] That result concerns a different kernel, machine, and execution boundary and is not plotted beside the parallel f32 measurements.
 
-(3.1) Behavior Around the Filter
+(3.1) Integrity Constraints During Development
 
-The EKF demonstrates a numerical part of Mech. The language also provides user-defined functions, pattern matching, structured data, and first-class state machines. These facilities can describe the surrounding behavior of a reactive application: interpreting a tagged input, selecting a mode, or coordinating a process with distinct phases. Their semantics are separate from the EKF's throughput measurements, and a numerical backend does not imply support for every language construct inside a device kernel.
+(i)> **A constraint exposed a numerical problem in this example.** During development, we used the live page's controls to switch between CPU and WebGPU and test batches of 256, 4,096, and 65,536 filters: six configurations of the same Mech program. With the default inputs, the 65,536-filter CPU run accepted 359 turns and rejected turn 360. Two mirrored covariance entries differed by about `0.0001006`, just beyond the original absolute symmetry tolerance of `0.0001`. GPU runs exposed the same failure class, although the first failing turn differed. Rejection preserved the accepted state and identified the constraint and filter, allowing us to investigate the candidate before changing the program.
 
-BLOGBEHAVIORSOURCE
+The kernel already used the Joseph covariance update. In exact arithmetic it preserves symmetry, but separate f32 evaluations of mirrored entries accumulated slightly different rounded results over successive turns. Merely increasing the fixed tolerance would postpone rejection without preventing that accumulation. The revised source checks each raw pair against `0.0001 + 0.000001 * abs(a) + 0.000001 * abs(b)`, then stores the symmetric part as `Σraw * 0.5 + (Σraw') * 0.5`. Testing the raw result prevents the projection from concealing a large asymmetry, while the projection prevents small mirrored differences from being carried into the next turn. Finite-value and positive-diagonal checks are retained.
 
-The browser host passes the current mode and an event into this Mech state machine. Numeric codes form the small host interface: modes 0, 1, and 2 correspond to Paused, Patrol, and Fault, while events select pause, run, rejection, or reset. The Mech transitions determine the returned mode; JavaScript uses that result to schedule or stop updates and display the selected state. Fault is latched until reset, so pressing Run cannot silently resume after rejection. The last accepted EKF state stays displayed while the simulation is stopped. This behavior policy is distinct from the kernel's rollback mechanism and could be changed independently.
-
-(3.2) Functions and Pattern Matching
-
-The following small examples can be evaluated independently of the simulation. Their displayed source is read-only; further expressions can be entered in the REPL. The first defines a numerical function and calls it on a heading; adding a scalar to the heading vector demonstrates broadcasting. The second destructures a tagged sensor observation and uses a guard to select correction or prediction. These calls use Mech's Rust interpreter compiled to WebAssembly, rather than the restricted numerical GPU kernel.
-
-BLOGFUNCTIONS
-
-For a tagged observation, a match arm binds the distance and evaluates the associated guard. In the REPL, a new observation can use a different distance or the `"occluded"` tag to exercise the other branch.
-
-BLOGMATCHING
-
-(3.3) Literate Documents
-
-Literate documents provide another use of the same infrastructure. A Mechdown file combines prose, executable Mech, references, and live output. This page displays the exact EKF and behavior sources, while its expandable support links expose the hand-written JavaScript that generates synthetic sensor inputs and draws SVG. That presentation code is kept out of the main explanation, but it is not hidden Mech code. Mechdown also supports hidden executable Mech blocks when a document's helpers are themselves written in Mech. The previous version announcement provides a broader introduction to functions, matching, and state machines.[LANGUAGE]
+The correction is expressed once in Mech. Both browser backends compile that source, so testing the correction required no separate CPU or GPU implementation. Switching the control starts a new episode; it does not transfer running state between devices. The corrected program completed 1,000 turns in each of the six configurations, and a CPU trial with 64 filters completed 10,000 turns. Tests also verified rejection and whole-batch rollback for NaN, positive and negative infinity, and an intentionally large raw covariance asymmetry. These are bounded regression checks, not proof of stability for every input or duration. The [diagnostic record and reproducible tests](evidence/ekf-long-horizon-diagnostic.md) retain source identities, fault details, and results. The native benchmark charts below have not been rerun with this correction.
 
 4. Heterogeneous
 -------------------------------------------------------------------------------
@@ -193,7 +185,36 @@ This work presents a snapshot of Mech v0.4-beta. Many features are implemented a
 
 The EKF results motivate that work by connecting compact numerical source with usable Rust embedding, explicit validation boundaries, and several execution strategies. Future evaluations should include other numerical kernels, changing live inputs, complete robot workloads, and deployment costs beyond steady-state throughput. The source, raw measurements, and reproduction instructions are public. Contributions, independently optimized comparison implementations, and bug reports are welcome through [mech-lang/mech](https://github.com/mech-lang/mech).
 
-[^SOURCE]: The complete presentation source and its parity tests are supplied with this article. The five-backend native measurements use the archived source identified by SHA-256 `da531cddcb25d002d49f1a77800122e84b573e2685e191c1955908ef6fccd625`; the compact presentation is not a new timing result.
+6. More about Mech
+-------------------------------------------------------------------------------
+
+The poster concentrates on embedded numerical kernels, but Mech is a functional language with user-defined types, pattern matching, and first-class state machines. The following examples extend the case study with facilities introduced in the [version 0.3 article](https://mech-lang.org/post/2026-05-11-version-0.3/).[LANGUAGE] They run in this document's Rust interpreter compiled to WebAssembly. The numerical GPU backend supports a more restricted set of operations.
+
+(6.1) State Machines and Named Events
+
+The behavior around the filter distinguishes paused operation, active patrol, and a latched fault. Modes and events are named atoms with declared types, so the host interface carries their meaning directly. Dispatch patterns match those values; a wildcard ignores an argument that does not affect a transition.
+
+BLOGBEHAVIORSOURCE
+
+The browser host supplies the current mode and an event to this Mech state machine. Its result determines whether JavaScript schedules another measurement update or stops the simulation. Reset takes precedence over a fault, while a run event cannot resume a faulted episode. The last accepted EKF state stays visible until reset. This behavior policy is separate from the kernel's rollback mechanism and can be changed independently.
+
+(6.2) Functions and Pattern Matching
+
+A user-defined function can package a numerical expression without changing its matrix notation. This example wraps an angle and calls the function on a heading; adding a scalar to the heading vector demonstrates broadcasting. Further calls can be entered in the REPL.
+
+BLOGFUNCTIONS
+
+Pattern matching can also select behavior from structured observations. Here a match arm binds the distance and checks its guard before choosing correction or prediction. A different distance or an occluded observation exercises the other branch.
+
+BLOGMATCHING
+
+(6.3) Literate Documents
+
+This article is itself a Mechdown document: prose explains the code, and executable blocks supply results alongside it. [Download the complete `.mec` document](article.mec) to inspect the prose and expanded examples together. The EKF blocks share a namespace and are compiled as one numerical kernel; the other examples are available in the document REPL.
+
+The Output pane presents the running EKF application, while the source links expose the JavaScript that generates synthetic sensor measurements and draws its SVG scene. Those support routines are kept outside the main explanation. Mechdown also supports hidden executable blocks when the helpers are written in Mech, allowing a document to present selected code without displaying every supporting calculation.
+
+[^SOURCE]: The complete live source and regression tests are supplied with this article. The five-backend native measurements use the archived source identified by SHA-256 `da531cddcb25d002d49f1a77800122e84b573e2685e191c1955908ef6fccd625`. The live example's symmetry correction is separate from those measurements; its exact source and runtime hashes are recorded in the build manifest.
 
 [^BUNDLE]: The bundle route uses a native dynamic library and versioned interface metadata. Loading does not invoke compilation, although the current consumer feature still includes compiler dependencies. A generated-kernel `rlib` export and C++/Python wrappers are not provided by this interface. The Rust library itself can be linked into a Rust application. See the [embedding interface documentation](https://github.com/mech-lang/mech/blob/iros-workshop-benchmarks/docs/embedding-kernels.md) for compatibility and native-loading requirements.
 
@@ -224,3 +245,7 @@ The EKF results motivate that work by connecting compact numerical source with u
 [SIZE]: Mech workshop repository. [Checked dynamic-library size diagnostic](https://github.com/mech-lang/mech/blob/iros-workshop-benchmarks/benchmarks/iros-2026/DYLIB-SIZE-AUDIT.md).
 
 [LANGUAGE]: Corey Montella. [Version 0.3 Beta: Enums, Match, State Machines](https://mech-lang.org/post/2026-05-11-version-0.3/). May 11, 2026.
+
+[LIVE]: Corey Montella. [Mech: A Programming Language for Data Driven, Reactive Systems](https://2019.splashcon.org/details/live/6/Mech-A-Programming-Language-for-Data-Driven-Reactive-Systems). LIVE 2019, October 22, 2019. Live examples include a clock, Pong, and animation.
+
+[HYTRADBOI]: Corey Montella. [I tried rubbing a database on a robot](https://www.hytradboi.com/2022/i-tried-rubbing-a-database-on-a-robot). HYTRADBOI, April 29, 2022. The [project retrospective](https://mech-lang.org/post/2025-11-12-mechdown/) identifies the demonstrated implementation as Mech v0.1.

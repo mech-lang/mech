@@ -133,8 +133,8 @@
   --mech-syntax-path: #84b4c2;
   --mech-syntax-capability: var(--mech-syntax-atom);
   --mech-syntax-invariant: var(--mech-warning);
-  --mech-syntax-namespace: #afb4d4;
-  --mech-syntax-import: var(--mech-syntax-operator);
+  --mech-syntax-namespace: #f09fca;
+  --mech-syntax-import: var(--mech-syntax-function);
 
   /* Selection, scrolling, and depth */
   --mech-selection-bg: rgb(242 182 61 / 24%);

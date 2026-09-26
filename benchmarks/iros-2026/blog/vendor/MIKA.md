@@ -23,12 +23,9 @@ reserve the artwork's aspect ratio. Platform placeholder links and documentation
 links use the official site's existing destinations; the Mika link targets the
 verified introduction in the v0.3 post.
 
-On September 26, 2026, GitHub's latest-release URL redirected to
-<https://github.com/mech-lang/mech/releases/tag/v0.3.5-beta>, which displayed
-May 7, 2026 as the publication date. The footer therefore retains that release
-version and corrects the older website footer's May 6 date. The workshop's
-development checkout identifies itself as version 0.3.6; it is not substituted
-for a published release.
+The workshop footer identifies its compiled v0.4.0-beta build and links to the
+build manifest. It does not claim that a corresponding GitHub release has been
+published. The date matches the workshop article's September 27, 2026 date.
 
 `../separator.html` preserves the blog's decorative Mika separator. Insert it
 after the article layout and before the footnotes/works-cited backmatter. Insert

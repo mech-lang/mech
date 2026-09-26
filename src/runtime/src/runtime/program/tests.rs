@@ -44,6 +44,22 @@ fn runtime() -> crate::MechRuntime {
         .unwrap()
 }
 
+#[cfg(all(feature = "enum", feature = "atom", feature = "kind_define", feature = "kind_annotation"))]
+#[test]
+fn nominal_source_activates_without_silently_exporting_legacy_bytecode() {
+    let source = "<mode> := :paused | :patrol | :fault\ncurrent<mode> := :patrol\ncurrent";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler().unwrap();
+    assert!(compiler.compile_source(source).is_err(), "unsupported nominal bytecode export must fail closed");
+    assert!(compiler.compile_source_artifact(source).is_ok(), "semantic artifact compilation retains the complete enum schema");
+    let mut runtime = runtime();
+    runtime.load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Volatile).unwrap();
+    let (_, value) = runtime.root_symbol_values_all().unwrap().into_iter()
+        .find(|(name, _)| name == "current").expect("interactive enum is published");
+    assert_eq!(value.format_canonical_inline(), ":patrol");
+}
+
 fn canonical_f64(value: &Value) -> f64 {
     let ValueData::F64(value) = value.data() else {
         panic!("expected canonical f64, got {value:?}")

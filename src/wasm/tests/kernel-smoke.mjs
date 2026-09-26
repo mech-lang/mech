@@ -68,12 +68,17 @@ if (process.argv[2]) {
       envelope.event.channel === "diagnostic" && envelope.event.event.severity === "error"
     ), JSON.stringify(loaded));
     for (const [mode, event, expected] of [
-      [0, 0, 0], [0, 1, 1], [1, 0, 0], [1, 2, 2], [2, 1, 2], [2, 3, 0],
+      [":paused", ":pause", ":paused"],
+      [":paused", ":run", ":patrol"],
+      [":patrol", ":pause", ":paused"],
+      [":patrol", ":rejected", ":fault"],
+      [":fault", ":run", ":fault"],
+      [":fault", ":reset", ":paused"],
     ]) {
       const response = repl.submit(`#Robot(${mode}, ${event})`);
-      assert.equal(Number(response.result?.inlineHtml), expected, JSON.stringify(response));
+      assert.equal(response.result?.inlineHtml, expected, JSON.stringify(response));
     }
-    console.log("WasmRepl: actual Mech Robot FSM pause, run, reject, latch and reset transitions passed.");
+    console.log("WasmRepl: typed-atom Mech Robot FSM pause, run, reject, latch and reset transitions passed.");
   } finally {
     repl.shutdown();
     repl.free();

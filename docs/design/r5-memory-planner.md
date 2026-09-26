@@ -10,9 +10,10 @@ storage, capacity, placement, lifetime, aliasing, reuse eligibility,
 transactions, budgets, and transfers. It does not introduce an allocator or
 replace any backing.
 
-The R5 branch is stacked on the exact R4 authority cutover. The root package
-remains `0.3.6`, workspace package versions remain unchanged, and R5 metadata
-is process-local and non-wire.
+The R5 branch is stacked on the exact R4 authority cutover. Current package
+metadata is the `0.4.0-beta` preview, with active manifests, internal package
+requirements, and local lock entries kept consistent. Stable `0.4.0` remains
+subject to R7 qualification. R5 metadata is process-local and non-wire.
 
 ## 2. Sources of authority
 

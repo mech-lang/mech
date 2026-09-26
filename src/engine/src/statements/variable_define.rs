@@ -11,13 +11,6 @@ use crate::{
     MResult, MechError, ResolvedOperationDescriptor, RuntimeFunctionId, SpecializationInput,
     SpecializedFunction, ValueCell, VariableDefine, expression,
 };
-#[cfg(all(
-    feature = "variable_define",
-    feature = "kind_annotation",
-    feature = "enum",
-    feature = "atom"
-))]
-use crate::{CanonicalNominalPath, NominalKey, NominalKind};
 #[cfg(all(feature = "variable_define", feature = "subscript_formula"))]
 use crate::{
     mark_string_access_value_live, reset_current_string_access_expression_live,
@@ -26,48 +19,6 @@ use crate::{
 #[cfg(all(feature = "variable_define", feature = "kind_annotation"))]
 use mech_core::snapshot::{OptionDraft, ValueDataDraft};
 
-#[cfg(all(
-    feature = "variable_define",
-    feature = "kind_annotation",
-    feature = "enum",
-    feature = "atom"
-))]
-fn canonical_atom_enum_conversion(
-    value: &ValueCell,
-    target: &crate::SchemaBody,
-) -> MResult<Option<ValueCell>> {
-    let crate::SchemaBody::Enum { variants, .. } = target else {
-        return Ok(None);
-    };
-    let crate::SchemaBody::Atom(atom_key) = value.closed_schema_body()? else {
-        return Ok(None);
-    };
-    let ordinal = variants.iter().position(|variant| {
-        CanonicalNominalPath::new(
-            variant
-                .name
-                .split('/')
-                .filter(|segment| !segment.is_empty())
-                .map(str::to_owned)
-                .collect::<Vec<_>>(),
-        )
-        .is_ok_and(|path| NominalKey::from_path(NominalKind::Atom, &path) == atom_key)
-    });
-    let Some(ordinal) = ordinal else {
-        return Ok(None);
-    };
-    if variants[ordinal].payload.is_some() {
-        return Ok(None);
-    }
-    ValueCell::from_schema_data(
-        target.clone(),
-        ValueDataDraft::Enum(mech_core::snapshot::EnumDraft {
-            ordinal: ordinal as u32,
-            payload: None,
-        }),
-    )
-    .map(Some)
-}
 
 #[cfg(feature = "variable_define")]
 pub fn variable_define(
@@ -103,7 +54,7 @@ pub fn variable_define(
                 } else if let Some(converted) = {
                     #[cfg(all(feature = "enum", feature = "atom"))]
                     {
-                        canonical_atom_enum_conversion(&value, &target_schema)?
+                        crate::structures::canonical_atom_enum_conversion(&value, &target_schema)?
                     }
                     #[cfg(not(all(feature = "enum", feature = "atom")))]
                     {

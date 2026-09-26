@@ -1,6 +1,6 @@
 [package]
 name = "mech-compute"
-version = "0.3.5"
+version = "0.4.0-beta"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Backend-neutral planning and intermediate representations for resident Mech compute regions."
 documentation = "https://docs.mech-lang.org"
@@ -14,5 +14,5 @@ rust-version = "1.92"
 default = []
 
 [dependencies]
-mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["f32", "matrixd", "range"] }
-mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["resident-artifact"] }
+mech-core = { version = "0.4.0-beta", path = "../core", default-features = false, features = ["f32", "matrixd", "range"] }
+mech-engine = { version = "0.4.0-beta", path = "../engine", default-features = false, features = ["resident-artifact"] }

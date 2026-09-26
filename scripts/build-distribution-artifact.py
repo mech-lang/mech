@@ -12,6 +12,8 @@ import subprocess
 import sys
 import time
 
+from release_metadata import resolve_channel
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN = "nightly-2026-03-03"
@@ -19,7 +21,7 @@ TOOLCHAIN = "nightly-2026-03-03"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--channel", choices=("stable", "nightly"), required=True)
+    parser.add_argument("--channel", choices=("auto", "stable", "preview", "nightly"), required=True)
     parser.add_argument("--distribution", choices=("standard", "full"), required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--date")
@@ -88,6 +90,8 @@ def build(distribution: str) -> tuple[Path, float, float]:
 
 
 def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
+    version = root_version()
+    channel = resolve_channel(args.channel, version)
     contract = json.loads(
         (ROOT / "tests" / "architecture" / "distributions" / f"{args.distribution}.json")
         .read_text(encoding="utf-8")
@@ -101,11 +105,11 @@ def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
         "--binary",
         str(executable),
         "--channel",
-        args.channel,
+        channel,
         "--distribution",
         args.distribution,
         "--version",
-        root_version(),
+        version,
         "--commit",
         commit,
         "--toolchain",
@@ -119,7 +123,7 @@ def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
         "--output-dir",
         str(args.output_dir),
     ]
-    if args.channel == "nightly":
+    if channel == "nightly":
         if not args.date:
             raise RuntimeError("--date is required for nightly artifacts")
         command.extend(["--date", args.date])
@@ -146,6 +150,7 @@ def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
 def main() -> int:
     args = parse_args()
     try:
+        args.channel = resolve_channel(args.channel, root_version())
         executable, clean_elapsed, incremental_elapsed = build(args.distribution)
         target = host_target()
         archive = package(args, executable, target)
@@ -158,10 +163,11 @@ def main() -> int:
                 / f"{args.distribution}.json"
             ).read_text(encoding="utf-8")
         )
-    except (OSError, RuntimeError, subprocess.CalledProcessError, KeyError) as error:
+    except (OSError, RuntimeError, ValueError, subprocess.CalledProcessError, KeyError) as error:
         print(f"distribution artifact build failed: {error}", file=sys.stderr)
         return 1
     report = {
+        "channel": args.channel,
         "archive": str(archive),
         "archive_bytes": archive.stat().st_size,
         "clean_build_seconds": round(clean_elapsed, 3),

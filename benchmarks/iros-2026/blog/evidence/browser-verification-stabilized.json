@@ -1,0 +1,25 @@
+{
+  "supported": true,
+  "passed": true,
+  "status": "passed",
+  "reason": null,
+  "sourceSha256": "f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b",
+  "wasmSha256": "18224e2cf04b246148029bff7bf498ed77c92780495a5e7cfc493a9cd94a8871",
+  "instances": 256,
+  "turns": 20,
+  "tolerance": { "absolute": 0.0001, "relative": 0.0001 },
+  "cpuPassed": true,
+  "gpuExecuted": true,
+  "comparedTurns": 21,
+  "errors": {
+    "μ": { "valuesCompared": 831, "maxAbsolute": 0.000003814697265625, "maxRelative": 1.5093772324632629e-7, "maxToleranceRatio": 0.0014519281824051569, "failures": 0 },
+    "Σ": { "valuesCompared": 2493, "maxAbsolute": 0.00009918212890625, "maxRelative": 0.000002307806317269349, "maxToleranceRatio": 0.010224987210245166, "failures": 0 }
+  },
+  "rollback": {
+    "cpu": { "rejected": true, "instance": 255, "allStateBitsUnchanged": true },
+    "gpu": { "rejected": true, "constraint": "finite-candidate!", "instance": 255, "allStateBitsUnchanged": true, "activeBufferUnchanged": true }
+  },
+  "recovery": { "cpu": true, "gpu": true, "comparedInstances": 256 },
+  "elapsedMs": 455.89999985694885,
+  "provenance": "Observed from the rebuilt page's Verify CPU / GPU agreement and rollback control on 2026-09-26. Elapsed time is diagnostic, not a benchmark."
+}

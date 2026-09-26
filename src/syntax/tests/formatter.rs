@@ -13,6 +13,15 @@ fn ident(name: &str) -> Identifier {
     }
 }
 
+#[test]
+fn scientific_formatter_does_not_invent_empty_fractional_parts() {
+    let number = RealNumber::Scientific((
+        (token(TokenKind::Digit, "3"), token(TokenKind::Digit, "402823466")),
+        (false, token(TokenKind::Digit, "38"), token(TokenKind::Digit, "")),
+    ));
+    assert_eq!(Formatter::new().real_number(&number), "3.402823466e+38");
+}
+
 fn atom_expr(name: &str) -> Expression {
     Expression::Literal(Literal::Atom(Atom { name: ident(name) }))
 }
@@ -197,6 +206,102 @@ fn first_statement(src: &str) -> Statement {
         }
     }
     panic!("expected statement")
+}
+
+#[test]
+fn formatter_compacts_literal_column_vectors_without_erasing_explicit_types() {
+    for (source, expected) in [
+        ("column := [0; 1; 1]", "column := [0 1 1]'"),
+        (
+            "column := [0f32; 1f32; 1f32]",
+            "column := [0f32 1f32 1f32]'",
+        ),
+        ("column := [true; false]", "column := [true false]'"),
+    ] {
+        let statement = first_statement(source);
+        let formatted = Formatter::new().statement(&statement);
+        assert_eq!(formatted, expected);
+        // The compact spelling must remain parseable, including the typed
+        // literals that cannot safely be inferred by a syntax-only formatter.
+        let reparsed = first_statement(&formatted);
+        assert_eq!(Formatter::new().statement(&reparsed), expected);
+
+        let mut formatter = Formatter::new();
+        formatter.html = true;
+        let html = formatter.statement(&statement);
+        assert!(
+            html.contains("class=\"mech-transpose-op\">'</span>"),
+            "{html}"
+        );
+        let expected_columns = if source.contains("true") { 2 } else { 3 };
+        assert_eq!(
+            html.matches("class=\"mech-matrix-column\"").count(),
+            expected_columns
+        );
+        if source.contains("f32") {
+            assert_eq!(
+                html.matches("f32").count(),
+                3,
+                "all explicit literal types survive"
+            );
+        }
+    }
+}
+
+#[test]
+fn formatter_preserves_matrix_block_concatenation_and_row_order() {
+    for source in [
+        "matrix := [a; b]",
+        "matrix := [1 2; 3 4]",
+        "matrix := [[1 2]; [3 4]]",
+        "matrix := [a; 1]",
+        "matrix := [1]",
+        "matrix := []",
+    ] {
+        let statement = first_statement(source);
+        let formatted = Formatter::new().statement(&statement);
+        assert_eq!(formatted, source, "source shape and row order must survive");
+        assert_eq!(
+            Formatter::new().statement(&first_statement(&formatted)),
+            source
+        );
+    }
+}
+
+#[test]
+fn formatter_structures_function_body_lines_and_indents_plain_source() {
+    let source = "twice(x<f64>) = answer<f64> :=\n  y := x + x\n  answer := y.\n";
+    let program = mech_syntax::parser::parse(source).unwrap();
+    let function = program
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| match element {
+            SectionElement::MechCode(codes) => Some(codes),
+            _ => None,
+        })
+        .flatten()
+        .find_map(|(code, _)| match code {
+            MechCode::FunctionDefine(function) => Some(function),
+            _ => None,
+        })
+        .expect("function definition");
+    let plain = Formatter::new().function_define(function);
+    assert!(plain.contains("\n  y := x + x\n  answer := y."), "{plain}");
+    mech_syntax::parser::parse(&plain).expect("indented function remains valid Mech");
+
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.function_define(function);
+    assert!(html.contains("class=\"mech-function-body\"><div class=\"mech-function-statement\">"));
+    assert_eq!(html.matches("class=\"mech-function-statement\"").count(), 2);
+    assert_eq!(
+        html.matches("class=\"mech-function-period\">.</span>")
+            .count(),
+        1
+    );
+    assert!(html.ends_with("<span class=\"mech-function-period\">.</span></div></div></div>"));
 }
 
 #[test]

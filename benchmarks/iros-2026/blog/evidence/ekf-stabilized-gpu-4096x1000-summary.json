@@ -1,0 +1,79 @@
+{
+  "reportKind": "observed browser report summary; not a benchmark or complete raw event log",
+  "observedDate": "2026-09-26",
+  "runtime": "actual browser WebGPU, current shared MechBrowserCompute.Device",
+  "sourceSha256": "f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b",
+  "wasmSha256": "18224e2cf04b246148029bff7bf498ed77c92780495a5e7cfc493a9cd94a8871",
+  "turns": 1000,
+  "accepted": 1000,
+  "controls": {
+    "velocity": 1,
+    "omega": 0.015,
+    "noise": 0.02,
+    "timeStep": 0.1
+  },
+  "policy": {
+    "absolute": 0.0001,
+    "relativePerOperand": 0.000001,
+    "pairBudget": "absolute + relative*abs(a) + relative*abs(b)",
+    "projection": "raw*0.5 + transpose(raw)*0.5"
+  },
+  "fullBatchPublicationChecks": {
+    "period": 100,
+    "checkpoints": 10,
+    "allLanesFinitePositiveDiagonalAndBitwiseSymmetric": true
+  },
+  "grossAsymmetry": {
+    "injectedRawPairGap": 1,
+    "faultLane": 0,
+    "constraint": "symmetric-covariance!",
+    "rejected": true,
+    "rollbackBitIdentical": true,
+    "activeBufferUnchanged": true
+  },
+  "status": "passed",
+  "adapterIdentity": "not reported",
+  "instances": 4096,
+  "invalidInputs": {
+    "values": [
+      "NaN",
+      "Infinity",
+      "-Infinity"
+    ],
+    "lane": 4095,
+    "checkedBeforeAndAfterRun": true,
+    "constraint": "finite-candidate!",
+    "wholeBatchRollbackBitIdentical": true,
+    "activeBufferUnchanged": true
+  },
+  "recovery": {
+    "accepted": true,
+    "acceptedTurn": 1001,
+    "allLanesFinitePositiveDiagonalAndBitwiseSymmetric": true,
+    "maxScale": 275.19989013671875,
+    "minDiagonal": 0.023986568674445152
+  },
+  "checkpoint1000": {
+    "maxScale": 274.7445373535156,
+    "minDiagonal": 0.023981604725122452,
+    "lane0": {
+      "mean": [
+        92.18500518798828,
+        107.92757415771484,
+        1.8999103307724
+      ],
+      "covarianceColumnMajor": [
+        274.715087890625,
+        29.672630310058594,
+        -2.4069981575012207,
+        29.672630310058594,
+        33.65206527709961,
+        -0.3981938362121582,
+        -2.4069981575012207,
+        -0.3981938362121582,
+        0.02398207038640976
+      ]
+    }
+  },
+  "elapsedMs": 2392.3
+}

@@ -5,58 +5,64 @@ Extended Kalman Filter
 EKF step @compute
 ----------------
 (1) Initialization
-dt<f32> := 0.1
+Δt<f32> := 0.1
 v<f32> := 1
 w<f32> := 0.015
 bearing<f32> := -0.55
 R<f32> := 0.25
 fmax<f32> := 3.402823466e38
-eps<f32> := 0.0001
-m<[f32]:2,1> := [140; 12]
-Q<[f32]:2,2> := [0.01 0; 0 0.0025]
-I<[f32]:3,3> := [1 0 0; 0 1 0; 0 0 1]
-J<[f32]:2,3> := [1 0 0; 0 1 0]
-ex<[f32]:3,1> := [1; 0; 0]
-ey<[f32]:3,1> := [0; 1; 0]
-et<[f32]:3,1> := [0; 0; 1]
-~state<[f32]:3,1> := [55; 25; 0.4]
-~covariance<[f32]:3,3> := [100 0 0; 0 100 0;
-                          0 0 0.15]
+ε<f32> := 0.0001
+ρ<f32> := 0.000001
+m<[f32]> := [140 12]'
+Q<[f32]> := [0.01 0; 0 0.0025]
+I<[f32]> := [1 0 0; 0 1 0; 0 0 1]
+J<[f32]> := [1 0 0; 0 1 0]
+ex<[f32]> := [1 0 0]'
+ey<[f32]> := [0 1 0]'
+et<[f32]> := [0 0 1]'
+~μ<[f32]> := [55 25 0.4]'
+~Σ<[f32]> := [100 0 0; 0 100 0; 0 0 0.15]
 
 (2) Time Update
-th := state · et
-st := sin(th)
-ct := cos(th)
-d := v * dt
-mu0 := state + [d * ct; d * st; w * dt]
-G := [1f32 0f32 (0f32 - d * st);
-      0f32 1f32 d * ct; 0f32 0f32 1f32]
-V := [ct * dt 0f32; st * dt 0f32; 0f32 dt]
-P0 := G ** covariance ** G' + V ** Q ** V'
+θ := μ · et
+sinθ := sin(θ)
+cosθ := cos(θ)
+d := v * Δt
+μ̄ := μ + [d * cosθ, d * sinθ, w * Δt]'
+G := [1f32 0f32 (0f32 - d * sinθ);
+      0f32 1f32 d * cosθ; 0f32 0f32 1f32]
+V := [cosθ * Δt 0f32; sinθ * Δt 0f32; 0f32 Δt]
+Σ̄ := G ** Σ ** G' + V ** Q ** V'
 
 (3) Measurement Update
-delta := m - J ** mu0
-dx := delta · [1f32; 0f32]
-dy := delta · [0f32; 1f32]
-q := delta · delta
-zhat := atan2(dy, dx) - (mu0 · et)
-r := bearing - zhat
-nu := atan2(sin(r), cos(r))
-H := [dy / q, (0f32 - dx) / q, -1f32]
-S := H ** P0 · H + R
-K := P0 ** H' / S
-mu1 := mu0 + K * nu
+δ := m - J ** μ̄
+δx := δ · [1f32 0f32]'
+δy := δ · [0f32 1f32]'
+q := δ · δ
+ẑ := atan2(δy, δx) - (μ̄ · et)
+r := bearing - ẑ
+ν := atan2(sin(r), cos(r))
+H := [δy / q, (0f32 - δx) / q, -1f32]
+S := H ** Σ̄ · H + R
+K := Σ̄ ** H' / S
+μ₊ := μ̄ + K * ν
 A := I - K ** H
-P1 := A ** P0 ** A' + (K ** K') * R
+Σraw := A ** Σ̄ ** A' + (K ** K') * R
 
 (4) Checked Publication
-xyz := [mu1 · ex; mu1 · ey; mu1 · et]
-finmu := all(xyz <= fmax) && all(xyz >= -fmax)
-finP := all(P1 <= fmax) && all(P1 >= -fmax)
-D := P1[[4 7 8]] - P1[[2 3 6]]
-finite-candidate! := finmu && finP
-positive-covariance! := all(P1[[1 5 9]] > 0f32)
-symmetric-covariance! := all(D <= eps) && all(D >= -eps)
-state = mu1
-covariance = P1
-(state, covariance)
+ΔΣ := Σraw[[4 7 8]] - Σraw[[2 3 6]]
+τxy := ε + ρ * abs(Σraw[4]) + ρ * abs(Σraw[2])
+τxθ := ε + ρ * abs(Σraw[7]) + ρ * abs(Σraw[3])
+τyθ := ε + ρ * abs(Σraw[8]) + ρ * abs(Σraw[6])
+τ := [τxy τxθ τyθ]'
+Σ₊ := Σraw * 0.5<f32> + (Σraw') * 0.5<f32>
+xyz := [μ₊ · ex, μ₊ · ey, μ₊ · et]'
+finμ := all(xyz <= fmax) && all(xyz >= -fmax)
+finraw := all(Σraw <= fmax) && all(Σraw >= -fmax)
+finΣ := all(Σ₊ <= fmax) && all(Σ₊ >= -fmax)
+finite-candidate! := finμ && finraw && finΣ
+positive-covariance! := all(Σraw[[1 5 9]] > 0f32) && all(Σ₊[[1 5 9]] > 0f32)
+symmetric-covariance! := all(ΔΣ <= τ) && all(ΔΣ >= -τ)
+μ = μ₊
+Σ = Σ₊
+(μ, Σ)

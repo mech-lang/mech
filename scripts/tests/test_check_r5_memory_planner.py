@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import shutil
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -23,6 +25,19 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         for relative in CHECKER.REQUIRED:
             source = REPOSITORY / relative
             target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        metadata = {REPOSITORY / "Cargo.lock"}
+        for directory in ("src", "hosts", "machines"):
+            metadata.update((REPOSITORY / directory).glob("*/Cargo.toml"))
+        metadata.update((REPOSITORY / "tests/fixtures").glob("*/Cargo.lock"))
+        metadata.update({
+            REPOSITORY / "tests/fixtures/native-live-host/Cargo.toml",
+            REPOSITORY / "benchmarks/iros-2026/blog/render/Cargo.toml",
+            REPOSITORY / "benchmarks/iros-2026/blog/render/Cargo.lock",
+        })
+        for source in metadata:
+            target = root / source.relative_to(REPOSITORY)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
         return root
@@ -238,10 +253,42 @@ class R5MemoryPlannerCheckerTests(unittest.TestCase):
         self.append(root, "src/compute/src/memory.rs", "\nstruct AllocationHandle;\n")
         self.assert_failure(root, "R6 concept introduced during R5")
 
-    def test_20_package_version_change_fails(self):
+    def test_20_root_only_package_version_change_fails(self):
         root = self.fixture()
-        self.replace(root, "Cargo.toml", 'version = "0.3.6"', 'version = "0.4.0"')
-        self.assert_failure(root, "root package version changed")
+        version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
+        self.replace(root, "Cargo.toml", f'version = "{version}"', 'version = "99.0.0-beta"')
+        self.assert_failure(root, "package version must be 99.0.0-beta")
+
+    def test_20b_coherent_release_version_change_passes(self):
+        root = self.fixture()
+        version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
+        for path in list(root.rglob("Cargo.toml")) + list(root.rglob("Cargo.lock")):
+            path.write_text(path.read_text().replace(f'"{version}"', '"99.0.0-beta"'))
+        self.assertEqual(CHECKER.failures(root), [])
+
+    def test_20c_stale_component_version_fails(self):
+        root = self.fixture()
+        version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
+        self.replace(root, "src/core/Cargo.toml", f'version = "{version}"', 'version = "0.0.0"')
+        self.assert_failure(root, "src/core/Cargo.toml: package version must be")
+
+    def test_20d_stale_internal_requirement_fails(self):
+        root = self.fixture()
+        version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
+        path = root / "Cargo.toml"
+        source, replacements = re.subn(
+            rf'(?m)^(mech-core\s*=\s*\{{\s*version\s*=\s*)"{re.escape(version)}"',
+            r'\1"0.0.0"', path.read_text(), count=1,
+        )
+        self.assertEqual(replacements, 1)
+        path.write_text(source)
+        self.assert_failure(root, "mech-core requirement must be")
+
+    def test_20e_stale_local_lock_version_fails(self):
+        root = self.fixture()
+        version = tomllib.loads((root / "Cargo.toml").read_text())["package"]["version"]
+        self.replace(root, "Cargo.lock", f'name = "mech-core"\nversion = "{version}"', 'name = "mech-core"\nversion = "0.0.0"')
+        self.assert_failure(root, "mech-core lock version must be")
 
     def test_21_incomplete_r5_status_fails(self):
         root = self.fixture()

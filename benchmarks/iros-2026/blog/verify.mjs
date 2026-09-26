@@ -13,9 +13,9 @@
  * part of the demo's FPS measurement. CPU and GPU matrix layouts are reconciled
  * through the existing Device output-layout conversion, not EKF code in JS.
  */
-const PAPER_SHA256 = "a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2";
-const NAMES = ["state", "covariance"];
-const WIDTHS = { state: 3, covariance: 9 };
+const PAPER_SHA256 = "f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b";
+const NAMES = ["μ", "Σ"];
+const WIDTHS = { μ: 3, Σ: 9 };
 const TURNS = 20;
 const TOLERANCE = Object.freeze({ absolute: 1e-4, relative: 1e-4 });
 
@@ -112,7 +112,7 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
     supported: false, passed: false, status: "failed", reason: null,
     sourceSha256: null, instances, turns: TURNS, tolerance: TOLERANCE,
     cpuPassed: false, gpuExecuted: false, comparedTurns: 0,
-    errors: { state: emptyErrors(), covariance: emptyErrors() },
+    errors: Object.fromEntries(NAMES.map(name => [name, emptyErrors()])),
     rollback: null, recovery: null, elapsedMs: null,
   };
   let kernel, resource, manifest, exported, activeBuffer = 0;
@@ -187,7 +187,7 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
       if (resource) compareSample(await gpuTurn(updates), turn);
     }
     const beforeCpu = cpuSnapshot(kernel, instances);
-    requireThat(!equalWords(initial.state, beforeCpu.state), "valid CPU turns did not change state");
+    requireThat(!equalWords(initial['μ'], beforeCpu['μ']), "valid CPU turns did not change state");
     const beforeGpu = resource ? await gpuSnapshot(resource, manifest, exported, activeBuffer, instances) : null;
     const beforeActive = activeBuffer;
     const invalid = deterministicInputs(TURNS + 1, instances);
@@ -218,7 +218,7 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
     const valid = deterministicInputs(TURNS + 2, instances);
     kernel.turn(valid);
     const recoveredCpu = cpuSnapshot(kernel, instances);
-    requireThat(!equalWords(beforeCpu.state, recoveredCpu.state), "CPU did not advance after rejection");
+    requireThat(!equalWords(beforeCpu['μ'], recoveredCpu['μ']), "CPU did not advance after rejection");
     requireThat(kernel.attemptedTurns() === TURNS + 2 && kernel.faultCount() === 1, "unexpected CPU turn or fault count");
     report.recovery = { cpu: true, gpu: false, comparedInstances: 0 };
     report.cpuPassed = true;

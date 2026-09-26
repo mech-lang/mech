@@ -32,7 +32,7 @@
   --mech-source-machine: var(--mech-syntax-machine, #d8a5e4);
   --mech-source-machine-flow: var(--mech-syntax-machine-flow, #8e90bd);
   --mech-source-invariant: var(--mech-syntax-invariant, #ffaa80);
-  --mech-source-namespace: var(--mech-syntax-namespace, #afb4d4);
+  --mech-source-namespace: var(--mech-syntax-namespace, #f09fca);
   --mech-source-comment: var(--mech-syntax-comment, #939a9e);
   --mech-source-comment-structure: var(--mech-syntax-comment-structure, #5c6467);
   --mech-source-scrollbar: var(--mech-scrollbar, rgb(128 128 128 / 70%));
@@ -1315,6 +1315,7 @@
     font-size: 1rem;
     padding: 20px;
     border: 1px solid var(--code-border-color);
+    border-left-color: var(--code-namespace-label-color);
     border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
     overflow-x: auto;
 }
@@ -2085,6 +2086,26 @@
 :where([data-mech-source], [data-mech-source] *).mech-code-block-namespace {
   background: var(--mech-canvas, hsl(206 24% 6%));
   color: var(--mech-source-namespace);
+}
+
+:where([data-mech-source]) .mech-function-body {
+  padding-inline-start: 2ch;
+}
+
+:where([data-mech-source]) .mech-function-body .mech-function-period {
+  display: inline;
+}
+
+:where([data-mech-source]) .mech-function-statement > .mech-statement {
+  display: inline;
+}
+
+:where([data-mech-source]) :is(.mech-import, .mech-import-module, .mech-import-selector, .mech-import-alias) {
+  color: var(--mech-syntax-import, var(--mech-source-function));
+}
+
+:where([data-mech-source]) :is(.mech-import-sigil, .mech-import-separator, .mech-import-assign-op, .mech-import-group-open, .mech-import-group-close) {
+  color: var(--mech-syntax-function-structure);
 }
 
 :where([data-mech-source], [data-mech-source] *).mech-comment {

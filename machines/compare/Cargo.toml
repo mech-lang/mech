@@ -1,6 +1,6 @@
 [package]
 name = "mech-compare"
-version = "0.3.5"
+version = "0.4.0-beta"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Comparison library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -108,7 +108,7 @@ vectord = ["matrix",  "mech-core/vectord"]
 matrixd = ["matrix",  "mech-core/matrixd"]
 
 [dependencies]
-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false }
+mech-core = { path = "../../src/core", version = "0.4.0-beta", default-features = false }
 
 paste = "1.0.15"
 nalgebra = {version="0.34.1", optional = true}

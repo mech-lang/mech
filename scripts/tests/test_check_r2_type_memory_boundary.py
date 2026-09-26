@@ -159,6 +159,14 @@ class R2TypeMemoryBoundaryTests(unittest.TestCase):
     def test_01_canonical_fixture_passes(self):
         self.assertEqual(CHECKER.failures(self.fixture()), [])
 
+    def test_01b_release_documentation_can_advance_without_waiving_architecture(self):
+        root = self.fixture()
+        for relative in ("README.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md"):
+            self.replace(root, relative, "0.3.6", "0.4.0-beta")
+        self.assertEqual(CHECKER.failures(root), [])
+        self.replace(root, "docs/design/v0.4-endgame.md", "## R2 closure", "## Obsolete closure")
+        self.assert_failure(root, "missing R2 closure")
+
     def test_02_missing_required_module_fails(self):
         root = self.fixture()
         (root / "src/core/src/memory_contract/type_contract.rs").unlink()

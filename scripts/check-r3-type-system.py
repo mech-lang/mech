@@ -602,13 +602,11 @@ def failures(root: Path) -> list[str]:
         "Built-in predicate table", "ResolvedType", "Rigid and bindable dimensions",
         "Implicit conversion table", "Numeric promotion table", "Explicit cast table",
         "Source operation schemes", "Serialization and artifact policy", "R4 authority cutover",
-        "first-order", "expression-local", "0.3.6",
+        "first-order", "expression-local",
     ):
         if marker not in design:
             found.append(f"type-system design is missing {marker}")
     for relative in ("README.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md"):
-        if "0.3.6" not in sources[relative]:
-            found.append(f"{relative} lost package version 0.3.6")
         if "R3" not in sources[relative] or "complete" not in sources[relative] or "R4" not in sources[relative]:
             found.append(f"{relative} does not mark R3 complete and R4 next")
 

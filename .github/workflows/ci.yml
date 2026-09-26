@@ -165,6 +165,7 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
           python3 -B scripts/check-distribution-packaging.py
+          python3 -B -m unittest scripts/tests/test_release_metadata.py scripts/tests/test_check_package_versions.py
           python3 scripts/check-native-host-catalog.py
           bash scripts/check-static-distribution-profiles.sh static
 
@@ -559,7 +560,7 @@ jobs:
       }}
     uses: ./.github/workflows/ci-full.yml
     with:
-      release_channel: stable
+      release_channel: auto
       validation_ref: ${{ github.event.pull_request.head.sha }}
       native_plan_in_caller: true
 

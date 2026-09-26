@@ -46,6 +46,15 @@ class R3TypeSystemCheckerTests(unittest.TestCase):
     def test_01_repository_fixture_passes(self):
         self.assertEqual(CHECKER.failures(self.fixture()), [])
 
+    def test_01b_release_documentation_can_advance_without_waiving_architecture(self):
+        root = self.fixture()
+        for relative in ("README.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md", "docs/design/type-system-v1.md"):
+            path = root / relative
+            path.write_text(path.read_text().replace("0.3.6", "0.4.0-beta"))
+        self.assertEqual(CHECKER.failures(root), [])
+        self.replace(root, "docs/design/type-system-v1.md", "expression-local", "unbounded")
+        self.assert_failure(root, "type-system design is missing expression-local")
+
     def test_02_missing_permanent_module_fails(self):
         root = self.fixture()
         (root / "src/core/src/type_system/solver.rs").unlink()

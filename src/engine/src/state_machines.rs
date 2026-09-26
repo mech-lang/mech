@@ -84,6 +84,10 @@ pub fn execute_fsm_pipe(
         if let Some(kind_annotation_node) = &arg_decl.kind {
             let expected_schema =
                 crate::structures::schema_body_from_kind(&kind_annotation_node.kind, p)?;
+            #[cfg(all(feature = "enum", feature = "atom"))]
+            let converted = crate::structures::canonical_atom_enum_conversion(arg_value, &expected_schema)?;
+            #[cfg(all(feature = "enum", feature = "atom"))]
+            let arg_value = converted.as_ref().unwrap_or(arg_value);
             let actual_schema = arg_value.closed_schema_body()?;
             if expected_schema != actual_schema {
                 return Err(MechError::new(
@@ -102,9 +106,118 @@ pub fn execute_fsm_pipe(
         }
         call_env.insert(arg_decl.name.hash(), arg_value.clone());
     }
-    let mut state = pattern_to_value(&fsm.start, &call_env, p)?;
+    let mut state = fsm_state_to_value(&fsm.start, &fsm, &call_env, p)?;
     validate_fsm_state_coverage(&fsm, fsm_pipe)?;
-    execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)
+    let result = execute_fsm_pipe_impl(&fsm, &mut state, &mut call_env, p)?;
+    #[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
+    if let Some(output) = p.user_state_machine_specs.borrow().get(&fsm_id).and_then(|spec| spec.output.as_ref()) {
+        let expected = crate::structures::schema_body_from_kind(&output.kind, p)?;
+        if let Some(converted) = crate::structures::canonical_atom_enum_conversion(&result, &expected)? {
+            return Ok(converted);
+        }
+        if matches!(expected, SchemaBody::Enum { .. }) && result.closed_schema_body()? != expected {
+            return Err(MechError::new(FsmArgumentKindMismatchError {
+                argument: "output".to_owned(),
+                expected_kind: format!("{expected:?}"),
+                actual_kind: format!("{:?}", result.closed_schema_body()?),
+            }, None).with_compiler_loc().with_tokens(fsm_pipe.start.tokens()));
+        }
+    }
+    Ok(result)
+}
+
+#[cfg(feature = "kind_annotation")]
+fn declared_fsm_state(
+    pattern: &Pattern,
+    fsm: &FsmImplementation,
+    p: &InterpreterExecution<'_>,
+) -> Option<StateDefinition> {
+    let name = state_name_from_pattern(pattern)?;
+    let specs = p.user_state_machine_specs.borrow();
+    specs.get(&fsm.name.hash())?.states.iter()
+        .find(|state| state.name.to_string() == name).cloned()
+}
+
+#[cfg(feature = "kind_annotation")]
+fn fsm_payload_schemas(variables: &[Var], p: &InterpreterExecution<'_>) -> MResult<Vec<Option<SchemaBody>>> {
+    variables.iter().map(|variable| {
+        let schema = variable.kind.as_ref()
+            .map(|kind| crate::structures::schema_body_from_kind(&kind.kind, p))
+            .transpose()?;
+        // A source wildcard is a missing restriction, not a requirement for
+        // the runtime value itself to have the Dynamic wrapper schema.
+        Ok(schema.filter(|schema| !matches!(schema, SchemaBody::Dynamic)))
+    }).collect()
+}
+
+fn compile_fsm_pattern(pattern: &Pattern, fsm: &FsmImplementation, p: &InterpreterExecution<'_>) -> MResult<CompiledPattern> {
+    #[cfg(not(feature = "kind_annotation"))]
+    let _ = fsm;
+    #[cfg(feature = "kind_annotation")]
+    if let Some(state) = declared_fsm_state(pattern, fsm, p) {
+        if let Some(variables) = &state.state_variables {
+            return compile_fsm_tuple_pattern(pattern, &fsm_payload_schemas(variables, p)?, p);
+        }
+        if matches!(pattern, Pattern::TupleStruct(_)) {
+            return Err(fsm_state_payload_error(pattern));
+        }
+    }
+    compile_pattern(pattern, None, p)
+}
+
+#[cfg(feature = "kind_annotation")]
+fn fsm_state_payload_error(pattern: &Pattern) -> MechError {
+    MechError::new(PatternCompileError {
+        reason: "FSM state payload does not match its declaration.".to_owned(),
+    }, None).with_compiler_loc().with_tokens(pattern.tokens())
+}
+
+fn fsm_state_to_value(pattern: &Pattern, fsm: &FsmImplementation, env: &Environment, p: &InterpreterExecution<'_>) -> MResult<ValueCell> {
+    #[cfg(not(feature = "kind_annotation"))]
+    let _ = fsm;
+    #[cfg(feature = "kind_annotation")]
+    if let Some(state) = declared_fsm_state(pattern, fsm, p) {
+        if let Some(variables) = &state.state_variables {
+            let Pattern::TupleStruct(tuple) = pattern else {
+                return Err(fsm_state_payload_error(pattern));
+            };
+            if tuple.patterns.len() != variables.len() {
+                return Err(fsm_state_payload_error(pattern));
+            }
+            let schemas = fsm_payload_schemas(variables, p)?;
+            let mut values = vec![crate::literals::atom(&Atom { name: state.name.clone() }, p)?];
+            for ((pattern, variable), expected) in tuple.patterns.iter().zip(variables).zip(schemas) {
+                let value = pattern_to_value(pattern, env, p)?;
+                let Some(expected) = expected else {
+                    values.push(value);
+                    continue;
+                };
+                #[cfg(not(all(feature = "enum", feature = "atom")))]
+                let _ = (variable, expected);
+                #[cfg(all(feature = "enum", feature = "atom"))]
+                let value = if matches!(expected, SchemaBody::Enum { .. }) {
+                    let value = crate::structures::canonical_atom_enum_conversion(&value, &expected)?.unwrap_or(value);
+                    let actual = value.closed_schema_body()?;
+                    if actual != expected {
+                        return Err(MechError::new(FsmArgumentKindMismatchError {
+                            argument: format!("{}.{}", state.name.to_string(), variable.name.to_string()),
+                            expected_kind: format!("{expected:?}"),
+                            actual_kind: format!("{actual:?}"),
+                        }, None).with_compiler_loc().with_tokens(pattern.tokens()));
+                    }
+                    value
+                } else {
+                    value
+                };
+                values.push(value);
+            }
+            return ValueCell::tuple_from_cells(&values);
+        }
+        if matches!(pattern, Pattern::TupleStruct(_)) {
+            return Err(fsm_state_payload_error(pattern));
+        }
+    }
+    pattern_to_value(pattern, env, p)
 }
 
 fn execute_fsm_pipe_impl(
@@ -130,7 +243,7 @@ fn execute_fsm_pipe_impl(
         .iter()
         .map(|arm| match arm {
             FsmArm::Guard(pattern, _) | FsmArm::Transition(pattern, _) => {
-                compile_pattern(pattern, None, p).map(Some)
+                compile_fsm_pattern(pattern, fsm, p).map(Some)
             }
             FsmArm::Comment(_) => Ok(None),
         })
@@ -179,7 +292,7 @@ fn execute_fsm_pipe_impl(
                     if matched {
                         #[cfg(feature = "trace")]
                         let previous_state = format!("{state:?}");
-                        let out = apply_transitions(transitions, state, &mut arm_env, p)?;
+                        let out = apply_transitions(transitions, fsm, state, &mut arm_env, p)?;
                         restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
                         *call_env = arm_env;
                         if let Some(value) = out {
@@ -274,7 +387,7 @@ fn execute_fsm_pipe_impl(
                         }
                         #[cfg(feature = "trace")]
                         let previous_state = format!("{state:?}");
-                        let out = apply_transitions(&guard.transitions, state, &mut arm_env, p)?;
+                        let out = apply_transitions(&guard.transitions, fsm, state, &mut arm_env, p)?;
                         restore_arm_local_bindings(&pattern_match, &base_env, &mut arm_env);
                         *call_env = arm_env;
                         if let Some(value) = out {
@@ -436,6 +549,7 @@ fn state_name_from_pattern(pattern: &Pattern) -> Option<String> {
 
 fn apply_transitions(
     transitions: &[Transition],
+    fsm: &FsmImplementation,
     state: &mut ValueCell,
     env: &mut Environment,
     p: &InterpreterExecution<'_>,
@@ -443,7 +557,7 @@ fn apply_transitions(
     for transition in transitions {
         match transition {
             Transition::Next(next_pattern) | Transition::Async(next_pattern) => {
-                *state = pattern_to_value(next_pattern, env, p)?;
+                *state = fsm_state_to_value(next_pattern, fsm, env, p)?;
             }
             Transition::Output(output_pattern) => {
                 return Ok(Some(pattern_to_value(output_pattern, env, p)?));

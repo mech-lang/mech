@@ -1,5 +1,5 @@
-<section class="live-demo" aria-labelledby="live-title" id="live-demo">
-  <div class="demo-heading"><div><p class="kicker" id="source-origin">Executing the source above</p><h3 id="live-title">Bearing-only localization</h3></div><span id="runtime-status" role="status">Loading Rust / WebAssembly runtime…</span></div>
+<section class="live-demo" aria-labelledby="live-title" id="ekf-app">
+  <div class="demo-heading"><div><p class="kicker" id="source-origin">Executing the article's EKF source</p><h3 id="live-title">Bearing-only localization</h3></div><span id="runtime-status" role="status">Loading Rust / WebAssembly runtime…</span></div>
   <div class="demo-controls">
     <label>Compute backend<select id="backend"><option value="cpu">CPU · Rust / WebAssembly</option><option value="gpu" disabled>GPU · WebGPU (checking availability)</option></select></label>
     <label>Independent filters<select id="instances"><option value="1">1</option><option value="256">256</option><option value="4096" selected>4,096</option><option value="65536">65,536</option></select></label>
@@ -25,14 +25,14 @@
     <label>Bearing noise scale <output id="noise-label">0.02</output><input id="noise" type="range" min="0" max="0.3" step="0.01" value="0.02"></label>
     <button id="inject" disabled>Inject an invalid bearing</button>
   </div>
-  <div class="behavior-status" aria-label="Live robot behavior"><span data-state="0" class="active">Paused</span><span class="state-edge">↔</span><span data-state="1">Patrol</span><span class="state-edge">→</span><span data-state="2">Fault</span><p id="behavior-message">The Mech state machine controls run, pause, and rejected-turn behavior.</p></div>
+  <div class="behavior-status" aria-label="Live robot behavior"><span data-state="paused" class="active">Paused</span><span class="state-edge">↔</span><span data-state="patrol">Patrol</span><span class="state-edge">→</span><span data-state="fault">Fault</span><p id="behavior-message">The Mech state machine controls run, pause, and rejected-turn behavior.</p></div>
   <p class="small" id="gpu-support">Checking WebGPU availability…</p>
   <button id="verify" disabled>Verify CPU / GPU agreement and rollback</button><pre id="verification" class="verification" role="status"></pre>
   <p class="callout">Changing the backend or batch size resets both the filter and the simulation. CPU and GPU compile the same source; state migration between devices is not implemented in this example. Rendering shows the first filter in the batch.</p>
-  <p class="small">Long episodes or changed inputs can trigger the displayed covariance constraints. A reported fault stops the episode without publishing the candidate; Reset starts again from the source initial state.</p>
+  <p class="small">The kernel checks the raw covariance update and stores its symmetric part. A constraint violation stops the episode without publishing the candidate; Reset starts from the source initial state. The Reactive section describes the long-run symmetry fault that led to this formulation.</p>
   <details><summary>Timing and drawing support</summary>
     <p>FPS includes animation scheduling and is capped by the display. Completed-turn time includes input binding, execution, validation, synchronization, and one filter's state readback; it excludes drawing and compilation. Throughput is batch size divided by median turn time. The summary uses the latest 60 accepted turns after five warmups, not independent benchmark trials.</p>
-    <p><a href="source/ekf.mec">Download the paper kernel</a> · <a href="source/behavior.mec">Robot state machine</a> · <a href="assets/drawing.mjs">Drawing and sensor simulation support</a> · <a href="assets/app.mjs">Browser host integration</a></p>
+    <p><a href="source/ekf.mec">Download the live kernel</a> · <a href="source/behavior.mec">Robot state machine</a> · <a href="assets/drawing.mjs">Drawing and sensor simulation support</a> · <a href="assets/app.mjs">Browser host integration</a></p>
   </details>
   <pre id="runtime-error" class="error" role="alert" hidden></pre>
 </section>

@@ -37,14 +37,22 @@ export function blogShell(repo) {
     </div>
   </header>`);
   replaceOnce('{{SOURCE_URL_KEY}}','article.mec');
+  replaceOnce('<section class="content-shell" id="contentShell">', '<section class="content-shell workshop-footer-shell" id="contentShell">');
+  replaceOnce('aria-selected="false" aria-controls="mech-console-panel-output"', 'aria-selected="true" aria-controls="mech-console-panel-output"');
+  replaceOnce('aria-selected="true" aria-controls="mech-console-panel-console"', 'aria-selected="false" aria-controls="mech-console-panel-console"');
+  replaceOnce('data-mech-console-panel="console">', 'data-mech-console-panel="console" hidden>');
+  replaceOnce('data-mech-console-panel="output" hidden>', 'data-mech-console-panel="output">');
+  replaceOnce('<div class="console-scroll" data-mech-output-panel></div>', `<div class="console-scroll" data-mech-output-panel data-mech-output-host="application">
+            <div class="mech-output-region mech-output-region-application" data-mech-output-region="application">${component('demo.html')}</div>
+          </div>`);
   replaceOnce('    <div class="content-column">',`    <div class="content-column">
       <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="https://mech-lang.org">Home</a><span class="sep">⟩</span><a href="https://mech-lang.org/blog/">Blog</a><span class="sep">⟩</span><span aria-current="page">IROS Rust for Robotics 2026</span></nav>`);
-  replaceOnce('        <div class="article-layout"',`        <p class="workshop-links"><a href="#live-demo">Run the browser EKF</a><a href="source/ekf.mec">Executable EKF source</a><a href="article.mec">Article source</a><a href="build-manifest.json">Build identity</a></p>
-        <div class="article-layout"`);
   replaceOnce('        <section class="article-backmatter"',`        ${component('separator.html')}
         <section class="article-backmatter"`);
-  replaceOnce('      </div>\n    </section>',`        ${component('footer.html')}
-      </div>
+  // The footer owns the full scroll-pane width; its inner container keeps
+  // the official blog's centered links and release-card layout.
+  replaceOnce('      </div>\n    </section>',`      </div>
+      ${component('footer.html')}
     </section>`);
   replaceOnce(`<script
     type="module"

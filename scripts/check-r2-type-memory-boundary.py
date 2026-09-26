@@ -472,10 +472,6 @@ def failures(root: Path) -> list[str]:
     stale = "The R2 boundary has not yet separated semantic identity from physical storage identity."
     if stale in endgame:
         found.append("v0.4 endgame retains stale R2 release blocker")
-    for relative in ("README.md", "docs/design/ROADMAP.mec", "docs/design/v0.4-endgame.md"):
-        if "0.3.6" not in sources[relative]:
-            found.append(f"{relative} lost package version 0.3.6")
-
     r1, r2, unit = ("python3 scripts/check-r1-compatibility-closure.py",
         "python3 scripts/check-r2-type-memory-boundary.py", "scripts/tests/test_check_r2_type_memory_boundary.py")
     for relative, job_name in ((".github/workflows/ci.yml", "static-contracts"), (".github/workflows/ci-full.yml", "architecture-contracts")):

@@ -414,14 +414,6 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_tree(&tree)
     }
 
-    pub(crate) fn compile_interactive_source(
-        &self,
-        source: &str,
-    ) -> MResult<ProgramCompilationProduct> {
-        let tree = mech_syntax::parser::parse(source.trim())?;
-        self.compile_tree_with_projection(&tree, RootOutputProjection::ObservableResultsAndSymbols)
-    }
-
     pub(crate) fn compile_tree(
         &self,
         tree: &mech_core::Program,
@@ -441,6 +433,27 @@ impl<'a> ProgramCompilerView<'a> {
         tree: &mech_core::Program,
         output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
+        let (program, operations) = self.plan_tree_with_projection(tree, output_projection)?;
+        self.finalize(program, &operations)
+    }
+
+    /// Resident activation consumes the semantic artifact directly. It must
+    /// not require a second bytecode-v1 representation of canonical values.
+    pub(crate) fn compile_tree_for_activation(
+        &self,
+        tree: &mech_core::Program,
+        interactive: bool,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let projection = if interactive { RootOutputProjection::ObservableResultsAndSymbols } else { RootOutputProjection::ObservableResults };
+        let (program, operations) = self.plan_tree_with_projection(tree, projection)?;
+        self.finalize_activation(program, &operations)
+    }
+
+    fn plan_tree_with_projection(
+        &self,
+        tree: &mech_core::Program,
+        output_projection: RootOutputProjection,
+    ) -> MResult<(CompilerPlanningProgram, Vec<CompiledResourceSendOperation>)> {
         let mut program = self.new_program();
         let document_output_ids = root_document_output_ids(tree);
         let index = SourceIndex::from_program(tree);
@@ -470,7 +483,7 @@ impl<'a> ProgramCompilerView<'a> {
         ) {
             program.publish_compiler_root_symbols();
         }
-        self.finalize(program, &operations)
+        Ok((program, operations))
     }
 
     fn compile_tree_artifact_with_inputs(
@@ -838,18 +851,6 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_root_with_projection(request, options, RootOutputProjection::ObservableResults)
     }
 
-    pub(crate) fn compile_resolved_root(
-        &self,
-        resolved: ResolvedSource,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compile_resolved_root_with_projection(
-            resolved,
-            options,
-            RootOutputProjection::ObservableResults,
-        )
-    }
-
     pub(crate) fn compile_interactive_root(
         &self,
         request: SourceRequest,
@@ -857,18 +858,6 @@ impl<'a> ProgramCompilerView<'a> {
     ) -> MResult<ProgramCompilationProduct> {
         self.compile_root_with_projection(
             request,
-            options,
-            RootOutputProjection::ObservableResultsAndSymbols,
-        )
-    }
-
-    pub(crate) fn compile_interactive_resolved_root(
-        &self,
-        resolved: ResolvedSource,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compile_resolved_root_with_projection(
-            resolved,
             options,
             RootOutputProjection::ObservableResultsAndSymbols,
         )
@@ -899,6 +888,27 @@ impl<'a> ProgramCompilerView<'a> {
         options: ModuleBuildOptions<'_>,
         output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
+        let (program, operations) = self.plan_resolved_root_with_projection(resolved, options, output_projection)?;
+        self.finalize(program, &operations)
+    }
+
+    pub(crate) fn compile_resolved_root_for_activation(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+        interactive: bool,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let projection = if interactive { RootOutputProjection::ObservableResultsAndSymbols } else { RootOutputProjection::ObservableResults };
+        let (program, operations) = self.plan_resolved_root_with_projection(resolved, options, projection)?;
+        self.finalize_activation(program, &operations)
+    }
+
+    fn plan_resolved_root_with_projection(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+        output_projection: RootOutputProjection,
+    ) -> MResult<(CompilerPlanningProgram, Vec<CompiledResourceSendOperation>)> {
         let mut modules = HashMap::new();
         let mut stack = Vec::new();
         let root = self.resolve_resolved_module(resolved, options, &mut modules, &mut stack)?;
@@ -934,10 +944,10 @@ impl<'a> ProgramCompilerView<'a> {
             .values()
             .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
             .collect::<Vec<_>>();
-        self.finalize(
+        Ok((
             root_program.expect("root compiler program is retained until finalization"),
-            &operations,
-        )
+            operations,
+        ))
     }
 
     pub(crate) fn compile_roots(
@@ -1018,6 +1028,20 @@ impl<'a> ProgramCompilerView<'a> {
                 format!("resident ProgramArtifact finalization failed: {error:?}"),
             )
         })
+    }
+
+    fn finalize_activation(
+        &self,
+        mut program: CompilerPlanningProgram,
+        operations: &[CompiledResourceSendOperation],
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let resolver = ResidentExternalContractResolver::new(self.resources);
+        program.compile_program_artifact_product_with_resource_send_operations(
+            &resolver, operations, &BTreeSet::new(),
+        ).map_err(|error| route_failure(
+            ResidentRouteFailureClass::InvalidArtifact,
+            format!("resident ProgramArtifact finalization failed: {error:?}"),
+        ))
     }
 
     fn resolve_module(

@@ -24,7 +24,7 @@ for(const [name,path] of [['logo.png','img/logo.png'],['FiraCode-Regular.ttf','f
   }
   copyFileSync(dest,join(out,'assets',name));
 }
-const expected='a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2';
+const expected='f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b';
 if(hash(join(root,'source/ekf.mec'))!==expected) throw new Error('The presentation EKF has changed; update its provenance and tests intentionally.');
 const renderer=join(root,'render/target/debug/mech-iros-blog-render');
 if(!existsSync(renderer)) throw new Error('Build render/Cargo.toml first.');
@@ -44,6 +44,7 @@ for(const [token,[label,href]] of slotLinks) {
   literate=literate.replace(token,`[${label}](${href})`);
 }
 for(const item of downloads) writeFileSync(join(out,item.href),item.source);
+copyFileSync(join(root,'../poster/IROS-2026-Mech-Poster-prose-v3.pdf'),join(out,'poster.pdf'));
 const expandedPath=join(temporary,'article.mec');
 writeFileSync(expandedPath,literate);
 const shellPath=join(temporary,'blog-shell.html');
@@ -58,7 +59,7 @@ function slot(name,content) {
   });
   if(count!==1) throw new Error(`Expected one paragraph slot ${name}; found ${count}`);
 }
-slot('BLOGLIVEDEMO',read(join(root,'demo.html')));
+slot('BLOGLIVEDEMO',read(join(root,'demo-launcher.html')));
 // One tokenizing pass over the unescaped source avoids altering inserted markup.
 function highlightRust(code) {
   const token=/\/\/[^\n]*|"(?:\\.|[^"\\])*"|\b(?:use|fn|let|mut|unsafe|for|in|pub|return)\b|\b\d+(?:\.\d+)?\b|[;,]/g;
@@ -82,7 +83,8 @@ if(rustIndex!==rustDownloads.length) throw new Error('Rust code fence count chan
 slot('BLOGPIPELINE',`<figure class="mech-figure workshop-figure"><div class="figure-frame chart-desktop">${read(join(root,'pipeline.svg'))}</div><div class="figure-frame chart-mobile">${read(join(root,'pipeline-mobile.svg'))}</div><figcaption class="mech-figure-caption">Poster architecture diagram, adapted for the article. The build lane runs during build and activation; the execution lane repeats for each accepted or rejected turn. Telemetry values are illustrative, while the live figure above uses the actual computed values.</figcaption></figure>`);
 copyFileSync(join(root,'pipeline.svg'),join(out,'assets/pipeline.svg'));
 copyFileSync(join(root,'pipeline-mobile.svg'),join(out,'assets/pipeline-mobile.svg'));
-copyFileSync(join(root,'hero.svg'),join(out,'assets/hero.svg'));
+copyFileSync(join(root,'vendor/pittsburgh-hero.jpg'),join(out,'assets/pittsburgh-hero.jpg'));
+copyFileSync(join(root,'vendor/PITTSBURGH.md'),join(out,'assets/PITTSBURGH.md'));
 if(existsSync(join(root,'charts.mjs'))) {
   const {buildCharts}=await import('./charts.mjs');await buildCharts(join(out,'assets'));
 }
@@ -109,8 +111,11 @@ for(const file of ['mika-pose-point.png','MIKA.md']) copyFileSync(join(root,'ven
 for(const file of ['README.md','VALIDATION.md']) if(existsSync(join(root,file))) copyFileSync(join(root,file),join(out,file));
 for(const file of ['apple-m1-cpu-equal-n10-2026-09-24.json','apple-m1-metal-equal-n10-2026-09-24.json','apple-m1-mech-backend-pairs-n10-2026-09-25.json']) copyFileSync(join(root,'../results',file),join(out,'evidence',file));
 copyFileSync(join(root,'browser-verification.json'),join(out,'evidence/browser-verification.json'));
+for(const file of readdirSync(join(root,'evidence'))) {
+  if (/\.(?:md|json|mec|mjs|html)$/.test(file)) copyFileSync(join(root,'evidence',file),join(out,'evidence',file));
+}
 copyFileSync(join(repo,'LICENSE'),join(out,'LICENSE'));
-const evidenceFiles=['article.mec',...readdirSync(join(out,'source')).map(x=>'source/'+x),...readdirSync(join(out,'assets')).map(x=>'assets/'+x),'_mech/pkg/mech_wasm.js','_mech/pkg/mech_wasm_bg.wasm','_mech/pkg/mech_wasm_bg.wasm.gz',...readdirSync(join(out,'evidence')).map(x=>'evidence/'+x)];
+const evidenceFiles=['article.mec','poster.pdf',...readdirSync(join(out,'source')).map(x=>'source/'+x),...readdirSync(join(out,'assets')).map(x=>'assets/'+x),'_mech/pkg/mech_wasm.js','_mech/pkg/mech_wasm_bg.wasm','_mech/pkg/mech_wasm_bg.wasm.gz',...readdirSync(join(out,'evidence')).map(x=>'evidence/'+x)];
 const manifest={builtAt:new Date().toISOString(),gitRevision:execFileSync('git',['rev-parse','HEAD'],{cwd:repo,encoding:'utf8'}).trim(),worktreeDirty:!!execFileSync('git',['status','--porcelain'],{cwd:repo,encoding:'utf8'}).trim(),files:Object.fromEntries(evidenceFiles.map(x=>[x,hash(join(out,x))]))};
 writeFileSync(join(out,'build-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log(`Built ${out}/index.html`);

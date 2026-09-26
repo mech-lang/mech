@@ -1136,7 +1136,7 @@ fn compile_executable_program_artifact_from_semantics(
     validate_compiled_instruction_roles(compiled, catalog)?;
     validate_compiled_type_sidecars(compiled, catalog)?;
 
-    let canonical_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
+    let canonical_constants = compiled.artifact_constant_values()?;
     let matrix_literal_instructions = validate_compiled_matrix_literals(compiled)?;
 
     struct PendingRegisterSchema {

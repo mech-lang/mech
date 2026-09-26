@@ -65,6 +65,28 @@ def full_architecture_contracts() -> str:
 
 
 class FullWorkflowContractTests(unittest.TestCase):
+    def test_nominal_source_contracts_have_explicit_feature_enabled_gates(self):
+        contracts = job_block(FULL, "architecture-contracts")
+        commands = " ".join(contracts.split())
+        expected = (
+            "cargo +nightly-2026-03-03 test --locked -p mech-core "
+            "--no-default-features --features semantic-compiler,base,f32 "
+            "--test compiler_nominal_constants",
+            "cargo +nightly-2026-03-03 test --locked -p mech-engine "
+            "--no-default-features --features full_compiler,resident-artifact "
+            "--test fsm_nominal_states",
+            "cargo +nightly-2026-03-03 test --locked -p mech-runtime "
+            "--no-default-features --features full_compiler,compute "
+            "--lib runtime::program::tests::nominal_source_activates_without_silently_exporting_legacy_bytecode "
+            "-- --exact",
+        )
+        for command in expected:
+            with self.subTest(command=command):
+                self.assertIn(command, commands)
+        self.assertIn(FULL_CHECKOUT_REF, contracts)
+        self.assertNotIn("continue-on-error", contracts)
+        self.assertNotIn("if:", contracts)
+
     def test_native_plan_starts_early_once_on_the_exact_head(self):
         early = job_block(CI, "early-native-plan")
         delegated = job_block(FULL, "native-plan")

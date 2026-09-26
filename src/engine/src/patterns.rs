@@ -547,6 +547,30 @@ pub fn compile_pattern(
     PatternCompiler::default().compile(pattern, expected_schema, interpreter)
 }
 
+/// Compile a declared FSM state's payload in one binding scope, retaining
+/// known field schemas without treating unannotated fields as Dynamic values.
+#[cfg(all(feature = "state_machines", feature = "kind_annotation"))]
+pub(crate) fn compile_fsm_tuple_pattern(
+    pattern: &Pattern,
+    payload_schemas: &[Option<SchemaBody>],
+    interpreter: &Interpreter,
+) -> MResult<CompiledPattern> {
+    let mut compiler = PatternCompiler::default();
+    let Pattern::TupleStruct(tuple) = pattern else {
+        return Err(compiler.error(pattern, "FSM state pattern requires its declared payload."));
+    };
+    if tuple.patterns.len() != payload_schemas.len() {
+        return Err(compiler.error(pattern, "FSM state pattern payload arity does not match its declaration."));
+    }
+    let payload = tuple.patterns.iter().zip(payload_schemas)
+        .map(|(pattern, schema)| compiler.compile(pattern, schema.as_ref(), interpreter))
+        .collect::<MResult<Vec<_>>>()?;
+    Ok(CompiledPattern::AtomTuple {
+        tag_key: canonical_atom_key(&tuple.name.to_string())?,
+        payload,
+    })
+}
+
 enum PatternExpressionSource<'a, 'execution> {
     Interpreter {
         env: &'a Environment,

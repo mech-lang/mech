@@ -97,7 +97,7 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## Project Roadmap
 
-The current published package is `v0.3.6`; the active development target is
+The current package is `v0.4.0-beta`, a preview of the active development target
 `v0.4.0`. The canonical value-system cutover, R1 contract closure, and R2 type-memory
 boundary are complete. R3 Type System v1 and the R4 authority cutover are also
 complete. Semantic inference, built-in predicates, conversion planning, overload
@@ -110,7 +110,8 @@ authoritative. The active v0.4 phase is R6:
 - R6 Memory runtime cutover — in progress
 - R7 Release qualification
 
-The package version remains `v0.3.6` until R7 qualifies the release.
+The preview is not a qualified stable release. Stable `v0.4.0` remains subject
+to R7 release qualification; see the [preview release notes](docs/releases/v0.4.0-beta.md).
 
 A Brief Roadmap:
 

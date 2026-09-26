@@ -207,6 +207,62 @@ fn formatter_round_trips_comma_imports_and_their_trailing_comment() {
 
 #[cfg(feature = "formatter")]
 #[test]
+fn formatter_emits_styled_import_tokens_without_changing_source_text() {
+    for source in [
+        "+> stats",
+        "+> math/*",
+        "+> logic/all",
+        "+> stats/{sum/row, sum/column}",
+        "+> s := math/sin",
+        "+> @ui := browser/dom",
+    ] {
+        let import = imports(source).remove(0);
+        let mut formatter = mech_syntax::Formatter::new();
+        assert_eq!(formatter.module_import(&import), source);
+        formatter.html = true;
+        let html = formatter.module_import(&import);
+        assert!(
+            html.starts_with(
+                "<span class=\"mech-import\"><span class=\"mech-import-sigil\">+&gt;</span> "
+            ),
+            "{html}"
+        );
+        assert!(html.contains("class=\"mech-import-module\""), "{html}");
+        if source.contains('/') {
+            assert!(html.contains("class=\"mech-import-separator\""));
+            assert!(html.contains("class=\"mech-import-selector\""));
+        }
+        if source.contains(":=") {
+            assert!(html.contains("class=\"mech-import-alias\""));
+            assert!(html.contains("class=\"mech-import-assign-op\">:=</span>"));
+        }
+        let mut inside_tag = false;
+        let visible = html
+            .chars()
+            .filter(|character| match character {
+                '<' => {
+                    inside_tag = true;
+                    false
+                }
+                '>' => {
+                    inside_tag = false;
+                    false
+                }
+                _ => !inside_tag,
+            })
+            .collect::<String>()
+            .replace("&gt;", ">")
+            .replace("&lt;", "<")
+            .replace("&amp;", "&");
+        assert_eq!(
+            visible, source,
+            "styling must preserve the import expression"
+        );
+    }
+}
+
+#[cfg(feature = "formatter")]
+#[test]
 fn formatter_round_trips_comma_imports_in_mechdown() {
     let src = "Import Lists\n============\n+> math/*, logic/all -- shared imports\n============\n\n~~~mech:demo\n+> stats, s := math/sin -- block imports\nx := s(0)\n~~~\n";
     let program = parser::parse(src).unwrap();

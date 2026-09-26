@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {buildCharts} from './charts.mjs';
-import {sourceWithHeadingComments} from './standard-examples.mjs';
+import {ekfSections} from './standard-examples.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url)), out=join(root,'dist');
 const repo=join(root,'../../..');
@@ -20,10 +20,13 @@ assert(html.includes('data-mech-wasm-module="./runtime.mjs"'),'document and kern
 assert(html.includes('id="contentShell"')&&html.includes('id="articleLayout"'),'shared scroll and TOC boundaries');
 assert(!html.includes('class="contents"'),'do not nest the canonical TOC inside a custom wrapper');
 assert(html.includes('data-mech-console-pane')&&html.includes('data-mech-repl-mount'),'real document console mounts');
-assert(html.includes('src="assets/hero.svg"'),'EKF hero artwork');
+assert(html.includes('src="assets/pittsburgh-hero.jpg"'),'licensed Pittsburgh hero photograph');
 assert(html.includes('class="github-button"')&&html.includes('aria-label="Star mech-lang/mech on GitHub"'),'canonical GitHub star button');
 assert(html.includes('class="mika-separator"')&&html.includes('class="footer-main"'),'blog separator and complete footer');
 assert(html.includes('IROS 2026: Rust for Robotics Workshop')&&html.includes('September 27, 2026'),'workshop metadata');
+assert(html.includes('Why an EKF?')&&html.includes('HYTRADBOI'),'explain the representative workload and cite earlier implementations');
+for(const structure of ['set','table','tuple','map']) assert(html.includes(`https://docs.mech-lang.org/reference/${structure}.html`),'link numerical-syntax callout to data-structure references');
+assert(html.includes('evidence/ekf-long-horizon-diagnostic.md'),'retain the integrity-constraint case-study evidence');
 const blogCss=readFileSync(join(repo,'include/blog.css'),'utf8');
 assert.match(blogCss,/\.hero:has\(> \.hero-visual:empty\)\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,'empty hero must use the full title width');
 assert.match(blogCss,/\.hero > \.hero-visual:empty\s*\{\s*display: none;/,'empty artwork must not reserve vertical space');
@@ -40,8 +43,14 @@ assert.equal(new Set(structuralIds).size,structuralIds.length,'duplicate structu
 for(const id of ['backend','run','pause','reset','step','inject','verify','state-values']) assert(ids.includes(id),`missing control ${id}`);
 for(const id of ['source-editor','compile','restore','functions-source','matching-source','modified-source']) assert(!ids.includes(id),`source editing must be removed: ${id}`);
 assert(!/<textarea|contenteditable="true"|data-run-example/.test(html),'no static inline source editors');
-assert.equal([...html.matchAll(/class="mech-fenced-mech-block"/g)].length,4,'four native read-only examples');
-assert.equal([...html.matchAll(/class="mech-code-block-namespace"/g)].length,4,'four standard label pills');
+assert.equal([...html.matchAll(/class="mech-fenced-mech-block"/g)].length,7,'four connected EKF sections plus three native language examples');
+assert.equal([...html.matchAll(/class="mech-code-block-namespace"/g)].length,7,'seven standard label pills');
+assert.equal([...html.matchAll(/data-workshop-kernel-listing/g)].length,4,'all EKF sections share the same kernel host');
+assert.match(html,/data-mech-output-region="application">\s*<section class="live-demo"[^>]*id="ekf-app"/,'working app belongs in the Output pane');
+assert(html.includes('data-mech-output-host="application"'),'app output survives REPL refresh');
+assert(html.includes('data-workshop-fullscreen'),'article opens existing output fullscreen');
+assert(html.includes('v0.4.0-beta'),'current workshop version');
+assert.deepEqual(readFileSync(join(out,'poster.pdf')),readFileSync(join(root,'../poster/IROS-2026-Mech-Poster-prose-v3.pdf')),'publish the identified current PDF without re-exporting it');
 for(const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
   const ref=match[1];
   if(/^(?:https?:|mailto:|data:)/.test(ref)) continue;
@@ -61,11 +70,11 @@ for(const [,target,number] of citationReferences) {
   assert.equal(citationNumbers.get(target),number,`inline citation [${number}] disagrees with Works Cited target ${target}`);
 }
 const kernel=readFileSync(join(out,'source/ekf.mec'));
-assert.equal(createHash('sha256').update(kernel).digest('hex'),'a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2');
+assert.equal(createHash('sha256').update(kernel).digest('hex'),'f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b');
 assert.equal(kernel.toString(),readFileSync(join(root,'source/ekf.mec'),'utf8'));
 const article=readFileSync(join(out,'article.mec'),'utf8');
 assert(article.includes(`${publishedUrl}#live-demo`),'download must link to the workshop demo');
-assert(article.includes(sourceWithHeadingComments(kernel.toString())),'downloadable article must contain unchanged EKF computational lines');
+for (const section of ekfSections(kernel.toString())) assert(article.includes(section.code),'downloadable article must contain unchanged EKF computational lines');
 assert(!/BLOG[A-Z]+/.test(article),'download contains unexpanded slots');
 const chartDir=mkdtempSync(join(tmpdir(),'mech-blog-chart-test-'));
 buildCharts(chartDir); // Also validates n=10 and medians/MAD against the archive.

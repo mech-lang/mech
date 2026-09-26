@@ -1,0 +1,106 @@
+{
+  "sourceSha256": "f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b",
+  "wasmSha256": "18224e2cf04b246148029bff7bf498ed77c92780495a5e7cfc493a9cd94a8871",
+  "instances": 64,
+  "turns": 10000,
+  "controls": {
+    "velocity": 1,
+    "omega": 0.015,
+    "noise": 0.02,
+    "timeStep": 0.1
+  },
+  "policy": {
+    "absolute": 0.0001,
+    "relativePerOperand": 0.000001,
+    "pairBudget": "absolute + relative*abs(a) + relative*abs(b)",
+    "projection": "raw*0.5 + transpose(raw)*0.5"
+  },
+  "accepted": 10000,
+  "publicationCheckedEveryTurn": true,
+  "maxCovarianceMagnitude": 803.063232421875,
+  "minDiagonal": 0.014838606119155884,
+  "rawAudit": {
+    "comparedEveryAcceptedStateBit": true,
+    "maxGap": 0.0001220703125,
+    "maxGapToBudget": 0.19707974732768144
+  },
+  "grossAsymmetry": {
+    "injectedRawPairGap": 1,
+    "rejectedByRawSymmetryGuard": true,
+    "rollbackBitIdentical": true,
+    "sourceSha256": "16ee6522cedd0c10def39d7442beb21c65da6b28e69373b846e1398d0758bc70",
+    "error": "Integrity(BatchedIntegrityFault { attempted_turn: 1, instance: 0, constraint: IntegrityConstraintId(0), constraint_name: \"symmetric-covariance!\" })"
+  },
+  "initialInvalidInputs": [
+    {
+      "input": "NaN",
+      "lane": 63,
+      "rejected": true,
+      "wholeBatchRollbackBitIdentical": true,
+      "error": "Integrity(BatchedIntegrityFault { attempted_turn: 1, instance: 63, constraint: IntegrityConstraintId(1), constraint_name: \"finite-candidate!\" })"
+    },
+    {
+      "input": "Infinity",
+      "lane": 63,
+      "rejected": true,
+      "wholeBatchRollbackBitIdentical": true,
+      "error": "Integrity(BatchedIntegrityFault { attempted_turn: 2, instance: 63, constraint: IntegrityConstraintId(1), constraint_name: \"finite-candidate!\" })"
+    },
+    {
+      "input": "-Infinity",
+      "lane": 63,
+      "rejected": true,
+      "wholeBatchRollbackBitIdentical": true,
+      "error": "Integrity(BatchedIntegrityFault { attempted_turn: 3, instance: 63, constraint: IntegrityConstraintId(1), constraint_name: \"finite-candidate!\" })"
+    }
+  ],
+  "finalInvalidInputs": [
+    {
+      "input": "NaN",
+      "lane": 63,
+      "rejected": true,
+      "wholeBatchRollbackBitIdentical": true,
+      "error": "Integrity(BatchedIntegrityFault { attempted_turn: 10004, instance: 63, constraint: IntegrityConstraintId(1), constraint_name: \"finite-candidate!\" })"
+    },
+    {
+      "input": "Infinity",
+      "lane": 63,
+      "rejected": true,
+      "wholeBatchRollbackBitIdentical": true,
+      "error": "Integrity(BatchedIntegrityFault { attempted_turn: 10005, instance: 63, constraint: IntegrityConstraintId(1), constraint_name: \"finite-candidate!\" })"
+    },
+    {
+      "input": "-Infinity",
+      "lane": 63,
+      "rejected": true,
+      "wholeBatchRollbackBitIdentical": true,
+      "error": "Integrity(BatchedIntegrityFault { attempted_turn: 10006, instance: 63, constraint: IntegrityConstraintId(1), constraint_name: \"finite-candidate!\" })"
+    }
+  ],
+  "recovery": {
+    "accepted": true,
+    "maxScale": 803.3807983398438,
+    "minDiagonal": 0.038166485726833344,
+    "matchesUninterruptedReferenceBits": true
+  },
+  "finalLane0": {
+    "mean": [
+      49.21278762817383,
+      149.9542236328125,
+      15.401761054992676
+    ],
+    "covarianceColumnMajor": [
+      803.3512573242188,
+      372.27337646484375,
+      -5.341187000274658,
+      372.27337646484375,
+      190.49171447753906,
+      -2.5488603115081787,
+      -5.341187000274658,
+      -2.5488603115081787,
+      0.03816720470786095
+    ]
+  },
+  "status": "passed",
+  "elapsedMs": 4395.458334
+}

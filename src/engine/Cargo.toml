@@ -1,6 +1,6 @@
 [package]
 name = "mech-engine"
-version = "0.3.5"
+version = "0.4.0-beta"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Retained program execution, reactive coordination, and bytecode integration for Mech."
 documentation = "https://docs.mech-lang.org"
@@ -468,10 +468,10 @@ string_default = ["string_concat"]
 string_concat = []
 
 [dependencies]
-mech-bytecode = { version = "0.3.5", path = "../bytecode", default-features = false, optional = true }
-mech-core = { version = "0.3.5", path = "../core", default-features = false }
-mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, optional = true }
-mech-abi = { path = "../abi", version = "0.3.5", optional = true }
+mech-bytecode = { version = "0.4.0-beta", path = "../bytecode", default-features = false, optional = true }
+mech-core = { version = "0.4.0-beta", path = "../core", default-features = false }
+mech-syntax = { version = "0.4.0-beta", path = "../syntax", default-features = false, optional = true }
+mech-abi = { path = "../abi", version = "0.4.0-beta", optional = true }
 libloading = { version = "0.8.9", optional = true }
 libm = { version = "0.2.16", optional = true }
 

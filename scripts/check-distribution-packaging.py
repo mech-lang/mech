@@ -73,6 +73,10 @@ def validate_payload(path: Path, executable: str, expected_manifest: dict[str, o
     manifest = json.loads(files["distribution-manifest.json"])
     if manifest != expected_manifest:
         raise PackagingContractError(f"distribution manifest drifted: {manifest}")
+    readme = files["README.txt"].decode("utf-8")
+    for label, key in (("Channel", "channel"), ("Version", "version")):
+        if f"{label}: {expected_manifest[key]}\n" not in readme:
+            raise PackagingContractError(f"distribution README has incorrect {label.lower()}")
 
     checksum_lines = files["SHA256SUMS"].decode("ascii").splitlines()
     checksums = {}
@@ -174,10 +178,23 @@ def main() -> int:
             nightly,
             "mech-nightly-2026-08-06-fedcba987-full-x86_64-pc-windows-msvc.zip",
         )
+        for target, extension in (("x86_64-unknown-linux-gnu", "tar.gz"),
+                                  ("x86_64-pc-windows-msvc", "zip")):
+            for distribution in ("standard", "full"):
+                preview = SimpleNamespace(**vars(stable))
+                preview.channel = "preview"
+                preview.version = "0.4.0-beta"
+                preview.target = target
+                preview.distribution = distribution
+                preview.manifest = dict(stable_manifest, channel=preview.channel,
+                                        version=preview.version, target=target,
+                                        distribution=distribution)
+                prove_reproducible(packager, preview,
+                                  f"mech-0.4.0-beta-{distribution}-{target}.{extension}")
     except (PackagingContractError, OSError, ValueError, zipfile.BadZipFile, tarfile.TarError) as error:
         print(f"distribution packaging contract failed: {error}")
         return 1
-    print("distribution packaging contract passed (stable/nightly, standard/full, tar/zip)")
+    print("distribution packaging contract passed (stable/preview/nightly, standard/full, tar/zip)")
     return 0
 
 

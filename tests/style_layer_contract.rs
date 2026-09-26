@@ -9,6 +9,38 @@ fn include(name: &str) -> String {
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()))
 }
 
+fn has_global_selector(css: &str, target: &str) -> bool {
+    let mut uncommented = String::new();
+    let mut remaining = css;
+    while let Some(start) = remaining.find("/*") {
+        uncommented.push_str(&remaining[..start]);
+        let comment = &remaining[start + 2..];
+        let Some(end) = comment.find("*/") else {
+            remaining = "";
+            break;
+        };
+        uncommented.push(' ');
+        remaining = &comment[end + 2..];
+    }
+    uncommented.push_str(remaining);
+    uncommented.split('{').any(|prelude| {
+        prelude
+            .rsplit('}')
+            .next()
+            .unwrap_or(prelude)
+            .split(',')
+            .any(|selector| selector.trim() == target)
+    })
+}
+
+#[test]
+fn global_selector_contract_checks_tokens_not_class_name_suffixes() {
+    assert!(!has_global_selector(".mech-function-body { display: block; }", "body"));
+    assert!(!has_global_selector("/* body { } */ .example { color: red; }", "body"));
+    assert!(has_global_selector("/* page */ body\n{ color: red; }", "body"));
+    assert!(has_global_selector("@media print { html, body { color: black; } }", "body"));
+}
+
 #[test]
 fn shipped_shims_expose_the_five_independent_style_layers_in_order() {
     for (shim, identity) in [
@@ -130,7 +162,8 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
     ] {
         assert!(css.contains(token), "source layer lost {token}");
     }
-    for foreign in ["body {", ".console-pane", ".site-header", "[data-mechdown]"] {
+    assert!(!has_global_selector(&css, "body"), "source layer leaked a global body selector");
+    for foreign in [".console-pane", ".site-header", "[data-mechdown]"] {
         assert!(!css.contains(foreign), "source layer leaked {foreign}");
     }
 }

@@ -291,7 +291,18 @@ pub fn effective_run_runtime_config(
 }
 
 pub fn cli_module_options() -> ModuleBuildOptions<'static> {
-    ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
+    ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        concat!(
+            "v",
+            env!("CARGO_PKG_VERSION_MAJOR"),
+            ".",
+            env!("CARGO_PKG_VERSION_MINOR")
+        ),
+        "native",
+        &[],
+        &[],
+    )
 }
 
 pub fn cli_host_capability_args() -> Vec<Arg> {

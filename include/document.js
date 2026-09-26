@@ -1233,7 +1233,7 @@ function refreshOutputPanel(entries) {
     return;
   }
   panel.replaceChildren();
-  if (state.directedProgramOutput) {
+  if (state.directedProgramOutput || outputPanel()?.dataset.mechOutputHost === "application") {
     return;
   }
   for (const entry of entries) {
@@ -2147,6 +2147,20 @@ function activeDocumentController(operation, method = null) {
 }
 
 globalThis.MechDocumentController = Object.freeze({
+  // Application output uses the existing drawer/workspace and fullscreen
+  // controls. Opening a presentation panel does not require a ready WASM host.
+  showOutput() {
+    if (state.runtimeLifecycle === "disposed") {
+      throw documentControllerError(
+        "MECH_DOCUMENT_DISPOSED",
+        "cannot show output: the document controller is disposed",
+      );
+    }
+    if (!panelFor("output")) return false;
+    setConsoleOpen(true);
+    activateConsolePanel("output");
+    return true;
+  },
   // Reflection observes an ordinary retained resident symbol; it never
   // widens compute readback or routes scalar compute through JavaScript.
   renderedValue(name) {

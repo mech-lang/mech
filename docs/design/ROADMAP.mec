@@ -13,7 +13,7 @@ Implementation: started 2018
 
 Started: December 2022
 
-Current package: `v0.3.6`
+Current package: `v0.4.0-beta` (preview)
 Current development target: `v0.4.0`
 Canonical value-system cutover: complete
 Canonical contract and compatibility closure: complete
@@ -139,7 +139,8 @@ memory planner are complete. R6 is the active v0.4 endgame phase:
 - R6 Memory runtime cutover — in progress
 - R7 Release qualification
 
-The root package remains `v0.3.6` until R7 qualifies `v0.4.0`.
+The root package is the `v0.4.0-beta` preview. Stable `v0.4.0` remains subject to
+R7 release qualification; the preview does not complete that phase.
 
 (2.4) Post-v0.4 direction
 

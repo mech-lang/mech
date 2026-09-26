@@ -1,4 +1,4 @@
-name: Stable release
+name: Versioned release
 
 on:
   push:
@@ -9,29 +9,34 @@ permissions:
   contents: write
 
 concurrency:
-  group: stable-release-${{ github.ref_name }}
+  group: versioned-release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   verify-tag:
-    name: Verify exact stable tag
+    name: Verify exact release tag
     runs-on: ubuntu-latest
+    outputs:
+      channel: ${{ steps.tag.outputs.channel }}
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - name: Match the tag, package version, and checkout commit
-        run: python3 scripts/check-release-tag.py --tag "${{ github.ref_name }}"
+        id: tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/check-release-tag.py --tag "$RELEASE_TAG" --github-output "$GITHUB_OUTPUT"
 
   full-validation:
     name: Exact-tag full validation
     needs: verify-tag
     uses: ./.github/workflows/ci-full.yml
     with:
-      release_channel: stable
+      release_channel: ${{ needs.verify-tag.outputs.channel }}
 
   publish:
-    name: Publish immutable stable release
+    name: Publish validated versioned release
     needs:
       - verify-tag
       - full-validation
@@ -52,11 +57,26 @@ jobs:
       - name: Publish the immutable GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_CHANNEL: ${{ needs.verify-tag.outputs.channel }}
         run: |
-          gh release create "${{ github.ref_name }}" \
+          release_flags=()
+          if [ "$RELEASE_CHANNEL" = "preview" ]; then
+            release_flags+=(--prerelease --latest=false)
+          elif [ "$RELEASE_CHANNEL" != "stable" ]; then
+            echo "Unsupported release channel: $RELEASE_CHANNEL" >&2
+            exit 1
+          fi
+          notes_file="docs/releases/$RELEASE_TAG.md"
+          if [ -f "$notes_file" ]; then
+            release_flags+=(--notes-file "$notes_file")
+          else
+            release_flags+=(--notes "The standard distribution is the recommended download. The full distribution is available as the optional broad scalar, machine, and robot-arm build.")
+          fi
+          gh release create "$RELEASE_TAG" \
             target/release-assets/mech-* \
             target/release-assets/SHA256SUMS \
             --verify-tag \
-            --title "Mech ${{ github.ref_name }}" \
-            --generate-notes \
-            --notes "The standard distribution is the recommended download. The full distribution is available as the optional broad scalar, machine, and robot-arm build."
+            --title "Mech $RELEASE_TAG" \
+            "${release_flags[@]}" \
+            --generate-notes

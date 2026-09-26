@@ -24,7 +24,7 @@ use crate::{
     RuntimeResourceWriteIntent, runtime::MechRuntime,
 };
 #[cfg(feature = "resident-routing-source")]
-use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramCompilationProduct};
+use mech_engine::{CompilerPlanningConfig, CompilerPlanningLimits, ProgramArtifactCompilationProduct};
 
 use super::diagnostics::activation_failure_for_artifact;
 use super::value::{initial_prepared_value, initial_value};
@@ -78,7 +78,7 @@ impl MechRuntime {
         self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
         self.load_production_with(durability, |runtime| {
             Ok(Arc::new(
-                runtime.plan_source_product(source)?.into_parts().0,
+                runtime.plan_source_product(source)?.into_artifact(),
             ))
         })
     }
@@ -101,8 +101,7 @@ impl MechRuntime {
                 Ok(Arc::new(
                     runtime
                         .plan_interactive_source_product(source)?
-                        .into_parts()
-                        .0,
+                        .into_artifact(),
                 ))
             },
         )
@@ -130,8 +129,7 @@ impl MechRuntime {
                     Ok(Arc::new(
                         runtime
                             .plan_resolved_root_source_product(resolved, module_options)?
-                            .into_parts()
-                            .0,
+                            .into_artifact(),
                     ))
                 }
                 MechSourceCode::ByteCode(bytecode) => {
@@ -178,8 +176,7 @@ impl MechRuntime {
                                     resolved,
                                     module_options,
                                 )?
-                                .into_parts()
-                                .0,
+                                .into_artifact(),
                         ))
                     }
                     MechSourceCode::ByteCode(bytecode) => {
@@ -231,7 +228,7 @@ impl MechRuntime {
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
         self.load_production_with(durability, |runtime| {
-            Ok(Arc::new(runtime.plan_tree_product(tree)?.into_parts().0))
+            Ok(Arc::new(runtime.plan_tree_product(tree)?.into_artifact()))
         })
     }
 
@@ -249,7 +246,7 @@ impl MechRuntime {
             InitialValueProjection::InteractiveRootResult,
             |runtime| {
                 Ok(Arc::new(
-                    runtime.plan_interactive_tree_product(tree)?.into_parts().0,
+                    runtime.plan_interactive_tree_product(tree)?.into_artifact(),
                 ))
             },
         )
@@ -295,9 +292,9 @@ impl MechRuntime {
         &mut self,
         resolved: crate::ResolvedSource,
         module_options: ModuleBuildOptions<'_>,
-    ) -> MResult<ProgramCompilationProduct> {
+    ) -> MResult<ProgramArtifactCompilationProduct> {
         self.compiler_view()?
-            .compile_resolved_root(resolved, module_options)
+            .compile_resolved_root_for_activation(resolved, module_options, false)
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -305,22 +302,24 @@ impl MechRuntime {
         &mut self,
         resolved: crate::ResolvedSource,
         module_options: ModuleBuildOptions<'_>,
-    ) -> MResult<ProgramCompilationProduct> {
+    ) -> MResult<ProgramArtifactCompilationProduct> {
         self.compiler_view()?
-            .compile_interactive_resolved_root(resolved, module_options)
+            .compile_resolved_root_for_activation(resolved, module_options, true)
     }
 
     #[cfg(feature = "resident-routing-source")]
-    fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_source(source)
+    fn plan_source_product(&mut self, source: &str) -> MResult<ProgramArtifactCompilationProduct> {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.compiler_view()?.compile_tree_for_activation(&tree, false)
     }
 
     #[cfg(feature = "resident-routing-source")]
     fn plan_interactive_source_product(
         &mut self,
         source: &str,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_interactive_source(source)
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.compiler_view()?.compile_tree_for_activation(&tree, true)
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -346,16 +345,16 @@ impl MechRuntime {
     fn plan_tree_product(
         &mut self,
         tree: &mech_core::Program,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_tree(tree)
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.compiler_view()?.compile_tree_for_activation(tree, false)
     }
 
     #[cfg(feature = "resident-routing-source")]
     fn plan_interactive_tree_product(
         &mut self,
         tree: &mech_core::Program,
-    ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_interactive_tree(tree)
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.compiler_view()?.compile_tree_for_activation(tree, true)
     }
 
     #[cfg(feature = "resident-routing")]

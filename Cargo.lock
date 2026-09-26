@@ -2558,7 +2558,7 @@ dependencies = [
 
 [[package]]
 name = "mech"
-version = "0.3.6"
+version = "0.4.0-beta"
 dependencies = [
  "base64 0.22.1",
  "bincode",
@@ -2606,11 +2606,11 @@ dependencies = [
 
 [[package]]
 name = "mech-abi"
-version = "0.3.5"
+version = "0.4.0-beta"
 
 [[package]]
 name = "mech-browser"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "base64 0.22.1",
  "mech-core",
@@ -2622,7 +2622,7 @@ dependencies = [
 
 [[package]]
 name = "mech-build"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "cargo_metadata",
  "mech-console",
@@ -2645,14 +2645,14 @@ dependencies = [
 
 [[package]]
 name = "mech-bytecode"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
 ]
 
 [[package]]
 name = "mech-combinatorics"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "itertools 0.14.0",
  "mech-core",
@@ -2663,7 +2663,7 @@ dependencies = [
 
 [[package]]
 name = "mech-compare"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -2672,7 +2672,7 @@ dependencies = [
 
 [[package]]
 name = "mech-compute"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "mech-engine",
@@ -2680,7 +2680,7 @@ dependencies = [
 
 [[package]]
 name = "mech-console"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "mech-runtime",
@@ -2690,7 +2690,7 @@ dependencies = [
 
 [[package]]
 name = "mech-core"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "base64 0.22.1",
  "bincode",
@@ -2719,7 +2719,7 @@ dependencies = [
 
 [[package]]
 name = "mech-engine"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "byteorder",
  "grapheme",
@@ -2742,7 +2742,7 @@ dependencies = [
 
 [[package]]
 name = "mech-gpu"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "bytemuck",
  "cranelift-codegen",
@@ -2771,7 +2771,7 @@ dependencies = [
 
 [[package]]
 name = "mech-logic"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -2780,7 +2780,7 @@ dependencies = [
 
 [[package]]
 name = "mech-math"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "libm",
  "mech-core",
@@ -2792,7 +2792,7 @@ dependencies = [
 
 [[package]]
 name = "mech-matrix"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -2802,7 +2802,7 @@ dependencies = [
 
 [[package]]
 name = "mech-native-live-host-fixture"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "mech-runtime",
@@ -2810,7 +2810,7 @@ dependencies = [
 
 [[package]]
 name = "mech-range"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -2820,7 +2820,7 @@ dependencies = [
 
 [[package]]
 name = "mech-robot-arm"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "mech-runtime",
@@ -2828,7 +2828,7 @@ dependencies = [
 
 [[package]]
 name = "mech-runtime"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "blake3",
  "criterion",
@@ -2855,7 +2855,7 @@ dependencies = [
 
 [[package]]
 name = "mech-scene"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "js-sys",
  "mech-core",
@@ -2869,7 +2869,7 @@ dependencies = [
 
 [[package]]
 name = "mech-set"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "indexmap",
  "mech-core",
@@ -2878,7 +2878,7 @@ dependencies = [
 
 [[package]]
 name = "mech-stats"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -2888,7 +2888,7 @@ dependencies = [
 
 [[package]]
 name = "mech-stdlib"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-combinatorics",
  "mech-compare",
@@ -2910,7 +2910,7 @@ dependencies = [
 
 [[package]]
 name = "mech-string"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "nalgebra",
@@ -2919,7 +2919,7 @@ dependencies = [
 
 [[package]]
 name = "mech-syntax"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "colored",
  "indexmap",
@@ -2937,7 +2937,7 @@ dependencies = [
 
 [[package]]
 name = "mech-terminal"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "mech-runtime",
@@ -2945,7 +2945,7 @@ dependencies = [
 
 [[package]]
 name = "mech-time"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "chrono",
  "js-sys",
@@ -2957,7 +2957,7 @@ dependencies = [
 
 [[package]]
 name = "mech-timer"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "mech-core",
  "mech-runtime",
@@ -2967,7 +2967,7 @@ dependencies = [
 
 [[package]]
 name = "mech-wasm"
-version = "0.3.5"
+version = "0.4.0-beta"
 dependencies = [
  "base64 0.22.1",
  "bincode",

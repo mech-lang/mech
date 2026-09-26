@@ -1185,6 +1185,7 @@ fn compiled_scalar_artifact_fixture(
         .resolved_descriptor()
         .unwrap();
     CompiledBytecode {
+        canonical_constants: BTreeMap::new(),
         program: BytecodeProgram {
             register_count: 2,
             constants: vec![

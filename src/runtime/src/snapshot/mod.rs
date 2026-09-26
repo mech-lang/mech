@@ -164,8 +164,17 @@ impl Display for RuntimeValueSnapshot {
 
 fn format_value_inline(value: &Value, max_elements: usize) -> String {
     let mut remaining = max_elements;
-    let matrix_shape = value.schemas().and_then(|schemas| {
-        let SchemaBody::Matrix { dimensions, .. } = schemas.get(value.schema())?.body() else {
+    format_snapshot_data(value, &mut remaining)
+}
+
+fn format_snapshot_data(value: &Value, remaining: &mut usize) -> String {
+    let schemas = value.schemas();
+    let schema = schemas
+        .as_ref()
+        .and_then(|schemas| schemas.get(value.schema()))
+        .map(|schema| schema.body());
+    let matrix_shape = schema.and_then(|schema| {
+        let SchemaBody::Matrix { dimensions, .. } = schema else {
             return None;
         };
         dimensions
@@ -175,14 +184,20 @@ fn format_value_inline(value: &Value, max_elements: usize) -> String {
     });
     format_data(
         value.data(),
+        schema,
         matrix_shape
             .as_deref()
             .unwrap_or_else(|| value.shape().parameter_values()),
-        &mut remaining,
+        remaining,
     )
 }
 
-fn format_data(data: &ValueData, shape: &[u64], remaining: &mut usize) -> String {
+fn format_data(
+    data: &ValueData,
+    schema: Option<&SchemaBody>,
+    shape: &[u64],
+    remaining: &mut usize,
+) -> String {
     macro_rules! scalar {
         ($value:expr) => {{
             if *remaining == 0 {
@@ -194,7 +209,7 @@ fn format_data(data: &ValueData, shape: &[u64], remaining: &mut usize) -> String
     }
     match data {
         ValueData::Dynamic(value) => match value.value() {
-            Some(value) => format_data(value.data(), value.shape().parameter_values(), remaining),
+            Some(value) => format_snapshot_data(value, remaining),
             None => scalar!("_"),
         },
         ValueData::U8(value) => scalar!(value),
@@ -229,20 +244,59 @@ fn format_data(data: &ValueData, shape: &[u64], remaining: &mut usize) -> String
         ValueData::Atom => scalar!(":"),
         ValueData::Option(None) => scalar!("none"),
         ValueData::Option(Some(value)) => {
-            format!("some({})", format_data(value, &[], remaining))
+            let inner = match schema {
+                Some(SchemaBody::Option(inner)) => Some(inner.as_ref()),
+                _ => None,
+            };
+            format!("some({})", format_data(value, inner, &[], remaining))
         }
-        ValueData::Tuple(values) => format_sequence("(", ")", values, remaining),
-        ValueData::Record(value) => format_sequence("{", "}", value.fields(), remaining),
-        ValueData::Matrix(value) => format_matrix(value.elements(), shape, remaining),
+        ValueData::Tuple(values) => {
+            let schemas = match schema {
+                Some(SchemaBody::Tuple(items)) => items.iter().collect(),
+                _ => Vec::new(),
+            };
+            format_sequence("(", ")", values, &schemas, remaining)
+        }
+        ValueData::Record(value) => {
+            let schemas = match schema {
+                Some(SchemaBody::Record(fields)) => {
+                    fields.iter().map(|field| &field.schema).collect()
+                }
+                _ => Vec::new(),
+            };
+            format_sequence("{", "}", value.fields(), &schemas, remaining)
+        }
+        ValueData::Matrix(value) => {
+            let element = match schema {
+                Some(SchemaBody::Matrix { element, .. }) => Some(element.as_ref()),
+                _ => None,
+            };
+            format_matrix(value.elements(), element, shape, remaining)
+        }
         ValueData::Set(value) => {
-            let values = value
-                .elements()
-                .iter()
-                .map(|value| value.data())
-                .collect::<Vec<_>>();
-            format_refs("{", "}", &values, remaining)
+            let element_schema = match schema {
+                Some(SchemaBody::Set { element, .. }) => Some(element.as_ref()),
+                _ => None,
+            };
+            let mut values = Vec::new();
+            for value in value.elements() {
+                if *remaining == 0 {
+                    values.push("…".into());
+                    break;
+                }
+                values.push(format_data(value.data(), element_schema, &[], remaining));
+            }
+            format!("{{{}}}", values.join(", "))
         }
         ValueData::Map(value) => {
+            let key_schema = match schema {
+                Some(SchemaBody::Map { key, .. }) => Some(key.as_ref()),
+                _ => None,
+            };
+            let value_schema = match schema {
+                Some(SchemaBody::Map { value, .. }) => Some(value.as_ref()),
+                _ => None,
+            };
             let mut entries = Vec::new();
             for entry in value.entries() {
                 if *remaining == 0 {
@@ -251,25 +305,45 @@ fn format_data(data: &ValueData, shape: &[u64], remaining: &mut usize) -> String
                 }
                 entries.push(format!(
                     "{}: {}",
-                    format_data(entry.key().data(), &[], remaining),
-                    format_data(entry.value(), &[], remaining)
+                    format_data(entry.key().data(), key_schema, &[], remaining),
+                    format_data(entry.value(), value_schema, &[], remaining)
                 ));
             }
             format!("{{{}}}", entries.join(", "))
         }
-        ValueData::Enum(value) => match value.payload() {
-            Some(payload) => format!(
-                ":{}({})",
-                value.ordinal(),
-                format_data(payload, &[], remaining)
-            ),
-            None => scalar!(format!(":{}", value.ordinal())),
-        },
+        ValueData::Enum(value) => {
+            let variant = match schema {
+                Some(SchemaBody::Enum { variants, .. }) => variants.get(value.ordinal() as usize),
+                _ => None,
+            };
+            let name = variant
+                .map(|variant| variant.name.clone())
+                .unwrap_or_else(|| value.ordinal().to_string());
+            match value.payload() {
+                Some(payload) => format!(
+                    ":{}({})",
+                    name,
+                    format_data(
+                        payload,
+                        variant.and_then(|variant| variant.payload.as_ref()),
+                        &[],
+                        remaining
+                    )
+                ),
+                None => scalar!(format!(":{name}")),
+            }
+        }
         ValueData::Table(value) => {
             let mut columns = Vec::new();
             for index in 0..value.len() {
                 if let Some(column) = value.column(index) {
-                    columns.push(format_sequence_view(column, remaining));
+                    let element = match schema {
+                        Some(SchemaBody::Table { columns, .. }) => {
+                            columns.get(index).map(|column| &column.schema)
+                        }
+                        _ => None,
+                    };
+                    columns.push(format_sequence_view(column, element, remaining));
                 }
             }
             format!("table({})", columns.join(", "))
@@ -278,28 +352,42 @@ fn format_data(data: &ValueData, shape: &[u64], remaining: &mut usize) -> String
     }
 }
 
-fn format_sequence(open: &str, close: &str, values: &[ValueData], remaining: &mut usize) -> String {
-    let refs = values.iter().collect::<Vec<_>>();
-    format_refs(open, close, &refs, remaining)
-}
-
-fn format_refs(open: &str, close: &str, values: &[&ValueData], remaining: &mut usize) -> String {
+fn format_sequence(
+    open: &str,
+    close: &str,
+    values: &[ValueData],
+    schemas: &[&SchemaBody],
+    remaining: &mut usize,
+) -> String {
     let mut output = Vec::new();
-    for value in values {
+    for (index, value) in values.iter().enumerate() {
         if *remaining == 0 {
             output.push("…".into());
             break;
         }
-        output.push(format_data(value, &[], remaining));
+        output.push(format_data(
+            value,
+            schemas.get(index).copied(),
+            &[],
+            remaining,
+        ));
     }
     format!("{open}{}{close}", output.join(", "))
 }
 
-fn format_matrix(values: SequenceView<'_>, shape: &[u64], remaining: &mut usize) -> String {
+fn format_matrix(
+    values: SequenceView<'_>,
+    element: Option<&SchemaBody>,
+    shape: &[u64],
+    remaining: &mut usize,
+) -> String {
     let columns = shape.get(1).copied().unwrap_or(1) as usize;
-    let elements = sequence_strings(values, remaining);
+    let elements = sequence_strings(values, element, remaining);
     if columns == 0 {
         return "[]".into();
+    }
+    if shape.len() == 2 && columns == 1 && shape[0] > 1 {
+        return format!("[{}]'", elements.join(" "));
     }
     let rows = elements
         .chunks(columns)
@@ -308,11 +396,22 @@ fn format_matrix(values: SequenceView<'_>, shape: &[u64], remaining: &mut usize)
     format!("[{}]", rows.join("; "))
 }
 
-fn format_sequence_view(values: SequenceView<'_>, remaining: &mut usize) -> String {
-    format!("[{}]", sequence_strings(values, remaining).join(", "))
+fn format_sequence_view(
+    values: SequenceView<'_>,
+    element: Option<&SchemaBody>,
+    remaining: &mut usize,
+) -> String {
+    format!(
+        "[{}]",
+        sequence_strings(values, element, remaining).join(", ")
+    )
 }
 
-fn sequence_strings(values: SequenceView<'_>, remaining: &mut usize) -> Vec<String> {
+fn sequence_strings(
+    values: SequenceView<'_>,
+    element: Option<&SchemaBody>,
+    remaining: &mut usize,
+) -> Vec<String> {
     macro_rules! values {
         ($values:expr, $convert:expr) => {{
             let mut output = Vec::new();
@@ -363,12 +462,12 @@ fn sequence_strings(values: SequenceView<'_>, remaining: &mut usize) -> Vec<Stri
             let values = vec![ValueData::Atom; usize::try_from(count).unwrap_or(usize::MAX)];
             values
                 .iter()
-                .map(|value| format_data(value, &[], remaining))
+                .map(|value| format_data(value, element, &[], remaining))
                 .collect()
         }
         SequenceView::Values(values) => values
             .iter()
-            .map(|value| format_data(value, &[], remaining))
+            .map(|value| format_data(value, element, &[], remaining))
             .collect(),
     }
 }

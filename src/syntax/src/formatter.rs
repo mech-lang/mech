@@ -2570,6 +2570,58 @@ impl Formatter {
     }
 
     pub fn module_import(&mut self, node: &ModuleImport) -> String {
+        if self.html {
+            let token = |class: &str, text: &str| {
+                format!("<span class=\"{class}\">{}</span>", escape_html_text(text))
+            };
+            let module = token("mech-import-module", &node.module.to_string());
+            let separator = token("mech-import-separator", "/");
+            let path = match node.kind {
+                ModuleImportKind::Module => module,
+                ModuleImportKind::Glob => format!(
+                    "{module}{separator}{}",
+                    token("mech-import-selector", "*")
+                ),
+                ModuleImportKind::Item => {
+                    let item = node
+                        .item
+                        .as_ref()
+                        .map(ToString::to_string)
+                        .unwrap_or_default();
+                    let path = format!(
+                        "{module}{separator}{}",
+                        token("mech-import-selector", &item)
+                    );
+                    match &node.alias {
+                        Some(alias) => format!(
+                            "{} {} {path}",
+                            token("mech-import-alias", &alias.to_string()),
+                            token("mech-import-assign-op", ":=")
+                        ),
+                        None => path,
+                    }
+                }
+                ModuleImportKind::Group => {
+                    let items = node
+                        .group_items
+                        .as_deref()
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|item| token("mech-import-selector", &item.item.to_string()))
+                        .collect::<Vec<_>>()
+                        .join(&format!("{} ", token("mech-import-separator", ",")));
+                    format!(
+                        "{module}{separator}{}{items}{}",
+                        token("mech-import-group-open", "{"),
+                        token("mech-import-group-close", "}")
+                    )
+                }
+            };
+            return format!(
+                "<span class=\"mech-import\">{} {path}</span>",
+                token("mech-import-sigil", "+>")
+            );
+        }
         match node.kind {
             ModuleImportKind::Module => format!("+> {}", node.module.to_string()),
             ModuleImportKind::Item => {
@@ -2667,13 +2719,30 @@ impl Formatter {
             let statements = node
                 .statements
                 .iter()
-                .map(|stmt| self.statement(stmt))
+                .enumerate()
+                .map(|(index, stmt)| {
+                    let statement = self.statement(stmt);
+                    if self.html {
+                        let terminator = if index + 1 == node.statements.len() {
+                            "<span class=\"mech-function-period\">.</span>"
+                        } else {
+                            ""
+                        };
+                        format!("<div class=\"mech-function-statement\">{statement}{terminator}</div>")
+                    } else {
+                        statement
+                            .lines()
+                            .map(|line| format!("  {line}"))
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    }
+                })
                 .collect::<Vec<_>>()
                 .join(if self.html { "" } else { "\n" });
 
             if self.html {
                 format!(
-                    "<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-equals\">=</span> <span class=\"mech-function-output\">{}</span> <span class=\"mech-define-op\">:=</span></div><div class=\"mech-function-body\">{}.</div></div>",
+                    "<div class=\"mech-function-define\"><div class=\"mech-function-signature\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-function-input\">{}</span><span class=\"mech-right-paren\">)</span> <span class=\"mech-function-equals\">=</span> <span class=\"mech-function-output\">{}</span> <span class=\"mech-define-op\">:=</span></div><div class=\"mech-function-body\">{}</div></div>",
                     name, input, output, statements
                 )
             } else {
@@ -3932,6 +4001,49 @@ impl Formatter {
                 return format!("[]");
             }
         }
+        // Only literal scalars are known to form a column vector here. An
+        // expression such as [a; b] may concatenate matrix-valued blocks, so
+        // rewriting it as [a b]' without type information would change shape.
+        let scalar_column = node.rows.len() > 1
+            && node.rows.iter().all(|row| {
+                row.columns.len() == 1
+                    && matches!(
+                        &row.columns[0].element,
+                        Expression::Literal(
+                            Literal::Number(_)
+                                | Literal::Boolean(_)
+                                | Literal::String(_)
+                        )
+                    )
+            });
+        if scalar_column {
+            let row = MatrixRow {
+                columns: node
+                    .rows
+                    .iter()
+                    .map(|row| row.columns[0].clone())
+                    .collect(),
+            };
+            let vector = Matrix { rows: vec![row] };
+            let source = self.matrix(&vector);
+            return if self.html {
+                format!(
+                    "<span class=\"mech-transpose\">{source}</span><span class=\"mech-transpose-op\">'</span>"
+                )
+            } else {
+                format!("{source}'")
+            };
+        }
+        if !self.html {
+            return format!(
+                "[{}]",
+                node.rows
+                    .iter()
+                    .map(|row| self.matrix_row(row))
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            );
+        }
         let column_count = node.rows[0].columns.len(); // Assume all rows have the same number of columns
 
         for col_index in 0..column_count {
@@ -4540,14 +4652,15 @@ impl Formatter {
             RealNumber::Hexadecimal(token) => format!("0x{}", token.to_string()),
             RealNumber::Octal(token) => format!("0o{}", token.to_string()),
             RealNumber::Binary(token) => format!("0b{}", token.to_string()),
-            RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!(
-                "{}.{}e{}{}.{}",
-                whole.to_string(),
-                part.to_string(),
-                if *sign { "-" } else { "+" },
-                ewhole.to_string(),
-                epart.to_string()
-            ),
+            RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => {
+                let decimal = |whole: &Token, part: &Token| {
+                    let fraction = part.to_string();
+                    if fraction.is_empty() { whole.to_string() }
+                    else { format!("{}.{}", whole.to_string(), fraction) }
+                };
+                format!("{}e{}{}", decimal(whole, part),
+                    if *sign { "-" } else { "+" }, decimal(ewhole, epart))
+            },
             RealNumber::Rational((numerator, denominator)) => {
                 format!("{}/{}", numerator.to_string(), denominator.to_string())
             }

@@ -2453,7 +2453,12 @@ fn document_source_resolver(
 fn browser_module_options() -> ModuleBuildOptions<'static> {
     ModuleBuildOptions::new(
         env!("CARGO_PKG_VERSION"),
-        "v0.3",
+        concat!(
+            "v",
+            env!("CARGO_PKG_VERSION_MAJOR"),
+            ".",
+            env!("CARGO_PKG_VERSION_MINOR")
+        ),
         "wasm32-unknown-unknown",
         &[],
         &[],

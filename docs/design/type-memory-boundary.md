@@ -277,4 +277,6 @@ R2 is complete when:
 22. Full CI runs the architecture checker.
 23. Checker changes themselves trigger Full CI.
 24. ROADMAP, type-memory design, and v0.4 endgame agree that R5 is complete and R6 is next.
-25. Package version remains `0.3.6`.
+25. Active package manifests, internal requirements, and local lock entries agree
+    on the release version. The current `0.4.0-beta` preview does not qualify
+    stable `0.4.0`; that remains the R7 release gate.

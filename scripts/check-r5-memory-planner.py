@@ -4,12 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PACKAGE_CHECK_SPEC = importlib.util.spec_from_file_location(
+    "mech_package_versions", ROOT / "scripts/check-package-versions.py"
+)
+assert PACKAGE_CHECK_SPEC is not None and PACKAGE_CHECK_SPEC.loader is not None
+PACKAGE_CHECK = importlib.util.module_from_spec(PACKAGE_CHECK_SPEC)
+PACKAGE_CHECK_SPEC.loader.exec_module(PACKAGE_CHECK)
 REQUIRED = (
     "src/core/src/memory_plan/mod.rs",
     "src/core/src/memory_plan/model.rs",
@@ -48,6 +55,7 @@ REQUIRED = (
     "src/compute/tests/r5_memory_plan.rs",
     "hosts/gpu/tests/r5_memory_plan.rs",
     "scripts/check-r5-memory-planner.py",
+    "scripts/check-package-versions.py",
     "scripts/check-r6-memory-runtime.py",
     "scripts/tests/test_check_r5_memory_planner.py",
     "docs/design/r5-memory-planner.md",
@@ -615,12 +623,13 @@ def failures(root: Path) -> list[str]:
             if re.search(rf"\b{re.escape(identifier)}\b", code) and not allowed_r6_owner:
                 found.append(f"{relative}: R6 concept introduced during R5: {identifier}")
 
-    # 21. Package versions remain on the existing release line.
-    cargo = sources.get("Cargo.toml", "")
-    if not re.search(r"(?m)^version\s*=\s*\"0\.3\.6\"\s*$", cargo):
-        found.append("root package version changed during R5")
-    if not re.search(r"(?m)^mech-core\s*=\s*\{\s*version\s*=\s*\"0\.3\.5\"", cargo):
-        found.append("workspace component versions changed during R5")
+    # 21. Releases may advance without weakening the architectural boundary.
+    # Keep active package identities, internal requirements and local locks
+    # coherent; historical documentation is not a release-version authority.
+    try:
+        found.extend(PACKAGE_CHECK.check(root))
+    except (OSError, ValueError, KeyError) as error:
+        found.append(f"cannot verify package version consistency: {error}")
 
     # 22. Final status and workflow ownership are permanent.
     status_sources = "\n".join(

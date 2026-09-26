@@ -1,0 +1,81 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Diagnostic EKF symmetry candidate — WebGPU</title>
+<h1>Diagnostic-only EKF symmetry candidate</h1>
+<p>This does not change the published application. The actual checked Mech kernel performs every EKF update.</p>
+<pre id="report">Loading…</pre>
+<script src="browser-compute.js"></script>
+<script type="module">
+import initialize, {WasmKernel} from './mech_wasm.js';
+const out = document.querySelector('#report'), options = new URLSearchParams(location.search);
+const instances = Number(options.get('n') ?? 65536), turns = Number(options.get('turns') ?? 1000);
+const report = {status:'initializing', instances, turns, accepted:0, controls:{velocity:1,omega:.015,noise:.02,timeStep:.1}, policy:{absolute:1e-4,relativePerOperand:1e-6,pairBudget:'absolute + relative*abs(a) + relative*abs(b)',projection:'raw*0.5 + transpose(raw)*0.5'}, publicationSamplePeriod:100, checkpoints:[]};
+const require = (ok, text) => {if(!ok)throw Error(text);};
+const words = a => new Uint32Array(a.buffer, a.byteOffset, a.length);
+const same = (a,b) => a.length===b.length && words(a).every((v,i)=>v===words(b)[i]);
+let names = ['state','covariance'];
+const sha = async bytes => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),v=>v.toString(16).padStart(2,'0')).join('');
+function show(){out.textContent=JSON.stringify(report,null,2);globalThis.symmetryCandidateReport=report;}
+function observation(truth,turn,n){const[x,y,h]=truth;const next=[x+.1*Math.cos(h),y+.1*Math.sin(h),h+.015*.1];const bearing=Math.atan2(12-next[1],140-next[0])-next[2];return{next,inputs:{bearing:Float32Array.from({length:n},(_,lane)=>bearing+.02*Math.sin(turn*1.73+lane*.37)),v:[1],w:[.015]}};}
+async function open(source,n){
+ const kernel=WasmKernel.fromSource(source,{bearing:new Float32Array(n).fill(-.55),v:[1],w:[.015]},names);
+ try{const manifest=kernel.computeManifest(),adapter=await navigator.gpu.requestAdapter();require(adapter,'WebGPU unavailable');const device=await MechBrowserCompute.Device.create(manifest,adapter,manifest.exports.map(e=>e.outputName));return{kernel,manifest,device,n,active:0};}catch(e){kernel.free();throw e;}
+}
+async function close(r){r.device.dispose();await r.device.disposeCompletion;r.kernel.free();}
+async function snapshot(r){
+ const result={};
+ for(const name of names){
+  const exported=r.manifest.exports.find(x=>x.name===name),state=r.manifest.states.find(x=>Number(x.slot)===Number(exported.slot));
+  const size=Number(state.elements)*4,buffer=r.device.device.createBuffer({size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+  try{const encoder=r.device.device.createCommandEncoder();encoder.copyBufferToBuffer(r.device.outputBuffer(r.active,{slot:state.slot}),0,buffer,0,size);r.device.device.queue.submit([encoder.finish()]);await buffer.mapAsync(GPUMapMode.READ,0,size);result[name===names[0]?'state':'covariance']=new Float32Array(buffer.getMappedRange(0,size)).slice();}finally{if(buffer.mapState==='mapped')buffer.unmap();buffer.destroy();}
+ }
+ return result;
+}
+async function dispatch(r,input){const submission=r.device.submit({inputs:r.kernel.gpuInputs(input)},r.active),result=await r.device.finish(submission);if(!result.integrity)r.active=submission.outputIndex;return result;}
+function inspect(values){
+ const cov=values.covariance,bits=words(cov);let maxScale=0,minDiagonal=Infinity;
+ for(let base=0;base<cov.length;base+=9){
+  for(let i=0;i<9;i++){require(Number.isFinite(cov[base+i]),'nonfinite covariance');maxScale=Math.max(maxScale,Math.abs(cov[base+i]));}
+  for(const i of [0,4,8]){require(cov[base+i]>0,'nonpositive covariance diagonal');minDiagonal=Math.min(minDiagonal,cov[base+i]);}
+  for(const[i,j]of[[1,3],[2,6],[5,7]])require(bits[base+i]===bits[base+j],'published covariance is not bitwise symmetric');
+ }
+ require(values.state.every(Number.isFinite),'nonfinite state');
+ return{allLanesFinitePositiveDiagonalAndBitwiseSymmetric:true,maxScale,minDiagonal,lane0:{mean:Array.from(values.state.slice(0,3)),covarianceColumnMajor:Array.from(cov.slice(0,9))}};
+}
+async function invalidInputs(r,input){
+ const results=[];
+ for(const value of [NaN,Infinity,-Infinity]){
+  const before=await snapshot(r),active=r.active,bearing=input.bearing.slice();bearing[r.n-1]=value;
+  const result=await dispatch(r,{...input,bearing});require(result.integrity,'nonfinite input did not reject');require(r.active===active,'rejection changed active buffer');
+  const after=await snapshot(r);for(const name of ['state','covariance'])require(same(before[name],after[name]),'rejected input changed published bits');
+  results.push({input:String(value),lane:r.n-1,fault:result.integrity,wholeBatchRollbackBitIdentical:true,activeBufferUnchanged:true});
+ }
+ return results;
+}
+let resource;const start=performance.now();
+try{
+ require(Number.isSafeInteger(instances)&&instances>0&&instances<=65536,'invalid instance count');require(Number.isSafeInteger(turns)&&turns>0,'invalid turns');
+ await initialize();
+ const source=await fetch('./candidate.mec').then(r=>{require(r.ok,'missing candidate source');return r.text();});
+ if(source.includes('~μ<'))names=['μ','Σ'];
+ report.sourceSha256=await sha(new TextEncoder().encode(source));report.wasmSha256=await sha(await fetch('./mech_wasm_bg.wasm').then(r=>r.arrayBuffer()));
+ resource=await open(source,instances);
+ let truth=[55,25,.4];report.initialInvalidInputs=await invalidInputs(resource,observation(truth,1,instances).inputs);report.status='running';show();
+ for(let turn=1;turn<=turns;turn++){
+  const sample=observation(truth,turn,instances),result=await dispatch(resource,sample.inputs);require(!result.integrity,`normal turn ${turn} rejected: ${JSON.stringify(result.integrity)}`);truth=sample.next;report.accepted++;
+  if(turn%100===0||turn===turns)report.checkpoints.push({turn,...inspect(await snapshot(resource))});
+  if(turn%25===0)show();
+ }
+ const recovery=observation(truth,turns+1,instances);report.finalInvalidInputs=await invalidInputs(resource,recovery.inputs);
+ const result=await dispatch(resource,recovery.inputs);require(!result.integrity,'recovery rejected');report.recovery={accepted:true,...inspect(await snapshot(resource))};
+ await close(resource);resource=null;
+ const original=source.includes('~μ<')?"Σraw := A ** Σ̄ ** A' + (K ** K') * R":"Praw := A ** P0 ** A' + (K ** K') * R";require(source.split(original).length===2,'candidate source changed');
+ const injected=source.replace(original,`${original} + [0f32 1f32 0f32; 0f32 0f32 0f32; 0f32 0f32 0f32]`);
+ resource=await open(injected,1);const before=await snapshot(resource),active=resource.active,fault=await dispatch(resource,observation([55,25,.4],1,1).inputs);
+ require(fault.integrity?.name==='symmetric-covariance!'||fault.integrity?.constraintName==='symmetric-covariance!'||JSON.stringify(fault.integrity).includes('symmetric-covariance'),'large raw asymmetry was not rejected');
+ const after=await snapshot(resource);for(const name of ['state','covariance'])require(same(before[name],after[name]),'large-asymmetry rejection changed published bits');require(resource.active===active,'large-asymmetry rejection changed active buffer');
+ report.grossAsymmetry={injectedRawPairGap:1,rejectedByRawSymmetryGuard:true,rollbackBitIdentical:true,activeBufferUnchanged:true,fault:fault.integrity};
+ report.status='passed';
+}catch(e){report.status='failed';report.error=String(e);}
+finally{if(resource)await close(resource);report.elapsedMs=performance.now()-start;show();}
+</script>

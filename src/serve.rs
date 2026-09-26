@@ -1959,7 +1959,18 @@ fn target_name(specifier: &str) -> String {
 }
 
 fn module_options() -> ModuleBuildOptions<'static> {
-    ModuleBuildOptions::new("serve", "v0.3", "native", &[], &[])
+    ModuleBuildOptions::new(
+        env!("CARGO_PKG_VERSION"),
+        concat!(
+            "v",
+            env!("CARGO_PKG_VERSION_MAJOR"),
+            ".",
+            env!("CARGO_PKG_VERSION_MINOR")
+        ),
+        "native",
+        &[],
+        &[],
+    )
 }
 
 fn asset(

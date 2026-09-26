@@ -14,6 +14,8 @@ import tarfile
 import tempfile
 import zipfile
 
+from release_metadata import resolve_channel
+
 
 ROOT = Path(__file__).resolve().parents[1]
 LICENSE = ROOT / "LICENSE"
@@ -29,7 +31,7 @@ class DistributionPackageError(RuntimeError):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, required=True)
-    parser.add_argument("--channel", choices=("stable", "nightly"), required=True)
+    parser.add_argument("--channel", choices=("stable", "preview", "nightly"), required=True)
     parser.add_argument("--distribution", choices=("standard", "full"), required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--commit", required=True)
@@ -54,7 +56,7 @@ def sha256(path: Path) -> str:
 
 
 def archive_stem(args: argparse.Namespace) -> str:
-    if args.channel == "stable":
+    if args.channel in ("stable", "preview"):
         return f"mech-{args.version}-{args.distribution}-{args.target}"
     if not args.date:
         raise DistributionPackageError("--date is required for nightly archives")
@@ -67,6 +69,7 @@ def archive_stem(args: argparse.Namespace) -> str:
 
 
 def validate_args(args: argparse.Namespace) -> None:
+    resolve_channel(args.channel, args.version)
     if not args.binary.is_file() or args.binary.is_symlink():
         raise DistributionPackageError(
             f"binary must be a regular, non-symlink file: {args.binary}"
@@ -75,7 +78,7 @@ def validate_args(args: argparse.Namespace) -> None:
         raise DistributionPackageError("repository LICENSE is missing or unsafe")
     if args.runtime_factory_count < 0 or args.source_specializer_count < 0:
         raise DistributionPackageError("surface counts must be non-negative")
-    if args.channel == "stable" and args.date:
+    if args.channel != "nightly" and args.date:
         raise DistributionPackageError("--date is only valid for nightly archives")
 
 

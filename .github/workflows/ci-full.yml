@@ -7,7 +7,7 @@ on:
         description: Artifact channel used by the full-validation dry run
         required: false
         type: string
-        default: stable
+        default: auto
       release_date:
         description: UTC date for nightly artifact names
         required: false
@@ -29,9 +29,11 @@ on:
         description: Artifact channel used by the full-validation dry run
         required: true
         type: choice
-        default: stable
+        default: auto
         options:
+          - auto
           - stable
+          - preview
           - nightly
       release_date:
         description: UTC date for nightly artifact names (YYYY-MM-DD)
@@ -124,6 +126,22 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-runtime
           --no-default-features --features resident_external_test_support
           --test resident_external_contract
+      - name: Execute semantic nominal constant contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-core
+          --no-default-features --features semantic-compiler,base,f32
+          --test compiler_nominal_constants
+      - name: Execute typed state-machine contracts
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-engine
+          --no-default-features --features full_compiler,resident-artifact
+          --test fsm_nominal_states
+      - name: Execute nominal resident activation and export contract
+        run: >-
+          cargo +nightly-2026-03-03 test --locked -p mech-runtime
+          --no-default-features --features full_compiler,compute
+          --lib runtime::program::tests::nominal_source_activates_without_silently_exporting_legacy_bytecode
+          -- --exact
       - name: Execute the complete R2 conformance boundary
         run: >-
           cargo +nightly-2026-03-03 test --locked -p mech-core
@@ -495,6 +513,8 @@ jobs:
         run: |
           cargo fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile full
+          python3 -B scripts/check-distribution-packaging.py
+          python3 -B -m unittest scripts/tests/test_release_metadata.py scripts/tests/test_check_package_versions.py
 
   wasm-source-profile:
     name: WASM source profile

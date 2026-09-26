@@ -1,6 +1,48 @@
 /* Workshop components only. Page typography, hero, headings, TOC, tables,
  * footnotes and scrolling come from the shared include/ stylesheets. */
 .workshop-links { display:flex; flex-wrap:wrap; gap:12px 28px; margin:0 0 36px; color:var(--mech-link); font-size:14px; }
+/* Color treatment only: preserve the licensed photograph's actual skyline. */
+.hero-visual .mech-image[src="assets/pittsburgh-hero.jpg"] { filter:saturate(.78) contrast(1.08) sepia(.09); object-position:48% center; }
+.hero-visual .mech-hero-img:has(img[src="assets/pittsburgh-hero.jpg"]) { min-height:0; }
+/* Keep the article's shared gutters while the black footer spans its pane. */
+.workshop-footer-shell { --workshop-page-gutter:32px; flex-direction:column; align-items:center; justify-content:flex-start; padding-inline:0; }
+.workshop-footer-shell > .content-column { flex:0 0 auto; }
+.workshop-footer-shell > .content-column,
+.workshop-footer-shell > .footer > .footer-inner { width:min(calc(100% - 2 * var(--workshop-page-gutter)), var(--content-max-width)); }
+.workshop-footer-shell > .footer { flex:0 0 auto; width:100%; background:var(--mech-output-bg); }
+.workshop-footer-shell > .footer > .footer-inner { padding-inline:0; }
+.footer-photo-credit { color:var(--mech-text-muted); font-size:12px; }
+.footer-photo-credit:hover { color:var(--mech-link); }
+.footer-photo-credit:focus-visible { outline:2px solid var(--mech-focus); outline-offset:4px; }
+/* The REPL can narrow the article independently of the browser viewport. */
+@container (max-width:900px) {
+  .workshop-footer-shell .footer-main { grid-template-columns:140px minmax(0,1fr); gap:24px; }
+  .workshop-footer-shell .footer-robot { grid-column:1; grid-row:1; width:140px; }
+  .workshop-footer-shell .footer-robot img { margin:0; max-width:140px; }
+  .workshop-footer-shell .footer-release { grid-column:2; grid-row:1; margin:0; min-width:0; }
+  .workshop-footer-shell .footer-links { grid-column:1/-1; grid-row:2; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+}
+@container (max-width:420px) {
+  .workshop-footer-shell .footer-main { grid-template-columns:minmax(0,1fr); }
+  .workshop-footer-shell .footer-robot { display:none; }
+  .workshop-footer-shell .footer-release { grid-column:1; }
+  .workshop-footer-shell .footer-links { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:900px) {
+  .workshop-footer-shell { --workshop-page-gutter:18px; }
+}
+.demo-launcher { margin:24px 0; padding:18px 22px; border-left:3px solid var(--accent-secondary-teal); background:var(--mech-panel); }
+.demo-launcher-actions { display:flex; flex-wrap:wrap; gap:12px; }
+.demo-launcher button { font:inherit; color:var(--mech-brand); background:var(--mech-panel-raised); border:1px solid var(--mech-border); border-radius:5px; padding:9px 15px; cursor:pointer; }
+.demo-launcher button:focus-visible { outline:2px solid var(--mech-brand); outline-offset:3px; }
+.mech-output-region-application { container-type:inline-size; }
+.mech-output-region-application .live-demo { margin:0; padding:20px; border:0; border-radius:0; font-family:var(--font-family, sans-serif); }
+.mech-output-region-application .demo-heading .kicker { margin:0 0 8px; font-size:12px; }
+.mech-output-region-application .demo-heading h3 { margin:0 0 12px; }
+.mech-output-region-application .scene-wrap svg { max-height:42dvh; min-height:210px; }
+.mech-output-region-application .telemetry pre { font-size:10px; line-height:1.6; }
+[data-mech-output-fullscreen-active="true"] .mech-output-region-application .scene-wrap svg { max-height:52dvh; }
+[data-mech-output-fullscreen-active="true"] .mech-output-region-application .live-demo { padding-top:44px; }
 .source-card { background:var(--mech-code-bg); border:1px solid var(--mech-border); border-radius:3px; margin:24px 0; padding:20px; overflow:auto; font:14px/1.65 'Fira Code',monospace; box-shadow:var(--mech-shadow-content-block); }
 .source-card pre { margin:0; font:inherit; white-space:pre; }
 .source-card .mech-code-block { padding:0; border:0; margin:0; box-shadow:none; }
@@ -56,7 +98,7 @@ html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-captio
 .behavior-status { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:24px 0; }
 .behavior-status [data-state] { padding:6px 16px; border:1px solid var(--mech-border); border-radius:3px; color:var(--mech-text-secondary); font:13px 'Fira Code',monospace; }
 .behavior-status [data-state].active { border-color:var(--mech-syntax-operator); color:var(--mech-syntax-variable); background:var(--mech-panel-raised); }
-.behavior-status [data-state="2"].active { border-color:var(--mech-error); color:var(--mech-error); }
+.behavior-status [data-state="fault"].active { border-color:var(--mech-error); color:var(--mech-error); }
 .behavior-status p { flex-basis:100%; font-size:12px; margin:0; color:var(--mech-text-secondary); }
 .live-demo details { border-top:1px solid var(--mech-border); padding-top:12px; margin-top:20px; font-size:14px; }
 .live-demo summary { cursor:pointer; color:var(--mech-link); font-weight:600; margin-bottom:15px; }
@@ -67,13 +109,18 @@ html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-captio
   .workshop-figure .chart-desktop { display:none; }
   .workshop-figure .chart-mobile { display:block; }
 }
-@media(max-width:1000px) {
+@container (max-width:850px) {
   .demo-body { grid-template-columns:1fr; }
   .telemetry { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
   .telemetry h4,.telemetry pre,.telemetry p { grid-column:1/-1; }
   .telemetry h4,.metric { margin:0; }
   .demo-heading { flex-direction:column; gap:0; }
   .demo-heading [role=status] { margin-bottom:16px; max-width:none; }
+}
+@container (max-width:520px) {
+  .sensor-controls { grid-template-columns:1fr; }
+  .demo-controls label { flex:1; min-width:160px; }
+  .demo-controls select { width:100%; }
 }
 @media(max-width:720px) {
   .live-demo { padding:14px; }

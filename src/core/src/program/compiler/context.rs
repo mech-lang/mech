@@ -88,6 +88,10 @@ pub struct CompiledComputeRegion {
 #[derive(Clone, Debug)]
 pub struct CompiledBytecode {
     pub program: BytecodeProgram,
+    /// Validated nominal values retained only for semantic artifact lowering.
+    /// The corresponding nonempty Any markers are intentionally invalid in
+    /// bytecode v1, whose wire format lacks complete nominal schema authority.
+    pub canonical_constants: BTreeMap<u32, crate::Value>,
     /// Exact canonical names for runtime instructions emitted by source
     /// extensions that are not members of the immutable static catalog.
     /// This sidecar is consumed while constructing the semantic artifact;
@@ -149,6 +153,62 @@ impl PartialOrd for CanonicalRequirement {
     }
 }
 
+fn contains_nominal_schema(schema: &crate::SchemaBody) -> bool {
+    use crate::SchemaBody;
+    match schema {
+        SchemaBody::Atom(_) | SchemaBody::Enum { .. } => true,
+        SchemaBody::Option(inner)
+        | SchemaBody::Matrix { element: inner, .. }
+        | SchemaBody::Set { element: inner, .. } => contains_nominal_schema(inner),
+        SchemaBody::Tuple(elements) => elements.iter().any(contains_nominal_schema),
+        SchemaBody::Record(fields) | SchemaBody::Table { columns: fields, .. } => {
+            fields.iter().any(|field| contains_nominal_schema(&field.schema))
+        }
+        SchemaBody::Map { key, value, .. } => contains_nominal_schema(key) || contains_nominal_schema(value),
+        _ => false,
+    }
+}
+
+fn canonical_constant_marker(value: &crate::Value) -> MResult<EncodedConstant> {
+    let schemas = value.schemas().ok_or_else(|| {
+        invalid::<()>("semantic constant is missing its authoritative schema table").unwrap_err()
+    })?;
+    let mut bytes = b"mech-artifact-constant-v1\0".to_vec();
+    bytes.extend_from_slice(&value.canonical_snapshot_bytes(&schemas).map_err(|error| {
+        invalid::<()>(format!("semantic constant snapshot validation failed: {error:?}")).unwrap_err()
+    })?);
+    // Any requires an empty payload on bytecode-v1's wire boundary. This
+    // marker can only be consumed together with the validated sidecar below.
+    Ok(EncodedConstant { runtime_type: crate::RuntimeType::Any, alignment: 1, bytes })
+}
+
+impl CompiledBytecode {
+    /// Resolve source constants without reconstructing nominal schemas from
+    /// an enum's selected variant or an atom's display spelling.
+    pub fn artifact_constant_values(&self) -> MResult<Vec<crate::Value>> {
+        if self.canonical_constants.keys().any(|index| *index as usize >= self.program.constants.len()) {
+            return invalid("semantic constant sidecar index is out of range");
+        }
+        self.program.constants.iter().enumerate().map(|(index, encoded)| {
+            if let Some(value) = self.canonical_constants.get(&(index as u32)) {
+                let schema = ValueCell::from_snapshot(value.clone())?.closed_schema_body()?;
+                let expected = canonical_constant_marker(value)?;
+                if !contains_nominal_schema(&schema)
+                    || encoded.runtime_type != expected.runtime_type
+                    || encoded.bytes != expected.bytes
+                    || encoded.alignment != expected.alignment
+                {
+                    return invalid("semantic constant sidecar disagrees with its canonical marker");
+                }
+                Ok(value.clone())
+            } else {
+                crate::decode_encoded_constants(core::slice::from_ref(encoded))?
+                    .pop().ok_or_else(|| invalid::<()>("constant decoder returned no value").unwrap_err())
+            }
+        }).collect()
+    }
+}
+
 #[derive(Debug)]
 pub struct CompileCtx {
     reg_map: HashMap<BytecodeRegisterIdentity, Register>,
@@ -160,6 +220,7 @@ pub struct CompileCtx {
     runtime_function_names: BTreeMap<u64, String>,
     mutable_symbols: BTreeSet<u64>,
     pending_constants: Vec<EncodedConstant>,
+    pending_canonical_constants: BTreeMap<u32, crate::Value>,
     requirements: BTreeSet<CanonicalRequirement>,
     pending_requirements: Vec<ApplicationRequirement>,
     instructions: Vec<BytecodeInstruction>,
@@ -202,6 +263,7 @@ impl Default for CompileCtx {
             runtime_function_names: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
             pending_constants: Vec::new(),
+            pending_canonical_constants: BTreeMap::new(),
             requirements: BTreeSet::new(),
             pending_requirements: Vec::new(),
             instructions: Vec::new(),
@@ -318,6 +380,12 @@ impl CompileCtx {
         }
 
         self.pending_constants.remove(constant as usize);
+        self.pending_canonical_constants = core::mem::take(&mut self.pending_canonical_constants)
+            .into_iter()
+            .filter_map(|(index, value)| {
+                (index != constant).then_some((if index > constant { index - 1 } else { index }, value))
+            })
+            .collect();
         for instruction in &mut self.instructions {
             let referenced = match instruction {
                 BytecodeInstruction::ConstLoad { constant, .. } => Some(constant),
@@ -554,6 +622,11 @@ impl CompileCtx {
         }
         let (constants, constant_remap) =
             canonicalize_instruction_constants(&mut instructions, &self.pending_constants)?;
+        let canonical_constants = self.pending_canonical_constants.iter()
+            .filter_map(|(old, value)| {
+                constant_remap[*old as usize].map(|index| (index, value.clone()))
+            })
+            .collect();
         instructions.push(BytecodeInstruction::Return {
             src: return_register,
         });
@@ -673,6 +746,7 @@ impl CompileCtx {
         }
 
         Ok(CompiledBytecode {
+            canonical_constants,
             program: BytecodeProgram {
                 register_count: self.next_register,
                 constants,
@@ -1159,6 +1233,27 @@ impl BytecodeCompilerContext for CompileCtx {
         let index = u32::try_from(self.pending_constants.len())
             .map_err(|_| invalid::<()>("constant index exceeds u32").unwrap_err())?;
         self.pending_constants.push(constant);
+        Ok(index)
+    }
+
+    fn intern_canonical_constant(
+        &mut self,
+        value: &crate::Value,
+        representation: crate::FunctionValueRepresentation,
+        composite_template: bool,
+    ) -> MResult<u32> {
+        let schema = ValueCell::from_snapshot(value.clone())?.closed_schema_body()?;
+        if !contains_nominal_schema(&schema) {
+            let encoded = if composite_template {
+                crate::encode_canonical_composite_template(value, representation)?
+            } else {
+                crate::encode_canonical_constant(value, representation)?
+            };
+            return self.intern_constant(encoded);
+        }
+        let encoded = canonical_constant_marker(value)?;
+        let index = self.intern_constant(encoded)?;
+        self.pending_canonical_constants.insert(index, value.clone());
         Ok(index)
     }
 

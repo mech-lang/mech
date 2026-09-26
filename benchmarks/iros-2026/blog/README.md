@@ -12,13 +12,16 @@ review and authorization step.
   insertion points, not public source examples.
 - `source/ekf.mec`, `behavior.mec`, `functions.mec`, and `matching.mec` are the
   complete downloadable Mech examples. The displayed listings retain their
-  computational lines, with document headings rendered as Mech comments.
+  computational lines. The EKF is presented as four connected stages with
+  explanatory prose; its downloadable source remains one compute program.
 - `standard-examples.mjs` expands the listings into native, read-only Mech
   fences before the complete document is parsed. Behavior, functions, and
-  matching use root scope; the EKF uses the native `mech:ekf` namespace. The behavior
-  listing adds a commented example invocation, `#Robot(0, 1)`; its download is
+  matching use root scope; all four EKF stages use the same native `mech:ekf`
+  namespace. The behavior
+  listing adds a commented example invocation, `#Robot(:paused, :run)`; its download is
   unchanged. The three root-scope filename pills use native namespace-label
-  markup only as presentation; the EKF retains its native `ekf` pill. All
+  markup only as presentation; each EKF pill identifies its shared namespace
+  and stage. All
   formatter-generated block, source, and output IDs remain intact.
 - `render/` is a small native `mech-syntax` parser/HTML formatter executable
   that also embeds the encoded AST of that same complete document.
@@ -27,7 +30,10 @@ review and authorization step.
   non-Mech fences with a presentation-only syntax-highlighting pass.
 - `blog-shell.mjs` composes website navigation and the workshop host with
   `include/blog.html`. It does not replace the shared hero, content columns,
-  metadata, TOC placement, or backmatter markup.
+  metadata, TOC placement, or backmatter markup. The numerical application
+  occupies the shared Output pane, selected initially; the article's launcher
+  opens that pane or its existing fullscreen view. The Console tab retains
+  the interactive document REPL.
 - `include/palette.css`, `mech-source.css`, `mechdown.css`, `mech-repl.css`,
   `style.css`, `blog.css`, and `document.js` are copied unchanged into the
   publication. The shared controller starts the real v0.4 resident document
@@ -39,8 +45,12 @@ review and authorization step.
   expanded source used by the formatter and AST encoder for resident REPL
   reflection. The resident document and numerical demo have separate state;
   sharing the WASM instance does not couple their sessions.
-  The numerical host fills the EKF's standard output block, identified by
-  `data-workshop-kernel-output`, from its actual accepted kernel state.
+  The numerical host fills the final EKF stage's standard output block,
+  identified by `data-workshop-kernel-output`, from its actual accepted kernel
+  state. All four EKF listings have `data-workshop-kernel-listing` markers;
+  their variables do not offer inspection of unrelated resident-root values.
+  The shared controller preserves application-owned Output content when the
+  resident document refreshes its own outputs.
 - `header-actions.html`, `separator.html`, and `footer.html` reuse the official
   blog's GitHub Star widget, Mika separator, complete link groups, release
   card, and artwork. The current shared styles also render footnotes and works
@@ -53,19 +63,26 @@ review and authorization step.
 - `hero.mjs` deterministically generates `hero.svg` from 40 checked turns of
   the actual Mech WASM kernel and the demo's sensor source. JavaScript draws
   the resulting state and covariance; it does not implement another EKF.
+  This retained diagram is not the current article hero. The article uses
+  `vendor/pittsburgh-hero.jpg`, a CC0 photograph with a light CSS color treatment whose
+  provenance is in `vendor/PITTSBURGH.md`.
 - `app.mjs` connects the browser controls to Mech; `drawing.mjs` supplies
   synthetic observations and SVG rendering; `verify.mjs` checks CPU/GPU parity.
 - `dist/index.html` is the deployable page. `dist/article.mec` is the expanded,
   downloadable article with the complete Mech and Rust listings, rather than
   the template tokens. Its live UI is supplied by the accompanying browser
   host files; the article text alone is not a standalone UI bundle.
+- `dist/poster.pdf` is an unchanged copy of
+  `../poster/IROS-2026-Mech-Poster-prose-v3.pdf`, retained beside the article
+  and identified in the build manifest for downloadable poster links.
 - `dist/build-manifest.json` records build time, repository revision, dirty
   worktree status, and hashes of the kernel, behavior source, WASM and copied
   evidence. Retain it with a publication.
 
 `_build/`, `render/target/`, and `dist/` are build outputs. The small `vendor/`
 directory retains the website logo and Fira Code font for subsequent builds.
-It also retains the official Mika footer artwork and its provenance notice.
+It also retains the official Mika footer artwork and its provenance notice,
+plus the temporary Pittsburgh illustration and its separate provenance notice.
 The generated WASM package is copied from `src/wasm/pkg/`, not downloaded from
 the current production website.
 
@@ -91,8 +108,14 @@ relicense the separate Mech logo.
 The unchanged Mika image and reused footer are documented in
 [vendor/MIKA.md](vendor/MIKA.md); that notice is copied beside the image in
 `dist/assets/`. Its artwork provenance and rights are separate from the font
-license. The footer's published-release card is not the workshop runtime's
-development-version identifier.
+license. The adapted footer card identifies the workshop's v0.4.0-beta build
+and links to its build manifest; it does not claim that a matching public
+release or repository tag has been published.
+
+The Pittsburgh hero is a photograph by Cbaile19 released under CC0.
+[vendor/PITTSBURGH.md](vendor/PITTSBURGH.md) records the source, license,
+resize, and CSS treatment. The builder copies that notice to
+`dist/assets/PITTSBURGH.md` beside the image.
 
 ## Build
 
@@ -125,15 +148,22 @@ root. The shared target directory is a local build-cache choice, not a source
 dependency; omit that environment override on other machines.
 
 ```sh
+RUSTUP_TOOLCHAIN=nightly-2026-03-03 \
 CARGO_TARGET_DIR=/private/tmp/mech-iros-workshop-20260924/target \
 CARGO_BUILD_JOBS=2 \
   wasm-pack build src/wasm --target web --out-dir pkg --release \
   --no-default-features --features browser_compute_canary --offline
 ```
 
-The crate's release metadata disables `wasm-opt`. The inspected resulting WASM
-SHA-256 was
-`99a400e89a925a959282ef1d2814fef40bd967e8b3f50b3ed03a267da2ac42d5`.
+The crate's release metadata disables `wasm-opt`. The rebuilt v0.4.0-beta WASM
+SHA-256 is
+`18224e2cf04b246148029bff7bf498ed77c92780495a5e7cfc493a9cd94a8871`.
+Its actual `:version` response reports `0.4.0-beta` for all 13 installed
+product, library, and host components; these values come from compiled Rust
+package metadata, not JavaScript replacements. The earlier browser checks
+used SHA-256
+`99a400e89a925a959282ef1d2814fef40bd967e8b3f50b3ed03a267da2ac42d5`,
+retained as historical provenance in `VALIDATION.md`.
 Other compiler or dependency versions can change that binary hash; the
 generated build manifest records the package actually copied into the page.
 
@@ -153,7 +183,7 @@ Once both vendor assets exist, the argument is unnecessary:
 node benchmarks/iros-2026/blog/build.mjs
 ```
 
-The builder checks the paper-kernel hash, requires every source and figure
+The builder checks the current presentation-kernel hash, requires every source and figure
 slot exactly once, regenerates desktop/mobile chart SVGs, and copies the three archived throughput
 records into `dist/evidence/`. It does not rerun native benchmarks. Run the
 build again after changing the article, examples, browser host, chart module,
@@ -161,7 +191,8 @@ or WASM package. It writes into the existing local output directory; use a
 clean checkout or inspect the deployment file list to avoid carrying unrelated
 old files into a publication.
 
-The deterministic hero is retained as `hero.svg`. Regenerate it after an
+The deterministic EKF diagram is retained as `hero.svg`, separately from the
+current Pittsburgh article hero. Regenerate the diagram after an
 intentional change to the sensor source, drawing, or generated WASM package,
 then rebuild the article:
 
@@ -170,7 +201,7 @@ node benchmarks/iros-2026/blog/hero.mjs
 node benchmarks/iros-2026/blog/build.mjs
 ```
 
-The generator verifies the paper-source hash and uses 40 steps of 0.1 seconds,
+The generator verifies the current presentation-source hash and uses 40 steps of 0.1 seconds,
 velocity 1, angular velocity 0.015, and noise scale 0.02. Its position ellipse
 uses covariance eigenvectors and twice the square roots of the eigenvalues;
 it is not labeled a 95% probability region.
@@ -201,17 +232,51 @@ page.
 
 ## Executed source and browser boundaries
 
-The paper source has SHA-256:
+The current presentation source has SHA-256:
 
 ```text
-a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2
+f18e37effb2fa63fadca69639f3a8eed218b73218decf65419e78a60b62bb46b
 ```
 
 `build.mjs` and `verify.mjs` enforce this identity. The source includes every
 initial value, prediction/correction equation, integrity constraint and
-publication statement. It is the numerically tested compact presentation
-of the archived EKF, with rewritten guard expressions. It is not the literal
+publication statement. It is the workshop EKF with a revised covariance
+publication policy, not a bit-identical rewrite of the archived algorithm's
+floating-point execution. It is not the literal
 source used to collect the archived timing or source-count measurements.
+
+The September 26 source revision infers all matrix dimensions, uses the
+poster-style Unicode mathematical names in the actual source, and writes
+column vectors as transposed rows, such as `[0 1 1]'`. The public numerical
+exports are `μ` and `Σ`; the live input names `bearing`, `v`, and `w` are
+unchanged. Element-kind annotations
+remain where they are needed to select f32 arithmetic; mixing one f32 literal
+with otherwise untyped f64 literals is not supported by the current compiler.
+The preceding presentation source was identified by SHA-256
+`a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2`.
+Before the symmetry-stabilization revision below, the compact/Unicode forms
+produced bit-identical exported state
+and covariance for 256 filters across 40 deterministic sensor turns. Both
+rejected NaN and positive/negative infinity, retained identical accepted state,
+and recovered after valid input. This is source-equivalence validation, not
+a rerun of the archived benchmark campaigns.
+The intermediate compact ASCII form had SHA-256
+`438c5fd415c3d093b0438f80215846f635e99d6d2caea35cb03a84f79558d8af`;
+that Unicode-only revision changed names, not equations or precision. Its
+exact source, SHA-256
+`cefe87b0ee184f1f30c34c66e626948f6d43236c8449dca0054a68e9e5cd932f`,
+is retained as `evidence/ekf-before-symmetry-stabilization.mec`; its historical
+equivalence checks still run independently of the current numerical policy.
+
+The current source measures each raw Joseph covariance pair's asymmetry
+against `ε + ρ*abs(a) + ρ*abs(b)`, with `ε=1e-4` and `ρ=1e-6`, then publishes
+`Σraw*0.5 + Σrawᵀ*0.5`. Raw and projected finite/positive-diagonal checks
+remain prerequisites to publication. This prevents accumulated antisymmetry
+without letting the projection hide an excessive raw residual. It is not a
+PSD guarantee. The [long-horizon diagnostic](evidence/ekf-long-horizon-diagnostic.md)
+records the original default-input failures, exact policy, artifact hashes,
+bounded CPU/GPU trials, and reproducible helpers. No archived native timing
+or source-count measurements were replaced.
 
 The browser compiler parses this source and constructs a fixed-shape numerical
 program. CPU turns interpret its lowered instructions in the Rust runtime
@@ -229,18 +294,20 @@ migration is not implemented here. The source listings are read-only, and
 there are no inline kernel, function, or matching editors.
 
 The behavior, function, and matching fences execute in the resident root
-scope. The EKF's native named fence and output belong to the separate checked
-kernel integration; its output is supplied by the numerical host's actual
-accepted state. All four native blocks retain their formatter-generated IDs.
+scope. The EKF's four native named fences belong to the separate checked
+kernel integration; only their final publication-stage output is populated
+from the numerical host's actual accepted state. All seven native blocks
+retain their formatter-generated IDs.
 The full expanded Mechdown source, encoded AST, and rendered listings come
-from one parse. Mechdown headings inside the example sources become comments
-in the listings; the original downloaded EKF retains its `@compute` heading
-and is compiled separately, unchanged, for the numerical demo. The behavior
+from one parse. The EKF's stage headings become introductory prose between
+connected listings; other Mechdown headings become comments. The downloaded
+EKF retains its `@compute` heading and is compiled separately, byte-for-byte
+from the current presentation source, for the numerical demo. The behavior
 listing's additional example call demonstrates Run from Paused without
 altering its download or the demo's initial mode.
 
-The EKF and behavior transitions execute in Mech. The host passes numeric mode
-and event codes into the Mech state machine and uses its result to schedule
+The EKF and behavior transitions execute in Mech. The host passes named mode
+and event atoms into the typed Mech state machine and uses its result to schedule
 updates. `drawing.mjs` is hand-written JavaScript for sensor simulation and SVG
 drawing, not a second EKF implementation and not hidden executable Mech drawing
 code. Its source is linked from the expandable demo details. Functions,
@@ -295,11 +362,18 @@ package can produce a Node module-type warning without failing these checks.
 
 The resident-document smoke test exercises the shipped initializer, requires
 one runtime download for concurrent hosts, loads the encoded document and
-source bundle, reads the three native resident outputs, checks the separate
-kernel-output marker, and submits arithmetic through the actual resident REPL:
+source bundle, checks all 13 compiled component versions, reads the three
+native resident outputs, checks ownership of all four named EKF stages and
+the single live kernel-output marker, and submits arithmetic, function,
+all six state-machine transitions, and matching probes through the actual
+resident REPL. It also compares the current EKF against the retained
+`src/wasm/tests/fixtures/paper-ekf.mec` source at the bit level across 256
+filters and 40 turns, with non-finite rejection, whole-batch rollback, and
+recovery:
 
 ```sh
 node benchmarks/iros-2026/blog/test-document-runtime.mjs
+node benchmarks/iros-2026/blog/test-language-examples.mjs
 node benchmarks/iros-2026/blog/test.mjs
 ```
 
@@ -307,9 +381,13 @@ These checks require a rebuilt `dist/`; they do not validate a stale earlier
 page or dispatch a GPU. The shared controller's focused navigation regression
 is separately available as `node scripts/test-document-presentation.mjs`;
 the workshop itself uses full document startup, not presentation-only mode.
+The language-example test separately exercises all 12 mode/event combinations,
+unknown and numeric input rejection, recovery, typed enum assignment, functions,
+and matching against the generated WASM package.
 
-For real device verification, open the local page and select **Verify CPU /
-GPU agreement and rollback**. The read-only page loads the exact paper source;
+For real device verification, open the local page's Output pane and select
+**Verify CPU / GPU agreement and rollback**. The read-only page loads the exact
+current presentation source;
 verification also enforces its hash.
 The verifier runs in separate sessions from the displayed demo and reports a
 structured result. It compares 20 deterministic turns, injects NaN in the
@@ -336,7 +414,7 @@ browser correctness checks, not new native throughput measurements. That
 historical pass predates the current read-only native-block/resident-REPL
 integration; current-build checks are identified separately in that record.
 
-**The rebuilt resident-REPL page also passed on 2026-09-26:** three native
+**The preceding resident-REPL page also passed on 2026-09-26:** three native
 resident outputs, the kernel-fed EKF output, REPL `40 + 2` → `42`, no inline
 source editors, and the same real CPU/WebGPU verification. Desktop and
 390 px mobile layouts had no horizontal page overflow, and all five mobile
@@ -345,11 +423,16 @@ and all 19 shared style contracts passed. Hero, footer/backmatter, and mobile
 pipeline visual checks also passed, as did mobile REPL input and accepted
 CPU/GPU turns with matching live block output. This covers local desktop and
 390 px responsive layouts, not physical-phone hardware or production checks.
+It predates the four-stage EKF layout, Pittsburgh hero, inferred-dimension
+source revision, and v0.4.0-beta rebuild; see separately dated validation
+entries for those subsequent changes.
 
 Also inspect normal UI behavior: run/pause/single step; each batch size; CPU
 and GPU where available; velocity and noise changes; invalid input entering
-Fault without changing displayed accepted state; reset; four populated native
-outputs; REPL input; and the absence of inline source editors. Check the
+Fault without changing displayed accepted state; reset; the three resident
+outputs and final EKF publication output; REPL input; application persistence
+when switching Console/Output and fullscreen views; and the absence of inline
+source editors. Check the
 complete footer, footnotes, hero, fitted mobile figures, browser console, and
 layout at desktop and narrow widths. Neither a successful HTML build nor
 the Node smoke test substitutes for those browser checks.
@@ -410,7 +493,7 @@ After explicit publication approval:
    are unchanged.
 
 The current development browser package is approximately 49 MB uncompressed
-(49,325,199 bytes in the inspected build). The builder also emits
+(49,168,648 bytes in the inspected build). The builder also emits
 `_mech/pkg/mech_wasm_bg.wasm.gz`, approximately 6 MB. Where `DecompressionStream`
 is available, the page fetches this compressed file and decompresses it before
 WASM initialization. It checks gzip magic bytes so hosts that already decode

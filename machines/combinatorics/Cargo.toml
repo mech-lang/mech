@@ -1,6 +1,6 @@
 [package]
 name = "mech-combinatorics"
-version = "0.3.5"
+version = "0.4.0-beta"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Combinatorics library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -87,8 +87,8 @@ vectord = ["matrix",  "mech-core/vectord"]
 matrixd = ["matrix",  "mech-core/matrixd"]
 
 [dependencies]
-mech-core = { path = "../../src/core", version = "0.3.5", default-features = false, optional = true }
-mech-abi = { path = "../../src/abi", version = "0.3.5", optional = true }
+mech-core = { path = "../../src/core", version = "0.4.0-beta", default-features = false, optional = true }
+mech-abi = { path = "../../src/abi", version = "0.4.0-beta", optional = true }
 
 paste = { version = "1.0.15", optional = true }
 nalgebra = {version="0.34.1", optional = true}

@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.3.6"
+version = "0.4.0-beta"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a programming language for building reactive systems like robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -471,27 +471,27 @@ tempfile = "3.26.0"
 # The root bytecode integration corpus deliberately exercises explicit u8/u64
 # table annotations even though the shipping standard distribution selects a
 # smaller value surface. Keep that additional closure test-owned.
-mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false, features = ["u8", "u64"] }
+mech-stdlib = { version = "0.4.0-beta", path = "src/stdlib", default-features = false, features = ["u8", "u64"] }
 
 [target.'cfg(windows)'.dev-dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
 [dependencies]
-mech-core        = { version = "0.3.5", path = "src/core", default-features = false }
-mech-syntax      = { version = "0.3.5", path = "src/syntax", default-features = false }
-mech-engine = { version = "0.3.5", path = "src/engine", default-features = false }
-mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false }
-mech-runtime = { version = "0.3.5", path = "src/runtime", default-features = false, optional = true }
-mech-build = { version = "0.3.5", path = "src/build", default-features = false, optional = true }
-mech-browser = { version = "0.3.5", path = "hosts/browser", default-features = false, optional = true }
-mech-terminal = { version = "0.3.5", path = "hosts/terminal", default-features = false, optional = true }
-mech-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
-mech-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
-mech-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
-mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
-mech-robot-arm = { version = "0.3.5", path = "hosts/robot-arm", default-features = false, optional = true }
-mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
-mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
+mech-core        = { version = "0.4.0-beta", path = "src/core", default-features = false }
+mech-syntax      = { version = "0.4.0-beta", path = "src/syntax", default-features = false }
+mech-engine = { version = "0.4.0-beta", path = "src/engine", default-features = false }
+mech-stdlib = { version = "0.4.0-beta", path = "src/stdlib", default-features = false }
+mech-runtime = { version = "0.4.0-beta", path = "src/runtime", default-features = false, optional = true }
+mech-build = { version = "0.4.0-beta", path = "src/build", default-features = false, optional = true }
+mech-browser = { version = "0.4.0-beta", path = "hosts/browser", default-features = false, optional = true }
+mech-terminal = { version = "0.4.0-beta", path = "hosts/terminal", default-features = false, optional = true }
+mech-time = { version = "0.4.0-beta", path = "hosts/time", default-features = false, optional = true }
+mech-console = { version = "0.4.0-beta", path = "hosts/console", default-features = false, optional = true }
+mech-timer = { version = "0.4.0-beta", path = "hosts/timer", default-features = false, optional = true }
+mech-scene = { version = "0.4.0-beta", path = "hosts/scene", default-features = false, optional = true }
+mech-robot-arm = { version = "0.4.0-beta", path = "hosts/robot-arm", default-features = false, optional = true }
+mech-compute = { version = "0.4.0-beta", path = "src/compute", optional = true }
+mech-gpu = { version = "0.4.0-beta", path = "hosts/gpu", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"

@@ -1,0 +1,61 @@
+Extended Kalman Filter
+======================
++> math/*, logic/all
+
+EKF step @compute
+----------------
+(1) Initialization
+Δt<f32> := 0.1
+v<f32> := 1
+w<f32> := 0.015
+bearing<f32> := -0.55
+R<f32> := 0.25
+fmax<f32> := 3.402823466e38
+ε<f32> := 0.0001
+m<[f32]> := [140 12]'
+Q<[f32]> := [0.01 0; 0 0.0025]
+I<[f32]> := [1 0 0; 0 1 0; 0 0 1]
+J<[f32]> := [1 0 0; 0 1 0]
+ex<[f32]> := [1 0 0]'
+ey<[f32]> := [0 1 0]'
+et<[f32]> := [0 0 1]'
+~μ<[f32]> := [55 25 0.4]'
+~Σ<[f32]> := [100 0 0; 0 100 0; 0 0 0.15]
+
+(2) Time Update
+θ := μ · et
+sinθ := sin(θ)
+cosθ := cos(θ)
+d := v * Δt
+μ̄ := μ + [d * cosθ, d * sinθ, w * Δt]'
+G := [1f32 0f32 (0f32 - d * sinθ);
+      0f32 1f32 d * cosθ; 0f32 0f32 1f32]
+V := [cosθ * Δt 0f32; sinθ * Δt 0f32; 0f32 Δt]
+Σ̄ := G ** Σ ** G' + V ** Q ** V'
+
+(3) Measurement Update
+δ := m - J ** μ̄
+δx := δ · [1f32 0f32]'
+δy := δ · [0f32 1f32]'
+q := δ · δ
+ẑ := atan2(δy, δx) - (μ̄ · et)
+r := bearing - ẑ
+ν := atan2(sin(r), cos(r))
+H := [δy / q, (0f32 - δx) / q, -1f32]
+S := H ** Σ̄ · H + R
+K := Σ̄ ** H' / S
+μ₊ := μ̄ + K * ν
+A := I - K ** H
+Σ₊ := A ** Σ̄ ** A' + (K ** K') * R
+
+(4) Checked Publication
+xyz := [μ₊ · ex, μ₊ · ey, μ₊ · et]'
+finμ := all(xyz <= fmax) && all(xyz >= -fmax)
+finΣ := all(Σ₊ <= fmax) && all(Σ₊ >= -fmax)
+ΔΣ := Σ₊[[4 7 8]] - Σ₊[[2 3 6]]
+finite-candidate! := finμ && finΣ
+positive-covariance! := all(Σ₊[[1 5 9]] > 0f32)
+symmetric-covariance! := all(ΔΣ <= ε) && all(ΔΣ >= -ε)
+μ = μ₊
+Σ = Σ₊
+(μ, Σ)

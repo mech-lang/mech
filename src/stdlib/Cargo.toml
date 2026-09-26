@@ -1,6 +1,6 @@
 [package]
 name = "mech-stdlib"
-version = "0.3.5"
+version = "0.4.0-beta"
 edition = "2024"
 rust-version = "1.92"
 description = "Explicit standard-library composition for Mech."
@@ -346,20 +346,20 @@ vectord = ["mech-core/vectord", "mech-engine/vectord", "mech-math?/vectord", "me
 matrixd = ["mech-core/matrixd", "mech-engine/matrixd", "mech-math?/matrixd", "mech-compare?/matrixd", "mech-logic?/matrixd", "mech-range?/matrixd", "mech-matrix?/matrixd", "mech-set?/matrixd", "mech-string?/matrixd", "mech-stats?/matrixd", "mech-combinatorics?/matrixd"]
 
 [dependencies]
-mech-core = { version = "0.3.5", path = "../core", default-features = false }
-mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["functions"] }
-mech-math = { version = "0.3.5", default-features = false, optional = true }
-mech-compare = { version = "0.3.5", default-features = false, optional = true }
-mech-logic = { version = "0.3.5", default-features = false, optional = true }
-mech-range = { version = "0.3.5", default-features = false, optional = true }
-mech-matrix = { version = "0.3.5", default-features = false, optional = true }
-mech-set = { version = "0.3.5", default-features = false, optional = true }
-mech-string = { version = "0.3.5", default-features = false, optional = true }
-mech-stats = { version = "0.3.5", default-features = false, optional = true }
-mech-combinatorics = { version = "0.3.5", default-features = false, optional = true }
+mech-core = { version = "0.4.0-beta", path = "../core", default-features = false }
+mech-engine = { version = "0.4.0-beta", path = "../engine", default-features = false, features = ["functions"] }
+mech-math = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-compare = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-logic = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-range = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-matrix = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-set = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-string = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-stats = { version = "0.4.0-beta", default-features = false, optional = true }
+mech-combinatorics = { version = "0.4.0-beta", default-features = false, optional = true }
 
 [dev-dependencies]
-mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false }
+mech-syntax = { version = "0.4.0-beta", path = "../syntax", default-features = false }
 nalgebra = { version = "0.34.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

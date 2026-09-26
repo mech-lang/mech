@@ -274,7 +274,12 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             .collect::<MResult<Vec<_>>>()?;
         let options = mech_runtime::ModuleBuildOptions::new(
             env!("CARGO_PKG_VERSION"),
-            "v0.3",
+            concat!(
+                "v",
+                env!("CARGO_PKG_VERSION_MAJOR"),
+                ".",
+                env!("CARGO_PKG_VERSION_MINOR")
+            ),
             "native",
             &[],
             &[],

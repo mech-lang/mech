@@ -5,11 +5,11 @@ import { verifyKernel } from './verify.mjs';
 const $ = id => document.getElementById(id);
 const text = (id, value) => { $(id).textContent = value; };
 const scene = new RobotScene($('robot-scene'));
+const MEAN = 'μ', COVARIANCE = 'Σ';
 function bindKernelListing() {
-  const block=document.querySelector('[data-workshop-kernel-output]')?.closest('.mech-fenced-mech-block');
   // The live kernel is separate from the document REPL. Do not offer root
   // symbol inspection for values whose state is held by that kernel.
-  for(const element of block?.querySelectorAll('.mech-var-name') || []) {
+  for(const element of document.querySelectorAll('[data-workshop-kernel-listing] .mech-var-name')) {
     element.dataset.mechValueInteractive='false';
     element.classList.remove('mech-clickable');
     element.removeAttribute('tabindex');
@@ -21,13 +21,25 @@ window.addEventListener('mech:document-rendered',bindKernelListing);
 document.addEventListener('click', event => {
   // The shared document controller handles TOC navigation and compact layouts.
   if (event.defaultPrevented) return;
+  const launcher=event.target.closest?.('[data-workshop-open-output], [data-workshop-fullscreen], a[href="#live-demo"]');
+  if(launcher) {
+    event.preventDefault();
+    window.MechDocumentController?.showOutput();
+    if(launcher.hasAttribute('data-workshop-fullscreen')) document.querySelector('[data-mech-output-fullscreen]')?.click();
+    return;
+  }
   const link=event.target.closest?.('a[href^="#"]');
   if(!link) return;
   const target=document.getElementById(decodeURIComponent(link.getAttribute('href').slice(1)));
   if(target) {event.preventDefault();target.scrollIntoView({behavior:'instant',block:'start'});history.replaceState(null,'',link.getAttribute('href'));}
 });
+function openOutputFromHash() {
+  if(location.hash==='#live-demo') window.MechDocumentController?.showOutput();
+}
+openOutputFromHash();
+for(const event of ['mech:console-ready','mech:document-ready','hashchange']) window.addEventListener(event,openOutputFromHash);
 let source, repl, kernel, device, manifest, adapter, active = 0;
-let mode = 0, busy = false, running = false, generation = 0, samples = [], accepted = 0, rejected = 0;
+let mode = 'paused', busy = false, running = false, generation = 0, samples = [], accepted = 0, rejected = 0;
 let state, covariance, frames = [], ready = false;
 let committedBackend = 'cpu', committedInstances = '4096';
 const rowMajor = a => new Float32Array([a[0],a[3],a[6],a[1],a[4],a[7],a[2],a[5],a[8]]);
@@ -36,7 +48,7 @@ const median = values => {
   return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
 };
 function controls() {
-  for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 2;
+  for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 'fault';
   for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy;
   $('pause').disabled = !running;
   $('run').disabled ||= running;
@@ -46,24 +58,28 @@ function error(message) {
   text('runtime-error', message || '');
 }
 function transition(event) {
-  const response = repl.submit(`#Robot(${mode}, ${event})`);
-  if (!response.result || !/^[012]$/.test(response.result.inlineHtml.trim())) {
+  if(!['pause','run','rejected','reset'].includes(event)) throw new Error(`Unknown robot event: ${event}`);
+  const response = repl.submit(`#Robot(:${mode}, :${event})`);
+  const result = document.createElement('span');
+  result.innerHTML = response.result?.inlineHtml || '';
+  const atom = result.textContent.trim().match(/^:(paused|patrol|fault)$/);
+  if (!atom) {
     throw new Error(`Mech behavior evaluation failed: ${JSON.stringify(response)}`);
   }
-  mode = Number(response.result.inlineHtml);
+  mode = atom[1];
   document.querySelectorAll('[data-state]').forEach(el => {
-    el.classList.toggle('active', Number(el.dataset.state) === mode);
+    el.classList.toggle('active', el.dataset.state === mode);
   });
-  text('behavior-message', ['Paused. Run or advance one turn.','Patrol. Successive measurements update the filter.','Fault. The last accepted state is retained; Reset starts a new episode.'][mode]);
+  text('behavior-message', {paused:'Paused. Run or advance one turn.',patrol:'Patrol. Successive measurements update the filter.',fault:'Fault. The last accepted state is retained; Reset starts a new episode.'}[mode]);
 }
 function telemetry() {
-  const values=`μ = [${Array.from(state, x => x.toFixed(3)).join(', ')}]\nΣ =\n${[0,1,2].map(i => '  '+Array.from(covariance.slice(i*3,i*3+3),x=>x.toFixed(4).padStart(9)).join(' ')).join('\n')}`;
+  const values=`μ = [${Array.from(state, x => x.toFixed(3)).join(' ')}]'\nΣ = [${[0,1,2].map(i => Array.from(covariance.slice(i*3,i*3+3),x=>x.toFixed(4).padStart(9)).join(' ')).join(';\n     ')}]`;
   text('state-values', values);
   const output=document.querySelector('[data-workshop-kernel-output]');
   if(output) {
     const caption=document.createElement('a');
     caption.href='#live-demo';
-    caption.textContent=`Live EKF output · ${accepted} accepted / ${rejected} rejected turns`;
+    caption.textContent=`EKF output · ${accepted} accepted / ${rejected} rejected turns`;
     const pre=document.createElement('pre');
     pre.textContent=values;
     output.replaceChildren(caption,pre);
@@ -90,8 +106,8 @@ async function compile() {
     nextKernel = WasmKernel.fromSource(source, {
       bearing: new Float32Array(n).fill(-0.55),
       v: [Number($('velocity').value)], w: [Number($('omega').value)]
-    }, ['state', 'covariance']);
-    if (nextKernel.stateWidth('state')!==3 || nextKernel.stateWidth('covariance')!==9) throw new Error('The robot view requires a three-value state and a 3×3 covariance.');
+    }, [MEAN, COVARIANCE]);
+    if (nextKernel.stateWidth(MEAN)!==3 || nextKernel.stateWidth(COVARIANCE)!==9) throw new Error('The robot view requires a three-value state and a 3×3 covariance.');
     const nextManifest = $('backend').value === 'gpu' ? nextKernel.computeManifest() : null;
     if (nextManifest) {
       const freshAdapter = await navigator.gpu.requestAdapter();
@@ -101,9 +117,9 @@ async function compile() {
     await dispose(device, kernel);
     kernel = nextKernel; device = nextDevice; manifest = nextManifest; active = 0;
     committedBackend = $('backend').value; committedInstances = $('instances').value;
-    state = kernel.stateSample('state',0); covariance = rowMajor(kernel.stateSample('covariance',0));
+    state = kernel.stateSample(MEAN,0); covariance = rowMajor(kernel.stateSample(COVARIANCE,0));
     accepted = rejected = 0; samples = []; frames = [];
-    scene.reset(); scene.draw(state,covariance); transition(3);
+    scene.reset(); scene.draw(state,covariance); transition('reset');
     text('fps','—'); text('turn-ms','—'); text('throughput','—'); telemetry();
     text('runtime-status', device ? 'WebGPU · generated WGSL · checked turns' : 'CPU · Rust/WASM scalar interpreter · checked turns');
   } catch (e) {
@@ -114,7 +130,7 @@ async function compile() {
   } finally { busy = false; controls(); }
 }
 async function turn(invalid = false) {
-  if (busy || !kernel || mode === 2) return;
+  if (busy || !kernel || mode === 'fault') return;
   busy = true; controls(); error('');
   const observation = scene.observation(Number($('velocity').value),Number($('omega').value),Number($('noise').value),kernel.instances(),invalid);
   const begin = performance.now();
@@ -130,10 +146,10 @@ async function turn(invalid = false) {
         if (!found) throw new Error(`Missing GPU output ${name}`);
         return new Float32Array(found.values);
       };
-      state = output('state'); covariance = output('covariance');
+      state = output(MEAN); covariance = output(COVARIANCE);
     } else {
       kernel.turn(observation.inputs);
-      state = kernel.stateSample('state',0); covariance = rowMajor(kernel.stateSample('covariance',0));
+      state = kernel.stateSample(MEAN,0); covariance = rowMajor(kernel.stateSample(COVARIANCE,0));
     }
     const duration = performance.now()-begin;
     accepted++;
@@ -142,7 +158,7 @@ async function turn(invalid = false) {
     const now=performance.now(); frames.push(now); frames=frames.filter(t=>now-t<=1000);
     if(frames.length>1) text('fps', `${((frames.length-1)*1000/(now-frames[0])).toFixed(1)} FPS`);
   } catch(e) {
-    rejected++; running = false; generation++; transition(2); error(String(e));
+    rejected++; running = false; generation++; transition('rejected'); error(String(e));
   } finally { telemetry(); busy = false; controls(); }
 }
 async function loop(token) {
@@ -153,14 +169,14 @@ async function loop(token) {
 for (const [id,label] of [['velocity','velocity-label'],['omega','omega-label'],['noise','noise-label']]) {
   $(id).addEventListener('input',()=>text(label,$(id).value));
 }
-$('run').onclick=()=>{transition(1);running=mode===1;frames=[];const token=++generation;controls();requestAnimationFrame(()=>loop(token));};
-$('pause').onclick=()=>{running=false;generation++;transition(0);controls();};
+$('run').onclick=()=>{transition('run');running=mode==='patrol';frames=[];const token=++generation;controls();requestAnimationFrame(()=>loop(token));};
+$('pause').onclick=()=>{running=false;generation++;transition('pause');controls();};
 $('step').onclick=()=>turn();
 $('inject').onclick=()=>turn(true);
 $('reset').onclick=()=>compile();
 for(const id of ['backend','instances']) $(id).onchange=()=>compile();
 $('verify').onclick=async()=>{
-  running=false;generation++;transition(0);busy=true;controls();text('verification','Checking CPU/WebGPU parity and rejected-turn rollback…');
+  running=false;generation++;transition('pause');busy=true;controls();text('verification','Checking CPU/WebGPU parity and rejected-turn rollback…');
   try {
     const result=await verifyKernel({WasmKernel,source});
     $('verification').textContent=JSON.stringify(result,null,2);
@@ -173,7 +189,9 @@ try {
   [source] = await Promise.all([fetch('source/ekf.mec').then(r=>{if(!r.ok)throw new Error('EKF source unavailable');return r.text();}), initializeRuntime()]);
   repl=new WasmRepl();
   const behavior=await fetch('source/behavior.mec').then(r=>r.text());
-  repl.submit(behavior); transition(3);
+  const behaviorResult = repl.submit(behavior);
+  if(behaviorResult.errors?.length) throw new Error(`Mech behavior could not load: ${JSON.stringify(behaviorResult.errors)}`);
+  transition('reset');
   if(navigator.gpu) {
     try { adapter=await navigator.gpu.requestAdapter(); }
     catch { adapter=null; }
@@ -183,4 +201,4 @@ try {
   ready=true; await compile();
 } catch(e) { error(String(e)); text('runtime-status','The browser runtime could not start. The source and archived results are still available.'); }
 
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&running){running=false;generation++;transition(0);controls();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&running){running=false;generation++;transition('pause');controls();}});
