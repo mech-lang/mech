@@ -77,7 +77,7 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// This is a lexical back-edge, not a graph edge and not a source-level
     /// callable lookup. Activation binds it to the enclosing match and the
     /// resident executor admits a bounded call frame before following it.
-    Recur,
+    Recur(u8),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1038,7 +1038,8 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
-                        ControlOperationBody::Operation { .. } => {}
+                        ControlOperationBody::Operation { .. } | ControlOperationBody::Recur(_) => {
+                        }
                     }
                 }
             }
@@ -1055,7 +1056,8 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
-                        ControlOperationBody::Operation { .. } => {}
+                        ControlOperationBody::Operation { .. } | ControlOperationBody::Recur(_) => {
+                        }
                     }
                 }
             }
