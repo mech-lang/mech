@@ -2777,7 +2777,7 @@ struct SemanticBuilder {
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
     active_functions: Vec<String>,
-    active_recursive_outputs: Vec<(String, SchemaDraft)>,
+    active_recursive_outputs: Vec<(String, SchemaDraft, usize)>,
     patterns: Vec<SourceSemanticPattern>,
     resource_writes: BTreeMap<String, mech_core::ExecutionResourceRequest>,
 }
@@ -8962,13 +8962,8 @@ impl SemanticBuilder {
         expected_result: Option<&SchemaDraft>,
     ) -> Result<PendingValue, SourceSemanticError> {
         self.match_depth += 1;
-        let result = self.lower_match_expression_inner(
-            scrutinee,
-            arms,
-            syntax,
-            partial,
-            expected_result,
-        );
+        let result =
+            self.lower_match_expression_inner(scrutinee, arms, syntax, partial, expected_result);
         self.match_depth -= 1;
         result
     }
