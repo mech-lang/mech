@@ -62,9 +62,9 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-audited.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-audited.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-audited.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-spacing-v3.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-spacing-v3.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-spacing-v3.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
 code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
@@ -79,6 +79,12 @@ describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.
 release-candidate target for 2028, including additional hosts and language features. The header
 links to the website and GitHub repository. The footer invites contributions
 and bug reports.
+
+The QR invitation reads “Scan the QR code at the bottom for a demo.”
+Embeddable and Reactive move down together by 32 layout pixels to provide more
+space after Motivation. The header website and repository links use 40 pt,
+reduced from 42 pt. The title, Numerical column and benchmark plots retain their
+positions and sizes.
 
 The current layout uses informational callouts with matching medium-gold accent
 bars, a shape marker for the
