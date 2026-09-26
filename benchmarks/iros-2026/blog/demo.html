@@ -1,0 +1,42 @@
+<section class="live-demo" aria-labelledby="live-title" id="live-demo">
+  <div class="demo-heading"><div><p class="kicker" id="source-origin">Executing the source above</p><h3 id="live-title">Bearing-only localization</h3></div><span id="runtime-status" role="status">Loading Rust / WebAssembly runtime…</span></div>
+  <div class="demo-controls">
+    <label>Compute backend<select id="backend"><option value="cpu">CPU · Rust / WebAssembly</option><option value="gpu" disabled>GPU · WebGPU (checking availability)</option></select></label>
+    <label>Independent filters<select id="instances"><option value="1">1</option><option value="256">256</option><option value="4096" selected>4,096</option><option value="65536">65,536</option></select></label>
+    <button id="run" disabled>Run</button><button id="pause" disabled>Pause</button><button id="step" disabled>One turn</button><button id="reset" disabled>Reset</button>
+  </div>
+  <div class="demo-body">
+    <div class="scene-wrap"><svg id="robot-scene" viewBox="0 0 200 130" role="img" aria-label="Simulated robot, EKF pose estimate, landmark and covariance ellipse"></svg>
+      <div class="scene-key"><span class="truth-key">Simulated pose</span><span class="estimate-key">EKF estimate</span><span class="ellipse-key">2σ position ellipse</span><span class="landmark-key">Landmark</span></div>
+    </div>
+    <div class="telemetry">
+      <div class="metric"><span>Completed frames / s</span><output id="fps">—</output></div>
+      <div class="metric"><span>Median completed turn</span><output id="turn-ms">—</output></div>
+      <div class="metric"><span>Filter-turns / s</span><output id="throughput">—</output></div>
+      <div class="metric"><span>Published / rejected turns</span><output id="turn-count">0 / 0</output></div>
+      <h4>EKF state telemetry</h4><pre id="state-values">μ = [55, 25, 0.4]
+Σ = diag(100, 100, 0.15)</pre>
+      <p class="small" id="sample-window">Timing begins after five completed warmup turns.</p>
+    </div>
+  </div>
+  <div class="sensor-controls">
+    <label>Forward velocity <output id="velocity-label">1.0</output><input id="velocity" type="range" min="0" max="12" step="0.1" value="1"></label>
+    <label>Angular velocity <output id="omega-label">0.015</output><input id="omega" type="range" min="-0.4" max="0.4" step="0.001" value="0.015"></label>
+    <label>Bearing noise scale <output id="noise-label">0.02</output><input id="noise" type="range" min="0" max="0.3" step="0.01" value="0.02"></label>
+    <button id="inject" disabled>Inject an invalid bearing</button>
+  </div>
+  <div class="behavior-status" aria-label="Live robot behavior"><span data-state="0" class="active">Paused</span><span class="state-edge">↔</span><span data-state="1">Patrol</span><span class="state-edge">→</span><span data-state="2">Fault</span><p id="behavior-message">The Mech state machine controls run, pause, and rejected-turn behavior.</p></div>
+  <p class="small" id="gpu-support">Checking WebGPU availability…</p>
+  <button id="verify" disabled>Verify CPU / GPU agreement and rollback</button><pre id="verification" class="verification" role="status"></pre>
+  <p class="callout">Changing the backend or batch size resets both the filter and the simulation. CPU and GPU compile the same source; state migration between devices is not implemented in this example. Rendering shows the first filter in the batch.</p>
+  <p class="small">Long episodes or changed inputs can trigger the displayed covariance constraints. A reported fault stops the episode without publishing the candidate; Reset starts again from the source initial state.</p>
+  <details><summary>Timing, source editing, and drawing support</summary>
+    <p>FPS includes animation scheduling and is capped by the display. Completed-turn time includes input binding, execution, validation, synchronization, and one filter's state readback; it excludes drawing and compilation. Throughput is batch size divided by median turn time. The summary uses the latest 60 accepted turns after five warmups, not independent benchmark trials.</p>
+    <p>The source editor below starts with the exact file printed in the paper. Applying an edit recompiles and resets the simulation; the archived benchmark figures never change in response to edits.</p>
+    <label for="source-editor">Executable EKF source</label><textarea id="source-editor" spellcheck="false" rows="18"></textarea>
+    <button id="compile" disabled>Apply source and reset</button><button id="restore" disabled>Restore paper source</button><p id="source-status">Paper source loaded.</p>
+    <p><a href="source/ekf.mec">Download the paper kernel</a> · <a href="source/behavior.mec">Robot state machine</a> · <a href="assets/drawing.mjs">Drawing and sensor simulation support</a> · <a href="assets/app.mjs">Browser host integration</a></p>
+  </details>
+  <details id="modified-source" hidden><summary>Currently running edited source</summary><pre id="modified-source-code"></pre></details>
+  <pre id="runtime-error" class="error" role="alert" hidden></pre>
+</section>

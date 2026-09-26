@@ -1,0 +1,23 @@
+// Stage a reviewed static build in the verified About repository. Never push.
+import {cpSync,copyFileSync,existsSync,readFileSync,writeFileSync} from 'node:fs';
+import {resolve,dirname,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+const root=dirname(fileURLToPath(import.meta.url));
+if(!process.argv[2]) throw new Error('Usage: node stage-about.mjs /path/to/about-review-checkout');
+const destination=resolve(process.argv[2]);
+const git=(...args)=>execFileSync('git',args,{cwd:destination,encoding:'utf8'}).trim();
+if(git('remote','get-url','origin')!=='https://gitlab.com/mech-lang/web/about.git') throw new Error('Not the verified About repository.');
+const branch=git('branch','--show-current');
+if(!branch || ['main','master'].includes(branch)) throw new Error('Create a review branch before staging.');
+if(git('status','--porcelain')) throw new Error('Review checkout must be clean; existing work will not be overwritten.');
+const homepage=join(destination,'public/index.html');
+const previousHash=createHash('sha256').update(readFileSync(homepage)).digest('hex');
+if(previousHash!=='8c58ce2f4d115e250f52662d610253cc2bf5c0c64f7710a426f210ab8b04eb32') throw new Error('About homepage changed since inspection; review before replacing it.');
+if(existsSync(join(destination,'public/previous-about.html'))) throw new Error('Backup page already exists.');
+const manifest=JSON.parse(readFileSync(join(root,'dist/build-manifest.json'),'utf8'));
+copyFileSync(homepage,join(destination,'public/previous-about.html'));
+cpSync(join(root,'dist'),join(destination,'public'),{recursive:true});
+writeFileSync(join(destination,'IROS-ARTICLE.md'),`# IROS article review\n\nPrepared from Mech revision ${manifest.gitRevision}. Build details and source hashes are in public/build-manifest.json.\n\nThe previous homepage is retained at public/previous-about.html, and its CSS, JavaScript and runtime assets are unchanged.\n\nThis branch is not deployed. The existing GitLab Pages job publishes public/ only after changes reach main.\n`);
+console.log(`Staged static article on local branch ${branch}; no remote write or deployment.`);

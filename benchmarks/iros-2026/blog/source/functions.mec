@@ -1,0 +1,7 @@
+Heading normalization
+=====================
++> math/*
+wrap-angle(theta<f64>) = wrapped<f64> :=
+  wrapped := atan2(sin(theta), cos(theta)).
+headings := [0.0 3.0 7.0] + 0.25
+wrap-angle(headings[3])

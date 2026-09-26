@@ -1,0 +1,41 @@
+{
+  "supported": true,
+  "passed": true,
+  "status": "passed",
+  "reason": null,
+  "sourceSha256": "a7cd4077c7bf2f9741559b5748f05cf06e9b48e156c4fdbabfbdc7feea065eb2",
+  "instances": 256,
+  "turns": 20,
+  "tolerance": { "absolute": 0.0001, "relative": 0.0001 },
+  "cpuPassed": true,
+  "gpuExecuted": true,
+  "comparedTurns": 21,
+  "errors": {
+    "state": {
+      "valuesCompared": 831,
+      "maxAbsolute": 0.000003814697265625,
+      "maxRelative": 1.5093772324632629e-7,
+      "maxToleranceRatio": 0.0014519281824051569,
+      "failures": 0
+    },
+    "covariance": {
+      "valuesCompared": 2493,
+      "maxAbsolute": 0.0001068115234375,
+      "maxRelative": 0.000002649910796309307,
+      "maxToleranceRatio": 0.011929149712362638,
+      "failures": 0
+    }
+  },
+  "rollback": {
+    "cpu": { "rejected": true, "instance": 255, "allStateBitsUnchanged": true },
+    "gpu": {
+      "rejected": true,
+      "constraint": "finite-candidate!",
+      "instance": 255,
+      "allStateBitsUnchanged": true,
+      "activeBufferUnchanged": true
+    }
+  },
+  "recovery": { "cpu": true, "gpu": true, "comparedInstances": 256 },
+  "elapsedMs": 118.59999990463257
+}

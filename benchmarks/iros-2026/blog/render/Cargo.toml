@@ -1,0 +1,14 @@
+[package]
+name = "mech-iros-blog-render"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+mech-syntax = { path = "../../../../src/syntax", features = ["base", "f32"] }
+
+[profile.dev]
+debug = false
+incremental = false

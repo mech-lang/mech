@@ -1,0 +1,9 @@
+Sensor decision
+===============
+reading := ("visible", 2.4)
+decision := reading?
+  | ("visible", distance), distance <= 3.6 => "correct"
+  | ("visible", distance) => "predict"
+  | ("occluded", *) => "predict"
+  | * => "predict".
+decision

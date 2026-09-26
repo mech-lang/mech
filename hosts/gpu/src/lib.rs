@@ -2079,6 +2079,13 @@ fn format_wgsl_f32(value: f32) -> String {
     if value == f32::NEG_INFINITY {
         return "bitcast<f32>(0xff800000u)".to_owned();
     }
+    // Rust's shortest f32 decimal for MAX rounds back to MAX, but its exact
+    // decimal value is slightly outside the finite f32 range. WGSL first
+    // interprets an unsuffixed literal as abstract-float and rejects that
+    // narrowing. Preserve both finite endpoints exactly, including their sign.
+    if value.abs() == f32::MAX {
+        return format!("bitcast<f32>(0x{:08x}u)", value.to_bits());
+    }
     let formatted = value.to_string();
     if formatted.contains(['.', 'e', 'E']) {
         formatted
@@ -2134,6 +2141,34 @@ fn broadcast_index(source_elements: usize, index: usize, consumer_elements: usiz
 mod tests {
     use super::*;
     use mech_core::ConstantId;
+
+    #[test]
+    fn wgsl_f32_finite_endpoints_are_bit_exact() {
+        // This decimal is round-trip-safe in Rust but exceeds the finite range
+        // when a WGSL implementation checks the abstract-float conversion.
+        assert!(f32::MAX.to_string().parse::<f64>().unwrap() > f64::from(f32::MAX));
+        assert_eq!(format_wgsl_f32(f32::MAX), "bitcast<f32>(0x7f7fffffu)");
+        assert_eq!(format_wgsl_f32(f32::MIN), "bitcast<f32>(0xff7fffffu)");
+        assert_eq!(format_wgsl_f32(1.0), "1.0");
+        assert_eq!(format_wgsl_f32(-0.25), "-0.25");
+    }
+
+    #[cfg(feature = "metal-native")]
+    #[test]
+    fn wgsl_f32_finite_endpoints_parse_and_validate() {
+        let source = format!(
+            "@compute @workgroup_size(1) fn main() {{ let hi: f32 = {}; let lo: f32 = {}; }}",
+            format_wgsl_f32(f32::MAX),
+            format_wgsl_f32(f32::MIN),
+        );
+        let module = naga::front::wgsl::parse_str(&source).unwrap();
+        naga::valid::Validator::new(
+            naga::valid::ValidationFlags::all(),
+            naga::valid::Capabilities::all(),
+        )
+        .validate(&module)
+        .unwrap();
+    }
 
     fn concat_program(
         axis: ConcatenationAxis,

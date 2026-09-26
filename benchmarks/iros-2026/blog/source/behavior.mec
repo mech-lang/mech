@@ -1,0 +1,23 @@
+Robot behavior
+==============
+
+-- Modes: 0 paused, 1 patrol, 2 fault.
+-- Events: 0 pause, 1 run, 2 rejected turn, 3 reset.
+#Robot(mode<f64>, event<f64>) => <f64> :=
+  | :Dispatch(mode<f64>, event<f64>)
+  | :Paused
+  | :Patrol
+  | :Fault.
+
+#Robot(mode, event) -> :Dispatch(mode, event)
+  :Dispatch(mode, event)
+    | event == 3 -> :Paused
+    | event == 2 -> :Fault
+    | mode == 2 -> :Fault
+    | event == 0 -> :Paused
+    | event == 1 -> :Patrol
+    | * -> :Paused
+  :Paused => 0
+  :Patrol => 1
+  :Fault => 2
+.

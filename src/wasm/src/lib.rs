@@ -25,9 +25,14 @@ mod gpu;
 #[cfg(feature = "browser_compute")]
 mod mixed_compute;
 
+#[cfg(feature = "browser_compute")]
+mod kernel;
+
 #[cfg(feature = "browser_project_core")]
 pub use project::*;
 
 #[cfg(feature = "browser_compute")]
 pub use mixed_compute::*;
+#[cfg(feature = "browser_compute")]
+pub use kernel::*;
 pub use repl::*;

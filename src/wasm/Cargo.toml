@@ -82,7 +82,7 @@ browser_compute_canary = [
   "browser_project_core", "browser_compute", "sample_hold", "state_step",
   "served_project_authority", "browser_host_dom", "browser_host_time",
   "browser_host_timer", "browser_host_scene", "mika", "statements_default",
-  "state_machines", "access", "assign", "subscript_default", "matrix_solve",
+  "state_machines", "compare_eq", "access", "assign", "subscript_default", "matrix_solve",
   "matrix_vertcat", "matrix_matmul", "matrix_transpose", "matrix_dot",
   "matrix_comprehensions", "bool", "string_default", "record", "table",
   # The document includes hexadecimal and rational source literals in its
@@ -93,7 +93,7 @@ browser_compute = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
   "mech-runtime/compute",
   "math_abs", "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_mod", "math_neg", "math_sqrt", "math_ceil", "math_floor", "math_atan2", "math_sin", "math_cos",
-  "compare_lte", "compare_gt", "logic_and",
+  "compare_lte", "compare_gte", "compare_gt", "logic_and", "logic_all",
   "variables", "variable_define", "variable_assign", "tuple",
   "mech-stdlib/native-plan", "dep:mech-compute", "dep:mech-gpu", "mech-gpu/runtime-host",
 ]
@@ -199,8 +199,9 @@ matrix_comprehensions = ["matrix", "mech-stdlib/matrix_comprehensions"]
 
 
 # Logic
-logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
+logic_default = ["logic_all", "logic_and", "logic_or", "logic_not", "logic_xor"]
 logic = ["bool"]
+logic_all = ["logic", "mech-stdlib/logic_all"]
 logic_and = ["logic", "mech-stdlib/logic_and"]
 logic_or = ["logic", "mech-stdlib/logic_or"]
 logic_not = ["logic", "mech-stdlib/logic_not"]

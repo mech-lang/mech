@@ -1,0 +1,62 @@
+Extended Kalman Filter
+======================
++> math/*, logic/all
+
+EKF step @compute
+----------------
+(1) Initialization
+dt<f32> := 0.1
+v<f32> := 1
+w<f32> := 0.015
+bearing<f32> := -0.55
+R<f32> := 0.25
+fmax<f32> := 3.402823466e38
+eps<f32> := 0.0001
+m<[f32]:2,1> := [140; 12]
+Q<[f32]:2,2> := [0.01 0; 0 0.0025]
+I<[f32]:3,3> := [1 0 0; 0 1 0; 0 0 1]
+J<[f32]:2,3> := [1 0 0; 0 1 0]
+ex<[f32]:3,1> := [1; 0; 0]
+ey<[f32]:3,1> := [0; 1; 0]
+et<[f32]:3,1> := [0; 0; 1]
+~state<[f32]:3,1> := [55; 25; 0.4]
+~covariance<[f32]:3,3> := [100 0 0; 0 100 0;
+                          0 0 0.15]
+
+(2) Time Update
+th := state · et
+st := sin(th)
+ct := cos(th)
+d := v * dt
+mu0 := state + [d * ct; d * st; w * dt]
+G := [1f32 0f32 (0f32 - d * st);
+      0f32 1f32 d * ct; 0f32 0f32 1f32]
+V := [ct * dt 0f32; st * dt 0f32; 0f32 dt]
+P0 := G ** covariance ** G' + V ** Q ** V'
+
+(3) Measurement Update
+delta := m - J ** mu0
+dx := delta · [1f32; 0f32]
+dy := delta · [0f32; 1f32]
+q := delta · delta
+zhat := atan2(dy, dx) - (mu0 · et)
+r := bearing - zhat
+nu := atan2(sin(r), cos(r))
+H := [dy / q, (0f32 - dx) / q, -1f32]
+S := H ** P0 · H + R
+K := P0 ** H' / S
+mu1 := mu0 + K * nu
+A := I - K ** H
+P1 := A ** P0 ** A' + (K ** K') * R
+
+(4) Checked Publication
+xyz := [mu1 · ex; mu1 · ey; mu1 · et]
+finmu := all(xyz <= fmax) && all(xyz >= -fmax)
+finP := all(P1 <= fmax) && all(P1 >= -fmax)
+D := P1[[4 7 8]] - P1[[2 3 6]]
+finite-candidate! := finmu && finP
+positive-covariance! := all(P1[[1 5 9]] > 0f32)
+symmetric-covariance! := all(D <= eps) && all(D >= -eps)
+state = mu1
+covariance = P1
+(state, covariance)

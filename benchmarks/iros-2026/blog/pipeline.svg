@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="architecture-pipeline" viewBox="0 0 1080 590" role="img" aria-labelledby="pipeline-title pipeline-desc">
+<title id="pipeline-title">Build, activation, and checked reactive execution</title>
+<desc id="pipeline-desc">Mech source compiles into a typed Program Artifact, serializable as program.mecb. Configuration and host capabilities determine activation. On each live turn Rust drivers provide inputs, the resident computation produces a candidate, and validation either publishes state and outputs or rejects the candidate and retains prior state.</desc>
+<defs>
+<marker id="blue" orient="auto-start-reverse" markerWidth="8" markerHeight="8" refX="7" refY="4"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#8bc7f0" stroke-width="1.5"/></marker>
+<marker id="purple" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#bc8cbf" stroke-width="1.5"/></marker>
+<marker id="green" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#4cac97" stroke-width="1.5"/></marker>
+<marker id="salmon" orient="auto" markerWidth="8" markerHeight="8" refX="7" refY="4"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#e69b92" stroke-width="1.5"/></marker>
+<style>#architecture-pipeline text{font-family:system-ui,sans-serif;fill:#e3e8ea;font-size:16px}#architecture-pipeline .head{font-family:monospace;font-size:21px;font-weight:700;fill:#bc8cbf}#architecture-pipeline .small{font-size:13px;fill:#b3c5ce}#architecture-pipeline .box{fill:#141e22;stroke-width:1.8}#architecture-pipeline .input{stroke:#8bc7f0}#architecture-pipeline .program{stroke:#bc8cbf}#architecture-pipeline .output{stroke:#4cac97}#architecture-pipeline .fail{stroke:#e69b92}#architecture-pipeline .edge{fill:none;stroke-width:1.8}#architecture-pipeline .b{stroke:#8bc7f0;marker-end:url(#blue)}#architecture-pipeline .p{stroke:#bc8cbf;marker-end:url(#purple)}#architecture-pipeline .g{stroke:#4cac97;marker-end:url(#green)}#architecture-pipeline .r{stroke:#e69b92;marker-end:url(#salmon)}#architecture-pipeline .center{text-anchor:middle}</style>
+</defs>
+<rect width="1080" height="590" fill="#0b1012"/>
+<g transform="translate(24 25)"><rect class="box input" width="12" height="12"/><text class="small" x="19" y="12">Inputs</text><rect class="box program" x="105" width="12" height="12"/><text class="small" x="124" y="12">Program</text><rect class="box output" x="220" width="12" height="12"/><text class="small" x="239" y="12">Outputs</text><rect class="box fail" x="330" width="12" height="12"/><text class="small" x="349" y="12">Failures</text></g>
+<text class="head" x="24" y="80">Build and activation (once)</text>
+<rect x="356" y="92" width="257" height="164" fill="none" stroke="#866888" stroke-dasharray="3 5"/>
+<rect class="box input" x="377" y="103" width="215" height="39"/><text class="center" x="484" y="122">program.mecb</text><text class="small center" x="484" y="136">Serialized artifact</text>
+<path class="edge b" d="M484 146 V177" marker-start="url(#blue)"/><text class="small" x="496" y="165">encode / decode</text>
+<rect class="box input" x="24" y="180" width="131" height="56"/><text class="center" x="89" y="213">ekf.mec</text>
+<rect class="box program" x="193" y="180" width="139" height="56"/><text class="center" x="262" y="213">Mech compiler</text>
+<rect class="box program" x="369" y="180" width="230" height="64" stroke-width="3"/><text class="center" x="484" y="205" font-weight="700">Program Artifact</text><text class="center" x="484" y="227">(typed dataflow graph)</text>
+<path class="edge b" d="M155 208 H190"/><path class="edge p" d="M332 208 H366"/>
+<rect class="box input" x="651" y="107" width="184" height="40"/><text class="center" x="743" y="132">.mcfg configuration</text>
+<rect class="box program" x="651" y="180" width="184" height="56"/><text class="center" x="743" y="214">Activate</text>
+<rect class="box fail" x="651" y="269" width="184" height="40"/><text class="center" x="743" y="294">Activation failed</text>
+<path class="edge p" d="M600 208 H648"/><path class="edge b" d="M743 147 V177"/><path class="edge r" d="M743 236 V266"/>
+<rect class="box output" x="879" y="180" width="177" height="56"/><text class="center" x="967" y="204">Resident</text><text class="center" x="967" y="224">computation</text><path class="edge g" d="M835 208 H876"/>
+<path d="M865 96 V155" stroke="#af9a65" stroke-width="3"/><text class="small" x="878" y="107">Activation checks hosts</text><text class="small" x="878" y="125">and capabilities: permissions</text><text class="small" x="878" y="143">for resource operations.</text>
+<text class="head" x="24" y="337">Live execution (each turn)</text>
+<rect class="box input" x="24" y="411" width="153" height="73"/><text class="center" x="100" y="442">Rust host</text><text class="center" x="100" y="464">drivers</text>
+<rect class="box program" x="218" y="365" width="295" height="177"/><text x="232" y="390" font-weight="700">Resident computation</text>
+<g fill="#111a1e" stroke="#40515a"><rect x="232" y="403" width="267" height="28"/><rect x="232" y="443" width="267" height="28"/><rect x="232" y="503" width="129" height="27"/><rect x="375" y="503" width="124" height="27"/></g>
+<text class="small center" x="366" y="422">Time update</text><text class="small center" x="366" y="462">Measurement update</text><text class="small center" x="296" y="521">μ → robot pose</text><text class="small center" x="437" y="521">Σ → ellipse</text>
+<path class="edge p" d="M366 431 V440"/><path class="edge p" d="M366 471 C366 488 296 481 296 500"/><path class="edge p" d="M366 471 C366 488 437 481 437 500"/>
+<path class="edge b" d="M177 447 H215"/>
+<rect class="box program" x="553" y="424" width="119" height="48"/><text class="center" x="612" y="443">Validate</text><text class="center" x="612" y="462">candidate</text><path class="edge p" d="M513 447 H550"/>
+<rect class="box output" x="718" y="424" width="139" height="48"/><text class="center" x="787" y="443">Publish state</text><text class="center" x="787" y="462">+ record</text><path class="edge g" d="M672 447 H715"/><text x="683" y="415" style="fill:#4cac97;font-size:14px">pass</text>
+<rect class="box fail" x="718" y="512" width="139" height="52"/><text class="small center" x="787" y="534">Abort candidate</text><text class="small center" x="787" y="552">retain prior state</text><path class="edge r" d="M672 451 C712 451 677 537 715 537"/><text x="679" y="568" style="fill:#e69b92;font-size:14px">fail</text>
+<rect class="box output" x="900" y="360" width="156" height="110"/><text x="910" y="383" style="fill:#4cac97;font-size:15px">EKF state telemetry</text><text class="small" x="910" y="408">μ = [98.2, 55.2, −0.03]</text><text class="small" x="910" y="430">Σ = [107.9 −28.9 …</text><text class="small" x="935" y="449">−28.9  19.9 …]</text>
+<rect class="box output" x="900" y="487" width="156" height="77"/><text x="911" y="509" style="fill:#4cac97">SVG scene</text><ellipse cx="1010" cy="535" rx="29" ry="11" transform="rotate(25 1010 535)" fill="#bc8cbf" fill-opacity=".3" stroke="#bc8cbf"/><path d="M1003 528 L1021 535 L1003 540 Z" fill="#8bc7f0"/><text class="small" x="911" y="550">pose + 2σ</text>
+<path class="edge g" d="M857 447 C887 447 872 415 897 415"/><path class="edge g" d="M857 447 C887 447 872 523 897 523"/>
+</svg>
