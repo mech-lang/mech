@@ -1866,7 +1866,26 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
     ));
 
     let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
-    let graph = String::from_utf8(sections.nodes.clone()).unwrap();
+    let graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+    let identifier_fields = [
+        ("machine", "/nodes/0/body/Fsm/machine"),
+        ("argument", "/nodes/0/body/Fsm/arguments/0/0"),
+        (
+            "structured value",
+            "/nodes/0/body/Fsm/stages/0/value/Tuple/2/AtomStruct/name",
+        ),
+    ];
+    let mutate_identifier = |role: &str, pointer: &str, replacement: &str| {
+        let mut mutated = graph.clone();
+        let field = mutated
+            .pointer_mut(pointer)
+            .unwrap_or_else(|| panic!("missing FSM {role} field at {pointer}"));
+        assert!(field.is_string(), "FSM {role} field must be a string");
+        *field = serde_json::Value::String(replacement.to_owned());
+        let mut sections = sections.clone();
+        sections.nodes = serde_json::to_vec(&mutated).unwrap();
+        sections
+    };
     // Canonical identifier classes are defined over extended grapheme clusters.
     // U+0600 joins the following '=' into one emoji grapheme whose first scalar
     // admits it in machine, named-argument, and structured-value roles.
@@ -1881,31 +1900,15 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             .unwrap()
             .compile_artifact()
             .unwrap();
-        for (original, replacement) in [
-            (
-                "\"machine\":\"machine\"",
-                format!("\"machine\":\"{canonical_identifier}\""),
-            ),
-            (
-                "\"arguments\":[[\"left\",0]",
-                format!("\"arguments\":[[\"{canonical_identifier}\",0]"),
-            ),
-            (
-                "\"name\":\"some\"",
-                format!("\"name\":\"{canonical_identifier}\""),
-            ),
-        ] {
-            let mutated = graph.replacen(original, &replacement, 1);
-            assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-            let mut valid = sections.clone();
-            valid.nodes = mutated.into_bytes();
+        for &(role, pointer) in &identifier_fields {
+            let valid = mutate_identifier(role, pointer, canonical_identifier);
             mech_engine::decode_program_artifact_sections(&valid).unwrap_or_else(|error| {
-                panic!("canonical FSM identifier {replacement}: {error:?}")
+                panic!("canonical FSM {role} identifier {canonical_identifier:?}: {error:?}")
             });
         }
     }
     let mut unsupported_revision = sections.clone();
-    let mut unsupported_graph: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    let mut unsupported_graph = graph.clone();
     unsupported_graph["revision"] = serde_json::Value::from(0);
     unsupported_revision.nodes = serde_json::to_vec(&unsupported_graph).unwrap();
     assert!(mech_engine::decode_program_artifact_sections(&unsupported_revision).is_err());
@@ -1921,40 +1924,24 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
             format!("bad{glyph}"),
             format!("b{glyph}ad"),
         ] {
-            for (original, replacement) in [
-                ("\"machine\":\"machine\"", format!("\"machine\":\"{name}\"")),
-                (
-                    "\"arguments\":[[\"left\",0]",
-                    format!("\"arguments\":[[\"{name}\",0]"),
-                ),
-                ("\"name\":\"some\"", format!("\"name\":\"{name}\"")),
-            ] {
-                let mutated = graph.replacen(original, &replacement, 1);
-                assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-                let mut invalid = sections.clone();
-                invalid.nodes = mutated.into_bytes();
+            for &(role, pointer) in &identifier_fields {
+                let invalid = mutate_identifier(role, pointer, &name);
                 assert!(
                     mech_engine::decode_program_artifact_sections(&invalid).is_err(),
-                    "forbidden canonical grapheme in FSM identifier: {replacement}"
+                    "forbidden canonical grapheme in FSM {role} identifier: {name:?}"
                 );
             }
         }
     }
-    for (original, replacement) in [
-        ("\"machine\":\"machine\"", "\"machine\":\" \""),
-        (
-            "\"arguments\":[[\"left\",0]",
-            "\"arguments\":[[\"bad\\u0000name\",0]",
-        ),
-        ("\"name\":\"some\"", "\"name\":\"bad\\u0000name\""),
-    ] {
-        let mutated = graph.replacen(original, replacement, 1);
-        assert_ne!(mutated, graph, "missing FSM wire fixture {original}");
-        let mut invalid = sections.clone();
-        invalid.nodes = mutated.into_bytes();
+    for (&(role, pointer), replacement) in
+        identifier_fields
+            .iter()
+            .zip([" ", "bad\0name", "bad\0name"])
+    {
+        let invalid = mutate_identifier(role, pointer, replacement);
         assert!(
             mech_engine::decode_program_artifact_sections(&invalid).is_err(),
-            "noncanonical FSM identifier {replacement}"
+            "noncanonical FSM {role} identifier {replacement:?}"
         );
     }
 }

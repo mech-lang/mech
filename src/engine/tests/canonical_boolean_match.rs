@@ -322,14 +322,20 @@ fn typed_match_codec_admits_exact_bounds_and_rejects_unknown_tags() {
     }
     for key in ["revision", "pattern"] {
         let mut sections = sections.clone();
+        let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
         if key == "revision" {
-            let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
             graph["revision"] = serde_json::json!(0);
-            sections.nodes = serde_json::to_vec(&graph).unwrap();
         } else {
-            let text = String::from_utf8(sections.nodes).unwrap();
-            sections.nodes = text.replace("\"Literal\":", "\"Unknown\":").into_bytes();
+            let pattern = graph
+                .pointer_mut("/nodes/0/body/Match/arms/0/pattern")
+                .and_then(serde_json::Value::as_object_mut)
+                .expect("fixture must encode the first match pattern as an object");
+            let literal = pattern
+                .remove("Literal")
+                .expect("fixture must encode the first match pattern as Literal");
+            assert!(pattern.insert("Unknown".to_owned(), literal).is_none());
         }
+        sections.nodes = serde_json::to_vec(&graph).unwrap();
         assert!(
             decode_program_artifact_sections(&sections).is_err(),
             "{key}"
