@@ -2240,11 +2240,17 @@ fn calls_ranges_subscripts_and_patterns_keep_their_canonical_roles() {
     let mech_engine::SourceNodeBody::Match(control) = &typed_pattern.program().nodes[0].body else {
         panic!("typed match");
     };
-    assert_eq!(control.arms[0].pattern, mech_engine::MatchPattern::Bind);
+    assert!(matches!(
+        control.arms[0].pattern,
+        mech_engine::MatchPattern::Structural(mech_engine::CollectionPattern::Bind {
+            local: 0,
+            ..
+        })
+    ));
     let parameter = &control.arms[0].body.parameters[0];
     assert_eq!(
         parameter.source,
-        mech_engine::ControlParameterSource::Scrutinee
+        mech_engine::ControlParameterSource::PatternBinding(0)
     );
     assert_eq!(
         typed_pattern

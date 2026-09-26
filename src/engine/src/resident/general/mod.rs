@@ -210,9 +210,18 @@ pub struct ActivatedMatchNode {
     pub locals: Box<[ResidentRegion]>,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ActivatedRecursiveCall {
+    pub artifact_node: NodeId,
+    pub target: ActivatedNodeIndex,
+    pub argument: ResidentReadLocation,
+    pub write: ResidentWriteLocation,
+}
+
 #[derive(Clone, Debug)]
 pub enum ActivatedTurnStep {
     Match(ActivatedMatchNode),
+    Recur(ActivatedRecursiveCall),
     Comprehension(std::sync::Arc<ActivatedComprehensionNode>),
     Kernel(ActivatedKernelNode),
     External(ActivatedExternalNode),
@@ -254,6 +263,7 @@ impl ActivatedTurnStep {
         match self {
             Self::Kernel(node) => node.artifact_node,
             Self::Match(node) => node.artifact_node,
+            Self::Recur(node) => node.artifact_node,
             Self::Comprehension(node) => node.artifact_node,
             Self::External(node) => node.artifact_node,
         }
@@ -1186,6 +1196,13 @@ pub struct TurnWorkspace {
     // Only activation-invariant fixed-width plans are cached. Payload-bearing
     // values and deferred regions still supply live facts on every execution.
     fixed_turn_plans: Box<[Option<std::sync::Arc<crate::memory_planner::TurnMemoryPlan>>]>,
+    recursive_scrutinees: Vec<RecursiveFrame>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct RecursiveFrame {
+    target: ActivatedNodeIndex,
+    argument: ResidentReadLocation,
 }
 
 impl TurnWorkspace {
@@ -1231,6 +1248,7 @@ impl TurnWorkspace {
             )?,
             state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
             fixed_turn_plans: vec![None; plan.steps.len()].into_boxed_slice(),
+            recursive_scrutinees: Vec::new(),
         })
     }
 }
@@ -1997,6 +2015,7 @@ fn append_comprehension_execution_cases(
                     cases,
                 )?;
             }
+            crate::ControlOperationBody::Recur(_) => {}
         }
     }
     Ok(())
@@ -2053,6 +2072,7 @@ fn append_match_execution_cases(
                         cases,
                     )?;
                 }
+                crate::ControlOperationBody::Recur(_) => {}
                 crate::ControlOperationBody::Operation {
                     operation: reference,
                     contract,
@@ -4625,6 +4645,7 @@ fn build_plan(
             continue;
         };
         let input_sources = node_inputs(artifact, node.node)?;
+        let root = artifact_to_activated[node.node.get() as usize].unwrap();
         let arms = bind_match_arms(
             artifact,
             catalog,
@@ -4635,6 +4656,7 @@ fn build_plan(
             &mut steps,
             &mut reads,
             &mut control_calls,
+            &[root],
         )?;
         let ActivatedTurnStep::Match(matched) = &mut steps[artifact_to_activated
             [node.node.get() as usize]
@@ -4788,6 +4810,7 @@ fn build_plan(
                     ActivatedTurnStep::Kernel(node) => node.clone(),
                     ActivatedTurnStep::External(_)
                     | ActivatedTurnStep::Match(_)
+                    | ActivatedTurnStep::Recur(_)
                     | ActivatedTurnStep::Comprehension(_) => {
                         unreachable!("pure resident plan contains a non-kernel step")
                     }
@@ -4851,6 +4874,7 @@ fn build_plan(
         }
         ActivatedTurnStep::Comprehension(_)
         | ActivatedTurnStep::Kernel(_)
+        | ActivatedTurnStep::Recur(_)
         | ActivatedTurnStep::External(_) => None,
     });
     let (schemas, structural_projections) = if let Some(node) = structural_match {
@@ -6643,6 +6667,7 @@ fn bind_match_arms(
         crate::memory_planner::CallSiteMemoryTemplate,
         mech_core::CallMemoryPlan,
     )>,
+    recursive_roots: &[ActivatedNodeIndex],
 ) -> Result<Box<[ActivatedMatchArm]>, ResidentActivationError> {
     control
         .arms
@@ -6719,6 +6744,7 @@ fn bind_match_arms(
                     steps,
                     reads,
                     calls,
+                    recursive_roots,
                 )
             };
             let guard = arm.guard.as_ref().map(&mut bind).transpose()?;
@@ -6766,6 +6792,7 @@ fn bind_control_block(
         crate::memory_planner::CallSiteMemoryTemplate,
         mech_core::CallMemoryPlan,
     )>,
+    recursive_roots: &[ActivatedNodeIndex],
 ) -> Result<ActivatedControlBlock, ResidentActivationError> {
     let source = |value: crate::ControlValue| -> ArtifactSource {
         match value {
@@ -6880,8 +6907,19 @@ fn bind_control_block(
                         layout,
                     )?;
                     steps.push(ActivatedTurnStep::Match(prepared));
+                    let mut nested_roots = recursive_roots.to_vec();
+                    nested_roots.push(ActivatedNodeIndex(index));
                     let arms = bind_match_arms(
-                        artifact, catalog, owner, nested, &inputs, layout, steps, reads, calls,
+                        artifact,
+                        catalog,
+                        owner,
+                        nested,
+                        &inputs,
+                        layout,
+                        steps,
+                        reads,
+                        calls,
+                        &nested_roots,
                     )?;
                     let ActivatedTurnStep::Match(prepared) = &mut steps[index as usize] else {
                         unreachable!()
@@ -6951,6 +6989,29 @@ fn bind_control_block(
                         },
                         memory,
                     ));
+                }
+                crate::ControlOperationBody::Recur(ancestor) => {
+                    let target = recursive_roots
+                        .len()
+                        .checked_sub(usize::from(*ancestor) + 1)
+                        .and_then(|index| recursive_roots.get(index))
+                        .copied()
+                        .ok_or(ResidentActivationError::UnsupportedControlLayout { node: owner })?;
+                    let [argument] = inputs.as_slice() else {
+                        return Err(ResidentActivationError::UnsupportedControlLayout {
+                            node: owner,
+                        });
+                    };
+                    steps.push(ActivatedTurnStep::Recur(ActivatedRecursiveCall {
+                        artifact_node: owner,
+                        target,
+                        argument: resolve_read(layout, *argument)?,
+                        write: ResidentWriteLocation {
+                            slot: output_slot,
+                            storage: output.storage,
+                            region: output.region,
+                        },
+                    }));
                 }
                 crate::ControlOperationBody::Operation { .. } => unreachable!(),
             }
