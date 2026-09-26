@@ -141,6 +141,7 @@ try{
       await evaluate(`(()=>{for(let e=document.getElementById('ekf-app');e;e=e.parentElement)e.scrollTop=0;})()`);
       for(const panel of ['open','closed']) {
       if(panel==='closed') await evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{key:String.fromCharCode(96),bubbles:true}))');
+      await new Promise(r=>setTimeout(r,200)); // Let the drawer's 120ms transition settle before layout/screenshots.
       assert(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'no page horizontal overflow at '+width);
       const metadata=await evaluate(`(()=>{
         const date=document.querySelector('.hero .mech-date'),author=document.querySelector('.hero .mech-author');
