@@ -2384,7 +2384,7 @@ fn classify_source_planning(error: mech_core::MechError) -> mech_core::MechError
     feature = "variable_assign"
 ))]
 mod embedding_interface_tests {
-    use super::*;
+    use std::collections::{BTreeMap, BTreeSet};
 
     #[test]
     fn explicit_interface_retains_only_selected_named_symbols() {
