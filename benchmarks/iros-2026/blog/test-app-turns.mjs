@@ -12,17 +12,17 @@ const controlsEnd=source.indexOf('function error(',controlsBegin);
 const sensorsBegin=source.indexOf('function sensorControls()');
 assert(begin>=0&&end>begin);
 assert(controlsBegin>=0&&controlsEnd>controlsBegin&&sensorsBegin>controlsEnd&&sensorsBegin<begin);
-const sensorIds=['velocity','omega','noise','landmark','camera-range'];
+const sensorIds=['velocity','omega','noise','motion-noise','camera-range'];
 const guardedIds=['run','step','inject','reset','instances','backend','verify'];
 function harness({failure=null,gpu=false,finishGate=null}={}) {
   const messages=new Map();
   const elements=new Map([...sensorIds,...guardedIds,'pause'].map(id=>[id,{disabled:false,value:'0'}]));
-  for(const [id,value] of Object.entries({velocity:20,omega:.2,noise:.01,landmark:1,'camera-range':100}))elements.get(id).value=String(value);
+  for(const [id,value] of Object.entries({velocity:20,omega:.2,noise:1,'motion-noise':1,'camera-range':100}))elements.get(id).value=String(value);
   const context=vm.createContext({
     MEAN:'μ',COVARIANCE:'Σ',Float32Array,performance:{now:()=>10},
     state:new Float32Array([55,25,.4]),covariance:new Float32Array(9),
     busy:false,turnInFlight:false,ready:true,mode:'patrol',running:true,generation:0,accepted:0,rejected:0,
-    active:0,samples:[],frames:[],faults:0,kernelTurns:0,sceneCommits:0,observations:[],
+    active:0,samples:[],frames:[],faults:0,kernelTurns:0,sceneCommits:0,observations:[],sceneRefreshPending:false,sceneRefreshes:[],
     $:id=>elements.get(id),telemetry(){if(failure==='telemetry')throw new Error('telemetry failed');},text:(id,value)=>messages.set(id,value),
     error:value=>messages.set('error',value),
     transition(event){assert.equal(event,'rejected');context.mode='fault';},
@@ -30,6 +30,7 @@ function harness({failure=null,gpu=false,finishGate=null}={}) {
     scene:{
       observation(controls){if(failure==='prepare')throw new Error('sensor failed');context.observations.push({...controls});return {inputs:{}};},
       accepted(){context.sceneCommits++;if(failure==='scene')throw new Error('scene failed');},
+      refresh(controls){context.sceneRefreshes.push({...controls});},
     },
     kernel:{
       faultCount:()=>context.faults,
@@ -96,9 +97,10 @@ for(const gpu of [false,true]) {
   assert.equal(c.turnInFlight,true);
   for(const id of sensorIds)assert.equal(elements.get(id).disabled,false,`${id} stays adjustable during a turn`);
   for(const id of guardedIds)assert.equal(elements.get(id).disabled,true,`${id} cannot overlap a turn`);
-  const original={velocity:20,omega:.2,noise:.01,landmark:1,range:100};
+  const original={velocity:20,omega:.2,noise:1,motionNoise:1,range:100};
   assert.deepEqual(c.observations,[original]);
-  for(const [id,value] of Object.entries({velocity:35,omega:-.3,noise:.04,landmark:2,'camera-range':250}))elements.get(id).value=String(value);
+  for(const [id,value] of Object.entries({velocity:35,omega:-.3,noise:2,'motion-noise':3,'camera-range':250}))elements.get(id).value=String(value);
+  c.sceneRefreshPending=true;
   assert.deepEqual(c.observations,[original],'in-flight observation retains its complete input snapshot');
   assert.equal(c.sceneCommits,0);
   // Pausing while a GPU turn finishes also must not disable an active drag.
@@ -107,8 +109,10 @@ for(const gpu of [false,true]) {
   finish();await pending;
   assert.equal(c.accepted,1);
   assert.equal(c.sceneCommits,1);
+  assert.deepEqual(c.sceneRefreshes,[{velocity:35,omega:-.3,noise:2,motionNoise:3,range:250}],'queued scene controls refresh after the accepted commit');
+  assert.equal(c.sceneRefreshPending,false);
   await run();
-  assert.deepEqual(c.observations,[original,{velocity:35,omega:-.3,noise:.04,landmark:2,range:250}]);
+  assert.deepEqual(c.observations,[original,{velocity:35,omega:-.3,noise:2,motionNoise:3,range:250}]);
   assert.equal(c.accepted,2);
   assert.equal(c.sceneCommits,2);
   // Compile/reset/backend changes and verification still lock sensor controls.

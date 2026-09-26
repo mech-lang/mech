@@ -19,7 +19,7 @@ export function blogShell(repo) {
   ]) replaceOnce(`<style data-mech-style-layer="${layer}">{{${slot}}}</style>`,files.map(file=>`<link rel="stylesheet" data-mech-style-layer="${layer}" href="assets/${file}">`).join('\n  '));
   replaceOnce('</head>',`  <link rel="stylesheet" href="assets/article.css">
   <link rel="canonical" href="https://mech-lang.org/iros-r4r-2026/index.html">
-  <meta name="description" content="Mech's numerical, embedded, reactive and heterogeneous runtime, with a bearing-only EKF running on WebAssembly and WebGPU.">
+  <meta name="description" content="Mech's numerical, embedded, reactive and heterogeneous runtime, with a fixed-camera range-and-bearing EKF running on WebAssembly and WebGPU.">
   <script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>`);
   replaceOnce('<body>',`<body>

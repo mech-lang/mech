@@ -1,13 +1,12 @@
-Bearing-only Camera and Scene
+Fixed Cameras and Robot Scene
 ===============================================================================
 +> math/*
 
-The robot carries a simulated bearing camera. Each row of `landmarks` is a known
-point that the camera can observe; `camera-index` chooses that point. The camera
-reports its direction relative to the robot's heading, matching the displayed
-bearing-only EKF. Measurements are used only within the configured camera range;
-outside it, the filter predicts without a bearing correction. This example does
-not perform image detection or occlusion.
+Four fixed cameras observe the simulated robot with noisy range-and-bearing
+measurements, following `examples/ekf/localization.mec`. Each camera has its own
+finite sensing circle and resident enable mask. Clicking a camera toggles that
+mask: disabled cameras contribute no measurement. Every enabled camera within
+range contributes a correction after the turn's single motion prediction.
 
 The browser supplies controls and the accepted filter state. A prepare turn uses
 `commit = 0` to calculate measurements without advancing the simulation. After
@@ -15,39 +14,84 @@ the filter accepts those measurements, a `commit = 1` turn advances the truth an
 trails and publishes the scene. A rejected filter turn leaves these unchanged.
 
 @input := input://browser/frame{
-  :read(commit), :read(velocity), :read(omega), :read(noise),
-  :read(lane-indices), :read(estimate), :read(covariance), :read(camera-index),
+  :read(commit), :read(velocity), :read(omega), :read(noise), :read(motion-noise),
+  :read(lane-indices), :read(estimate), :read(covariance), :read(camera-pulses),
   :read(camera-range)
 }
 @scene := scene://view/frame{:write(replace)}
 
-Camera Measurements
+Camera Enable State and Simulated Motion
 -------------------------------------------------------------------------------
 
   π := 3.141592653589793
   Δt := 0.1
   commit := @input/commit
-  landmarks := [140.0 12.0
-                 35.0 110.0
-                170.0 110.0
-                 10.0 10.0]
-  camera-position := landmarks[@input/camera-index,:]'
+  cameras := [20.0 20.0
+              180.0 20.0
+              180.0 110.0
+              20.0 110.0]
+  ~camera-enabled := [1.0 1.0 1.0 1.0]'
+  ~last-camera-pulses := [0.0 0.0 0.0 0.0]'
+  camera-toggle := (@input/camera-pulses - last-camera-pulses) % 2.0
+  next-camera-enabled := camera-enabled + camera-toggle * (1.0 - 2.0 * camera-enabled)
+
+The browser queues camera presses while a numerical turn is pending. Cumulative
+press counts are consumed here only at the next preparation or paused refresh;
+the accepted turn retains the exact camera mask used to prepare its readings.
+Only Mech changes the enable mask. Two queued presses cancel by parity.
+
   ~truth := [55.0 25.0 0.4]'
   ~accepted-turns := 0.0
-  candidate-truth := truth + Δt * [@input/velocity * cos(truth[3])
-                                  @input/velocity * sin(truth[3])
-                                  @input/omega]
-  camera-offset := camera-position - candidate-truth[1..=2]
-  camera-distance := sqrt(camera-offset[1] ^ 2 + camera-offset[2] ^ 2)
+  simulation-time := (accepted-turns + 1.0) * Δt
+  commanded-control := [@input/velocity @input/omega]'
+  control-bias := [-0.035 -0.01]' + [0.025 0.01]' * sin(simulation-time * [0.73 0.51]' + [0.0 0.8]')
+  actual-control := commanded-control * (1.0 + @input/motion-noise * control-bias)
+  truth-mid-heading := truth[3] + actual-control[2] * Δt / 2.0
+  field-size := [200.0 130.0]'
+  unwrapped-position := truth[1..=2] + Δt * actual-control[1] * [cos(truth-mid-heading) sin(truth-mid-heading)]'
+  wrapped-position := ((unwrapped-position % field-size) + field-size) % field-size
+  candidate-truth := [wrapped-position; truth[3] + Δt * actual-control[2]]
+  edge-crossings := abs(floor(unwrapped-position / field-size))
+  crossing-count := edge-crossings[1] + edge-crossings[2]
+  truth-wrapped := ceil(crossing-count / (crossing-count + 1.0))
+  next-truth := truth + commit * (candidate-truth - truth)
+  next-accepted-turns := accepted-turns + commit
+
+Motion noise scales the reference's smooth velocity biases. At zero, the plant
+executes the commanded midpoint motion exactly. The filter receives commanded
+motion, never actual-control or the true pose.
+The field wraps at x = 0/200 and y = 0/130. Crossing an edge moves the true
+position to the opposite edge before camera observations are generated; its
+heading continues unchanged. Camera distances remain local Euclidean distances.
+
+Camera Measurements
+-------------------------------------------------------------------------------
+
+  camera-offsets := candidate-truth[1..=2]' - cameras
+  camera-distance := sqrt((camera-offsets ^ 2) ** [1.0 1.0]')
   -- A zero/one range gate: include the boundary, with no distance fade.
   camera-range-excess := camera-distance - @input/camera-range
   camera-positive-excess := (camera-range-excess + abs(camera-range-excess)) / 2.0
-  measurement-visible := 1.0 - ceil(camera-positive-excess / (abs(camera-range-excess) + 1.0))
-  noiseless-bearing := atan2(camera-offset[2], camera-offset[1]) - candidate-truth[3]
+  measurement-visible := (1.0 - ceil(camera-positive-excess / (abs(camera-range-excess) + 1.0))) * next-camera-enabled
+  noiseless-bearing := atan2(camera-offsets[:,2], camera-offsets[:,1])
   lanes := @input/lane-indices'
-  readings := noiseless-bearing + @input/noise * sin((accepted-turns + 1.0) * 1.73 + (lanes - 1.0) * 0.37)
-  next-truth := truth + commit * (candidate-truth - truth)
-  next-accepted-turns := accepted-turns + commit
+  lane-ones := 1.0 + lanes * 0.0
+  range-phase := simulation-time * 1.57 + (lanes - 1.0) * 0.37
+  bearing-phase := simulation-time * 1.91 + (lanes - 1.0) * 0.53
+  camera-indices := [1.0 2.0 3.0 4.0]'
+  range-phase-grid := [range-phase; range-phase; range-phase; range-phase]
+  bearing-phase-grid := [bearing-phase; bearing-phase; bearing-phase; bearing-phase]
+  range-readings := camera-distance + @input/noise * 0.11 * sin(range-phase-grid + 0.7 * camera-indices)
+  bearing-readings := noiseless-bearing + @input/noise * 0.011 * sin(bearing-phase-grid + camera-indices)
+  measurements := [range-readings[1,:]; bearing-readings[1,:]; measurement-visible[1] * lane-ones
+                   range-readings[2,:]; bearing-readings[2,:]; measurement-visible[2] * lane-ones
+                   range-readings[3,:]; bearing-readings[3,:]; measurement-visible[3] * lane-ones
+                   range-readings[4,:]; bearing-readings[4,:]; measurement-visible[4] * lane-ones]'
+  control := [Δt @input/velocity @input/omega]
+
+Bearings are measured from each fixed camera toward the robot in world axes.
+Each measurement row contains four range, bearing, visibility triples for one
+filter lane. The browser transfers these values unchanged to the live kernel.
 
 Scene Geometry
 -------------------------------------------------------------------------------
@@ -61,17 +105,16 @@ display coordinates; the measurements and filter retain world coordinates.
   screen-axis := [1.0 -1.0]'
   truth-screen := screen-origin + screen-axis * next-truth[1..=2]
   estimate-screen := screen-origin + screen-axis * estimate[1..=2]
-  landmark-screen := screen-origin' + landmarks * screen-axis'
-  landmark-distance := abs([1.0 2.0 3.0 4.0] - @input/camera-index)
-  landmark-selection := (1.0 - landmark-distance + abs(1.0 - landmark-distance)) / 2.0
-  landmark-opacity := 0.3 + 0.7 * landmark-selection
-  selected-landmark-screen := screen-origin + screen-axis * camera-position
-  display-camera-offset := camera-position - next-truth[1..=2]
-  display-camera-distance := sqrt(display-camera-offset[1] ^ 2 + display-camera-offset[2] ^ 2)
+  camera-screen := screen-origin' + cameras * screen-axis'
+  camera-label-opacity := 0.35 + 0.65 * next-camera-enabled
+  camera-colors := 0x687780<f64> + next-camera-enabled * (0x62b4a4<f64> - 0x687780<f64>)
+  camera-range-opacity := 0.3 * next-camera-enabled
+  display-camera-offset := cameras - next-truth[1..=2]'
+  display-camera-distance := sqrt((display-camera-offset ^ 2) ** [1.0 1.0]')
   display-range-excess := display-camera-distance - @input/camera-range
   display-positive-excess := (display-range-excess + abs(display-range-excess)) / 2.0
-  landmark-visible := 1.0 - ceil(display-positive-excess / (abs(display-range-excess) + 1.0))
-  camera-ray-opacity := 0.65 * landmark-visible
+  camera-visible := (1.0 - ceil(display-positive-excess / (abs(display-range-excess) + 1.0))) * next-camera-enabled
+  camera-ray-opacity := 0.65 * camera-visible
   truth-heading := truth-screen + 4.3 * screen-axis * [cos(next-truth[3]) sin(next-truth[3])]'
   estimate-heading := estimate-screen + 3.1 * screen-axis * [cos(estimate[3]) sin(estimate[3])]'
   robot-samples := 0.0..=24.0
@@ -81,7 +124,6 @@ display coordinates; the measurements and filter retain world coordinates.
   estimate-outline := estimate-screen' + 1.7 * robot-outline
   truth-heading-line := [truth-screen'; truth-heading']
   estimate-heading-line := [estimate-screen'; estimate-heading']
-  camera-outline := truth-heading' + 0.6 * robot-outline
 
 The cyan ring marks the actual simulated pose; the smaller yellow disk marks
 the EKF estimate. Both remain visible when their positions coincide. A solid
@@ -110,10 +152,22 @@ tiny negative eigenvalues to zero is a drawing operation, not a filter update.
   trail-samples := 1.0..=350.0
   ~truth-path := (trail-samples' * 0.0) ** [1.0 1.0] + [55.0 105.0]
   ~estimate-path := (trail-samples' * 0.0) ** [1.0 1.0] + [55.0 105.0]
-  advanced-truth-path := [truth-path[2..=350,:]; truth-screen']
-  advanced-estimate-path := [estimate-path[2..=350,:]; estimate-screen']
+  shifted-truth-path := [truth-path[2..=350,:]; truth-screen']
+  shifted-estimate-path := [estimate-path[2..=350,:]; estimate-screen']
+  estimate-screen-step := abs(estimate-screen' - estimate-path[350,:])
+  estimate-edge-steps := floor(estimate-screen-step / [100.0 65.0])
+  estimate-crossing-count := estimate-edge-steps[1] + estimate-edge-steps[2]
+  estimate-wrapped := ceil(estimate-crossing-count / (estimate-crossing-count + 1.0))
+  reset-truth-path := (trail-samples' * 0.0) ** [1.0 1.0] + truth-screen'
+  reset-estimate-path := (trail-samples' * 0.0) ** [1.0 1.0] + estimate-screen'
+  advanced-truth-path := shifted-truth-path + truth-wrapped * (reset-truth-path - shifted-truth-path)
+  advanced-estimate-path := shifted-estimate-path + estimate-wrapped * (reset-estimate-path - shifted-estimate-path)
   next-truth-path := truth-path + commit * (advanced-truth-path - truth-path)
   next-estimate-path := estimate-path + commit * (advanced-estimate-path - estimate-path)
+
+Each trail restarts at its own wrapped position, so an edge crossing never
+draws a diagonal across the field. A position correction larger than half the
+field likewise restarts the estimate trail instead of connecting distant edges.
 
 Scene Tables
 -------------------------------------------------------------------------------
@@ -123,11 +177,18 @@ covariance, and trail history are computed by Mech rather than by the renderer.
 
   scene-circles :=
     | id<string>   x<f64>               y<f64>               radius<f64> fill<*>  stroke<*> stroke-width<f64> opacity<f64>       |
-    | "target-1"   landmark-screen[1,1] landmark-screen[1,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[1] |
-    | "target-2"   landmark-screen[2,1] landmark-screen[2,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[2] |
-    | "target-3"   landmark-screen[3,1] landmark-screen[3,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[3] |
-    | "target-4"   landmark-screen[4,1] landmark-screen[4,2] 1.8         0x62b4a4 "none"    0.0               landmark-opacity[4] |
-    | "camera-range" truth-screen[1]   truth-screen[2]      @input/camera-range "none" 0x687780 0.35              0.45               |
+    | "camera-range-1" camera-screen[1,1] camera-screen[1,2] @input/camera-range "none" 0x687780 0.35 camera-range-opacity[1] |
+    | "camera-range-2" camera-screen[2,1] camera-screen[2,2] @input/camera-range "none" 0x687780 0.35 camera-range-opacity[2] |
+    | "camera-range-3" camera-screen[3,1] camera-screen[3,2] @input/camera-range "none" 0x687780 0.35 camera-range-opacity[3] |
+    | "camera-range-4" camera-screen[4,1] camera-screen[4,2] @input/camera-range "none" 0x687780 0.35 camera-range-opacity[4] |
+    | "camera-1"   camera-screen[1,1] camera-screen[1,2] 2.3 camera-colors[1] 0x91cabc 0.3 1.0 |
+    | "camera-2"   camera-screen[2,1] camera-screen[2,2] 2.3 camera-colors[2] 0x91cabc 0.3 1.0 |
+    | "camera-3"   camera-screen[3,1] camera-screen[3,2] 2.3 camera-colors[3] 0x91cabc 0.3 1.0 |
+    | "camera-4"   camera-screen[4,1] camera-screen[4,2] 2.3 camera-colors[4] 0x91cabc 0.3 1.0 |
+    | "camera-hit-1" camera-screen[1,1] camera-screen[1,2] 2.5 "none" "none" 0.0 1.0 |
+    | "camera-hit-2" camera-screen[2,1] camera-screen[2,2] 2.5 "none" "none" 0.0 1.0 |
+    | "camera-hit-3" camera-screen[3,1] camera-screen[3,2] 2.5 "none" "none" 0.0 1.0 |
+    | "camera-hit-4" camera-screen[4,1] camera-screen[4,2] 2.5 "none" "none" 0.0 1.0 |
 
   scene-lines :=
     | id<string>    x1<f64>              y1<f64>              x2<f64>                     y2<f64>                     stroke<f64> stroke-width<f64> line-cap<string> opacity<f64> rotation<f64> origin-x<f64> origin-y<f64> |
@@ -166,7 +227,10 @@ covariance, and trail history are computed by Mech rather than by the renderer.
     | "grid-y-110"  0.0                  110.0                200.0                       110.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
     | "grid-y-120"  0.0                  120.0                200.0                       120.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
     | "grid-y-130"  0.0                  130.0                200.0                       130.0                       0x243139    0.25              "butt"           1.0          0.0 0.0 0.0 |
-    | "camera-ray"  truth-screen[1]      truth-screen[2]      selected-landmark-screen[1] selected-landmark-screen[2] 0x687780    0.3               "round"          camera-ray-opacity 0.0 0.0 0.0 |
+    | "camera-ray-1" camera-screen[1,1] camera-screen[1,2] truth-screen[1] truth-screen[2] 0x687780 0.3 "round" camera-ray-opacity[1] 0.0 0.0 0.0 |
+    | "camera-ray-2" camera-screen[2,1] camera-screen[2,2] truth-screen[1] truth-screen[2] 0x687780 0.3 "round" camera-ray-opacity[2] 0.0 0.0 0.0 |
+    | "camera-ray-3" camera-screen[3,1] camera-screen[3,2] truth-screen[1] truth-screen[2] 0x687780 0.3 "round" camera-ray-opacity[3] 0.0 0.0 0.0 |
+    | "camera-ray-4" camera-screen[4,1] camera-screen[4,2] truth-screen[1] truth-screen[2] 0x687780 0.3 "round" camera-ray-opacity[4] 0.0 0.0 0.0 |
 
   scene-line-strips :=
     | id<string>        positions<*>       fill<*>  stroke<*> stroke-width<f64> stroke-dasharray<*> line-cap<string> line-join<string> opacity<f64> closed<bool> |
@@ -178,15 +242,14 @@ covariance, and trail history are computed by Mech rather than by the renderer.
     | "estimate"        estimate-outline   0xf6c04e 0xf6c04e 0.45              [0.0]               "round"          "round"           1.0          true         |
     | "truth-heading"   truth-heading-line "none"   0x687780 0.7               [0.0]               "round"          "round"           1.0          false        |
     | "estimate-heading" estimate-heading-line "none" 0x687780 0.7            [0.0]               "round"          "round"           1.0          false        |
-    | "camera"          camera-outline     0x62b4a4 "none"    0.0               [0.0]               "round"          "round"           1.0          true         |
 
   font := "Inter, ui-sans-serif, system-ui, sans-serif"
   scene-texts :=
     | id<string> x<f64>                        y<f64>                        fill<f64> font-size<f64> font-family<string> font-weight<f64> text-anchor<string> opacity<f64>       value<string> |
-    | "label-1" landmark-screen[1,1] + 3.0    landmark-screen[1,2] + 1.0    0x91cabc  2.8            font                400              "start"             landmark-opacity[1] "Landmark 1" |
-    | "label-2" landmark-screen[2,1] + 3.0    landmark-screen[2,2] + 1.0    0x91cabc  2.8            font                400              "start"             landmark-opacity[2] "Landmark 2" |
-    | "label-3" landmark-screen[3,1] - 3.0    landmark-screen[3,2] + 1.0    0x91cabc  2.8            font                400              "end"               landmark-opacity[3] "Landmark 3" |
-    | "label-4" landmark-screen[4,1] + 3.0    landmark-screen[4,2] + 1.0    0x91cabc  2.8            font                400              "start"             landmark-opacity[4] "Landmark 4" |
+    | "camera-label-1" camera-screen[1,1] + 3.5 camera-screen[1,2] + 1.0 0x91cabc 2.8 font 400 "start" camera-label-opacity[1] "Camera 1" |
+    | "camera-label-2" camera-screen[2,1] - 3.5 camera-screen[2,2] + 1.0 0x91cabc 2.8 font 400 "end" camera-label-opacity[2] "Camera 2" |
+    | "camera-label-3" camera-screen[3,1] - 3.5 camera-screen[3,2] + 1.0 0x91cabc 2.8 font 400 "end" camera-label-opacity[3] "Camera 3" |
+    | "camera-label-4" camera-screen[4,1] + 3.5 camera-screen[4,2] + 1.0 0x91cabc 2.8 font 400 "start" camera-label-opacity[4] "Camera 4" |
     | "scale"   5.0                           126.0                         0xa9bcc5  2.7            font                400              "start"             1.0                "World coordinates · grid spacing 10" |
 
   field-presentation := {
@@ -200,6 +263,8 @@ covariance, and trail history are computed by Mech rather than by the renderer.
   }
 
   truth = next-truth
+  camera-enabled = next-camera-enabled
+  last-camera-pulses = @input/camera-pulses
   accepted-turns = next-accepted-turns
   truth-path = next-truth-path
   estimate-path = next-estimate-path

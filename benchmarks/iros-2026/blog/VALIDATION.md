@@ -478,3 +478,87 @@ open and closed. The drawing fills its available width at the scene's 200:130
 aspect ratio, authors wrap beside a single-line date, and the desktop grip is
 centered on the divider. These are desktop-browser responsive checks, not
 physical-phone qualification or performance measurements.
+
+## Fixed cameras, field wrapping, and bounded sensor preparation
+
+This extension executes `source/camera-ekf.mec`, rather than the preserved
+bearing-only `source/ekf.mec`. Four fixed cameras supply world-referenced range
+and bearing observations; one motion prediction is followed by a correction
+for each enabled, in-range camera. Motion and measurement noise are independently
+adjustable in the Mech scene. The numerical inputs are `control`, `cameras`, and
+`measurements`, and the published outputs are `μ` and `Σ`.
+
+The final numerical and scene source identities are:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `source/camera-ekf.mec` | `18c016bc35189b43f21689af955b1cd41ad680a851e210506aea9ae5466aeb5f` |
+| `source/scene.mec` | `1a9e9fc8d4ba8b2bca63a7b39e0e0024fd8bcee8fd386b7997b298accd37d433` |
+| `mech_wasm_bg.wasm` | `ba2fe6330931fdeb32f0417dfd903185cee392d1bb4bbae026876415168ba880` |
+
+`test-camera-kernel.mjs` passed against the actual WASM kernel and an independent
+double-precision reference. It checks 200 turns for four filters with changing
+camera masks and four measurement-noise levels, including prediction-only
+intervals. Separate cases check every camera's contribution, unavailable cameras
+at otherwise singular geometry, the absence of a direct robot-heading observation,
+NaN and both infinities in the last filter, bitwise whole-batch rollback, recovery,
+and rejection of an intentionally asymmetric raw covariance. Every checked
+published covariance is finite, has positive diagonal entries, and has bitwise
+equal mirrored entries. These checks do not establish positive definiteness.
+
+Position wraps into the 200×130 field while heading continues. A camera's noisy
+polar observation selects the nearest periodic representation of the predicted
+position before its ordinary range-and-bearing correction; this handles truth
+and estimate crossing an edge on different turns. Camera visibility and measured
+range still use ordinary Euclidean field coordinates. The numerical tests cover
+all four edges, with noise zero or one and cameras available or unavailable,
+for 20 turns per case. Two additional CPU/WASM trials each run four filters for
+1,000 turns with biased simulated motion and four field crossings. One includes
+a 100-turn measurement dropout. The first filter's maximum periodic position
+error stays below two field units without the dropout and below five with it;
+finite-state and covariance checks cover every filter. These are deterministic,
+bounded cases, not a claim of stability for arbitrary controls or noise.
+
+All eight native scene/interface tests passed. They include actual Mech scene
+execution with 1, 256, and 4,096 sensor lanes, measurement availability, camera
+enable-state changes, preparation without motion or trail advancement, and scene
+publication after an accepted turn. `test-drawing.mjs` separately checks fixed
+camera-centered range circles, independent motion and measurement noise, queued
+camera clicks, distinguishable truth/estimate geometry, accepted histories, and
+trail restart at each of the four field edges.
+
+Large populations use sensor-preparation packets of at most 4,096 global lane
+indices to respect the resident runtime's temporary-value budget. Real WASM host
+tests cover 65,536 and 4,097 filters, including the partial final packet. The
+assembled observations are checked against direct Mech evaluation at global
+lanes 1, 4,096, 4,097, and the final lane; the last packet must not repeat the
+first packet's noise. Preparation leaves the accepted-turn counter unchanged,
+and acceptance advances the scene once. Only sensor preparation is packetized:
+the numerical kernel still executes and validates one full-population turn,
+with whole-batch publication or rejection.
+
+The final packetized-host browser regression passed and is retained as
+[fixed-camera-verification.json](evidence/fixed-camera-verification.json); it
+records its artifacts and completion status separately from the earlier
+selected-landmark reports. `test-browser-scene.mjs` exercises CPU and real WebGPU
+at 1, 256, 4,096, and 65,536 filters. Its eight cases cover actual pointer clicks
+to disable and re-enable all four cameras, prediction-only turns when all cameras
+are disabled or out of range, restored four-camera correction, last-lane rejection,
+retention of both pose histories, and Reset. Additional checks drag all five
+motion/noise/range controls while turns continue, click cameras during running
+turns, and observe a field crossing and trail restart on each backend. The
+independent 256-filter verifier compares 20 CPU/GPU turns, including unavailable
+and individually enabled cameras, followed by rejected-turn rollback and recovery.
+Responsive checks cover 320, 360, 390, 900, and 1,920 pixels with the pane open and
+closed, including scene aspect ratio, metadata fit, and divider alignment.
+All eight backend/population cases, both five-slider runs, the CPU/GPU verifier,
+and all ten responsive layouts passed with no uncaught browser exceptions. Each
+backend's observed field crossing occurred at 132 accepted turns with zero
+rejections, and the scene restarted its trail at the boundary.
+
+The document test preserves the historical bearing-only equivalence checks in
+their own source fixtures and separately runs the displayed camera kernel and
+resident scene for 40 turns at 256 filters, with rejection and recovery checks.
+The reference listing and live listing have separate namespaces. No archived
+native benchmark source, timing, or source-size measurement is replaced by this
+extension, and the browser and numerical tests are not new throughput samples.

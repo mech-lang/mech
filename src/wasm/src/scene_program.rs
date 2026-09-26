@@ -519,13 +519,21 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
             ("commit", 0.0),
             ("velocity", 1.0),
             ("omega", 0.015),
-            ("noise", 0.02),
-            ("camera-index", 1.0),
+            ("noise", 1.0),
+            ("motion-noise", 1.0),
             ("camera-range", 100.0),
         ]
         .into_iter()
         .map(|(name, value)| (name.into(), RuntimeHostInputValue::F64(value)))
         .collect();
+        values.insert(
+            "camera-pulses".into(),
+            RuntimeHostInputValue::F64Matrix {
+                rows: 4,
+                columns: 1,
+                values: vec![0.0; 4],
+            },
+        );
         values.insert(
             "lane-indices".into(),
             RuntimeHostInputValue::F64Matrix {
@@ -565,21 +573,38 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
         );
         assert_eq!(program.read_numbers("accepted-turns").unwrap(), vec![0.0]);
         assert_eq!(
-            program.read_numbers("camera-position").unwrap(),
-            vec![140.0, 12.0]
+            program.read_numbers("cameras").unwrap(),
+            vec![20.0, 20.0, 180.0, 20.0, 180.0, 110.0, 20.0, 110.0]
         );
         assert_eq!(
             program.read_numbers("measurement-visible").unwrap(),
-            vec![1.0]
+            vec![1.0, 0.0, 0.0, 1.0]
         );
-        let readings = program.read_numbers("readings").unwrap();
-        assert_eq!(readings.len(), 256);
+        let readings = program.read_numbers("measurements").unwrap();
+        assert_eq!(readings.len(), 256 * 12);
         assert!(readings.iter().all(|reading| reading.is_finite()));
-        let predicted_x = 55.0 + 0.1 * 0.4_f64.cos();
-        let predicted_y = 25.0 + 0.1 * 0.4_f64.sin();
+        let actual_velocity = 0.965 + 0.025 * 0.073_f64.sin();
+        let actual_omega = 0.015 * (0.99 + 0.01 * 0.851_f64.sin());
+        let mid_heading = 0.4 + actual_omega * 0.1 / 2.0;
+        let predicted_x = 55.0 + 0.1 * actual_velocity * mid_heading.cos();
+        let predicted_y = 25.0 + 0.1 * actual_velocity * mid_heading.sin();
+        let expected_range =
+            (predicted_x - 20.0).hypot(predicted_y - 20.0) + 0.11 * 0.857_f64.sin();
         let expected_bearing =
-            (12.0 - predicted_y).atan2(140.0 - predicted_x) - 0.4015 + 0.02 * 1.73_f64.sin();
-        assert!((readings[0] - expected_bearing).abs() < 1e-10);
+            (predicted_y - 20.0).atan2(predicted_x - 20.0) + 0.011 * 1.191_f64.sin();
+        assert!((readings[0] - expected_range).abs() < 1e-10);
+        assert!((readings[1] - expected_bearing).abs() < 1e-10);
+        for lane in readings.chunks_exact(12) {
+            assert_eq!([lane[2], lane[5], lane[8], lane[11]], [1.0, 0.0, 0.0, 1.0]);
+        }
+        assert_ne!(
+            readings[1], readings[13],
+            "lanes have independent sensor noise"
+        );
+        assert_eq!(
+            program.read_numbers("control").unwrap(),
+            vec![0.1, 1.0, 0.015]
+        );
         let initial_path = program.read_numbers("truth-path").unwrap();
         let prepared_scene = program.scene().unwrap();
         assert_eq!(
@@ -592,8 +617,22 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
                 .iter()
                 .any(|line| line.id == "estimate-path")
         );
+        for (index, x, y) in [
+            (1, 20.0, 110.0),
+            (2, 180.0, 110.0),
+            (3, 180.0, 20.0),
+            (4, 20.0, 20.0),
+        ] {
+            let ring = prepared_scene
+                .circles
+                .iter()
+                .find(|circle| circle.id == format!("camera-range-{index}"))
+                .unwrap();
+            assert_eq!((ring.x, ring.y, ring.radius), (x, y, 100.0));
+            assert!(ring.opacity > 0.0);
+        }
         program.turn(initial).unwrap();
-        assert_eq!(program.read_numbers("readings").unwrap(), readings);
+        assert_eq!(program.read_numbers("measurements").unwrap(), readings);
         assert_eq!(program.read_numbers("accepted-turns").unwrap(), vec![0.0]);
         assert_eq!(program.read_numbers("truth-path").unwrap(), initial_path);
         program
@@ -604,9 +643,9 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
             .unwrap();
         assert_eq!(program.read_numbers("accepted-turns").unwrap(), vec![1.0]);
         let truth = program.read_numbers("truth").unwrap();
-        assert!((truth[0] - (55.0 + 0.1 * 0.4_f64.cos())).abs() < 1e-10);
-        assert!((truth[1] - (25.0 + 0.1 * 0.4_f64.sin())).abs() < 1e-10);
-        assert!((truth[2] - 0.4015).abs() < 1e-10);
+        assert!((truth[0] - predicted_x).abs() < 1e-10);
+        assert!((truth[1] - predicted_y).abs() < 1e-10);
+        assert!((truth[2] - (0.4 + 0.1 * actual_omega)).abs() < 1e-10);
         let accepted_path = program.read_numbers("truth-path").unwrap();
         assert_eq!(accepted_path.len(), 700);
         assert_eq!(&accepted_path[..698], &initial_path[2..]);
@@ -618,14 +657,65 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
         program
             .turn(BTreeMap::from([
                 ("commit".into(), RuntimeHostInputValue::F64(0.0)),
-                ("camera-index".into(), RuntimeHostInputValue::F64(2.0)),
+                (
+                    "camera-pulses".into(),
+                    RuntimeHostInputValue::F64Matrix {
+                        rows: 4,
+                        columns: 1,
+                        values: vec![1.0, 0.0, 0.0, 0.0],
+                    },
+                ),
             ]))
             .unwrap();
         assert_eq!(program.read_numbers("truth").unwrap(), truth);
         assert_eq!(program.read_numbers("truth-path").unwrap(), accepted_path);
         assert_eq!(
-            program.read_numbers("camera-position").unwrap(),
-            vec![35.0, 110.0]
+            program.read_numbers("camera-enabled").unwrap(),
+            vec![0.0, 1.0, 1.0, 1.0]
+        );
+        assert_eq!(
+            program.read_numbers("measurement-visible").unwrap(),
+            vec![0.0, 0.0, 0.0, 1.0]
+        );
+        assert_eq!(
+            program
+                .scene()
+                .unwrap()
+                .circles
+                .iter()
+                .find(|circle| circle.id == "camera-range-1")
+                .unwrap()
+                .opacity,
+            0.0
+        );
+        program
+            .turn(BTreeMap::from([(
+                "camera-pulses".into(),
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 4,
+                    columns: 1,
+                    values: vec![2.0, 0.0, 0.0, 0.0],
+                },
+            )]))
+            .unwrap();
+        assert_eq!(
+            program.read_numbers("camera-enabled").unwrap(),
+            vec![1.0; 4]
+        );
+        program
+            .turn(BTreeMap::from([(
+                "camera-pulses".into(),
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 4,
+                    columns: 1,
+                    values: vec![4.0, 0.0, 0.0, 0.0],
+                },
+            )]))
+            .unwrap();
+        assert_eq!(
+            program.read_numbers("camera-enabled").unwrap(),
+            vec![1.0; 4],
+            "two queued presses cancel"
         );
         let distance = program.read_numbers("camera-distance").unwrap()[0];
         for (range, expected) in [
@@ -640,8 +730,8 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
                 )]))
                 .unwrap();
             assert_eq!(
-                program.read_numbers("measurement-visible").unwrap(),
-                vec![expected]
+                program.read_numbers("measurement-visible").unwrap()[0],
+                expected
             );
             assert_eq!(program.read_numbers("truth-path").unwrap(), accepted_path);
         }
@@ -653,7 +743,7 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
             .unwrap();
         assert_eq!(
             program.read_numbers("measurement-visible").unwrap(),
-            vec![0.0]
+            vec![0.0; 4]
         );
         program
             .turn(BTreeMap::from([(
@@ -663,21 +753,24 @@ presentation := {width: 100, height: 80, background: "#101010", circles: circles
             .unwrap();
         assert_eq!(
             program.read_numbers("measurement-visible").unwrap(),
-            vec![1.0]
+            vec![1.0, 0.0, 0.0, 1.0]
         );
         assert_eq!(program.read_numbers("truth-path").unwrap(), accepted_path);
     }
 
     #[test]
-    fn workshop_camera_supports_every_displayed_batch_size() {
+    fn workshop_camera_supports_bounded_sensor_packets() {
         let source = include_str!("../../../benchmarks/iros-2026/blog/source/scene.mec");
-        for instances in [65_536, 4_096, 1] {
+        // drawing.mjs prepares larger filter batches (including 65,536 lanes)
+        // in at most 4,096-lane sensor packets, preserving global lane indices
+        // and committing the true pose only after the full filter batch passes.
+        for instances in [4_096, 256, 1] {
             let initial = workshop_inputs(instances);
             let mut program = SceneProgramCore::from_source(source, initial.clone())
                 .unwrap_or_else(|error| panic!("scene batch {instances}: {error:?}"));
             program.turn(initial).unwrap();
-            let readings = program.read_numbers("readings").unwrap();
-            assert_eq!(readings.len(), instances);
+            let readings = program.read_numbers("measurements").unwrap();
+            assert_eq!(readings.len(), instances * 12);
             assert!(readings.iter().all(|reading| reading.is_finite()));
             assert_eq!(program.read_numbers("accepted-turns").unwrap(), vec![0.0]);
             assert!(program.scene().is_some());

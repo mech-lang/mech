@@ -13,7 +13,7 @@
  * part of the demo's FPS measurement. CPU and GPU matrix layouts are reconciled
  * through the existing Device output-layout conversion, not EKF code in JS.
  */
-const LIVE_SHA256 = "69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689";
+const LIVE_SHA256 = "18c016bc35189b43f21689af955b1cd41ad680a851e210506aea9ae5466aeb5f";
 const NAMES = ["μ", "Σ"];
 const WIDTHS = { μ: 3, Σ: 9 };
 const TURNS = 20;
@@ -54,14 +54,19 @@ function compare(reference, actual, expectedLength, statistics, context) {
 }
 
 function deterministicInputs(turn, instances) {
-  // Deterministic sensor/control packets, not an EKF implementation. Per-lane
-  // variation ensures the faulted last lane is not interchangeable with lane 0.
-  return {
-    bearing: Float32Array.from({ length: instances }, (_, lane) =>
-      -0.55 + 0.008 * Math.sin(turn * 0.17) + lane * 0.000001),
-    u: [1 + 0.08 * Math.sin(turn * 0.11),0.015 + 0.003 * Math.cos(turn * 0.13),turn>=5&&turn<=8?0:1],
-    m: turn>=11?[35,110]:[140,12],
-  };
+  // Four fixed cameras provide world-referenced bearing and range. Sensor
+  // packets vary by lane; only the Mech source implements filter arithmetic.
+  const cameras=[20,20,180,20,180,110,20,110];
+  const x=55+.1*turn*Math.cos(.4),y=25+.1*turn*Math.sin(.4);
+  const measurements=new Float32Array(instances*12);
+  for(let lane=0;lane<instances;lane++) for(let camera=0;camera<4;camera++) {
+    const offset=lane*12+camera*3,dx=x-cameras[camera*2],dy=y-cameras[camera*2+1];
+    measurements[offset]=Math.hypot(dx,dy)+.11*Math.sin(turn*.157+camera*.7+lane*.0037);
+    measurements[offset+1]=Math.atan2(dy,dx)+.011*Math.sin(turn*.191+camera+lane*.0019);
+    measurements[offset+2]=turn>=5&&turn<=8?0:turn>=11&&turn<=14?(camera===turn-11?1:0):1;
+  }
+  return {measurements,cameras,control:turn===5||turn===6?[.1,0,0]:
+    [.1,1+.08*Math.sin(turn*.11),.015+.003*Math.cos(turn*.13)]};
 }
 
 function cpuSnapshot(kernel, instances) {
@@ -179,16 +184,24 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
       report.comparedTurns += 1;
     };
 
-    stage = "20 deterministic turns including prediction-only and landmark changes";
+    stage = "20 deterministic turns including four-camera corrections, prediction-only, and camera masks";
     report.predictionOnlyTurns=0;
     const initial = cpuSnapshot(kernel, instances);
     for (let turn = 1; turn <= TURNS; turn += 1) {
       const updates = deterministicInputs(turn, instances);
       const previousMean=kernel.stateSample('μ',0);
+      // Disabled geometry must be safe before division and atan2, including
+      // both a camera exactly at the robot and the old (-1,0) guard edge case.
+      if(turn===5||turn===6) updates.cameras=Array.from({length:4},()=>
+        [previousMean[0]+(turn===6?1:0),previousMean[1]]).flat();
       kernel.turn(updates);
-      if(updates.u[2]===0) {
-        const prediction=[previousMean[0]+updates.u[0]*.1*Math.cos(previousMean[2]),
-          previousMean[1]+updates.u[0]*.1*Math.sin(previousMean[2]),previousMean[2]+updates.u[1]*.1];
+      if(updates.measurements[2]===0&&updates.measurements[5]===0&&
+         updates.measurements[8]===0&&updates.measurements[11]===0) {
+        const [dt,v,omega]=updates.control,heading=previousMean[2]+omega*dt/2;
+        const prediction=[previousMean[0]+v*dt*Math.cos(heading),
+          previousMean[1]+v*dt*Math.sin(heading),previousMean[2]+omega*dt];
+        prediction[0]=((prediction[0]%200)+200)%200;
+        prediction[1]=((prediction[1]%130)+130)%130;
         const actual=kernel.stateSample('μ',0);
         requireThat(prediction.every((x,i)=>Math.abs(x-actual[i])<=1e-4+1e-4*Math.abs(x)),
           'missing-camera turn must perform motion prediction without correction');
@@ -201,7 +214,7 @@ export async function verifyKernel({ WasmKernel, source, adapter, instances = 25
     const beforeGpu = resource ? await gpuSnapshot(resource, manifest, exported, activeBuffer, instances) : null;
     const beforeActive = activeBuffer;
     const invalid = deterministicInputs(TURNS + 1, instances);
-    invalid.bearing[instances - 1] = NaN;
+    invalid.measurements[(instances - 1)*12+1] = NaN;
 
     stage = "last-lane NaN rejection and whole-batch rollback";
     let cpuError = null;

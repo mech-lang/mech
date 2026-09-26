@@ -10,14 +10,18 @@ review and authorization step.
 
 - `article.mec` is the authoring template. `BLOG...` tokens are build-time
   insertion points, not public source examples.
-- `source/ekf.mec`, `scene.mec`, `behavior.mec`, `functions.mec`, and `matching.mec` are the
-  complete downloadable Mech examples. The displayed listings retain their
-  computational lines. The EKF is presented as four connected stages with
-  explanatory prose; its downloadable source remains one compute program.
+- `source/ekf.mec` is the preserved bearing-only source used in the article's
+  numerical explanation and Rust examples. `source/camera-ekf.mec` is the
+  enhanced fixed-camera range-and-bearing kernel executed by the live app.
+  Each has four connected displayed stages and one complete downloadable
+  compute program. `scene.mec`, `behavior.mec`, `functions.mec`, and
+  `matching.mec` supply the other Mech examples. Displayed computational lines
+  are extracted from these files rather than maintained as separate copies.
 - `standard-examples.mjs` expands the listings into native, read-only Mech
   fences before the complete document is parsed. Behavior, functions, and
-  matching use root scope; all four EKF stages use the same native `mech:ekf`
-  namespace. A `mech:scene` fence displays a table extracted from the separately
+  matching use root scope; the four live camera stages use `mech:ekf`, while
+  the four bearing-only reference stages use `mech:paper-ekf`. A `mech:scene`
+  fence displays a table extracted from the separately
   executed camera and scene program. The behavior
   listing adds a commented example invocation, `#Robot(:paused, :run)`; its download is
   unchanged. The three root-scope filename pills use native namespace-label
@@ -48,8 +52,9 @@ review and authorization step.
   sharing the WASM instance does not couple their sessions.
   The numerical host fills the final EKF stage's standard output block,
   identified by `data-workshop-kernel-output`, from its actual accepted kernel
-  state. All four EKF listings have `data-workshop-kernel-listing` markers;
-  their variables do not offer inspection of unrelated resident-root values.
+  state. The four camera listings have `data-workshop-kernel-listing` markers,
+  and the bearing-only listings use `data-workshop-reference-listing` with
+  hidden outputs. Their variables do not inspect unrelated resident-root values.
   The shared controller preserves application-owned Output content when the
   resident document refreshes its own outputs.
 - `header-actions.html`, `separator.html`, and `footer.html` reuse the official
@@ -61,10 +66,10 @@ review and authorization step.
   the pipeline have separate desktop and narrow-layout SVGs, selected at the
   720 px breakpoint; figures fit their containers instead of requiring a
   fixed-width horizontal scroller. Code can still scroll within its block.
-- `hero.mjs` deterministically generates `hero.svg` from 40 checked turns of
-  the actual Mech WASM kernel and the demo's sensor source. JavaScript draws
-  the resulting state and covariance; it does not implement another EKF.
-  This retained diagram is not the current article hero. The article uses
+- `hero.mjs` and `hero.svg` retain an earlier bearing-only illustration. The
+  generator expects the earlier scene-input contract and is not part of the
+  current build; regenerating that historical diagram requires its matching
+  source revision. The article uses
   `vendor/pittsburgh-hero.jpg`, an Unsplash-licensed photograph with a warm CSS color treatment whose
   provenance is in `vendor/PITTSBURGH.md`.
 - `app.mjs` connects the browser controls to Mech; `drawing.mjs` binds inputs
@@ -185,7 +190,7 @@ Once both vendor assets exist, the argument is unnecessary:
 node benchmarks/iros-2026/blog/build.mjs
 ```
 
-The builder checks the current presentation-kernel hash, requires every source and figure
+The builder checks the preserved bearing-only source hash, requires every source and figure
 slot exactly once, regenerates desktop/mobile chart SVGs, and copies the three archived throughput
 records into `dist/evidence/`. It does not rerun native benchmarks. Run the
 build again after changing the article, examples, browser host, chart module,
@@ -193,20 +198,10 @@ or WASM package. It writes into the existing local output directory; use a
 clean checkout or inspect the deployment file list to avoid carrying unrelated
 old files into a publication.
 
-The deterministic EKF diagram is retained as `hero.svg`, separately from the
-current Pittsburgh article hero. Regenerate the diagram after an
-intentional change to the sensor source, drawing, or generated WASM package,
-then rebuild the article:
-
-```sh
-node benchmarks/iros-2026/blog/hero.mjs
-node benchmarks/iros-2026/blog/build.mjs
-```
-
-The generator verifies the current presentation-source hash and uses 40 steps of 0.1 seconds,
-velocity 1, angular velocity 0.015, and noise scale 0.02. Its position ellipse
-uses covariance eigenvectors and twice the square roots of the eigenvalues;
-it is not labeled a 95% probability region.
+The retained `hero.svg` is a historical bearing-only diagram, separate from
+the Pittsburgh article photograph and the current fixed-camera simulation.
+It used 40 steps of 0.1 seconds, velocity 1, angular velocity 0.015, and noise
+scale 0.02. It is not regenerated by the article build.
 
 Serve the output over HTTP, not `file://`:
 
@@ -234,13 +229,48 @@ page.
 
 ## Executed source and browser boundaries
 
-The current presentation source has SHA-256:
+The live application executes `source/camera-ekf.mec`. It predicts motion
+once per turn with a midpoint model, then applies up to four sequential
+range-and-bearing corrections, one per enabled in-range fixed camera. The
+camera bearing is world-referenced from the camera toward the robot; it is
+not a robot-relative bearing to a selected landmark. Each correction uses
+the Joseph covariance update, and checked publication validates the final
+candidate and raw covariance symmetry before replacing accepted state.
+
+Its three live inputs are:
+
+| Input | Shape for one filter | Host representation |
+| --- | --- | --- |
+| `control` | 3×1 | `[dt, velocity, angularVelocity]`, shared by the batch |
+| `cameras` | 2×4 | Column-major `[x1,y1,x2,y2,x3,y3,x4,y4]`, shared by the batch |
+| `measurements` | 3×4 | One `[range,bearing,visible]` column per camera; 12 values per filter, concatenated in lane order |
+
+The output bindings are `μ` and `Σ`. An unavailable camera has visibility
+zero; its gain is zero and its geometry is guarded before division. With
+all cameras unavailable, the turn consists of motion prediction alone.
+The current source and runtime identities are recorded in
+`dist/build-manifest.json`; `verify.mjs` also checks the exact camera-source
+hash it was written to verify.
+
+Clicking a camera changes that camera's enabled state in the Mech scene.
+The range slider controls the shared maximum sensing range. Separate
+measurement-noise and simulated-motion-noise multipliers change the
+observations and plant, not the kernel's fixed covariance models `Q` and `R`.
+Both truth and filter position wrap into the 200×130 field at an edge while
+heading continues; the camera distances use ordinary field coordinates,
+not shortest-path distances across the wrap. The drawing restarts a trail
+at a crossing rather than connecting opposite edges. This is a simulation
+boundary rule, not a physical robot teleportation model.
+
+### Preserved bearing-only source and earlier validation
+
+The separately displayed `source/ekf.mec` has SHA-256:
 
 ```text
 69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689
 ```
 
-`build.mjs` and `verify.mjs` enforce this identity. The source includes every
+`build.mjs` preserves this identity. The source includes every
 initial value, prediction/correction equation, integrity constraint and
 publication statement. It is the workshop EKF with a revised covariance
 publication policy, not a bit-identical rewrite of the archived algorithm's
@@ -250,7 +280,7 @@ source used to collect the archived timing or source-count measurements.
 The September 26 source revision infers all matrix dimensions, uses the
 poster-style Unicode mathematical names in the actual source, and writes
 column vectors as transposed rows, such as `[0 1 1]'`. The public numerical
-exports are `μ` and `Σ`. The live camera revision binds `bearing`, `u`, and
+exports are `μ` and `Σ`. The earlier robot-mounted-camera revision binds `bearing`, `u`, and
 `m`; `u` contains velocity, angular velocity, and measurement availability,
 and `m` is the selected known landmark. Packing these controls keeps the GPU
 program within eight storage bindings. The preceding camera-free revision was
@@ -275,7 +305,7 @@ exact source, SHA-256
 is retained as `evidence/ekf-before-symmetry-stabilization.mec`; its historical
 equivalence checks still run independently of the current numerical policy.
 
-The current source measures each raw Joseph covariance pair's asymmetry
+This preserved bearing-only source measures each raw Joseph covariance pair's asymmetry
 against `ε + ρ*abs(a) + ρ*abs(b)`, with `ε=1e-4` and `ρ=1e-6`, then publishes
 `Σraw*0.5 + Σrawᵀ*0.5`. Raw and projected finite/positive-diagonal checks
 remain prerequisites to publication. This prevents accumulated antisymmetry
@@ -285,7 +315,9 @@ records the original default-input failures, exact policy, artifact hashes,
 bounded CPU/GPU trials, and reproducible helpers. No archived native timing
 or source-count measurements were replaced.
 
-The browser compiler parses this source and constructs a fixed-shape numerical
+### Current browser execution
+
+The browser compiler parses `camera-ekf.mec` and constructs a fixed-shape numerical
 program. CPU turns interpret its lowered instructions in the Rust runtime
 compiled to WebAssembly; they do not use the native Cranelift JIT. WebGPU
 generates WGSL and a binding manifest from that same compiled program and
@@ -293,23 +325,25 @@ submits them through `MechBrowserCompute.Device`. The browser supplies its
 platform GPU backend. This is not a fresh measurement of the native Metal
 chart.
 
-The host binds `bearing`, `u`, and `m`; the other source values are constants for
-the selected compilation. Three live inputs give the GPU path eight storage
+The host binds `control`, `cameras`, and `measurements`; the other source values
+are constants for the selected compilation. Three live inputs give the GPU path eight storage
 bindings. The displayed pose and covariance are the first filter in the
 selected batch. Backend/batch changes reset the episode; cross-device state
 migration is not implemented here. The source listings are read-only, and
 there are no inline kernel, function, or matching editors.
 
 The behavior, function, and matching fences execute in the resident root
-scope. The EKF's four native named fences belong to the separate checked
+scope. The camera EKF's four native named fences belong to the separate checked
 kernel integration; only their final publication-stage output is populated
-from the numerical host's actual accepted state. All eight native blocks
+from the numerical host's actual accepted state. Four bearing-only reference
+blocks have a separate namespace and hidden output. All twelve native blocks
 retain their formatter-generated IDs.
 The full expanded Mechdown source, encoded AST, and rendered listings come
 from one parse. The EKF's stage headings become introductory prose between
 connected listings; other Mechdown headings become comments. The downloaded
-EKF retains its `@compute` heading and is compiled separately, byte-for-byte
-from the current presentation source, for the numerical demo. The behavior
+camera EKF retains its `@compute` heading and is compiled separately, byte-for-byte,
+for the numerical demo. The bearing-only source remains available for the Rust
+examples and historical regression comparisons. The behavior
 listing's additional example call demonstrates Run from Paused without
 altering its download or the demo's initial mode.
 
@@ -319,14 +353,24 @@ updates. `source/scene.mec` implements sensor simulation, geometry, trails,
 camera range, and drawing tables in a resident Mech program. `drawing.mjs`
 only binds numeric inputs to `WasmSceneProgram` and forwards its scene snapshot
 to the shared `MechDocumentController.renderSceneSvg` renderer. It prepares
-measurements without advancing state, then commits truth and trails only after
-the numerical kernel accepts its turn. Missing camera measurements set the
-filter gain to zero for prediction-only operation. Its source is linked from
+measurements without advancing robot state, then commits truth and trails only
+after the numerical kernel accepts its turn. Camera-click pulse counters update
+enabled states without committing robot motion. Missing camera measurements
+set the corresponding gain to zero; all enabled in-range cameras may contribute
+to one numerical turn. Its source is linked from
 the expandable demo details. Functions,
 matching, and the behavior example are registered in the resident document
 REPL; readers can submit further expressions there.
 The demo's scheduling state machine uses a separate `WasmRepl` session so
 interactive REPL experiments do not change its current mode.
+
+For large populations, sensor preparation evaluates packets of at most 4,096
+global lane indices to stay within the resident runtime's temporary-value
+budget. These preparation calls do not commit robot motion or trails, and
+global indices preserve the per-lane observations across packet boundaries.
+The host concatenates the measurement arrays before submitting one numerical
+turn for the full selected population. Numerical validation and publication
+are not split into packets: a rejection still applies to the entire batch.
 
 The live timing summary excludes drawing and compilation but includes input
 binding, numerical execution, validation, synchronization and one filter's
@@ -336,14 +380,17 @@ FPS additionally reflects browser scheduling and display limits.
 
 ## Current scene integration verification
 
-`evidence/scene-browser-verification.json` records the browser run for the
-camera/scene integration and vectorized covariance tolerance. It identifies
-the exact numerical source, scene source, and WASM module. Chrome exercised
-real WebGPU and the Mech interpreter at 1, 256, 4,096, and 65,536 filters.
-The test covers range loss, prediction-only turns, landmark changes, range
-reentry, scene styling, rejected-turn retention, and Reset. Its independent
-256-filter parity check covers 20 turns, four without measurements, followed
-by whole-batch rollback and recovery checks.
+`test-browser-scene.mjs` exercises the Mech interpreter and real WebGPU at
+1, 256, 4,096, and 65,536 filters. It covers camera clicks, all-camera disable
+and re-enable, range loss and reentry, scene styling, five live noise/motion/range
+controls, rejection retention, and Reset. Its independent 256-filter parity
+check uses 20 turns with four-camera corrections, prediction-only turns, and
+individual camera masks, followed by whole-batch rollback and recovery.
+The report identifies exact kernel, scene, and WASM hashes. A preceding
+`evidence/scene-browser-verification.json` may describe the older selected-landmark
+demo; compare its source identities before treating it as evidence for this
+fixed-camera extension. No long-duration wrapping result is implied by these
+short regression checks.
 
 Reproduce against an isolated Chrome remote-debugging session and local HTTP
 preview (port defaults shown; no browser is launched by the test):
@@ -354,6 +401,7 @@ IROS_CDP_PORT=9227 IROS_URL=http://127.0.0.1:8768/index.html \
 node benchmarks/iros-2026/blog/test-document-runtime.mjs
 node benchmarks/iros-2026/blog/test-app-turns.mjs
 node benchmarks/iros-2026/blog/test-drawing.mjs
+node benchmarks/iros-2026/blog/test-camera-kernel.mjs
 node hosts/scene/tests/document-renderer.mjs
 ```
 
@@ -362,10 +410,10 @@ display failure after numerical acceptance; that condition must not increment
 the integrity-rejection count or claim rollback. It is a mocked host regression,
 separate from the real browser and WASM tests. The source-integration notes in
 `evidence/scene-source-integration.md` describe native scene tests and current
-source-language limitations. None of these checks reruns the archived benchmarks.
-Additional tested source-cleanup candidates are recorded in
-`evidence/vectorization-audit.md`; those audit candidates have not been applied
-to the live source or archived experiments.
+source-language limitations of the preceding integration. None of these checks reruns the archived benchmarks.
+Additional tested source-cleanup candidates for the earlier bearing-only source
+are recorded in `evidence/vectorization-audit.md`. The fixed-camera program is
+a separate implementation; that audit does not describe its source size or timings.
 
 ## Earlier numerical bridge verification
 
@@ -408,13 +456,15 @@ package can produce a Node module-type warning without failing these checks.
 The resident-document smoke test exercises the shipped initializer, requires
 one runtime download for concurrent hosts, loads the encoded document and
 source bundle, checks all 13 compiled component versions, reads the three
-native resident outputs, checks ownership of all four named EKF stages and
+native resident outputs, checks separate reference/camera namespaces and
 the single live kernel-output marker, and submits arithmetic, function,
 all six state-machine transitions, and matching probes through the actual
-resident REPL. It also compares the current EKF against the retained
+resident REPL. It compares the preserved bearing-only sources against the retained
 `src/wasm/tests/fixtures/paper-ekf.mec` source at the bit level across 256
 filters and 40 turns, with non-finite rejection, whole-batch rollback, and
-recovery:
+recovery. A separate 256-filter check runs the actual fixed-camera kernel and
+resident scene for 40 turns, checks range/enable masks, and verifies rejection,
+rollback, and recovery for NaN and both infinities:
 
 ```sh
 node benchmarks/iros-2026/blog/test-document-runtime.mjs
@@ -432,7 +482,7 @@ and matching against the generated WASM package.
 
 For real device verification, open the local page's Output pane and select
 **Verify CPU / GPU agreement and rollback**. The read-only page loads the exact
-current presentation source;
+current `camera-ekf.mec` source;
 verification also enforces its hash.
 The verifier runs in separate sessions from the displayed demo and reports a
 structured result. It compares 20 deterministic turns, injects NaN in the
@@ -473,7 +523,8 @@ source revision, and v0.4.0-beta rebuild; see separately dated validation
 entries for those subsequent changes.
 
 Also inspect normal UI behavior: run/pause/single step; each batch size; CPU
-and GPU where available; velocity and noise changes; invalid input entering
+and GPU where available; individual camera clicks, camera range, velocity,
+measurement-noise and simulated-motion-noise changes; edge wrapping; invalid input entering
 Fault without changing displayed accepted state; reset; the three resident
 outputs and final EKF publication output; REPL input; application persistence
 when switching Console/Output and fullscreen views; and the absence of inline

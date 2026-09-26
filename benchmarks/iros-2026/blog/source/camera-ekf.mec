@@ -1,0 +1,90 @@
+Fixed-camera Extended Kalman Filter
+===================================
++> math/*, logic/all
+
+Four-camera EKF step @compute
+----------------------------
+(1) Initialization
+control<[f32]:3,1> := [0.1; 1; 0.015]
+cameras<[f32]:2,4> := [20 180 180 20; 20 20 110 110]
+measurements<[f32]:3,4> := [0 0 0 0; 0 0 0 0; 0 0 0 0]
+Q<[f32]> := [0.08 0; 0 0.018]
+R<[f32]> := [0.0225 0; 0 0.0004]
+fmax<f32> := 3.402823466e38
+ε<f32> := 0.0001
+ρ<f32> := 0.000001
+~μ<[f32]> := [55 25 0.4]'
+~Σ<[f32]> := [100 0 0; 0 100 0; 0 0 0.15]
+field-extent<[f32]> := [200; 130]
+
+(2) Time Update
+Δt := control[1]
+v := control[2]
+ω := control[3]
+θ := μ[3] + ω * Δt / 2f32
+c := cos(θ)
+s := sin(θ)
+d := v * Δt
+μ̄raw := μ + [d * c; d * s; ω * Δt]
+-- Both positive and negative edge crossings wrap into the field.
+μ̄position := μ̄raw[1..=2] + field-extent * ceil(-μ̄raw[1..=2] / field-extent)
+μ̄ := [μ̄position; μ̄raw[3]]
+G := [1f32 0f32 -d * s; 0f32 1f32 d * c; 0f32 0f32 1f32]
+V := [c * Δt -d * s * Δt / 2f32;
+      s * Δt d * c * Δt / 2f32;
+      0f32 Δt]
+Σ̄ := G ** Σ ** G' + V ** Q ** V'
+
+(3) Measurement Update
+-- Fixed cameras measure range and world-referenced bearing to the robot.
+-- Their observation contains no robot heading measurement.
+-- Align the nearest position representation when a boundary was crossed.
+-- Camera ranges remain ordinary distances within the visible field.
+camera-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:3,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σraw<[f32]:3,3>) :=
+  inactive := 1f32 - z[3]
+  field := [200f32; 130f32]
+  observed-position := camera + z[1] * [cos(z[2]); sin(z[2])]
+  chart-shift := field * ceil((μ-[1..=2] - observed-position) / field - 0.5<f32>) * z[3]
+  μlocal := [μ-[1..=2] - chart-shift; μ-[3]]
+  Δ := (μlocal[1..=2] - camera) * z[3] + [inactive; 0f32]
+  q := Δ · Δ
+  r := sqrt(q)
+  ẑ := [r; atan2(Δ[2], Δ[1])]
+  H := [Δ[1] / r Δ[2] / r 0f32;
+        -Δ[2] / q Δ[1] / q 0f32]
+  S := H ** Σ- ** H' + R
+  B := H ** Σ-
+  K := (S \ B)' * z[3]
+  νθ := z[2] - ẑ[2]
+  ν := [z[1] - ẑ[1]; atan2(sin(νθ), cos(νθ))]
+  μ+ := μlocal + K ** ν
+  I := [1f32 0f32 0f32; 0f32 1f32 0f32; 0f32 0f32 1f32]
+  A := I - K ** H
+  Σraw := A ** Σ- ** A' + K ** R ** K'.
+
+(μ1, Σ1raw) := camera-correct(μ̄, Σ̄, cameras[:,1], measurements[:,1], R)
+Σ1 := Σ1raw * 0.5<f32> + Σ1raw' * 0.5<f32>
+(μ2, Σ2raw) := camera-correct(μ1, Σ1, cameras[:,2], measurements[:,2], R)
+Σ2 := Σ2raw * 0.5<f32> + Σ2raw' * 0.5<f32>
+(μ3, Σ3raw) := camera-correct(μ2, Σ2, cameras[:,3], measurements[:,3], R)
+Σ3 := Σ3raw * 0.5<f32> + Σ3raw' * 0.5<f32>
+(μraw, Σ4raw) := camera-correct(μ3, Σ3, cameras[:,4], measurements[:,4], R)
+μposition := μraw[1..=2] + field-extent * ceil(-μraw[1..=2] / field-extent)
+μ₊ := [μposition; μraw[3]]
+Σ₊ := Σ4raw * 0.5<f32> + Σ4raw' * 0.5<f32>
+
+(4) Checked Publication
+raw-covariances := [Σ1raw Σ2raw Σ3raw Σ4raw]
+lower-pairs := [Σ1raw[[4 7 8]] Σ2raw[[4 7 8]] Σ3raw[[4 7 8]] Σ4raw[[4 7 8]]]
+upper-pairs := [Σ1raw[[2 3 6]] Σ2raw[[2 3 6]] Σ3raw[[2 3 6]] Σ4raw[[2 3 6]]]
+ΔΣ := lower-pairs - upper-pairs
+τ := ε + ρ * abs(lower-pairs) + ρ * abs(upper-pairs)
+finμ := all(μraw <= fmax) && all(μraw >= -fmax) && all(μ₊ <= fmax) && all(μ₊ >= -fmax)
+finraw := all(raw-covariances <= fmax) && all(raw-covariances >= -fmax)
+finΣ := all(Σ₊ <= fmax) && all(Σ₊ >= -fmax)
+finite-candidate! := finμ && finraw && finΣ
+positive-covariance! := (finΣ && (all(Σ₊[[1 5 9]] > 0f32) == false)) == false
+symmetric-covariance! := (finraw && ((all(ΔΣ <= τ) && all(ΔΣ >= -τ)) == false)) == false
+μ = μ₊
+Σ = Σ₊
+(μ, Σ)

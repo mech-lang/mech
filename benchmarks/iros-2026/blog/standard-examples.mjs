@@ -4,7 +4,8 @@ import {fileURLToPath} from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const definitions = [
-  {token: 'BLOGEKFSOURCE', file: 'ekf.mec', language: 'mech', namespace: 'ekf'},
+  {token: 'BLOGEKFSOURCE', file: 'ekf.mec', language: 'mech', namespace: 'paper-ekf', reference: true},
+  {token: 'BLOGCAMERASOURCE', file: 'camera-ekf.mec', language: 'mech', namespace: 'ekf'},
   {token: 'BLOGSCENESOURCE', file: 'scene.mec', language: 'mech', namespace: 'scene'},
   {token: 'BLOGBEHAVIORSOURCE', file: 'behavior.mec', language: 'mech'},
   {token: 'BLOGFUNCTIONS', file: 'functions.mec', language: 'mech'},
@@ -16,8 +17,8 @@ const definitions = [
 const escapeHtml = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;')
   .replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
-// The archived native examples use English binding names. The live article's
-// mathematical source exports μ and Σ instead. Adapt only the known kernel API
+// The archived native examples use English binding names. The article's
+// bearing-only source exports μ and Σ instead. Adapt only the known kernel API
 // strings before either rendering or publishing the Rust source; do not alter
 // the archived examples or substitute prettier, non-executable display text.
 export function adaptBlogRustExample(source, file) {
@@ -61,11 +62,16 @@ export function sourceWithHeadingComments(source) {
 
 // Several fences in the same namespace are one program. Split at the source's
 // own literate section boundaries, never into independent copied kernels.
-export function ekfSections(source) {
+export function ekfSections(source, {camera = false} = {}) {
   const normalized = sourceWithHeadingComments(source);
   const boundaries = [...normalized.matchAll(/^-- \((\d+)\) (.+)$/gm)];
   if (boundaries.length !== 4) throw new Error('Expected four EKF sections');
-  const introductions = [
+  const introductions = camera ? [
+    '**Initialization.** The filter receives commanded motion and range-and-bearing observations from four fixed cameras. Each observation includes an availability flag; the state and covariance persist between turns.',
+    '**Time update.** A midpoint motion model predicts the next pose, and its Jacobians propagate state and process-noise covariance.',
+    '**Measurement update.** Available cameras correct the prediction in sequence. Each correction wraps the bearing innovation and updates covariance in Joseph form; an unavailable camera contributes no correction.',
+    '**Checked publication.** Integrity predicates validate the candidate before its mean and covariance replace the accepted state.',
+  ] : [
     '**Initialization.** The imports, motion inputs, measurement covariance, and initial state establish the filter. The control vector `u` carries forward velocity, angular velocity, and a measurement-availability flag. Matrix shapes are inferred from their values.',
     '**Time update.** The motion model predicts the next pose, and its Jacobians propagate the state and process-noise covariance.',
     '**Measurement update.** An available bearing corrects the prediction. When the selected landmark is outside camera range, `visible` is zero and the gain is zero, giving a prediction-only update. Wrapping the angular innovation avoids a discontinuity at a full revolution; the Joseph form updates the covariance.',
@@ -99,7 +105,7 @@ export function expandStandardExamples(article, {
   }
   const examples = [];
   const downloads = [];
-  const source = article.replace(/^BLOG(?:EKFSOURCE|SCENESOURCE|BEHAVIORSOURCE|FUNCTIONS|MATCHING|RUSTJIT|RUSTBUILD|RUSTLOAD)[ \t]*$/gm, token => {
+  const source = article.replace(/^BLOG(?:EKFSOURCE|CAMERASOURCE|SCENESOURCE|BEHAVIORSOURCE|FUNCTIONS|MATCHING|RUSTJIT|RUSTBUILD|RUSTLOAD)[ \t]*$/gm, token => {
     const definition = byToken.get(token.trim());
     const {file, language} = definition;
     const path = language === 'mech' ? join(blogRoot, 'source', file)
@@ -118,11 +124,14 @@ export function expandStandardExamples(article, {
       examples.push({...definition,label:'scene · drawing table',href});
       return `\`\`\`mech:scene\n${table}\n\`\`\`\n\n(i)> [Download the complete camera and scene program](${href}). The table above is extracted from this file, which supplies the live drawing.`;
     }
-    if (file === 'ekf.mec') {
-      const sections = ekfSections(original);
-      for (const section of sections) examples.push({...definition, ...section, label: `ekf · ${section.title.toLowerCase()}`, href});
-      return sections.map(section => `${section.prose}\n\n\`\`\`mech:ekf\n${section.code}\n\`\`\``).join('\n\n')
-        + `\n\n(i)> Download the complete [${file}](${href}). These blocks share the same \`ekf\` namespace and compile together.`;
+    if (file === 'ekf.mec' || file === 'camera-ekf.mec') {
+      const sections = ekfSections(original, {camera: file === 'camera-ekf.mec'});
+      const label = definition.reference ? 'bearing-only EKF' : 'live camera EKF';
+      for (const section of sections) examples.push({...definition, ...section, label: `${label} · ${section.title.toLowerCase()}`, href});
+      return sections.map(section => `${section.prose}\n\n\`\`\`mech:${definition.namespace}\n${section.code}\n\`\`\``).join('\n\n')
+        + (definition.reference
+          ? `\n\n(i)> Download the complete bearing-only [${file}](${href}). The Rust embedding examples below use this source; the interactive fixed-camera extension has its own listing and download.`
+          : `\n\n(i)> Download the complete live [${file}](${href}). These blocks share the \`ekf\` namespace and compile together as the numerical program running in the Output pane.`);
     }
     examples.push({...definition, label: file, href});
     // The numerical EKF is owned by the separately compiled checked kernel.
@@ -149,11 +158,12 @@ export function decorateStandardExamples(html, examples) {
     const pill = label => `<div class="mech-code-block-namespace"><a href="#${escapeHtml(id)}">${escapeHtml(label)}</a></div>`;
     if (example.namespace) {
       if (!body.includes(pill(example.namespace))) throw new Error(`Missing native namespace pill for ${example.file}`);
-      const marker=example.namespace==='ekf'?'data-workshop-kernel-listing':'data-workshop-scene-listing';
+      const marker=example.reference ? 'data-workshop-reference-listing'
+        : example.namespace==='ekf'?'data-workshop-kernel-listing':'data-workshop-scene-listing';
       return block.replace(opening, opening.replace(' data-mech-source', ` ${marker} data-mech-source`))
         .replace(pill(example.namespace), pill(example.label))
         .replace(/(<div class="mech-block-output" id="[^"]+")>/,
-          example.stage === 'publication' ? '$1 data-workshop-kernel-output>' : '$1 hidden>');
+          !example.reference && example.stage === 'publication' ? '$1 data-workshop-kernel-output>' : '$1 hidden>');
     }
     if (body.includes('class="mech-code-block-namespace"')) throw new Error(`Unexpected executable namespace for ${example.file}`);
     return block.replace(opening, `${opening}\n          ${pill(example.label)}`);

@@ -50,6 +50,17 @@ async function dragSlider(name){
   assert(Math.abs((final-box.min)/(box.max-box.min)-.52)<.05,name+' reaches the dragged position');
   return {name,samples};
 }
+async function clickCamera(index){
+  const selector=`#robot-scene [data-camera-index="${index}"][role="button"]`;
+  await evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center',behavior:'instant'})`);
+  await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+  const point=await evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  const hit=await evaluate(`document.elementFromPoint(${point.x},${point.y})?.closest('[data-camera-index]')?.getAttribute('data-camera-index')`);
+  assert.equal(hit,String(index),'pointer reaches camera '+index+' at '+JSON.stringify(point));
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',buttons:1,clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',...point,button:'left',buttons:0,clickCount:1});
+}
+const cameraEnabled=index=>evaluate(`document.querySelector('#robot-scene [data-camera-index="${index}"][role="button"]').getAttribute('aria-pressed')==='true'`);
 async function step(){
   const before=await evaluate('document.getElementById("turn-count").textContent');
   await evaluate('document.getElementById("step").click()');
@@ -65,13 +76,14 @@ try{
   report.browser=await send('Browser.getVersion');
   report.artifacts=await evaluate(`(async()=>{
     const hashes={};
-    for(const file of ['source/ekf.mec','source/scene.mec','_mech/pkg/mech_wasm_bg.wasm']){
+    for(const file of ['source/ekf.mec','source/camera-ekf.mec','source/scene.mec','_mech/pkg/mech_wasm_bg.wasm']){
       const bytes=await fetch(file).then(r=>r.arrayBuffer());
       hashes[file]=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),v=>v.toString(16).padStart(2,'0')).join('');
     }
     return hashes;
   })()`);
   const gpu=await evaluate('!document.querySelector("#backend option[value=gpu]").disabled');
+  assert.equal(await evaluate('!!document.getElementById("landmark")'),false,'no landmark dropdown');
   report.gpuAvailable=gpu;
   const modes=process.env.IROS_CPU_ONLY?['cpu']:['cpu','gpu'];
   const batches=process.env.IROS_QUICK?[256]:[1,256,4096,65536];
@@ -82,24 +94,39 @@ try{
     for(const instances of batches){
       await change('instances',instances);
       await until('!document.getElementById("run").disabled','batch compilation');
-      await change('landmark',1);await change('camera-range',100);
+      await change('camera-range',250);
       const initial=await snapshot();
-      assert(initial.status.includes('in camera range'));
+      assert.match(initial.status,/^4 of 4 enabled cameras in range/,'all cameras observe the robot at maximum range');
+      for(let i=1;i<=4;i++)assert(await cameraEnabled(i),'all cameras initially enabled');
       await step();const accepted=await snapshot();
       assert.notEqual(accepted.trail,initial.trail,'accepted state advances trail');
       assert.notEqual(accepted.truthTrail,initial.truthTrail,'accepted turn advances actual robot path');
       const poses=await evaluate(`Object.fromEntries(['truth','estimate'].map(id=>{const e=document.querySelector('[data-mech-scene-id="'+id+'"]');return [id,{points:e.getAttribute('points'),stroke:e.getAttribute('stroke'),fill:e.getAttribute('fill')}]}))`);
       assert.notEqual(poses.truth.points,poses.estimate.points,'truth and estimate use distinguishable geometry');
       assert.equal(poses.truth.fill,'none','truth ring does not hide the estimate when they overlap');
+      for(let i=1;i<=4;i++){
+        await clickCamera(i);
+        await until(`document.querySelector('#robot-scene [data-camera-index="${i}"][role="button"]').getAttribute('aria-pressed')==='false'`,'disable camera '+i);
+      }
+      const disabled=await snapshot();
+      assert.equal(disabled.count,accepted.count,'camera clicks do not advance the numerical state');
+      assert.equal(disabled.truthTrail,accepted.truthTrail,'camera clicks do not move the simulated robot');
+      assert(disabled.status.includes('prediction'),'all disabled gives prediction only');
+      await step();const unobserved=await snapshot();
+      assert.notEqual(unobserved.telemetry,disabled.telemetry,'all-off still predicts');
+      for(let i=1;i<=4;i++){
+        await clickCamera(i);
+        await until(`document.querySelector('#robot-scene [data-camera-index="${i}"][role="button"]').getAttribute('aria-pressed')==='true'`,'enable camera '+i);
+      }
       await change('camera-range',10);
       const outside=await snapshot();
-      assert.equal(outside.count,accepted.count,'control edit must not advance numerical turn');
-      assert.equal(outside.trail,accepted.trail,'control edit must not advance trail');
-      assert(outside.status.includes('motion prediction only'),'out-of-range camera');
+      assert.equal(outside.count,unobserved.count,'control edit must not advance numerical turn');
+      assert.equal(outside.trail,unobserved.trail,'control edit must not advance trail');
+      assert(outside.status.includes('prediction'),'all out-of-range cameras give prediction only');
       await step();const predicted=await snapshot();
       assert.notEqual(predicted.telemetry,outside.telemetry,'missing measurement still predicts');
-      await change('landmark',2);await change('camera-range',200);await step();
-      const recovered=await snapshot();assert(recovered.status.includes('bearing correction'));
+      await change('camera-range',250);await step();
+      const recovered=await snapshot();assert.match(recovered.status,/^4 of 4 enabled cameras in range/,'all four cameras contribute within range');
       const drawing=await evaluate(`({dash:document.querySelector('[data-mech-scene-id="estimate-path"]')?.getAttribute('stroke-dasharray'),trail:document.querySelector('[data-mech-scene-id="estimate-path"]')?.getAttribute('stroke'),heading:document.querySelector('[data-mech-scene-id="estimate-heading"]')?.getAttribute('stroke'),sceneCount:document.querySelectorAll('#robot-scene').length})`);
       assert.equal(drawing.sceneCount,1);assert(drawing.dash);assert.equal(drawing.trail,'#ad9159');assert.equal(drawing.heading,'#687780');
       await evaluate('document.getElementById("inject").click()');
@@ -109,8 +136,8 @@ try{
       assert.equal(rejected.trail,recovered.trail,'rejection retains Mech trail');
       assert.equal(rejected.truthTrail,recovered.truthTrail,'rejection retains actual robot path');
       assert(rejected.count.includes('1 rejected'));
-      report.cases.push({backend,instances,initial,accepted,predicted,recovered,rejected,drawing});
-      console.log('PASS',backend,instances,'range, reentry, scene, rejection');
+      report.cases.push({backend,instances,initial,accepted,disabled,unobserved,predicted,recovered,rejected,drawing});
+      console.log('PASS',backend,instances,'four camera clicks, all-off prediction, range, reentry, scene, rejection');
       await evaluate('document.getElementById("reset").click()');
       await until('!document.getElementById("run").disabled','reset recovery');
     }
@@ -120,19 +147,37 @@ try{
     for(const backend of modes){
       await change('backend',backend);await until('!document.getElementById("run").disabled','drag backend compilation');
       await change('instances',4096);await until('!document.getElementById("run").disabled','drag batch compilation');
-      await change('velocity',1);await change('omega',.015);await change('noise',.02);await change('camera-range',100);
+      await change('velocity',1);await change('omega',.015);await change('noise',1);await change('motion-noise',1);await change('camera-range',250);
       const before=await snapshot();
       await evaluate('document.getElementById("run").click()');
+      await clickCamera(1);
+      await until(`document.querySelector('#robot-scene [data-camera-index="1"][role="button"]').getAttribute('aria-pressed')==='false'`,'camera click during running turns');
+      await clickCamera(1);
+      await until(`document.querySelector('#robot-scene [data-camera-index="1"][role="button"]').getAttribute('aria-pressed')==='true'`,'camera restoration during running turns');
       const drags=[];
-      for(const name of ['velocity','omega','noise','camera-range'])drags.push(await dragSlider(name));
+      for(const name of ['velocity','omega','noise','motion-noise','camera-range'])drags.push(await dragSlider(name));
       await evaluate('document.getElementById("pause").click()');
       await until('!document.getElementById("step").disabled','pause after live slider drag');
       const after=await snapshot();assert.notEqual(after.count,before.count,'turns continue while sliders are dragged');
       assert.notEqual(after.truthTrail,before.truthTrail,'robot moves while steering');
       report.liveDrags.push({backend,drags,before:before.count,after:after.count});
       await evaluate('document.getElementById("reset").click()');await until('!document.getElementById("run").disabled','drag reset');
+      await change('instances',256);await until('!document.getElementById("run").disabled','wrap batch compilation');
+      await change('velocity',12);await change('omega',0);await change('noise',0);await change('motion-noise',0);await change('camera-range',250);
+      await evaluate(`(()=>{
+        const pose=()=>document.querySelector('[data-mech-scene-id="truth-heading"]').getAttribute('points').trim().split(/[ ,]+/).map(Number).slice(0,2);
+        let previous=pose();window.workshopWrapEvents=[];
+        window.workshopWrapObserver=new MutationObserver(()=>{const next=pose();if(Math.abs(next[0]-previous[0])>100||Math.abs(next[1]-previous[1])>65){workshopWrapEvents.push({from:previous,to:next});document.getElementById('pause').click();}previous=next;});
+        workshopWrapObserver.observe(document.querySelector('.scene-wrap'),{childList:true});
+      })()`);
+      await evaluate('document.getElementById("run").click()');
+      await until('workshopWrapEvents.length>0&&!document.getElementById("step").disabled','robot wraps the field while running',120000);
+      const wrap=await evaluate(`(()=>{workshopWrapObserver.disconnect();const p=document.querySelector('[data-mech-scene-id="truth-path"]').getAttribute('points').trim().split(/\\s+/);return {events:workshopWrapEvents,trailPoints:new Set(p).size,count:document.getElementById('turn-count').textContent};})()`);
+      assert.equal(wrap.trailPoints,1,'truth trail restarts at wrap instead of crossing the field');
+      (report.wraps??=[]).push({backend,...wrap});
+      await evaluate('document.getElementById("reset").click()');await until('!document.getElementById("run").disabled','wrap reset');
     }
-    report.parity=await evaluate(`(async()=>{const runtime=await import('./assets/runtime.mjs');const {verifyKernel}=await import('./assets/verify.mjs');return verifyKernel({WasmKernel:runtime.WasmKernel,source:await fetch('source/ekf.mec').then(r=>r.text())});})()`);
+    report.parity=await evaluate(`(async()=>{const runtime=await import('./assets/runtime.mjs');const {verifyKernel}=await import('./assets/verify.mjs');return verifyKernel({WasmKernel:runtime.WasmKernel,source:await fetch('source/camera-ekf.mec').then(r=>r.text())});})()`);
     assert.equal(report.parity.status,'passed',JSON.stringify(report.parity));
     await evaluate('document.fonts.ready.then(()=>true)');
     for(const [width,height] of [[320,740],[360,800],[390,844],[900,1000],[1920,1100]]){
@@ -171,5 +216,5 @@ try{
   }
   assert.equal(exceptions.length,0,'no uncaught browser exceptions');
   report.status='passed';
-}catch(error){report.status='failed';report.error=String(error);process.exitCode=1;console.error(error);}
+}catch(error){report.status='failed';report.error=String(error);process.exitCode=1;console.error(error);const shot=await send('Page.captureScreenshot',{format:'png'});writeFileSync(output.replace(/\.json$/,'-failure.png'),Buffer.from(shot.data,'base64'));}
 finally{report.finishedAt=new Date().toISOString();writeFileSync(output,JSON.stringify(report,null,2)+'\n');await send('Page.close');socket.close();}

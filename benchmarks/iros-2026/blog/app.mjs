@@ -4,12 +4,12 @@ import { verifyKernel } from './verify.mjs';
 
 const $ = id => document.getElementById(id);
 const text = (id, value) => { $(id).textContent = value; };
-let scene;
+let scene, sceneRefreshPending = false;
 const MEAN = 'μ', COVARIANCE = 'Σ';
 function bindKernelListing() {
   // The live kernel is separate from the document REPL. Do not offer root
   // symbol inspection for values whose state is held by that kernel.
-  for(const element of document.querySelectorAll('[data-workshop-kernel-listing] .mech-var-name, [data-workshop-scene-listing] .mech-var-name')) {
+  for(const element of document.querySelectorAll('[data-workshop-kernel-listing] .mech-var-name, [data-workshop-reference-listing] .mech-var-name, [data-workshop-scene-listing] .mech-var-name')) {
     element.dataset.mechValueInteractive='false';
     element.classList.remove('mech-clickable');
     element.removeAttribute('tabindex');
@@ -53,7 +53,7 @@ function controls() {
   for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy;
   // A numerical turn snapshots these inputs before submission. Keep native
   // slider drags alive while it runs; newer values belong to the next turn.
-  for (const id of ['landmark','camera-range','velocity','omega','noise']) $(id).disabled = !ready || (busy && !turnInFlight);
+  for (const id of ['camera-range','velocity','omega','noise','motion-noise']) $(id).disabled = !ready || (busy && !turnInFlight);
   $('pause').disabled = !running;
   $('run').disabled ||= running;
 }
@@ -109,10 +109,7 @@ async function compile() {
     const n = Number($('instances').value);
     nextScene=new MechScene(sceneSource,n,[55,25,.4],[100,0,0,0,100,0,0,0,.15],sensorControls());
     const initial=nextScene.observation(sensorControls());
-    nextKernel = WasmKernel.fromSource(source, {
-      bearing: new Float32Array(n).fill(-0.55),
-      u:initial.inputs.u, m:initial.inputs.m,
-    }, [MEAN, COVARIANCE]);
+    nextKernel = WasmKernel.fromSource(source, initial.inputs, [MEAN, COVARIANCE]);
     if (nextKernel.stateWidth(MEAN)!==3 || nextKernel.stateWidth(COVARIANCE)!==9) throw new Error('The robot view requires a three-value state and a 3×3 covariance.');
     const nextManifest = $('backend').value === 'gpu' ? nextKernel.computeManifest() : null;
     if (nextManifest) {
@@ -122,7 +119,7 @@ async function compile() {
     }
     await dispose(device, kernel);
     scene?.dispose();
-    scene=nextScene;
+    scene=nextScene; sceneRefreshPending=false;
     kernel = nextKernel; device = nextDevice; manifest = nextManifest; active = 0;
     committedBackend = $('backend').value; committedInstances = $('instances').value;
     state = kernel.stateSample(MEAN,0); covariance = rowMajor(kernel.stateSample(COVARIANCE,0));
@@ -140,7 +137,12 @@ async function compile() {
 }
 function sensorControls() {
   return {velocity:Number($('velocity').value),omega:Number($('omega').value),
-    noise:Number($('noise').value),landmark:Number($('landmark').value),range:Number($('camera-range').value)};
+    noise:Number($('noise').value),motionNoise:Number($('motion-noise').value),range:Number($('camera-range').value)};
+}
+function refreshScene() {
+  if(!scene || busy || !sceneRefreshPending) return;
+  try { scene.refresh(sensorControls()); sceneRefreshPending=false; }
+  catch(e) { error(String(e)); }
 }
 async function turn(invalid = false) {
   if (busy || !kernel || mode === 'fault') return;
@@ -203,6 +205,9 @@ async function turn(invalid = false) {
     }
   } finally {
     busy = false; turnInFlight = false; controls();
+    // Camera clicks and range edits during GPU execution affect the next
+    // observation, never the already submitted simulation/filter pair.
+    refreshScene();
   }
 }
 async function loop(token) {
@@ -210,13 +215,25 @@ async function loop(token) {
   await turn();
   if(running && token===generation) requestAnimationFrame(()=>loop(token));
 }
-for (const [id,label] of [['velocity','velocity-label'],['omega','omega-label'],['noise','noise-label'],['camera-range','camera-range-label']]) {
+for (const [id,label] of [['velocity','velocity-label'],['omega','omega-label'],['noise','noise-label'],['motion-noise','motion-noise-label'],['camera-range','camera-range-label']]) {
   $(id).addEventListener('input',()=>text(label,$(id).value));
 }
-for(const id of ['landmark','camera-range']) $(id).addEventListener('change',()=>{
-  if(!scene || busy) return;
-  try {scene.observation(sensorControls());scene.draw();} catch(e){error(String(e));}
+$('camera-range').addEventListener('input',()=>{
+  sceneRefreshPending=true; refreshScene();
 });
+function toggleSceneCamera(event) {
+  const target=event.target.closest?.('#robot-scene [data-camera-index]');
+  if(!target || !scene || !ready || (busy && !turnInFlight)) return;
+  event.preventDefault();
+  scene.toggleCamera(Number(target.dataset.cameraIndex));
+  sceneRefreshPending=true; refreshScene();
+}
+// Act on press: the scene can be redrawn between pointer-down and pointer-up.
+document.addEventListener('pointerdown',event=>{if(event.button===0)toggleSceneCamera(event);});
+document.addEventListener('keydown',event=>{
+  if(!event.repeat && (event.key==='Enter'||event.key===' '))toggleSceneCamera(event);
+});
+document.addEventListener('click',event=>{if(event.detail===0)toggleSceneCamera(event);});
 $('run').onclick=()=>{transition('run');running=mode==='patrol';frames=[];const token=++generation;controls();requestAnimationFrame(()=>loop(token));};
 $('pause').onclick=()=>{running=false;generation++;transition('pause');controls();};
 $('step').onclick=()=>turn();
@@ -235,7 +252,7 @@ $('verify').onclick=async()=>{
 
 try {
   [source,sceneSource] = await Promise.all([
-    fetch('source/ekf.mec').then(r=>{if(!r.ok)throw new Error('EKF source unavailable');return r.text();}),
+    fetch('source/camera-ekf.mec').then(r=>{if(!r.ok)throw new Error('Camera EKF source unavailable');return r.text();}),
     fetch('source/scene.mec').then(r=>{if(!r.ok)throw new Error('Mech scene source unavailable');return r.text();}),
     initializeRuntime()]);
   repl=new WasmRepl();

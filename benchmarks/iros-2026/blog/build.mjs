@@ -25,7 +25,7 @@ for(const [name,path] of [['logo.png','img/logo.png'],['FiraCode-Regular.ttf','f
   copyFileSync(dest,join(out,'assets',name));
 }
 const expected='69480e5b46a4da7b9391755dc2a40a5e45a3e39e0899351910c83e5352893689';
-if(hash(join(root,'source/ekf.mec'))!==expected) throw new Error('The presentation EKF has changed; update its provenance and tests intentionally.');
+if(hash(join(root,'source/ekf.mec'))!==expected) throw new Error('The preserved bearing-only EKF has changed; update its provenance and tests intentionally.');
 const renderer=join(root,'render/target/debug/mech-iros-blog-render');
 if(!existsSync(renderer)) throw new Error('Build render/Cargo.toml first.');
 function render(file,shim,dest) {execFileSync(renderer,[file,shim,dest],{stdio:'inherit'});return read(dest);}
@@ -89,8 +89,8 @@ if(existsSync(join(root,'charts.mjs'))) {
   const {buildCharts}=await import('./charts.mjs');await buildCharts(join(out,'assets'));
 }
 for(const [file,token,caption] of [
-  ['cpu','BLOGCPUCHART','Matched population and eight-worker CPU budget. The Mech and Rust rows use four-wide SIMD with fused turns. Every bar is median ± MAD from ten retained samples.'],
-  ['backends','BLOGBACKENDCHART','Same archived Mech source, per-turn publication, five execution targets. JIT and AOT share numerical lowering; worker count and host capability also determine available parallelism.'],
+  ['cpu','BLOGCPUCHART','Archived bearing-only implementations with matched population and eight-worker CPU budget. The Mech and Rust rows use four-wide SIMD with fused turns. Every bar is median ± MAD from ten retained samples.'],
+  ['backends','BLOGBACKENDCHART','Same archived bearing-only Mech source, per-turn publication, five execution targets. JIT and AOT share numerical lowering; worker count and host capability also determine available parallelism.'],
   ['metal','BLOGMETALCHART','Cross-system native Metal campaign, collected September 24. GPU hatching distinguishes device measurements from CPU measurements.'],
   ['portable','BLOGPORTABLECHART','Application-source reuse in Mech, Taichi, and Halide. Each system selects CPU or Metal using its own backend options and schedules.']]) {
   const path=join(out,'assets',`${file}.svg`);

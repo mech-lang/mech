@@ -89,6 +89,9 @@ html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-captio
 /* The snapshot's width/height attributes describe its coordinate system.
  * Scale both dimensions together to fill the available scene column. */
 .live-demo .scene-wrap svg { display:block; width:100%; height:auto; max-height:none; min-height:0; }
+.live-demo #robot-scene [data-camera-index] { cursor:pointer; }
+.live-demo #robot-scene [data-mech-scene-id^="camera-hit-"] { pointer-events:all; stroke:transparent; stroke-width:24px; vector-effect:non-scaling-stroke; }
+.live-demo #robot-scene [data-camera-index]:focus-visible { outline:2px solid var(--mech-brand); outline-offset:3px; }
 .scene-key { display:flex; flex-wrap:wrap; gap:9px; font-size:10px; line-height:1.6; padding:9px 12px; }
 .truth-key { color:#63d6c5; }
 .estimate-key { color:var(--mech-logo); }
