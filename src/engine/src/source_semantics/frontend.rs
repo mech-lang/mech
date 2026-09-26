@@ -8635,6 +8635,7 @@ mod tests {
             dimension_parameters: Box::new([]),
         };
         let nested = PendingMatch {
+            partial: false,
             captures: Vec::new(),
             arms: vec![PendingMatchArm {
                 pattern: crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
@@ -8668,6 +8669,7 @@ mod tests {
             yield_value: comprehension::PendingCollectionValue::Local(0),
         };
         let root = PendingMatch {
+            partial: false,
             captures: Vec::new(),
             arms: vec![PendingMatchArm {
                 pattern: crate::MatchPattern::Wildcard,

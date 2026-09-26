@@ -1134,6 +1134,7 @@ fn pattern_functions_lower_to_ordered_partial_control() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn pattern_functions_apply_per_matrix_element_and_preserve_source_shape() {
     let source = "classify(n<f64>) => <f64>\n\
@@ -1172,6 +1173,7 @@ fn pattern_functions_apply_per_matrix_element_and_preserve_source_shape() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn pattern_function_lifts_conform_each_collection_element() {
     let function = "twice(n<f64>) => <f64>\n\
@@ -1222,6 +1224,7 @@ fn pattern_function_lifts_annotation_compatible_tuple_elements() {
     compiled.compile_artifact().unwrap();
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn pattern_function_matrix_parameter_consumes_the_whole_matrix() {
     execute_document(
@@ -1254,6 +1257,7 @@ fn pattern_function_lifts_keep_dynamic_collection_shape_ownership() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn pattern_function_lift_uses_live_matrix_dimensions_on_each_turn() {
     let source =
@@ -1367,6 +1371,7 @@ fn set_lift_rejects_results_the_resident_cannot_canonicalize() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn pattern_function_arms_conform_to_the_declared_output_before_joining() {
     execute_document(
@@ -1395,6 +1400,7 @@ fn refutable_enum_payload_pattern_does_not_make_a_variant_exhaustive() {
     assert_eq!(error.code, "source-semantics/non-exhaustive-match");
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn pattern_functions_lift_over_sets_with_deduplication_and_distinct_output_kind() {
     let negative = [-2.0];
@@ -1427,6 +1433,7 @@ fn pattern_functions_lift_over_sets_with_deduplication_and_distinct_output_kind(
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn a_failed_set_lift_discards_the_whole_candidate_and_allows_retry() {
     let source = "only-zero(n<f64>) => <f64>\n\

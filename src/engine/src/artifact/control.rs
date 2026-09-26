@@ -251,7 +251,7 @@ fn validate_structural_pattern(
     Some(())
 }
 
-fn structurally_irrefutable<V>(
+fn structurally_irrefutable_for_schema<V>(
     schemas: &mech_core::SchemaTable,
     pattern: &super::CollectionPattern<SchemaId, V>,
     expected: &mech_core::Schema,
@@ -265,8 +265,9 @@ fn structurally_irrefutable<V>(
             };
             fields.len() == items.len()
                 && items.iter().zip(fields).all(|(item, field)| {
-                    component_schema(expected, field)
-                        .is_some_and(|expected| structurally_irrefutable(schemas, item, &expected))
+                    component_schema(expected, field).is_some_and(|expected| {
+                        structurally_irrefutable_for_schema(schemas, item, &expected)
+                    })
                 })
         }
         super::CollectionPattern::Array {
@@ -288,24 +289,25 @@ fn structurally_irrefutable<V>(
                     prefix
                         .iter()
                         .chain(suffix)
-                        .all(|item| structurally_irrefutable(schemas, item, &element))
+                        .all(|item| structurally_irrefutable_for_schema(schemas, item, &element))
                         && (super::comprehension::array_rest_schema(
                             &element,
                             element.body(),
                             residual,
                         )
-                        .is_some_and(|expected| structurally_irrefutable(schemas, rest, &expected))
-                            || matches!(
-                                rest.as_ref(),
-                                super::CollectionPattern::Bind { schema, .. }
-                                if super::comprehension::array_rest_schema(
-                                    &element,
-                                    element.body(),
-                                    None,
-                                )
-                                .as_ref()
-                                .is_some_and(|expected| schemas.get(*schema) == Some(expected))
-                            ))
+                        .is_some_and(|expected| {
+                            structurally_irrefutable_for_schema(schemas, rest, &expected)
+                        }) || matches!(
+                            rest.as_ref(),
+                            super::CollectionPattern::Bind { schema, .. }
+                            if super::comprehension::array_rest_schema(
+                                &element,
+                                element.body(),
+                                None,
+                            )
+                            .as_ref()
+                            .is_some_and(|expected| schemas.get(*schema) == Some(expected))
+                        ))
                 })
         }
         super::CollectionPattern::Array {
@@ -322,7 +324,7 @@ fn structurally_irrefutable<V>(
                 prefix
                     .iter()
                     .chain(suffix)
-                    .all(|item| structurally_irrefutable(schemas, item, &expected))
+                    .all(|item| structurally_irrefutable_for_schema(schemas, item, &expected))
             })
         }
         super::CollectionPattern::Enum { ordinal, payload } => {
@@ -338,7 +340,9 @@ fn structurally_irrefutable<V>(
             match (&variant.payload, payload) {
                 (None, None) => true,
                 (Some(payload_schema), Some(pattern)) => component_schema(expected, payload_schema)
-                    .is_some_and(|expected| structurally_irrefutable(schemas, pattern, &expected)),
+                    .is_some_and(|expected| {
+                        structurally_irrefutable_for_schema(schemas, pattern, &expected)
+                    }),
                 _ => false,
             }
         }
@@ -394,7 +398,7 @@ fn structural_coverage_pattern(
     expected: &mech_core::Schema,
     draft: &super::ProgramArtifactDraft,
 ) -> StructuralCoveragePattern {
-    if structurally_irrefutable(&draft.schemas, pattern, expected) {
+    if structurally_irrefutable_for_schema(&draft.schemas, pattern, expected) {
         return StructuralCoveragePattern::Wildcard;
     }
     match (pattern, expected.body()) {
@@ -1240,7 +1244,9 @@ mod tests {
                 rest: None,
                 suffix: Box::new([]),
             };
-        assert!(structurally_irrefutable(&schemas, &exact, expected));
+        assert!(structurally_irrefutable_for_schema(
+            &schemas, &exact, expected
+        ));
 
         let short: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
             super::super::CollectionPattern::Array {
@@ -1248,7 +1254,9 @@ mod tests {
                 rest: None,
                 suffix: Box::new([]),
             };
-        assert!(!structurally_irrefutable(&schemas, &short, expected));
+        assert!(!structurally_irrefutable_for_schema(
+            &schemas, &short, expected
+        ));
 
         let rest: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
             super::super::CollectionPattern::Array {
@@ -1256,7 +1264,9 @@ mod tests {
                 rest: Some(Box::new(wildcard())),
                 suffix: Box::new([]),
             };
-        assert!(structurally_irrefutable(&schemas, &rest, expected));
+        assert!(structurally_irrefutable_for_schema(
+            &schemas, &rest, expected
+        ));
 
         let oversized_rest: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
             super::super::CollectionPattern::Array {
@@ -1264,7 +1274,7 @@ mod tests {
                 rest: Some(Box::new(wildcard())),
                 suffix: Box::new([]),
             };
-        assert!(!structurally_irrefutable(
+        assert!(!structurally_irrefutable_for_schema(
             &schemas,
             &oversized_rest,
             expected
@@ -1305,14 +1315,18 @@ mod tests {
                 local: 0,
                 schema: f64,
             };
-        assert!(!structurally_irrefutable(&schemas, &narrowed, expected));
+        assert!(!structurally_irrefutable_for_schema(
+            &schemas, &narrowed, expected
+        ));
 
         let exact: super::super::CollectionPattern<SchemaId, MatchPatternValue> =
             super::super::CollectionPattern::Bind {
                 local: 0,
                 schema: dynamic,
             };
-        assert!(structurally_irrefutable(&schemas, &exact, expected));
+        assert!(structurally_irrefutable_for_schema(
+            &schemas, &exact, expected
+        ));
     }
 
     #[test]
