@@ -62,9 +62,9 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-callouts.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-callouts.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-callouts.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-audited.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-audited.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-audited.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
 code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
@@ -76,7 +76,7 @@ matching. Selective soft hyphens improve the Motivation column line endings
 without changing column widths or font sizes. The notation legend includes
 library imports. Status and Future Work
 describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.0
-target for 2028, including additional hosts and language features. The header
+release-candidate target for 2028, including additional hosts and language features. The header
 links to the website and GitHub repository. The footer invites contributions
 and bug reports.
 
@@ -105,9 +105,17 @@ dimensions are unchanged.
 Both chart subtitles use the same “Median ± MAD” style, and the left chart's
 measurement labels are slightly smaller. The implementation note states that
 performance specialists may optimize these illustrative implementations further.
-Both notes beneath the charts use medium-gold accent bars and inset text.
+The notes form one three-line callout below the right chart, with a medium-gold
+accent bar and fixed line spacing. Motivation paragraphs use matching line
+spacing. The typography audit preserves 27 pt prose, 18 pt footnotes and 51 pt
+main headings, with separate sizes for code, diagrams and measurements.
+The status paragraph has additional clearance above the timeline. Both QR
+arrows use the same yellow dotted stroke and open arrowhead style.
 The backend footnote relates JIT and AOT compilation and qualifies worker scaling
 by host support; the measured AOT row remains single-worker.
+The setup footnote distinguishes the CPU chart's eight-worker fused execution
+from the backend chart's per-turn publication. Benchmark measurements and
+chart data are unchanged.
 The bundle caption
 identifies its metadata for named inputs, exported state and initial values.
 
