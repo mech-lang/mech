@@ -72,16 +72,21 @@ display coordinates; the measurements and filter retain world coordinates.
   display-positive-excess := (display-range-excess + abs(display-range-excess)) / 2.0
   landmark-visible := 1.0 - ceil(display-positive-excess / (abs(display-range-excess) + 1.0))
   camera-ray-opacity := 0.65 * landmark-visible
-  truth-heading := truth-screen + 3.1 * screen-axis * [cos(next-truth[3]) sin(next-truth[3])]'
+  truth-heading := truth-screen + 4.3 * screen-axis * [cos(next-truth[3]) sin(next-truth[3])]'
   estimate-heading := estimate-screen + 3.1 * screen-axis * [cos(estimate[3]) sin(estimate[3])]'
   robot-samples := 0.0..=24.0
   robot-angle := robot-samples' * (2.0 * π / 24.0)
-  robot-outline := 1.7 * cos(robot-angle ** [1.0 1.0] - [0.0 π / 2.0])
-  truth-outline := truth-screen' + robot-outline
-  estimate-outline := estimate-screen' + robot-outline
+  robot-outline := cos(robot-angle ** [1.0 1.0] - [0.0 π / 2.0])
+  truth-outline := truth-screen' + 2.6 * robot-outline
+  estimate-outline := estimate-screen' + 1.7 * robot-outline
   truth-heading-line := [truth-screen'; truth-heading']
   estimate-heading-line := [estimate-screen'; estimate-heading']
-  camera-outline := truth-heading' + robot-outline * (0.6 / 1.7)
+  camera-outline := truth-heading' + 0.6 * robot-outline
+
+The cyan ring marks the actual simulated pose; the smaller yellow disk marks
+the EKF estimate. Both remain visible when their positions coincide. A solid
+cyan truth path remains visible between the muted-gold estimate trail's dots.
+Marker size and heading length affect only the drawing, not either pose.
 
 The position covariance determines the ellipse's axes and orientation. Clamping
 tiny negative eigenvalues to zero is a drawing operation, not a filter update.
@@ -167,9 +172,9 @@ covariance, and trail history are computed by Mech rather than by the renderer.
     | id<string>        positions<*>       fill<*>  stroke<*> stroke-width<f64> stroke-dasharray<*> line-cap<string> line-join<string> opacity<f64> closed<bool> |
     | "ellipse-fill"    covariance-ellipse 0xc08cc7 "none"    0.0               [0.0]               "round"          "round"           0.3          true         |
     | "covariance"      covariance-ellipse "none"   0xc08cc7 0.55              [0.0]               "round"          "round"           1.0          true         |
-    | "truth-path"      next-truth-path    "none"   0x78858d 0.6               [0.1 1.5]           "round"          "round"           1.0          false        |
+    | "truth-path"      next-truth-path    "none"   0x63d6c5 0.75              [0.0]               "round"          "round"           0.8          false        |
     | "estimate-path"   next-estimate-path "none"   0xad9159 0.6               [0.1 1.5]           "round"          "round"           1.0          false        |
-    | "truth"           truth-outline      0x10171a 0xacb9c1 0.45              [0.0]               "round"          "round"           1.0          true         |
+    | "truth"           truth-outline      "none"   0x63d6c5 0.55              [0.0]               "round"          "round"           1.0          true         |
     | "estimate"        estimate-outline   0xf6c04e 0xf6c04e 0.45              [0.0]               "round"          "round"           1.0          true         |
     | "truth-heading"   truth-heading-line "none"   0x687780 0.7               [0.0]               "round"          "round"           1.0          false        |
     | "estimate-heading" estimate-heading-line "none" 0x687780 0.7            [0.0]               "round"          "round"           1.0          false        |

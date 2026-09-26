@@ -168,7 +168,8 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
 }
 
 .hero .mech-meta .mech-author {
-  flex: 1 1 auto;
+  flex: 0 1 24ch;
+  max-width: 24ch;
   min-width: 0;
 }
 
@@ -183,6 +184,23 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
 
 .hero-visual {
   min-width: 0;
+}
+
+/* Match the docked resize track to the visible panes, not the document's
+ * intrinsic grid-row height, so its centered grip stays in the viewport. */
+@media (min-width: 901px) {
+  html[data-mech-shim="blog"] [data-mech-repl-host][data-mech-console-mode="docked"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+    align-self: start;
+    height: calc(100dvh - var(--mech-repl-header-height));
+    position: sticky;
+    top: var(--mech-repl-header-height);
+  }
+
+  /* The divider is the console's left border, at the track's right edge. */
+  html[data-mech-shim="blog"] [data-mech-repl-host][data-mech-console-mode="docked"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle])::before,
+  html[data-mech-shim="blog"] [data-mech-repl-host][data-mech-console-mode="docked"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle])::after {
+    left: calc(100% + 0.5px);
+  }
 }
 
 /* A document without hero artwork uses the same title and metadata styles

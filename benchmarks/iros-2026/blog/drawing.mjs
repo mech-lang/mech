@@ -34,7 +34,7 @@ export class MechScene {
     if(!render) throw new Error('The shared Mech scene renderer is unavailable.');
     const svg=render(this.program.scene());
     svg.id='robot-scene';
-    svg.setAttribute('aria-label','Robot camera, selectable landmarks, accepted EKF estimate, trail, and covariance');
+    svg.setAttribute('aria-label','Actual simulated robot pose and solid cyan path, yellow EKF estimate and dotted gold path, robot camera, selectable landmarks, and covariance');
     document.getElementById('robot-scene').replaceWith(svg);
     const visible=this.program.readNumbers('landmark-visible')[0];
     document.getElementById('measurement-status').textContent=visible

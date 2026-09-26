@@ -47,9 +47,7 @@
 .mech-output-region-application .live-demo { margin:0; padding:20px; border:0; border-radius:0; font-family:var(--font-family, sans-serif); }
 .mech-output-region-application .demo-heading .kicker { margin:0 0 8px; font-size:12px; }
 .mech-output-region-application .demo-heading h3 { margin:0 0 12px; }
-.mech-output-region-application .scene-wrap svg { max-height:42dvh; min-height:210px; }
 .mech-output-region-application .telemetry pre { font-size:10px; line-height:1.6; }
-[data-mech-output-fullscreen-active="true"] .mech-output-region-application .scene-wrap svg { max-height:52dvh; }
 [data-mech-output-fullscreen-active="true"] .mech-output-region-application .live-demo { padding-top:44px; }
 .source-card { background:var(--mech-code-bg); border:1px solid var(--mech-border); border-radius:3px; margin:24px 0; padding:20px; overflow:auto; font:14px/1.65 'Fira Code',monospace; box-shadow:var(--mech-shadow-content-block); }
 .source-card pre { margin:0; font:inherit; white-space:pre; }
@@ -88,10 +86,17 @@ html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-captio
 .live-demo label { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--mech-text-secondary); }
 .demo-body { display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:20px; padding:22px 0; }
 .scene-wrap { align-self:start; background:var(--mech-code-bg); border:1px solid var(--mech-border); }
-.scene-wrap svg { display:block; width:100%; }
+/* The snapshot's width/height attributes describe its coordinate system.
+ * Scale both dimensions together to fill the available scene column. */
+.live-demo .scene-wrap svg { display:block; width:100%; height:auto; max-height:none; min-height:0; }
 .scene-key { display:flex; flex-wrap:wrap; gap:9px; font-size:10px; line-height:1.6; padding:9px 12px; }
-.truth-key { color:var(--mech-text-secondary); }
+.truth-key { color:#63d6c5; }
 .estimate-key { color:var(--mech-logo); }
+.scene-key :is(.truth-key,.estimate-key) { position:relative; padding-left:30px; }
+.scene-key :is(.truth-key,.estimate-key)::before { content:""; position:absolute; left:0; top:50%; width:24px; border-top:2px solid currentColor; }
+.scene-key :is(.truth-key,.estimate-key)::after { content:""; position:absolute; left:8px; top:50%; width:8px; height:8px; border:2px solid currentColor; border-radius:50%; background:var(--mech-code-bg); transform:translateY(-50%); }
+.scene-key .estimate-key::before { border-top-style:dotted; border-color:#ad9159; }
+.scene-key .estimate-key::after { background:currentColor; }
 .ellipse-key { color:var(--mech-syntax-operator); }
 .landmark-key { color:var(--accent-secondary-teal-soft); }
 .metric { display:flex; justify-content:space-between; gap:10px; flex-direction:column; border-bottom:1px solid var(--mech-border); padding:0 0 8px; margin-bottom:10px; font-size:11px; line-height:1.5; }

@@ -31,7 +31,25 @@ async function until(expression,description,limit=60000,expectedError=''){
   throw new Error('Timed out: '+description);
 }
 const change=async(id,value)=>evaluate(`(()=>{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(String(value))};e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);
-const snapshot=()=>evaluate(`({count:document.getElementById('turn-count').textContent,telemetry:document.getElementById('state-values').textContent,trail:document.querySelector('[data-mech-scene-id="estimate-path"]')?.getAttribute('points'),truth:document.querySelector('[data-mech-scene-id="truth-body"]')?.getAttribute('points'),status:document.getElementById('measurement-status').textContent})`);
+const snapshot=()=>evaluate(`({count:document.getElementById('turn-count').textContent,telemetry:document.getElementById('state-values').textContent,trail:document.querySelector('[data-mech-scene-id="estimate-path"]')?.getAttribute('points'),truth:document.querySelector('[data-mech-scene-id="truth"]')?.getAttribute('points'),truthTrail:document.querySelector('[data-mech-scene-id="truth-path"]')?.getAttribute('points'),status:document.getElementById('measurement-status').textContent})`);
+async function dragSlider(name){
+  await evaluate(`document.getElementById(${JSON.stringify(name)}).scrollIntoView({block:'center'})`);
+  const box=await evaluate(`(()=>{const e=document.getElementById(${JSON.stringify(name)}),r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,min:Number(e.min),max:Number(e.max)};})()`);
+  const y=box.y+box.h/2,start=box.x+box.w*.2;
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:start,y,button:'left',buttons:1,clickCount:1});
+  const samples=[];
+  for(let i=0;i<=8;i++){
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:box.x+box.w*(.2+i*.04),y,button:'left',buttons:1});
+    await new Promise(r=>setTimeout(r,70));
+    samples.push(await evaluate(`({disabled:document.getElementById(${JSON.stringify(name)}).disabled,value:Number(document.getElementById(${JSON.stringify(name)}).value)})`));
+  }
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:box.x+box.w*.52,y,button:'left',buttons:0,clickCount:1});
+  assert(samples.every(s=>!s.disabled),name+' stays enabled throughout a real pointer drag');
+  assert(new Set(samples.map(s=>s.value)).size>=5,name+' follows the held pointer across running turns');
+  const final=samples.at(-1).value;
+  assert(Math.abs((final-box.min)/(box.max-box.min)-.52)<.05,name+' reaches the dragged position');
+  return {name,samples};
+}
 async function step(){
   const before=await evaluate('document.getElementById("turn-count").textContent');
   await evaluate('document.getElementById("step").click()');
@@ -69,6 +87,10 @@ try{
       assert(initial.status.includes('in camera range'));
       await step();const accepted=await snapshot();
       assert.notEqual(accepted.trail,initial.trail,'accepted state advances trail');
+      assert.notEqual(accepted.truthTrail,initial.truthTrail,'accepted turn advances actual robot path');
+      const poses=await evaluate(`Object.fromEntries(['truth','estimate'].map(id=>{const e=document.querySelector('[data-mech-scene-id="'+id+'"]');return [id,{points:e.getAttribute('points'),stroke:e.getAttribute('stroke'),fill:e.getAttribute('fill')}]}))`);
+      assert.notEqual(poses.truth.points,poses.estimate.points,'truth and estimate use distinguishable geometry');
+      assert.equal(poses.truth.fill,'none','truth ring does not hide the estimate when they overlap');
       await change('camera-range',10);
       const outside=await snapshot();
       assert.equal(outside.count,accepted.count,'control edit must not advance numerical turn');
@@ -85,6 +107,7 @@ try{
       const rejected=await snapshot();
       assert.equal(rejected.telemetry,recovered.telemetry,'rejection retains numerical state');
       assert.equal(rejected.trail,recovered.trail,'rejection retains Mech trail');
+      assert.equal(rejected.truthTrail,recovered.truthTrail,'rejection retains actual robot path');
       assert(rejected.count.includes('1 rejected'));
       report.cases.push({backend,instances,initial,accepted,predicted,recovered,rejected,drawing});
       console.log('PASS',backend,instances,'range, reentry, scene, rejection');
@@ -93,12 +116,29 @@ try{
     }
   }
   if(!process.env.IROS_QUICK){
+    report.liveDrags=[];
+    for(const backend of modes){
+      await change('backend',backend);await until('!document.getElementById("run").disabled','drag backend compilation');
+      await change('instances',4096);await until('!document.getElementById("run").disabled','drag batch compilation');
+      await change('velocity',1);await change('omega',.015);await change('noise',.02);await change('camera-range',100);
+      const before=await snapshot();
+      await evaluate('document.getElementById("run").click()');
+      const drags=[];
+      for(const name of ['velocity','omega','noise','camera-range'])drags.push(await dragSlider(name));
+      await evaluate('document.getElementById("pause").click()');
+      await until('!document.getElementById("step").disabled','pause after live slider drag');
+      const after=await snapshot();assert.notEqual(after.count,before.count,'turns continue while sliders are dragged');
+      assert.notEqual(after.truthTrail,before.truthTrail,'robot moves while steering');
+      report.liveDrags.push({backend,drags,before:before.count,after:after.count});
+      await evaluate('document.getElementById("reset").click()');await until('!document.getElementById("run").disabled','drag reset');
+    }
     report.parity=await evaluate(`(async()=>{const runtime=await import('./assets/runtime.mjs');const {verifyKernel}=await import('./assets/verify.mjs');return verifyKernel({WasmKernel:runtime.WasmKernel,source:await fetch('source/ekf.mec').then(r=>r.text())});})()`);
     assert.equal(report.parity.status,'passed',JSON.stringify(report.parity));
     await evaluate('document.fonts.ready.then(()=>true)');
     for(const [width,height] of [[320,740],[360,800],[390,844],[900,1000],[1920,1100]]){
       await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
       await evaluate('MechDocumentController.showOutput()');
+      await evaluate(`(()=>{for(let e=document.getElementById('ekf-app');e;e=e.parentElement)e.scrollTop=0;})()`);
       for(const panel of ['open','closed']) {
       if(panel==='closed') await evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{key:String.fromCharCode(96),bubbles:true}))');
       assert(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'no page horizontal overflow at '+width);
@@ -109,6 +149,19 @@ try{
       })()`);
       assert.equal(metadata.dateLines,1,'date stays on one line at '+width);
       assert(metadata.authorRight<metadata.dateLeft&&metadata.dateRight<=metadata.metaRight+1,'metadata fits without overlap at '+width);
+      assert(metadata.dateLeft-metadata.authorRight<40,'date sits near wrapped authors at '+width);
+      if(panel==='open'){
+        const layout=await evaluate(`(()=>{const svg=document.getElementById('robot-scene'),r=svg.getBoundingClientRect(),v=svg.viewBox.baseVal;return {width:r.width,height:r.height,aspect:v.width/v.height,parentWidth:svg.parentElement.clientWidth};})()`);
+        assert(Math.abs(layout.width/layout.height-layout.aspect)<.01,'scene scales proportionally at '+width);
+        assert(Math.abs(layout.width-layout.parentWidth)<2,'scene fills available width at '+width);
+        (report.sceneLayouts??=[]).push({viewportWidth:width,...layout});
+        if(width>900){
+          const grip=await evaluate(`(()=>{const track=document.querySelector('[data-mech-repl-host]>[data-mech-console-resizer]:not([data-mech-console-edge-handle])'),r=track.getBoundingClientRect(),p=document.querySelector('[data-mech-console-pane]').getBoundingClientRect(),s=getComputedStyle(track,'::after');return {centerX:r.x+parseFloat(s.left),dividerX:p.x+.5,centerY:r.y+parseFloat(s.top),paneCenterY:p.y+p.height/2};})()`);
+          assert(Math.abs(grip.centerX-grip.dividerX)<1,'grip centered on divider');
+          assert(Math.abs(grip.centerY-grip.paneCenterY)<1,'grip vertically centered');
+          (report.gripLayouts??=[]).push({viewportWidth:width,...grip});
+        }
+      }
       (report.metadataLayouts??=[]).push({width,panel,...metadata});
       const image=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
       writeFileSync(output.replace(/\.json$/,`-${width}-${panel}.png`),Buffer.from(image.data,'base64'));

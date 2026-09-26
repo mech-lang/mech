@@ -450,3 +450,31 @@ presentation mode, language examples, and mobile-chart tests passed.
 The three exact downloadable Rust programs also compiled and ran against this
 source: JIT embedding, AOT bundle production, and bundle loading. Their four
 exported states agreed within f32 tolerance.
+
+## Live controls and distinct truth/estimate rendering
+
+The subsequent regression report is
+[scene-controls-verification.json](evidence/scene-controls-verification.json).
+It records the updated scene hash separately from the preceding camera build;
+the numerical source and WASM binary are unchanged.
+
+Real pointer drags move velocity, angular velocity, noise, and camera range
+through multiple values while 4,096-filter CPU and WebGPU runs continue. Sensor
+controls no longer become disabled during each numerical turn. Coordinator
+tests hold a GPU turn pending and verify that it retains its original input
+snapshot, while the next turn consumes the new controls. Compilation and
+verification still lock controls that would conflict with those operations.
+
+The scene uses a transparent cyan ring and solid path for simulated truth,
+and a smaller yellow marker and dotted muted-gold path for the estimate.
+Actual Mech/WASM checks verify distinct coordinate bindings, visible coincident
+markers, independent histories, and twelve accepted EKF updates. The eight
+CPU/GPU browser cases also verify both paths advance on acceptance and remain
+unchanged on rejection. Neither the simulated motion nor the filter equations
+were changed to exaggerate tracking error.
+
+Responsive checks cover 320, 360, 390, 900, and 1,920 pixels with the output pane
+open and closed. The drawing fills its available width at the scene's 200:130
+aspect ratio, authors wrap beside a single-line date, and the desktop grip is
+centered on the divider. These are desktop-browser responsive checks, not
+physical-phone qualification or performance measurements.

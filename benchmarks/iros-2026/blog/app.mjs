@@ -40,6 +40,7 @@ openOutputFromHash();
 for(const event of ['mech:console-ready','mech:document-ready','hashchange']) window.addEventListener(event,openOutputFromHash);
 let source, sceneSource, repl, kernel, device, manifest, adapter, active = 0;
 let mode = 'paused', busy = false, running = false, generation = 0, samples = [], accepted = 0, rejected = 0;
+let turnInFlight = false;
 let state, covariance, frames = [], ready = false;
 let committedBackend = 'cpu', committedInstances = '4096';
 const rowMajor = a => new Float32Array([a[0],a[3],a[6],a[1],a[4],a[7],a[2],a[5],a[8]]);
@@ -49,7 +50,10 @@ const median = values => {
 };
 function controls() {
   for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 'fault';
-  for (const id of ['reset','instances','backend','verify','landmark','camera-range','velocity','omega','noise']) $(id).disabled = !ready || busy;
+  for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy;
+  // A numerical turn snapshots these inputs before submission. Keep native
+  // slider drags alive while it runs; newer values belong to the next turn.
+  for (const id of ['landmark','camera-range','velocity','omega','noise']) $(id).disabled = !ready || (busy && !turnInFlight);
   $('pause').disabled = !running;
   $('run').disabled ||= running;
 }
@@ -140,7 +144,7 @@ function sensorControls() {
 }
 async function turn(invalid = false) {
   if (busy || !kernel || mode === 'fault') return;
-  busy = true; controls(); error('');
+  busy = true; turnInFlight = true; controls(); error('');
   let phase = 'preparation', published = false, integrityRejected = false;
   try {
     const observation = scene.observation(sensorControls(),invalid);
@@ -198,7 +202,7 @@ async function turn(invalid = false) {
       catch(displayError) { error(`${diagnostic} Telemetry display also failed: ${String(displayError)}`); }
     }
   } finally {
-    busy = false; controls();
+    busy = false; turnInFlight = false; controls();
   }
 }
 async function loop(token) {
