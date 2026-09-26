@@ -59,9 +59,14 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
     let mut front_matter = TitleFrontMatter::default();
 
     while many1(equal)(input.clone()).is_err() {
-        if let Ok((next_input, import)) = module_import(input.clone()) {
+        if let Ok((next_input, imports)) = module_imports(input.clone()) {
             let (next_input, comment) = code_terminal(next_input)?;
-            front_matter.imports.push((import, comment));
+            front_matter
+                .imports
+                .extend(imports.into_iter().map(|import| (import, None)));
+            if let Some((_, trailing_comment)) = front_matter.imports.last_mut() {
+                *trailing_comment = comment;
+            }
             input = next_input;
             continue;
         }

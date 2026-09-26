@@ -1948,6 +1948,8 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_absolute(output, &inputs)
             } else if let Some(comparison) = comparison_operation(&operation) {
                 self.lower_compare(output, &inputs, comparison)
+            } else if operation == "logic/all" {
+                self.lower_all(output, &inputs)
             } else if let Some(logic) = logic_operation(&operation) {
                 self.lower_logic(output, &inputs, logic)
             } else if let Some(elementwise) = scalar_operation(&operation) {
@@ -2194,31 +2196,137 @@ impl<'a> BatchCompiler<'a> {
         inputs: &[ArtifactSource],
         operation: ComparisonOperation,
     ) -> Result<(), String> {
-        if inputs.len() != 2 || self.shape(output)?.elements() != 1 {
-            return Err("comparison requires two scalar inputs and one scalar output".to_owned());
+        if inputs.len() != 2 {
+            return Err("comparison requires two inputs".to_owned());
         }
-        self.reserve_scalar_instructions(1, 1, 1)?;
-        let right = self.operand(inputs[1], 0)?;
-        if operation == ComparisonOperation::LessEqual
-            && matches!(right, ScalarOperand::Constant(value) if value == f32::MAX)
-            && let Some(value) = self.absolute_value_input(inputs[0])
-        {
+        let shape = self.shape(output)?;
+        let left_shape = self.source_shape(inputs[0])?;
+        let right_shape = self.source_shape(inputs[1])?;
+        for input_shape in [left_shape, right_shape] {
+            if input_shape.elements() != 1 && input_shape != shape {
+                return Err("comparison input shape differs from output shape".to_owned());
+            }
+        }
+        self.reserve_scalar_instructions(shape.elements(), 1, 1)?;
+        let left_operands = self.source_operands(inputs[0])?;
+        let right_operands = self.source_operands(inputs[1])?;
+        for component in 0..shape.elements() {
+            let left_component = if left_shape.elements() == 1 {
+                0
+            } else {
+                component
+            };
+            let right_component = if right_shape.elements() == 1 {
+                0
+            } else {
+                component
+            };
+            let right = right_operands[right_component];
+            if shape.elements() == 1
+                && operation == ComparisonOperation::LessEqual
+                && matches!(right, ScalarOperand::Constant(value) if value == f32::MAX)
+                && let Some(value) = self.absolute_value_input(inputs[0])
+            {
+                self.emit(
+                    output,
+                    component,
+                    ScalarComputation::IsFinite(self.operand(value, 0)?),
+                );
+                continue;
+            }
             self.emit(
                 output,
-                0,
-                ScalarComputation::IsFinite(self.operand(value, 0)?),
+                component,
+                ScalarComputation::Compare {
+                    operation,
+                    left: left_operands[left_component],
+                    right,
+                },
             );
+        }
+        Ok(())
+    }
+
+    fn lower_all(&mut self, output: CellSlotId, inputs: &[ArtifactSource]) -> Result<(), String> {
+        if inputs.len() != 1 || self.shape(output)?.elements() != 1 {
+            return Err("all requires one Boolean input and one scalar output".to_owned());
+        }
+        let source_schema = |source: ArtifactSource| -> Result<&SchemaBody, String> {
+            let schema = match source {
+                ArtifactSource::Slot(slot) => {
+                    self.artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .ok_or_else(|| format!("all input slot {} does not exist", slot.get()))?
+                        .schema
+                }
+                ArtifactSource::Constant(constant) => self
+                    .artifact
+                    .constants()
+                    .get(constant)
+                    .ok_or_else(|| format!("all input constant {} does not exist", constant.get()))?
+                    .schema(),
+            };
+            self.artifact
+                .schemas()
+                .get(schema)
+                .map(|schema| schema.body())
+                .ok_or_else(|| "all input schema does not exist".to_owned())
+        };
+        let boolean_input = match source_schema(inputs[0])? {
+            SchemaBody::Bool => true,
+            SchemaBody::Matrix { element, .. } => element.as_ref() == &SchemaBody::Bool,
+            _ => false,
+        };
+        if !boolean_input || source_schema(ArtifactSource::Slot(output))? != &SchemaBody::Bool {
+            return Err(
+                "all requires a Boolean scalar or matrix input and scalar Boolean output"
+                    .to_owned(),
+            );
+        }
+        let elements = self.source_shape(inputs[0])?.elements();
+        // A scalar is copied, an empty reduction is true, and all larger
+        // reductions use the Boolean instructions already shared by each target.
+        self.reserve_scalar_instructions(elements.saturating_sub(1).max(1), 1, 1)?;
+        let mut operands = self.source_operands(inputs[0])?;
+        if elements <= 1 {
+            let value = if elements == 0 {
+                ScalarOperand::Constant(1.0)
+            } else {
+                operands[0]
+            };
+            self.emit(output, 0, ScalarComputation::Copy(value));
             return Ok(());
         }
-        self.emit(
-            output,
-            0,
-            ScalarComputation::Compare {
-                operation,
-                left: self.operand(inputs[0], 0)?,
-                right,
-            },
-        );
+        // Keep the generated tree balanced: integrity-predicate construction
+        // recursively follows these producers before flattening conjunctions.
+        let mut width = elements;
+        while width > 1 {
+            let mut next_width = 0;
+            for first in (0..width).step_by(2) {
+                if first + 1 == width {
+                    operands[next_width] = operands[first];
+                } else {
+                    let computation = ScalarComputation::Logic {
+                        operation: LogicOperation::And,
+                        inputs: vec![operands[first], operands[first + 1]],
+                    };
+                    if width == 2 {
+                        self.emit(output, 0, computation);
+                    } else {
+                        let temporary = self.register_count;
+                        self.register_count += 1;
+                        self.instructions.push(ScalarInstruction {
+                            output: temporary,
+                            computation,
+                        });
+                        operands[next_width] = ScalarOperand::Register(temporary);
+                    }
+                }
+                next_width += 1;
+            }
+            width = next_width;
+        }
         Ok(())
     }
 
@@ -2607,6 +2715,37 @@ impl<'a> BatchCompiler<'a> {
         ScalarOperand::Register(output)
     }
 
+    /// Materialize a source once for elementwise lowering. In particular,
+    /// decoding a matrix constant for every component would take quadratic work.
+    fn source_operands(&self, source: ArtifactSource) -> Result<Vec<ScalarOperand>, String> {
+        let elements = self.source_shape(source)?.elements();
+        let mut operands = Vec::new();
+        operands
+            .try_reserve_exact(elements)
+            .map_err(|_| "unable to reserve scalar source operands".to_owned())?;
+        match source {
+            ArtifactSource::Slot(slot) => {
+                let offset = self.register_offsets[&slot];
+                let end = offset
+                    .checked_add(elements)
+                    .ok_or_else(|| "scalar source register range overflow".to_owned())?;
+                operands.extend((offset..end).map(ScalarOperand::Register));
+            }
+            ArtifactSource::Constant(constant) => {
+                let values = artifact_constant_values(self.artifact, constant)?;
+                if values.len() != elements {
+                    return Err(format!(
+                        "constant {} contains {} elements, expected {elements}",
+                        constant.get(),
+                        values.len(),
+                    ));
+                }
+                operands.extend(values.into_iter().map(ScalarOperand::Constant));
+            }
+        }
+        Ok(operands)
+    }
+
     fn operand(&self, source: ArtifactSource, component: usize) -> Result<ScalarOperand, String> {
         match source {
             ArtifactSource::Slot(slot) => {
@@ -2973,9 +3112,9 @@ impl<'a> BatchCompiler<'a> {
                     .get(constant)
                     .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
                 match value.data() {
-                    ValueData::F32(_) => Ok(FixedShape::scalar()),
+                    ValueData::F32(_) | ValueData::Bool(_) => Ok(FixedShape::scalar()),
                     ValueData::Matrix(_) => fixed_shape(self.artifact, value.schema()),
-                    _ => Err("only f32 constants are admitted".to_owned()),
+                    _ => Err("only f32 and Boolean constants are admitted".to_owned()),
                 }
             }
         }
@@ -3066,14 +3205,20 @@ fn fixed_shape(
         SchemaBody::Matrix {
             element,
             dimensions,
-        } if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) => dimensions
-            .iter()
-            .map(|dimension| match dimension {
-                DimensionExpr::Constant(value) => Ok(*value),
-                _ => Err("matrix dimension is not compile-time constant".to_owned()),
-            })
-            .collect::<Result<Vec<_>, _>>()?
-            .into_boxed_slice(),
+        } if matches!(
+            element.as_ref(),
+            SchemaBody::FloatingPoint(FloatWidth::W32) | SchemaBody::Bool
+        ) =>
+        {
+            dimensions
+                .iter()
+                .map(|dimension| match dimension {
+                    DimensionExpr::Constant(value) => Ok(*value),
+                    _ => Err("matrix dimension is not compile-time constant".to_owned()),
+                })
+                .collect::<Result<Vec<_>, _>>()?
+                .into_boxed_slice()
+        }
         body => {
             return Err(format!(
                 "schema {body:?} is not fixed-shape f32 numeric data"
@@ -3097,7 +3242,10 @@ fn fixed_shape_with_dimensions(
             Ok(FixedShape::scalar())
         }
         SchemaBody::Matrix { element, .. }
-            if matches!(element.as_ref(), SchemaBody::FloatingPoint(FloatWidth::W32)) =>
+            if matches!(
+                element.as_ref(),
+                SchemaBody::FloatingPoint(FloatWidth::W32) | SchemaBody::Bool
+            ) =>
         {
             let dimensions = dimensions
                 .iter()
@@ -3188,7 +3336,23 @@ fn artifact_constant_values(
         .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
     match value.data() {
         ValueData::F32(value) => Ok(vec![value.to_f32()]),
+        ValueData::Bool(value) => Ok(vec![if *value { 1.0 } else { 0.0 }]),
         ValueData::Matrix(matrix) => match matrix.elements() {
+            SequenceView::Bool(values) => {
+                let shape = fixed_shape(artifact, value.schema())?;
+                let mut column_major = vec![0.0; values.len()];
+                for row in 0..shape.rows {
+                    for column in 0..shape.columns {
+                        column_major[shape.index(row, column)] =
+                            if values[row * shape.columns + column] {
+                                1.0
+                            } else {
+                                0.0
+                            };
+                    }
+                }
+                Ok(column_major)
+            }
             SequenceView::F32(values) => {
                 let shape = fixed_shape(artifact, value.schema())?;
                 // ProgramArtifact snapshots are canonical row-major values;
@@ -4789,7 +4953,15 @@ mod native {
             let submission = self.queue.submit(Some(encoder.finish()));
             unsubmitted.record_submitted(submission);
 
-            let readback_result = (|| {
+            // Complete the transfer's plan scope before host staging opens its
+            // own scope. A successful buffer mapping alone does not release it.
+            let completion_result = crate::settle_submissions(
+                &self.device,
+                &mut self.submission_tracker,
+                &self.managed_memory,
+            )
+            .map_err(|error| BatchedExecutionError::Native(error.to_string()));
+            let readback_result = completion_result.and_then(|_| {
                 let mut state = BTreeMap::new();
                 for (slot, size) in &readbacks {
                     let readback = &self.output_readbacks[slot];
@@ -4824,15 +4996,8 @@ mod native {
                     drop(cleanup);
                 }
                 Ok::<_, BatchedExecutionError>(state)
-            })();
-            let completion_result = crate::settle_submissions(
-                &self.device,
-                &mut self.submission_tracker,
-                &self.managed_memory,
-            )
-            .map_err(|error| BatchedExecutionError::Native(error.to_string()));
+            });
             let state = readback_result?;
-            completion_result?;
             for slot in state.keys().copied() {
                 let object = self
                     .memory_plan

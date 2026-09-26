@@ -1,7 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
-#[cfg(any(feature = "f32", feature = "f64", feature = "matrix"))]
+#[cfg(any(feature = "bool", feature = "f32", feature = "f64", feature = "matrix"))]
 use mech_core::ValueData;
 use mech_core::{MResult, MechError, MechErrorKind, Value, ValueCell};
 #[cfg(feature = "matrix")]
@@ -186,9 +186,28 @@ impl RuntimeHostInputValue {
         cell.snapshot()
     }
 
+    /// Detaches a canonical floating-point or Boolean scalar or matrix.
+    /// Matrix values retain their logical row-major order.
+    pub fn from_value(value: &Value) -> MResult<Self> {
+        Self::from_value_impl(value, true)
+    }
+
     /// Detaches a canonical numeric scalar or matrix for host input queues.
+    /// Boolean values are deliberately excluded; generic compiler boundaries
+    /// should use [`Self::from_value`] instead.
     pub fn from_numeric_value(value: &Value) -> MResult<Self> {
+        Self::from_value_impl(value, false)
+    }
+
+    fn from_value_impl(value: &Value, allow_boolean: bool) -> MResult<Self> {
+        let error_name = if allow_boolean {
+            "RuntimeHostInputValueUnsupported"
+        } else {
+            "RuntimeNumericValueUnsupported"
+        };
         match value.data() {
+            #[cfg(feature = "bool")]
+            ValueData::Bool(value) if allow_boolean => Ok(Self::Bool(*value)),
             #[cfg(feature = "f32")]
             ValueData::F32(value) => Ok(Self::F32(value.to_f32())),
             #[cfg(feature = "f64")]
@@ -197,49 +216,55 @@ impl RuntimeHostInputValue {
             ValueData::Matrix(matrix) => {
                 let schemas = value.schemas().ok_or_else(|| {
                     input_error(
-                        "RuntimeNumericValueUnsupported",
+                        error_name,
                         "canonical matrix input does not retain its schema table",
                     )
                 })?;
                 let schema = schemas.entry(value.schema()).ok_or_else(|| {
-                    input_error(
-                        "RuntimeNumericValueUnsupported",
-                        "canonical matrix input schema is absent",
-                    )
+                    input_error(error_name, "canonical matrix input schema is absent")
                 })?;
                 let SchemaBody::Matrix { dimensions, .. } = schema.schema().body() else {
                     return Err(input_error(
-                        "RuntimeNumericValueUnsupported",
+                        error_name,
                         "canonical matrix payload has a non-matrix schema",
                     ));
                 };
                 let [rows, columns] = dimensions.as_ref() else {
                     return Err(input_error(
-                        "RuntimeNumericValueUnsupported",
+                        error_name,
                         "runtime host matrices must have exactly two dimensions",
                     ));
                 };
-                let rows =
-                    usize::try_from(value.shape().resolve_dimension(rows).map_err(|error| {
-                        input_error("RuntimeNumericValueUnsupported", format!("{error:?}"))
-                    })?)
-                    .map_err(|_| {
-                        input_error(
-                            "RuntimeNumericValueUnsupported",
-                            "matrix row count does not fit the host platform",
-                        )
-                    })?;
-                let columns =
-                    usize::try_from(value.shape().resolve_dimension(columns).map_err(|error| {
-                        input_error("RuntimeNumericValueUnsupported", format!("{error:?}"))
-                    })?)
-                    .map_err(|_| {
-                        input_error(
-                            "RuntimeNumericValueUnsupported",
-                            "matrix column count does not fit the host platform",
-                        )
-                    })?;
+                let rows = usize::try_from(
+                    value
+                        .shape()
+                        .resolve_dimension(rows)
+                        .map_err(|error| input_error(error_name, format!("{error:?}")))?,
+                )
+                .map_err(|_| {
+                    input_error(
+                        error_name,
+                        "matrix row count does not fit the host platform",
+                    )
+                })?;
+                let columns = usize::try_from(
+                    value
+                        .shape()
+                        .resolve_dimension(columns)
+                        .map_err(|error| input_error(error_name, format!("{error:?}")))?,
+                )
+                .map_err(|_| {
+                    input_error(
+                        error_name,
+                        "matrix column count does not fit the host platform",
+                    )
+                })?;
                 match matrix.elements() {
+                    SequenceView::Bool(values) if allow_boolean => Ok(Self::BoolMatrix {
+                        rows,
+                        columns,
+                        values: values.to_vec(),
+                    }),
                     #[cfg(feature = "f32")]
                     SequenceView::F32(values) => Ok(Self::F32Matrix {
                         rows,
@@ -253,13 +278,17 @@ impl RuntimeHostInputValue {
                         values: values.iter().map(|value| value.to_f64()).collect(),
                     }),
                     _ => Err(input_error(
-                        "RuntimeNumericValueUnsupported",
-                        "canonical matrix element type is not a supported numeric host input",
+                        error_name,
+                        if allow_boolean {
+                            "canonical matrix element type is not a supported floating-point or Boolean host input"
+                        } else {
+                            "canonical matrix element type is not a supported numeric host input"
+                        },
                     )),
                 }
             }
             _ => Err(input_error(
-                "RuntimeNumericValueUnsupported",
+                error_name,
                 format!(
                     "canonical value kind `{}` cannot become a detached runtime input",
                     value.data().kind()
@@ -697,6 +726,54 @@ mod tests {
         assert!(matches!(unit.data(), mech_core::ValueData::Tuple(values) if values.is_empty()));
     }
 
+    #[cfg(feature = "bool")]
+    #[test]
+    fn boolean_scalars_round_trip_through_generic_host_conversion() {
+        for expected in [false, true] {
+            let original = RuntimeHostInputValue::Bool(expected).into_value().unwrap();
+            let detached = RuntimeHostInputValue::from_value(&original).unwrap();
+            assert_eq!(detached, RuntimeHostInputValue::Bool(expected));
+            assert!(RuntimeHostInputValue::from_numeric_value(&original).is_err());
+
+            let round_trip = detached.into_value().unwrap();
+            assert_eq!(round_trip.schema_key(), original.schema_key());
+            assert!(matches!(round_trip.data(), ValueData::Bool(value) if *value == expected));
+        }
+    }
+
+    #[cfg(feature = "matrixd")]
+    #[test]
+    fn boolean_matrices_round_trip_in_row_major_order() {
+        for (rows, columns) in [(1, 3), (3, 1), (2, 3), (3, 2), (2, 4)] {
+            let values = (0..rows * columns)
+                .map(|index| index % 5 == 0 || index % 7 == 2)
+                .collect::<Vec<_>>();
+            let expected = RuntimeHostInputValue::BoolMatrix {
+                rows,
+                columns,
+                values: values.clone(),
+            };
+            let original = expected.clone().into_value().unwrap();
+            let detached = RuntimeHostInputValue::from_value(&original).unwrap();
+            assert_eq!(detached, expected);
+            assert!(RuntimeHostInputValue::from_numeric_value(&original).is_err());
+
+            let round_trip = detached.into_value().unwrap();
+            assert_eq!(round_trip.schema_key(), original.schema_key());
+            assert_eq!(
+                round_trip.shape().parameter_values(),
+                original.shape().parameter_values()
+            );
+            let ValueData::Matrix(matrix) = round_trip.data() else {
+                panic!("Boolean round trip did not produce a matrix");
+            };
+            let SequenceView::Bool(actual) = matrix.elements() else {
+                panic!("Boolean round trip changed its element schema");
+            };
+            assert_eq!(actual, values);
+        }
+    }
+
     #[cfg(all(feature = "matrix", feature = "f32", feature = "f64"))]
     #[test]
     fn nonsquare_numeric_matrices_round_trip_in_row_major_order() {
@@ -717,6 +794,10 @@ mod tests {
         .unwrap();
         let f32_schema = f32_original.schema_key();
         let f32_detached = RuntimeHostInputValue::from_numeric_value(&f32_original).unwrap();
+        assert_eq!(
+            RuntimeHostInputValue::from_value(&f32_original).unwrap(),
+            f32_detached
+        );
         let RuntimeHostInputValue::F32Matrix {
             rows,
             columns,
@@ -767,6 +848,10 @@ mod tests {
         .unwrap();
         let f64_schema = f64_original.schema_key();
         let f64_detached = RuntimeHostInputValue::from_numeric_value(&f64_original).unwrap();
+        assert_eq!(
+            RuntimeHostInputValue::from_value(&f64_original).unwrap(),
+            f64_detached
+        );
         let RuntimeHostInputValue::F64Matrix {
             rows,
             columns,

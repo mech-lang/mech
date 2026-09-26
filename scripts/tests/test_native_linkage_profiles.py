@@ -1,6 +1,8 @@
-"""Cover the existing math surface partition in native-link-only builds."""
+"""Cover native profile partitions and the explicit Boolean-reduction addition."""
 
 import importlib.util
+import copy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,18 +18,32 @@ SPEC.loader.exec_module(LINKAGE)
 
 
 class NativeLinkageProfileTests(unittest.TestCase):
-    def test_sharded_catalog_union_is_the_extended_rust_contract(self):
-        entries = [
-            {"runtime_factory_id": "0000000000000002", "runtime_factory_name": "Two"},
-            {"runtime_factory_id": "0000000000000001", "runtime_factory_name": "One"},
-        ]
-        surface_digest = LINKAGE.catalog_surface_digest(entries)
-        report = {
-            "complete_catalog": {
-                "entry_count": 2,
-                "runtime_surface_digest": surface_digest,
-            }
+    @staticmethod
+    def entry(index, name):
+        return {
+            **copy.deepcopy(LINKAGE.LOGIC_ALL_ENTRY),
+            "runtime_factory_id": f"{index:016x}",
+            "runtime_factory_name": name,
+            "installer_path": f"mech_logic::__mech_native::install_{name.lower()}",
+            "cargo_features": ["bool", "native-link", "not", "runtime"],
+            "contract_kind": "same_shape",
+            "runtime_signature": "RuntimeFunctionSignature { output: Bool, inputs: Unary(Bool) }",
         }
+
+    @staticmethod
+    def report(entries):
+        return {
+            "complete_catalog": {
+                "entry_count": len(entries),
+                "runtime_surface_digest": LINKAGE.catalog_surface_digest(entries),
+            },
+            "entries": LINKAGE.grouped(entries),
+        }
+
+    def test_sharded_catalog_union_is_the_extended_rust_contract(self):
+        entries = [self.entry(2, "Two"), self.entry(1, "One")]
+        surface_digest = LINKAGE.catalog_surface_digest(entries)
+        report = self.report([*entries, copy.deepcopy(LINKAGE.LOGIC_ALL_ENTRY)])
         contract = (
             "const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 2;\n"
             "const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =\n"
@@ -43,6 +59,88 @@ class NativeLinkageProfileTests(unittest.TestCase):
                     LINKAGE.ContractError, "digest diverges"
                 ):
                     LINKAGE.verify_extended_runtime_contract(report)
+
+    def test_full_surface_accepts_only_the_exact_addition(self):
+        legacy = [self.entry(1, "One"), self.entry(2, "Two")]
+        frozen = {"runtime_factories": [
+            {"id_hex": entry["runtime_factory_id"], "name": entry["runtime_factory_name"]}
+            for entry in legacy
+        ]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "runtime-factory-surface.json"
+            path.write_text(json.dumps(frozen))
+            with patch.object(LINKAGE, "FROZEN_SURFACE", path), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", len(legacy)), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_SURFACE_SHA256", LINKAGE.sha256(path.read_bytes()).hexdigest()):
+                addition = copy.deepcopy(LINKAGE.LOGIC_ALL_ENTRY)
+                LINKAGE.verify_full_surface([*legacy, addition])
+                for invalid in [
+                    legacy,
+                    [legacy[0], addition],
+                    [*legacy, addition, self.entry(3, "Unknown")],
+                    [*legacy, addition, addition],
+                    [legacy[0], self.entry(2, "Renamed"), addition],
+                ]:
+                    with self.subTest(invalid=invalid), self.assertRaises(LINKAGE.ContractError):
+                        LINKAGE.verify_full_surface(invalid)
+
+    def test_addition_metadata_and_id_are_exact(self):
+        entry = copy.deepcopy(LINKAGE.LOGIC_ALL_ENTRY)
+        LINKAGE.validate_logic_all_entry(entry)
+        mutations = {
+            "runtime_factory_id": "0000000000000009",
+            "runtime_factory_name": "logic/any",
+            "runtime_signature": "RuntimeFunctionSignature { output: Bool, inputs: Unary(F64) }",
+            "signature_cargo_features": ["bool", "f64"],
+            "package": "mech-math",
+            "crate_name": "mech_math",
+            "installer_path": "mech_logic::__mech_native::other",
+            "cargo_features": ["bool", "native-link", "runtime"],
+            "contract_kind": "no_matrix",
+            "output_alias_policy": "allow_input_alias",
+        }
+        for field, value in mutations.items():
+            with self.subTest(field=field), self.assertRaisesRegex(LINKAGE.ContractError, "logic/all"):
+                LINKAGE.historical_entries([{**entry, field: value}])
+        raw = {
+            "name": entry["runtime_factory_name"],
+            "id_hex": entry["runtime_factory_id"],
+            **{key: value for key, value in entry.items() if key not in {"runtime_factory_name", "runtime_factory_id"}},
+        }
+        known = {"mech-logic": {"all", "bool", "native-link", "runtime"}}
+        self.assertEqual(LINKAGE.validate_catalog([raw], "addition", known), [entry])
+        with self.assertRaisesRegex(LINKAGE.ContractError, "logic/all"):
+            LINKAGE.validate_catalog([{**raw, "id_hex": "0000000000000009"}], "addition", known)
+
+    def test_extended_contract_rejects_unknown_removed_or_changed_entries(self):
+        legacy = [self.entry(1, "One"), self.entry(2, "Two")]
+        addition = copy.deepcopy(LINKAGE.LOGIC_ALL_ENTRY)
+        with patch.object(LINKAGE, "frozen_extended_runtime_contract", return_value=(2, LINKAGE.catalog_surface_digest(legacy))):
+            LINKAGE.verify_extended_runtime_contract(self.report([*legacy, addition]))
+            for invalid in [
+                legacy,
+                [legacy[0], addition],
+                [*legacy, self.entry(3, "Unknown"), addition],
+                [legacy[0], self.entry(2, "Changed"), addition],
+                [*legacy, {**addition, "runtime_factory_id": "0000000000000009"}],
+            ]:
+                with self.subTest(invalid=invalid), self.assertRaises(LINKAGE.ContractError):
+                    LINKAGE.verify_extended_runtime_contract(self.report(invalid))
+
+    def test_reports_keep_actual_surface_and_label_historical_compatibility(self):
+        one, two = self.entry(1, "One"), self.entry(2, "Two")
+        addition = copy.deepcopy(LINKAGE.LOGIC_ALL_ENTRY)
+        report = LINKAGE.assemble_report([one, addition], [[one, two, addition]])
+        baseline = LINKAGE.report_summary(LINKAGE.assemble_surface_report([one], [one, two]))
+        self.assertEqual(report["complete_catalog"]["entry_count"], 3)
+        self.assertEqual(report["complete_catalog"]["runtime_surface_digest"], LINKAGE.catalog_surface_digest([one, two, addition]))
+        self.assertEqual(report["historical_baseline"]["coverage_summary"], baseline)
+        self.assertEqual(LINKAGE.verify_committed_summary(report, baseline), "historical baseline plus the explicit logic/all addition")
+        self.assertEqual(LINKAGE.verify_committed_summary(report, LINKAGE.report_summary(report)), "current catalog")
+        changed = {**one, "installer_path": "mech_logic::__mech_native::changed"}
+        changed_report = LINKAGE.assemble_report([changed, addition], [[changed, two, addition]])
+        with self.assertRaisesRegex(LINKAGE.ContractError, "stale"):
+            LINKAGE.verify_committed_summary(changed_report, baseline)
 
     def test_malformed_extended_rust_contract_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

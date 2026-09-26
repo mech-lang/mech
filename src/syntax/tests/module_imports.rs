@@ -82,6 +82,145 @@ fn parses_module_item_glob_and_nested_item_imports() {
 }
 
 #[test]
+fn parses_comma_separated_module_imports_in_source_order() {
+    for src in ["+> math/*, logic/all", "+> math/* ,\tlogic/all"] {
+        let parsed = imports(src);
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].module.to_string(), "math");
+        assert_eq!(parsed[0].kind, ModuleImportKind::Glob);
+        assert_eq!(parsed[1].module.to_string(), "logic");
+        assert_eq!(item_path(&parsed[1]), vec!["all"]);
+        assert_eq!(parsed[0].module.name.src_range.start.row, 1);
+        assert_eq!(parsed[1].module.name.src_range.start.row, 1);
+        assert!(parsed[0].module.name.src_range.end <= parsed[1].module.name.src_range.start);
+    }
+}
+
+#[test]
+fn comma_imports_accept_groups_namespaces_and_aliases() {
+    let parsed =
+        imports("+> math/{sin, cos}, stats, s := math/sin, @ui := browser/dom, logic/all\n");
+    assert_eq!(parsed.len(), 5);
+    assert_eq!(parsed[0].kind, ModuleImportKind::Group);
+    let items: Vec<_> = parsed[0]
+        .group_items
+        .as_ref()
+        .unwrap()
+        .iter()
+        .map(|item| item.item.to_string())
+        .collect();
+    assert_eq!(items, vec!["sin", "cos"]);
+    assert_eq!(parsed[1].kind, ModuleImportKind::Module);
+    assert!(matches!(parsed[2].alias, Some(ModuleImportAlias::Value(_))));
+    assert!(matches!(
+        parsed[3].alias,
+        Some(ModuleImportAlias::Context(_))
+    ));
+    assert_eq!(parsed[4].module.to_string(), "logic");
+}
+
+#[test]
+fn comma_imports_do_not_consume_following_statements() {
+    for src in [
+        "+> math/*, logic/all\nx := [1, 2, 3]\n",
+        "+> math/*, logic/all; x := [1, 2, 3]\n",
+        "+> math/*, logic/all\n+> stats/sum/column\nx := [1, 2, 3]\n",
+    ] {
+        let program = parser::parse(src).expect("parse import followed by statement");
+        assert_no_mech_code_errors(&program);
+        assert_eq!(statements(src).len(), 1);
+    }
+}
+
+#[test]
+fn comma_imports_reject_missing_or_invalid_items() {
+    for src in [
+        "+> math/*,",
+        "+> math/*,, logic/all",
+        "+> , math/*",
+        "+> math/*, logic/",
+        "+> math/*, @ui := browser/*",
+        "+> math/*, ./dep.mec",
+        "+> math/*,\nlogic/all",
+        "+> math/*, -- missing import\nx := 1\n",
+    ] {
+        assert!(
+            parser::parse(src).is_err(),
+            "expected parse failure for {src:?}"
+        );
+    }
+}
+
+#[test]
+fn comma_imports_work_in_fenced_mechdown_and_title_front_matter() {
+    let src = "Import Lists\n============\n+> math/*, logic/all -- shared imports\n============\n\n~~~mech:demo\n+> stats/{sum/row, sum/column}, s := math/sin\nx := s(0)\n~~~\n";
+    let program = parser::parse(src).expect("parse import lists in Mechdown");
+    assert_no_mech_code_errors(&program);
+    let front = &program.title.as_ref().unwrap().imports;
+    assert_eq!(front.len(), 2);
+    assert!(front[0].1.is_none());
+    assert!(front[1].1.is_some());
+    let fenced = program
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| section.elements.iter())
+        .find_map(|element| match element {
+            SectionElement::FencedMechCode(block) => Some(block),
+            _ => None,
+        })
+        .expect("fenced block");
+    assert_eq!(
+        fenced
+            .code
+            .iter()
+            .filter(|(code, _)| matches!(code, MechCode::Import(_)))
+            .count(),
+        2
+    );
+}
+
+#[cfg(feature = "formatter")]
+#[test]
+fn formatter_round_trips_comma_imports_and_their_trailing_comment() {
+    let src = "+> math/{sin, cos}, stats, s := math/sin, @ui := browser/dom, logic/all -- shared imports\nx := s(0)\n";
+    let program = parser::parse(src).unwrap();
+    let formatted = mech_syntax::Formatter::new().format(&program);
+    assert!(formatted.contains("+> math/{sin, cos}"));
+    assert!(formatted.contains("+> stats"));
+    assert!(formatted.contains("+> s := math/sin"));
+    assert!(formatted.contains("+> @ui := browser/dom"));
+    assert!(formatted.contains("+> logic/all -- shared imports"));
+    assert_eq!(formatted.matches("shared imports").count(), 1);
+    let original = imports(src);
+    let reparsed = imports(&formatted);
+    assert_eq!(original.len(), reparsed.len());
+    for (expected, actual) in original.iter().zip(&reparsed) {
+        let mut formatter = mech_syntax::Formatter::new();
+        assert_eq!(
+            formatter.module_import(expected),
+            formatter.module_import(actual)
+        );
+    }
+    assert_eq!(statements(&formatted).len(), 1);
+}
+
+#[cfg(feature = "formatter")]
+#[test]
+fn formatter_round_trips_comma_imports_in_mechdown() {
+    let src = "Import Lists\n============\n+> math/*, logic/all -- shared imports\n============\n\n~~~mech:demo\n+> stats, s := math/sin -- block imports\nx := s(0)\n~~~\n";
+    let program = parser::parse(src).unwrap();
+    let formatted = mech_syntax::Formatter::new().format(&program);
+    let reparsed = parser::parse(&formatted).unwrap();
+    assert_no_mech_code_errors(&reparsed);
+    assert_eq!(reparsed.title.unwrap().imports.len(), 2);
+    assert_eq!(formatted.matches("shared imports").count(), 1);
+    assert_eq!(formatted.matches("block imports").count(), 1);
+    assert!(formatted.contains("+> stats"));
+    assert!(formatted.contains("+> s := math/sin"));
+}
+
+#[test]
 fn preserves_source_import_declarations() {
     let stmts = statements(
         "+> ./dep.mec\n+> ../lib/dep.mec\n+> fs://lib/dep.mec\n+> file:///tmp/dep.mec\n+> memory://scratch/dep\n+> https://example.com/dep.mec\n+> http://example.com/dep.mec",

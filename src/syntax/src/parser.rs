@@ -350,6 +350,17 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
     };
 }
 
+fn mech_code_line(input: ParseString) -> ParseResult<Vec<MechCode>> {
+    let (input, code) = mech_code_alt(input)?;
+    match code {
+        MechCode::Import(first) => {
+            let (input, imports) = module_import_continuations(input, first)?;
+            Ok((input, imports.into_iter().map(MechCode::Import).collect()))
+        }
+        code => Ok((input, vec![code])),
+    }
+}
+
 /// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | right-brace | eof), *whitespace ;
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
     let (input, _) = many0(space_tab)(input)?;
@@ -394,7 +405,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
 
         let start = new_input.loc();
         let start_cursor = new_input.cursor;
-        let (input, code) = match mech_code_alt(new_input.clone()) {
+        let (input, codes) = match mech_code_line(new_input.clone()) {
             Err(Err::Error(mut e)) => {
                 // if the error is just "Unexpected character", we will just fail.
                 if e.error_detail.message == "Unexpected character" {
@@ -429,7 +440,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
                         },
                     };
                     let mech_error = MechCode::Error(skipped_token, e.cause_range);
-                    (input, mech_error)
+                    (input, vec![mech_error])
                 }
             }
             Err(Err::Failure(mut e)) => {
@@ -470,7 +481,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
                     },
                 };
                 let mech_error = MechCode::Error(skipped_token, e.cause_range);
-                (input, mech_error)
+                (input, vec![mech_error])
             }
             Ok(x) => x,
             _ => unreachable!(),
@@ -493,16 +504,22 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
                 return Err(e);
             }
         };
-        match &code {
-            MechCode::Statement(Statement::ImportDeclaration(import)) => {
-                imports.push(import.clone())
+        for code in codes {
+            match &code {
+                MechCode::Statement(Statement::ImportDeclaration(import)) => {
+                    imports.push(import.clone())
+                }
+                MechCode::Statement(Statement::ExportDeclaration(export)) => {
+                    exports.push(export.clone())
+                }
+                _ => {}
             }
-            MechCode::Statement(Statement::ExportDeclaration(export)) => {
-                exports.push(export.clone())
-            }
-            _ => {}
+            lines.push((code, None));
         }
-        lines.push((code, cmmt));
+        // A trailing comment belongs to the final import in a comma-separated list.
+        if let Some((_, comment)) = lines.last_mut() {
+            *comment = cmmt;
+        }
         new_input = input;
         if new_input.is_empty() {
             break;

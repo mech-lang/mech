@@ -1,4 +1,7 @@
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(feature = "and", feature = "not", feature = "or", feature = "xor")
+))]
 use mech_core::CanonicalFunctionSpecializer;
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "source")]
@@ -6,7 +9,10 @@ use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(feature = "and", feature = "not", feature = "or", feature = "xor")
+))]
 fn install_canonical_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
@@ -29,6 +35,22 @@ where
 
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "all")]
+    {
+        let declaration = mech_core::maintained_source_type_declaration("logic/all")?;
+        let operation = builder.insert_canonical_specializer(
+            "logic/all",
+            declaration,
+            Arc::new(crate::LogicAll),
+        )?;
+        builder.insert_export(FunctionExport {
+            operation,
+            canonical_name: "logic/all".into(),
+            module: Some("logic".into()),
+            item: Some("all".into()),
+            exposure: FunctionExposure::ModuleOnly,
+        })?;
+    }
     #[cfg(feature = "and")]
     install_canonical_operation(builder, "logic/and", crate::LogicAnd {})?;
     #[cfg(feature = "not")]
@@ -38,6 +60,24 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "xor")]
     install_canonical_operation(builder, "logic/xor", crate::LogicXor {})?;
     Ok(())
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: feature = "all",
+    registration: register_logic_all,
+    installer: install_logic_all,
+    name: "logic/all",
+    factory_type: crate::all::All,
+    contract: mech_core::RuntimeFunctionContract::canonical_custom(
+        "boolean_reduction",
+        mech_core::RuntimeOutputAliasPolicy::DisallowInputAlias,
+        crate::all::validate_all,
+    ),
+    operations: [mech_core::OperationId::from_name("logic/all")],
+    package: "mech-logic",
+    crate_name: "mech_logic",
+    installer_path: "mech_logic::__mech_native::install_logic_all",
+    extra_cargo_features: ["all"],
 }
 
 macro_rules! declare_logic_native_factory {
@@ -247,6 +287,8 @@ macro_rules! install_native_logic_binop_runtime {
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(feature = "all")]
+    pub use super::install_logic_all;
     macro_rules! export_logic_binop_runtime {
         ($module:ident, $operation:ident, $operation_feature:literal) => {
             mech_core::__mech_for_each_binop_runtime_factory_for_type!(
@@ -270,6 +312,8 @@ pub mod __mech_native {
 
 /// Installs every enabled concrete bytecode factory owned by `mech-logic`.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(feature = "all")]
+    register_logic_all(builder)?;
     #[cfg(feature = "and")]
     install_native_logic_binop_runtime!(builder, and, And, "and");
     #[cfg(feature = "or")]
@@ -290,6 +334,8 @@ mod tests {
 
     fn expected_operations() -> Vec<&'static str> {
         let mut expected = Vec::new();
+        #[cfg(feature = "all")]
+        expected.push("logic/all");
         #[cfg(feature = "and")]
         expected.push("logic/and");
         #[cfg(feature = "not")]
@@ -312,8 +358,14 @@ mod tests {
         let catalog = builder.build().unwrap();
         let expected = expected_operations();
 
-        #[cfg(all(feature = "and", feature = "not", feature = "or", feature = "xor"))]
-        assert_eq!(expected.len(), 4);
+        #[cfg(all(
+            feature = "all",
+            feature = "and",
+            feature = "not",
+            feature = "or",
+            feature = "xor"
+        ))]
+        assert_eq!(expected.len(), 5);
         assert_eq!(catalog.specializer_count(), expected.len());
         assert_eq!(catalog.runtime_factory_count(), runtime_count);
         for name in expected {
@@ -332,9 +384,13 @@ mod tests {
                 &[FunctionExport {
                     operation,
                     canonical_name: name.to_string(),
-                    module: None,
-                    item: None,
-                    exposure: FunctionExposure::Prelude,
+                    module: (name == "logic/all").then(|| "logic".into()),
+                    item: (name == "logic/all").then(|| "all".into()),
+                    exposure: if name == "logic/all" {
+                        FunctionExposure::ModuleOnly
+                    } else {
+                        FunctionExposure::Prelude
+                    },
                 }],
             );
         }

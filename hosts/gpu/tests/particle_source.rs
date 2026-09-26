@@ -571,9 +571,10 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     );
     let outputs = program.run_cpu(&inputs).expect("CPU backend must run");
 
-    let expected_velocities = [-0.045, -0.0225, 0.045, 0.0225, -0.09, -0.18, 0.09, 0.18];
+    // Public tensor values follow the row-major order of particle_inputs().
+    let expected_velocities = [-0.045, 0.045, -0.09, 0.09, -0.0225, 0.0225, -0.18, 0.18];
     let expected_positions = [
-        0.9955, 0.49775, -0.9955, -0.49775, 1.991, 3.982, -1.991, -3.982,
+        0.9955, -0.9955, 1.991, -1.991, 0.49775, -0.49775, 3.982, -3.982,
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
@@ -655,6 +656,41 @@ fn standalone_particle_program_needs_no_host_inputs() {
     let cycled = cpu.outputs().expect("cycled outputs must read");
     assert_ne!(cycled["result.0"], initial["result.0"]);
     assert_ne!(cycled["result.1"], initial["result.1"]);
+}
+
+#[test]
+fn nonsquare_state_initializer_keeps_canonical_row_major_order() {
+    let artifact = compile_source(
+        "~state := [1f32 2f32 3f32; 4f32 5f32 6f32]\nstate = state + 1f32\nstate\n",
+        [],
+    );
+    let program = ComputeLowerer.compile(&artifact).unwrap();
+    let output_name = program.outputs().next().unwrap().0;
+    assert_eq!(program.outputs().count(), 1);
+    let mut session = program.prepare_cpu(&BTreeMap::new()).unwrap();
+    assert_eq!(
+        session.outputs().unwrap()[output_name],
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    );
+    session.dispatch_turns(1).unwrap();
+    assert_eq!(
+        session.outputs().unwrap()[output_name],
+        [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+    );
+}
+
+#[test]
+fn nonsquare_embedded_constant_keeps_canonical_row_major_order() {
+    let artifact = compile_source(
+        "offset := host-offset\nconstant := [1f32 2f32 3f32; 4f32 5f32 6f32]\nresult := constant + offset\nresult\n",
+        [("host-offset", RuntimeHostInputValue::F32(0.0))],
+    );
+    let program = ComputeLowerer.compile(&artifact).unwrap();
+    let inputs = BTreeMap::from([("offset".to_owned(), vec![10.0])]);
+    assert_eq!(
+        program.run_cpu(&inputs).unwrap()["result"],
+        [11.0, 12.0, 13.0, 14.0, 15.0, 16.0],
+    );
 }
 
 #[test]

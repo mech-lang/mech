@@ -362,7 +362,12 @@ impl ElementwiseKernel {
         let submission = queue.submit(Some(encoder.finish()));
         unsubmitted.record_submitted(submission);
 
-        let readback_result = (|| {
+        // Release the submission's transfer scope before host staging opens
+        // a separate plan scope for decoding the completed readback.
+        let completion_result =
+            settle_submissions(&device, &mut submission_tracker, &managed_memory);
+        let completed = completion_result.is_ok();
+        let readback_result = completion_result.and_then(|_| {
             let mut outputs = BTreeMap::new();
             for (aliases, _, host_readback_object, readback, size) in &readbacks {
                 let slice = readback.buffer().slice(..*size);
@@ -389,10 +394,8 @@ impl ElementwiseKernel {
                 drop(cleanup);
             }
             Ok::<_, GpuExecutionError>(outputs)
-        })();
-        let completion_result =
-            settle_submissions(&device, &mut submission_tracker, &managed_memory);
-        let write_result = if completion_result.is_ok() {
+        });
+        let write_result = if completed {
             (|| {
                 for (object, bytes) in planned_execution.writable_device_objects().iter().copied() {
                     managed_memory
@@ -437,7 +440,6 @@ impl ElementwiseKernel {
             .close()
             .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()));
         let outputs = readback_result?;
-        completion_result?;
         write_result?;
         close_result?;
         Ok(GpuExecutionProfile {
@@ -1110,7 +1112,15 @@ impl ResidentGpuSession {
         let submission = self.queue.submit(Some(encoder.finish()));
         unsubmitted.record_submitted(submission);
 
-        let readback_result = (|| {
+        // Host staging requires its own plan scope after device transfer
+        // completion has released the submission's scope.
+        let completion_result = settle_submissions(
+            &self.device,
+            &mut self.submission_tracker,
+            &self.managed_memory,
+        );
+        let completed = completion_result.is_ok();
+        let readback_result = completion_result.and_then(|_| {
             let mut outputs = BTreeMap::new();
             for (name, slot, size) in &readbacks {
                 let readback = &self.readback_buffers[slot];
@@ -1143,13 +1153,8 @@ impl ResidentGpuSession {
                 drop(cleanup);
             }
             Ok::<_, GpuExecutionError>(outputs)
-        })();
-        let completion_result = settle_submissions(
-            &self.device,
-            &mut self.submission_tracker,
-            &self.managed_memory,
-        );
-        let write_result = if completion_result.is_ok() {
+        });
+        let write_result = if completed {
             (|| {
                 for slot in self.readback_buffers.keys().copied() {
                     let device_object =
@@ -1177,7 +1182,6 @@ impl ResidentGpuSession {
             Ok(())
         };
         let outputs = readback_result?;
-        completion_result?;
         write_result?;
         Ok((started.elapsed(), outputs))
     }

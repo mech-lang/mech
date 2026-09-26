@@ -41,6 +41,18 @@ math/cos(angle)
 
 Namespace imports are useful when you want to avoid local name conflicts or make it clear where a binding comes from.
 
+Several module imports can share one `+>` on the same line, separated by commas.
+Each import is applied in order, just as if it were on its own line.
+
+```mech:disabled
++> math/*, logic/all
++> stats/{sum/row, sum/column}, s := math/sin
+```
+
+Module names, individual bindings, wildcards, groups, and aliases can be combined
+this way. Source-file imports use separate lines. The formatter writes one module
+import per line.
+
 (2.1) One binding
 
 Import a single exported binding by naming it at the end of the import path.

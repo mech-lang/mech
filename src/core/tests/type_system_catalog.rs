@@ -148,6 +148,7 @@ fn maintained_declarations_are_deterministic_and_ids_are_unique() {
         "compare/eq",
         "compare/gt",
         "logic/not",
+        "logic/all",
         "logic/and",
         "range/inclusive",
         "range/inclusive-increment",
@@ -963,6 +964,48 @@ fn boolean_broadcast_overloads_preserve_axes_in_both_operand_orders() {
             assert_eq!(resolved.outputs.as_ref(), &[changing_matrix.clone()]);
         }
     }
+}
+
+#[test]
+fn boolean_all_reduces_scalar_and_matrix_to_scalar_without_numeric_coercions() {
+    for input in [
+        scalar(BuiltinScalarKind::Bool),
+        fixed_matrix(BuiltinScalarKind::Bool, 1, 3),
+        fixed_matrix(BuiltinScalarKind::Bool, 3, 1),
+        fixed_matrix(BuiltinScalarKind::Bool, 2, 3),
+        fixed_matrix(BuiltinScalarKind::Bool, 0, 3),
+        turn_row_matrix(BuiltinScalarKind::Bool, 3),
+    ] {
+        let resolved = resolve_named_overload("logic/all", &[input]).unwrap();
+        assert_eq!(
+            resolved.outputs.as_ref(),
+            &[scalar(BuiltinScalarKind::Bool)]
+        );
+        assert!(
+            resolved
+                .conversions
+                .iter()
+                .all(|conversion| conversion.cost == 0)
+        );
+    }
+    for input in [
+        scalar(BuiltinScalarKind::F64),
+        fixed_matrix(BuiltinScalarKind::F64, 2, 3),
+        scalar(BuiltinScalarKind::U8),
+    ] {
+        assert!(resolve_named_overload("logic/all", &[input]).is_err());
+    }
+    assert!(resolve_named_overload("logic/all", &[]).is_err());
+    assert!(
+        resolve_named_overload(
+            "logic/all",
+            &[
+                scalar(BuiltinScalarKind::Bool),
+                scalar(BuiltinScalarKind::Bool),
+            ]
+        )
+        .is_err()
+    );
 }
 
 #[test]

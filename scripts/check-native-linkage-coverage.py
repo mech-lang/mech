@@ -25,6 +25,7 @@ CATALOG_CLOSURE_PROFILES = ("standard", "full")
 EXACT_CLOSURE_DIRECTORY = ROOT / "target/native-linkage/exact-closures"
 EXACT_CLOSURE_SHARDS = 8
 NAMED_EXACT_CLOSURE_REGRESSIONS = {
+    "logic/all",
     "DotM1M1<f64>",
     "MatMulR3M3x2<f64>",
     "MatMulRDVD<f64>",
@@ -39,6 +40,20 @@ EXPECTED_FULL_COUNT = 9_716
 EXPECTED_FULL_SURFACE_SHA256 = (
     "cccc5a0bc5b06689e202504d226fe9ce02f12061e2af89ec6f3bdd36720cc397"
 )
+# The committed PR2 fixtures and coverage report are historical evidence.
+# Validate this exact addition separately, preserving all other entries.
+LOGIC_ALL_ENTRY = {
+    "runtime_factory_id": "00335e33bdc2f430",
+    "runtime_factory_name": "logic/all",
+    "runtime_signature": "RuntimeFunctionSignature { output: Bool, inputs: Unary(AnyValue) }",
+    "signature_cargo_features": ["bool"],
+    "package": "mech-logic",
+    "crate_name": "mech_logic",
+    "installer_path": "mech_logic::__mech_native::install_logic_all",
+    "cargo_features": ["all", "bool", "native-link", "runtime"],
+    "contract_kind": "boolean_reduction",
+    "output_alias_policy": "disallow_input_alias",
+}
 OWNERS: dict[str, tuple[Path, str, str]] = {
     "mech-engine": (ROOT / "src/engine/Cargo.toml", "extended-engine", "stdlib"),
     "mech-math": (ROOT / "machines/math/Cargo.toml", "extended-math", "full_runtime"),
@@ -118,6 +133,23 @@ def catalog_surface_digest(entries: list[dict[str, Any]]) -> str:
         for entry in entries
     )
     return sha256("".join(lines).encode("utf-8")).hexdigest()
+
+
+def validate_logic_all_entry(entry: dict[str, Any]) -> None:
+    if entry != LOGIC_ALL_ENTRY:
+        raise ContractError("logic/all additive factory ID or native metadata changed")
+
+
+def historical_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    additions = [
+        entry for entry in entries
+        if entry.get("runtime_factory_id") == LOGIC_ALL_ENTRY["runtime_factory_id"]
+        or entry.get("runtime_factory_name") == LOGIC_ALL_ENTRY["runtime_factory_name"]
+    ]
+    if len(additions) != 1:
+        raise ContractError("catalog must contain exactly one additive logic/all factory")
+    validate_logic_all_entry(additions[0])
+    return [entry for entry in entries if entry is not additions[0]]
 
 
 def frozen_extended_runtime_contract() -> tuple[int, str]:
@@ -345,6 +377,8 @@ def validate_catalog(
                 "output_alias_policy": output_alias_policy,
             }
         )
+        if name == "logic/all" or runtime_id == LOGIC_ALL_ENTRY["runtime_factory_id"]:
+            validate_logic_all_entry(clean[-1])
     return sorted(clean, key=lambda item: (item["runtime_factory_id"], item["runtime_factory_name"]))
 
 
@@ -445,7 +479,10 @@ def verify_full_surface(entries: list[dict[str, Any]]) -> None:
     if len(frozen) != EXPECTED_FULL_COUNT:
         raise ContractError("frozen full runtime surface count changed")
     expected = {(item["id_hex"], item["name"]) for item in frozen}
-    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in entries}
+    legacy = historical_entries(entries)
+    actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in legacy}
+    if len(legacy) != len(expected):
+        raise ContractError("runtime/native-plan count drift in the frozen full surface")
     if actual != expected:
         raise ContractError("runtime/native-plan drift in the frozen full surface")
 
@@ -454,6 +491,26 @@ def assemble_report(
     full: list[dict[str, Any]], extended_surfaces: list[list[dict[str, Any]]]
 ) -> dict[str, Any]:
     extended = merge_surfaces("extended linkage universe", extended_surfaces)
+    report = assemble_surface_report(full, extended)
+    # Both summary and detail retain actual complete counts/digests. Keep the
+    # historical comparison explicitly labeled and independently reconstructible.
+    baseline = assemble_surface_report(historical_entries(full), historical_entries(extended))
+    report["historical_baseline"] = {
+        "scope": "catalog before the explicit logic/all addition",
+        "additions": [LOGIC_ALL_ENTRY],
+        "coverage_summary": report_summary(baseline),
+    }
+    report.pop("coverage_digest")
+    report["coverage_digest"] = {
+        "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
+        "sha256": digest(report),
+    }
+    return report
+
+
+def assemble_surface_report(
+    full: list[dict[str, Any]], extended: list[dict[str, Any]]
+) -> dict[str, Any]:
     all_entries = merge_surfaces("complete linkage universe", [full, extended])
     report = {
         "schema": "mech.native-linkage-coverage.v2",
@@ -570,11 +627,17 @@ def verify_extended_runtime_contract(report: dict[str, Any]) -> None:
     complete = report.get("complete_catalog")
     if not isinstance(complete, dict):
         raise ContractError("native linkage report omits the complete catalog contract")
-    if complete.get("entry_count") != expected_count:
+    entries = inventory_entries(report)
+    if complete.get("entry_count") != len(entries):
+        raise ContractError("complete catalog count differs from its actual inventory")
+    if complete.get("runtime_surface_digest") != catalog_surface_digest(entries):
+        raise ContractError("complete catalog digest diverges from its actual inventory")
+    legacy = historical_entries(entries)
+    if len(legacy) != expected_count:
         raise ContractError(
             "stdlib extended runtime count diverges from the sharded catalog union"
         )
-    if complete.get("runtime_surface_digest") != expected_digest:
+    if catalog_surface_digest(legacy) != expected_digest:
         raise ContractError(
             "stdlib extended runtime digest diverges from the sharded catalog union"
         )
@@ -632,6 +695,7 @@ def require_named_closure_regressions(report: dict[str, Any]) -> None:
         by_name.setdefault(entry["runtime_factory_name"], []).append(entry)
 
     cases = {
+        "logic/all": ({"all", "bool"}, {"matrix"}),
         "DotM1M1<f64>": ({"f64", "matrix1"}, {"matrix2"}),
         "MatMulR3M3x2<f64>": (
             {"f64", "row_vector3", "matrix3x2", "row_vector2"},
@@ -823,7 +887,7 @@ def validate_exact_closure_shard(report: dict[str, Any], shard: int) -> None:
 
 
 def report_summary(report: dict[str, Any]) -> dict[str, Any]:
-    return {
+    summary = {
         "schema": "mech.native-linkage-coverage-summary.v1",
         "detail_schema": report["schema"],
         "full": report["full"],
@@ -836,6 +900,18 @@ def report_summary(report: dict[str, Any]) -> dict[str, Any]:
             "generated_by": "python3 scripts/check-native-linkage-coverage.py strict",
         },
     }
+    if "historical_baseline" in report:
+        summary["historical_baseline"] = report["historical_baseline"]
+    return summary
+
+
+def verify_committed_summary(report: dict[str, Any], committed: dict[str, Any]) -> str:
+    if committed == report_summary(report):
+        return "current catalog"
+    baseline = report.get("historical_baseline", {})
+    if committed == baseline.get("coverage_summary"):
+        return "historical baseline plus the explicit logic/all addition"
+    raise ContractError("coverage report is stale; run `check-native-linkage-coverage.py report`")
 
 
 def owner_native_link_profiles(package: str) -> list[str]:
@@ -1035,9 +1111,10 @@ def main() -> int:
             REPORT_PATH.write_text(rendered, encoding="utf-8")
             action = "wrote"
         else:
-            if not REPORT_PATH.is_file() or REPORT_PATH.read_text(encoding="utf-8") != rendered:
-                raise ContractError("coverage report is stale; run `check-native-linkage-coverage.py report`")
-            action = "validated"
+            if not REPORT_PATH.is_file():
+                raise ContractError("committed native linkage coverage report is missing")
+            scope = verify_committed_summary(report, json.loads(REPORT_PATH.read_text(encoding="utf-8")))
+            action = f"validated {scope} against"
         print(
             f"native linkage coverage: {report['full']['entry_count']} full and "
             f"{report['extended']['entry_count']} extended entries, zero missing linkage"

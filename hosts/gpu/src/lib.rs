@@ -62,7 +62,7 @@ fn empty_compute_program() -> ComputeProgram {
     )
 }
 
-/// Converts a Mech matrix snapshot into the row-major storage order consumed
+/// Converts column-major host matrix data into the row-major storage order consumed
 /// by generated GPU and fused CPU kernels.
 pub fn column_major_to_row_major<T: Copy + Default>(
     rows: usize,
@@ -71,6 +71,31 @@ pub fn column_major_to_row_major<T: Copy + Default>(
 ) -> Result<Vec<T>, String> {
     mech_compute::column_major_to_row_major(&[rows as u64, columns as u64], values)
         .map_err(|error| error.to_string())
+}
+
+fn validate_matrix_value_count(
+    dimensions: &[u64],
+    actual: usize,
+) -> Result<(), mech_compute::ComputeValueError> {
+    use mech_compute::ComputeValueError;
+    let [rows, columns] = dimensions else {
+        return Err(ComputeValueError::LayoutRankUnsupported {
+            rank: dimensions.len(),
+        });
+    };
+    let rows = usize::try_from(*rows).map_err(|_| ComputeValueError::ElementCountOverflow)?;
+    let columns = usize::try_from(*columns).map_err(|_| ComputeValueError::ElementCountOverflow)?;
+    let expected = rows
+        .checked_mul(columns)
+        .ok_or(ComputeValueError::ElementCountOverflow)?;
+    if actual != expected {
+        return Err(ComputeValueError::ElementCountMismatch {
+            port: "<canonical matrix>".into(),
+            expected,
+            actual,
+        });
+    }
+    Ok(())
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -1622,14 +1647,14 @@ impl<'a> Compiler<'a> {
                         .map(|value| value.to_f32())
                         .collect::<Vec<_>>();
                     let dimensions = self.slot_dimensions(slot.slot);
-                    mech_compute::column_major_to_row_major(&dimensions, &values).map_err(
-                        |error| {
-                            (
-                                GpuDiagnosticCode::ShapeMismatch,
-                                format!("initializer matrix layout is invalid: {error}"),
-                            )
-                        },
-                    )?
+                    validate_matrix_value_count(&dimensions, values.len()).map_err(|error| {
+                        (
+                            GpuDiagnosticCode::ShapeMismatch,
+                            format!("initializer matrix layout is invalid: {error}"),
+                        )
+                    })?;
+                    // ProgramArtifact snapshots already store canonical row-major elements.
+                    values
                 }
                 _ => {
                     return Err((
@@ -1804,20 +1829,18 @@ impl<'a> Compiler<'a> {
                                 );
                                 return None;
                             };
-                            let values =
-                                match mech_compute::column_major_to_row_major(&dimensions, &values)
-                                {
-                                    Ok(values) => values,
-                                    Err(error) => {
-                                        self.reject(
-                                            GpuDiagnosticCode::ShapeMismatch,
-                                            Some(node),
-                                            Some(operation.to_owned()),
-                                            format!("constant matrix layout is invalid: {error}"),
-                                        );
-                                        return None;
-                                    }
-                                };
+                            if let Err(error) =
+                                validate_matrix_value_count(&dimensions, values.len())
+                            {
+                                self.reject(
+                                    GpuDiagnosticCode::ShapeMismatch,
+                                    Some(node),
+                                    Some(operation.to_owned()),
+                                    format!("constant matrix layout is invalid: {error}"),
+                                );
+                                return None;
+                            }
+                            // Constants have the same canonical row-major layout as states.
                             let elements = values.len() as u64;
                             self.constants.insert(constant, values);
                             Some(elements)

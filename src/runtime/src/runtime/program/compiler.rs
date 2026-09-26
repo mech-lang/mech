@@ -561,8 +561,7 @@ impl<'a> ProgramCompilerView<'a> {
             .compiler_root_symbol_cells(&input_names)?
             .into_iter()
             .map(|(name, cell)| {
-                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
-                    .map(|value| (name, value))
+                RuntimeHostInputValue::from_value(&cell.snapshot()?).map(|value| (name, value))
             })
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let resolver = CompilerExternalContractResolver {
@@ -706,8 +705,7 @@ impl<'a> ProgramCompilerView<'a> {
             .compiler_root_symbol_cells(&input_names)?
             .into_iter()
             .map(|(name, cell)| {
-                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
-                    .map(|value| (name, value))
+                RuntimeHostInputValue::from_value(&cell.snapshot()?).map(|value| (name, value))
             })
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let operations = modules
@@ -771,8 +769,7 @@ impl<'a> ProgramCompilerView<'a> {
             .compiler_root_symbol_cells(names)?
             .into_iter()
             .map(|(name, cell)| {
-                RuntimeHostInputValue::from_numeric_value(&cell.snapshot()?)
-                    .map(|value| (name, value))
+                RuntimeHostInputValue::from_value(&cell.snapshot()?).map(|value| (name, value))
             })
             .collect()
     }

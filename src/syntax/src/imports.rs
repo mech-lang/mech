@@ -188,12 +188,7 @@ fn module_only_import(input: ParseString) -> ParseResult<ModuleImport> {
     ))
 }
 
-pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
-    let (input, _) = whitespace0(input)?;
-    let (input, _) = plus(input)?;
-    let (input, _) = right_angle(input)?;
-    let (input, _) = space_tab0(input)?;
-
+fn module_import_body(input: ParseString) -> ParseResult<ModuleImport> {
     let (input, mut import) = if at(input.clone()).is_ok() {
         cut(aliased_item_import)(input)?
     } else {
@@ -208,4 +203,30 @@ pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
     import.module.name.src_range.end = next_input.loc();
 
     Ok((input, import))
+}
+
+pub fn module_import(input: ParseString) -> ParseResult<ModuleImport> {
+    let (input, _) = whitespace0(input)?;
+    let (input, _) = plus(input)?;
+    let (input, _) = right_angle(input)?;
+    let (input, _) = space_tab0(input)?;
+    module_import_body(input)
+}
+
+/// A comma shares the leading `+>` with another module import on the same line.
+/// Expand the list into the existing import nodes, preserving evaluation order.
+pub(crate) fn module_import_continuations(
+    input: ParseString,
+    first: ModuleImport,
+) -> ParseResult<Vec<ModuleImport>> {
+    let separator = nom_tuple((space_tab0, comma, space_tab0));
+    let (input, rest) = many0(preceded(separator, cut(module_import_body)))(input)?;
+    let mut imports = vec![first];
+    imports.extend(rest);
+    Ok((input, imports))
+}
+
+pub fn module_imports(input: ParseString) -> ParseResult<Vec<ModuleImport>> {
+    let (input, first) = module_import(input)?;
+    module_import_continuations(input, first)
 }

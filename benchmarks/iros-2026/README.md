@@ -94,9 +94,18 @@ The EKF panel ends with `variance! := all(Σ₊[[1 5 9]] > 0)`, an illustrative
 integrity constraint on all three diagonal variances. Linear indices 1, 5 and 9
 select the diagonal of this 3×3 covariance matrix. Positive diagonal entries
 alone do not establish finiteness, symmetry or positive definiteness.
-The import is displayed on one line as `+> math/*, logic/all`.
-Implementation and verification of `logic/all` and comma-separated module
-imports are deferred; this poster notation is not yet a verified runnable example.
+The import is displayed on one line as `+> math/*, logic/all`. Comma-separated
+module imports and `logic/all` are implemented. The reduction accepts Boolean
+scalars, vectors and matrices, returns one Boolean, and uses true as the empty
+reduction identity. Numeric inputs are rejected rather than coerced.
+The regression tests in `hosts/gpu/tests/logic_all.rs` exercise the compact
+guard in the ordinary f64 resident runtime and its explicitly typed f32 form
+through CPU, SIMD, scalar/SIMD JIT, scalar/SIMD AOT, Metal and WGPU execution.
+They check each diagonal independently, artifact encode/decode, rejection
+without publication, and retention of the last accepted state. The combined
+import is also tested with calls to both `math/sin` and `logic/all`.
+See [poster syntax verification](POSTER-SYNTAX-VERIFICATION.md) for coverage and
+reproduction commands.
 Its orange name follows `--mech-warning`
 in `include/palette.css` (`#FFAA80`), and the operator legend includes `x!`.
 The benchmark still uses its full three-guard contract documented below, not

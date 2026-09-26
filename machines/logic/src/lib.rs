@@ -16,6 +16,7 @@ extern crate nalgebra as na;
 extern crate paste;
 
 use mech_core::*;
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 use std::marker::PhantomData;
 
 #[cfg(feature = "runtime")]
@@ -23,7 +24,10 @@ pub mod catalog;
 #[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(feature = "and", feature = "or", feature = "xor")
+))]
 fn semantic_logic_extents(inputs: &[&SpecializationInput]) -> MResult<Box<[u64]>> {
     let mut extents = Vec::<u64>::new().into_boxed_slice();
     for input in inputs {
@@ -140,7 +144,13 @@ use nalgebra::Vector3;
 ))]
 use nalgebra::Vector4;
 
-#[cfg(any(feature = "and", feature = "not", feature = "or", feature = "xor"))]
+#[cfg(any(
+    feature = "all",
+    feature = "and",
+    feature = "not",
+    feature = "or",
+    feature = "xor"
+))]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
@@ -149,7 +159,7 @@ static PURE_LOGIC_BINARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
 #[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 static PURE_LOGIC_BINARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| logic_full_write_contract(2, ChangeDetectionPolicy::KernelReported));
-#[cfg(feature = "not")]
+#[cfg(any(feature = "all", feature = "not"))]
 static PURE_LOGIC_UNARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| logic_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
 #[cfg(feature = "not")]
@@ -204,6 +214,8 @@ fn logic_unary_full_write_contract(
     }
 }
 
+#[cfg(feature = "all")]
+pub mod all;
 #[cfg(feature = "and")]
 pub mod and;
 #[cfg(feature = "not")]
@@ -213,6 +225,8 @@ pub mod or;
 #[cfg(feature = "xor")]
 pub mod xor;
 
+#[cfg(all(feature = "all", feature = "source"))]
+pub use self::all::*;
 #[cfg(all(feature = "and", feature = "source"))]
 pub use self::and::*;
 #[cfg(all(feature = "not", feature = "source"))]

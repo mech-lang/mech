@@ -192,7 +192,7 @@ compare_default = [
   "compare_eq", "compare_neq", "compare_seq", "compare_sneq", "compare_lt",
   "compare_gt", "compare_lte", "compare_gte", "compare_min", "compare_max",
 ]
-logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
+logic_default = ["logic_all", "logic_and", "logic_or", "logic_not", "logic_xor"]
 range_default = [
   "range_inclusive", "range_exclusive", "range_inclusive_increment",
   "range_exclusive_increment",
@@ -259,6 +259,7 @@ compare_gte = ["mech-compare", "mech-compare/gte", "mech-engine/compare_gte"]
 compare_min = ["mech-compare", "mech-compare/min"]
 compare_max = ["mech-compare", "mech-compare/max"]
 
+logic_all = ["mech-logic", "mech-logic/all"]
 logic_and = ["mech-logic", "mech-logic/and", "mech-engine/logic_and"]
 logic_or = ["mech-logic", "mech-logic/or", "mech-engine/logic_or"]
 logic_not = ["mech-logic", "mech-logic/not", "mech-engine/logic_not"]

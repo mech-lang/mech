@@ -503,6 +503,21 @@ pub fn bool_unary() -> Result<Vec<KindScheme>, SemanticModelError> {
     ])
 }
 
+/// Reduce one Boolean scalar or matrix to a scalar Boolean.
+pub fn bool_reduction() -> Result<Vec<KindScheme>, SemanticModelError> {
+    let bool_kind = BuiltinScalarKind::Bool.kind_expr();
+    Ok(vec![
+        exact_unary(bool_kind.clone(), bool_kind.clone())?,
+        make(
+            0,
+            2,
+            vec![matrix(bool_kind.clone(), dim(0), dim(1))],
+            vec![bool_kind],
+            Vec::new(),
+        )?,
+    ])
+}
+
 pub fn bool_binary() -> Result<Vec<KindScheme>, SemanticModelError> {
     let bool_kind = BuiltinScalarKind::Bool.kind_expr();
     let mut schemes = vec![
@@ -1404,6 +1419,7 @@ pub fn maintained_source_schemes(
             numeric_binary_for_predicate(BuiltinKindPredicate::Ordered)?
         }
         "logic/not" => bool_unary()?,
+        "logic/all" => bool_reduction()?,
         "logic/and" | "logic/or" | "logic/xor" => bool_binary()?,
         "range/exclusive" | "range/inclusive" => vec![range_binary()?],
         "range/exclusive-increment" | "range/inclusive-increment" => vec![range_ternary()?],

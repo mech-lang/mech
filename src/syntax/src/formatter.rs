@@ -1158,7 +1158,7 @@ impl Formatter {
                 x => format!("{{{:?}}}", x),
             };
             let formatted_comment = match cmmnt {
-                Some(cmmt) => self.comment(cmmt),
+                Some(cmmt) => self.trailing_comment(cmmt),
                 None => String::new(),
             };
             if self.html {
@@ -2084,6 +2084,14 @@ impl Formatter {
         }
     }
 
+    fn trailing_comment(&mut self, node: &Comment) -> String {
+        if self.html {
+            format!(" {}", self.comment(node))
+        } else {
+            format!(" -- {}", self.paragraph(&node.paragraph).trim())
+        }
+    }
+
     pub fn list(&mut self, node: &MDList) -> String {
         match node {
             MDList::Ordered(ordered_list) => self.ordered_list(ordered_list),
@@ -2205,7 +2213,7 @@ impl Formatter {
                 }
             };
             let formatted_comment = match cmmnt {
-                Some(cmmt) => self.comment(cmmt),
+                Some(cmmt) => self.trailing_comment(cmmt),
                 None => String::new(),
             };
             if self.html {

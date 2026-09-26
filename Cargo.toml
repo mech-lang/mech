@@ -320,6 +320,7 @@ compare_gte = ["mech-stdlib/compare_gte"]
 compare_min = ["mech-stdlib/compare_min"]
 compare_max = ["mech-stdlib/compare_max"]
 
+logic_all = ["mech-stdlib/logic_all"]
 logic_and = ["mech-stdlib/logic_and"]
 logic_or = ["mech-stdlib/logic_or"]
 logic_not = ["mech-stdlib/logic_not"]

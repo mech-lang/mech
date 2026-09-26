@@ -7,6 +7,9 @@ use mech_core::{FunctionCatalog, FunctionExposure};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
+// Historical PR2/profile baselines. The additive logic/all surface is checked
+// independently below; these counts and digests continue to freeze every
+// pre-existing factory and export rather than replacing the baseline fixtures.
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_716;
 #[cfg(feature = "full_source")]
@@ -51,6 +54,19 @@ const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "34db793ac637b3b1bc532978c6e8a6e0be1b8be63c33ec5f3043045f765616f5";
 
 static CATALOG_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+#[cfg(any(
+    feature = "logic_all",
+    feature = "full_runtime",
+    feature = "standard_runtime"
+))]
+const LOGIC_ALL_ID: u64 = 0x0033_5e33_bdc2_f430;
+#[cfg(any(
+    feature = "logic_all",
+    feature = "full_runtime",
+    feature = "standard_runtime"
+))]
+const ADDED_RUNTIME_FACTORIES: usize = 1;
 
 #[cfg(feature = "full_runtime")]
 const RUNTIME_SURFACE: &[u8] = include_bytes!(concat!(
@@ -118,20 +134,132 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
         .collect()
 }
 
+#[cfg(any(
+    feature = "logic_all",
+    feature = "full_runtime",
+    feature = "standard_runtime"
+))]
+fn assert_logic_all_runtime_addition(catalog: &FunctionCatalog) {
+    use mech_core::{
+        FunctionValueRepresentation, OperationId, RuntimeFunctionId, RuntimeFunctionSignature,
+        RuntimeOperationBinding, RuntimeOutputAliasPolicy,
+    };
+    assert_eq!(
+        RuntimeFunctionId::from_name("logic/all").raw(),
+        LOGIC_ALL_ID
+    );
+    assert_eq!(OperationId::from_name("logic/all").raw(), LOGIC_ALL_ID);
+    let entry = catalog
+        .runtime_entry(RuntimeFunctionId::from_raw(LOGIC_ALL_ID))
+        .expect("the selected logic profile must include logic/all");
+    assert_eq!(entry.name, "logic/all");
+    assert_eq!(
+        catalog
+            .runtime_entries()
+            .filter(|entry| entry.name == "logic/all")
+            .count(),
+        ADDED_RUNTIME_FACTORIES,
+    );
+    assert_eq!(
+        entry.signature(),
+        RuntimeFunctionSignature::unary(
+            FunctionValueRepresentation::Bool,
+            FunctionValueRepresentation::AnyValue,
+        )
+    );
+    assert_eq!(entry.contract_kind(), "boolean_reduction");
+    assert_eq!(
+        entry.output_alias_policy(),
+        RuntimeOutputAliasPolicy::DisallowInputAlias
+    );
+    assert_eq!(
+        entry.operation_binding(),
+        &RuntimeOperationBinding::Fixed(
+            vec![OperationId::from_raw(LOGIC_ALL_ID)].into_boxed_slice(),
+        )
+    );
+}
+
+#[cfg(all(
+    feature = "source",
+    any(
+        feature = "logic_all",
+        feature = "full_runtime",
+        feature = "standard_runtime"
+    )
+))]
+fn assert_logic_all_source_addition(catalog: &FunctionCatalog) {
+    use mech_core::{FunctionExport, OperationId};
+    let operation = OperationId::from_raw(LOGIC_ALL_ID);
+    let entries = catalog
+        .all_specializers()
+        .filter(|entry| entry.operation.id == operation)
+        .collect::<Vec<_>>();
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].operation.canonical_name.to_string(), "logic/all");
+    assert_eq!(
+        catalog.exports_for_operation(operation),
+        &[FunctionExport {
+            operation,
+            canonical_name: "logic/all".to_owned(),
+            module: Some("logic".to_owned()),
+            item: Some("all".to_owned()),
+            exposure: FunctionExposure::ModuleOnly,
+        }]
+    );
+}
+
+/// Verify the explicit new factory before comparing the unchanged remainder
+/// against the historical fingerprint. Diagnostic reports use the complete
+/// catalog digest above, including logic/all.
+#[cfg(any(feature = "full_runtime", feature = "standard_compiler"))]
+fn historical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
+    assert_logic_all_runtime_addition(catalog);
+    let mut entries = catalog
+        .runtime_entries()
+        .filter(|entry| entry.id.raw() != LOGIC_ALL_ID)
+        .map(|entry| format!("{}\t{}\n", id_hex(entry.id.raw()), entry.name))
+        .collect::<Vec<_>>();
+    entries.sort();
+    Sha256::digest(entries.concat().as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[cfg(any(
+    feature = "logic_all",
+    feature = "full_runtime",
+    feature = "standard_runtime"
+))]
+#[test]
+fn logic_all_is_an_explicit_addition_to_the_selected_surface() {
+    with_catalog_test_stack(|| {
+        #[cfg(feature = "source")]
+        let catalog = mech_stdlib::source_catalog();
+        #[cfg(not(feature = "source"))]
+        let catalog = mech_stdlib::runtime_catalog();
+        assert_logic_all_runtime_addition(&catalog);
+        #[cfg(feature = "source")]
+        assert_logic_all_source_addition(&catalog);
+    });
+}
+
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
     assert_eq!(
         catalog.runtime_factory_count(),
-        EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES
+        EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES + ADDED_RUNTIME_FACTORIES
     );
     assert_eq!(
-        canonical_runtime_surface_digest(catalog),
+        historical_runtime_surface_digest(catalog),
         EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST
     );
     assert_eq!(
         catalog.specializer_count(),
-        EXPECTED_STANDARD_SOURCE_SPECIALIZERS
+        EXPECTED_STANDARD_SOURCE_SPECIALIZERS + 1
     );
+    assert_logic_all_source_addition(catalog);
 }
 
 #[cfg(feature = "compiler")]
@@ -244,17 +372,17 @@ fn frozen_runtime_surface() -> BTreeMap<String, String> {
 fn assert_runtime_surface(catalog: &FunctionCatalog) {
     let count = catalog.runtime_factory_count();
     #[cfg(feature = "full_source")]
-    if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES {
+    if count == EXPECTED_SOURCE_ENABLED_RUNTIME_FACTORIES + ADDED_RUNTIME_FACTORIES {
         assert_eq!(
-            canonical_runtime_surface_digest(catalog),
+            historical_runtime_surface_digest(catalog),
             EXPECTED_SOURCE_ENABLED_RUNTIME_SURFACE_DIGEST,
             "source-enabled runtime catalog diverged from its frozen contract",
         );
         return;
     }
-    if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES {
+    if count == EXPECTED_EXTENDED_RUNTIME_FACTORIES + ADDED_RUNTIME_FACTORIES {
         assert_eq!(
-            canonical_runtime_surface_digest(catalog),
+            historical_runtime_surface_digest(catalog),
             EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST,
             "extended runtime catalog diverged from the exhaustive all-features contract",
         );
@@ -262,16 +390,25 @@ fn assert_runtime_surface(catalog: &FunctionCatalog) {
     }
 
     assert_eq!(
-        count, EXPECTED_RUNTIME_FACTORIES,
+        count,
+        EXPECTED_RUNTIME_FACTORIES + ADDED_RUNTIME_FACTORIES,
         "selected runtime catalog is neither the frozen standard nor exhaustive profile",
     );
 
-    let expected = frozen_runtime_surface();
+    assert_logic_all_runtime_addition(catalog);
+    let mut expected = frozen_runtime_surface();
+    assert_eq!(
+        expected.insert(id_hex(LOGIC_ALL_ID), "logic/all".to_owned()),
+        None
+    );
     let actual = catalog
         .runtime_entries()
         .map(|entry| (id_hex(entry.id.raw()), entry.name.clone()))
         .collect::<BTreeMap<_, _>>();
-    assert_eq!(actual, expected, "runtime catalog diverged from PR2");
+    assert_eq!(
+        actual, expected,
+        "runtime catalog diverged from PR2 plus logic/all"
+    );
 
     let digest = Sha256::digest(RUNTIME_SURFACE)
         .iter()
@@ -286,8 +423,11 @@ fn assert_source_runtime_surface(
     expected_count: usize,
     expected_digest: &str,
 ) {
-    assert_eq!(catalog.runtime_factory_count(), expected_count);
-    assert_eq!(canonical_runtime_surface_digest(catalog), expected_digest);
+    assert_eq!(
+        catalog.runtime_factory_count(),
+        expected_count + ADDED_RUNTIME_FACTORIES
+    );
+    assert_eq!(historical_runtime_surface_digest(catalog), expected_digest);
 
     let actual = catalog
         .runtime_entries()
@@ -304,12 +444,13 @@ fn assert_source_runtime_surface(
 
 #[cfg(feature = "full_source")]
 fn assert_source_surface(catalog: &FunctionCatalog) {
-    assert_eq!(catalog.specializer_count(), EXPECTED_NAMED_SPECIALIZERS);
+    assert_logic_all_source_addition(catalog);
+    assert_eq!(catalog.specializer_count(), EXPECTED_NAMED_SPECIALIZERS + 1);
     assert_eq!(
         catalog.intrinsic_specializer_count(),
         EXPECTED_INTRINSIC_SPECIALIZERS
     );
-    assert_eq!(catalog.all_exports().len(), EXPECTED_ALL_EXPORTS);
+    assert_eq!(catalog.all_exports().len(), EXPECTED_ALL_EXPORTS + 1);
     assert_eq!(
         catalog
             .all_exports()
@@ -318,8 +459,28 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
         EXPECTED_PRELUDE_EXPORTS,
     );
 
-    let frozen: FrozenSourceSurface =
+    let mut frozen: FrozenSourceSurface =
         serde_json::from_str(SOURCE_SURFACE).expect("frozen source surface must be valid JSON");
+    frozen.full_source_specializers.push(FrozenSpecializer {
+        name: "logic/all".to_owned(),
+        id_hex: id_hex(LOGIC_ALL_ID),
+    });
+    frozen
+        .full_source_specializers
+        .sort_by(|left, right| (&left.name, &left.id_hex).cmp(&(&right.name, &right.id_hex)));
+    frozen.module_exports.push(FrozenModuleExport {
+        module: "logic".to_owned(),
+        item: "all".to_owned(),
+        canonical_name: "logic/all".to_owned(),
+        id_hex: id_hex(LOGIC_ALL_ID),
+    });
+    frozen.module_exports.sort_by(|left, right| {
+        (&left.module, &left.item, &left.canonical_name).cmp(&(
+            &right.module,
+            &right.item,
+            &right.canonical_name,
+        ))
+    });
 
     let mut actual_specializers = catalog
         .all_specializers()
@@ -370,7 +531,7 @@ fn assert_source_surface(catalog: &FunctionCatalog) {
             &right.canonical_name,
         ))
     });
-    assert_eq!(actual_modules.len(), EXPECTED_MODULE_EXPORTS);
+    assert_eq!(actual_modules.len(), EXPECTED_MODULE_EXPORTS + 1);
     assert_eq!(actual_modules, frozen.module_exports);
 }
 

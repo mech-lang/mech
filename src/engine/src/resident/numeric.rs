@@ -492,6 +492,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_no_additional_scratch(builder, &["logic"], "or", bind_semantic_bool_or)?;
     register_no_additional_scratch(builder, &["logic"], "xor", bind_semantic_bool_xor)?;
     register_no_additional_scratch(builder, &["logic"], "not", bind_bool_not)?;
+    register_no_additional_scratch(builder, &["logic"], "all", bind_bool_all)?;
     register_no_additional_scratch(builder, &["compare"], "eq", bind_semantic_equal)?;
     register_no_additional_scratch(builder, &["compare"], "neq", bind_semantic_not_equal)?;
     register_no_additional_scratch(builder, &["compare"], "lt", bind_semantic_less)?;
@@ -2182,6 +2183,50 @@ fn bind_bool_not(
         if scalar { bool_not } else { bool_vector_not },
         Vec::<u64>::new().into_boxed_slice(),
     )
+}
+
+fn bind_bool_all(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    require_kind(request, &[ResidentValueKind::Bool], ResidentValueKind::Bool)?;
+    let input = &request.inputs[0];
+    let input_schema = request
+        .schemas
+        .get(input.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    let output_schema = request
+        .schemas
+        .get(request.output.schema_id)
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    if output_schema.body() != &SchemaBody::Bool || request.output.shape != ResidentShape::SCALAR {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let input_matches = match input_schema.body() {
+        SchemaBody::Bool => input.shape == ResidentShape::SCALAR,
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if element.as_ref() == &SchemaBody::Bool => {
+            matches!(dimensions.as_ref(), [rows, columns]
+                if input.shape_instance.resolve_dimension(rows).ok() == Some(u64::from(input.shape.rows))
+                    && input.shape_instance.resolve_dimension(columns).ok() == Some(u64::from(input.shape.columns)))
+        }
+        _ => false,
+    };
+    if !input_matches {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let elements = input
+        .shape
+        .len()
+        .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
+    bound(bool_all, vec![elements as u64].into_boxed_slice())
 }
 
 fn bind_strict_comparison(
@@ -8654,6 +8699,36 @@ fn bool_not(
     write_bool(output, !bool_scalar(inputs, 0)?)
 }
 
+fn bool_all(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let Some(ResidentValueRef::Bool(input)) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let [elements] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    if usize::try_from(*elements).ok() != Some(input.len()) {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    // Validate every byte before writing, even after a false element. Empty
+    // inputs retain the conjunction identity, true.
+    let mut next = true;
+    for value in input {
+        match value {
+            0 => next = false,
+            1 => {}
+            _ => return Err(ResidentKernelError::InvalidInput),
+        }
+    }
+    write_bool(output, next)
+}
+
 fn bool_vector_not(
     _kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -14775,6 +14850,162 @@ mod tests {
         assert_eq!(
             kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
             Ok(true)
+        );
+        assert_eq!(output, [0]);
+    }
+
+    #[test]
+    fn boolean_all_binds_scalar_and_matrix_shapes_with_empty_identity() {
+        for dimensions in [
+            None,
+            Some((1, 1)),
+            Some((1, 3)),
+            Some((3, 1)),
+            Some((2, 3)),
+            Some((0, 0)),
+            Some((0, 3)),
+            Some((3, 0)),
+        ] {
+            let (input_body, shape) = match dimensions {
+                None => (SchemaBody::Bool, ResidentShape::SCALAR),
+                Some((rows, columns)) => (
+                    SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::Bool),
+                        dimensions: vec![
+                            mech_core::DimensionExpr::Constant(rows.into()),
+                            mech_core::DimensionExpr::Constant(columns.into()),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                    ResidentShape { rows, columns },
+                ),
+            };
+            let (schemas, ids) = test_schema_table([input_body, SchemaBody::Bool]);
+            let input_schema = ids[0];
+            let output_schema = ids[1];
+            let contract = test_contract(
+                &[input_schema],
+                output_schema,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::ExactScalar,
+            );
+            let kernel = bind_bool_all(&ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &[test_layout(
+                    &schemas,
+                    input_schema,
+                    ResidentValueKind::Bool,
+                    shape,
+                )],
+                output: test_layout(
+                    &schemas,
+                    output_schema,
+                    ResidentValueKind::Bool,
+                    ResidentShape::SCALAR,
+                ),
+            })
+            .unwrap();
+            let elements = shape.len().unwrap();
+            for false_position in 0..=elements {
+                let mut values = vec![1u8; elements];
+                if false_position < elements {
+                    values[false_position] = 0;
+                }
+                let expected = u8::from(false_position == elements);
+                let inputs = [ResidentValueRef::Bool(&values)];
+                let mut output = [1 - expected];
+                assert_eq!(
+                    kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+                    Ok(true)
+                );
+                assert_eq!(output, [expected]);
+                assert_eq!(
+                    kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+                    Ok(false)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn boolean_all_rejects_numeric_bindings_and_non_scalar_results() {
+        let matrix_bool = SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(1),
+                mech_core::DimensionExpr::Constant(1),
+            ]
+            .into_boxed_slice(),
+        };
+        let (schemas, ids) = test_schema_table([
+            SchemaBody::Bool,
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            matrix_bool,
+        ]);
+        for (input_schema, input_kind, output_schema) in [
+            (ids[1], ResidentValueKind::F64, ids[0]),
+            (ids[1], ResidentValueKind::Bool, ids[0]),
+            (ids[0], ResidentValueKind::Bool, ids[2]),
+        ] {
+            let contract = test_contract(
+                &[input_schema],
+                output_schema,
+                OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                },
+                AccessMode::Write,
+                AliasPolicy::NoAlias,
+                ChangeDetectionPolicy::ExactScalar,
+            );
+            assert!(
+                bind_bool_all(&ResidentKernelBindRequest {
+                    contract: &contract,
+                    schemas: &schemas,
+                    inputs: &[test_layout(
+                        &schemas,
+                        input_schema,
+                        input_kind,
+                        ResidentShape::SCALAR
+                    )],
+                    output: test_layout(
+                        &schemas,
+                        output_schema,
+                        ResidentValueKind::Bool,
+                        ResidentShape::SCALAR
+                    ),
+                })
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn boolean_all_rejects_noncanonical_or_wrong_length_input_atomically() {
+        let kernel = BoundResidentKernel::new(bool_all, Box::new([3]));
+        for values in [&[0u8, 2, 1][..], &[1u8, 1, 255][..], &[1u8, 1][..]] {
+            let inputs = [ResidentValueRef::Bool(values)];
+            let mut output = [1u8];
+            let expected = if values.len() == 3 {
+                ResidentKernelError::InvalidInput
+            } else {
+                ResidentKernelError::InvalidShape
+            };
+            assert_eq!(
+                kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+                Err(expected)
+            );
+            assert_eq!(output, [1]);
+        }
+        let inputs = [ResidentValueRef::F64(&[1.0, 1.0, 1.0])];
+        let mut output = [0u8];
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::Bool(&mut output)),
+            Err(ResidentKernelError::InvalidInput)
         );
         assert_eq!(output, [0]);
     }
