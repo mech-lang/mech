@@ -43,6 +43,11 @@ name = "kernel_embedding"
 path = "tests/kernel_embedding.rs"
 required-features = ["kernel-aot"]
 
+[[test]]
+name = "kernel_macro"
+path = "tests/kernel_macro.rs"
+required-features = ["kernel"]
+
 [profile.release]
 debug = false
 

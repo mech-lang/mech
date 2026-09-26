@@ -26,7 +26,7 @@ session, submits a measurement update, and reads a source-named state export:
 ```rust
 use mech::kernel::{Backend, Kernel};
 let source = include_str!("ekf.mec");
-let kernel = Kernel::from_source(source)
+let kernel = mech::mech!(source)
     .input("bearing", [-0.55; 4])
     .export("state")
     .compile(Backend::Jit)?;
@@ -40,6 +40,12 @@ These are implemented calls, excerpted from the runnable example. The
 shapes, independent sessions, exported state, JIT/AOT compilation, and rejected
 turns. The embedding API's 21 integration tests pass. JIT code is compiled once
 and reused across sessions.
+
+`mech::mech!` accepts an inline Rust string or an expression such as
+`include_str!("ekf.mec")` and returns the same kernel builder. Compilation stays
+explicit in `.compile(backend)`, and `.turn(...)` executes synchronously.
+The macro tests cover source-expression evaluation, file/inline parity,
+integrity rejection and recovery, and all five numerical embedding backends.
 
 The [AOT producer](../../examples/embedded_ekf/build.rs) compiles the same source
 and saves a dylib with its typed interface metadata. A separate
@@ -62,9 +68,9 @@ does not measure the new embedding wrapper.
 
 ## Mech backends: matched checked and unchecked
 
-Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-spacing-v3.pptx),
-[PDF](poster/IROS-2026-Mech-Poster-spacing-v3.pdf), and
-[preview](poster/IROS-2026-Mech-Poster-spacing-v3.png).
+Current poster: [editable PowerPoint](poster/IROS-2026-Mech-Poster-prose-v3.pptx),
+[PDF](poster/IROS-2026-Mech-Poster-prose-v3.pdf), and
+[preview](poster/IROS-2026-Mech-Poster-prose-v3.png).
 
 The current poster uses Avenir Next for prose and Fira Code for headings and
 code. Body prose uses 27 pt and footnotes use 18 pt, with distinct sizes for code,
@@ -72,19 +78,28 @@ diagram labels and measurements. Motivation covers Rust numerical kernels and
 Mech's open-source implementation and reactive semantics. Embeddable covers standalone use, native Rust embedding
 and browser embedding through WebAssembly. A note directs readers to the QR code
 for a fuller demonstration, including first-class state machines and pattern
-matching. Selective soft hyphens improve the Motivation column line endings
-without changing column widths or font sizes. The notation legend includes
-library imports. Status and Future Work
+matching. The notation legend includes library imports. Status and Future Work
 describes the v0.4-beta snapshot, further robot-hardware validation, and the v1.0
-release-candidate target for 2028, including additional hosts and language features. The header
+release-candidate target for 2028, including additional hosts, an expanded standard
+library and language features. The header
 links to the website and GitHub repository. The footer invites contributions
 and bug reports.
 
-The QR invitation reads “Scan the QR code at the bottom for a demo.”
+The single-sentence QR invitation connects embedded numerical kernels to Mech's
+broader language features and the online demonstration.
 Embeddable and Reactive move down together by 32 layout pixels to provide more
 space after Motivation. The header website and repository links use 40 pt,
 reduced from 42 pt. The title, Numerical column and benchmark plots retain their
 positions and sizes.
+
+The Numerical prose distinguishes textbook-style Rust from the separately
+optimized SIMD implementation. The audited EKF and candidate-update categories
+contain 356 normalized characters in Mech and 1,024/1,119 in Rust, about a
+threefold difference before helpers and batching. SIMD and batch support adds
+2,857 characters, more than half the selected Rust SIMD application. These
+counts describe the archived source audit, not a recount of the poster snippet.
+Table data and code comments are brighter. Rust semicolons use the syntax
+purple, and the Mech import separator uses the syntax green.
 
 The current layout uses informational callouts with matching medium-gold accent
 bars, a shape marker for the

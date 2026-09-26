@@ -11,9 +11,9 @@ cargo run --no-default-features --features kernel-jit --example embedded_ekf
 The complete host program is [`examples/embedded_ekf/main.rs`](../examples/embedded_ekf/main.rs). Its numerical work is initiated by these calls:
 
 ```rust
-use mech::kernel::{Backend, Kernel};
+use mech::kernel::Backend;
 let source = include_str!("ekf.mec");
-let kernel = Kernel::from_source(source)
+let kernel = mech::mech!(source)
     .input("bearing", [-0.55; 4])
     .export("state")
     .compile(Backend::Jit)?;
@@ -21,6 +21,34 @@ let mut ekf = kernel.start()?;
 ekf.turn([("bearing", [-0.54; 4])])?;
 let state = ekf.state("state")?;
 ```
+
+For source embedded directly in Rust, `mech::mech!` constructs the same builder:
+
+```rust
+use mech::kernel::Backend;
+
+let kernel = mech::mech!(r#"
+Counter @compute
+----------------
+increment := 1f32
+~state := 0f32
+state = state + increment
+"#)
+    .input("increment", [1.0])
+    .export("state")
+    .compile(Backend::Scalar)?;
+let mut counter = kernel.start()?;
+counter.turn([("increment", [2.0])])?;
+assert_eq!(counter.state("state")?, &[2.0]);
+```
+
+The macro is available with the `kernel` feature. Its argument is a Rust string
+expression, evaluated once and passed unchanged to `Kernel::from_source`.
+Raw strings preserve Mech's newlines and syntax. A file can use
+`mech::mech!(include_str!("ekf.mec"))`, as in the AOT producer example below.
+The macro does not compile Mech during Rust compilation: `.compile(backend)`
+explicitly prepares the chosen backend. Submit updates as they arrive with
+`.turn(...)`; each call executes synchronously and returns success or an error.
 
 ## Compilation and state
 
@@ -37,7 +65,7 @@ The source contains one `@compute` section. Its declarations define the per-inst
 Build a persistent AOT bundle once, using the same source and input/export declarations:
 
 ```rust
-let kernel = Kernel::from_source(include_str!("ekf.mec"))
+let kernel = mech::mech!(include_str!("ekf.mec"))
     .input("bearing", [-0.55; 4])
     .export("state")
     .compile(Backend::AotSimd)?;

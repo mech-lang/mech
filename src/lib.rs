@@ -21,6 +21,44 @@ pub extern crate mech_syntax as syntax;
 #[cfg(feature = "kernel")]
 pub use mech_gpu::embed as kernel;
 
+/// Embed Mech source from a Rust string expression in a numerical kernel builder.
+///
+/// Available with the `kernel` feature. This is equivalent to
+/// [`kernel::Kernel::from_source`]: it evaluates the source expression once and
+/// passes the string through unchanged. Use a raw string for inline Mech or
+/// `include_str!("kernel.mec")` to embed a source file.
+///
+/// This macro does not parse or compile Mech during Rust compilation. Configure
+/// the returned builder, then call `.compile(backend)` to prepare the selected
+/// interpreter, JIT, or AOT implementation. A session's `.turn(...)` executes
+/// synchronously and returns after the turn succeeds or fails.
+///
+/// ```
+/// use mech::kernel::Backend;
+///
+/// let kernel = mech::mech!(r#"
+/// Counter @compute
+/// ----------------
+/// increment := 1f32
+/// ~state := 0f32
+/// state = state + increment
+/// "#)
+///     .input("increment", [1.0])
+///     .export("state")
+///     .compile(Backend::Scalar)?;
+/// let mut counter = kernel.start()?;
+/// counter.turn([("increment", [2.0])])?;
+/// assert_eq!(counter.state("state")?, &[2.0]);
+/// # Ok::<(), mech::kernel::Error>(())
+/// ```
+#[cfg(feature = "kernel")]
+#[macro_export]
+macro_rules! mech {
+    ($source:expr $(,)?) => {
+        $crate::kernel::Kernel::from_source($source)
+    };
+}
+
 pub use mech_engine::*;
 #[cfg(not(feature = "no_std"))]
 pub use mech_syntax::print_err_report;

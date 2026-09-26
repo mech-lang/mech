@@ -1,8 +1,8 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // POSTER-BEGIN
-    use mech::kernel::{Backend, Kernel};
+    use mech::kernel::Backend;
     let source = include_str!("ekf.mec");
-    let kernel = Kernel::from_source(source)
+    let kernel = mech::mech!(source)
         .input("bearing", [-0.55; 4])
         .export("state")
         .compile(Backend::Jit)?;
