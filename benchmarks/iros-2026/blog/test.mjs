@@ -35,6 +35,7 @@ for(const file of ['palette.css','mech-source.css','mechdown.css','mech-repl.css
   assert.equal(readFileSync(join(out,'assets',file),'utf8'),readFileSync(join(repo,'include',file),'utf8'),`shared layer drift: ${file}`);
 }
 assert(!/BLOG[A-Z]+|\{\{[A-Z_]+\}\}|Chart build pending/.test(html),'unfilled article slot');
+assert(!html.includes('Citations may contain at most one link.'),'citation definitions must render without formatter diagnostics');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
 // Native symbol references intentionally share hash:namespace addresses so
 // the controller can select all occurrences. Structural/anchor IDs are unique.
@@ -62,6 +63,9 @@ for(const match of html.matchAll(/href="#([^"]+)"/g)) assert(ids.includes(match[
 const citedEntries=[...html.matchAll(/<div id="(\d+)" class="mech-citation">\s*<div class="mech-citation-id">\[(\d+)\]:<\/div>/g)];
 const citationNumbers=new Map(citedEntries.map(match=>[match[1],match[2]]));
 assert(citationNumbers.size>0,'article requires Works Cited entries');
+for(const match of html.matchAll(/<div id="\d+" class="mech-citation">\s*<div class="mech-citation-id">\[\d+\]:<\/div>(.*?)<\/div>/gs)) {
+  assert(match[1].includes('<a href='),'every cited source must retain its verified link');
+}
 assert.equal(citationNumbers.size,citedEntries.length,'duplicate Works Cited targets');
 assert.equal(new Set(citationNumbers.values()).size,citationNumbers.size,'duplicate Works Cited numbers');
 const citationReferences=[...html.matchAll(/<a href="#(\d+)" class="mech-reference-link">(\d+)<\/a>/g)];
