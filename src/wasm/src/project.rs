@@ -2837,7 +2837,7 @@ mod tests {
                 .unwrap()
                 .1
                 .format_canonical_inline(),
-            "[3; 7]",
+            "[3 7]'",
         );
         assert_eq!(
             runtime
@@ -5155,7 +5155,7 @@ mod browser_tests {
                 .unwrap()
                 .unwrap()
                 .format_canonical_inline(),
-            "[3; 7]",
+            "[3 7]'",
         );
         assert_eq!(
             document

@@ -83,6 +83,9 @@ fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static
     if name.starts_with("VariableDefine") || name == "integrity/constraint" {
         return Some("F09");
     }
+    if name == "logic/all" {
+        return Some("F01");
+    }
     if [
         "Add",
         "And",
@@ -122,6 +125,30 @@ fn r6_runtime_family(entry: &mech_core::RuntimeFunctionEntry) -> Option<&'static
         return Some("F01");
     }
     None
+}
+
+#[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
+#[test]
+fn boolean_reduction_has_managed_no_scratch_classification() {
+    use mech_core::{FunctionValueRepresentation, RuntimeFunctionId, RuntimeFunctionSignature};
+
+    let catalog = mech_stdlib::source_catalog();
+    let entry = catalog
+        .runtime_entry(RuntimeFunctionId::from_name("logic/all"))
+        .expect("maintained profiles include the Boolean reduction");
+    assert_eq!(r6_runtime_family(entry), Some("F01"));
+    assert_eq!(
+        entry.implementation_memory_class(),
+        ImplementationMemoryClass::NoAdditionalScratch,
+    );
+    assert_eq!(entry.contract_kind(), "boolean_reduction");
+    assert_eq!(
+        entry.signature(),
+        RuntimeFunctionSignature::unary(
+            FunctionValueRepresentation::Bool,
+            FunctionValueRepresentation::AnyValue,
+        ),
+    );
 }
 
 #[cfg(any(feature = "standard_compiler", feature = "full_compiler"))]
