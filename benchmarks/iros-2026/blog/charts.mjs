@@ -208,7 +208,148 @@ ${content.join('\n')}
 </svg>\n`;
 }
 
-/** Write four self-contained SVGs; return their absolute output paths. */
+// Mobile figures use their own geometry rather than shrinking the desktop's
+// labels and values. Data, scale limits, bar order and summaries are identical.
+function wrapWords(value, maximum) {
+  const lines = [];
+  let line = '';
+  for (const word of value.split(/\s+/)) {
+    if (line && `${line} ${word}`.length > maximum) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? `${line} ${word}` : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function mobileChart({ title, subtitle, panels, archives, notes }) {
+  const width = 560;
+  const margin = 20;
+  const left = margin;
+  const right = 352;
+  const medianX = 438;
+  const plusX = 464;
+  const madX = width - margin;
+  const rowHeight = 118;
+  const barHeight = 24;
+  const barGap = 6;
+  const id = `iros-chart-${createHash('sha256').update(title).digest('hex').slice(0, 10)}-mobile`;
+  const hatchId = `${id}-gpu-hatch`;
+  const content = [];
+  let next = 34;
+  function lines(value, maximum, lineHeight, className) {
+    for (const line of wrapWords(value, maximum)) {
+      content.push(text(margin, next, line, `class="${className}"`));
+      next += lineHeight;
+    }
+  }
+  lines(title, 35, 30, 'title');
+  next += 4;
+  lines(subtitle, 49, 25, 'subtitle');
+  next += 15;
+  content.push('<g class="legend" aria-label="Dark upper bars are unchecked; light lower bars are checked; diagonal hatching indicates GPU execution.">');
+  for (const [x, fill, label] of [[20, '#69767b', 'unchecked (upper)'], [290, '#dce5e8', 'checked (lower)']]) {
+    content.push(`<rect x="${x}" y="${next - 16}" width="22" height="16" fill="${fill}"/>`);
+    content.push(text(x + 31, next - 1, label, 'class="legend-label"'));
+  }
+  next += 29;
+  content.push(`<rect x="20" y="${next - 16}" width="22" height="16" fill="#dce5e8"/>`);
+  content.push(`<rect x="20" y="${next - 16}" width="22" height="16" fill="url(#${hatchId})"/>`);
+  content.push(text(51, next - 1, 'GPU', 'class="legend-label"'), '</g>');
+  next += 28;
+
+  for (const configuration of panels) {
+    const { rows, title: panelTitle = '', log = false, maximum = 200 } = configuration;
+    const minimum = log ? 0.1 : 0;
+    const x = value => left + (right - left) * (log ?
+      Math.log10(value / minimum) / Math.log10(maximum / minimum) : value / maximum);
+    if (panelTitle) {
+      content.push(text(margin, next + 20, panelTitle, 'class="panel-title"'));
+      next += 45;
+    }
+    const ticks = log ? [0.1, 1, 10, 100, 1000] :
+      maximum === 500 ? [0, 100, 200, 300, 400, 500] : [0, 50, 100, 150, 200];
+    const plotTop = next;
+    const bottom = plotTop + rows.length * rowHeight - 11;
+    rows.forEach((entry, index) => {
+      const top = plotTop + index * rowHeight;
+      const label = `${entry.label}${entry.detail ? ` · ${entry.detail}` : ''}`;
+      content.push(text(margin, top + 20, label, 'class="row-label"'));
+      for (const tick of ticks) {
+        content.push(`<line x1="${x(tick)}" y1="${top + 33}" x2="${x(tick)}" y2="${top + 91}" stroke="#304047" stroke-width="1"/>`);
+      }
+      ['unchecked', 'checked'].forEach((mode, modeIndex) => {
+        const value = entry.values[mode];
+        const barY = top + 35 + modeIndex * (barHeight + barGap);
+        const centerY = barY + barHeight / 2;
+        const barRight = x(value.median);
+        if (barRight > right || value.median - value.mad <= minimum) {
+          throw new Error(`Mobile plot bounds exclude ${entry.label} ${mode}`);
+        }
+        const description = `${label}, ${mode}: ${number(value.median)} million filter-turns per second; ` +
+          `MAD ${variation(value.mad)}; ten samples.`;
+        const attrs = `data-language="${esc(entry.label)}" data-mode="${mode}" data-source="${entry.source}" data-median="${value.median}" data-mad="${value.mad}" data-n="10"`;
+        content.push(`<g ${attrs} role="group" aria-label="${esc(description)}"><title>${esc(description)}</title>`);
+        content.push(`<rect x="${left}" y="${barY}" width="${barRight - left}" height="${barHeight}" fill="${COLORS[entry.color][modeIndex]}"/>`);
+        if (entry.gpu) content.push(`<rect x="${left}" y="${barY}" width="${barRight - left}" height="${barHeight}" fill="url(#${hatchId})"/>`);
+        const lo = x(value.median - value.mad), hi = x(value.median + value.mad);
+        content.push(`<path d="M${lo},${centerY} H${hi} M${lo},${centerY - 5} V${centerY + 5} M${hi},${centerY - 5} V${centerY + 5}" fill="none" stroke="#f5f7f8" stroke-width="1.3"/>`);
+        content.push(text(medianX, centerY + 7, number(value.median), 'class="measurement" text-anchor="end"'));
+        content.push(text(plusX, centerY + 7, '±', 'class="measurement" text-anchor="middle"'));
+        content.push(text(madX, centerY + 7, variation(value.mad), 'class="measurement" text-anchor="end"'));
+        content.push('</g>');
+      });
+    });
+    content.push(`<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="#64767e"/>`);
+    for (const tick of ticks) content.push(text(x(tick), bottom + 26, tick, 'class="tick" text-anchor="middle"'));
+    content.push(text(width / 2, bottom + 58, 'Throughput (million filter-turns/s)', 'class="axis-label" text-anchor="middle"'));
+    content.push(text(width / 2, bottom + 83, log ? 'Logarithmic scale' : 'Linear scale', 'class="axis-label" text-anchor="middle"'));
+    next = bottom + 124;
+  }
+  for (const note of notes) {
+    lines(note, 55, 24, 'note');
+    next += 9;
+  }
+  const label = archives.length > 1 ? 'Raw CPU and Metal records' : 'Raw samples and provenance';
+  archives.forEach((archive, index) => {
+    content.push(`<a href="${SOURCE_ROOT}${archive.filename}" target="_blank">` +
+      text(margin, next, archives.length > 1 ? `${label}: ${index === 0 ? 'CPU' : 'Metal'}` : label, 'class="source-link"') + '</a>');
+    next += 27;
+  });
+  const height = next + 10;
+  const description = `${subtitle} Unchecked bars are above checked bars. Diagonal hatching indicates GPU execution. ` +
+    'Values and whiskers show the median and unscaled median absolute deviation from ten retained process trials per mode. No samples were removed. ' +
+    panels.map(value => `${value.title || 'Chart'} uses a ${value.log ? 'logarithmic' : 'linear'} throughput axis.`).join(' ') + ' ' + notes.join(' ');
+  const metadata = { units: 'million filter-turns/s', summary: 'median and unscaled MAD',
+    archives: archives.map(({ filename, sha256 }) => ({ filename, sha256 })),
+    rows: panels.flatMap(value => value.rows).map(({ key, label, source, values }) => ({ key, label, source, values })),
+  };
+  return `<svg xmlns="http://www.w3.org/2000/svg" id="${id}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title ${id}-description">
+<title id="${id}-title">${esc(title)}</title>
+<desc id="${id}-description">${esc(description)}</desc>
+<metadata>${esc(JSON.stringify(metadata))}</metadata>
+<defs><pattern id="${hatchId}" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M-2 2 L2 -2 M0 8 L8 0 M6 10 L10 6" stroke="#101719" stroke-opacity="0.33" stroke-width="1.4"/></pattern></defs>
+<style>
+#${id} text { font-family: Inter, Arial, sans-serif; fill: ${FOREGROUND}; }
+#${id} .title { font-family: 'Fira Code', monospace; font-size: 24px; font-weight: 600; fill: #f4c653; }
+#${id} .subtitle, #${id} .note, #${id} .tick, #${id} .axis-label { fill: ${MUTED}; }
+#${id} .subtitle, #${id} .legend-label, #${id} .axis-label { font-size: 20px; }
+#${id} .row-label { font-size: 22px; font-weight: 600; }
+#${id} .measurement { font-size: 23px; font-variant-numeric: tabular-nums; }
+#${id} .panel-title { font-size: 24px; font-weight: 600; }
+#${id} .tick { font-size: 19px; }
+#${id} .note { font-size: 18px; }
+#${id} .source-link { font-size: 18px; fill: #8ccde7; text-decoration: underline; }
+</style>
+<rect width="${width}" height="${height}" rx="8" fill="${BACKGROUND}"/>
+${content.join('\n')}
+</svg>\n`;
+}
+
+/** Write desktop and mobile SVGs for four charts; return all eight paths. */
 export function buildCharts(outputDir) {
   const destination = outputDir instanceof URL ? fileURLToPath(outputDir) : resolve(outputDir);
   const cpu = load('apple-m1-cpu-equal-n10-2026-09-24.json');
@@ -283,7 +424,10 @@ export function buildCharts(outputDir) {
     },
   };
   // Validate every dataset before writing any chart.
-  const rendered = Object.entries(charts).map(([filename, configuration]) => [filename, chart(configuration)]);
+  const rendered = Object.entries(charts).flatMap(([filename, configuration]) => [
+    [filename, chart(configuration)],
+    [filename.replace('.svg', '-mobile.svg'), mobileChart(configuration)],
+  ]);
   mkdirSync(destination, { recursive: true });
   return rendered.map(([filename, svg]) => {
     const output = join(destination, filename);

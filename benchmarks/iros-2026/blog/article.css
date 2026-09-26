@@ -18,22 +18,24 @@
 .code-number { color:var(--mech-syntax-literal); }
 .workshop-figure { margin:32px 0; }
 .workshop-figure svg { width:100%; height:auto; display:block; }
-.workshop-figure .wide-scroll { width:100%; min-width:0; max-width:100%; overflow:auto; border:1px solid var(--mech-border); padding:14px; background:var(--mech-canvas); }
-.workshop-figure .wide-scroll svg { min-width:660px; }
+.workshop-figure .figure-frame { width:100%; min-width:0; max-width:100%; border:1px solid var(--mech-border); padding:14px; background:var(--mech-canvas); }
+.workshop-figure .chart-mobile { display:none; }
+[data-workshop-kernel-output] > a { font-size:12px; color:var(--mech-link); }
+[data-workshop-kernel-output] > pre { margin:12px 0 0; font:inherit; }
 .workshop-figure figcaption { margin-top:12px; }
 html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-caption { width:100%; max-width:100%; }
 .live-demo { margin:32px 0; padding:22px; border:1px solid var(--mech-border); border-top:3px solid var(--accent-secondary-teal); background:var(--mech-panel); border-radius:4px; }
-.live-demo button,.live-demo select,.feature-example button { background:var(--mech-panel-raised); color:var(--mech-text-body); border:1px solid var(--mech-border); border-radius:4px; padding:8px 13px; font:inherit; font-size:13px; cursor:pointer; }
-.live-demo :is(button,select):hover,.feature-example button:hover { border-color:var(--mech-brand); }
-.live-demo button:disabled,.feature-example button:disabled { opacity:.45; cursor:not-allowed; }
-.live-demo :is(button,select,input,summary):focus-visible,.feature-example :is(button,summary,textarea):focus-visible { outline:2px solid var(--mech-brand); outline-offset:4px; }
-.live-demo :is(#run,#compile) { color:var(--mech-canvas); background:var(--mech-brand); border-color:var(--mech-brand); }
+.live-demo button,.live-demo select { background:var(--mech-panel-raised); color:var(--mech-text-body); border:1px solid var(--mech-border); border-radius:4px; padding:8px 13px; font:inherit; font-size:13px; cursor:pointer; }
+.live-demo :is(button,select):hover { border-color:var(--mech-brand); }
+.live-demo button:disabled { opacity:.45; cursor:not-allowed; }
+.live-demo :is(button,select,input,summary):focus-visible { outline:2px solid var(--mech-brand); outline-offset:4px; }
+.live-demo #run { color:var(--mech-canvas); background:var(--mech-brand); border-color:var(--mech-brand); }
 .live-demo #inject { color:var(--mech-warning); }
 .demo-heading { display:flex; justify-content:space-between; align-items:start; gap:20px; }
 .demo-heading h3 { margin:0 0 15px; font-size:20px; }
 .demo-heading [role=status] { font-size:12px; max-width:260px; color:var(--accent-secondary-teal-soft); }
 .demo-controls { display:flex; flex-wrap:wrap; gap:10px; align-items:end; padding-bottom:20px; border-bottom:1px solid var(--mech-border); }
-.live-demo label,.feature-example label { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--mech-text-secondary); }
+.live-demo label { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--mech-text-secondary); }
 .demo-body { display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:20px; padding:22px 0; }
 .scene-wrap { align-self:start; background:var(--mech-code-bg); border:1px solid var(--mech-border); }
 .scene-wrap svg { display:block; width:100%; }
@@ -56,15 +58,15 @@ html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-captio
 .behavior-status [data-state].active { border-color:var(--mech-syntax-operator); color:var(--mech-syntax-variable); background:var(--mech-panel-raised); }
 .behavior-status [data-state="2"].active { border-color:var(--mech-error); color:var(--mech-error); }
 .behavior-status p { flex-basis:100%; font-size:12px; margin:0; color:var(--mech-text-secondary); }
-.live-demo details,.feature-example details { border-top:1px solid var(--mech-border); padding-top:12px; margin-top:20px; font-size:14px; }
-.live-demo summary,.feature-example summary { cursor:pointer; color:var(--mech-link); font-weight:600; margin-bottom:15px; }
-.live-demo textarea,.feature-example textarea { width:100%; background:var(--mech-code-bg); color:var(--mech-syntax-variable); padding:16px; border:1px solid var(--mech-border); font:12px/1.6 'Fira Code',monospace; resize:vertical; }
-#source-status { font-size:12px; color:var(--mech-text-secondary); margin-top:12px; }
+.live-demo details { border-top:1px solid var(--mech-border); padding-top:12px; margin-top:20px; font-size:14px; }
+.live-demo summary { cursor:pointer; color:var(--mech-link); font-weight:600; margin-bottom:15px; }
 .live-demo .error { color:var(--mech-error); border-left:3px solid var(--mech-error); padding:12px; white-space:pre-wrap; font:12px/1.6 'Fira Code',monospace; max-height:250px; overflow:auto; }
-.feature-example { margin-bottom:40px; }
-.feature-result { display:inline-block; margin-left:18px; font-family:'Fira Code',monospace; color:var(--mech-syntax-function); overflow-wrap:anywhere; }
 .verification { font:12px/1.65 'Fira Code',monospace; white-space:pre-wrap; color:var(--mech-text-secondary); max-height:360px; overflow:auto; }
 .verification:empty,[hidden] { display:none!important; }
+@container (max-width:720px) {
+  .workshop-figure .chart-desktop { display:none; }
+  .workshop-figure .chart-mobile { display:block; }
+}
 @media(max-width:1000px) {
   .demo-body { grid-template-columns:1fr; }
   .telemetry { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
@@ -79,6 +81,8 @@ html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-captio
   .demo-controls label { flex:1; min-width:160px; }
   .demo-controls select { width:100%; }
   .source-card { padding:14px; font-size:12px; }
-  .workshop-figure .wide-scroll { padding:7px; }
+  .workshop-figure .figure-frame { padding:7px; }
+  .workshop-figure .chart-desktop { display:none; }
+  .workshop-figure .chart-mobile { display:block; }
   .telemetry .metric output { font-size:16px; }
 }

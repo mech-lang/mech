@@ -115,6 +115,31 @@ html[data-mech-shim="blog"] .backmatter-body li + li {
   margin-top: 8px;
 }
 
+/* The published blog keeps notes at the prose reading size, with plain
+ * backmatter headings and no extra section gap above their own margins. */
+html[data-mech-shim="blog"] .backmatter-body :is(.mech-footnotes, .mech-works-cited) {
+  margin-top: 0;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-backmatter-heading {
+  color: var(--text-primary);
+  font-family: inherit;
+  line-height: inherit;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-footnote {
+  margin-bottom: 0;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-footnote .mech-paragraph {
+  font-size: 1.06rem;
+  font-weight: 400;
+}
+
+html[data-mech-shim="blog"] [data-mechdown] .mech-footnote-reference {
+  font-family: monospace;
+}
+
 html[data-mech-shim="blog"] body.narrow-content .mech-float,
 html[data-mech-shim="blog"] body.narrow-content .mech-float.left,
 html[data-mech-shim="blog"] body.narrow-content .mech-float.right {
@@ -277,8 +302,9 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
     grid-template-columns: 1fr;
   }
 
-  .hero-visual {
-    min-height: 280px;
+  .hero-visual,
+  .mech-hero-img {
+    min-height: 0;
   }
 
   .hero h1 {
@@ -286,7 +312,9 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
   }
 
   .mech-hero-img figure img {
-    aspect-ratio: 5 / 3;
+    aspect-ratio: auto;
+    height: auto;
+    object-fit: contain;
   }
 }
 
@@ -294,11 +322,21 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
   html[data-mech-shim="blog"] .article-layout {
     display: block;
   }
+
+  /* Start compact pages with the article visible. The shared controller reads
+   * this initial visibility; the edge handle still opens the working REPL. */
+  html[data-mech-shim="blog"] [data-mech-repl-host]:not([data-mech-console-open]) [data-mech-console-pane] {
+    display: none;
+  }
 }
 
 @container (max-width: 900px) {
   html[data-mech-shim="blog"] .article-layout {
     display: block;
+  }
+
+  html[data-mech-shim="blog"] .article-abstract .mech-paragraph {
+    text-align: left;
   }
 }
 

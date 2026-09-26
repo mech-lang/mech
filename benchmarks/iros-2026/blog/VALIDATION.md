@@ -5,6 +5,12 @@ Recorded on 2026-09-26 against the local article preview at
 browser implementation, not new native benchmark measurements or a
 publication record.
 
+This record preserves the earlier browser checks and distinguishes them from
+the newer read-only native-block/resident-REPL integration below. Historical
+source-editor checks describe a superseded build, not controls present in the
+current article. Do not treat an earlier browser pass as validation of a
+subsequent rebuilt page.
+
 ## Source and environment
 
 - Browser: the Codex in-app browser, with a real WebGPU adapter executing the
@@ -77,7 +83,11 @@ The Node smoke test does not dispatch a GPU. A verifier result marked
 `unsupported` is not a passing GPU result even if CPU checks pass. The browser
 verification above explicitly exercised real WebGPU execution.
 
-## Final integration pass
+## Previous-build integration pass — superseded UI
+
+The following checks were performed before source editors were removed and
+the standard resident document REPL was restored. They are retained as
+historical evidence only; editing and restoration are no longer page features.
 
 - Edited the source measurement covariance from 0.25 to 0.3 through the page,
   recompiled it, and executed an accepted turn. The interface reported edited
@@ -102,9 +112,9 @@ No archived CPU, Metal, dylib, memory, or source-size measurements were rerun
 or changed by these browser checks. The observed live FPS is not a new native
 benchmark claim.
 
-## Shared blog template integration
+## Previous shared-template pass — superseded presentation-only startup
 
-The article now composes `include/blog.html` and copies the current shared
+That intermediate article composed `include/blog.html` and copied the shared
 palette, source, Mechdown, shell, blog, and document-controller assets unchanged.
 Article-specific CSS is limited to executable examples and workshop figures.
 
@@ -130,3 +140,76 @@ The first-use fixes hide absent hero artwork, wrap long identifiers in
 footnotes, defer workshop anchor handling to the shared TOC, and contain
 wide workshop figures on narrow displays. The controller's opt-in
 presentation mode preserves ordinary document startup for other pages.
+
+## Current native-block and resident-REPL integration
+
+The current source replaces the intermediate presentation-only startup with
+the actual v0.4 resident document controller and REPL. One cached WASM
+initialization is shared with the numerical host. The whole expanded document
+is formatted and encoded once, and the same source is embedded for REPL
+reflection. All four Mech fences retain native block and output IDs. Behavior,
+functions, and matching use root scope, with presentation-only filename pills.
+The EKF uses the native `mech:ekf` namespace and keeps its native pill; its
+standard output block is marked `data-workshop-kernel-output` for the numerical
+host to populate from actual accepted kernel state.
+
+An all-root-scope attempt exposed a resident projection failure when a REPL
+submission included the full EKF document. The integration therefore keeps
+the numerical example in its named namespace and runs it through the existing
+separate checked-kernel path. This is a current runtime limitation, not a
+claim that the complete numerical demo executes in the resident document REPL.
+
+The source listings are read-only. Document headings become Mech comments in
+each fence, and the behavior example adds the labeled invocation
+`#Robot(0, 1)`. Original downloadable Mech files are unchanged. The EKF demo
+continues to compile the exact original source, including its `@compute`
+heading, in a separate kernel session.
+
+Completed build-level checks on 2026-09-26:
+
+- The actual native formatter parsed the complete expanded article and
+  produced four native Mech fences: three root output addresses (`:0`) and
+  one named EKF output with the kernel-host marker. It also produced three
+  native Rust code blocks.
+- Adding native filename-pill markup preserved every formatter-generated ID.
+- All four downloadable Mech sources remained byte-identical to their inputs.
+- The rebuilt-artifact resident-runtime smoke, static article, mobile-layout,
+  and shared presentation/lifecycle regression tests passed. All 19 shared
+  style-contract tests passed.
+
+Current rebuilt-page browser checks passed on 2026-09-26:
+
+- The resident document and console reached ready state. Native root outputs
+  displayed `1`, `0.9668146928`, and `correct`; the EKF block displayed the
+  numerical kernel's real initial state. Submitting `40 + 2` in the resident
+  REPL returned `42` without errors.
+- The only textarea was `.repl-input`. There were no inline kernel, function,
+  or matching source editors.
+- The real WebGPU verifier again passed 20 paired turns across 256 filters.
+  NaN in lane 255 caused rejection and bitwise whole-batch CPU/GPU rollback,
+  including an unchanged GPU active publication buffer; all 256 filters
+  recovered. Maximum absolute errors remained `3.814697e-6` for mean state
+  and `1.068115e-4` for covariance.
+- At desktop width 1,280 px, document scroll width was 1,280 px. At
+  390 × 844, document scroll width was 390 px. All five narrow-layout figure
+  variants were displayed with 352 px container/scroll widths and 338 px SVG
+  widths, with no horizontal overflow. The mobile CPU chart was also
+  visually inspected and legible. This is responsive-browser testing, not a
+  physical-phone or mobile-GPU qualification.
+
+Final local visual and interaction checks also passed:
+
+- The mobile hero preserved its full 800:640 aspect ratio without cropping
+  or blank padding. Hero and Mika images loaded; footnotes rendered at
+  16.96 px, and mobile tables fit within 354 px without overflow.
+- The vertical mobile pipeline clearly showed the artifact, serialization,
+  configuration, host, and turn branches. Every standard footer link group
+  and the release card were visible without overflow.
+- The mobile REPL drawer evaluated `#Robot(0, 1)` to `1` without errors.
+  One CPU turn and one GPU turn were accepted, and the native EKF block's
+  live output exactly matched the displayed telemetry. Source listings
+  remained read-only.
+
+This validates local desktop and 390 px responsive-browser layouts, not
+physical-phone hardware. Production checks remain separate. No archived
+native measurements were rerun or replaced by these checks.

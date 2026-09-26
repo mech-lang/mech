@@ -442,6 +442,100 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
     }
 }
 
+fn shim_part<'a>(html: &'a str, name: &str) -> &'a str {
+    html.split_once(&format!("<{name}>"))
+        .unwrap()
+        .1
+        .split_once(&format!("</{name}>"))
+        .unwrap()
+        .0
+}
+
+#[test]
+fn html_shim_shares_reference_numbers_across_document_slots() {
+    let source = "Reference Slots\n===============\n\n\
+%% Abstract reference [A] and note[^a].\n\n\
+Introduction reference [B], repeated [A], and note[^b].\n\n\
+[B]: Introduction bibliography entry.\n\n\
+[^b]: Introduction note definition.\n\n\
+1. First\n--------\n\n\
+Content reference [C], repeated [A], and notes[^c][^a].\n\n\
+(1.1) Child\n\n\
+Child text.\n\n\
+2. Second\n---------\n\n\
+Repeated introduction reference [B] and note[^b].\n\n\
+[A]: Abstract bibliography entry.\n\n\
+[C]: Content bibliography entry.\n\n\
+[^a]: Abstract note definition.\n\n\
+[^c]: Content note definition.\n";
+    let tree = mech_syntax::parser::parse(source).unwrap();
+    let html = Formatter::new().format_html(
+        &tree,
+        String::new(),
+        "<abstract>{{ABSTRACT}}</abstract><intro>{{INTRO}}</intro>\
+<contents>{{CONTENT}}</contents><first>{{SECTION1}}</first>\
+<second>{{SECTION2}}</second><cited>{{CITED}}</cited>\
+<notes>{{FOOTNOTES}}</notes><toc>{{TOC}}</toc>".to_string(),
+    );
+    let abstract_html = shim_part(&html, "abstract");
+    let intro = shim_part(&html, "intro");
+    let contents = shim_part(&html, "contents");
+    for (part, citation, number) in [
+        (abstract_html, "A", 1), (intro, "A", 1), (intro, "B", 2),
+        (contents, "A", 1), (contents, "B", 2), (contents, "C", 3),
+    ] {
+        assert!(part.contains(&format!(
+            "href=\"#{}\" class=\"mech-reference-link\">{number}</a>", hash_str(citation),
+        )), "citation {citation} in {part}");
+    }
+    for (citation, number) in [("A", 1), ("B", 2), ("C", 3)] {
+        assert!(shim_part(&html, "cited").contains(&format!(
+            "<div id=\"{}\" class=\"mech-citation\">\n      <div class=\"mech-citation-id\">[{number}]:</div>",
+            hash_str(citation),
+        )), "bibliography {citation}: {html}");
+    }
+    for (part, note, number) in [
+        (abstract_html, "a", 1), (intro, "b", 2),
+        (contents, "a", 1), (contents, "b", 2), (contents, "c", 3),
+    ] {
+        assert!(part.contains(&format!(
+            "href=\"#{}\" class=\"mech-footnote-reference\">{number}</a>",
+            hash_str(&format!("footnote-{note}")),
+        )), "footnote {note} in {part}");
+    }
+    for (note, number) in [("a", 1), ("b", 2), ("c", 3)] {
+        assert!(shim_part(&html, "notes").contains(&format!(
+            "<div class=\"mech-footnote\" id=\"{}\">\n        <div class=\"mech-footnote-id\">{number}:</div>",
+            hash_str(&format!("footnote-{note}")),
+        )), "footnote definition {note}: {html}");
+    }
+    assert!(contents.starts_with(shim_part(&html, "first")));
+    assert!(contents.ends_with(shim_part(&html, "second")));
+    for (part, section) in [(shim_part(&html, "first"), "1.0"), (shim_part(&html, "second"), "2.0")] {
+        assert!(part.contains(&format!("section=\"{section}\"")), "heading numbering: {part}");
+    }
+    assert!(shim_part(&html, "first").contains("section=\"1.1\""));
+    let visible = format!("{abstract_html}{intro}{contents}");
+    let ids: Vec<_> = visible.split(" id=\"").skip(1)
+        .map(|part| part.split_once('"').unwrap().0).collect();
+    assert_eq!(ids.len(), ids.iter().collect::<std::collections::BTreeSet<_>>().len(),
+        "repeated citations must not duplicate HTML IDs");
+}
+
+#[test]
+fn html_shim_keeps_backmatter_without_numbered_sections() {
+    let tree = mech_syntax::parser::parse(
+        "Unsectioned\n===========\n\n%% Abstract reference [A].\n\n\
+Introduction with note[^a].\n\n[A]: Abstract entry.\n\n[^a]: Introduction note.\n",
+    ).unwrap();
+    let html = Formatter::new().format_html(&tree, String::new(),
+        "{{ABSTRACT}}{{INTRO}}{{CONTENT}}{{CITED}}{{FOOTNOTES}}".to_string());
+    assert!(html.contains("mech-works-cited"), "{html}");
+    assert!(html.contains("mech-footnotes"), "{html}");
+    assert!(html.contains("Abstract entry."), "{html}");
+    assert!(html.contains("Introduction note."), "{html}");
+}
+
 #[test]
 fn html_shim_leaves_title_empty_when_the_document_has_no_title() {
     let mut tree = html_fixture(&[]);

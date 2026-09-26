@@ -1,10 +1,23 @@
-import init, { WasmKernel, WasmRepl } from '../_mech/pkg/mech_wasm.js';
+import initializeRuntime, { WasmKernel, WasmRepl } from './runtime.mjs';
 import { RobotScene } from './drawing.mjs';
 import { verifyKernel } from './verify.mjs';
 
 const $ = id => document.getElementById(id);
 const text = (id, value) => { $(id).textContent = value; };
 const scene = new RobotScene($('robot-scene'));
+function bindKernelListing() {
+  const block=document.querySelector('[data-workshop-kernel-output]')?.closest('.mech-fenced-mech-block');
+  // The live kernel is separate from the document REPL. Do not offer root
+  // symbol inspection for values whose state is held by that kernel.
+  for(const element of block?.querySelectorAll('.mech-var-name') || []) {
+    element.dataset.mechValueInteractive='false';
+    element.classList.remove('mech-clickable');
+    element.removeAttribute('tabindex');
+    element.removeAttribute('role');
+  }
+}
+bindKernelListing();
+window.addEventListener('mech:document-rendered',bindKernelListing);
 document.addEventListener('click', event => {
   // The shared document controller handles TOC navigation and compact layouts.
   if (event.defaultPrevented) return;
@@ -13,34 +26,20 @@ document.addEventListener('click', event => {
   const target=document.getElementById(decodeURIComponent(link.getAttribute('href').slice(1)));
   if(target) {event.preventDefault();target.scrollIntoView({behavior:'instant',block:'start'});history.replaceState(null,'',link.getAttribute('href'));}
 });
-let original, source, repl, kernel, device, manifest, adapter, active = 0;
+let source, repl, kernel, device, manifest, adapter, active = 0;
 let mode = 0, busy = false, running = false, generation = 0, samples = [], accepted = 0, rejected = 0;
 let state, covariance, frames = [], ready = false;
 let committedBackend = 'cpu', committedInstances = '4096';
 const rowMajor = a => new Float32Array([a[0],a[3],a[6],a[1],a[4],a[7],a[2],a[5],a[8]]);
-async function initializeRuntime() {
-  if (typeof DecompressionStream !== 'undefined') {
-    const response=await fetch(new URL('../_mech/pkg/mech_wasm_bg.wasm.gz',import.meta.url));
-    if (response.ok) {
-      let bytes=await response.arrayBuffer();
-      const magic=new Uint8Array(bytes,0,2);
-      // Some hosts apply Content-Encoding and fetch decompresses for us.
-      if(magic[0]===0x1f && magic[1]===0x8b) bytes=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
-      return init({module_or_path:bytes});
-    }
-  }
-  return init();
-}
 const median = values => {
   const a = [...values].sort((a, b) => a - b), m = a.length >> 1;
   return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
 };
 function controls() {
   for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 2;
-  for (const id of ['reset','compile','restore','instances','backend','verify']) $(id).disabled = !ready || busy;
+  for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy;
   $('pause').disabled = !running;
   $('run').disabled ||= running;
-  $('verify').disabled ||= source !== original;
 }
 function error(message) {
   $('runtime-error').hidden = !message;
@@ -58,7 +57,17 @@ function transition(event) {
   text('behavior-message', ['Paused. Run or advance one turn.','Patrol. Successive measurements update the filter.','Fault. The last accepted state is retained; Reset starts a new episode.'][mode]);
 }
 function telemetry() {
-  text('state-values', `μ = [${Array.from(state, x => x.toFixed(3)).join(', ')}]\nΣ =\n${[0,1,2].map(i => '  '+Array.from(covariance.slice(i*3,i*3+3),x=>x.toFixed(4).padStart(9)).join(' ')).join('\n')}`);
+  const values=`μ = [${Array.from(state, x => x.toFixed(3)).join(', ')}]\nΣ =\n${[0,1,2].map(i => '  '+Array.from(covariance.slice(i*3,i*3+3),x=>x.toFixed(4).padStart(9)).join(' ')).join('\n')}`;
+  text('state-values', values);
+  const output=document.querySelector('[data-workshop-kernel-output]');
+  if(output) {
+    const caption=document.createElement('a');
+    caption.href='#live-demo';
+    caption.textContent=`Live EKF output · ${accepted} accepted / ${rejected} rejected turns`;
+    const pre=document.createElement('pre');
+    pre.textContent=values;
+    output.replaceChildren(caption,pre);
+  }
   text('turn-count', `${accepted} accepted / ${rejected} rejected`);
   text('sample-window', samples.length ? `${samples.length} accepted turns after 5 warm-ups · ${kernel.instances().toLocaleString()} independent filters` : 'Collecting 5 warm-up turns before timing summaries.');
   if (samples.length) {
@@ -71,14 +80,14 @@ async function dispose(oldDevice, oldKernel) {
   try { if (oldDevice) { oldDevice.dispose(); if (oldDevice.disposeCompletion) await oldDevice.disposeCompletion; } }
   finally { oldKernel?.free(); }
 }
-async function compile(nextSource = source) {
+async function compile() {
   running = false; generation++; busy = true; controls(); error('');
   let nextKernel, nextDevice;
   try {
     text('runtime-status', 'Compiling the displayed Mech source…');
     await new Promise(resolve => requestAnimationFrame(resolve));
     const n = Number($('instances').value);
-    nextKernel = WasmKernel.fromSource(nextSource, {
+    nextKernel = WasmKernel.fromSource(source, {
       bearing: new Float32Array(n).fill(-0.55),
       v: [Number($('velocity').value)], w: [Number($('omega').value)]
     }, ['state', 'covariance']);
@@ -90,18 +99,13 @@ async function compile(nextSource = source) {
       nextDevice = await MechBrowserCompute.Device.create(nextManifest, freshAdapter, nextManifest.exports.map(x=>x.outputName));
     }
     await dispose(device, kernel);
-    kernel = nextKernel; device = nextDevice; manifest = nextManifest; active = 0; source = nextSource;
+    kernel = nextKernel; device = nextDevice; manifest = nextManifest; active = 0;
     committedBackend = $('backend').value; committedInstances = $('instances').value;
     state = kernel.stateSample('state',0); covariance = rowMajor(kernel.stateSample('covariance',0));
     accepted = rejected = 0; samples = []; frames = [];
     scene.reset(); scene.draw(state,covariance); transition(3);
     text('fps','—'); text('turn-ms','—'); text('throughput','—'); telemetry();
     text('runtime-status', device ? 'WebGPU · generated WGSL · checked turns' : 'CPU · Rust/WASM scalar interpreter · checked turns');
-    const modified = source !== original;
-    text('source-origin',modified ? 'Executing the edited source below' : 'Executing the source above');
-    text('source-status', modified ? 'Running your edited source. The archived charts are unchanged. Restore the paper source to run its retained parity test.' : 'Running the complete EKF source printed above.');
-    $('modified-source').hidden = !modified;
-    $('modified-source-code').textContent = source;
   } catch (e) {
     if (nextKernel !== kernel) await dispose(nextDevice,nextKernel);
     $('backend').value = committedBackend; $('instances').value = committedInstances;
@@ -155,8 +159,6 @@ $('step').onclick=()=>turn();
 $('inject').onclick=()=>turn(true);
 $('reset').onclick=()=>compile();
 for(const id of ['backend','instances']) $(id).onchange=()=>compile();
-$('compile').onclick=()=>compile($('source-editor').value);
-$('restore').onclick=()=>{$('source-editor').value=original;compile(original);};
 $('verify').onclick=async()=>{
   running=false;generation++;transition(0);busy=true;controls();text('verification','Checking CPU/WebGPU parity and rejected-turn rollback…');
   try {
@@ -168,8 +170,7 @@ $('verify').onclick=async()=>{
 };
 
 try {
-  [original] = await Promise.all([fetch('source/ekf.mec').then(r=>{if(!r.ok)throw new Error('EKF source unavailable');return r.text();}), initializeRuntime()]);
-  source=original; $('source-editor').value=source;
+  [source] = await Promise.all([fetch('source/ekf.mec').then(r=>{if(!r.ok)throw new Error('EKF source unavailable');return r.text();}), initializeRuntime()]);
   repl=new WasmRepl();
   const behavior=await fetch('source/behavior.mec').then(r=>r.text());
   repl.submit(behavior); transition(3);
@@ -180,19 +181,6 @@ try {
   }
   if(!adapter) text('gpu-support','WebGPU is unavailable in this browser. CPU execution is available; try a browser with WebGPU support to compare devices.');
   ready=true; await compile();
-  for(const button of document.querySelectorAll('[data-run-example]')) {
-    button.disabled=false;
-    button.onclick=()=>{
-      const name=button.dataset.runExample, example=new WasmRepl();
-      try {
-        const response=example.submit($(name+'-source').value);
-        if(!response.result) throw new Error(JSON.stringify(response.events));
-        const value=response.result.inlineHtml.replace(/<[^>]*>/g,'').replaceAll('&quot;','"').replaceAll('&#39;',"'").replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&');
-        text(name+'-result',value);
-      } catch(e) {text(name+'-result',String(e));}
-      finally {example.free();}
-    };
-  }
 } catch(e) { error(String(e)); text('runtime-status','The browser runtime could not start. The source and archived results are still available.'); }
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&running){running=false;generation++;transition(0);controls();}});

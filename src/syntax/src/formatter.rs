@@ -235,6 +235,7 @@ pub struct Formatter {
     h6_num: usize,
     citation_num: usize,
     citation_map: BTreeMap<u64, usize>,
+    citation_reference_counts: BTreeMap<u64, usize>,
     citations: Vec<String>,
     footnote_num: usize,
     footnote_map: BTreeMap<u64, usize>,
@@ -298,6 +299,7 @@ impl Formatter {
             h6_num: 0,
             citation_num: 0,
             citation_map: BTreeMap::new(),
+            citation_reference_counts: BTreeMap::new(),
             citations: Vec::new(),
             footnote_num: 0,
             footnote_map: BTreeMap::new(),
@@ -412,6 +414,7 @@ impl Formatter {
             formatted_contents,
             formatted_cited,
             formatted_footnotes,
+            formatted_sections,
         ) = self.document_slots(tree);
         let formatted_src = formatted_contents.clone();
         self.reset_numbering();
@@ -466,7 +469,7 @@ impl Formatter {
         slots.insert("REPL".to_string(), repl_html.to_string());
         slots.insert("PRESENTATION".to_string(), "document".to_string());
 
-        for (ix, section_html) in self.section_slots(tree).into_iter().enumerate() {
+        for (ix, section_html) in formatted_sections.into_iter().enumerate() {
             slots.insert(format!("SECTION{}", ix + 1), section_html);
         }
 
@@ -525,7 +528,7 @@ impl Formatter {
         }
     }
 
-    fn document_slots(&self, tree: &Program) -> (String, String, String, String, String) {
+    fn document_slots(&self, tree: &Program) -> (String, String, String, String, String, Vec<String>) {
         let first_section_ix = tree
             .body
             .sections
@@ -535,40 +538,42 @@ impl Formatter {
         let intro_sections = &tree.body.sections[..first_section_ix];
         let content_sections = &tree.body.sections[first_section_ix..];
 
-        let mut abstract_formatter = Formatter::new();
-        abstract_formatter.html = true;
-        let mut intro_formatter = Formatter::new();
-        intro_formatter.html = true;
-        let mut contents_formatter = Formatter::new();
-        contents_formatter.html = true;
+        // These slots are fragments of one document, so citation, footnote and
+        // inline-evaluation identities must continue across their boundaries.
+        // Only numbered sections call section(), preserving their heading IDs.
+        let mut document_formatter = Formatter::new();
+        document_formatter.html = true;
 
         let mut abstract_src = String::new();
         let mut intro_src = String::new();
         let mut contents_src = String::new();
+        let mut section_src = Vec::new();
 
         for section in intro_sections {
             for el in &section.elements {
                 match el {
                     SectionElement::Abstract(paragraphs) => {
-                        abstract_src.push_str(&abstract_formatter.abstract_el(paragraphs));
+                        abstract_src.push_str(&document_formatter.abstract_el(paragraphs));
                     }
                     _ => {
-                        intro_src.push_str(&intro_formatter.section_element(el));
+                        intro_src.push_str(&document_formatter.section_element(el));
                     }
                 }
             }
         }
 
         for section in content_sections {
-            contents_src.push_str(&contents_formatter.section(section));
+            let html = document_formatter.section(section);
+            contents_src.push_str(&html);
+            section_src.push(html);
         }
 
         if !intro_src.is_empty() {
             intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
         }
 
-        let cited_src = contents_formatter.works_cited();
-        let footnotes_src = contents_formatter.footnotes();
+        let cited_src = document_formatter.works_cited();
+        let footnotes_src = document_formatter.footnotes();
 
         (
             abstract_src,
@@ -576,23 +581,8 @@ impl Formatter {
             contents_src,
             cited_src,
             footnotes_src,
+            section_src,
         )
-    }
-
-    fn section_slots(&self, tree: &Program) -> Vec<String> {
-        let first_section_ix = tree
-            .body
-            .sections
-            .iter()
-            .position(|s| s.subtitle.is_some())
-            .unwrap_or(tree.body.sections.len());
-        let content_sections = &tree.body.sections[first_section_ix..];
-        let mut section_formatter = Formatter::new();
-        section_formatter.html = true;
-        content_sections
-            .iter()
-            .map(|section| section_formatter.section(section))
-            .collect()
     }
 
     pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
@@ -990,14 +980,26 @@ impl Formatter {
     }
 
     fn reference(&mut self, node: &Token) -> String {
-        self.citation_num += 1;
-        let id = hash_str(&format!("reference-{}", node.to_string()));
         let ref_id = hash_str(&format!("{}", node.to_string()));
-        self.citation_map.insert(ref_id, self.citation_num);
+        let citation_num = match self.citation_map.get(&ref_id) {
+            Some(&number) => number,
+            None => {
+                self.citation_num += 1;
+                self.citation_map.insert(ref_id, self.citation_num);
+                self.citation_num
+            }
+        };
+        let occurrence = self.citation_reference_counts.entry(ref_id).or_insert(0);
+        let id = if *occurrence == 0 {
+            hash_str(&format!("reference-{}", node.to_string()))
+        } else {
+            hash_str(&format!("reference-{}-{}", node.to_string(), occurrence))
+        };
+        *occurrence += 1;
         if self.html {
             format!(
                 "<span id=\"{}\" class=\"mech-reference\">[<a href=\"#{}\" class=\"mech-reference-link\">{}</a>]</span>",
-                id, ref_id, self.citation_num
+                id, ref_id, citation_num
             )
         } else {
             format!("[{}]", node.to_string())

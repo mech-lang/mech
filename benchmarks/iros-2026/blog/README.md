@@ -11,22 +11,48 @@ review and authorization step.
 - `article.mec` is the authoring template. `BLOG...` tokens are build-time
   insertion points, not public source examples.
 - `source/ekf.mec`, `behavior.mec`, `functions.mec`, and `matching.mec` are the
-  complete Mech examples displayed by the page.
-- `render/` is a small native `mech-syntax` parser/HTML formatter executable.
-- `build.mjs` formats the article and examples, inserts the actual Rust host
-  programs, charts, diagram and UI, and copies their runtime dependencies.
+  complete downloadable Mech examples. The displayed listings retain their
+  computational lines, with document headings rendered as Mech comments.
+- `standard-examples.mjs` expands the listings into native, read-only Mech
+  fences before the complete document is parsed. Behavior, functions, and
+  matching use root scope; the EKF uses the native `mech:ekf` namespace. The behavior
+  listing adds a commented example invocation, `#Robot(0, 1)`; its download is
+  unchanged. The three root-scope filename pills use native namespace-label
+  markup only as presentation; the EKF retains its native `ekf` pill. All
+  formatter-generated block, source, and output IDs remain intact.
+- `render/` is a small native `mech-syntax` parser/HTML formatter executable
+  that also embeds the encoded AST of that same complete document.
+- `build.mjs` formats the expanded article once, inserts the charts, diagram
+  and live UI, and copies their runtime dependencies. Rust listings use native
+  non-Mech fences with a presentation-only syntax-highlighting pass.
 - `blog-shell.mjs` composes website navigation and the workshop host with
   `include/blog.html`. It does not replace the shared hero, content columns,
   metadata, TOC placement, or backmatter markup.
-- `include/palette.css`, `mech-source.css`, `mechdown.css`, `style.css`,
-  `blog.css`, and `document.js` are copied unchanged into the publication.
-  The shared controller's presentation mode supplies TOC expansion, active
-  sections, mobile navigation, and scroll restoration without starting a
-  second Mech runtime. `article.css` styles only workshop examples and figures.
-  Run `node scripts/test-document-presentation.mjs` for the shared startup and
-  scroll-aware TOC regression checks.
+- `include/palette.css`, `mech-source.css`, `mechdown.css`, `mech-repl.css`,
+  `style.css`, `blog.css`, and `document.js` are copied unchanged into the
+  publication. The shared controller starts the real v0.4 resident document
+  and REPL, populates the three root-scope outputs, and supplies TOC expansion,
+  active sections, mobile navigation, and scroll restoration. `article.css`
+  styles workshop controls, figures, and Rust syntax tokens.
+- `runtime.mjs` caches one WASM initialization promise shared by the document
+  controller and workshop kernel host. `document-source.mjs` embeds the same
+  expanded source used by the formatter and AST encoder for resident REPL
+  reflection. The resident document and numerical demo have separate state;
+  sharing the WASM instance does not couple their sessions.
+  The numerical host fills the EKF's standard output block, identified by
+  `data-workshop-kernel-output`, from its actual accepted kernel state.
+- `header-actions.html`, `separator.html`, and `footer.html` reuse the official
+  blog's GitHub Star widget, Mika separator, complete link groups, release
+  card, and artwork. The current shared styles also render footnotes and works
+  cited. The Star count uses the official external GitHub-buttons script.
 - `charts.mjs` recomputes median and unscaled MAD from all ten retained samples
-  for each row/mode and checks them against the archived summaries.
+  for each row/mode and checks them against the archived summaries. Charts and
+  the pipeline have separate desktop and narrow-layout SVGs, selected at the
+  720 px breakpoint; figures fit their containers instead of requiring a
+  fixed-width horizontal scroller. Code can still scroll within its block.
+- `hero.mjs` deterministically generates `hero.svg` from 40 checked turns of
+  the actual Mech WASM kernel and the demo's sensor source. JavaScript draws
+  the resulting state and covariance; it does not implement another EKF.
 - `app.mjs` connects the browser controls to Mech; `drawing.mjs` supplies
   synthetic observations and SVG rendering; `verify.mjs` checks CPU/GPU parity.
 - `dist/index.html` is the deployable page. `dist/article.mec` is the expanded,
@@ -39,6 +65,7 @@ review and authorization step.
 
 `_build/`, `render/target/`, and `dist/` are build outputs. The small `vendor/`
 directory retains the website logo and Fira Code font for subsequent builds.
+It also retains the official Mika footer artwork and its provenance notice.
 The generated WASM package is copied from `src/wasm/pkg/`, not downloaded from
 the current production website.
 
@@ -60,6 +87,12 @@ including its copyright and reserved-font-name notices. The upstream `1.205`
 tag resolves to `37f16bc199c7618436b0aa7a241030302da2263a`. The build copies the
 notice to `dist/assets/OFL.txt` beside the font. This font license does not
 relicense the separate Mech logo.
+
+The unchanged Mika image and reused footer are documented in
+[vendor/MIKA.md](vendor/MIKA.md); that notice is copied beside the image in
+`dist/assets/`. Its artwork provenance and rights are separate from the font
+license. The footer's published-release card is not the workshop runtime's
+development-version identifier.
 
 ## Build
 
@@ -120,13 +153,27 @@ Once both vendor assets exist, the argument is unnecessary:
 node benchmarks/iros-2026/blog/build.mjs
 ```
 
-The builder checks the paper-kernel hash, requires every HTML slot exactly
-once, regenerates the four SVGs, and copies the three archived throughput
+The builder checks the paper-kernel hash, requires every source and figure
+slot exactly once, regenerates desktop/mobile chart SVGs, and copies the three archived throughput
 records into `dist/evidence/`. It does not rerun native benchmarks. Run the
 build again after changing the article, examples, browser host, chart module,
 or WASM package. It writes into the existing local output directory; use a
 clean checkout or inspect the deployment file list to avoid carrying unrelated
 old files into a publication.
+
+The deterministic hero is retained as `hero.svg`. Regenerate it after an
+intentional change to the sensor source, drawing, or generated WASM package,
+then rebuild the article:
+
+```sh
+node benchmarks/iros-2026/blog/hero.mjs
+node benchmarks/iros-2026/blog/build.mjs
+```
+
+The generator verifies the paper-source hash and uses 40 steps of 0.1 seconds,
+velocity 1, angular velocity 0.015, and noise scale 0.02. Its position ellipse
+uses covariance eigenvectors and twice the square roots of the eigenvalues;
+it is not labeled a 95% probability region.
 
 Serve the output over HTTP, not `file://`:
 
@@ -177,15 +224,30 @@ chart.
 The host binds `bearing`, `v`, and `w`; other source values are constants for
 the selected compilation. Three live inputs give the GPU path eight storage
 bindings. The displayed pose and covariance are the first filter in the
-selected batch. Backend/batch changes and applying edited source reset the
-episode; cross-device state migration is not implemented here.
+selected batch. Backend/batch changes reset the episode; cross-device state
+migration is not implemented here. The source listings are read-only, and
+there are no inline kernel, function, or matching editors.
+
+The behavior, function, and matching fences execute in the resident root
+scope. The EKF's native named fence and output belong to the separate checked
+kernel integration; its output is supplied by the numerical host's actual
+accepted state. All four native blocks retain their formatter-generated IDs.
+The full expanded Mechdown source, encoded AST, and rendered listings come
+from one parse. Mechdown headings inside the example sources become comments
+in the listings; the original downloaded EKF retains its `@compute` heading
+and is compiled separately, unchanged, for the numerical demo. The behavior
+listing's additional example call demonstrates Run from Paused without
+altering its download or the demo's initial mode.
 
 The EKF and behavior transitions execute in Mech. The host passes numeric mode
 and event codes into the Mech state machine and uses its result to schedule
 updates. `drawing.mjs` is hand-written JavaScript for sensor simulation and SVG
 drawing, not a second EKF implementation and not hidden executable Mech drawing
-code. Its source is linked from the expandable demo details. The small
-functions and matching examples are separately executed through `WasmRepl`.
+code. Its source is linked from the expandable demo details. Functions,
+matching, and the behavior example are registered in the resident document
+REPL; readers can submit further expressions there.
+The demo's scheduling state machine uses a separate `WasmRepl` session so
+interactive REPL experiments do not change its current mode.
 
 The live timing summary excludes drawing and compilation but includes input
 binding, numerical execution, validation, synchronization and one filter's
@@ -231,9 +293,24 @@ paper's finite-value guards without changing their source.
 This smoke test passed with Node 26.8.1 and the package hash above. The generated
 package can produce a Node module-type warning without failing these checks.
 
+The resident-document smoke test exercises the shipped initializer, requires
+one runtime download for concurrent hosts, loads the encoded document and
+source bundle, reads the three native resident outputs, checks the separate
+kernel-output marker, and submits arithmetic through the actual resident REPL:
+
+```sh
+node benchmarks/iros-2026/blog/test-document-runtime.mjs
+node benchmarks/iros-2026/blog/test.mjs
+```
+
+These checks require a rebuilt `dist/`; they do not validate a stale earlier
+page or dispatch a GPU. The shared controller's focused navigation regression
+is separately available as `node scripts/test-document-presentation.mjs`;
+the workshop itself uses full document startup, not presentation-only mode.
+
 For real device verification, open the local page and select **Verify CPU /
-GPU agreement and rollback**. Restore the paper source before this check:
-verification intentionally rejects an edited kernel with a different hash.
+GPU agreement and rollback**. The read-only page loads the exact paper source;
+verification also enforces its hash.
 The verifier runs in separate sessions from the displayed demo and reports a
 structured result. It compares 20 deterministic turns, injects NaN in the
 last lane, requires bitwise whole-batch rollback, and compares every instance
@@ -246,7 +323,7 @@ A passing GPU result requires `status: "passed"`, `passed: true`,
 still include passing CPU checks but is not GPU evidence. Record the browser,
 adapter, source hash and returned report when documenting a device check.
 
-**Actual browser verification passed on 2026-09-26.** The in-app browser
+**Earlier-build browser verification passed on 2026-09-26.** The in-app browser
 executed real WebGPU for 20 paired turns and recovery across 256 filters.
 Maximum absolute differences were `3.814697e-6` for mean state and
 `1.068115e-4` for covariance, within the element-wise tolerance above. NaN in
@@ -255,13 +332,26 @@ recovery passed for all 256 filters. Additional UI checks exercised 4,096 GPU
 filters, an invalid bearing in lane 4,095, displayed-state retention, the
 latched Fault mode and reset, and both small language examples. See
 [VALIDATION.md](VALIDATION.md) for the recorded scope and values. These are
-browser correctness checks, not new native throughput measurements.
+browser correctness checks, not new native throughput measurements. That
+historical pass predates the current read-only native-block/resident-REPL
+integration; current-build checks are identified separately in that record.
+
+**The rebuilt resident-REPL page also passed on 2026-09-26:** three native
+resident outputs, the kernel-fed EKF output, REPL `40 + 2` → `42`, no inline
+source editors, and the same real CPU/WebGPU verification. Desktop and
+390 px mobile layouts had no horizontal page overflow, and all five mobile
+figure variants fit their containers. Runtime/static/mobile/lifecycle tests
+and all 19 shared style contracts passed. Hero, footer/backmatter, and mobile
+pipeline visual checks also passed, as did mobile REPL input and accepted
+CPU/GPU turns with matching live block output. This covers local desktop and
+390 px responsive layouts, not physical-phone hardware or production checks.
 
 Also inspect normal UI behavior: run/pause/single step; each batch size; CPU
 and GPU where available; velocity and noise changes; invalid input entering
-Fault without changing displayed accepted state; reset; source edit and
-restore; and the functions/matching example editors. Check the browser console
-and layout at desktop and narrow widths. Neither a successful HTML build nor
+Fault without changing displayed accepted state; reset; four populated native
+outputs; REPL input; and the absence of inline source editors. Check the
+complete footer, footnotes, hero, fitted mobile figures, browser console, and
+layout at desktop and narrow widths. Neither a successful HTML build nor
 the Node smoke test substitutes for those browser checks.
 
 ## Archived evidence
@@ -288,7 +378,7 @@ experiments, linked in the article rather than recomputed by this build. The
 dylib experiment uses seven processes per library, 10,000 filters, 200 turns,
 one worker, and a minimal ABI loader. Its RSS is whole-process peak memory,
 not private library memory. The scalar Rust dylib is not the packed SIMD Rust
-implementation from the CPU chart. Browser throughput and edited examples
+implementation from the CPU chart. Browser throughput and REPL experiments
 never replace or modify these archived results.
 
 ## Publication destination

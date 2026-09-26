@@ -30,13 +30,9 @@
   <button id="verify" disabled>Verify CPU / GPU agreement and rollback</button><pre id="verification" class="verification" role="status"></pre>
   <p class="callout">Changing the backend or batch size resets both the filter and the simulation. CPU and GPU compile the same source; state migration between devices is not implemented in this example. Rendering shows the first filter in the batch.</p>
   <p class="small">Long episodes or changed inputs can trigger the displayed covariance constraints. A reported fault stops the episode without publishing the candidate; Reset starts again from the source initial state.</p>
-  <details><summary>Timing, source editing, and drawing support</summary>
+  <details><summary>Timing and drawing support</summary>
     <p>FPS includes animation scheduling and is capped by the display. Completed-turn time includes input binding, execution, validation, synchronization, and one filter's state readback; it excludes drawing and compilation. Throughput is batch size divided by median turn time. The summary uses the latest 60 accepted turns after five warmups, not independent benchmark trials.</p>
-    <p>The source editor below starts with the exact file printed in the paper. Applying an edit recompiles and resets the simulation; the archived benchmark figures never change in response to edits.</p>
-    <label for="source-editor">Executable EKF source</label><textarea id="source-editor" spellcheck="false" rows="18"></textarea>
-    <button id="compile" disabled>Apply source and reset</button><button id="restore" disabled>Restore paper source</button><p id="source-status">Paper source loaded.</p>
     <p><a href="source/ekf.mec">Download the paper kernel</a> · <a href="source/behavior.mec">Robot state machine</a> · <a href="assets/drawing.mjs">Drawing and sensor simulation support</a> · <a href="assets/app.mjs">Browser host integration</a></p>
   </details>
-  <details id="modified-source" hidden><summary>Currently running edited source</summary><pre id="modified-source-code"></pre></details>
   <pre id="runtime-error" class="error" role="alert" hidden></pre>
 </section>

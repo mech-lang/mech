@@ -1,25 +1,24 @@
 Mech for Robotics: Embedded Numerical and Reactive Computation
 ===============================================================================
 author: Corey Montella, Aung Khant Ko, Steven McPhillimey
-date: September 2026
-kicker: IROS Rust for Robotics Workshop
+date: September 27, 2026
+kicker: IROS 2026: Rust for Robotics Workshop
+hero: ![Bearing-only EKF scene](assets/hero.svg)
 summary: A bearing-only extended Kalman filter demonstrates Rust embedding, checked reactive updates, and backend specialization, with executable examples and retained benchmark evidence.
 ===============================================================================
 
-Rust's memory safety, performance, and low-level control make it a strong foundation for robotics. Numerical applications also benefit from matrix notation, interactive development, and an execution model that responds to successive measurements. Mech is an open-source, Rust-native language that combines these capabilities. A Rust application can use a small numerical kernel or integrate a larger reactive component; Mech can also run independently or through a browser's WebAssembly environment.
-
+%% Rust's memory safety, performance, and low-level control make it a strong foundation for robotics. Numerical applications also benefit from matrix notation, interactive development, and an execution model that responds to successive measurements. Mech is an open-source, Rust-native language that combines these capabilities. A Rust application can use a small numerical kernel or integrate a larger reactive component; Mech can also run independently or through a browser's WebAssembly environment.
 This article develops one example through those choices. We write a bearing-only extended Kalman filter (EKF), call it from Rust, examine how candidate updates are validated, and compare implementations on CPU and GPU. The interactive example is accompanied by its source. The performance charts describe separately recorded native experiments, with the workloads, sample variability, and relevant implementation differences stated alongside them.
 
-1. Numerical Programs in Robot Software
--------------------------------------------------------------------------------
+The 2007 DARPA Urban Challenge required autonomous vehicles to navigate traffic and obey road rules; six of eleven finalists completed the course.[DARPA] Little Ben, entered by the Ben Franklin Racing Team from the University of Pennsylvania, Lehigh University, and Lockheed Martin, was the only Track B vehicle to finish.[BFRT] Track B entrants competed without DARPA's vehicle-development funding.[TRACKS] Little Ben's authors describe a system built around high-level numerical programming: the software modules were written mainly in MATLAB, with ancillary C++ routines, in fewer than 5,000 lines of code.[BEN]
 
-The 2007 DARPA Urban Challenge required autonomous vehicles to navigate traffic and obey road rules; six of eleven vehicles completed the course.[DARPA] The participating systems illustrate the range of software involved in a robot. Little Ben's authors reported fewer than 5,000 lines in a system written mainly in MATLAB with ancillary C++ routines.[BEN] MIT reported approximately 140,000 lines for Talos, including logging, replay, and three-dimensional visualization, while Tartan Racing reported more than 500,000 lines for Boss.[MIT][TARTAN] These totals have different boundaries and cannot isolate a language effect. They nevertheless provide useful context for considering how numerical algorithms fit into a larger systems application.
+Other teams reported substantially larger systems. MIT's Talos comprised approximately 140,000 lines, including logging, replay, and three-dimensional visualization, while Tartan Racing reported more than 500,000 lines for Boss.[MIT][TARTAN] These totals cover different implementations and supporting facilities, so they do not isolate the effect of language choice. Little Ben nevertheless demonstrates that a high-level numerical language can be used in an autonomous vehicle that completes a demanding field task. Mech's design history draws on this example in seeking an open-source language with numerical abstractions suited to robot software.[HISTORY]
 
 Matrix and array notation lets a programmer express an algorithm close to its mathematical formulation. Drivers, middleware, scheduling, deployment, and resource management require additional facilities. Maintaining one numerical implementation for development and another for deployment can duplicate both the program and the work needed to verify it, a concern also discussed in the scientific-computing literature.[JULIA] Separate CPU, SIMD, and GPU implementations can add further versions of the same equations.
 
 Mech addresses this problem through typed numerical syntax and a compiler that specializes its dataflow representation. The application describes the equations and state transitions; backend implementations supply storage layout, vectorization, and device execution. This does not remove backend engineering. It places reusable specialization in the compiler and runtime instead of requiring each application to reproduce it. Rust applications can adopt these facilities incrementally, without replacing their drivers or middleware.
 
-2. A Bearing-Only Extended Kalman Filter
+1. Numerical
 -------------------------------------------------------------------------------
 
 Our example estimates planar position and heading from linear velocity, angular velocity, and a bearing measurement to a known landmark. Its persistent state consists of a three-component mean and a 3×3 covariance matrix. Prediction advances the mean with the motion model and propagates covariance through its Jacobians. Correction compares the predicted and observed bearings, wraps the innovation with `atan2(sin(r), cos(r))`, and applies the Kalman gain. The covariance uses the Joseph update. This is a bearing-only variant, not the range-and-bearing algorithm often used to introduce the EKF.
@@ -34,7 +33,7 @@ The three named integrity constraints check finite candidate values, positive co
 
 This compact document was tested against the archived kernel on five CPU execution paths, including JIT and AOT. The tests check exported-state bits over successive updates, invalid-input rejection, rollback, and recovery. Its mathematical names and array-reduction guards improve the presentation, but the rewritten guards can generate different instructions. The timing and source-size measurements below retain their original, separately identified sources.[^SOURCE]
 
-(2.1) Run the Example
+(1.1) Run the Example
 
 BLOGLIVEDEMO
 
@@ -42,97 +41,13 @@ The browser demonstration makes successive state updates visible. A pose marker 
 
 Start with Run or advance One turn at a time. Change the forward and angular velocities to alter the simulated motion, then vary the bearing-noise scale to change the observations supplied to the filter. The noise control changes the synthetic measurement, not the kernel's declared measurement covariance. The drawing and telemetry show the first filter; selecting a larger batch executes additional independent filters. Compare CPU and GPU where WebGPU is available. Changing the backend or batch size starts a new episode rather than migrating a running session between devices.
 
-Inject an invalid bearing to exercise rejection in the last filter of the batch. The accepted state stays visible and the behavior enters Fault; Reset starts a new episode. Under the expandable source controls, edit the actual Mech program and apply it to recompile and reset, or restore the paper source. The archived charts do not change when the example is edited. The verification control separately checks CPU/GPU numerical agreement, rejection, rollback, and recovery, and reports when WebGPU is unavailable.
+Inject an invalid bearing to exercise rejection in the last filter of the batch. The accepted state stays visible and the behavior enters Fault; Reset starts a new episode. The displayed source is read-only, and the source links provide complete downloadable examples. The verification control separately checks CPU/GPU numerical agreement, rejection, rollback, and recovery, and reports when WebGPU is unavailable.
 
 Both browser routes parse the displayed Mech source and construct the same fixed-shape numerical program. The CPU route executes its lowered instructions in the Rust runtime compiled to WebAssembly. It is an instruction interpreter, not native Cranelift JIT code. The GPU route generates WGSL and a binding manifest from that program; the browser host submits it through WebGPU and observes completion and integrity status before accepting the result. JavaScript supplies synthetic measurements and draws the SVG scene. It does not implement a second EKF.
 
 Browser results describe the browser and device running this page. The live summary uses the latest accepted turns after warmup, rather than independent process trials. Turn time includes input binding, execution, validation, synchronization, and one filter's readback; drawing and compilation are excluded. WebAssembly CPU and WebGPU have different timing boundaries from the native programs in the archived charts. A browser may translate WebGPU to Metal, Vulkan, or another platform API, which does not make its timings interchangeable with direct-Metal measurements.
 
-3. Running the Kernel from Rust
--------------------------------------------------------------------------------
-
-A Rust caller supplies source, identifies live inputs and exported state, and selects an execution backend. Source can come from a file with `include_str!` or from a string embedded directly in `mech::mech!`. The macro constructs a kernel builder and preserves the source text. Compilation is explicit in `.compile(...)`; the macro itself does not compile Mech during Rust compilation.
-
-BLOGRUSTJIT
-
-Compilation prepares a reusable kernel. `start()` initializes an independent session, and `turn(...)` binds an update packet and executes synchronously. The four bearing values in this example select four independent filters. A caller can submit new measurements as they arrive and borrow the published state by its source name. A rejected numerical update returns an error without replacing the accepted state. Invalid measurements must be replaced before retrying because a numerical rejection does not discard the newly bound inputs.
-
-This interface is useful when Rust already provides the application's event loop, sensor access, or ROS integration. It executes a fixed-shape numerical kernel with checked publication; it does not implicitly construct the full reactive coordinator or deliver external effects. The larger runtime described next is a separate integration choice. Rust-native function implementations can also be registered in Mech's function catalog, allowing an application to expose its own operations to Mech.
-
-(3.1) Preparing and Loading an AOT Library
-
-An application with a known kernel can compile it before deployment. The AOT producer below saves the native library and the interface information needed to initialize and address its inputs and state.
-
-BLOGRUSTBUILD
-
-A separate process loads that bundle and submits updates through the same session interface.
-
-BLOGRUSTLOAD
-
-The bundle describes named inputs, exported state, initial values, and the native layout. It is a deployment artifact, not a checkpoint of an already running filter. Loading a compatible bundle does not parse Mech source, invoke Cranelift, or run a linker.[^BUNDLE]
-
-JIT and AOT share the relevant Cranelift numerical lowering. Their distinction is when native code is prepared and whether it is saved for later loading. Scalar and four-lane SIMD AOT are both implemented. Worker scheduling is an additional execution choice: the matched chart includes single-worker SIMD AOT and eight-worker SIMD JIT, so their difference must not be attributed to compilation time alone.
-
-4. From a Program Artifact to Reactive Turns
--------------------------------------------------------------------------------
-
-Robot software commonly implements feedback loops over continuous data streams. In Mech, Rust host drivers supply updates from direct device interfaces or channels such as ROS. The runtime evaluates the affected computation, validates candidate state, and either publishes it or reports a rejection while retaining the previous state. This makes the acceptance boundary explicit in a program that is expected to process many successive inputs.
-
-BLOGPIPELINE
-
-The build lane produces a Program Artifact containing the typed dataflow graph. A `.mecb` file is its serialized representation, so encoding and decoding connect the two representations. A `.mcfg` configuration supplies deployment choices such as hosts, capability grants, runtime policy, and compute targets. Activation checks those requirements against the available host services before creating the resident computation. Missing services or permissions can cause activation to fail before live execution starts.
-
-During each turn, input changes identify affected computation. The resident graph calculates candidate state and proposed effects. Integrity predicates run before publication. A successful turn makes its accepted state available and records the result; after-commit output can deliver telemetry or a scene. A failed turn reports the rejection without publishing the candidate or its external effects. The diagram separates those outcomes rather than treating validation as a warning attached to an already published result.
-
-The EKF is one numerical component within this model. Its mean and covariance can drive a telemetry view and a robot scene from the same accepted update. The high-throughput kernel experiments below exercise double-buffered state and publication boundaries, but they do not time the complete host admission, recording, and output-delivery lifecycle. A separate retained f64, range-and-bearing EKF experiment measured a resident turn at approximately 315 ns median with zero steady-state allocations on its Apple M3 test machine.[^REACTIVE] That result concerns a different kernel, machine, and execution boundary and is not plotted beside the parallel f32 measurements.
-
-5. How the Measurements Were Collected
--------------------------------------------------------------------------------
-
-The native charts use an Apple M1 with four performance and four efficiency CPU cores, an eight-core GPU, 8 GiB of memory, and macOS 15.6.1. Each throughput chart processes 500,000 independent f32 filters for 40 timed turns. Each displayed mode has ten retained measurements from process trials. The CPU campaign's Mech trials measure both modes in the same process, while other CPU commands select one mode per process. The matched five-backend campaign uses a fresh process for each backend/mode case. The collectors interleave cases in a shuffled order, and no samples are removed as outliers. Values are medians with unscaled median absolute deviation (MAD), which describes observed variation rather than a confidence interval.
-
-Checked execution evaluates the candidate-state predicates. Unchecked execution omits those predicates while retaining the specified state-publication mechanism. This does not refer to Rust's `unsafe` keyword or to a general removal of all runtime checks. The cross-language CPU experiment, same-source backend experiment, and Metal comparison have distinct execution boundaries and source identities; equal throughput units do not make them one experiment.
-
-The repository retains raw process output, source and executable hashes, toolchain versions, and reproduction scripts. Native Rust uses LLVM 22.1.0 in the recorded nightly build, while Mech's native code uses Cranelift 0.131.3. The other compiler and package versions, including Julia, Mojo, Futhark/ISPC, Numba, Taichi, and Halide, are recorded with the individual campaigns.[EVIDENCE] Compilation and device setup are outside these steady-state throughput measurements. Their cost matters for short-lived applications but requires a separate experiment.
-
-6. CPU Implementations and Backend Specialization
--------------------------------------------------------------------------------
-
-BLOGCPUCHART
-
-The cross-language CPU chart includes Mech, Rust, Mojo, Julia, Futhark, and a Numba kernel launched from Python. The NumPy/Numba path performs its numerical work in compiled code; it is not an interpreted Python or eager NumPy baseline. The comparison fixes the machine, precision, filter population, turn count, and eight-worker budget while using implementations suited to each system.
-
-The closest comparison is between Mech and Rust. Both use four-wide packed SIMD and execute a fused 40-turn block with block-atomic rollback. Checked medians are 151.3 ± 2.6 million filter-turns/s for Mech and 149.9 ± 2.5 for Rust. Their small median difference is within the observed variation. Unchecked medians are 184.1 ± 8.1 and 170.5 ± 1.7, respectively. These results compare the selected implementations and their code generation. They do not establish that Rust cannot match the Mech result with a different implementation or optimization.
-
-The remaining rows provide context rather than an exact fault-interface equivalence. Runtime setup, failure observation, and compiler transformations differ. Rust's measured interval includes worker creation and checkpoint work; Futhark's entry includes initialization and checksum work. Performance specialists may improve these implementations. The retained sources make those choices inspectable rather than attributing the entire difference to a language name.
-
-(6.1) One Mech Kernel, Five Execution Backends
-
-BLOGBACKENDCHART
-
-The second chart holds the Mech source and publication boundary fixed. It compares interpretation of lowered numerical instructions, scalar JIT, single-worker SIMD AOT, eight-worker SIMD JIT, and direct Metal execution. Seven bindings are live inputs. Each process performs five untimed turns followed by 40 timed turns in the same resident session, without resetting the state between them. Inputs stay resident and unchanged during measurement. Every turn publishes separately, including a worker or device synchronization where required.
-
-Checked medians range from about 0.70 million filter-turns/s for the numerical instruction interpreter to 420.9 for Metal. SIMD AOT reaches 34.6 on one worker and SIMD JIT reaches 121.1 on eight. These rows differ in interpretation, specialization, parallelism, and device execution, so the chart uses a logarithmic axis. The source equations require no backend-specific annotations to select these measured paths.
-
-Checking reduces SIMD AOT throughput by approximately 6.6% and eight-worker SIMD JIT throughput by approximately 14.5% in this campaign. The Metal checked and unchecked medians differ by less than either MAD, so this measurement does not resolve a checking cost there. Both modes retain per-turn publication. Before collection, component-wise numerical preflights compared all backends with the scalar reference, and each checked backend rejected an injected NaN without changing the published batch state.
-
-7. Metal and Same-Source CPU/GPU Execution
--------------------------------------------------------------------------------
-
-BLOGMETALCHART
-
-The six-system Metal comparison uses resident component-major f32 state, ping-pong publication, and a completed GPU submission after every turn. Rust supplies a host for a hand-written Metal Shading Language kernel, so its label is Rust + MSL rather than Rust alone. Mech generates its shader from the numerical graph; Julia uses Metal.jl, while Mojo, Taichi, and Halide use their respective native Metal paths. Futhark is included in the CPU comparison, not this Metal comparison.
-
-Rust + MSL measures 425.2 ± 3.1 million checked filter-turns/s, Julia 410.4 ± 4.7, Mech 409.8 ± 3.0, and Mojo 406.0 ± 5.2. These retained results place generated Mech execution near the hand-written Metal control for this workload. They come from the earlier cross-system campaign; the 420.9 Mech result in the five-backend chart belongs to a separate collection and must not be substituted into this one.
-
-Matching the GPU layout and host protocol materially changed earlier comparisons. The Julia and Mojo paths now use packed resident state and compact fault status instead of observing a large host-side result each turn. Taichi adds a compact cumulative fault count to the same publication protocol. Halide uses a resident per-lane fault plane because its measured interface does not expose the same device-wide compact status mechanism. Its checked result therefore includes that observation cost. Launch schedules and transcendental lowering also differ.[^METAL]
-
-BLOGPORTABLECHART
-
-Mech, Taichi, and Halide additionally select CPU and Metal execution from one application source in their respective systems. Backend options and schedules change while the equations and publication contract are retained. In this archived comparison, Mech has the highest CPU and checked-Metal medians. Unchecked Metal places Taichi and Mech within 0.08%, far below either MAD. The useful result is that all three demonstrate this source reuse, with different measured execution costs; it is not evidence that Mech is universally faster on CPU or GPU.
-
-8. Source Size, Dynamic Libraries, and Memory
--------------------------------------------------------------------------------
+(1.2) Application Source Size
 
 The source audit compares backend-neutral Mech with textbook-style Rust and a separate SIMD Rust implementation. It counts programmer-chosen names as one character per occurrence, excludes comments and nonliteral whitespace, and retains operators, types, numbers, and library names. The table reports normalized source characters, not lines or bytes. General libraries, compilers, and runtime internals are outside this application-source boundary.[AUDIT]
 
@@ -148,6 +63,33 @@ The source audit compares backend-neutral Mech with textbook-style Rust and a se
 
 The selected SIMD Rust application is almost five times as long as Mech. Its SIMD and batch support accounts for 2,857 characters, more than half of its total. A Rust library could provide some of that machinery, and different implementations could be shorter. In this case, the Mech application reuses the compiler's backend support instead of expressing a second set of equations and execution scaffolding. The counts describe the archived audit, not the compact document displayed above.
 
+2. Embeddable
+-------------------------------------------------------------------------------
+
+A Rust caller supplies source, identifies live inputs and exported state, and selects an execution backend. Source can come from a file with `include_str!` or from a string embedded directly in `mech::mech!`. The macro constructs a kernel builder and preserves the source text. Compilation is explicit in `.compile(...)`; the macro itself does not compile Mech during Rust compilation.
+
+BLOGRUSTJIT
+
+Compilation prepares a reusable kernel. `start()` initializes an independent session, and `turn(...)` binds an update packet and executes synchronously. The four bearing values in this example select four independent filters. A caller can submit new measurements as they arrive and borrow the published state by its source name. A rejected numerical update returns an error without replacing the accepted state. Invalid measurements must be replaced before retrying because a numerical rejection does not discard the newly bound inputs.
+
+This interface is useful when Rust already provides the application's event loop, sensor access, or ROS integration. It executes a fixed-shape numerical kernel with checked publication; it does not implicitly construct the full reactive coordinator or deliver external effects. The larger runtime described next is a separate integration choice. Rust-native function implementations can also be registered in Mech's function catalog, allowing an application to expose its own operations to Mech.
+
+(2.1) Preparing and Loading an AOT Library
+
+An application with a known kernel can compile it before deployment. The AOT producer below saves the native library and the interface information needed to initialize and address its inputs and state.
+
+BLOGRUSTBUILD
+
+A separate process loads that bundle and submits updates through the same session interface.
+
+BLOGRUSTLOAD
+
+The bundle describes named inputs, exported state, initial values, and the native layout. It is a deployment artifact, not a checkpoint of an already running filter. Loading a compatible bundle does not parse Mech source, invoke Cranelift, or run a linker.[^BUNDLE]
+
+JIT and AOT share the relevant Cranelift numerical lowering. Their distinction is when native code is prepared and whether it is saved for later loading. Scalar and four-lane SIMD AOT are both implemented. Worker scheduling is an additional execution choice: the matched chart includes single-worker SIMD AOT and eight-worker SIMD JIT, so their difference must not be attributed to compilation time alone.
+
+(2.2) Dynamic Library Size, Throughput, and Memory
+
 An independent checked-only dynamic-library experiment used one host thread, 10,000 filters, 200 timed turns, and seven fresh processes per library. The same minimal ABI loader called each library. Throughput and whole-process peak resident memory (RSS) are reported as median ± MAD.
 
 | Checked dynamic library | File size (bytes) | Throughput (M filter-turns/s) | Peak process RSS (MiB) |
@@ -160,8 +102,20 @@ This is a code-generation and packaging diagnostic, not the matched SIMD languag
 
 All three rows have the same median whole-process peak RSS, 2,818,048 bytes, with MAD zero. Their ranges overlap, providing no evidence of a memory-use advantage. A later inspection of rebuilt or retained libraries traced most of the file-size difference to Mach-O segment padding and different linker/deployment settings. The smaller Mech file therefore does not show that it contains fewer numerical instructions or avoids a large linked Rust runtime.[SIZE]
 
-9. Beyond the Numerical Kernel
+3. Reactive
 -------------------------------------------------------------------------------
+
+Robot software commonly implements feedback loops over continuous data streams. In Mech, Rust host drivers supply updates from direct device interfaces or channels such as ROS. The runtime evaluates the affected computation, validates candidate state, and either publishes it or reports a rejection while retaining the previous state. This makes the acceptance boundary explicit in a program that is expected to process many successive inputs.
+
+BLOGPIPELINE
+
+The build lane produces a Program Artifact containing the typed dataflow graph. A `.mecb` file is its serialized representation, so encoding and decoding connect the two representations. A `.mcfg` configuration supplies deployment choices such as hosts, capability grants, runtime policy, and compute targets. Activation checks those requirements against the available host services before creating the resident computation. Missing services or permissions can cause activation to fail before live execution starts.
+
+During each turn, input changes identify affected computation. The resident graph calculates candidate state and proposed effects. Integrity predicates run before publication. A successful turn makes its accepted state available and records the result; after-commit output can deliver telemetry or a scene. A failed turn reports the rejection without publishing the candidate or its external effects. The diagram separates those outcomes rather than treating validation as a warning attached to an already published result.
+
+The EKF is one numerical component within this model. Its mean and covariance can drive a telemetry view and a robot scene from the same accepted update. The high-throughput kernel experiments below exercise double-buffered state and publication boundaries, but they do not time the complete host admission, recording, and output-delivery lifecycle. A separate retained f64, range-and-bearing EKF experiment measured a resident turn at approximately 315 ns median with zero steady-state allocations on its Apple M3 test machine.[^REACTIVE] That result concerns a different kernel, machine, and execution boundary and is not plotted beside the parallel f32 measurements.
+
+(3.1) Behavior Around the Filter
 
 The EKF demonstrates a numerical part of Mech. The language also provides user-defined functions, pattern matching, structured data, and first-class state machines. These facilities can describe the surrounding behavior of a reactive application: interpreting a tagged input, selecting a mode, or coordinating a process with distinct phases. Their semantics are separate from the EKF's throughput measurements, and a numerical backend does not imply support for every language construct inside a device kernel.
 
@@ -169,17 +123,70 @@ BLOGBEHAVIORSOURCE
 
 The browser host passes the current mode and an event into this Mech state machine. Numeric codes form the small host interface: modes 0, 1, and 2 correspond to Paused, Patrol, and Fault, while events select pause, run, rejection, or reset. The Mech transitions determine the returned mode; JavaScript uses that result to schedule or stop updates and display the selected state. Fault is latched until reset, so pressing Run cannot silently resume after rejection. The last accepted EKF state stays displayed while the simulation is stopped. This behavior policy is distinct from the kernel's rollback mechanism and could be changed independently.
 
-The following small examples can be edited and evaluated independently of the simulation. The first defines a numerical function and calls it on a heading; adding a scalar to the heading vector demonstrates broadcasting. The second destructures a tagged sensor observation and uses a guard to select correction or prediction. These calls use Mech's Rust interpreter compiled to WebAssembly, rather than the restricted numerical GPU kernel.
+(3.2) Functions and Pattern Matching
+
+The following small examples can be evaluated independently of the simulation. Their displayed source is read-only; further expressions can be entered in the REPL. The first defines a numerical function and calls it on a heading; adding a scalar to the heading vector demonstrates broadcasting. The second destructures a tagged sensor observation and uses a guard to select correction or prediction. These calls use Mech's Rust interpreter compiled to WebAssembly, rather than the restricted numerical GPU kernel.
 
 BLOGFUNCTIONS
 
-For a tagged observation, a match arm binds the distance and evaluates the associated guard. Change the distance or replace the tag with `"occluded"` to see the other branch.
+For a tagged observation, a match arm binds the distance and evaluates the associated guard. In the REPL, a new observation can use a different distance or the `"occluded"` tag to exercise the other branch.
 
 BLOGMATCHING
 
+(3.3) Literate Documents
+
 Literate documents provide another use of the same infrastructure. A Mechdown file combines prose, executable Mech, references, and live output. This page displays the exact EKF and behavior sources, while its expandable support links expose the hand-written JavaScript that generates synthetic sensor inputs and draws SVG. That presentation code is kept out of the main explanation, but it is not hidden Mech code. Mechdown also supports hidden executable Mech blocks when a document's helpers are themselves written in Mech. The previous version announcement provides a broader introduction to functions, matching, and state machines.[LANGUAGE]
 
-10. Status and Future Work
+4. Heterogeneous
+-------------------------------------------------------------------------------
+
+The typed numerical graph connects the source shown above to several execution targets. The following native experiments examine cross-language CPU implementations, Mech's backend choices, and GPU execution. The browser example provides a separate way to explore the displayed source on the reader's machine; its timings are not substituted for these retained measurements.
+
+(4.1) How the Measurements Were Collected
+
+The native charts use an Apple M1 with four performance and four efficiency CPU cores, an eight-core GPU, 8 GiB of memory, and macOS 15.6.1. Each throughput chart processes 500,000 independent f32 filters for 40 timed turns. Each displayed mode has ten retained measurements from process trials. The CPU campaign's Mech trials measure both modes in the same process, while other CPU commands select one mode per process. The matched five-backend campaign uses a fresh process for each backend/mode case. The collectors interleave cases in a shuffled order, and no samples are removed as outliers. Values are medians with unscaled median absolute deviation (MAD), which describes observed variation rather than a confidence interval.
+
+Checked execution evaluates the candidate-state predicates. Unchecked execution omits those predicates while retaining the specified state-publication mechanism. This does not refer to Rust's `unsafe` keyword or to a general removal of all runtime checks. The cross-language CPU experiment, same-source backend experiment, and Metal comparison have distinct execution boundaries and source identities; equal throughput units do not make them one experiment.
+
+The repository retains raw process output, source and executable hashes, toolchain versions, and reproduction scripts. Native Rust uses LLVM 22.1.0 in the recorded nightly build, while Mech's native code uses Cranelift 0.131.3. The other compiler and package versions, including Julia, Mojo, Futhark/ISPC, Numba, Taichi, and Halide, are recorded with the individual campaigns.[EVIDENCE] Compilation and device setup are outside these steady-state throughput measurements. Their cost matters for short-lived applications but requires a separate experiment.
+
+(4.2) CPU Implementations
+
+BLOGCPUCHART
+
+The cross-language CPU chart includes Mech, Rust, Mojo, Julia, Futhark, and a Numba kernel launched from Python. The NumPy/Numba path performs its numerical work in compiled code; it is not an interpreted Python or eager NumPy baseline. The comparison fixes the machine, precision, filter population, turn count, and eight-worker budget while using implementations suited to each system.
+
+The closest comparison is between Mech and Rust. Both use four-wide packed SIMD and execute a fused 40-turn block with block-atomic rollback. Checked medians are 151.3 ± 2.6 million filter-turns/s for Mech and 149.9 ± 2.5 for Rust. Their small median difference is within the observed variation. Unchecked medians are 184.1 ± 8.1 and 170.5 ± 1.7, respectively. These results compare the selected implementations and their code generation. They do not establish that Rust cannot match the Mech result with a different implementation or optimization.
+
+The remaining rows provide context rather than an exact fault-interface equivalence. Runtime setup, failure observation, and compiler transformations differ. Rust's measured interval includes worker creation and checkpoint work; Futhark's entry includes initialization and checksum work. Performance specialists may improve these implementations. The retained sources make those choices inspectable rather than attributing the entire difference to a language name.
+
+(4.3) One Mech Kernel, Five Execution Backends
+
+BLOGBACKENDCHART
+
+The second chart holds the Mech source and publication boundary fixed. It compares interpretation of lowered numerical instructions, scalar JIT, single-worker SIMD AOT, eight-worker SIMD JIT, and direct Metal execution. Seven bindings are live inputs. Each process performs five untimed turns followed by 40 timed turns in the same resident session, without resetting the state between them. Inputs stay resident and unchanged during measurement. Every turn publishes separately, including a worker or device synchronization where required.
+
+Checked medians range from about 0.70 million filter-turns/s for the numerical instruction interpreter to 420.9 for Metal. SIMD AOT reaches 34.6 on one worker and SIMD JIT reaches 121.1 on eight. These rows differ in interpretation, specialization, parallelism, and device execution, so the chart uses a logarithmic axis. The source equations require no backend-specific annotations to select these measured paths.
+
+Checking reduces SIMD AOT throughput by approximately 6.6% and eight-worker SIMD JIT throughput by approximately 14.5% in this campaign. The Metal checked and unchecked medians differ by less than either MAD, so this measurement does not resolve a checking cost there. Both modes retain per-turn publication. Before collection, component-wise numerical preflights compared all backends with the scalar reference, and each checked backend rejected an injected NaN without changing the published batch state.
+
+(4.4) Native Metal Implementations
+
+BLOGMETALCHART
+
+The six-system Metal comparison uses resident component-major f32 state, ping-pong publication, and a completed GPU submission after every turn. Rust supplies a host for a hand-written Metal Shading Language kernel, so its label is Rust + MSL rather than Rust alone. Mech generates its shader from the numerical graph; Julia uses Metal.jl, while Mojo, Taichi, and Halide use their respective native Metal paths. Futhark is included in the CPU comparison, not this Metal comparison.
+
+Rust + MSL measures 425.2 ± 3.1 million checked filter-turns/s, Julia 410.4 ± 4.7, Mech 409.8 ± 3.0, and Mojo 406.0 ± 5.2. These retained results place generated Mech execution near the hand-written Metal control for this workload. They come from the earlier cross-system campaign; the 420.9 Mech result in the five-backend chart belongs to a separate collection and must not be substituted into this one.
+
+Matching the GPU layout and host protocol materially changed earlier comparisons. The Julia and Mojo paths now use packed resident state and compact fault status instead of observing a large host-side result each turn. Taichi adds a compact cumulative fault count to the same publication protocol. Halide uses a resident per-lane fault plane because its measured interface does not expose the same device-wide compact status mechanism. Its checked result therefore includes that observation cost. Launch schedules and transcendental lowering also differ.[^METAL]
+
+(4.5) CPU and GPU Execution from One Application Source
+
+BLOGPORTABLECHART
+
+Mech, Taichi, and Halide additionally select CPU and Metal execution from one application source in their respective systems. Backend options and schedules change while the equations and publication contract are retained. In this archived comparison, Mech has the highest CPU and checked-Metal medians. Unchecked Metal places Taichi and Mech within 0.08%, far below either MAD. The useful result is that all three demonstrate this source reuse, with different measured execution costs; it is not evidence that Mech is universally faster on CPU or GPU.
+
+5. Status and Future Work
 -------------------------------------------------------------------------------
 
 This work presents a snapshot of Mech v0.4-beta. Many features are implemented and working, but further validation and hardening are needed. Research-hardware deployments have been limited. Over the next year we plan to test on a wider range of robot platforms, collect deployment feedback, and extend host integrations, standard-library coverage, and language features. The development plan targets a fuller v0.4 release in 2027 and a v1.0 release candidate in 2028; these are planned milestones rather than completed validation claims.
@@ -195,6 +202,12 @@ The EKF results motivate that work by connecting compact numerical source with u
 [^METAL]: The [Metal campaign](https://github.com/mech-lang/mech/blob/iros-workshop-benchmarks/benchmarks/iros-2026/results/apple-m1-metal-equal-n10-2026-09-24.json) retains all ten samples per mode, the implementations, versions, and checks. MAD is descriptive spread, not a confidence interval or a significance test.
 
 [DARPA]: DARPA. [The DARPA Grand Challenge: Ten Years Later](https://www.darpa.mil/news/2014/grand-challenge-ten-years-later). 2014.
+
+[BFRT]: Lehigh University VADER Lab. [The Ben Franklin Racing Team](https://vaderlab.wordpress.com/the-ben-franklin-racing-team/). Team account of the 2007 Urban Challenge.
+
+[TRACKS]: DARPA. [Urban Challenge: Fiscal Year 2007 Report](https://www.grandchallenge.org/grandchallenge/docs/DDRE_Prize_Report_FY07.pdf). January 2008, section 3, page 2. Archived report describing the two entry tracks.
+
+[HISTORY]: Mech project. [Project History](https://github.com/mech-lang/mech/blob/iros-workshop-benchmarks/docs/design/history.mec). Historical motivation for Mech.
 
 [BEN]: Bohren and colleagues. [Little Ben: The Ben Franklin Racing Team's entry in the 2007 DARPA Urban Challenge](https://onlinelibrary.wiley.com/doi/pdf/10.1002/rob.20260). Journal of Field Robotics 25, 598–614, 2008.
 
