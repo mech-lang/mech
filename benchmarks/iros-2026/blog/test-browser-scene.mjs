@@ -95,11 +95,24 @@ try{
   if(!process.env.IROS_QUICK){
     report.parity=await evaluate(`(async()=>{const runtime=await import('./assets/runtime.mjs');const {verifyKernel}=await import('./assets/verify.mjs');return verifyKernel({WasmKernel:runtime.WasmKernel,source:await fetch('source/ekf.mec').then(r=>r.text())});})()`);
     assert.equal(report.parity.status,'passed',JSON.stringify(report.parity));
-    for(const [width,height] of [[390,844],[900,1000],[1920,1100]]){
+    await evaluate('document.fonts.ready.then(()=>true)');
+    for(const [width,height] of [[320,740],[360,800],[390,844],[900,1000],[1920,1100]]){
       await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+      await evaluate('MechDocumentController.showOutput()');
+      for(const panel of ['open','closed']) {
+      if(panel==='closed') await evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{key:String.fromCharCode(96),bubbles:true}))');
       assert(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'no page horizontal overflow at '+width);
+      const metadata=await evaluate(`(()=>{
+        const date=document.querySelector('.hero .mech-date'),author=document.querySelector('.hero .mech-author');
+        const range=document.createRange();range.selectNodeContents(date.querySelector('.mech-text')||date);
+        return {dateLines:range.getClientRects().length,authorRight:author.getBoundingClientRect().right,dateLeft:date.getBoundingClientRect().left,dateRight:date.getBoundingClientRect().right,metaRight:date.parentElement.getBoundingClientRect().right};
+      })()`);
+      assert.equal(metadata.dateLines,1,'date stays on one line at '+width);
+      assert(metadata.authorRight<metadata.dateLeft&&metadata.dateRight<=metadata.metaRight+1,'metadata fits without overlap at '+width);
+      (report.metadataLayouts??=[]).push({width,panel,...metadata});
       const image=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
-      writeFileSync(output.replace(/\.json$/,`-${width}.png`),Buffer.from(image.data,'base64'));
+      writeFileSync(output.replace(/\.json$/,`-${width}-${panel}.png`),Buffer.from(image.data,'base64'));
+      }
     }
   }
   assert.equal(exceptions.length,0,'no uncaught browser exceptions');

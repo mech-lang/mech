@@ -1,6 +1,6 @@
 {
   "url": "http://127.0.0.1:8768/index.html",
-  "startedAt": "2026-09-26T18:27:17.123Z",
+  "startedAt": "2026-09-26T18:49:11.530Z",
   "cases": [
     {
       "backend": "cpu",
@@ -387,9 +387,101 @@
       "gpu": true,
       "comparedInstances": 256
     },
-    "elapsedMs": 158.09999990463257,
+    "elapsedMs": 133.89999985694885,
     "predictionOnlyTurns": 4
   },
+  "metadataLayouts": [
+    {
+      "width": 320,
+      "panel": "open",
+      "dateLines": 1,
+      "authorRight": 144.109375,
+      "dateLeft": 170.5625,
+      "dateRight": 302,
+      "metaRight": 302
+    },
+    {
+      "width": 320,
+      "panel": "closed",
+      "dateLines": 1,
+      "authorRight": 144.109375,
+      "dateLeft": 170.5625,
+      "dateRight": 302,
+      "metaRight": 302
+    },
+    {
+      "width": 360,
+      "panel": "open",
+      "dateLines": 1,
+      "authorRight": 184.109375,
+      "dateLeft": 210.5625,
+      "dateRight": 342,
+      "metaRight": 342
+    },
+    {
+      "width": 360,
+      "panel": "closed",
+      "dateLines": 1,
+      "authorRight": 184.109375,
+      "dateLeft": 210.5625,
+      "dateRight": 342,
+      "metaRight": 342
+    },
+    {
+      "width": 390,
+      "panel": "open",
+      "dateLines": 1,
+      "authorRight": 214.109375,
+      "dateLeft": 240.5625,
+      "dateRight": 372,
+      "metaRight": 372
+    },
+    {
+      "width": 390,
+      "panel": "closed",
+      "dateLines": 1,
+      "authorRight": 214.109375,
+      "dateLeft": 240.5625,
+      "dateRight": 372,
+      "metaRight": 372
+    },
+    {
+      "width": 900,
+      "panel": "open",
+      "dateLines": 1,
+      "authorRight": 724.109375,
+      "dateLeft": 750.5625,
+      "dateRight": 882,
+      "metaRight": 882
+    },
+    {
+      "width": 900,
+      "panel": "closed",
+      "dateLines": 1,
+      "authorRight": 724.109375,
+      "dateLeft": 750.5625,
+      "dateRight": 882,
+      "metaRight": 882
+    },
+    {
+      "width": 1920,
+      "panel": "open",
+      "dateLines": 1,
+      "authorRight": 455.90625,
+      "dateLeft": 482.359375,
+      "dateRight": 613.796875,
+      "metaRight": 613.796875
+    },
+    {
+      "width": 1920,
+      "panel": "closed",
+      "dateLines": 1,
+      "authorRight": 769.90625,
+      "dateLeft": 796.359375,
+      "dateRight": 927.796875,
+      "metaRight": 927.796875
+    }
+  ],
   "status": "passed",
-  "finishedAt": "2026-09-26T18:27:41.085Z"
+  "finishedAt": "2026-09-26T18:49:31.474Z"
 }

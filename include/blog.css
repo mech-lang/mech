@@ -167,6 +167,20 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
   text-wrap: balance;
 }
 
+.hero .mech-meta .mech-author {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hero .mech-meta .mech-date {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.hero .mech-meta > [aria-hidden="true"] {
+  flex: 0 0 auto;
+}
+
 .hero-visual {
   min-width: 0;
 }

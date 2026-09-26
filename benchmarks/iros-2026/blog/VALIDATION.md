@@ -412,8 +412,10 @@ a selected-landmark change and correction, injected last-lane rejection, and
 Reset. Editing a control did not advance the numerical state or trail;
 rejection preserved both. The actual scene snapshot used the dotted muted-gold
 trail and gray heading requested for the figure. No uncaught browser exceptions
-were recorded. Layout checks at 390, 900, and 1,920 pixels found no page-level
-horizontal overflow. Visual inspection confirmed the taller, warmer Pittsburgh
+were recorded. Layout checks at 320, 360, 390, 900, and 1,920 pixels, with the
+REPL open and closed, found no page-level horizontal overflow. The hero date
+stayed on one text line without overlapping the independently wrapped authors.
+Visual inspection confirmed the taller, warmer Pittsburgh
 photograph and removal of the pink application-output border.
 
 The independent 256-filter verifier passed 20 paired turns, including four

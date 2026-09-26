@@ -31,6 +31,7 @@ assert(html.includes('evidence/ekf-long-horizon-diagnostic.md'),'retain the inte
 const blogCss=readFileSync(join(repo,'include/blog.css'),'utf8');
 assert.match(blogCss,/grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1\.05fr\)/,'hero needs balanced title and artwork columns');
 assert.match(blogCss,/font-size: clamp\(34px, 4\.2cqw, 52px\)/,'title size follows the article pane, not the viewport');
+assert.match(blogCss,/\.hero \.mech-meta \.mech-date\s*\{[^}]*white-space: nowrap;/,'keep the date together while author names wrap');
 const articleCss=readFileSync(join(out,'assets/article.css'),'utf8');
 assert.match(articleCss,/aspect-ratio:4 \/ 3/,'skyline uses a photographic crop rather than a thin panorama');
 assert(!articleCss.includes('saturate(.78)'),'do not desaturate the Pittsburgh photograph');
