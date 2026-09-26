@@ -149,8 +149,9 @@ fn assert_logic_all_runtime_addition(catalog: &FunctionCatalog) {
         LOGIC_ALL_ID
     );
     assert_eq!(OperationId::from_name("logic/all").raw(), LOGIC_ALL_ID);
+    let all_runtime_id = RuntimeFunctionId::from_raw(LOGIC_ALL_ID);
     let entry = catalog
-        .runtime_entry(RuntimeFunctionId::from_raw(LOGIC_ALL_ID))
+        .runtime_entry(all_runtime_id)
         .expect("the selected logic profile must include logic/all");
     assert_eq!(entry.name, "logic/all");
     assert_eq!(
@@ -172,11 +173,10 @@ fn assert_logic_all_runtime_addition(catalog: &FunctionCatalog) {
         entry.output_alias_policy(),
         RuntimeOutputAliasPolicy::DisallowInputAlias
     );
+    let all_operation_id = OperationId::from_raw(LOGIC_ALL_ID);
     assert_eq!(
         entry.operation_binding(),
-        &RuntimeOperationBinding::Fixed(
-            vec![OperationId::from_raw(LOGIC_ALL_ID)].into_boxed_slice(),
-        )
+        &RuntimeOperationBinding::Fixed(vec![all_operation_id].into_boxed_slice())
     );
 }
 
