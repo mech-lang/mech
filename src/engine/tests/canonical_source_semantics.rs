@@ -1946,6 +1946,7 @@ fn fsm_pipe_owns_typed_arguments_stages_and_artifact_roundtrip() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_runs_through_canonical_recursive_control() {
     let source = "#Increment(value<f64>) => <f64>\n  | :start(value<f64>)\n  | :done(result<f64>).\n#Increment(value) -> :start(value)\n  :start(current) -> :done(current + 1)\n  :done(result) => result.\nresult := #Increment(41)\nresult\n";
@@ -2052,6 +2053,7 @@ fn declared_fsm_diagnostics_reject_invalid_declarations_calls_and_transitions() 
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_guards_and_multi_value_states_use_one_control_owner() {
     let traffic = "#TrafficLight(steps<u64>) => <u64>\n  | :Red(steps<u64>)\n  | :Green(steps<u64>)\n  | :Yellow(steps<u64>)\n  | :Done(out<u64>).\n#TrafficLight(steps) -> :Red(steps)\n  :Red(steps)\n    | steps > 0u64 -> :Green(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Green(steps)\n    | steps > 0u64 -> :Yellow(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Yellow(steps)\n    | steps > 0u64 -> :Red(steps - 1u64)\n    | steps == 0u64 -> :Done(0u64)\n  :Done(out) => out.\n#TrafficLight(6u64)\n";
@@ -2061,6 +2063,7 @@ fn declared_fsm_guards_and_multi_value_states_use_one_control_owner() {
     execute_document(fibonacci, [(vec![], ValueDataDraft::U64(55))]);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_lowers_structured_state_and_output_values_recursively() {
     let source = "#Pair(left<u64>, right<u64>) => <(u64,u64)>\n  | :Start(left<u64>, right<u64>)\n  | :Later(pair<(u64,u64)>).\n#Pair(left, right) -> :Start(left, right)\n  :Start(left, right) -> :Later((left, right))\n  :Later((left, right)) => (left, right).\n#Pair(20u64, 22u64)\n";
@@ -2073,6 +2076,7 @@ fn declared_fsm_lowers_structured_state_and_output_values_recursively() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Middle(value<u64>)\n  | :Later(value<u64>)\n  | :Done(value<u64>).\n#Deferred() -> :Start\n  :Start ~> :Middle(40u64)\n  :Middle(value) ~> :Later(value + 1u64)\n  :Later(value) -> :Done(value + 1u64)\n  :Done(value) => value.\n#Deferred()\n";
@@ -2127,6 +2131,7 @@ fn declared_fsm_async_transition_resumes_on_a_distinct_later_turn() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn interactive_constant_aliases_keep_output_readiness_aligned() {
     let source = "selected := 40\n~counter := 0\ncounter += 1\n1\n";
@@ -2173,6 +2178,7 @@ fn interactive_constant_aliases_keep_output_readiness_aligned() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_publishes_output_and_continuation_atomically() {
     let source = "#Publishing() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7u64\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9u64.\n#Publishing()\n";
@@ -2246,6 +2252,7 @@ fn declared_fsm_publishes_output_and_continuation_atomically() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn fsm_publication_admission_counts_live_arm_bindings() {
     let source = "#Publishing(kept<string>, published<string>) => <string>\n  | :Start(kept<string>)\n  | :Later.\n#Publishing(kept, published) -> :Start(kept)\n  :Start(kept)\n    => published\n    ~> :Later\n  :Later => published.\n#Publishing(kept<string>, published<string>)\n";
@@ -2283,6 +2290,7 @@ fn fsm_publication_admission_counts_live_arm_bindings() {
     assert!(!instance.has_ready_continuation());
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn fsm_publication_replacement_admission_counts_the_previous_value() {
     let source = "#Publishing() => <string>\n  | :Start\n  | :Middle\n  | :Later.\n#Publishing() -> :Start\n  :Start\n    => signal<string>\n    ~> :Middle\n  :Middle\n    => signal\n    ~> :Later\n  :Later => signal.\n#Publishing()\n";
@@ -2320,6 +2328,7 @@ fn fsm_publication_replacement_admission_counts_the_previous_value() {
     assert!(instance.has_ready_continuation());
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_retains_its_last_publication_across_later_suspensions() {
     let source = "#Publishing() => <f64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Publishing() -> :Start\n  :Start\n    => 7\n    ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 9.\nvalue := #Publishing()\nvalue + signal<f64>\n";
@@ -2442,6 +2451,7 @@ fn declared_fsm_bytecode_rejects_malformed_typed_continuation_operations() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_continuation_retains_lexical_captures() {
     let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Captured(signal<f64>)\n";
@@ -2487,6 +2497,7 @@ fn declared_fsm_continuation_retains_lexical_captures() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_continuation_freezes_derived_capture_locations() {
     let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value + 1.\nderived := signal<f64> + 1\n#Captured(derived)\n";
@@ -2523,6 +2534,7 @@ fn declared_fsm_continuation_freezes_derived_capture_locations() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn resident_activation_rejects_non_input_live_fsm_captures() {
     use mech_engine::__resident::ResidentActivationError;
@@ -2576,6 +2588,7 @@ fn resident_activation_rejects_non_input_live_fsm_captures() {
     ));
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn replacement_continuation_admission_counts_the_retained_frame() {
     let source = "#Repeat(value<string>) => <string>\n  | :Start\n  | :Again.\n#Repeat(value) -> :Start\n  :Start ~> :Again\n  :Again ~> :Again.\n#Repeat(signal<string>)\n";
@@ -2608,6 +2621,7 @@ fn replacement_continuation_admission_counts_the_retained_frame() {
     assert!(instance.has_ready_continuation());
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn resumed_fsm_body_admission_counts_the_active_frame() {
     let source = "#Captured(value<string>) => <string>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#Captured(signal<string>)\n";
@@ -2640,6 +2654,7 @@ fn resumed_fsm_body_admission_counts_the_active_frame() {
     assert!(instance.has_ready_continuation());
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_resume_keeps_arguments_and_reads_external_inputs_live() {
     let source = "#Captured(value<f64>) => <f64>\n  | :Start\n  | :Later.\n#Captured(value) -> :Start\n  :Start ~> :Later\n  :Later => value + signal.\n#Captured(signal<f64>)\n";
@@ -2680,6 +2695,7 @@ fn declared_fsm_resume_keeps_arguments_and_reads_external_inputs_live() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_continuation_owns_managed_composite_captures() {
     let source = "#CapturedTuple(value<(f64,f64)>) => <(f64,f64)>\n  | :Start\n  | :Later.\n#CapturedTuple(value) -> :Start\n  :Start ~> :Later\n  :Later => value.\n#CapturedTuple((10, 20))\n";
@@ -2721,12 +2737,14 @@ fn declared_fsm_continuation_owns_managed_composite_captures() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_statement_and_block_transitions_share_the_arm_control_block() {
     let source = "#Code() => <u64>\n  | :Start\n  | :Done(value<u64>).\n#Code() -> :Start\n  :Start\n    -> x := 40u64\n    -> {y := x + 1u64\n        z := y + 1u64}\n    -> :Done(z)\n  :Done(value) => value.\n#Code()\n";
     execute_document(source, [(vec![], ValueDataDraft::U64(42))]);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_failed_yields_and_resumes_preserve_the_published_continuation() {
     let source = "#Atomic(seed<f64>) => <f64>\n  | :Start\n  | :Later(value<f64>)\n  | :Done(value<f64>).\n#Atomic(seed) -> :Start\n  :Start ~> :Later(seed)\n  :Later(value) -> :Done(value + 1)\n  :Done(value) => value.\n#Atomic(signal<f64>)\n";
@@ -2789,6 +2807,7 @@ fn declared_fsm_failed_yields_and_resumes_preserve_the_published_continuation() 
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_wakeup_rejects_reset_and_replacement_generations() {
     use mech_engine::__resident::StateMigrationPolicy;
@@ -2839,6 +2858,7 @@ fn declared_fsm_wakeup_rejects_reset_and_replacement_generations() {
     assert!(!instance.has_ready_continuation());
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn declared_fsm_wakeup_drains_are_bounded_and_fair_across_instances() {
     use mech_engine::resident::ResidentContinuationScheduler;
@@ -2892,6 +2912,7 @@ fn declared_fsm_wakeup_drains_are_bounded_and_fair_across_instances() {
     assert!(left.accepts_continuation_wakeup(third[0]));
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn one_turn_resumes_only_one_of_two_ready_fsm_nodes() {
     let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
@@ -2916,6 +2937,7 @@ fn one_turn_resumes_only_one_of_two_ready_fsm_nodes() {
     assert_eq!(instance.ready_continuation_count(), 1);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn completed_fsm_roots_do_not_restart_during_the_same_continuation_drain() {
     let source = "#Chain() => <u64>\n  | :Start\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
@@ -2942,6 +2964,7 @@ fn completed_fsm_roots_do_not_restart_during_the_same_continuation_drain() {
     assert_eq!(instance.ready_continuation_count(), 0);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn repeated_fsm_yields_rotate_ready_roots_within_one_instance() {
     let source = "#Chain() => <u64>\n  | :Start\n  | :Middle\n  | :Later\n  | :Done.\n#Chain() -> :Start\n  :Start ~> :Middle\n  :Middle ~> :Later\n  :Later -> :Done\n  :Done => 42u64.\nleft := #Chain()\nright := #Chain()\n";
@@ -2970,6 +2993,7 @@ fn repeated_fsm_yields_rotate_ready_roots_within_one_instance() {
     assert_eq!(instance.continuation_wakeup().unwrap(), first);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn downstream_fsm_output_stays_unavailable_until_resume() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\nresult := #Deferred()\nplus := result + 1u64\n";
@@ -3013,6 +3037,7 @@ fn downstream_fsm_output_stays_unavailable_until_resume() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn state_writers_wait_for_unpublished_fsm_dependencies() {
     let source = "#Deferred() => <f64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41.\nlive := signal<f64>\ndeferred := #Deferred()\n~total<f64> := 0.0\ntotal += deferred + live\ntotal\n";
@@ -3049,6 +3074,7 @@ fn state_writers_wait_for_unpublished_fsm_dependencies() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn fresh_fsm_waits_for_an_unpublished_upstream_continuation() {
     let source = "#Inner() => <f64>\n  | :Start\n  | :Done.\n#Inner() -> :Start\n  :Start ~> :Done\n  :Done => 41.\n#Outer(value<f64>, live<f64>) => <f64>\n  | :Start(value<f64>, live<f64>)\n  | :Done(value<f64>).\n#Outer(value, live) -> :Start(value, live)\n  :Start(value, live) ~> :Done(value + live)\n  :Done(value) => value.\n#Outer(#Inner(), signal<f64>)\n";
