@@ -1,0 +1,703 @@
+{
+  "url": "http://127.0.0.1:8768/index.html",
+  "viewports": [
+    {
+      "width": 1440,
+      "blocks": [
+        {
+          "id": "51121516621608039",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "55945267301386138",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "63513564109971657",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "37769114873463600",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "57148457109950844",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "26450907705100647",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "55028253537192672",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "51740637045466264",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        },
+        {
+          "id": "25224386071050993",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "14318393023282743",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        },
+        {
+          "id": "2723721654709529",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        },
+        {
+          "id": "56577822067743912",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        }
+      ],
+      "rust": [
+        {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        },
+        {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        },
+        {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        }
+      ],
+      "empty": {
+        "code": {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        },
+        "output": {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "0px",
+          "borderBottomLeftRadius": "10px",
+          "display": "none"
+        }
+      },
+      "missing": {
+        "code": {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        }
+      },
+      "restored": {
+        "borderTop": "1px solid rgb(77, 82, 87)",
+        "borderRight": "1px solid rgb(77, 82, 87)",
+        "borderBottom": "0px solid rgb(77, 82, 87)",
+        "borderLeft": "1px solid rgb(77, 82, 87)",
+        "borderTopLeftRadius": "10px",
+        "borderBottomLeftRadius": "0px",
+        "display": "block"
+      },
+      "application": {
+        "borderTop": "1px solid rgb(77, 82, 87)",
+        "borderRight": "1px solid rgb(77, 82, 87)",
+        "borderBottom": "1px solid rgb(77, 82, 87)",
+        "borderLeft": "1px solid rgb(77, 82, 87)",
+        "borderTopLeftRadius": "10px",
+        "borderBottomLeftRadius": "10px",
+        "display": "block"
+      },
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "blocks": [
+        {
+          "id": "51121516621608039",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "55945267301386138",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "63513564109971657",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "37769114873463600",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "57148457109950844",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "26450907705100647",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "55028253537192672",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "51740637045466264",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        },
+        {
+          "id": "25224386071050993",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "none"
+          },
+          "visible": false
+        },
+        {
+          "id": "14318393023282743",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        },
+        {
+          "id": "2723721654709529",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        },
+        {
+          "id": "56577822067743912",
+          "code": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "0px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "10px",
+            "borderBottomLeftRadius": "0px",
+            "display": "block"
+          },
+          "output": {
+            "borderTop": "1px solid rgb(77, 82, 87)",
+            "borderRight": "1px solid rgb(77, 82, 87)",
+            "borderBottom": "1px solid rgb(77, 82, 87)",
+            "borderLeft": "1px solid rgb(77, 82, 87)",
+            "borderTopLeftRadius": "0px",
+            "borderBottomLeftRadius": "10px",
+            "display": "block"
+          },
+          "visible": true
+        }
+      ],
+      "rust": [
+        {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        },
+        {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        },
+        {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        }
+      ],
+      "empty": {
+        "code": {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        },
+        "output": {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "0px",
+          "borderBottomLeftRadius": "10px",
+          "display": "none"
+        }
+      },
+      "missing": {
+        "code": {
+          "borderTop": "1px solid rgb(77, 82, 87)",
+          "borderRight": "1px solid rgb(77, 82, 87)",
+          "borderBottom": "1px solid rgb(77, 82, 87)",
+          "borderLeft": "1px solid rgb(77, 82, 87)",
+          "borderTopLeftRadius": "10px",
+          "borderBottomLeftRadius": "10px",
+          "display": "block"
+        }
+      },
+      "restored": {
+        "borderTop": "1px solid rgb(77, 82, 87)",
+        "borderRight": "1px solid rgb(77, 82, 87)",
+        "borderBottom": "0px solid rgb(77, 82, 87)",
+        "borderLeft": "1px solid rgb(77, 82, 87)",
+        "borderTopLeftRadius": "10px",
+        "borderBottomLeftRadius": "0px",
+        "display": "block"
+      },
+      "application": {
+        "borderTop": "1px solid rgb(77, 82, 87)",
+        "borderRight": "1px solid rgb(77, 82, 87)",
+        "borderBottom": "1px solid rgb(77, 82, 87)",
+        "borderLeft": "1px solid rgb(77, 82, 87)",
+        "borderTopLeftRadius": "10px",
+        "borderBottomLeftRadius": "10px",
+        "display": "block"
+      },
+      "overflow": false
+    }
+  ],
+  "exceptions": [],
+  "status": "passed"
+}

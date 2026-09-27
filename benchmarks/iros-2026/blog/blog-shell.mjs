@@ -10,6 +10,8 @@ export function blogShell(repo) {
     if(template.split(before).length!==2) throw new Error(`Canonical blog template changed near ${before.slice(0,60)}`);
     template=template.replace(before,after);
   };
+  // This article uses pre-rendered SVG figures, not Mermaid diagrams.
+  replaceOnce('  <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>\n','');
   for(const [layer,slot,files] of [
     ['palette','PALETTE_STYLESHEET',['palette.css']],
     ['source','MECH_SOURCE_STYLESHEET',['mech-source.css']],
@@ -18,6 +20,9 @@ export function blogShell(repo) {
     ['repl','MECH_REPL_STYLESHEET',['mech-repl.css']],
   ]) replaceOnce(`<style data-mech-style-layer="${layer}">{{${slot}}}</style>`,files.map(file=>`<link rel="stylesheet" data-mech-style-layer="${layer}" href="assets/${file}">`).join('\n  '));
   replaceOnce('</head>',`  <link rel="stylesheet" href="assets/article.css">
+  <link rel="modulepreload" href="assets/runtime.mjs">
+  <link rel="modulepreload" href="_mech/pkg/mech_wasm.js">
+  <link rel="preload" href="_mech/pkg/mech_wasm_bg.wasm.gz" as="fetch" crossorigin>
   <link rel="canonical" href="https://mech-lang.org/iros-r4r-2026/index.html">
   <meta name="description" content="Mech's numerical, embedded, reactive and heterogeneous runtime, with a fixed-camera range-and-bearing EKF running on WebAssembly and WebGPU.">
   <script async defer src="https://buttons.github.io/buttons.js"></script>
@@ -36,7 +41,9 @@ export function blogShell(repo) {
       ${component('header-actions.html')}
     </div>
   </header>`);
-  replaceOnce('{{SOURCE_URL_KEY}}','article.mec');
+  // The standalone page embeds its exact AST and source bundle. /code/ is a
+  // development-server route, not the source of this GitLab Pages document.
+  replaceOnce('{{SOURCE_URL_KEY}}','');
   replaceOnce('<section class="content-shell" id="contentShell">', '<section class="content-shell workshop-footer-shell" id="contentShell">');
   replaceOnce('aria-selected="false" aria-controls="mech-console-panel-output"', 'aria-selected="true" aria-controls="mech-console-panel-output"');
   replaceOnce('aria-selected="true" aria-controls="mech-console-panel-console"', 'aria-selected="false" aria-controls="mech-console-panel-console"');

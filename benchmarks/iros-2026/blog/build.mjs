@@ -44,7 +44,7 @@ for(const [token,[label,href]] of slotLinks) {
   literate=literate.replace(token,`[${label}](${href})`);
 }
 for(const item of downloads) writeFileSync(join(out,item.href),item.source);
-copyFileSync(join(root,'../poster/IROS-2026-Mech-Poster-prose-v3.pdf'),join(out,'poster.pdf'));
+copyFileSync(join(root,'../poster/IROS-2026-Mech-Poster-qr-v2.pdf'),join(out,'poster.pdf'));
 const expandedPath=join(temporary,'article.mec');
 writeFileSync(expandedPath,literate);
 const shellPath=join(temporary,'blog-shell.html');

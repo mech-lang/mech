@@ -1,8 +1,8 @@
 <section class="live-demo" aria-labelledby="live-title" id="ekf-app">
   <div class="demo-heading"><div><p class="kicker" id="source-origin">Executing camera-ekf.mec and scene.mec</p><h3 id="live-title">Camera EKF localization</h3></div><span id="runtime-status" role="status">Loading the Mech WebAssembly runtime…</span></div>
   <div class="demo-controls">
-    <label>Compute backend<select id="backend"><option value="cpu">CPU · Mech interpreter (WebAssembly)</option><option value="gpu" disabled>GPU · Mech / WebGPU (checking availability)</option></select></label>
-    <label>Independent filters<select id="instances"><option value="1">1</option><option value="256">256</option><option value="4096" selected>4,096</option><option value="65536">65,536</option></select></label>
+    <label>Compute backend<select id="backend" disabled><option value="cpu">CPU · Mech interpreter (WebAssembly)</option><option value="gpu" disabled>GPU · Mech / WebGPU (checking availability)</option></select></label>
+    <label>Independent filters<select id="instances" disabled><option value="1">1</option><option value="256">256</option><option value="4096" selected>4,096</option><option value="65536">65,536</option></select></label>
     <button id="run" disabled>Run</button><button id="pause" disabled>Pause</button><button id="step" disabled>One turn</button><button id="reset" disabled>Reset</button>
   </div>
   <div class="demo-body">
@@ -22,11 +22,11 @@
   <p class="small" id="measurement-status" role="status">Preparing the Mech camera model…</p>
   <p class="small">Click or tap a camera to enable or disable it. Each enabled camera contributes range and bearing measurements when the robot is inside its sensing circle; with none in range, the filter predicts from motion alone.</p>
   <div class="sensor-controls">
-    <label>Camera maximum range <output id="camera-range-label">65</output><input id="camera-range" type="range" min="10" max="250" step="1" value="65"></label>
-    <label>Forward velocity <output id="velocity-label">1.0</output><input id="velocity" type="range" min="0" max="12" step="0.1" value="1"></label>
-    <label>Angular velocity <output id="omega-label">0.015</output><input id="omega" type="range" min="-0.4" max="0.4" step="0.001" value="0.015"></label>
-    <label>Measurement noise multiplier <output id="noise-label">1</output><input id="noise" type="range" min="0" max="5" step="0.1" value="1"></label>
-    <label>Simulated motion noise multiplier <output id="motion-noise-label">1</output><input id="motion-noise" type="range" min="0" max="5" step="0.1" value="1"></label>
+    <label>Camera maximum range <output id="camera-range-label">65</output><input id="camera-range" type="range" min="10" max="250" step="1" value="65" disabled></label>
+    <label>Forward velocity <output id="velocity-label">1.0</output><input id="velocity" type="range" min="0" max="12" step="0.1" value="1" disabled></label>
+    <label>Angular velocity <output id="omega-label">0.015</output><input id="omega" type="range" min="-0.4" max="0.4" step="0.001" value="0.015" disabled></label>
+    <label>Measurement noise multiplier <output id="noise-label">1</output><input id="noise" type="range" min="0" max="5" step="0.1" value="1" disabled></label>
+    <label>Simulated motion noise multiplier <output id="motion-noise-label">1</output><input id="motion-noise" type="range" min="0" max="5" step="0.1" value="1" disabled></label>
     <button id="inject" disabled>Inject an invalid measurement</button>
   </div>
   <div class="behavior-status" aria-label="Live robot behavior"><span data-state="paused" class="active">Paused</span><span class="state-edge">↔</span><span data-state="patrol">Patrol</span><span class="state-edge">→</span><span data-state="fault">Fault</span><p id="behavior-message">The Mech state machine controls run, pause, and rejected-turn behavior.</p></div>

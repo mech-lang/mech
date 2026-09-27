@@ -80,7 +80,7 @@ review and authorization step.
   the template tokens. Its live UI is supplied by the accompanying browser
   host files; the article text alone is not a standalone UI bundle.
 - `dist/poster.pdf` is an unchanged copy of
-  `../poster/IROS-2026-Mech-Poster-prose-v3.pdf`, retained beside the article
+  `../poster/IROS-2026-Mech-Poster-qr-v2.pdf`, retained beside the article
   and identified in the build manifest for downloadable poster links.
 - `dist/build-manifest.json` records build time, repository revision, dirty
   worktree status, and hashes of the kernel, behavior source, WASM and copied
@@ -139,30 +139,43 @@ cargo +nightly-2026-03-03 build \
   --manifest-path benchmarks/iros-2026/blog/render/Cargo.toml -j 2
 ```
 
-Build the browser package with `browser_compute_canary`; the default empty
-feature set does not provide the source compiler and numerical/browser APIs
-needed by this page:
+Build the browser package with `browser_workshop`. It retains the document
+REPL, displayed language examples, CPU/WebGPU compiler, and console/scene
+hosts, but omits delegated server authority and the unused DOM/time/timer
+providers. The default empty feature set cannot execute this page.
+Strip the optional WASM debug-name section for publication; this removes
+symbol names, not numerical instructions or integrity checking. Install the
+`wasm-bindgen` CLI version matching Cargo.lock (currently 0.2.126), or supply
+its path with `--wasm-bindgen`:
 
 ```sh
 RUSTUP_TOOLCHAIN=nightly-2026-03-03 CARGO_BUILD_JOBS=2 \
-  wasm-pack build src/wasm --target web --out-dir pkg --release \
-  --no-default-features --features browser_compute_canary
+  python3 scripts/build-wasm.py --profile browser-workshop --strip-debug-names
 ```
 
-The successful local build used `wasm-pack 0.12.1`, Rust nightly
-`2026-03-03`, and the following cached/offline invocation from the repository
-root. The shared target directory is a local build-cache choice, not a source
+The successful local build used `wasm-pack 0.12.1` and Rust nightly
+`2026-03-03`. An equivalent rebuild using the local cached tools is shown
+below. The shared target directory is a local build-cache choice, not a source
 dependency; omit that environment override on other machines.
 
 ```sh
 RUSTUP_TOOLCHAIN=nightly-2026-03-03 \
 CARGO_TARGET_DIR=/private/tmp/mech-iros-workshop-20260924/target \
 CARGO_BUILD_JOBS=2 \
-  wasm-pack build src/wasm --target web --out-dir pkg --release \
-  --no-default-features --features browser_compute_canary --offline
+  python3 scripts/build-wasm.py --profile browser-workshop --strip-debug-names \
+  --wasm-bindgen /Users/coreymontella/Library/Caches/.wasm-pack/wasm-bindgen-cargo-install-0.2.126/wasm-bindgen
 ```
 
-The crate's release metadata disables `wasm-opt`. The earlier v0.4.0-beta WASM
+The workshop profile reports ten installed components: Mech Web, seven
+libraries, and the console/scene hosts. Its document and numerical regression
+tests still execute the real source. The September 27 publication package has
+SHA-256 `2bf653d0a467f800a9df301c434df14d32d41d7e2d26c50187e1a2d41e1ed99e`:
+30,066,611 bytes before compression and 4,530,509 bytes as gzip. The preceding
+package was 49,267,038 bytes, or 5,485,756 bytes as gzip. Debug-name stripping
+preserves every non-custom WASM section byte-for-byte; the profile itself
+removes only the unused providers and authority support described above.
+The crate's release metadata disables
+`wasm-opt`. The earlier v0.4.0-beta WASM
 used before the scene integration had SHA-256
 `18224e2cf04b246148029bff7bf498ed77c92780495a5e7cfc493a9cd94a8871`.
 Its actual `:version` response reports `0.4.0-beta` for all 13 installed

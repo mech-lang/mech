@@ -89,6 +89,18 @@ browser_compute_canary = [
   # executable/embedded source, so retain their semantic scalar families.
   "atom", "enum", "r64",
 ]
+# The workshop is a self-contained document with a JS-supplied numeric input
+# packet and a Mech scene host. It does not use delegated server authority or
+# the DOM/time/timer host providers. Retain its document REPL and language
+# examples alongside the CPU/WebGPU numerical compiler.
+browser_workshop = [
+  "browser_project_core", "browser_compute", "sample_hold", "state_step",
+  "browser_host_scene", "mika", "statements_default", "state_machines",
+  "compare_eq", "access", "assign", "subscript_default", "matrix_solve",
+  "matrix_vertcat", "matrix_matmul", "matrix_transpose", "matrix_dot",
+  "matrix_comprehensions", "bool", "string_default", "record", "table",
+  "atom", "enum", "r64",
+]
 browser_compute = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
   "mech-runtime/compute",

@@ -652,6 +652,33 @@ fn established_blog_color_and_component_details_are_preserved() {
 }
 
 #[test]
+fn floated_callouts_reuse_shared_style_and_mobile_float_layout() {
+    let mechdown = include("mechdown.css");
+    let callout_rule = mechdown
+        .split("[data-mechdown] .mech-float > :is(")
+        .nth(1)
+        .expect("shared floated callout rule")
+        .split('}')
+        .next()
+        .unwrap();
+    for class in ["mech-block-quote", "mech-info-block", "mech-question-block",
+        "mech-success-block", "mech-warning-block", "mech-error-block", "mech-idea-block"] {
+        assert!(callout_rule.contains(class));
+    }
+    assert!(callout_rule.contains("margin: 0"));
+    assert!(callout_rule.contains("box-sizing: border-box"));
+    assert!(!callout_rule.contains("background:"));
+    let blog = include("blog.css");
+    let mobile = blog.split("@media (max-width: 760px)").nth(1).unwrap();
+    let float_rule = mobile.split(":is(.main-content, .article-intro) .mech-float {").nth(1).unwrap()
+        .split('}').next().unwrap();
+    assert!(float_rule.contains("float: none"));
+    assert!(float_rule.contains("width: 100%"));
+    assert!(float_rule.contains("clear: both"));
+    assert!(blog.contains(".article-intro {\n  display: flow-root;"));
+}
+
+#[test]
 fn prose_links_keep_dots_without_recoloring_source_navigation() {
     let mechdown = include("mechdown.css");
     for selector in [".mech-hyperlink,", ".mech-section-reference-link {"] {

@@ -562,3 +562,61 @@ resident scene for 40 turns at 256 filters, with rejection and recovery checks.
 The reference listing and live listing have separate namespaces. No archived
 native benchmark source, timing, or source-size measurement is replaced by this
 extension, and the browser and numerical tests are not new throughput samples.
+
+## Workshop runtime, controls, and startup revision — 2026-09-27
+
+The `browser_workshop` profile retains the document REPL, displayed language
+examples, CPU/WebGPU numerical compiler, and console/scene hosts. It excludes
+unused delegated-server authority and DOM/time/timer providers. Official
+wasm-bindgen regeneration removes debugging names without changing noncustom
+WASM sections. The JavaScript bindings and WASM are regenerated together.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `mech_wasm_bg.wasm` | `2bf653d0a467f800a9df301c434df14d32d41d7e2d26c50187e1a2d41e1ed99e` |
+| `source/scene.mec` | `70547e59ec03a0bde301c7b7e2054c368a85689d927acdfa4bece626c0ce1588` |
+
+The numerical sources retain the identities in the preceding section. The
+scene change darkens each robot heading line within its marker's color family.
+The production runtime is 30,066,611 bytes, or 4,530,509 bytes gzipped, versus
+49,267,038 and 5,485,756 bytes respectively for the preceding runtime.
+
+The document/runtime, drawing, camera-kernel, application-turn, document-output,
+document-presentation, and scene-renderer tests passed against this artifact.
+The camera-kernel checks include the two 1,000-turn cases described above.
+All five WASM build-script tests passed. These tests retain integrity checking
+and whole-batch rollback; the smaller profile does not weaken those checks.
+
+[The full browser report](evidence/workshop-trim-browser-verification.json)
+records CPU and real WebGPU at 1, 256, 4,096, and 65,536 filters, all camera
+toggles, unavailable-camera prediction, rejection/recovery, and CPU/GPU
+agreement. Five actual slider drags per backend changed controls while turns
+continued. Structural controls were disabled, visibly dimmed, and did not gain
+hover highlighting. Both backends crossed the field boundary at 132 accepted
+turns with no rejection. Ten responsive layouts passed with no uncaught
+browser exceptions.
+
+The page preloads the shared runtime, omits unused Mermaid loading and the
+redundant document fetch, and loads footer artwork lazily. FAQ and idea callouts
+replace the generic EKF question and numbered integrity-story subsection; the
+introductory callout floats right on wide layouts and returns to normal flow
+on narrow layouts.
+
+[The cold local startup trace](evidence/workshop-trim-local-startup.json)
+recorded first content at 356 ms and a ready EKF at 4,561 ms. It is a local
+diagnostic, not a public-network speed comparison or benchmark result. The
+remaining long tasks primarily prepare the resident document and scene, then
+compile the numerical program synchronously. Browser tests confirm that the
+runtime is fetched once and no unused Mermaid, `/code/article.mec`, or eager
+footer-Mika request occurs during startup.
+
+The subsequent presentation-only border correction was checked against the
+published v0.3 blog's computed styles. [The border regression
+report](evidence/code-border-verification.json) covers all twelve Mech fences,
+three Rust listings, and the application output at 1,440 and 390 pixels.
+Standalone code has a complete neutral outline; visible code/output pairs
+share one divider and their outer rounded frame. Empty, hidden, and absent
+outputs close the code frame, and restoring output rejoins it. The checks
+passed without page overflow or browser exceptions. Desktop and mobile
+screenshots were visually reviewed. The numerical sources and runtime did
+not change after the full browser campaign above.

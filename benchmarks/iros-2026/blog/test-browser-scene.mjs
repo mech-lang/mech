@@ -128,7 +128,7 @@ try{
       await change('camera-range',250);await step();
       const recovered=await snapshot();assert.match(recovered.status,/^4 of 4 enabled cameras in range/,'all four cameras contribute within range');
       const drawing=await evaluate(`({dash:document.querySelector('[data-mech-scene-id="estimate-path"]')?.getAttribute('stroke-dasharray'),trail:document.querySelector('[data-mech-scene-id="estimate-path"]')?.getAttribute('stroke'),heading:document.querySelector('[data-mech-scene-id="estimate-heading"]')?.getAttribute('stroke'),sceneCount:document.querySelectorAll('#robot-scene').length})`);
-      assert.equal(drawing.sceneCount,1);assert(drawing.dash);assert.equal(drawing.trail,'#ad9159');assert.equal(drawing.heading,'#687780');
+      assert.equal(drawing.sceneCount,1);assert(drawing.dash);assert.equal(drawing.trail,'#ad9159');assert.equal(drawing.heading,'#ac8637');
       await evaluate('document.getElementById("inject").click()');
       await until('document.getElementById("runtime-error").textContent.includes("finite-candidate")','injected rejection',60000,'finite-candidate');
       const rejected=await snapshot();
@@ -150,6 +150,13 @@ try{
       await change('velocity',1);await change('omega',.015);await change('noise',1);await change('motion-noise',1);await change('camera-range',250);
       const before=await snapshot();
       await evaluate('document.getElementById("run").click()');
+      const locked=await evaluate(`['run','step','reset','instances','backend','verify'].map(id=>{const e=document.getElementById(id),s=getComputedStyle(e);return {id,disabled:e.disabled,opacity:Number(s.opacity),cursor:s.cursor,border:s.borderColor};})`);
+      for(const control of locked){assert(control.disabled,control.id+' stays disabled while running');assert(control.opacity<=.5,control.id+' visibly dimmed');assert.equal(control.cursor,'not-allowed');}
+      await evaluate(`document.getElementById('backend').scrollIntoView({block:'center',behavior:'instant'})`);
+      const disabledPoint=await evaluate(`(()=>{const r=document.getElementById('backend').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+      await send('Input.dispatchMouseEvent',{type:'mouseMoved',...disabledPoint});
+      const hoverBorder=await evaluate(`getComputedStyle(document.getElementById('backend')).borderColor`);
+      assert.equal(hoverBorder,locked.find(c=>c.id==='backend').border,'disabled dropdown never highlights on hover');
       await clickCamera(1);
       await until(`document.querySelector('#robot-scene [data-camera-index="1"][role="button"]').getAttribute('aria-pressed')==='false'`,'camera click during running turns');
       await clickCamera(1);
@@ -160,7 +167,7 @@ try{
       await until('!document.getElementById("step").disabled','pause after live slider drag');
       const after=await snapshot();assert.notEqual(after.count,before.count,'turns continue while sliders are dragged');
       assert.notEqual(after.truthTrail,before.truthTrail,'robot moves while steering');
-      report.liveDrags.push({backend,drags,before:before.count,after:after.count});
+      report.liveDrags.push({backend,drags,locked,before:before.count,after:after.count});
       await evaluate('document.getElementById("reset").click()');await until('!document.getElementById("run").disabled','drag reset');
       await change('instances',256);await until('!document.getElementById("run").disabled','wrap batch compilation');
       await change('velocity',12);await change('omega',0);await change('noise',0);await change('motion-noise',0);await change('camera-range',250);

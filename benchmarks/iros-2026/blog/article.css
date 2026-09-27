@@ -42,9 +42,10 @@
 .demo-launcher-actions { display:flex; flex-wrap:wrap; gap:12px; }
 .demo-launcher button { font:inherit; color:var(--mech-brand); background:var(--mech-panel-raised); border:1px solid var(--mech-border); border-radius:5px; padding:9px 15px; cursor:pointer; }
 .demo-launcher button:focus-visible { outline:2px solid var(--mech-brand); outline-offset:3px; }
-.mech-output-region-application { container-type:inline-size; border:0; outline:0; box-shadow:none; }
-.mech-block-output { border:0; }
-.mech-output-region-application .live-demo { margin:0; padding:20px; border:0; border-radius:0; font-family:var(--font-family, sans-serif); }
+.mech-output-region-application { container-type:inline-size; border:1px solid var(--mech-border); border-radius:10px; outline:0; box-shadow:none; }
+/* Match the blog's neutral output frame, not the pink namespace pill. */
+.workshop-footer-shell .mech-block-output { border:1px solid var(--mech-border); }
+.mech-output-region-application .live-demo { margin:0; padding:20px; border:0; border-radius:inherit; font-family:var(--font-family, sans-serif); }
 .mech-output-region-application .demo-heading .kicker { margin:0 0 8px; font-size:12px; }
 .mech-output-region-application .demo-heading h3 { margin:0 0 12px; }
 .mech-output-region-application .telemetry pre { font-size:10px; line-height:1.6; }
@@ -74,11 +75,13 @@
 html[data-mech-shim="blog"] [data-mechdown] .workshop-figure .mech-figure-caption { width:100%; max-width:100%; }
 .live-demo { margin:32px 0; padding:22px; border:1px solid var(--mech-border); border-top:3px solid var(--accent-secondary-teal); background:var(--mech-panel); border-radius:4px; }
 .live-demo button,.live-demo select { background:var(--mech-panel-raised); color:var(--mech-text-body); border:1px solid var(--mech-border); border-radius:4px; padding:8px 13px; font:inherit; font-size:13px; cursor:pointer; }
-.live-demo :is(button,select):hover { border-color:var(--mech-brand); }
-.live-demo button:disabled { opacity:.45; cursor:not-allowed; }
+.live-demo :is(button,select):enabled:hover { border-color:var(--mech-brand); }
 .live-demo :is(button,select,input,summary):focus-visible { outline:2px solid var(--mech-brand); outline-offset:4px; }
 .live-demo #run { color:var(--mech-canvas); background:var(--mech-brand); border-color:var(--mech-brand); }
 .live-demo #inject { color:var(--mech-warning); }
+.live-demo :is(button,select):disabled,
+.live-demo :is(#run,#inject):disabled { color:var(--mech-text-muted); background:var(--mech-panel); border-color:var(--mech-border); opacity:.45; cursor:not-allowed; box-shadow:none; }
+.live-demo input:disabled { opacity:.4; cursor:not-allowed; }
 .demo-heading { display:flex; justify-content:space-between; align-items:start; gap:20px; }
 .demo-heading h3 { margin:0 0 15px; font-size:20px; }
 .demo-heading [role=status] { font-size:12px; max-width:260px; color:var(--accent-secondary-teal-soft); }

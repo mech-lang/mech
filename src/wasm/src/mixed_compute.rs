@@ -340,6 +340,7 @@ pub(crate) struct PreparedBrowserComputeRuntime {
 }
 
 pub(crate) enum BrowserComputePurpose<'a> {
+    #[cfg(feature = "served_project_authority")]
     ResidentDocument {
         generation: u64,
         previous: Option<&'a BrowserComputeBridge>,
@@ -358,6 +359,7 @@ pub(crate) fn prepare_browser_compute_runtime(
 ) -> MResult<PreparedBrowserComputeRuntime> {
     let compute_index = configured_host_index(document, "compute")?;
     let (generation, previous, outputs, backend_override) = match purpose {
+        #[cfg(feature = "served_project_authority")]
         BrowserComputePurpose::ResidentDocument {
             generation,
             previous,
@@ -365,7 +367,12 @@ pub(crate) fn prepare_browser_compute_runtime(
         BrowserComputePurpose::StandalonePresentation {
             outputs,
             backend_override,
-        } => (1, None, Some(outputs), Some(backend_override)),
+        } => (
+            1,
+            None::<&BrowserComputeBridge>,
+            Some(outputs),
+            Some(backend_override),
+        ),
     };
     let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
     let registry = match outputs {

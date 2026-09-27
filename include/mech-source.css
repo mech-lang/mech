@@ -632,9 +632,19 @@
 }
 
 :where([data-mech-source]).mech-fenced-mech-block.no-output .mech-code-block,
-:where([data-mech-source]) .mech-fenced-mech-block.no-output .mech-code-block {
+:where([data-mech-source]) .mech-fenced-mech-block.no-output .mech-code-block,
+:where([data-mech-source]).mech-fenced-mech-block:not(:has(> .mech-block-output:not([hidden]):not(:empty))) > .mech-code-block,
+:where([data-mech-source]) .mech-fenced-mech-block:not(:has(> .mech-block-output:not([hidden]):not(:empty))) > .mech-code-block {
     border-radius: 10px;
     border-bottom: 1px solid var(--code-border-color);
+}
+
+/* Source-only documents and separately hosted examples keep their native
+ * output placeholders. Close the code outline until there is visible output,
+ * without requiring the controller to maintain a duplicate CSS state. */
+:where([data-mech-source]).mech-block-output:empty,
+:where([data-mech-source]) .mech-block-output:empty {
+    display: none;
 }
 
 :where([data-mech-source]).mech-inline-mech-code,

@@ -950,6 +950,22 @@
   max-width: 45%;
 }
 
+/* The float owns outer spacing; its callout keeps the standard visual style. */
+[data-mechdown] .mech-float > :is(
+  .mech-block-quote,
+  .mech-info-block,
+  .mech-question-block,
+  .mech-success-block,
+  .mech-warning-block,
+  .mech-error-block,
+  .mech-idea-block
+) {
+  box-sizing: border-box;
+  margin: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
 [data-mechdown] .mech-equation {
   color: var(--mechdown-equation);
   margin: 1.5rem 0;

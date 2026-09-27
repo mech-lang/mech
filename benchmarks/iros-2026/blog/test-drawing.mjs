@@ -7,7 +7,7 @@ assert(source.includes('@scene/replace <- field-presentation'),'Mech publishes i
 for(const name of ['scene-circles','scene-lines','scene-line-strips','scene-text'])
   assert(source.includes(name),'scene table '+name);
 assert(source.includes('0xad9159'),'muted gold trail');
-assert(source.includes('0x687780'),'visible dark-gray heading');
+assert(source.includes('0x46968a')&&source.includes('0xac8637'),'heading lines use darker shades of their robot colors');
 assert(source.includes('stroke-dasharray'),'dotted trail lives in Mech source');
 assert(source.includes('measurement-visible')&&source.includes('@input/camera-range'),'Mech controls sensor availability');
 assert(bridge.includes('WasmSceneProgram.fromSource'),'compile and activate Mech scene');
@@ -45,7 +45,8 @@ try {
   assert.deepEqual(initial['truth-path'].stroke_dasharray,[0],'true trajectory is solid beneath estimate dots');
   assert.equal(initial['estimate-path'].stroke,'#ad9159');
   assert.deepEqual(initial['estimate-path'].stroke_dasharray,[0.1,1.5]);
-  for(const id of ['truth-heading','estimate-heading']) assert.equal(initial[id].stroke,'#687780');
+  assert.equal(initial['truth-heading'].stroke,'#46968a');
+  assert.equal(initial['estimate-heading'].stroke,'#ac8637');
 
   const cameras=[[20,110],[180,110],[180,20],[20,20]];
   for(let index=1;index<=4;index++) {

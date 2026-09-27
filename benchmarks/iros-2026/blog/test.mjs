@@ -33,6 +33,17 @@ assert.match(blogCss,/grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1\.05fr
 assert.match(blogCss,/font-size: clamp\(34px, 4\.2cqw, 52px\)/,'title size follows the article pane, not the viewport');
 assert.match(blogCss,/\.hero \.mech-meta \.mech-date\s*\{[^}]*white-space: nowrap;/,'keep the date together while author names wrap');
 const articleCss=readFileSync(join(out,'assets/article.css'),'utf8');
+assert.match(articleCss,/:is\(button,select\):enabled:hover/,'disabled controls must not highlight on hover');
+assert.match(articleCss,/:is\(button,select\):disabled/,'both buttons and dropdowns show their disabled state');
+assert(!html.includes('mermaid.min.js'),'unused Mermaid bundle must not block startup');
+assert(!/class="[^"]*\bmermaid\b/.test(html),'adding Mermaid content requires restoring its renderer');
+assert(html.includes('data-mech-source-url-key=""'),'static page uses its embedded document instead of /code/');
+assert(html.includes('rel="preload" href="_mech/pkg/mech_wasm_bg.wasm.gz"'),'start runtime download from the head');
+assert.match(html,/mika-pose-point\.png[^>]*loading="lazy"/,'below-fold footer artwork is lazy-loaded');
+assert.match(html,/class="mech-question-block"[\s\S]*?Why an EKF\?/,'EKF question uses the FAQ callout');
+assert.match(html,/class="mech-idea-block"[\s\S]*?A constraint caught rounding drift/,'integrity story uses an idea callout');
+assert(!html.includes('Integrity Constraints During Development'),'integrity story is not a numbered subsection');
+assert.match(html,/class="mech-float right"><div class="mech-info-block"[\s\S]*?This is a live Mech document/,'intro callout uses the native right float');
 assert.match(articleCss,/aspect-ratio:4 \/ 3/,'skyline uses a photographic crop rather than a thin panorama');
 assert(!articleCss.includes('saturate(.78)'),'do not desaturate the Pittsburgh photograph');
 assert.match(blogCss,/\.hero:has\(> \.hero-visual:empty\)\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,'empty hero must use the full title width');
@@ -63,7 +74,7 @@ assert.match(html,/data-mech-output-region="application">\s*<section class="live
 assert(html.includes('data-mech-output-host="application"'),'app output survives REPL refresh');
 assert(html.includes('data-workshop-fullscreen'),'article opens existing output fullscreen');
 assert(html.includes('v0.4.0-beta'),'current workshop version');
-assert.deepEqual(readFileSync(join(out,'poster.pdf')),readFileSync(join(root,'../poster/IROS-2026-Mech-Poster-prose-v3.pdf')),'publish the identified current PDF without re-exporting it');
+assert.deepEqual(readFileSync(join(out,'poster.pdf')),readFileSync(join(root,'../poster/IROS-2026-Mech-Poster-qr-v2.pdf')),'publish the identified current PDF without re-exporting it');
 for(const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
   const ref=match[1];
   if(/^(?:https?:|mailto:|data:)/.test(ref)) continue;
@@ -110,5 +121,6 @@ for(const name of ['cpu','backends','metal','portable']) {
 }
 const wasm=readFileSync(join(out,'_mech/pkg/mech_wasm_bg.wasm'));
 assert(WebAssembly.validate(wasm),'valid executable WASM artifact');
+assert.equal(WebAssembly.Module.customSections(new WebAssembly.Module(wasm),'name').length,0,'production download excludes debug symbol names');
 assert.deepEqual(gunzipSync(readFileSync(join(out,'_mech/pkg/mech_wasm_bg.wasm.gz'))),wasm,'compressed runtime identity');
 console.log('PASS: article assets, anchors, source identity, expanded literate download, charts and WASM binary.');

@@ -89,6 +89,16 @@ for(const gpu of [false,true]) {
 // Native range dragging must survive every turn's control refresh, including
 // the asynchronous GPU wait. Changes during that wait feed one later snapshot.
 {
+  const {context:c,elements,refresh}=harness();
+  refresh();
+  for(const id of ['run','step','reset','instances','backend','verify'])
+    assert.equal(elements.get(id).disabled,true,`${id} stays locked between active turns`);
+  for(const id of [...sensorIds,'pause'])assert.equal(elements.get(id).disabled,false,`${id} stays live while running`);
+  c.running=false;c.mode='paused';refresh();
+  for(const id of guardedIds)assert.equal(elements.get(id).disabled,false,`${id} is available when paused`);
+  assert.equal(elements.get('pause').disabled,true);
+}
+{
   let finish;
   const finishGate=new Promise(resolve=>{finish=resolve;});
   const {context:c,elements,run,refresh}=harness({gpu:true,finishGate});

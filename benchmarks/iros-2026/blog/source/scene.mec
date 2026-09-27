@@ -240,8 +240,8 @@ covariance, and trail history are computed by Mech rather than by the renderer.
     | "estimate-path"   next-estimate-path "none"   0xad9159 0.6               [0.1 1.5]           "round"          "round"           1.0          false        |
     | "truth"           truth-outline      "none"   0x63d6c5 0.55              [0.0]               "round"          "round"           1.0          true         |
     | "estimate"        estimate-outline   0xf6c04e 0xf6c04e 0.45              [0.0]               "round"          "round"           1.0          true         |
-    | "truth-heading"   truth-heading-line "none"   0x687780 0.7               [0.0]               "round"          "round"           1.0          false        |
-    | "estimate-heading" estimate-heading-line "none" 0x687780 0.7            [0.0]               "round"          "round"           1.0          false        |
+    | "truth-heading"   truth-heading-line "none"   0x46968a 0.7               [0.0]               "round"          "round"           1.0          false        |
+    | "estimate-heading" estimate-heading-line "none" 0xac8637 0.7            [0.0]               "round"          "round"           1.0          false        |
 
   font := "Inter, ui-sans-serif, system-ui, sans-serif"
   scene-texts :=

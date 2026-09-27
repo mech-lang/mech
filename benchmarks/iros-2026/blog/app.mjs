@@ -50,7 +50,8 @@ const median = values => {
 };
 function controls() {
   for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 'fault';
-  for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy;
+  for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy || running;
+  $('step').disabled ||= running;
   // A numerical turn snapshots these inputs before submission. Keep native
   // slider drags alive while it runs; newer values belong to the next turn.
   for (const id of ['camera-range','velocity','omega','noise','motion-noise']) $(id).disabled = !ready || (busy && !turnInFlight);
@@ -104,11 +105,14 @@ async function compile() {
   running = false; generation++; busy = true; controls(); error('');
   let nextKernel, nextDevice, nextScene;
   try {
-    text('runtime-status', 'Compiling the displayed Mech source…');
+    text('runtime-status', 'Preparing the Mech scene…');
     await new Promise(resolve => requestAnimationFrame(resolve));
     const n = Number($('instances').value);
     nextScene=new MechScene(sceneSource,n,[55,25,.4],[100,0,0,0,100,0,0,0,.15],sensorControls());
     const initial=nextScene.observation(sensorControls());
+    text('runtime-status', 'Compiling the camera EKF…');
+    // Let the loading state paint between the two synchronous compilers.
+    await new Promise(resolve => requestAnimationFrame(resolve));
     nextKernel = WasmKernel.fromSource(source, initial.inputs, [MEAN, COVARIANCE]);
     if (nextKernel.stateWidth(MEAN)!==3 || nextKernel.stateWidth(COVARIANCE)!==9) throw new Error('The robot view requires a three-value state and a 3×3 covariance.');
     const nextManifest = $('backend').value === 'gpu' ? nextKernel.computeManifest() : null;
@@ -251,20 +255,18 @@ $('verify').onclick=async()=>{
 };
 
 try {
-  [source,sceneSource] = await Promise.all([
+  let behavior;
+  const gpuProbe=navigator.gpu ? navigator.gpu.requestAdapter().catch(()=>null) : Promise.resolve(null);
+  [source,sceneSource,behavior,,adapter] = await Promise.all([
     fetch('source/camera-ekf.mec').then(r=>{if(!r.ok)throw new Error('Camera EKF source unavailable');return r.text();}),
     fetch('source/scene.mec').then(r=>{if(!r.ok)throw new Error('Mech scene source unavailable');return r.text();}),
-    initializeRuntime()]);
+    fetch('source/behavior.mec').then(r=>{if(!r.ok)throw new Error('Robot behavior source unavailable');return r.text();}),
+    initializeRuntime(),gpuProbe]);
   repl=new WasmRepl();
-  const behavior=await fetch('source/behavior.mec').then(r=>r.text());
   const behaviorResult = repl.submit(behavior);
   if(behaviorResult.errors?.length) throw new Error(`Mech behavior could not load: ${JSON.stringify(behaviorResult.errors)}`);
   transition('reset');
-  if(navigator.gpu) {
-    try { adapter=await navigator.gpu.requestAdapter(); }
-    catch { adapter=null; }
-    if(adapter) { const option=$('backend').querySelector('[value=gpu]');option.disabled=false;option.textContent='GPU · Mech / WebGPU';text('gpu-support',`WebGPU is available${adapter.info?.description ? ': '+adapter.info.description : ''}.`); }
-  }
+  if(adapter) { const option=$('backend').querySelector('[value=gpu]');option.disabled=false;option.textContent='GPU · Mech / WebGPU';text('gpu-support',`WebGPU is available${adapter.info?.description ? ': '+adapter.info.description : ''}.`); }
   if(!adapter) text('gpu-support','WebGPU is unavailable in this browser. CPU execution is available; try a browser with WebGPU support to compare devices.');
   ready=true; await compile();
 } catch(e) { error(String(e)); text('runtime-status','The browser runtime could not start. The source and archived results are still available.'); }

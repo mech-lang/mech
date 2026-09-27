@@ -58,6 +58,10 @@ html[data-mech-shim="blog"] .article-intro li p {
   margin: 0 0 5px;
 }
 
+html[data-mech-shim="blog"] .article-intro {
+  display: flow-root;
+}
+
 /* The journal keeps the original fixed TOC/content rhythm on wide pages. */
 html[data-mech-shim="blog"] .article-layout {
   display: grid;
@@ -96,12 +100,12 @@ html[data-mech-shim="blog"] [data-mechdown] .mech-figure-caption .mech-paragraph
   color: var(--mech-text-reading);
 }
 
-html[data-mech-shim="blog"] .main-content .mech-float {
+html[data-mech-shim="blog"] :is(.main-content, .article-intro) .mech-float {
   max-width: 100%;
   width: min(48%, 520px);
 }
 
-html[data-mech-shim="blog"] .main-content .mech-float .mech-image {
+html[data-mech-shim="blog"] :is(.main-content, .article-intro) .mech-float .mech-image {
   height: auto;
   width: 100%;
 }
@@ -383,6 +387,14 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
 }
 
 @media (max-width: 760px) {
+  html[data-mech-shim="blog"] :is(.main-content, .article-intro) .mech-float {
+    clear: both;
+    float: none;
+    margin: 1.5rem 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
   [data-mechdown] :is(
     .mech-block-quote,
     .mech-info-block,

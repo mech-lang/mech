@@ -53,7 +53,7 @@ try {
     .map(envelope => envelope.event.event)
     .filter(event => event.kind === 'response' && event.payload?.content?.kind === 'table')
     .flatMap(event => event.payload.content.data.rows);
-  assert.equal(versionRows.length, 13, 'the maintained browser profile must report all installed product, library, and host versions');
+  assert.equal(versionRows.length, 10, 'the workshop profile reports its product, seven libraries, and console/scene hosts');
   for (const [component, kind, version] of versionRows) {
     assert.equal(version, '0.4.0-beta', `${kind} ${component} reports stale compiled Rust metadata`);
   }
@@ -247,7 +247,7 @@ try {
   }
   assert.equal(invoke('iros-decision-probe := decision\niros-decision-probe', 'iros-decision-probe'), '&quot;correct&quot;',
     'the REPL must retain the article pattern matching result');
-  console.log(`PASS: 13 compiled v0.4.0-beta component versions, shared WASM initialization, resident document REPL, ${residentOutputs.length} resident output blocks, separate reference/live namespaces, historical bearing-only equivalence, and 256-filter fixed-camera/scene execution, rejection, rollback and recovery.`);
+  console.log(`PASS: ${versionRows.length} compiled v0.4.0-beta component versions, shared WASM initialization, resident document REPL, ${residentOutputs.length} resident output blocks, separate reference/live namespaces, historical bearing-only equivalence, and 256-filter fixed-camera/scene execution, rejection, rollback and recovery.`);
 } finally {
   document?.stop();
   document?.free();

@@ -22,6 +22,43 @@ fn scientific_formatter_does_not_invent_empty_fractional_parts() {
     assert_eq!(Formatter::new().real_number(&number), "3.402823466e+38");
 }
 
+#[test]
+fn existing_float_syntax_wraps_callouts_without_absorbing_following_prose() {
+    for (marker, direction) in [("<<:", "left"), (":>>", "right")] {
+        for (sigil, class) in [
+            (">", "mech-block-quote"),
+            ("(i)>", "mech-info-block"),
+            ("(?)>", "mech-question-block"),
+            ("(+)>", "mech-success-block"),
+            ("(!)>", "mech-warning-block"),
+            ("(x)>", "mech-error-block"),
+        ] {
+            let source = format!("Float Callouts\n==============\n\n{marker} {sigil} **A floated note.**\n\nSurrounding prose.\n");
+            let tree = mech_syntax::parser::parse(&source).expect("floated callout parses");
+            let elements = &tree.body.sections[0].elements;
+            assert!(matches!(&elements[0], SectionElement::Float(_)));
+            assert!(matches!(&elements[1], SectionElement::Paragraph(_)));
+            let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".into());
+            let tag = if sigil == ">" { "blockquote" } else { "div" };
+            assert!(html.contains(&format!(
+                "class=\"mech-float {direction}\"><{tag} class=\"{class}\">"
+            )), "{marker} {sigil}: {html}");
+            assert!(html.contains("Surrounding prose."));
+            assert_eq!(html.matches("class=\"mech-float ").count(), 1);
+        }
+    }
+}
+
+#[test]
+fn workshop_callout_forms_parse_together() {
+    let source = "Callouts\n========\n\n:>> (i)> **This is a live Mech document.** Open the example.\n\nSurrounding prose.\n\n(?)> **Why an EKF?** A representative algorithm.\n\n(*)> **A constraint caught rounding drift.** Checked publication retained the accepted state.\n";
+    let tree = mech_syntax::parser::parse(source).expect("workshop callout forms parse");
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".into());
+    assert!(html.contains("class=\"mech-float right\"><div class=\"mech-info-block\">"));
+    assert!(html.contains("class=\"mech-question-block\""));
+    assert!(html.contains("class=\"mech-idea-block\""));
+}
+
 fn atom_expr(name: &str) -> Expression {
     Expression::Literal(Literal::Atom(Atom { name: ident(name) }))
 }
