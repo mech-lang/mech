@@ -14,7 +14,8 @@ export const TIMELINE_MILESTONES = Object.freeze([
 ].map(item=>Object.freeze({...item,lines:Object.freeze(item.lines)})));
 
 const COLORS = {
-  background:'#101719', text:'#e9eeef', muted:'#b0c2c9',
+  // Inherit the blog canvas; keep the same fallback for standalone SVG downloads.
+  background:'var(--mech-canvas, hsl(206 24% 6%))', text:'#e9eeef', muted:'#b0c2c9',
   completed:'#4cac97', current:'#f6c04e', planned:'#cd8dca',
 };
 const escape = value => String(value).replace(/[&<>"']/g, character => ({

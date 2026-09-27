@@ -34,8 +34,15 @@ assert(!/class="mech-strong">(?:Initialization|Time update|Measurement update|Ch
 assert.deepEqual(sectionTitles.slice(-2),['More about Mech','Status and Future Work'],'future work concludes the article after the broader language examples');
 assert(html.includes('href="https://docs.mech-lang.org/design/ROADMAP.html"'),'future work links to the project roadmap');
 assert(html.includes('class="mech-figure workshop-figure workshop-timeline"'),'future work includes the development timeline');
+const canvasColor=readFileSync(join(repo,'include/palette.css'),'utf8').match(/--mech-canvas:\s*([^;]+);/)[1];
+const timelineCanvas=`var(--mech-canvas, ${canvasColor})`;
 for(const file of ['timeline.svg','timeline-mobile.svg']) {
   const timeline=readFileSync(join(out,'assets',file),'utf8');
+  assert.match(timeline,/<rect\b[^>]*fill="var\(--mech-canvas, /,'timeline background follows the shared blog canvas');
+  assert(timeline.includes(`fill="${timelineCanvas}"`),'standalone timeline fallback matches the canonical page color');
+  for(const marker of timeline.matchAll(/<circle\b[^>]*r="(?:10|11)"[^>]*>/g)) {
+    assert(marker[0].includes(`fill="${timelineCanvas}"`)||marker[0].includes('fill="#4cac97"'),'hollow milestone markers use the same canvas as the timeline');
+  }
   assert(timeline.includes('<title')&&timeline.includes('<desc'),'timeline has an accessible description');
   for(const label of ['2018','2019','2023','2025','2026','v0.4','2027','2028']) assert(timeline.includes(label),`timeline includes ${label}`);
   assert(timeline.includes('planned'),'future milestones are identified as plans');
