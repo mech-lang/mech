@@ -3223,7 +3223,7 @@ fn declared_fsm_bodies_predeclare_late_input_annotations() {
 
 #[test]
 fn declared_fsm_input_predeclaration_preserves_every_lexical_scope() {
-    let source = "#Scoped(seed<u8>) => <u8>\n  | :Start(value<u8>).\n#Scoped(seed) -> :Start(seed)\n  :Start(value)\n    local := seed<u8> + value<u8>\n    => local<u8>.\n#Scoped(7u8)\n";
+    let source = "#Scoped(seed<u8>) => <u8>\n  | :Start(value<u8>).\n#Scoped(seed) -> :Start(seed)\n  :Start(value)\n    -> intermediate := seed<u8> + value<u8>\n    => intermediate.\n#Scoped(7u8)\n";
     let compiled = CanonicalSourceFrontend
         .compile_document(&document(source))
         .expect("FSM parameters, state binders, and preceding locals must remain lexical");

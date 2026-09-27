@@ -1946,15 +1946,15 @@ fn artifact_rejects_suspend_hidden_in_a_nested_match() {
         panic!("expected nested match")
     };
     let body = &mut nested.arms[0].body;
-    let schema = body.parameters[0].schema;
+    let argument = body.yield_value;
+    let ControlValue::Constant(argument_id) = argument else {
+        panic!("expected the nested selected arm to yield a constant")
+    };
+    let schema = program.constants().get(argument_id).unwrap().schema();
     body.operations = vec![ControlOperation {
         node: 0,
         body: ControlOperationBody::Suspend,
-        inputs: vec![ControlValue::Parameter {
-            block: body.id,
-            ordinal: 0,
-        }]
-        .into_boxed_slice(),
+        inputs: vec![argument].into_boxed_slice(),
         schema,
     }]
     .into_boxed_slice();

@@ -888,9 +888,23 @@ fn failed_initial_continuation_drain_releases_the_program_slot() {
 #[test]
 fn pending_continuations_are_drained_before_the_next_host_packet() {
     let source = "@clock := test://clock/tick{:read(delta-seconds)}\ntick := @clock/delta-seconds\n#Deferred(value<f64>) => <f64>\n  | :Start(value<f64>)\n  | :One(value<f64>)\n  | :Two(value<f64>)\n  | :Three(value<f64>)\n  | :Done(value<f64>).\n#Deferred(value) -> :Start(value)\n  :Start(value) ~> :One(value)\n  :One(value) ~> :Two(value)\n  :Two(value) ~> :Three(value)\n  :Three(value) -> :Done(value)\n  :Done(value) => value.\n#Deferred(tick)\n";
-    let (mut runtime, _, _, _) = configured_external_runtime();
+    let (mut runtime, plans, reads, value_bits) = configured_external_runtime();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .resource_provider(Box::new(PlanningObservationProvider {
+            plans,
+            reads,
+            value_bits,
+        }))
+        .build_compiler()
+        .unwrap();
+    let document = canonical_planning_test_document(source);
+    let product = compiler.compile_document(&document).unwrap();
     runtime
-        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(
+            product.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
         .unwrap();
     runtime.config.limits.max_steps_per_turn = Some(1);
     let trigger = crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap();

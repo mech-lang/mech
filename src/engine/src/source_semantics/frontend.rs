@@ -3237,7 +3237,7 @@ impl SemanticBuilder {
             SyntaxKind::Expression | SyntaxKind::OpAssign | SyntaxKind::VariableAssign => {
                 self.declare_input_annotations(unit, bindings)?;
             }
-            _ => unreachable!("document unit collector is closed"),
+            _ => self.declare_input_annotations(unit, bindings)?,
         }
         Ok(())
     }
