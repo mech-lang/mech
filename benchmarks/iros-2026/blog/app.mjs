@@ -40,7 +40,7 @@ openOutputFromHash();
 for(const event of ['mech:console-ready','mech:document-ready','hashchange']) window.addEventListener(event,openOutputFromHash);
 let source, sceneSource, repl, kernel, device, manifest, adapter, active = 0;
 let mode = 'paused', busy = false, running = false, generation = 0, samples = [], accepted = 0, rejected = 0;
-let turnInFlight = false;
+let turnInFlight = false, injectionPending = false;
 let state, covariance, frames = [], ready = false;
 let committedBackend = 'cpu', committedInstances = '4096';
 const rowMajor = a => new Float32Array([a[0],a[3],a[6],a[1],a[4],a[7],a[2],a[5],a[8]]);
@@ -49,7 +49,9 @@ const median = values => {
   return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
 };
 function controls() {
-  for (const id of ['run','step','inject']) $(id).disabled = !ready || busy || mode === 'fault';
+  for (const id of ['run','step']) $(id).disabled = !ready || busy || mode === 'fault';
+  $('inject').disabled = !ready || mode === 'fault' || (busy && !turnInFlight) || injectionPending;
+  text('inject', injectionPending ? 'Invalid bearing queued' : 'Inject an invalid bearing');
   for (const id of ['reset','instances','backend','verify']) $(id).disabled = !ready || busy || running;
   $('step').disabled ||= running;
   // A numerical turn snapshots these inputs before submission. Keep native
@@ -102,7 +104,7 @@ async function dispose(oldDevice, oldKernel) {
   finally { oldKernel?.free(); }
 }
 async function compile() {
-  running = false; generation++; busy = true; controls(); error('');
+  running = false; injectionPending = false; generation++; busy = true; controls(); error('');
   let nextKernel, nextDevice, nextScene;
   try {
     text('runtime-status', 'Preparing the Mech scene…');
@@ -150,6 +152,8 @@ function refreshScene() {
 }
 async function turn(invalid = false) {
   if (busy || !kernel || mode === 'fault') return;
+  invalid ||= injectionPending;
+  injectionPending = false;
   busy = true; turnInFlight = true; controls(); error('');
   let phase = 'preparation', published = false, integrityRejected = false;
   try {
@@ -188,7 +192,7 @@ async function turn(invalid = false) {
     phase = 'telemetry display';
     telemetry();
   } catch(e) {
-    running = false; generation++; transition('rejected');
+    running = false; injectionPending = false; generation++; transition('rejected');
     let diagnostic;
     if (integrityRejected) {
       rejected++;
@@ -212,7 +216,20 @@ async function turn(invalid = false) {
     // Camera clicks and range edits during GPU execution affect the next
     // observation, never the already submitted simulation/filter pair.
     refreshScene();
+    // A queued injection still executes if Pause was pressed while the
+    // current GPU turn was finishing. The running loop handles other cases.
+    if (injectionPending && !running) requestAnimationFrame(() => {
+      if (injectionPending && !running) void turn();
+    });
   }
+}
+function requestFaultInjection() {
+  if (!ready || mode === 'fault' || (busy && !turnInFlight) || injectionPending) return;
+  // Do not modify inputs already submitted to the GPU. One request marks
+  // the next observation invalid, including when the program is running.
+  injectionPending = true;
+  controls();
+  if (!running && !busy) void turn();
 }
 async function loop(token) {
   if(!running || token!==generation) return;
@@ -239,9 +256,12 @@ document.addEventListener('keydown',event=>{
 });
 document.addEventListener('click',event=>{if(event.detail===0)toggleSceneCamera(event);});
 $('run').onclick=()=>{transition('run');running=mode==='patrol';frames=[];const token=++generation;controls();requestAnimationFrame(()=>loop(token));};
-$('pause').onclick=()=>{running=false;generation++;transition('pause');controls();};
+$('pause').onclick=()=>{
+  running=false;generation++;transition('pause');controls();
+  if (injectionPending && !busy) void turn();
+};
 $('step').onclick=()=>turn();
-$('inject').onclick=()=>turn(true);
+$('inject').onclick=requestFaultInjection;
 $('reset').onclick=()=>compile();
 for(const id of ['backend','instances']) $(id).onchange=()=>compile();
 $('verify').onclick=async()=>{

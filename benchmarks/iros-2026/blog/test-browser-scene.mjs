@@ -66,6 +66,76 @@ async function step(){
   await evaluate('document.getElementById("step").click()');
   await until(`document.getElementById('turn-count').textContent!==${JSON.stringify(before)}&&!document.getElementById('step').disabled`,'accepted turn');
 }
+async function injectWhileRunning(backend){
+  await change('backend',backend);
+  await until('!document.getElementById("run").disabled','running injection backend compilation');
+  await change('instances',4096);
+  await until('!document.getElementById("run").disabled','running injection batch compilation');
+  await change('velocity',1);await change('omega',.015);await change('noise',1);await change('motion-noise',1);await change('camera-range',250);
+  await evaluate(`(()=>{
+    const capture=()=>({
+      accepted:Number(document.getElementById('turn-count').textContent.match(/^(\\d+) accepted/)[1]),
+      rejected:Number(document.getElementById('turn-count').textContent.match(/(\\d+) rejected/)[1]),
+      telemetry:document.getElementById('state-values').textContent,
+      scene:document.getElementById('robot-scene').outerHTML
+    });
+    const record=window.workshopRunningInjection={lastAccepted:capture(),click:null,acceptedPublications:0};
+    record.observer=new MutationObserver(()=>{
+      const current=capture();
+      // A valid turn already submitted when the user clicks may still publish.
+      // Compare the rejection against the last publication, not the click time.
+      if(current.rejected===0&&current.accepted>record.lastAccepted.accepted){
+        record.lastAccepted=current;record.acceptedPublications++;
+      }
+    });
+    record.observer.observe(document.getElementById('turn-count'),{childList:true});
+    document.getElementById('inject').addEventListener('click',()=>{
+      record.click={running:!document.getElementById('pause').disabled,enabled:!document.getElementById('inject').disabled,...capture()};
+    },{capture:true,once:true});
+    document.getElementById('run').click();
+  })()`);
+  await until('workshopRunningInjection.acceptedPublications>=3&&!document.getElementById("pause").disabled','running before fault injection');
+  await evaluate('document.getElementById("inject").scrollIntoView({block:"center",behavior:"instant"})');
+  const point=await evaluate(`(()=>{const e=document.getElementById('inject'),r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,disabled:e.disabled};})()`);
+  assert.equal(point.disabled,false,'fault injection stays enabled while '+backend+' runs');
+  const {x,y}=point;
+  assert.equal(await evaluate(`document.elementFromPoint(${x},${y})?.closest('button')?.id`),'inject','pointer reaches the injection button');
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',buttons:1,clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',buttons:0,clickCount:1});
+  await until('document.getElementById("runtime-error").textContent.includes("finite-candidate")&&!document.getElementById("reset").disabled','running injected rejection',60000,'finite-candidate');
+  const result=await evaluate(`(()=>{
+    const record=workshopRunningInjection;record.observer.disconnect();
+    return {click:record.click,lastAccepted:record.lastAccepted,acceptedPublications:record.acceptedPublications,
+      count:document.getElementById('turn-count').textContent,
+      telemetry:document.getElementById('state-values').textContent,
+      scene:document.getElementById('robot-scene').outerHTML,
+      fault:document.querySelector('[data-state="fault"]').classList.contains('active'),
+      pauseDisabled:document.getElementById('pause').disabled,
+      injectDisabled:document.getElementById('inject').disabled};
+  })()`);
+  assert(result.click?.running&&result.click.enabled,'real '+backend+' pointer click occurred while running and enabled');
+  assert.equal(result.count,`${result.lastAccepted.accepted} accepted / 1 rejected`,'exactly one queued observation is rejected');
+  assert.equal(result.telemetry,result.lastAccepted.telemetry,'running rejection retains last accepted numerical telemetry');
+  assert.equal(result.scene,result.lastAccepted.scene,'running rejection retains the entire last accepted Mech scene');
+  assert(result.fault&&result.pauseDisabled&&result.injectDisabled,'rejection stops the loop and latches Fault');
+  await new Promise(resolve=>setTimeout(resolve,250));
+  assert.equal((await snapshot()).count,result.count,'faulted animation loop does not repeat the injection');
+  await evaluate('document.getElementById("reset").click()');
+  await until('!document.getElementById("run").disabled','running injection reset recovery');
+  assert.equal((await snapshot()).count,'0 accepted / 0 rejected','Reset clears the rejected episode');
+  assert.equal(await evaluate('document.getElementById("inject").disabled'),false,'Reset clears the queued injection');
+  await step();
+  const recovery=await snapshot();
+  assert.equal(recovery.count,'1 accepted / 0 rejected','a fresh valid turn succeeds after Reset');
+  await evaluate('document.getElementById("reset").click()');
+  await until('!document.getElementById("run").disabled','running injection recovery reset');
+  console.log('PASS',backend,'running pointer injection, one rejection, complete scene rollback, Reset recovery');
+  // Retain comparison evidence without duplicating two complete SVG documents.
+  const {scene,...details}=result;
+  const {scene:lastScene,...lastAccepted}=details.lastAccepted;
+  const {scene:clickScene,...click}=details.click;
+  return {backend,...details,click,lastAccepted,validTurnCompletedAfterClick:lastAccepted.accepted>click.accepted,sceneRetained:scene===lastScene,recovery};
+}
 const report={url,startedAt:new Date().toISOString(),cases:[],exceptions};
 try{
   await send('Page.enable');await send('Runtime.enable');await send('Network.enable');
@@ -142,6 +212,8 @@ try{
       await until('!document.getElementById("run").disabled','reset recovery');
     }
   }
+  report.runningInjections=[];
+  for(const backend of modes)report.runningInjections.push(await injectWhileRunning(backend));
   if(!process.env.IROS_QUICK){
     report.liveDrags=[];
     for(const backend of modes){

@@ -620,3 +620,22 @@ outputs close the code frame, and restoring output rejoins it. The checks
 passed without page overflow or browser exceptions. Desktop and mobile
 screenshots were visually reviewed. The numerical sources and runtime did
 not change after the full browser campaign above.
+
+## Fault injection during running turns — 2026-09-27
+
+The injection button no longer toggles its disabled state on every numerical
+turn. A click queues one invalid observation for the next turn without changing
+an already submitted input packet. Compilation, verification, and a latched
+Fault still disable injection. Pause drains a pending request, while Reset
+cancels it. Repeated clicks before consumption are coalesced.
+
+`test-app-turns.mjs` passed deterministic CPU/GPU queue, rollback, immutable
+in-flight input, Pause, Reset-cancellation, and compile/verification guard
+checks. [Real-browser tests](evidence/running-fault-injection.json) clicked the
+button with an actual pointer while CPU and WebGPU simulations ran at 4,096
+filters. Each produced exactly one integrity rejection and preserved the last
+accepted telemetry and complete scene. In the GPU case, a valid turn already
+in flight completed after the click, followed by the queued rejection; its
+accepted result was retained. Both backends recovered through Reset and an
+accepted fresh turn. The quick suite also passed camera, range, ordinary
+rejection, and responsive checks without uncaught browser exceptions.
