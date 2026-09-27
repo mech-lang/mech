@@ -408,7 +408,7 @@ only then allocate and decode typed values.
 | Artifact inputs | `{input,name,slot,schema}` |
 | Artifact slots | `{slot,schema,role,initializer}`; role 1 input, 2 state, 3 derived, 4 output; initializer is null, `{Constant:id}`, or `{Slot:id}` |
 | Artifact producers | `{"Input":input}` or `{"NodeOutput":{"node":n,"output_ordinal":p}}` |
-| Artifact nodes | `{revision:10,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
+| Artifact nodes | `{revision:11,requirements:[...],nodes:[...]}`; each node is `{node,body,input_start,input_end,output_start,output_end}` |
 | Artifact bindings | tagged `Input`/`Output` records containing ID, node, port, and source/target |
 | Artifact outputs | `{output,name,source,schema}` |
 | Artifact integrity constraints | `{constraint,operation,contract,inputs}` |
@@ -424,11 +424,11 @@ zero-based `contract`. The engine reconstructs
 bijections, recomputes `ProgramRevision`, and exposes only the finalized
 read-only artifact.
 
-### Typed graph bodies (graph revision 10)
+### Typed graph bodies (graph revision 11)
 
 An ordinary body is `{"Operation":{"operation":id,"contract":id,"requirement":id_or_null}}`.
 A control body is `{"Match":{"scrutinee":input_ordinal,"partial":bool,"captures":[[input_ordinal,schema_id]],"arms":[...]}}`.
-The decoder requires revision 10 and typed bodies; earlier graph representations
+The decoder requires revision 11 and typed bodies; earlier graph representations
 must be regenerated with the current producer. The outer bytecode container
 remains version 1. There is one graph representation and no compatibility reader.
 
@@ -442,6 +442,15 @@ grammar:
 - `{"Enum":{"ordinal":variant_ordinal,"payload":structural_pattern_or_null}}`
 - `{"Tuple":[structural_pattern,...]}`
 - `{"Array":{"prefix":[structural_pattern,...],"rest":structural_pattern_or_null,"suffix":[structural_pattern,...]}}`
+
+A lexical operation body may also be `{"Recur":ancestor_depth}`. Depth zero
+targets the current function match; each increment names one enclosing match.
+It has exactly one input with that lexical target's scrutinee schema and produces
+that target's result schema. The back-edge remains inside the owning match
+artifact; resident activation binds it to bounded call-frame storage rather than
+expanding the graph or interpreting source text. A recursive target cannot use
+a direct bind arm or capture its own scrutinee input; artifact finalization
+rejects either layout.
 
 Structural binding IDs are dense within their arm. A binding equality refers to an earlier binding
 in that arm. Array prefixes and suffixes match in source order; a present rest consumes the middle
@@ -509,7 +518,7 @@ Arguments retain their optional canonical name and input ordinal. Each ordered s
 retains a state, asynchronous, or output kind plus a recursively typed value made
 from input ordinals, tuples, arrays, atom structures, or tuple structures. Machine
 and structure names must be canonical source identifiers. The FSM variant introduced by
-graph revision 6 remains part of revision 10; earlier readers must reject the current graph
+graph revision 6 remains part of revision 11; earlier readers must reject the current graph
 instead of treating the changed grammar as their own representation. FSM value depth, stage count, and
 aggregate control populations are bounded during decoder admission.
 

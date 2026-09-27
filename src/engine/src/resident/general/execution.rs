@@ -41,6 +41,13 @@ use super::{
     StateArena, StateVersion, TypedResidentArena,
 };
 
+// This is a host-stack safety ceiling, not the language's recursion budget.
+// Every call is independently admitted through the cumulative resident work
+// and frame-memory budget below. Keeping the emergency ceiling modest ensures
+// an adversarial call cannot reach the Rust stack limit before admission can
+// report a recoverable turn failure.
+const MAX_RESIDENT_RECURSION_DEPTH: usize = 32;
+
 #[derive(Clone, Copy, Debug)]
 pub struct CapturedSignalInput<'a> {
     pub slot: SlotIndex,
@@ -935,6 +942,7 @@ impl ReactiveInstance {
                 ActivatedTurnStep::Kernel(node) => Some((index, node)),
                 ActivatedTurnStep::External(_)
                 | ActivatedTurnStep::Match(_)
+                | ActivatedTurnStep::Recur(_)
                 | ActivatedTurnStep::Comprehension(_) => None,
             })
             .filter(|(_, node)| {
@@ -991,6 +999,7 @@ impl ReactiveInstance {
                 ),
                 ActivatedTurnStep::External(node) => (None, Some(node.captured_payload)),
                 ActivatedTurnStep::Match(node) => (Some(node.write.region), None),
+                ActivatedTurnStep::Recur(node) => (Some(node.write.region), None),
                 ActivatedTurnStep::Comprehension(node) => (Some(node.write.region), None),
             };
             if let Some(region) = scratch {
@@ -1678,6 +1687,17 @@ impl ReactiveInstance {
                 result
             });
         }
+        if let ActivatedTurnStep::Recur(call) = self.plan.steps[node_index.get() as usize] {
+            return self.execute_recursive_call(
+                node_index,
+                call,
+                before_epoch,
+                working_epoch,
+                probe,
+                live_bytes,
+                live_nodes,
+            );
+        }
         if matches!(
             self.plan.steps[node_index.get() as usize],
             ActivatedTurnStep::External(_)
@@ -1717,7 +1737,13 @@ impl ReactiveInstance {
             error: ResidentKernelError::InvalidInput,
         };
         let kernel_fail = |error| ResidentExecutionError::Kernel { node, error };
-        let scrutinee_source = matched.scrutinee;
+        let scrutinee_source = self
+            .workspace
+            .recursive_scrutinees
+            .iter()
+            .rev()
+            .find_map(|frame| (frame.target == node_index).then_some(frame.argument))
+            .unwrap_or(matched.scrutinee);
         let scrutinee_schema = matched.scrutinee_schema;
         let scrutinee_shape_values = matched.scrutinee_shape_values.clone();
         let structural_work = matched.arms.iter().try_fold(0u64, |total, arm| {
@@ -2310,6 +2336,267 @@ impl ReactiveInstance {
             live_bytes,
             live_nodes,
         )
+    }
+
+    fn execute_recursive_call(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        call: super::ActivatedRecursiveCall,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+        live_bytes: u64,
+        live_nodes: u64,
+    ) -> Result<bool, ResidentExecutionError> {
+        let fail = |error| ResidentExecutionError::Kernel {
+            node: call.artifact_node,
+            error,
+        };
+        let depth = self.workspace.recursive_scrutinees.len();
+        if depth >= MAX_RESIDENT_RECURSION_DEPTH
+            || call.write.storage != ResidentStorageClass::Scratch
+        {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
+        let (regions, returned, region_inventory_bytes) = {
+            let ActivatedTurnStep::Match(root) = &self.plan.steps[call.target.get() as usize]
+            else {
+                return Err(fail(ResidentKernelError::InvalidInput));
+            };
+            let count = root
+                .locals
+                .len()
+                .checked_add(usize::from(
+                    root.write.storage == ResidentStorageClass::Scratch,
+                ))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let region_inventory_bytes = u64::try_from(count)
+                .ok()
+                .and_then(|count| count.checked_mul(core::mem::size_of::<ResidentRegion>() as u64))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    recursive_inventory_cost(live_bytes, live_nodes, region_inventory_bytes)?,
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            let mut regions = Vec::with_capacity(count);
+            regions.extend_from_slice(&root.locals);
+            if root.write.storage == ResidentStorageClass::Scratch {
+                // Recursive arms share the target output slot. Its value from
+                // the preceding turn must survive the inner invocation.
+                regions.push(root.write.region);
+            }
+            regions.sort_unstable_by_key(|region| (region.kind as u8, region.offset, region.len));
+            regions.dedup();
+            (regions, root.write, region_inventory_bytes)
+        };
+
+        let mut frame_meter = budget::ResidentBudgetMeter::default();
+        let (value_bytes, value_nodes) = regions
+            .iter()
+            .try_fold((0u64, 0u64), |(bytes, nodes), region| {
+                let value = resident_frame_value_footprint(
+                    self.workspace.scratch.read(*region),
+                    &self.plan.schemas,
+                    &mut frame_meter,
+                )
+                .ok_or(ResidentKernelError::InvalidShape)?;
+                Ok::<_, ResidentKernelError>((
+                    bytes
+                        .checked_add(value.0)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    nodes
+                        .checked_add(value.1)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                ))
+            })
+            .map_err(fail)?;
+        let measured_frame_work = frame_meter.estimate().compute_work();
+        let frame_bytes = region_inventory_bytes
+            .checked_add(value_bytes)
+            .and_then(|bytes| {
+                bytes.checked_add((2 * core::mem::size_of::<super::RecursiveFrame>()) as u64)
+            })
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let frame_nodes = value_nodes
+            .checked_add(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let frame_copy_work = frame_bytes
+            .checked_mul(2)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        (|| -> Result<(), ResidentKernelError> {
+            let peak_bytes = live_bytes
+                .checked_add(frame_bytes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            let peak_nodes = live_nodes
+                .checked_add(frame_nodes)
+                .ok_or(ResidentKernelError::InvalidShape)?;
+            budget::PreparedKernel::new(
+                (),
+                budget::resident_cost! {
+                    compute_work: measured_frame_work
+                        .checked_add(frame_copy_work)
+                        .ok_or(ResidentKernelError::InvalidShape)?,
+                    temporary_bytes: peak_bytes,
+                    cloned_bytes: frame_copy_work,
+                    retained_nodes: peak_nodes,
+                    ..budget::KernelCostEstimate::default()
+                },
+            )
+            .admit_control()?
+            .into_plan();
+            Ok(())
+        })()
+        .map_err(fail)?;
+
+        let child_live_bytes = live_bytes
+            .checked_add(frame_bytes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let child_live_nodes = live_nodes
+            .checked_add(frame_nodes)
+            .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+        let budget_node = match &self.plan.steps[call.target.get() as usize] {
+            ActivatedTurnStep::Match(target) => target.budget_node,
+            _ => unreachable!("recursive target was checked above"),
+        };
+        let mut facts = crate::memory_planner::TurnMemoryFacts::default();
+        facts.additional_demand.turn_peak_bytes = child_live_bytes;
+        facts.additional_demand.retained_nodes = child_live_nodes;
+        let child_plan = crate::memory_planner::plan_current_resident_turn(
+            &self.plan.memory_plan,
+            budget_node,
+            &facts,
+        )
+        .map_err(|_| fail(ResidentKernelError::InvalidShape))?;
+        if !child_plan.budget_violations.is_empty() {
+            return Err(fail(ResidentKernelError::InvalidShape));
+        }
+
+        let frame = regions
+            .iter()
+            .map(|region| {
+                (
+                    *region,
+                    owned_resident_value(self.workspace.scratch.read(*region)),
+                )
+            })
+            .collect::<Vec<_>>();
+        let target_index = call.target.get() as usize;
+        let target_initialized = bit_is_set(&self.workspace.initialized_output_bits, target_index);
+        self.workspace
+            .recursive_scrutinees
+            .push(super::RecursiveFrame {
+                target: call.target,
+                argument: call.argument,
+            });
+        let invoked = budget::with_resident_turn_plan(child_plan, || {
+            self.execute_match_expression(
+                call.target,
+                before_epoch,
+                working_epoch,
+                probe,
+                child_live_bytes,
+                child_live_nodes,
+            )
+        });
+        self.workspace.recursive_scrutinees.pop();
+        if target_initialized {
+            set_bit(&mut self.workspace.initialized_output_bits, target_index);
+        } else {
+            clear_bit(&mut self.workspace.initialized_output_bits, target_index);
+        }
+
+        let result = invoked.and_then(|changed| {
+            let mut child_meter = budget::ResidentBudgetMeter::default();
+            let child_locals = match &self.plan.steps[call.target.get() as usize] {
+                ActivatedTurnStep::Match(target) => self
+                    .resident_local_footprint(
+                        target.locals.iter().copied(),
+                        &self.plan.schemas,
+                        &mut child_meter,
+                    )
+                    .map_err(fail)?,
+                _ => unreachable!("recursive target was checked above"),
+            };
+            let location = match returned.storage {
+                ResidentStorageClass::Constant => ResidentReadLocation::Constant(returned.region),
+                ResidentStorageClass::Input => ResidentReadLocation::Input(returned.region),
+                ResidentStorageClass::State => ResidentReadLocation::State {
+                    slot: returned.slot,
+                    region: returned.region,
+                },
+                ResidentStorageClass::Scratch => ResidentReadLocation::Scratch(returned.region),
+            };
+            let value = self
+                .read_location(location, working_epoch)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidOutput))?;
+            let mut result_meter = budget::ResidentBudgetMeter::default();
+            let (result_bytes, result_nodes) =
+                resident_frame_value_footprint(value, &self.plan.schemas, &mut result_meter)
+                    .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let measured_result_work = result_meter.estimate().compute_work();
+            let result_copy_work = result_bytes
+                .checked_mul(2)
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_bytes = live_bytes
+                .checked_add(frame_copy_work)
+                .and_then(|bytes| bytes.checked_add(child_locals.retained_bytes))
+                .and_then(|bytes| bytes.checked_add(result_copy_work))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            let peak_nodes = live_nodes
+                .checked_add(
+                    frame_nodes
+                        .checked_mul(2)
+                        .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?,
+                )
+                .and_then(|nodes| nodes.checked_add(child_locals.node_count))
+                .and_then(|nodes| nodes.checked_add(result_nodes.checked_mul(2)?))
+                .ok_or_else(|| fail(ResidentKernelError::InvalidShape))?;
+            (|| -> Result<(), ResidentKernelError> {
+                budget::PreparedKernel::new(
+                    (),
+                    budget::resident_cost! {
+                        compute_work: child_meter
+                            .estimate()
+                            .compute_work()
+                            .checked_add(measured_result_work)
+                            .and_then(|work| work.checked_add(result_copy_work))
+                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        temporary_bytes: peak_bytes,
+                        cloned_bytes: result_copy_work,
+                        retained_nodes: peak_nodes,
+                        ..budget::KernelCostEstimate::default()
+                    },
+                )
+                .admit_control()?
+                .into_plan();
+                Ok(())
+            })()
+            .map_err(fail)?;
+            Ok((changed, owned_resident_value(value)))
+        });
+
+        for (region, value) in &frame {
+            copy_input(&mut self.workspace.scratch, *region, value.as_ref())
+                .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
+        }
+        let (changed, result) = result?;
+        copy_input(
+            &mut self.workspace.scratch,
+            call.write.region,
+            result.as_ref(),
+        )
+        .map_err(|error| error.at(fail(ResidentKernelError::InvalidOutput)))?;
+        set_bit(
+            &mut self.workspace.initialized_output_bits,
+            node_index.get() as usize,
+        );
+        Ok(changed)
     }
 
     fn match_structural_pattern_item(
@@ -3106,6 +3393,23 @@ fn match_conversion_peak_retained_nodes(
     prior_snapshot_nodes
         .checked_add(candidate_nodes)
         .ok_or(ResidentKernelError::InvalidShape)
+}
+
+fn recursive_inventory_cost(
+    live_bytes: u64,
+    live_nodes: u64,
+    inventory_bytes: u64,
+) -> Result<budget::KernelCostEstimate, ResidentKernelError> {
+    Ok(budget::resident_cost! {
+        // Inventory copying, sorting, and deduplication run while the
+        // enclosing arm's dynamically measured locals remain resident.
+        compute_work: inventory_bytes,
+        temporary_bytes: live_bytes
+            .checked_add(inventory_bytes)
+            .ok_or(ResidentKernelError::InvalidShape)?,
+        retained_nodes: live_nodes,
+        ..budget::KernelCostEstimate::default()
+    })
 }
 
 fn match_conversion_prior_footprint(
@@ -3946,6 +4250,95 @@ fn copy_input(
     result.map_err(|_| ResidentCopyError::Layout)
 }
 
+fn owned_resident_value(value: ResidentValueRef<'_>) -> super::OwnedResidentValue {
+    match value {
+        ResidentValueRef::Bool(values) => {
+            super::OwnedResidentValue::Bool(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Index(values) => {
+            super::OwnedResidentValue::Index(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::F64(values) => {
+            super::OwnedResidentValue::F64(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::String(values) => {
+            super::OwnedResidentValue::String(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            super::OwnedResidentValue::Snapshot(values.to_vec().into_boxed_slice())
+        }
+    }
+}
+
+fn resident_frame_value_footprint(
+    value: ResidentValueRef<'_>,
+    schemas: &mech_core::SchemaTable,
+    meter: &mut budget::ResidentBudgetMeter,
+) -> Option<(u64, u64)> {
+    // The frame Vec owns one entry and one boxed slice per local. Include an
+    // allocator allowance per box so many small scalar locals cannot evade
+    // the byte ceiling. The entry contains the enum and its slice header.
+    const ALLOCATION_OVERHEAD: u64 = 16;
+    let entry = u64::try_from(core::mem::size_of::<(
+        ResidentRegion,
+        super::OwnedResidentValue,
+    )>())
+    .ok()?
+    .checked_add(ALLOCATION_OVERHEAD)?;
+    let fixed = |len: usize, element: usize| {
+        u64::try_from(len)
+            .ok()?
+            .checked_mul(u64::try_from(element).ok()?)
+    };
+    let (payload_bytes, payload_nodes) = match value {
+        ResidentValueRef::Bool(values) => (fixed(values.len(), core::mem::size_of::<u8>())?, 0),
+        ResidentValueRef::Index(values) => (fixed(values.len(), core::mem::size_of::<u64>())?, 0),
+        ResidentValueRef::F64(values) => (fixed(values.len(), core::mem::size_of::<f64>())?, 0),
+        ResidentValueRef::String(values) => {
+            meter
+                .charge_compute_work(u64::try_from(values.len()).ok()?)
+                .ok()?;
+            values.iter().try_fold(
+                (fixed(values.len(), core::mem::size_of::<String>())?, 0u64),
+                |(bytes, nodes), value| {
+                    Some((
+                        bytes
+                            .checked_add(u64::try_from(value.len()).ok()?)?
+                            .checked_add(ALLOCATION_OVERHEAD)?,
+                        nodes.checked_add(1)?,
+                    ))
+                },
+            )?
+        }
+        ResidentValueRef::Snapshot(values) => {
+            meter
+                .charge_compute_work(u64::try_from(values.len()).ok()?)
+                .ok()?;
+            values.iter().try_fold(
+                (
+                    fixed(values.len(), core::mem::size_of::<Option<Value>>())?,
+                    0u64,
+                ),
+                |(bytes, nodes), value| {
+                    let Some(value) = value else {
+                        return Some((bytes, nodes));
+                    };
+                    let footprint =
+                        budget::measure_canonical_value_footprint(meter, value, schemas).ok()?;
+                    Some((
+                        bytes.checked_add(footprint.retained_bytes)?,
+                        nodes.checked_add(footprint.node_count)?,
+                    ))
+                },
+            )?
+        }
+    };
+    Some((
+        entry.checked_add(payload_bytes)?,
+        payload_nodes.checked_add(1)?,
+    ))
+}
+
 fn copy_input_unchecked(
     arena: &mut TypedResidentArena,
     region: ResidentRegion,
@@ -4106,6 +4499,10 @@ fn set_bit(words: &mut [u64], bit: usize) {
     words[bit / 64] |= 1_u64 << (bit % 64);
 }
 
+fn clear_bit(words: &mut [u64], bit: usize) {
+    words[bit / 64] &= !(1_u64 << (bit % 64));
+}
+
 fn or_bits(target: &mut [u64], source: &[u64]) {
     for (target, source) in target.iter_mut().zip(source) {
         *target |= *source;
@@ -4175,6 +4572,34 @@ mod tests {
     use crate::resident::general::comprehension::ActivatedCollectionStep;
     use crate::resident::general::{ResidentArenaSizes, StateVersion};
     use mech_core::ResidentShape;
+
+    #[test]
+    fn recursive_frame_cost_includes_entries_and_snapshot_nodes() {
+        let snapshot = mech_core::ValueCell::from_exact(true)
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        let schemas = snapshot.schemas().unwrap();
+        let mut meter = budget::ResidentBudgetMeter::default();
+        let (scalar_bytes, scalar_nodes) =
+            resident_frame_value_footprint(ResidentValueRef::Bool(&[1]), &schemas, &mut meter)
+                .unwrap();
+        assert!(
+            scalar_bytes
+                > core::mem::size_of::<(ResidentRegion, super::super::OwnedResidentValue)>() as u64
+        );
+        assert_eq!(scalar_nodes, 1);
+        let (snapshot_bytes, snapshot_nodes) = resident_frame_value_footprint(
+            ResidentValueRef::Snapshot(&[Some(snapshot.clone())]),
+            &schemas,
+            &mut meter,
+        )
+        .unwrap();
+        let footprint = snapshot.retained_footprint(&schemas).unwrap();
+        assert!(snapshot_bytes > footprint.retained_bytes);
+        assert_eq!(snapshot_nodes, footprint.node_count + 1);
+        assert!(meter.estimate().compute_work() > 0);
+    }
 
     #[cfg(feature = "source")]
     fn source_instance(source: &str) -> ReactiveInstance {
@@ -5060,6 +5485,18 @@ mod tests {
             Err(ResidentKernelError::InvalidShape)
         );
         Ok(())
+    }
+
+    #[test]
+    fn recursive_inventory_cost_includes_live_local_demand() {
+        let cost = recursive_inventory_cost(1_024, 17, 96).unwrap();
+        assert_eq!(cost.compute_work(), 96);
+        assert_eq!(cost.temporary_bytes(), 1_120);
+        assert_eq!(cost.retained_nodes(), 17);
+        assert_eq!(
+            recursive_inventory_cost(u64::MAX, 0, 1),
+            Err(ResidentKernelError::InvalidShape)
+        );
     }
 
     #[cfg(feature = "source")]

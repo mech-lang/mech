@@ -77,6 +77,7 @@ fn append_match_contract_handles(
                         nested, &inputs, constants, builder, node, handles,
                     )?;
                 }
+                super::ControlOperationBody::Recur(_) => {}
             }
         }
     }
@@ -130,6 +131,7 @@ fn append_comprehension_contract_handles(
                             nested, &schemas, constants, builder, node, handles,
                         )?;
                     }
+                    super::ControlOperationBody::Recur(_) => {}
                 }
                 locals.push(operation.schema);
             }

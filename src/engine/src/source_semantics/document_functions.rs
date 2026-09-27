@@ -4,6 +4,10 @@ use super::comprehension::{
     PendingCollectionValue, PendingComprehensionOperation, PendingComprehensionStep,
 };
 use super::*;
+use mech_syntax::document::{
+    ComprehensionQualifierSyntax, ComprehensionQualifierValueSyntax, FunctionCallSyntax,
+    MatchArmSyntax, MatrixComprehensionSyntax, SetComprehensionSyntax,
+};
 
 enum DocumentFunctionBody {
     Statements(SyntaxNode),
@@ -21,6 +25,166 @@ struct PatternLift {
     source: PendingValue,
     element: SchemaDraft,
     output: PatternLiftOutput,
+}
+
+fn calls_function(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
+    if let Some(call) = FunctionCallSyntax::cast(node.clone())
+        && let Some(function) = call.function()
+        && node_text(function.syntax())? == name
+    {
+        return Ok(true);
+    }
+    for child in node.children() {
+        if calls_function(&child, name)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn references_variable(node: &SyntaxNode, name: &str) -> Result<bool, SourceSemanticError> {
+    references_free_variable(node, name, false)
+}
+
+fn references_pattern_variable(
+    pattern: &PatternSyntax,
+    name: &str,
+    shadowed: bool,
+) -> Result<bool, SourceSemanticError> {
+    let value = pattern
+        .value()
+        .ok_or_else(|| missing_kind_child(pattern.syntax(), "pattern body"))?;
+    let children = match value {
+        PatternValueSyntax::Expression(expression) => {
+            return if standalone_pattern_variable(&expression).is_some() {
+                Ok(false)
+            } else {
+                references_free_variable(expression.syntax(), name, shadowed)
+            };
+        }
+        PatternValueSyntax::Array(array) => array
+            .elements()
+            .iter()
+            .filter_map(|element| element.pattern())
+            .collect::<Vec<_>>(),
+        PatternValueSyntax::Tuple(tuple) => tuple.items(),
+        PatternValueSyntax::AtomStruct(tuple) => tuple.items(),
+        PatternValueSyntax::TupleStruct(tuple) => tuple.items(),
+        PatternValueSyntax::Wildcard(_) => Vec::new(),
+    };
+    for child in children {
+        if references_pattern_variable(&child, name, shadowed)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn references_comprehension_variable(
+    value: Option<ExpressionSyntax>,
+    qualifiers: Vec<ComprehensionQualifierSyntax>,
+    name: &str,
+    mut shadowed: bool,
+) -> Result<bool, SourceSemanticError> {
+    for qualifier in qualifiers {
+        match qualifier.value() {
+            Some(ComprehensionQualifierValueSyntax::Generator(generator)) => {
+                if let Some(source) = generator.source()
+                    && references_free_variable(source.syntax(), name, shadowed)?
+                {
+                    return Ok(true);
+                }
+                if let Some(pattern) = generator.pattern() {
+                    if references_pattern_variable(&pattern, name, shadowed)? {
+                        return Ok(true);
+                    }
+                    let mut bindings = Vec::new();
+                    collect_pattern_bindings(&pattern, &mut bindings)?;
+                    shadowed |= bindings.iter().any(|binding| binding.name == name);
+                }
+            }
+            Some(ComprehensionQualifierValueSyntax::Definition(definition)) => {
+                let variable = definition.variable();
+                for child in definition.syntax().children() {
+                    if variable.as_ref().is_some_and(|variable| {
+                        child.kind() == SyntaxKind::Variable
+                            && child.range() == variable.syntax().range()
+                    }) {
+                        continue;
+                    }
+                    if references_free_variable(&child, name, shadowed)? {
+                        return Ok(true);
+                    }
+                }
+                if let Some(variable) = variable
+                    && let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+                {
+                    shadowed |= node_text(identifier.syntax())? == name;
+                }
+            }
+            Some(ComprehensionQualifierValueSyntax::Filter(filter)) => {
+                if references_free_variable(filter.syntax(), name, shadowed)? {
+                    return Ok(true);
+                }
+            }
+            None => {}
+        }
+    }
+    match value {
+        Some(value) => references_free_variable(value.syntax(), name, shadowed),
+        None => Ok(false),
+    }
+}
+
+fn references_free_variable(
+    node: &SyntaxNode,
+    name: &str,
+    shadowed: bool,
+) -> Result<bool, SourceSemanticError> {
+    if let Some(arm) = MatchArmSyntax::cast(node.clone()) {
+        let mut arm_shadowed = shadowed;
+        if let Some(pattern) = arm.pattern() {
+            if references_pattern_variable(&pattern, name, shadowed)? {
+                return Ok(true);
+            }
+            let mut bindings = Vec::new();
+            collect_pattern_bindings(&pattern, &mut bindings)?;
+            arm_shadowed |= bindings.iter().any(|binding| binding.name == name);
+        }
+        for expression in [arm.guard(), arm.value()].into_iter().flatten() {
+            if references_free_variable(expression.syntax(), name, arm_shadowed)? {
+                return Ok(true);
+            }
+        }
+        return Ok(false);
+    }
+    if let Some(comprehension) = SetComprehensionSyntax::cast(node.clone()) {
+        return references_comprehension_variable(
+            comprehension.value(),
+            comprehension.qualifiers(),
+            name,
+            shadowed,
+        );
+    }
+    if let Some(comprehension) = MatrixComprehensionSyntax::cast(node.clone()) {
+        return references_comprehension_variable(
+            comprehension.value(),
+            comprehension.qualifiers(),
+            name,
+            shadowed,
+        );
+    }
+    if let Some(variable) = VariableSyntax::cast(node.clone())
+        && let Some(VariableStemSyntax::Identifier(identifier)) = variable.stem()
+    {
+        return Ok(!shadowed && node_text(identifier.syntax())? == name);
+    }
+    for child in node.children() {
+        if references_free_variable(&child, name, shadowed)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 fn lift_element_conforms(element: &SchemaBody, parameter: &SchemaDraft) -> bool {
@@ -140,14 +304,6 @@ impl SemanticBuilder {
             message,
             anchor: SourceSemanticAnchor::for_node(call),
         };
-        if self.active_functions.iter().any(|active| active == name)
-            || self.active_functions.len() >= crate::MAX_CONTROL_DEPTH as usize
-        {
-            return Err(error(
-                "source-semantics/recursive-function",
-                format!("function {name} cannot be finitely inlined"),
-            ));
-        }
         let function = self.local_functions[name].clone();
         let parameters = function
             .children()
@@ -198,6 +354,114 @@ impl SemanticBuilder {
                     "canonical function has no supported body".to_owned(),
                 )
             })?;
+        if self.active_functions.iter().any(|active| active == name) {
+            if self.comprehension_depth != 0 {
+                return Err(error(
+                    "source-semantics/recursive-comprehension",
+                    format!("recursive function {name} cannot be called inside a comprehension"),
+                ));
+            }
+            if self
+                .active_functions
+                .last()
+                .is_none_or(|active| active != name)
+            {
+                return Err(error(
+                    "source-semantics/mutual-recursion",
+                    format!("function {name} forms an unsupported mutual recursion cycle"),
+                ));
+            }
+            if !matches!(body, DocumentFunctionBody::Patterns(_)) {
+                return Err(error(
+                    "source-semantics/recursive-statement-function",
+                    format!("function {name} requires a pattern body for canonical recursion"),
+                ));
+            }
+            let (expected, root_depth) = self
+                .active_recursive_outputs
+                .iter()
+                .rev()
+                .find_map(|(active, output, root_depth)| {
+                    (active == name).then_some((output.clone(), *root_depth))
+                })
+                .ok_or_else(|| {
+                    error(
+                        "source-semantics/recursive-function",
+                        format!("function {name} has no active callable frame"),
+                    )
+                })?;
+            let ancestor = self
+                .match_depth
+                .checked_sub(root_depth)
+                .and_then(|depth| u8::try_from(depth).ok())
+                .ok_or_else(|| {
+                    error(
+                        "source-semantics/recursive-function",
+                        format!("function {name} has no enclosing lexical match"),
+                    )
+                })?;
+            let arguments = parameters
+                .iter()
+                .zip(selected)
+                .map(|((_, schema), input)| {
+                    self.conform_schema_draft(
+                        input,
+                        schema,
+                        call,
+                        "source-semantics/incompatible-function-argument",
+                        "recursive argument does not satisfy its declared kind",
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let argument = if let [argument] = arguments.as_slice() {
+                *argument
+            } else {
+                let mut dimensions = Vec::new();
+                let elements = arguments
+                    .iter()
+                    .map(|argument| {
+                        embed_schema_draft(
+                            &self.schema_draft_of(*argument)?,
+                            &mut dimensions,
+                            SourceSemanticAnchor::for_node(call),
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                self.emit_with_schema_draft(
+                    "core/composite-pack",
+                    arguments,
+                    SchemaDraft {
+                        dimension_parameters: dimensions.into_boxed_slice(),
+                        body: SchemaBody::Tuple(elements.into_boxed_slice()),
+                    },
+                    call,
+                    "function-arguments",
+                    Some(name.to_owned()),
+                )
+            };
+            let index = self.nodes.len() as u32;
+            self.nodes.push(PendingNode {
+                body: PendingNodeBody::RecursiveCall(ancestor),
+                inferable_projection: false,
+                inputs: vec![argument],
+                schema: expected,
+                exposes_output: true,
+                state: None,
+                semantic: SourceSemanticNode {
+                    operation: format!("function/{name}/recur"),
+                    role: "recursive-call",
+                    detail: Some(name.to_owned()),
+                    anchor: SourceSemanticAnchor::for_node(call),
+                },
+            });
+            return Ok(PendingValue::Node(index));
+        }
+        if self.active_functions.len() >= crate::MAX_CONTROL_DEPTH as usize {
+            return Err(error(
+                "source-semantics/function-expansion-depth",
+                format!("function {name} exceeds the lexical expansion depth"),
+            ));
+        }
         let mut local_bindings = BTreeMap::new();
         let mut parameter_names = BTreeSet::new();
         let mut arguments = Vec::new();
@@ -306,6 +570,9 @@ impl SemanticBuilder {
         let caller_definitions = std::mem::replace(&mut self.scope_definitions, parameter_names);
         let caller_external = std::mem::take(&mut self.external_definitions);
         self.active_functions.push(name.to_owned());
+        if lifted_collection.is_some() {
+            self.comprehension_depth += 1;
+        }
         let result = (|| match body {
             DocumentFunctionBody::Statements(body) => {
                 self.inline_statement_function_body(name, &body, call, &error)
@@ -315,6 +582,7 @@ impl SemanticBuilder {
             }
         })();
         let result = if let Some(lift) = lifted_collection {
+            self.comprehension_depth -= 1;
             self.control_depth -= 1;
             result.and_then(|result| self.finish_pattern_lift(lift, result, name, call))
         } else {
@@ -709,12 +977,46 @@ impl SemanticBuilder {
                 })
             })
             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
+        if arms
+            .iter()
+            .map(|arm| calls_function(arm.value.syntax(), name))
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .any(|recursive| recursive)
+        {
+            for arm in &arms {
+                let mut bindings = Vec::new();
+                if let Some(pattern) = &arm.pattern {
+                    collect_pattern_bindings(pattern, &mut bindings)?;
+                }
+                for parameter in &self.scope_definitions {
+                    if !bindings.iter().any(|binding| &binding.name == parameter)
+                        && references_variable(arm.value.syntax(), parameter)?
+                    {
+                        return Err(SourceSemanticError {
+                            code: "source-semantics/recursive-function-capture",
+                            message: format!(
+                                "recursive function {name} must bind parameter {parameter} in every arm that reads it"
+                            ),
+                            anchor: SourceSemanticAnchor::for_node(&arm.syntax),
+                        });
+                    }
+                }
+            }
+        }
         let enum_input = matches!(
             self.schema_draft_of(scrutinee)?.body,
             SchemaBody::Enum { .. }
         );
+        self.active_recursive_outputs.push((
+            name.to_owned(),
+            expected.clone(),
+            self.match_depth + 1,
+        ));
         let result =
-            self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected))?;
+            self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected));
+        self.active_recursive_outputs.pop();
+        let result = result?;
         self.conform_schema_draft(
             result,
             &expected,
@@ -722,5 +1024,43 @@ impl SemanticBuilder {
             "source-semantics/incompatible-function-output",
             "function output does not satisfy its declared kind",
         )
+    }
+}
+
+#[cfg(test)]
+mod recursive_capture_tests {
+    use super::*;
+    use mech_syntax::document::parser::{canonical::parse_canonical_phase_2i_rule_for_test, rules};
+    use mech_syntax::document::{DocumentId, ParseConfig, Revision, TextSnapshot};
+
+    fn expression(source: &str) -> ExpressionSyntax {
+        fn find(node: SyntaxNode) -> Option<ExpressionSyntax> {
+            ExpressionSyntax::cast(node.clone()).or_else(|| node.children().find_map(find))
+        }
+        let parsed = parse_canonical_phase_2i_rule_for_test(
+            TextSnapshot::new(DocumentId(0x557), Revision(1), source).unwrap(),
+            rules::EXPRESSION,
+            ParseConfig::default(),
+        )
+        .unwrap();
+        assert!(parsed.is_strictly_clean(), "{source}");
+        find(parsed.syntax()).unwrap()
+    }
+
+    #[test]
+    fn nested_binders_only_shadow_their_own_scopes() {
+        for (source, captures_n) in [
+            ("(1 ? | n => n)", false),
+            ("(n ? | x => x)", true),
+            ("[n | n <- [1]]", false),
+            ("[n | x <- [1]]", true),
+            ("[x | x <- n]", true),
+        ] {
+            assert_eq!(
+                references_variable(expression(source).syntax(), "n").unwrap(),
+                captures_n,
+                "{source}"
+            );
+        }
     }
 }

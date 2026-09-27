@@ -45,7 +45,8 @@ impl PendingComprehension {
                 PendingComprehensionStep::Operation(operation) => {
                     visit(&operation.schema);
                     match &operation.body {
-                        PendingControlOperationBody::Operation { .. } => {}
+                        PendingControlOperationBody::Operation { .. }
+                        | PendingControlOperationBody::Recur(_) => {}
                         PendingControlOperationBody::Match(nested) => {
                             nested.visit_schemas(visit);
                         }
@@ -269,6 +270,7 @@ impl SemanticBuilder {
         let saved_definitions = core::mem::take(&mut self.scope_definitions);
         let start = self.nodes.len();
         self.control_depth += 1;
+        self.comprehension_depth += 1;
         let compiled = self.collection_body(
             syntax,
             result,
@@ -278,6 +280,7 @@ impl SemanticBuilder {
             start,
         );
         self.control_depth -= 1;
+        self.comprehension_depth -= 1;
         self.bindings = saved;
         self.scope_definitions = saved_definitions;
         compiled
@@ -1096,6 +1099,9 @@ pub(super) fn resolve_comprehension(
                                 crate::ControlOperationBody::Comprehension(resolve_comprehension(
                                     nested, schemas, constants,
                                 ))
+                            }
+                            PendingControlOperationBody::Recur(ancestor) => {
+                                crate::ControlOperationBody::Recur(*ancestor)
                             }
                         },
                         inputs: operation.inputs.iter().map(value).collect(),
