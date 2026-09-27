@@ -26,6 +26,11 @@ assert(html.includes('class="github-button"')&&html.includes('aria-label="Star m
 assert(html.includes('class="mika-separator"')&&html.includes('class="footer-main"'),'blog separator and complete footer');
 assert(html.includes('IROS 2026: Rust for Robotics Workshop')&&html.includes('September 27, 2026'),'workshop metadata');
 const sectionTitles=[...html.matchAll(/<h2\b[^>]*>[\s\S]*?<\/h2>/g)].map(([heading])=>heading.replace(/<[^>]+>/g,'').trim());
+const subsubsectionTitles=[...html.matchAll(/<h4\b[^>]*>[\s\S]*?<\/h4>/g)].map(([heading])=>heading.replace(/<[^>]+>/g,'').trim());
+for(const title of ['Initialization','Time Update','Measurement Update','Checked Publication']) {
+  assert.equal(subsubsectionTitles.filter(heading=>heading===title).length,2,`both EKF listings use a native sub-subheading for ${title}`);
+}
+assert(!/class="mech-strong">(?:Initialization|Time update|Measurement update|Checked publication)\.<\//.test(html),'EKF stages must not be inline bold labels');
 assert.deepEqual(sectionTitles.slice(-2),['More about Mech','Status and Future Work'],'future work concludes the article after the broader language examples');
 assert(html.includes('href="https://docs.mech-lang.org/design/ROADMAP.html"'),'future work links to the project roadmap');
 assert(html.includes('class="mech-figure workshop-figure workshop-timeline"'),'future work includes the development timeline');
@@ -48,6 +53,7 @@ assert.match(blogCss,/grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1\.05fr
 assert.match(blogCss,/font-size: clamp\(34px, 4\.2cqw, 52px\)/,'title size follows the article pane, not the viewport');
 assert.match(blogCss,/\.hero \.mech-meta \.mech-date\s*\{[^}]*white-space: nowrap;/,'keep the date together while author names wrap');
 const articleCss=readFileSync(join(out,'assets/article.css'),'utf8');
+assert.match(readFileSync(join(out,'assets/mechdown.css'),'utf8'),/h4\[section\]::before\s*\{\s*content: attr\(section\);/,'native sub-subheading labels use their resolved hierarchy');
 assert(html.includes('mechdown-table workshop-source-size'),'source-size table has a scoped mobile layout');
 assert.match(readFileSync(join(out,'assets/mechdown.css'),'utf8'),/\.mechdown-table td\.right\s*\{[^}]*white-space: nowrap;/,'numeric table values stay on one line');
 assert.match(readFileSync(join(out,'assets/mechdown.css'),'utf8'),/\.mechdown-table \.mech-paragraph\s*\{[^}]*overflow-wrap: normal;/,'table labels wrap at words instead of collapsing to single characters');
@@ -122,6 +128,11 @@ const cameraKernel=readFileSync(join(out,'source/camera-ekf.mec'),'utf8');
 assert.equal(cameraKernel,readFileSync(join(root,'source/camera-ekf.mec'),'utf8'),'displayed camera source is published unchanged');
 assert.match(readFileSync(join(out,'assets/app.mjs'),'utf8'),/fetch\('source\/camera-ekf\.mec'\)/,'live host executes the camera listing rather than the reference kernel');
 const article=readFileSync(join(out,'article.mec'),'utf8');
+for(const parent of ['1.1','1.2']) {
+  for(const [index,title] of ['Initialization','Time Update','Measurement Update','Checked Publication'].entries()) {
+    assert(article.includes(`(${parent}.${index+1}) ${title}`),'literate download preserves native EKF stage headings');
+  }
+}
 assert(article.indexOf('5. More about Mech')<article.indexOf('6. Status and Future Work'),'download and visible page share section order');
 assert(article.includes('[Mech development timeline](assets/timeline.svg)'),'literate download retains the timeline reference');
 assert(article.includes(`${publishedUrl}#live-demo`),'download must link to the workshop demo');

@@ -219,6 +219,12 @@
   font-size: 10px;
 }
 
+/* Native headings carry their resolved hierarchy; prefer it to sibling CSS
+ * counters, whose scope can continue across consecutive subsections. */
+[data-mechdown] .mechdown-section > h4[section]::before {
+  content: attr(section);
+}
+
 [data-mechdown] .mechdown-section > h5::before {
   content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal);
   display: none;

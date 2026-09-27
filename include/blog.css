@@ -140,6 +140,32 @@ html[data-mech-shim="blog"] .backmatter-body .mech-footnote .mech-paragraph {
   font-weight: 400;
 }
 
+/* Match the published blog's compact hanging bibliography. The portable
+ * document defaults add a gap/margins and color the whole external link;
+ * the journal keeps reading text neutral, reserving gold for IDs/icons. */
+html[data-mech-shim="blog"] .backmatter-body .mech-citation {
+  align-items: baseline;
+  gap: 0;
+  margin: 0;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-footnote-id {
+  font-family: monospace;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-citation-id {
+  font-family: "FiraCodeRegular", monospace;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-citation-external-link {
+  color: inherit;
+  min-width: 0;
+}
+
+html[data-mech-shim="blog"] .backmatter-body .mech-citation-link-text {
+  word-break: normal;
+}
+
 html[data-mech-shim="blog"] [data-mechdown] .mech-footnote-reference {
   font-family: monospace;
 }

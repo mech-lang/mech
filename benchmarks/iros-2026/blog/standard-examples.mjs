@@ -4,8 +4,8 @@ import {fileURLToPath} from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const definitions = [
-  {token: 'BLOGEKFSOURCE', file: 'ekf.mec', language: 'mech', namespace: 'paper-ekf', reference: true},
-  {token: 'BLOGCAMERASOURCE', file: 'camera-ekf.mec', language: 'mech', namespace: 'ekf'},
+  {token: 'BLOGEKFSOURCE', file: 'ekf.mec', language: 'mech', namespace: 'paper-ekf', reference: true, parentSection: '1.1'},
+  {token: 'BLOGCAMERASOURCE', file: 'camera-ekf.mec', language: 'mech', namespace: 'ekf', parentSection: '1.2'},
   {token: 'BLOGSCENESOURCE', file: 'scene.mec', language: 'mech', namespace: 'scene'},
   {token: 'BLOGBEHAVIORSOURCE', file: 'behavior.mec', language: 'mech'},
   {token: 'BLOGFUNCTIONS', file: 'functions.mec', language: 'mech'},
@@ -67,15 +67,15 @@ export function ekfSections(source, {camera = false} = {}) {
   const boundaries = [...normalized.matchAll(/^-- \((\d+)\) (.+)$/gm)];
   if (boundaries.length !== 4) throw new Error('Expected four EKF sections');
   const introductions = camera ? [
-    '**Initialization.** The filter receives commanded motion and range-and-bearing observations from four fixed cameras. Each observation includes an availability flag; the state and covariance persist between turns.',
-    '**Time update.** A midpoint motion model predicts the next pose, and its Jacobians propagate state and process-noise covariance.',
-    '**Measurement update.** Available cameras correct the prediction in sequence. Each correction wraps the bearing innovation and updates covariance in Joseph form; an unavailable camera contributes no correction.',
-    '**Checked publication.** Integrity predicates validate the candidate before its mean and covariance replace the accepted state.',
+    'The filter receives commanded motion and range-and-bearing observations from four fixed cameras. Each observation includes an availability flag; the state and covariance persist between turns.',
+    'A midpoint motion model predicts the next pose, and its Jacobians propagate state and process-noise covariance.',
+    'Available cameras correct the prediction in sequence. Each correction wraps the bearing innovation and updates covariance in Joseph form; an unavailable camera contributes no correction.',
+    'Integrity predicates validate the candidate before its mean and covariance replace the accepted state.',
   ] : [
-    '**Initialization.** The imports, motion inputs, measurement covariance, and initial state establish the filter. The control vector `u` carries forward velocity, angular velocity, and a measurement-availability flag. Matrix shapes are inferred from their values.',
-    '**Time update.** The motion model predicts the next pose, and its Jacobians propagate the state and process-noise covariance.',
-    '**Measurement update.** An available bearing corrects the prediction. When the selected landmark is outside camera range, `visible` is zero and the gain is zero, giving a prediction-only update. Wrapping the angular innovation avoids a discontinuity at a full revolution; the Joseph form updates the covariance.',
-    '**Checked publication.** Integrity predicates validate the candidate before the new mean and covariance replace the accepted state.',
+    'The imports, motion inputs, measurement covariance, and initial state establish the filter. The control vector `u` carries forward velocity, angular velocity, and a measurement-availability flag. Matrix shapes are inferred from their values.',
+    'The motion model predicts the next pose, and its Jacobians propagate the state and process-noise covariance.',
+    'An available bearing corrects the prediction. When the selected landmark is outside camera range, `visible` is zero and the gain is zero, giving a prediction-only update. Wrapping the angular innovation avoids a discontinuity at a full revolution; the Joseph form updates the covariance.',
+    'Integrity predicates validate the candidate before the new mean and covariance replace the accepted state.',
   ];
   return boundaries.map((boundary, index) => ({
     stage: ['initialization', 'prediction', 'correction', 'publication'][index],
@@ -128,7 +128,7 @@ export function expandStandardExamples(article, {
       const sections = ekfSections(original, {camera: file === 'camera-ekf.mec'});
       const label = definition.reference ? 'bearing-only EKF' : 'live camera EKF';
       for (const section of sections) examples.push({...definition, ...section, label: `${label} · ${section.title.toLowerCase()}`, href});
-      return sections.map(section => `${section.prose}\n\n\`\`\`mech:${definition.namespace}\n${section.code}\n\`\`\``).join('\n\n')
+      return sections.map((section, index) => `(${definition.parentSection}.${index + 1}) ${section.title}\n\n${section.prose}\n\n\`\`\`mech:${definition.namespace}\n${section.code}\n\`\`\``).join('\n\n')
         + (definition.reference
           ? `\n\n(i)> Download the complete bearing-only [${file}](${href}). The Rust embedding examples below use this source; the interactive fixed-camera extension has its own listing and download.`
           : `\n\n(i)> Download the complete live [${file}](${href}). These blocks share the \`ekf\` namespace and compile together as the numerical program running in the Output pane.`);

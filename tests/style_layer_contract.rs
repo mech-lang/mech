@@ -693,6 +693,118 @@ fn established_blog_color_and_component_details_are_preserved() {
 }
 
 #[test]
+fn blog_backmatter_matches_published_typography_without_changing_document_defaults() {
+    fn rule<'a>(css: &'a str, selector: &str) -> &'a str {
+        let marker = format!("\n{selector} {{");
+        css.split_once(marker.as_str())
+            .unwrap_or_else(|| panic!("missing exact style rule: {selector}"))
+            .1
+            .split_once('}')
+            .expect("style rule must close")
+            .0
+    }
+
+    fn require(css: &str, selector: &str, declarations: &[&str]) {
+        let body = rule(css, selector);
+        for declaration in declarations {
+            assert!(
+                body.lines().any(|line| line.trim() == *declaration),
+                "{selector} lost {declaration}",
+            );
+        }
+    }
+
+    let blog = include("blog.css");
+    for (suffix, declarations) in [
+        (
+            ".mech-citation",
+            &["align-items: baseline;", "gap: 0;", "margin: 0;"][..],
+        ),
+        (".mech-footnote-id", &["font-family: monospace;"][..]),
+        (
+            ".mech-citation-id",
+            &["font-family: \"FiraCodeRegular\", monospace;"][..],
+        ),
+        (
+            ".mech-citation-external-link",
+            &["color: inherit;", "min-width: 0;"][..],
+        ),
+        (".mech-citation-link-text", &["word-break: normal;"][..]),
+        (".mech-footnote", &["margin-bottom: 0;"][..]),
+        (
+            ".mech-footnote .mech-paragraph",
+            &["font-size: 1.06rem;", "font-weight: 400;"][..],
+        ),
+        (
+            ".mech-backmatter-heading",
+            &[
+                "color: var(--text-primary);",
+                "font-family: inherit;",
+                "line-height: inherit;",
+            ][..],
+        ),
+        (
+            ":is(.mech-footnotes, .mech-works-cited)",
+            &["margin-top: 0;"][..],
+        ),
+    ] {
+        require(
+            &blog,
+            &format!("html[data-mech-shim=\"blog\"] .backmatter-body {suffix}"),
+            declarations,
+        );
+    }
+
+    let page = include("style.css");
+    require(
+        &page,
+        ".backmatter-body",
+        &["padding: 12px 14px;", "font-size: 14px;", "line-height: 1.65;"],
+    );
+    let mechdown = include("mechdown.css");
+    require(
+        &mechdown,
+        "[data-mechdown] .mech-backmatter-heading",
+        &[
+            "font-size: 24px;",
+            "font-weight: 700;",
+            "margin: 30px 0 12px;",
+            "column-span: all;",
+            "counter-increment: none;",
+            "counter-reset: none;",
+        ],
+    );
+    require(
+        &mechdown,
+        "[data-mechdown] .mech-backmatter-heading::before",
+        &["content: none !important;"],
+    );
+    require(
+        &mechdown,
+        "[data-mechdown] .mech-footnote .mech-paragraph",
+        &["line-height: 1.6;", "margin: 0;"],
+    );
+
+    // The editorial match is a blog override, not a change to portable
+    // document spacing, external-link colors, or wrapping behavior.
+    require(
+        &mechdown,
+        "[data-mechdown] .mech-footnote,\n[data-mechdown] .mech-citation",
+        &["gap: 0.65rem;", "margin: 0.6rem 0;"],
+    );
+    require(
+        &mechdown,
+        "[data-mechdown] .mech-citation-external-link",
+        &["color: var(--mechdown-link-hover);", "overflow-wrap: anywhere;"],
+    );
+    require(
+        &mechdown,
+        "[data-mechdown] .mech-citation-link-text",
+        &["word-break: break-all;"],
+    );
+}
+
+#[test]
 fn floated_callouts_reuse_shared_style_and_mobile_float_layout() {
     let mechdown = include("mechdown.css");
     let callout_rule = mechdown

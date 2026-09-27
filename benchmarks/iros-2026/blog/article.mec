@@ -27,6 +27,8 @@ The workshop's bearing-only example estimates planar position and heading from l
 
 (?)> **Why an EKF?** It is a representative robotics algorithm that combines matrix operations, nonlinear functions, persistent state, and successive sensor measurements. Here it also serves as a stress test of the current architecture: the same program exercises compilation, Rust embedding, checked reactive updates, and CPU/GPU execution. Earlier Mech implementations demonstrated the underlying reactive approach in the alpha-era LIVE 2019 work and the v0.1 HYTRADBOI 2022 presentation.[LIVE][HYTRADBOI] This case study extends that work to the current implementation; benchmarks and validation of additional algorithms, applications, and robot systems are planned.
 
+(1.1) Bearing-Only EKF
+
 BLOGEKFSOURCE
 
 The complete source includes initialization, prediction, correction, integrity constraints, and publication. `:=` defines a binding, `~` marks assignable persistent state, and `=` assigns it. Matrix multiplication uses `**`, a trailing apostrophe transposes a matrix, and `*` applies broadcast multiplication. Types and dimensions are explicit where needed and inferred through the equations. The `+>` line imports numerical functions and the Boolean `all` reduction.
@@ -39,13 +41,13 @@ The three named integrity constraints check finite candidate values, positive co
 
 An earlier compact presentation of the archived kernel passed state, rejection, rollback, and recovery parity tests on five CPU execution paths, including JIT and AOT. This bearing-only listing includes a numerical correction prompted by longer browser runs, described in the Reactive section. It intentionally changes covariance handling. The timing and source-size measurements below retain their original, separately identified sources; they do not measure either this correction or the fixed-camera extension.[^SOURCE]
 
-(1.1) Extending the Filter to Fixed Cameras
+(1.2) Extending the Filter to Fixed Cameras
 
 The interactive program adapts the repository's [fixed-camera localization example](https://github.com/mech-lang/mech/blob/iros-workshop-benchmarks/examples/ekf/localization.mec). Four cameras occupy known positions in the field and supply noisy range and bearing observations of the robot. Bearing is measured from each camera in world coordinates, rather than relative to the robot's heading. One turn predicts motion once, then incorporates every enabled camera whose range contains the robot, in camera-index order. If none can observe it, the filter publishes only the prediction.
 
 BLOGCAMERASOURCE
 
-(1.2) Run the Example
+(1.3) Run the Example
 
 BLOGLIVEDEMO
 
@@ -57,7 +59,7 @@ Inject an invalid observation to exercise rejection in the last filter of the ba
 
 Both browser routes parse the displayed `camera-ekf.mec` source and construct the same fixed-shape numerical program. The CPU route executes its lowered instructions in the Mech interpreter, whose Rust implementation is compiled to WebAssembly. The GPU route generates WGSL and a binding manifest from that program; the browser host submits it through WebGPU and observes completion and integrity status before accepting the result. A separate resident Mech program computes camera measurements, scene geometry, covariance ellipses, and trails. JavaScript binds the controls, schedules execution, and passes the resulting drawing tables to the shared scene renderer.
 
-(1.3) Drawing with Mech Tables
+(1.4) Drawing with Mech Tables
 
 The scene uses the same table-based drawing interface as the repository's EKF example. Columns describe properties of each primitive, and expressions connect those properties to the accepted filter state. These rows draw the fixed cameras and their range circles; lines and line strips describe observation rays, headings, trails, and the covariance ellipse. The supporting calculations are in the downloadable scene program rather than repeated throughout the article.
 
@@ -65,7 +67,7 @@ BLOGSCENESOURCE
 
 Browser results describe the browser and device running this page. The live summary uses the latest accepted turns after warmup, rather than independent process trials. Turn time includes input binding, execution, validation, synchronization, and one filter's readback; drawing and compilation are excluded. WebAssembly CPU and WebGPU have different timing boundaries from the native programs in the archived charts. A browser may translate WebGPU to Metal, Vulkan, or another platform API, which does not make its timings interchangeable with direct-Metal measurements.
 
-(1.4) Application Source Size
+(1.5) Application Source Size
 
 The source audit compares backend-neutral Mech with textbook-style Rust and a separate SIMD Rust implementation. It counts programmer-chosen names as one character per occurrence, excludes comments and nonliteral whitespace, and retains operators, types, numbers, and library names. The table reports normalized source characters, not lines or bytes. General libraries, compilers, and runtime internals are outside this application-source boundary.[AUDIT]
 
