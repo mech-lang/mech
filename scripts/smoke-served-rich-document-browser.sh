@@ -1294,7 +1294,30 @@ def assert_fullscreen_accessibility():
         {"width": 700, "height": 460, "deviceScaleFactor": 1, "mobile": False},
         session_id,
     )
-    time.sleep(0.15)
+    wait_for("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const workspace = pane?.querySelector(':scope > .console-panels');
+  const bounds = workspace?.getBoundingClientRect();
+  const consolePanel = document.querySelector('[data-mech-console-panel="console"]');
+  const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
+  const separators = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
+  if (!bounds || separators.length !== 2) return false;
+  return separators.every(handle => {
+    const column = handle.dataset.mechConsoleWorkspaceResizer === 'column';
+    const total = column ? bounds.width : bounds.height;
+    const minimumPixels = Math.min(column ? 180 : 120, Math.max(0, total / 2 - 4));
+    const maximumPixels = Math.max(minimumPixels, total - minimumPixels - 8);
+    const size = column
+      ? consolePanel?.getBoundingClientRect().width || 0
+      : outputPanel?.getBoundingClientRect().height || 0;
+    const percentage = value => Math.round((value / total) * 100);
+    return Number(handle.getAttribute('aria-valuemin')) === percentage(minimumPixels) &&
+      Number(handle.getAttribute('aria-valuemax')) === percentage(maximumPixels) &&
+      Number(handle.getAttribute('aria-valuenow')) === percentage(size);
+  });
+})()
+""", "fullscreen workspace split accessibility adapting to viewport pressure")
     responsive = evaluate_json("""
 (() => {
   const pane = document.querySelector('[data-mech-console-pane]');
