@@ -3077,6 +3077,7 @@ fn region(location: ResidentReadLocation) -> ResidentRegion {
     match location {
         ResidentReadLocation::Constant(region)
         | ResidentReadLocation::Input(region)
+        | ResidentReadLocation::LexicalInput(region)
         | ResidentReadLocation::Scratch(region)
         | ResidentReadLocation::State { region, .. } => region,
     }

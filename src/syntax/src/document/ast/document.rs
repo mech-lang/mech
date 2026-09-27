@@ -5,14 +5,197 @@ use crate::document::red::{
     SyntaxToken,
 };
 use crate::document::{
-    BodySyntax, CodeBlockSyntax, CodeFenceInfo, ContextSendSyntax, EnumDefineSyntax,
-    EnumVariantInlineKindSyntax, EnumVariantKindSyntax, EnumVariantSyntax,
-    EvalInlineMechCodeSyntax, ExpressionSyntax, KindAnnotationSyntax, KindDefineSyntax,
-    MechCodeAltSyntax, MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax,
-    ParagraphElementSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
-    SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax,
-    TupleDestructureSyntax, UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
+    AtomLiteralSyntax, BodySyntax, CodeBlockSyntax, CodeFenceInfo, ContextSendSyntax,
+    EnumDefineSyntax, EnumVariantInlineKindSyntax, EnumVariantKindSyntax, EnumVariantSyntax,
+    EvalInlineMechCodeSyntax, ExpressionSyntax, FsmArmSyntax, FsmAsyncTransitionSyntax,
+    FsmBlockTransitionSyntax, FsmCommentArmSyntax, FsmGuardArmSyntax, FsmGuardSyntax,
+    FsmImplementationSyntax, FsmOutputSyntax, FsmSpecificationSyntax, FsmStateDefinitionSyntax,
+    FsmStateDefinitionVariablesSyntax, FsmStateTransitionSyntax, FsmStatementTransitionSyntax,
+    FsmTransitionSyntax, FsmValueSyntax, KindAnnotationSyntax, KindDefineSyntax, MechCodeAltSyntax,
+    MechCodeSyntax, OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax,
+    ParagraphElementSyntax, PatternSyntax, SectionElementSyntax, SliceRefSyntax, SliceStemSyntax,
+    StatementSyntax, SubscriptListSyntax, SyntaxKind, TextRange, TitleFrontMatterSyntax,
+    TitleSyntax, TupleDestructureSyntax, UlSubtitleSyntax, VariableAssignSyntax, VariableSyntax,
 };
+
+#[derive(Clone, Debug)]
+pub enum FsmArmBodySyntax {
+    Transition(FsmTransitionSyntax),
+    Guard(FsmGuardArmSyntax),
+    Comment(FsmCommentArmSyntax),
+}
+
+#[derive(Clone, Debug)]
+pub enum FsmBodyTransitionSyntax {
+    State(FsmStateTransitionSyntax),
+    Async(FsmAsyncTransitionSyntax),
+    Output(FsmOutputSyntax),
+    Statement(FsmStatementTransitionSyntax),
+    Block(FsmBlockTransitionSyntax),
+}
+
+fn fsm_body_transitions(node: &SyntaxNode) -> Vec<FsmBodyTransitionSyntax> {
+    node.children()
+        .filter_map(|child| match child.kind() {
+            SyntaxKind::FsmStateTransition => {
+                FsmStateTransitionSyntax::cast(child).map(FsmBodyTransitionSyntax::State)
+            }
+            SyntaxKind::FsmAsyncTransition => {
+                FsmAsyncTransitionSyntax::cast(child).map(FsmBodyTransitionSyntax::Async)
+            }
+            SyntaxKind::FsmOutput => {
+                FsmOutputSyntax::cast(child).map(FsmBodyTransitionSyntax::Output)
+            }
+            SyntaxKind::FsmStatementTransition => {
+                FsmStatementTransitionSyntax::cast(child).map(FsmBodyTransitionSyntax::Statement)
+            }
+            SyntaxKind::FsmBlockTransition => {
+                FsmBlockTransitionSyntax::cast(child).map(FsmBodyTransitionSyntax::Block)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+impl FsmSpecificationSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+
+    pub fn inputs(&self) -> Vec<VariableSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(VariableSyntax::cast)
+            .collect()
+    }
+
+    pub fn output(&self) -> Option<KindAnnotationSyntax> {
+        self.syntax()
+            .children()
+            .find_map(KindAnnotationSyntax::cast)
+    }
+
+    pub fn states(&self) -> Vec<FsmStateDefinitionSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(FsmStateDefinitionSyntax::cast)
+            .collect()
+    }
+}
+
+impl FsmStateDefinitionSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.syntax()
+            .children()
+            .find_map(AtomLiteralSyntax::cast)
+            .and_then(|atom| atom.name())
+    }
+
+    pub fn variables(&self) -> Vec<VariableSyntax> {
+        self.syntax()
+            .children()
+            .find_map(FsmStateDefinitionVariablesSyntax::cast)
+            .map(|variables| {
+                variables
+                    .syntax()
+                    .children()
+                    .filter_map(VariableSyntax::cast)
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+}
+
+impl FsmImplementationSyntax {
+    pub fn name(&self) -> Option<IdentifierSyntax> {
+        self.syntax().children().find_map(IdentifierSyntax::cast)
+    }
+
+    pub fn inputs(&self) -> Vec<VariableSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(VariableSyntax::cast)
+            .collect()
+    }
+
+    pub fn start(&self) -> Option<FsmValueSyntax> {
+        self.syntax().children().find_map(FsmValueSyntax::cast)
+    }
+
+    pub fn arms(&self) -> Vec<FsmArmSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(FsmArmSyntax::cast)
+            .collect()
+    }
+}
+
+impl FsmArmSyntax {
+    pub fn body(&self) -> Option<FsmArmBodySyntax> {
+        self.syntax()
+            .children()
+            .find_map(|child| match child.kind() {
+                SyntaxKind::FsmTransition => {
+                    FsmTransitionSyntax::cast(child).map(FsmArmBodySyntax::Transition)
+                }
+                SyntaxKind::FsmGuardArm => {
+                    FsmGuardArmSyntax::cast(child).map(FsmArmBodySyntax::Guard)
+                }
+                SyntaxKind::FsmCommentArm => {
+                    FsmCommentArmSyntax::cast(child).map(FsmArmBodySyntax::Comment)
+                }
+                _ => None,
+            })
+    }
+}
+
+impl FsmTransitionSyntax {
+    pub fn pattern(&self) -> Option<PatternSyntax> {
+        self.syntax().children().find_map(PatternSyntax::cast)
+    }
+
+    pub fn transitions(&self) -> Vec<FsmBodyTransitionSyntax> {
+        fsm_body_transitions(self.syntax())
+    }
+}
+
+impl FsmGuardArmSyntax {
+    pub fn pattern(&self) -> Option<PatternSyntax> {
+        self.syntax().children().find_map(PatternSyntax::cast)
+    }
+
+    pub fn guards(&self) -> Vec<FsmGuardSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(FsmGuardSyntax::cast)
+            .collect()
+    }
+}
+
+impl FsmGuardSyntax {
+    pub fn condition(&self) -> Option<PatternSyntax> {
+        self.syntax().children().find_map(PatternSyntax::cast)
+    }
+
+    pub fn transitions(&self) -> Vec<FsmBodyTransitionSyntax> {
+        fsm_body_transitions(self.syntax())
+    }
+}
+
+impl FsmStatementTransitionSyntax {
+    pub fn statement(&self) -> Option<StatementSyntax> {
+        self.syntax().children().find_map(StatementSyntax::cast)
+    }
+}
+
+impl FsmBlockTransitionSyntax {
+    pub fn items(&self) -> Vec<MechCodeAltSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(MechCodeAltSyntax::cast)
+            .collect()
+    }
+}
 
 impl KindDefineSyntax {
     pub fn name(&self) -> Option<IdentifierSyntax> {

@@ -122,6 +122,9 @@ impl CanonicalArtifactWriter {
                 self.u8(3);
                 self.u8(*ancestor);
             }
+
+            super::ControlOperationBody::Suspend => self.u8(4),
+            super::ControlOperationBody::Publish => self.u8(5),
         }
     }
 
@@ -132,6 +135,7 @@ impl CanonicalArtifactWriter {
         for capture in &control.captures {
             self.u16(capture.input);
             self.u32(capture.schema.get());
+            self.u8(u8::from(capture.freeze_on_suspend));
         }
         self.u64(control.arms.len() as u64);
         for arm in &control.arms {

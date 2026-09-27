@@ -33,6 +33,9 @@ pub struct ControlCapture {
     /// Ordinal in the enclosing node's input bindings.
     pub input: u16,
     pub schema: SchemaId,
+    /// Retain lexical arguments and derived captures across suspension.
+    /// Direct external inputs remain live when the FSM resumes.
+    pub freeze_on_suspend: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -78,6 +81,14 @@ pub enum ControlOperationBody<C = OperationContractId> {
     /// callable lookup. Activation binds it to the enclosing match and the
     /// resident executor admits a bounded call frame before following it.
     Recur(u8),
+
+    /// Suspend the enclosing declared FSM with the operation's single state
+    /// input. Suspension publishes no result in the current turn; resident
+    /// execution resumes the same lexical match on a later turn.
+    Suspend,
+    /// Stage an FSM output while control continues to a later transition in
+    /// the same arm. Publication commits atomically with any suspension.
+    Publish,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -106,15 +117,17 @@ pub struct MatchDeclaration<C = OperationContractId> {
     pub arms: Box<[ControlMatchArm<C>]>,
 }
 
-pub(super) fn structurally_irrefutable<S, V>(pattern: &super::CollectionPattern<S, V>) -> bool {
+pub(super) fn structurally_irrefutable_shape<S, V>(
+    pattern: &super::CollectionPattern<S, V>,
+) -> bool {
     match pattern {
         super::CollectionPattern::Wildcard | super::CollectionPattern::Bind { .. } => true,
-        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable),
+        super::CollectionPattern::Tuple(items) => items.iter().all(structurally_irrefutable_shape),
         super::CollectionPattern::Array {
             prefix,
             rest: Some(rest),
             suffix,
-        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable(rest),
+        } if prefix.is_empty() && suffix.is_empty() => structurally_irrefutable_shape(rest),
         super::CollectionPattern::Equal(_)
         | super::CollectionPattern::Enum { .. }
         | super::CollectionPattern::Array { .. } => false,
@@ -559,7 +572,17 @@ pub(super) fn validate_match(
     inputs: &[SchemaId],
     output: SchemaId,
 ) -> Result<(), super::ArtifactBuildError> {
-    validate_match_inner(draft, node, declaration, inputs, output, &mut 0, &[])
+    validate_match_inner(
+        draft,
+        node,
+        declaration,
+        inputs,
+        output,
+        &mut 0,
+        &[],
+        false,
+        false,
+    )
 }
 
 pub(super) fn validate_match_inner(
@@ -570,6 +593,8 @@ pub(super) fn validate_match_inner(
     output: SchemaId,
     next_block: &mut u32,
     enclosing_matches: &[(SchemaId, SchemaId, bool, bool)],
+    inside_comprehension: bool,
+    enclosing_guard: bool,
 ) -> Result<(), super::ArtifactBuildError> {
     use mech_core::{
         AccessMode, AliasPolicy, DeliveryMode, ExternalInteraction, OutputConstruction,
@@ -677,6 +702,7 @@ pub(super) fn validate_match_inner(
             .map(|block| (block, true))
             .chain(core::iter::once((&arm.body, false)))
         {
+            let guarded = enclosing_guard || is_guard;
             if block.id.0 != *next_block {
                 return Err(invalid("noncanonical block identity"));
             }
@@ -729,7 +755,11 @@ pub(super) fn validate_match_inner(
                         block: owner,
                         node: local,
                     } if owner == block.id && (local as usize) < before => {
-                        Ok(block.operations[local as usize].schema)
+                        let producer = &block.operations[local as usize];
+                        if matches!(producer.body, ControlOperationBody::Publish) {
+                            return Err(invalid("publication locals cannot be referenced"));
+                        }
+                        Ok(producer.schema)
                     }
                     _ => Err(invalid("cross-block or non-dominating local reference")),
                 }
@@ -769,6 +799,8 @@ pub(super) fn validate_match_inner(
                             operation.schema,
                             next_block,
                             &match_schemas,
+                            inside_comprehension,
+                            guarded,
                         )?,
                         ControlOperationBody::Comprehension(nested) => {
                             super::comprehension::validate_comprehension_inner(
@@ -778,6 +810,7 @@ pub(super) fn validate_match_inner(
                                 &inputs,
                                 operation.schema,
                                 next_block,
+                                guarded,
                             )?
                         }
                         ControlOperationBody::Recur(ancestor) => {
@@ -799,6 +832,39 @@ pub(super) fn validate_match_inner(
                             if target.3 {
                                 return Err(invalid(
                                     "recursive target cannot capture its own scrutinee",
+                                ));
+                            }
+                        }
+                        ControlOperationBody::Suspend => {
+                            if inputs.as_slice() != [scrutinee] || operation.schema != output {
+                                return Err(invalid(
+                                    "suspended control must preserve the enclosing input and output schemas",
+                                ));
+                            }
+                            if !enclosing_matches.is_empty()
+                                || guarded
+                                || inside_comprehension
+                                || index + 1 != block.operations.len()
+                                || block.yield_value
+                                    != (ControlValue::Local {
+                                        block: block.id,
+                                        node: index as u32,
+                                    })
+                            {
+                                return Err(invalid(
+                                    "suspension must be the terminal FSM body yield",
+                                ));
+                            }
+                        }
+                        ControlOperationBody::Publish => {
+                            if inputs.as_slice() != [output] || operation.schema != output {
+                                return Err(invalid(
+                                    "FSM publication must preserve the enclosing output schema",
+                                ));
+                            }
+                            if guarded || inside_comprehension {
+                                return Err(invalid(
+                                    "FSM publication cannot execute inside a guard or comprehension",
                                 ));
                             }
                         }
@@ -965,7 +1031,9 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     depth.checked_add(1)?,
                                 )),
                                 ControlOperationBody::Operation { .. }
-                                | ControlOperationBody::Recur(_) => {}
+                                | ControlOperationBody::Recur(_)
+                                | ControlOperationBody::Suspend
+                                | ControlOperationBody::Publish => {}
                             }
                         }
                     }
@@ -994,7 +1062,9 @@ fn control_counts<C>(root: ControlRef<'_, C>) -> Option<[usize; 5]> {
                                     depth.checked_add(1)?,
                                 )),
                                 ControlOperationBody::Operation { .. }
-                                | ControlOperationBody::Recur(_) => {}
+                                | ControlOperationBody::Recur(_)
+                                | ControlOperationBody::Suspend
+                                | ControlOperationBody::Publish => {}
                             }
                         }
                     }
@@ -1038,8 +1108,10 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
-                        ControlOperationBody::Operation { .. } | ControlOperationBody::Recur(_) => {
-                        }
+                        ControlOperationBody::Operation { .. }
+                        | ControlOperationBody::Recur(_)
+                        | ControlOperationBody::Suspend
+                        | ControlOperationBody::Publish => {}
                     }
                 }
             }
@@ -1056,8 +1128,10 @@ fn validate_control_depth<C>(
                         ControlOperationBody::Comprehension(nested) => {
                             pending.push((ControlRef::Comprehension(nested), nested_depth));
                         }
-                        ControlOperationBody::Operation { .. } | ControlOperationBody::Recur(_) => {
-                        }
+                        ControlOperationBody::Operation { .. }
+                        | ControlOperationBody::Recur(_)
+                        | ControlOperationBody::Suspend
+                        | ControlOperationBody::Publish => {}
                     }
                 }
             }
@@ -1123,6 +1197,24 @@ pub(super) fn validate_control_counts(
 }
 
 impl<C> MatchDeclaration<C> {
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) fn contains_suspend(&self) -> bool {
+        self.arms.iter().any(|arm| {
+            arm.guard
+                .iter()
+                .chain(core::iter::once(&arm.body))
+                .flat_map(|block| &block.operations)
+                .any(|operation| match &operation.body {
+                    ControlOperationBody::Suspend => true,
+                    ControlOperationBody::Match(nested) => nested.contains_suspend(),
+                    ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                    ControlOperationBody::Operation { .. }
+                    | ControlOperationBody::Recur(_)
+                    | ControlOperationBody::Publish => false,
+                })
+        })
+    }
+
     pub(super) fn validate_depth(
         &self,
         node: mech_core::NodeId,
@@ -1182,6 +1274,9 @@ impl<C> MatchDeclaration<C> {
                                 ControlOperationBody::Recur(ancestor) => {
                                     ControlOperationBody::Recur(*ancestor)
                                 }
+
+                                ControlOperationBody::Suspend => ControlOperationBody::Suspend,
+                                ControlOperationBody::Publish => ControlOperationBody::Publish,
                             },
                             inputs: operation.inputs.clone(),
                             schema: operation.schema,
@@ -1210,6 +1305,23 @@ impl<C> MatchDeclaration<C> {
 }
 
 impl<C> super::ComprehensionDeclaration<C> {
+    #[cfg(feature = "resident-artifact")]
+    pub(crate) fn contains_suspend(&self) -> bool {
+        self.steps.iter().any(|step| {
+            let super::ComprehensionStep::Operation(operation) = step else {
+                return false;
+            };
+            match &operation.body {
+                ControlOperationBody::Suspend => true,
+                ControlOperationBody::Match(nested) => nested.contains_suspend(),
+                ControlOperationBody::Comprehension(nested) => nested.contains_suspend(),
+                ControlOperationBody::Operation { .. }
+                | ControlOperationBody::Recur(_)
+                | ControlOperationBody::Publish => false,
+            }
+        })
+    }
+
     pub(super) fn validate_depth(
         &self,
         node: mech_core::NodeId,

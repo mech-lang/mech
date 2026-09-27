@@ -456,6 +456,21 @@ impl ResidentExternalCoordinator {
     }
 
     #[cfg(feature = "resident-routing")]
+    pub(crate) fn execute_admitted_continuation_turn<F>(
+        &mut self,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
+    {
+        // `Some(&[])` deliberately captures from the last accepted host
+        // snapshot. A continuation belongs to that accepted input turn and
+        // must not read a provider value whose packet is still queued.
+        self.execute_live_turn(Some(&[]), admission, prepublication)
+    }
+
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn admit_turn(&mut self) -> MResult<ResidentExternalTurnAdmission> {
         self.ensure_live_bindings()?;
         self.reserve_live_turn()

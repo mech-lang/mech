@@ -12,6 +12,8 @@ use super::*;
 #[path = "document_assignment.rs"]
 mod document_assignment;
 
+#[path = "document_fsms.rs"]
+pub(super) mod document_fsms;
 #[path = "document_functions.rs"]
 mod document_functions;
 #[path = "document_imports.rs"]
@@ -23,6 +25,8 @@ enum DocumentUnit {
     Import(mech_syntax::document::ModuleImportSyntax),
     Kind(mech_syntax::document::KindDefineSyntax),
     Enum(mech_syntax::document::EnumDefineSyntax),
+    FsmSpecification(mech_syntax::document::FsmSpecificationSyntax),
+    FsmImplementation(mech_syntax::document::FsmImplementationSyntax),
     Function(SyntaxNode),
     Statement(SyntaxNode),
     ResourceSend(mech_syntax::document::ContextSendSyntax),
@@ -534,6 +538,10 @@ fn compile_collected_document(
     builder.external_definitions = external_definitions.clone();
     builder.resolved_source_modules = resolved_source_modules.clone();
     builder.register_document_types(&units, nominal_origin)?;
+    builder.register_document_fsms(
+        &units,
+        nominal_origin.map_or(&[], CanonicalNominalPath::segments),
+    )?;
     builder.register_document_functions(&units)?;
     builder.register_document_imports(&units, resolved_source_modules)?;
     let mut bindings = BTreeSet::new();
@@ -820,6 +828,15 @@ fn collect_document_units(
         output.push(DocumentUnit::Enum(enumeration));
         return Ok(());
     }
+    if let Some(specification) = mech_syntax::document::FsmSpecificationSyntax::cast(node.clone()) {
+        output.push(DocumentUnit::FsmSpecification(specification));
+        return Ok(());
+    }
+    if let Some(implementation) = mech_syntax::document::FsmImplementationSyntax::cast(node.clone())
+    {
+        output.push(DocumentUnit::FsmImplementation(implementation));
+        return Ok(());
+    }
     // Resolver-owned declarations participate through the canonical source
     // index and runtime handoff; they do not emit engine operations themselves.
     if matches!(
@@ -833,11 +850,9 @@ fn collect_document_units(
         SyntaxKind::ActivationScope
             | SyntaxKind::Fsm
             | SyntaxKind::FsmDeclare
-            | SyntaxKind::FsmImplementation
             // An expression owns a pipe's semantics. A bare pipe in a document
             // must not be traversed as unrelated child expressions.
             | SyntaxKind::FsmPipe
-            | SyntaxKind::FsmSpecification
     ) {
         return Err(SourceSemanticError {
             code: "source-semantics/unsupported-document-unit",
@@ -872,8 +887,12 @@ fn declare_document_inputs(
         match unit {
             DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
+            DocumentUnit::FsmImplementation(implementation) => {
+                builder.declare_document_fsm_input_annotations(implementation, bindings)?
+            }
             DocumentUnit::Statement(unit) => {
                 builder.declare_unit_input_annotations(unit, bindings)?
             }
@@ -901,6 +920,8 @@ fn declare_document_inline_inputs(
         match unit {
             DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::FsmImplementation(_)
             | DocumentUnit::Statement(_)
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
@@ -956,6 +977,8 @@ fn compile_document_units_inner(
         match unit {
             DocumentUnit::Kind(_)
             | DocumentUnit::Enum(_)
+            | DocumentUnit::FsmSpecification(_)
+            | DocumentUnit::FsmImplementation(_)
             | DocumentUnit::Function(_)
             | DocumentUnit::Import(_) => {}
             DocumentUnit::Statement(unit) => {
@@ -1575,6 +1598,7 @@ pub(super) fn compile_ordered_documents(
         );
         builder.function_imports.clear();
         builder.local_functions.clear();
+        builder.local_fsms.clear();
         builder.declared_kinds.clear();
         builder.declared_variants.clear();
         builder.resource_writes = root.resource_writes.clone();
@@ -1667,6 +1691,14 @@ pub(super) fn compile_ordered_documents(
             }
         }
         builder.register_document_types(&units, root.nominal_origin.as_ref())?;
+        let fallback_fsm_namespace;
+        let fsm_namespace = if let Some(origin) = root.nominal_origin.as_ref() {
+            origin.segments()
+        } else {
+            fallback_fsm_namespace = vec![format!("ordered-root-{}", root.identity)];
+            &fallback_fsm_namespace
+        };
+        builder.register_document_fsms(&units, fsm_namespace)?;
         builder.register_document_functions(&units)?;
         builder.register_document_imports(&units, &root.resolved_modules)?;
         let mut bindings = builder.bindings.keys().cloned().collect();
