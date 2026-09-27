@@ -184,19 +184,12 @@ BLOGPORTABLECHART
 
 Mech, Taichi, and Halide additionally select CPU and Metal execution from one application source in their respective systems. Backend options and schedules change while the equations and publication contract are retained. In this archived comparison, Mech has the highest CPU and checked-Metal medians. Unchecked Metal places Taichi and Mech within 0.08%, far below either MAD. The useful result is that all three demonstrate this source reuse, with different measured execution costs; it is not evidence that Mech is universally faster on CPU or GPU.
 
-5. Status and Future Work
--------------------------------------------------------------------------------
-
-This work presents a snapshot of Mech v0.4-beta. Many features are implemented and working, but further validation and hardening are needed. Research-hardware deployments have been limited. Over the next year we plan to test on a wider range of robot platforms, collect deployment feedback, and extend host integrations, standard-library coverage, and language features. The development plan targets a fuller v0.4 release in 2027 and a v1.0 release candidate in 2028; these are planned milestones rather than completed validation claims.
-
-The EKF results motivate that work by connecting compact numerical source with usable Rust embedding, explicit validation boundaries, and several execution strategies. Future evaluations should include other numerical kernels, changing live inputs, complete robot workloads, and deployment costs beyond steady-state throughput. The source, raw measurements, and reproduction instructions are public. Contributions, independently optimized comparison implementations, and bug reports are welcome through [mech-lang/mech](https://github.com/mech-lang/mech).
-
-6. More about Mech
+5. More about Mech
 -------------------------------------------------------------------------------
 
 The poster concentrates on embedded numerical kernels, but Mech is a functional language with user-defined types, pattern matching, and first-class state machines. The following examples extend the case study with facilities introduced in the [version 0.3 article](https://mech-lang.org/post/2026-05-11-version-0.3/).[LANGUAGE] They run in this document's Rust interpreter compiled to WebAssembly. The numerical GPU backend supports a more restricted set of operations.
 
-(6.1) State Machines and Named Events
+(5.1) State Machines and Named Events
 
 The behavior around the filter distinguishes paused operation, active patrol, and a latched fault. Modes and events are named atoms with declared types, so the host interface carries their meaning directly. Dispatch patterns match those values; a wildcard ignores an argument that does not affect a transition.
 
@@ -204,7 +197,7 @@ BLOGBEHAVIORSOURCE
 
 The browser host supplies the current mode and an event to this Mech state machine. Its result determines whether JavaScript schedules another measurement update or stops the simulation. Reset takes precedence over a fault, while a run event cannot resume a faulted episode. The last accepted EKF state stays visible until reset. This behavior policy is separate from the kernel's rollback mechanism and can be changed independently.
 
-(6.2) Functions and Pattern Matching
+(5.2) Functions and Pattern Matching
 
 A user-defined function can package a numerical expression without changing its matrix notation. This example wraps an angle and calls the function on a heading; adding a scalar to the heading vector demonstrates broadcasting. Further calls can be entered in the REPL.
 
@@ -214,11 +207,22 @@ Pattern matching can also select behavior from structured observations. Here a m
 
 BLOGMATCHING
 
-(6.3) Literate Documents
+(5.3) Literate Documents
 
 This article is itself a Mechdown document: prose explains the code, and executable blocks supply results alongside it. [Download the complete `.mec` document](article.mec) to inspect the prose and expanded examples together. The live camera EKF blocks share a namespace and compile as one numerical kernel. The bearing-only reference listing has a separate namespace, while the language examples execute in the document REPL.
 
 The Output pane presents the running EKF application. Its camera simulation and drawing tables are written in [Mech](source/scene.mec), while the browser host supplies UI events and measured filter state. The article shows selected scene rows alongside the numerical kernel; the source link provides the complete supporting program. Mechdown also supports hidden executable blocks, so a document can present selected calculations without displaying every helper.
+
+6. Status and Future Work
+-------------------------------------------------------------------------------
+
+This work presents a snapshot of Mech v0.4-beta. Many features are implemented and working, but further validation and hardening are needed. Research-hardware deployments have been limited. Over the next year we plan to test on a wider range of robot platforms, collect deployment feedback, and extend host integrations, standard-library coverage, and language features. The workshop timeline sets out planned milestones through a v1.0 release candidate in 2028.
+
+BLOGTIMELINE
+
+The [project roadmap](https://docs.mech-lang.org/design/ROADMAP.html) describes the development areas and individual features in more detail.
+
+The EKF results motivate that work by connecting compact numerical source with usable Rust embedding, explicit validation boundaries, and several execution strategies. Future evaluations should include other numerical kernels, changing live inputs, complete robot workloads, and deployment costs beyond steady-state throughput. The source, raw measurements, and reproduction instructions are public. Contributions, independently optimized comparison implementations, and bug reports are welcome through [mech-lang/mech](https://github.com/mech-lang/mech).
 
 [^SOURCE]: The bearing-only source, live fixed-camera extension, and regression tests are supplied with this article. The five-backend native measurements use the archived source identified by SHA-256 `da531cddcb25d002d49f1a77800122e84b573e2685e191c1955908ef6fccd625`. The bearing-only symmetry correction and range-and-bearing camera extension are separate from those measurements; their exact source and runtime hashes are recorded in the build manifest.
 

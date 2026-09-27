@@ -7,6 +7,7 @@ import {gzipSync} from 'node:zlib';
 import {blogShell} from './blog-shell.mjs';
 import {expandStandardExamples,decorateStandardExamples} from './standard-examples.mjs';
 import {documentSourceBundle} from './document-source.mjs';
+import {buildTimeline} from './timeline.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url));
 const repo=resolve(root,'../../..');
@@ -38,6 +39,7 @@ const slotLinks=new Map([
   ['BLOGBACKENDCHART',['One source across Mech backends','assets/backends.svg']],
   ['BLOGMETALCHART',['Native Metal implementation comparison','assets/metal.svg']],
   ['BLOGPORTABLECHART',['Application source reuse across targets','assets/portable.svg']],
+  ['BLOGTIMELINE',['Mech development timeline','assets/timeline.svg']],
 ]);
 for(const [token,[label,href]] of slotLinks) {
   if(literate.split(token).length!==2) throw new Error(`Missing or repeated slot ${token}`);
@@ -83,6 +85,8 @@ if(rustIndex!==rustDownloads.length) throw new Error('Rust code fence count chan
 slot('BLOGPIPELINE',`<figure class="mech-figure workshop-figure"><div class="figure-frame chart-desktop">${read(join(root,'pipeline.svg'))}</div><div class="figure-frame chart-mobile">${read(join(root,'pipeline-mobile.svg'))}</div><figcaption class="mech-figure-caption">Poster architecture diagram, adapted for the article. The build lane runs during build and activation; the execution lane repeats for each accepted or rejected turn. Telemetry values are illustrative, while the live figure above uses the actual computed values.</figcaption></figure>`);
 copyFileSync(join(root,'pipeline.svg'),join(out,'assets/pipeline.svg'));
 copyFileSync(join(root,'pipeline-mobile.svg'),join(out,'assets/pipeline-mobile.svg'));
+buildTimeline(join(out,'assets'));
+slot('BLOGTIMELINE',`<figure class="mech-figure workshop-figure workshop-timeline"><div class="timeline-wide">${read(join(out,'assets/timeline.svg'))}</div><div class="timeline-vertical">${read(join(out,'assets/timeline-mobile.svg'))}</div><figcaption class="mech-figure-caption">Mech development milestones. Yellow marks the current v0.4 work; the 2027 and 2028 milestones are planned.</figcaption></figure>`);
 copyFileSync(join(root,'vendor/pittsburgh-hero.jpg'),join(out,'assets/pittsburgh-hero.jpg'));
 copyFileSync(join(root,'vendor/PITTSBURGH.md'),join(out,'assets/PITTSBURGH.md'));
 if(existsSync(join(root,'charts.mjs'))) {

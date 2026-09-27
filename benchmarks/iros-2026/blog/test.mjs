@@ -25,6 +25,17 @@ assert(html.includes('Photo: Georg Pflueger / Unsplash'),'retain the replacement
 assert(html.includes('class="github-button"')&&html.includes('aria-label="Star mech-lang/mech on GitHub"'),'canonical GitHub star button');
 assert(html.includes('class="mika-separator"')&&html.includes('class="footer-main"'),'blog separator and complete footer');
 assert(html.includes('IROS 2026: Rust for Robotics Workshop')&&html.includes('September 27, 2026'),'workshop metadata');
+const sectionTitles=[...html.matchAll(/<h2\b[^>]*>[\s\S]*?<\/h2>/g)].map(([heading])=>heading.replace(/<[^>]+>/g,'').trim());
+assert.deepEqual(sectionTitles.slice(-2),['More about Mech','Status and Future Work'],'future work concludes the article after the broader language examples');
+assert(html.includes('href="https://docs.mech-lang.org/design/ROADMAP.html"'),'future work links to the project roadmap');
+assert(html.includes('class="mech-figure workshop-figure workshop-timeline"'),'future work includes the development timeline');
+for(const file of ['timeline.svg','timeline-mobile.svg']) {
+  const timeline=readFileSync(join(out,'assets',file),'utf8');
+  assert(timeline.includes('<title')&&timeline.includes('<desc'),'timeline has an accessible description');
+  for(const label of ['2018','2019','2023','2025','2026','v0.4','2027','2028']) assert(timeline.includes(label),`timeline includes ${label}`);
+  assert(timeline.includes('planned'),'future milestones are identified as plans');
+  assert(html.includes(timeline),'timeline asset matches its inline figure');
+}
 assert(html.includes('Why an EKF?')&&html.includes('HYTRADBOI'),'explain the representative workload and cite earlier implementations');
 for(const structure of ['set','table','tuple','map']) assert(html.includes(`https://docs.mech-lang.org/reference/${structure}.html`),'link numerical-syntax callout to data-structure references');
 assert(html.includes('evidence/ekf-long-horizon-diagnostic.md'),'retain the integrity-constraint case-study evidence');
@@ -104,6 +115,8 @@ const cameraKernel=readFileSync(join(out,'source/camera-ekf.mec'),'utf8');
 assert.equal(cameraKernel,readFileSync(join(root,'source/camera-ekf.mec'),'utf8'),'displayed camera source is published unchanged');
 assert.match(readFileSync(join(out,'assets/app.mjs'),'utf8'),/fetch\('source\/camera-ekf\.mec'\)/,'live host executes the camera listing rather than the reference kernel');
 const article=readFileSync(join(out,'article.mec'),'utf8');
+assert(article.indexOf('5. More about Mech')<article.indexOf('6. Status and Future Work'),'download and visible page share section order');
+assert(article.includes('[Mech development timeline](assets/timeline.svg)'),'literate download retains the timeline reference');
 assert(article.includes(`${publishedUrl}#live-demo`),'download must link to the workshop demo');
 for (const section of ekfSections(kernel.toString())) assert(article.includes(section.code),'downloadable article must contain unchanged EKF computational lines');
 for (const section of ekfSections(cameraKernel,{camera:true})) assert(article.includes(section.code),'downloadable article must contain unchanged live camera computational lines');

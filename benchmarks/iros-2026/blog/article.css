@@ -69,6 +69,12 @@
 .workshop-figure svg { width:100%; height:auto; display:block; }
 .workshop-figure .figure-frame { width:100%; min-width:0; max-width:100%; border:1px solid var(--mech-border); padding:14px; background:var(--mech-canvas); }
 .workshop-figure .chart-mobile { display:none; }
+.workshop-timeline { container-type:inline-size; }
+.workshop-timeline .timeline-vertical { display:none; max-width:440px; margin-inline:auto; }
+@container (max-width:800px) {
+  .workshop-timeline .timeline-wide { display:none; }
+  .workshop-timeline .timeline-vertical { display:block; }
+}
 [data-workshop-kernel-output] > a { font-size:12px; color:var(--mech-link); }
 [data-workshop-kernel-output] > pre { margin:12px 0 0; font:inherit; }
 .workshop-figure figcaption { margin-top:12px; }

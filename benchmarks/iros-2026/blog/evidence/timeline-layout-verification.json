@@ -1,0 +1,123 @@
+{
+  "cases": [
+    {
+      "width": 1920,
+      "open": false,
+      "figureWidth": 872,
+      "isWide": true,
+      "svg": {
+        "x": 678,
+        "y": 452.40625,
+        "width": 872,
+        "height": 198.171875
+      },
+      "viewBox": {
+        "width": 1100,
+        "height": 250
+      },
+      "clipped": [],
+      "labels": [
+        "Start: Implementation begins, 2018, completed",
+        "v0.0.1: First alpha release, 2019, completed",
+        "v0.1: Proof of concept, 2023, completed",
+        "v0.2: Data specification, 2025, completed",
+        "v0.3: Program specification, 2026, completed",
+        "v0.4: Reactive Runtime, In progress, current",
+        "v0.5: Distribution & concurrency, 2027 (planned), planned",
+        "v1.0: Release Candidate, 2028 (planned), planned"
+      ],
+      "overflow": false
+    },
+    {
+      "width": 1600,
+      "open": true,
+      "figureWidth": 580,
+      "isWide": false,
+      "svg": {
+        "x": 420,
+        "y": 201.0625,
+        "width": 440,
+        "height": 680
+      },
+      "viewBox": {
+        "width": 440,
+        "height": 680
+      },
+      "clipped": [],
+      "labels": [
+        "Start: Implementation begins, 2018, completed",
+        "v0.0.1: First alpha release, 2019, completed",
+        "v0.1: Proof of concept, 2023, completed",
+        "v0.2: Data specification, 2025, completed",
+        "v0.3: Program specification, 2026, completed",
+        "v0.4: Reactive Runtime, In progress, current",
+        "v0.5: Distribution & concurrency, 2027 (planned), planned",
+        "v1.0: Release Candidate, 2028 (planned), planned"
+      ],
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "open": false,
+      "figureWidth": 354,
+      "isWide": false,
+      "svg": {
+        "x": 18,
+        "y": 230.328125,
+        "width": 354,
+        "height": 547.078125
+      },
+      "viewBox": {
+        "width": 440,
+        "height": 680
+      },
+      "clipped": [],
+      "labels": [
+        "Start: Implementation begins, 2018, completed",
+        "v0.0.1: First alpha release, 2019, completed",
+        "v0.1: Proof of concept, 2023, completed",
+        "v0.2: Data specification, 2025, completed",
+        "v0.3: Program specification, 2026, completed",
+        "v0.4: Reactive Runtime, In progress, current",
+        "v0.5: Distribution & concurrency, 2027 (planned), planned",
+        "v1.0: Release Candidate, 2028 (planned), planned"
+      ],
+      "overflow": false
+    }
+  ],
+  "exceptions": [],
+  "order": {
+    "headings": [
+      "Numerical",
+      "Embeddable",
+      "Reactive",
+      "Heterogeneous",
+      "More about Mech",
+      "Status and Future Work"
+    ],
+    "toc": [
+      "Numerical",
+      "Extending the Filter to Fixed Cameras",
+      "Run the Example",
+      "Drawing with Mech Tables",
+      "Application Source Size",
+      "Embeddable",
+      "Preparing and Loading an AOT Library",
+      "Dynamic Library Size, Throughput, and Memory",
+      "Reactive",
+      "Heterogeneous",
+      "How the Measurements Were Collected",
+      "CPU Implementations",
+      "One Mech Kernel, Five Execution Backends",
+      "Native Metal Implementations",
+      "CPU and GPU Execution from One Application Source",
+      "More about Mech",
+      "State Machines and Named Events",
+      "Functions and Pattern Matching",
+      "Literate Documents",
+      "Status and Future Work"
+    ],
+    "roadmap": "https://docs.mech-lang.org/design/ROADMAP.html"
+  },
+  "status": "passed"
+}

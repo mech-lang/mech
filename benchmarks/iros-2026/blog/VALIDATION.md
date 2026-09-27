@@ -639,3 +639,20 @@ in flight completed after the click, followed by the queued rejection; its
 accepted result was retained. Both backends recovered through Reset and an
 accepted fresh turn. The quick suite also passed camera, range, ordinary
 rejection, and responsive checks without uncaught browser exceptions.
+
+## Concluding section and development timeline — 2026-09-27
+
+Status and Future Work now follows More about Mech as the final main section.
+The source document, rendered headings, and table of contents share that order.
+The concluding section links to the project's detailed roadmap and includes
+the poster's eight development milestones. Current v0.4 work is yellow;
+subsequent milestones and their dates are explicitly planned.
+
+Static article checks and the document/runtime integration test passed,
+including the resident REPL and camera-kernel rejection/recovery checks.
+[Browser layout verification](evidence/timeline-layout-verification.json)
+checks the heading/TOC order, roadmap URL, all eight unclipped milestone labels,
+and absence of horizontal overflow. Screenshots were reviewed at 1,920 pixels
+with the console closed, 1,600 with it open, and 390 pixels on a narrow layout.
+The timeline is horizontal at 872 pixels of available article width and
+vertical at 580 and 354 pixels. No runtime, kernel, or host-control code changed.

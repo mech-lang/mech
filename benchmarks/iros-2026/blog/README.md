@@ -66,6 +66,10 @@ review and authorization step.
   the pipeline have separate desktop and narrow-layout SVGs, selected at the
   720 px breakpoint; figures fit their containers instead of requiring a
   fixed-width horizontal scroller. Code can still scroll within its block.
+- `timeline.mjs` retains the workshop poster's development milestones and
+  generates horizontal and vertical SVG layouts from the same data. The final
+  Status and Future Work section follows More about Mech and links to the
+  detailed project roadmap. Timeline dates beyond v0.4 are marked as planned.
 - `hero.mjs` and `hero.svg` retain an earlier bearing-only illustration. The
   generator expects the earlier scene-input contract and is not part of the
   current build; regenerating that historical diagram requires its matching
