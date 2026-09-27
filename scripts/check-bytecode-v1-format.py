@@ -19,14 +19,14 @@ MANIFEST = CORPUS / "manifest.json"
 # Source fixtures were regenerated for graph payload revision 12; their only wire
 # changes in that migration are the graph revision and checksum.
 # The structural-match fixture also retains R16 canonical pattern metadata.
-EXPECTED_MANIFEST_SHA256 = "597ffd011b4cab2bfa3990fd40709c59c11237542485b6465563018f27ffdb57"
+EXPECTED_MANIFEST_SHA256 = "1c42b1635bf1161f14570ad650beead44fbc223c807a3f8975b4d789ac5865cd"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
     "literal-f64.mecb": "b3d42cbf221eab3ccdf2787e5978de1f3b39157c57e64d2953d24b0f5682283c",
     "scalar-add-f64.mecb": "4d2d9a43852b12760aa4006bb6783c7f061d278ebf9806db572211f195fe343e",
-    "structural-match.mecb": "24c4789efc462d16b34c06f6a12a739d4f483ea49fd565af745ece8235bc9b65",
+    "structural-match.mecb": "50a6860bb740c342e4e1b80d062c3f47b5d1be93874d696dc250af9c00f9ee3f",
     "fixed-matrix-add-f64.mecb": "a3cf916cff4519b2363c76a910661e6e708a7de3ec1ff084c0416fa9d13682a2",
     "dynamic-matrix-add-f64.mecb": "a81ed2a63ddc5a451a2cd9a71b19c47ffc51658db16329aa09ede3e3f8d31844",
     "variadic-horzcat-f64.mecb": "f3eee78653890574d098d3ead239f14609c6763e29ce27d8170c96237c5a418f",
