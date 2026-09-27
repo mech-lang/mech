@@ -40,10 +40,17 @@ assert(html.includes('Why an EKF?')&&html.includes('HYTRADBOI'),'explain the rep
 for(const structure of ['set','table','tuple','map']) assert(html.includes(`https://docs.mech-lang.org/reference/${structure}.html`),'link numerical-syntax callout to data-structure references');
 assert(html.includes('evidence/ekf-long-horizon-diagnostic.md'),'retain the integrity-constraint case-study evidence');
 const blogCss=readFileSync(join(repo,'include/blog.css'),'utf8');
+for(const responsive of ['@media (max-width: 900px)','@container (max-width: 900px)']) {
+  const rule=blogCss.split(responsive)[1].split('}')[0];
+  assert(rule.includes('display: flex;')&&rule.includes('flex-direction: column;'),'compact article layout must preserve the gap between Contents and the section label');
+}
 assert.match(blogCss,/grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1\.05fr\)/,'hero needs balanced title and artwork columns');
 assert.match(blogCss,/font-size: clamp\(34px, 4\.2cqw, 52px\)/,'title size follows the article pane, not the viewport');
 assert.match(blogCss,/\.hero \.mech-meta \.mech-date\s*\{[^}]*white-space: nowrap;/,'keep the date together while author names wrap');
 const articleCss=readFileSync(join(out,'assets/article.css'),'utf8');
+assert(html.includes('mechdown-table workshop-source-size'),'source-size table has a scoped mobile layout');
+assert.match(readFileSync(join(out,'assets/mechdown.css'),'utf8'),/\.mechdown-table td\.right\s*\{[^}]*white-space: nowrap;/,'numeric table values stay on one line');
+assert.match(readFileSync(join(out,'assets/mechdown.css'),'utf8'),/\.mechdown-table \.mech-paragraph\s*\{[^}]*overflow-wrap: normal;/,'table labels wrap at words instead of collapsing to single characters');
 assert.match(articleCss,/:is\(button,select\):enabled:hover/,'disabled controls must not highlight on hover');
 assert.match(articleCss,/:is\(button,select\):disabled/,'both buttons and dropdowns show their disabled state');
 assert(!html.includes('mermaid.min.js'),'unused Mermaid bundle must not block startup');

@@ -52,6 +52,10 @@ writeFileSync(expandedPath,literate);
 const shellPath=join(temporary,'blog-shell.html');
 writeFileSync(shellPath,blogShell(repo).replace('{{DOCUMENT_SOURCES}}',documentSourceBundle(literate)));
 let html=decorateStandardExamples(render(expandedPath,shellPath,join(temporary,'article.html')),examples);
+html=html.replace(/<table\b[^>]*>[\s\S]*?<\/table>/g,table=>{
+  if(!table.includes('Application source category')) return table;
+  return table.replace(/class="([^"]*\bmechdown-table\b[^"]*)"/, 'class="$1 workshop-source-size"');
+});
 function slot(name,content) {
   const href=slotLinks.get(name)[1];
   let count=0;

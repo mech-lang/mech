@@ -656,3 +656,35 @@ and absence of horizontal overflow. Screenshots were reviewed at 1,920 pixels
 with the console closed, 1,600 with it open, and 390 pixels on a narrow layout.
 The timeline is horizontal at 872 pixels of available article width and
 vertical at 580 and 354 pixels. No runtime, kernel, or host-control code changed.
+
+## Mobile tables, Contents, and demo controls — 2026-09-27
+
+The source-size table uses balanced columns at compact widths; its numbers
+stay on one line. Shared table styles preserve complete words and numeric
+values, allowing wider tables to scroll internally instead of squeezing text
+into single-character columns. The compact Contents layout retains its 24 px
+gap above the first section.
+
+The mobile demo opens in a top-aligned viewport overlay with a visible Close
+button and labeled fullscreen controls. Closing the demo preserves the
+article's reading position, including after output fullscreen. The controller
+captures that position before hiding the article and restores it through the
+existing window/content-shell scroll mapping. Close and keyboard dismissal
+also retire native fullscreen requests so a late promise cannot reopen a
+closed panel.
+
+[Responsive browser checks](evidence/mobile-layout-verification.json) cover
+320, 390, and 430 px phone widths, additional compact/wide layouts, table
+word/number integrity, real demo-launcher clicks, Close, and the fullscreen
+fallback without a native fullscreen API. Screenshots were reviewed for both
+prose tables and the demo. These are Chrome responsive checks, not physical
+iPhone or Safari qualification.
+
+The document-output and presentation suites passed, including delayed
+fullscreen completion, reopen/reentry, and scroll-owner changes. The resident
+document/WASM integration and application-turn tests passed. A quick real
+CPU/WebGPU browser run also passed camera interaction, prediction, running
+fault injection, rollback, and Reset recovery. The numerical sources and WASM
+artifact are unchanged. The dedicated compact-console style contract passed;
+the full style suite retains its preexisting blog ownership failure for
+`--mech-repl-header-height`.

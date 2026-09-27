@@ -4089,13 +4089,14 @@ def assert_mobile_contract():
       rect.width > 0 && rect.height > 0;
   };
   const content = document.querySelector(".content-shell, .main-content");
-  const toggle = document.querySelector("[data-mech-console-edge-handle]");
+  const open = root?.dataset.mechConsoleOpen !== "false";
+  const toggle = document.querySelector(open ? "[data-mech-console-close]" : "[data-mech-console-edge-handle]");
   return {
     contentVisible: visible(content),
     controlVisible: visible(toggle),
     scrollWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
-    rootOpen: root?.dataset.mechConsoleOpen !== "false",
+    rootOpen: open,
   };
 })()
 """)
@@ -4104,9 +4105,14 @@ def assert_mobile_contract():
     if mobile["scrollWidth"] > mobile["viewportWidth"] + 1:
         fail(f"mobile page overflows horizontally: {mobile!r}")
     def toggle_mobile_console():
-        return evaluate("""
+        expected = evaluate("document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'false' ? 'true' : 'false'")
+        evaluate("""
 (() => {
   const root = document.querySelector(".mech-root");
+  if (root?.dataset.mechConsoleOpen !== "false") {
+    document.querySelector("[data-mech-console-close]")?.click();
+    return;
+  }
   const edge = document.querySelector("[data-mech-console-edge-handle]");
   if (!edge) return "";
   edge.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 1, clientY: 1 }));
@@ -4114,6 +4120,11 @@ def assert_mobile_contract():
   return root?.dataset.mechConsoleOpen || "";
 })()
 """)
+        wait_for(
+            f"document.querySelector('.mech-root')?.dataset.mechConsoleOpen === '{expected}'",
+            "the mobile Close or edge control completing",
+        )
+        return expected
 
     # A narrow shell may deliberately start closed, but it must pass through
     # both states through an actual user-facing control.
@@ -4143,6 +4154,10 @@ def assert_mobile_contract():
   const pane = document.querySelector('[data-mech-console-pane]');
   if (!pane) return null;
   const rect = pane.getBoundingClientRect();
+  const close = pane.querySelector('[data-mech-console-close]');
+  const closeRect = close?.getBoundingClientRect();
+  const closeTarget = closeRect && document.elementFromPoint(
+    closeRect.left + closeRect.width / 2, closeRect.top + closeRect.height / 2);
   const rules = [];
   const collect = list => {
     for (const rule of list || []) {
@@ -4157,9 +4172,15 @@ def assert_mobile_contract():
   }
   return {
     width: rect.width,
+    top: rect.top,
     right: rect.right,
+    bottom: rect.bottom,
     viewportWidth: innerWidth,
-    expectedMaximum: Math.min(innerWidth * 0.94, 520),
+    viewportHeight: innerHeight,
+    closeReachable: Boolean(closeRect && closeRect.top >= 0 && closeRect.bottom <= innerHeight &&
+      closeRect.height >= 44 && close.contains(closeTarget)),
+    outputLabel: pane.querySelector('[data-mech-output-fullscreen] [data-mech-fullscreen-label]')?.textContent,
+    workspaceRedundantHidden: getComputedStyle(pane.querySelector('[data-mech-console-fullscreen]')).display === 'none',
     dynamicHeightImportant: rules.some(rule =>
       rule.style.getPropertyValue('height') === '100dvh' &&
       rule.style.getPropertyPriority('height') === 'important'),
@@ -4169,10 +4190,15 @@ def assert_mobile_contract():
     if (
         pane_geometry is None or
         not pane_geometry["dynamicHeightImportant"] or
-        pane_geometry["width"] > pane_geometry["expectedMaximum"] + 1 or
-        pane_geometry["right"] > pane_geometry["viewportWidth"] + 1
+        abs(pane_geometry["width"] - pane_geometry["viewportWidth"]) > 1 or
+        abs(pane_geometry["top"]) > 1 or
+        abs(pane_geometry["bottom"] - pane_geometry["viewportHeight"]) > 1 or
+        pane_geometry["right"] > pane_geometry["viewportWidth"] + 1 or
+        not pane_geometry["closeReachable"] or
+        not pane_geometry["outputLabel"] or
+        not pane_geometry["workspaceRedundantHidden"]
     ):
-        fail(f"mobile console retained an overflowing desktop width: {pane_geometry!r}")
+        fail(f"mobile console lost its safe viewport or labeled touch controls: {pane_geometry!r}")
 
 
 def assert_terminal_runtime_mutations_retired(probe):

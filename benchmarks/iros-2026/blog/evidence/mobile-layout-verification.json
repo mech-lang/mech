@@ -1,0 +1,251 @@
+{
+  "status": "passed",
+  "test": "test-browser-mobile-layout.mjs",
+  "url": "http://127.0.0.1:8768/index.html",
+  "startedAt": "2026-09-27T13:42:07.145Z",
+  "finishedAt": "2026-09-27T13:42:32.514Z",
+  "browser": "Chrome/153.0.8010.53",
+  "qualification": "Chrome mobile viewport emulation, not iOS Safari or WebKit. The no-Fullscreen-API fallback was tested by making only the isolated test pane requestFullscreen unavailable.",
+  "toc": {
+    "checks": [
+      "24px closed-toggle to section-label gap",
+      "pointer open/close",
+      "Escape closes and restores toggle focus",
+      "link navigation reveals selected section",
+      "wide desktop sidebar unchanged"
+    ],
+    "layouts": [
+      {
+        "width": 320,
+        "panelOpen": false,
+        "gap": 24,
+        "layout": "flex",
+        "overflow": false,
+        "navigationPassed": true
+      },
+      {
+        "width": 390,
+        "panelOpen": false,
+        "gap": 24,
+        "layout": "flex",
+        "overflow": false,
+        "navigationPassed": true
+      },
+      {
+        "width": 430,
+        "panelOpen": false,
+        "gap": 24,
+        "layout": "flex",
+        "overflow": false,
+        "navigationPassed": true
+      },
+      {
+        "width": 900,
+        "panelOpen": false,
+        "gap": 24,
+        "layout": "flex",
+        "overflow": false,
+        "navigationPassed": true
+      },
+      {
+        "width": 1400,
+        "panelOpen": true,
+        "gap": 24,
+        "layout": "flex",
+        "overflow": false,
+        "navigationPassed": true
+      },
+      {
+        "width": 1920,
+        "panelOpen": false,
+        "gap": null,
+        "layout": "grid",
+        "overflow": false,
+        "navigationPassed": null
+      }
+    ]
+  },
+  "tables": [
+    {
+      "width": 320,
+      "tables": [
+        {
+          "kind": "source-size",
+          "width": 284,
+          "scrollWidth": 284,
+          "clientWidth": 284,
+          "maximumScrollLeft": 0,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        },
+        {
+          "kind": "checked-dylib",
+          "width": 284,
+          "scrollWidth": 411,
+          "clientWidth": 282,
+          "maximumScrollLeft": 129,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "tables": [
+        {
+          "kind": "source-size",
+          "width": 354,
+          "scrollWidth": 354,
+          "clientWidth": 354,
+          "maximumScrollLeft": 0,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        },
+        {
+          "kind": "checked-dylib",
+          "width": 354,
+          "scrollWidth": 411,
+          "clientWidth": 352,
+          "maximumScrollLeft": 59,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "tables": [
+        {
+          "kind": "source-size",
+          "width": 394,
+          "scrollWidth": 394,
+          "clientWidth": 394,
+          "maximumScrollLeft": 0,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        },
+        {
+          "kind": "checked-dylib",
+          "width": 394,
+          "scrollWidth": 411,
+          "clientWidth": 392,
+          "maximumScrollLeft": 19,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        }
+      ]
+    },
+    {
+      "width": 600,
+      "tables": [
+        {
+          "kind": "source-size",
+          "width": 564,
+          "scrollWidth": 564,
+          "clientWidth": 564,
+          "maximumScrollLeft": 0,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        },
+        {
+          "kind": "checked-dylib",
+          "width": 564,
+          "scrollWidth": 562,
+          "clientWidth": 562,
+          "maximumScrollLeft": 0,
+          "numericValuesSingleLine": true,
+          "labelWordsIntact": true,
+          "cellTextContained": true,
+          "pageOverflow": false
+        }
+      ]
+    }
+  ],
+  "mobileDemo": [
+    {
+      "width": 320,
+      "paneRect": {
+        "left": 0,
+        "top": 0,
+        "width": 320,
+        "height": 844
+      },
+      "activePanel": "output",
+      "runVisible": true,
+      "fullscreenLabel": "Enter fullscreen output",
+      "workspaceButtonHidden": true,
+      "closeVisible": true,
+      "beforeY": 16845,
+      "afterY": 16845,
+      "articlePositionPreserved": true
+    },
+    {
+      "width": 390,
+      "paneRect": {
+        "left": 0,
+        "top": 0,
+        "width": 390,
+        "height": 844
+      },
+      "activePanel": "output",
+      "runVisible": true,
+      "fullscreenLabel": "Enter fullscreen output",
+      "workspaceButtonHidden": true,
+      "closeVisible": true,
+      "beforeY": 14205,
+      "afterY": 14205,
+      "articlePositionPreserved": true
+    },
+    {
+      "width": 430,
+      "paneRect": {
+        "left": 0,
+        "top": 0,
+        "width": 430,
+        "height": 844
+      },
+      "activePanel": "output",
+      "runVisible": true,
+      "fullscreenLabel": "Enter fullscreen output",
+      "workspaceButtonHidden": true,
+      "closeVisible": true,
+      "beforeY": 13400,
+      "afterY": 13400,
+      "articlePositionPreserved": true
+    }
+  ],
+  "fullscreenFallback": {
+    "native": false,
+    "top": 0,
+    "left": 0,
+    "width": 390,
+    "height": 844,
+    "viewportHeight": 844,
+    "label": "⛶\n          Exit fullscreen",
+    "outputVisible": true,
+    "beforeY": 18432,
+    "engine": "Chrome with requestFullscreen unavailable; not Safari/WebKit",
+    "afterExitY": 18432,
+    "afterCloseY": 18432
+  },
+  "exceptions": [],
+  "screenshots": [
+    "/private/tmp/iros-mobile-layout-complete-390-source-size.png",
+    "/private/tmp/iros-mobile-layout-complete-390-pane.png"
+  ]
+}
+

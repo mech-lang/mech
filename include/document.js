@@ -44,7 +44,9 @@ const state = {
   tocEventCleanup: null,
   tocLinkHandlers: new Map(),
   mermaidInitialized: false,
+  consoleFullscreenController: null,
   outputFullscreenController: null,
+  outputFullscreenPagePosition: null,
   fullscreenGeneration: 0,
   fullscreenRequest: null,
   computeBridge: null,
@@ -256,7 +258,7 @@ function currentPagePosition() {
   };
 }
 
-function savePagePosition(position = currentPagePosition()) {
+function savePagePosition(position = state.outputFullscreenPagePosition || currentPagePosition()) {
   if (state.pagePositionRestore) {
     return;
   }
@@ -271,7 +273,7 @@ function savePagePosition(position = currentPagePosition()) {
 }
 
 function schedulePagePositionSave() {
-  if (state.pagePositionRestore) {
+  if (state.pagePositionRestore || state.outputFullscreenPagePosition) {
     return;
   }
   state.pendingPagePosition = currentPagePosition();
@@ -803,6 +805,7 @@ function stopRuntime(nextLifecycle = "stopped") {
   }
   state.fullscreenGeneration += 1;
   state.fullscreenRequest = null;
+  state.consoleFullscreenController = null;
   state.outputFullscreenController = null;
   if (ownsNativeFullscreen) exitRetiredNativeFullscreen();
   state.scenePointerSession = null;
@@ -2965,12 +2968,46 @@ function documentOutputFullscreenControls() {
     : [];
 }
 
+function setFullscreenControlLabel(control, accessibleLabel, visibleLabel) {
+  control.setAttribute("aria-label", accessibleLabel);
+  control.setAttribute("title", accessibleLabel);
+  const label = control.querySelector("[data-mech-fullscreen-label]");
+  if (label) label.textContent = visibleLabel;
+}
+
+function ensureConsoleControls(pane) {
+  const topbar = pane?.querySelector(":scope > .console-topbar");
+  if (!topbar) return;
+  for (const [selector, accessibleLabel, visibleLabel] of [
+    ["[data-mech-output-fullscreen]", "Enter fullscreen output", "Fullscreen output"],
+    ["[data-mech-console-fullscreen]", "Enter fullscreen workspace", "Fullscreen workspace"],
+  ]) {
+    for (const control of topbar.querySelectorAll(selector)) {
+      if (!control.querySelector("[data-mech-fullscreen-label]")) {
+        const label = document.createElement("span");
+        label.dataset.mechFullscreenLabel = "";
+        control.append(label);
+      }
+      setFullscreenControlLabel(control, accessibleLabel, visibleLabel);
+    }
+  }
+  if (!topbar.querySelector("[data-mech-console-close]")) {
+    const close = document.createElement("button");
+    close.type = "button";
+    close.dataset.mechConsoleClose = "";
+    close.setAttribute("aria-label", "Close document console");
+    close.textContent = "Close";
+    topbar.append(close);
+  }
+}
+
 function initializeReplComponentContract() {
   if (!state.root) {
     return;
   }
   const pane = documentConsolePane();
   if (pane) {
+    ensureConsoleControls(pane);
     const tablist = pane.querySelector(":scope > .console-topbar .console-tabs");
     if (tablist) {
       for (const name of ["output", "console", "errors"]) {
@@ -3092,6 +3129,22 @@ function initializeConsoleToggle() {
       setConsoleOpen(!isOpen);
     });
   }
+  for (const close of documentConsolePane()?.querySelectorAll("[data-mech-console-close]") || []) {
+    addRuntimeEventListener(close, "click", () => { void closeDocumentConsole(); });
+  }
+}
+
+async function closeDocumentConsole() {
+  const ownsOperation = captureComponentOwnership();
+  // Retire either fullscreen owner before hiding the shared pane. In
+  // particular, a late native-fullscreen promise must not reopen a closed UI.
+  await state.outputFullscreenController?.exit({ revealWorkspace: false });
+  if (!ownsOperation()) return;
+  await state.consoleFullscreenController?.exit();
+  if (!ownsOperation()) return;
+  if (isOutputPresentation()) state.root.dataset.mechPresentationView = "workspace";
+  restoreOutputFullscreenPagePosition();
+  setConsoleOpen(false);
 }
 
 function isOutputPresentation() {
@@ -3102,9 +3155,36 @@ function outputFullscreenActive() {
   return state.root?.dataset.mechOutputFullscreenActive === "true";
 }
 
+function captureOutputFullscreenPagePosition() {
+  if (!outputFullscreenActive() && !state.outputFullscreenPagePosition) {
+    state.outputFullscreenPagePosition = currentPagePosition();
+  }
+}
+
+function restoreOutputFullscreenPagePosition() {
+  const saved = state.outputFullscreenPagePosition;
+  if (!saved || outputFullscreenActive() ||
+      (isOutputPresentation() && state.root.dataset.mechPresentationView !== "workspace")) {
+    return;
+  }
+  // Read layout only after the article is visible again. The canonical
+  // coordinate mapping also handles a resize changing its scroll owner.
+  const owner = documentPageScrollOwner();
+  const target = documentPagePositionForOwner(saved, owner);
+  if (!target) return;
+  state.outputFullscreenPagePosition = null;
+  scrollToImmediately(owner, target.x, target.y);
+  savePagePosition(saved);
+}
+
 function setOutputFullscreenVisualState(active) {
   if (!state.root) {
     return;
+  }
+  if (active) {
+    // Hiding the article can clamp window.scrollY to zero. Capture before
+    // changing presentation, not when Close/Exit sees the collapsed layout.
+    captureOutputFullscreenPagePosition();
   }
   state.root.dataset.mechOutputFullscreenActive = String(active);
   document.body.classList.toggle("output-fullscreen", active);
@@ -3114,11 +3194,12 @@ function setOutputFullscreenVisualState(active) {
   }
   for (const control of documentOutputFullscreenControls()) {
     control.setAttribute("aria-pressed", String(active));
-    control.setAttribute(
-      "aria-label",
+    setFullscreenControlLabel(control,
       active ? "Exit fullscreen output" : "Enter fullscreen output",
+      active ? "Exit fullscreen" : "Fullscreen output",
     );
   }
+  if (!active) restoreOutputFullscreenPagePosition();
   dispatch("mech:output-fullscreen", { active });
 }
 
@@ -3127,6 +3208,7 @@ function setDocumentPresentationView(view) {
     return;
   }
   const next = view === "workspace" ? "workspace" : "output";
+  if (next === "output") captureOutputFullscreenPagePosition();
   state.root.dataset.mechPresentationView = next;
   setConsoleOpen(true);
   activateConsolePanel("output");
@@ -3168,10 +3250,11 @@ function initializeConsoleKeyboardToggle() {
       return;
     }
     const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
-    setConsoleOpen(!isOpen);
     if (isOpen) {
+      void closeDocumentConsole();
       return;
     }
+    setConsoleOpen(true);
     activateConsolePanel("console");
     requestAnimationFrame(() => state.console?.input?.focus());
   });
@@ -3422,9 +3505,9 @@ function setFullscreenState(pane, toggle, active, mode = null) {
     state.root.dataset.mechConsoleMode = active && mode ? mode : "docked";
   }
   toggle.setAttribute("aria-pressed", String(buttonFullscreen));
-  toggle.setAttribute(
-    "aria-label",
+  setFullscreenControlLabel(toggle,
     buttonFullscreen ? "Minimize console workspace" : "Enter fullscreen workspace",
+    buttonFullscreen ? "Exit workspace" : "Fullscreen workspace",
   );
   activateConsolePanel(selectedConsolePanel(pane) || "console", pane);
   if (active) {
@@ -3448,12 +3531,13 @@ function retireFullscreenVisualState() {
   delete pane?.dataset.mechFullscreenFallback;
   for (const toggle of documentConsoleFullscreenControls()) {
     toggle.setAttribute("aria-pressed", "false");
-    toggle.setAttribute("aria-label", "Enter fullscreen workspace");
+    setFullscreenControlLabel(toggle, "Enter fullscreen workspace", "Fullscreen workspace");
   }
   for (const toggle of documentOutputFullscreenControls()) {
     toggle.setAttribute("aria-pressed", "false");
-    toggle.setAttribute("aria-label", "Enter fullscreen output");
+    setFullscreenControlLabel(toggle, "Enter fullscreen output", "Fullscreen output");
   }
+  restoreOutputFullscreenPagePosition();
 }
 
 function claimFullscreen(owner) {
@@ -3540,30 +3624,35 @@ function initializeFullscreen() {
 
   addRuntimeEventListener(document, "fullscreenchange", synchronize);
   synchronize();
+  const exit = async () => {
+    const ownsOperation = captureComponentOwnership();
+    buttonFullscreenState = "idle";
+    const ownedRequest = fullscreenRequest;
+    const ownedFullscreen = ownsFullscreen(ownedRequest);
+    releaseFullscreen(ownedRequest);
+    fullscreenRequest = null;
+    delete pane.dataset.mechFullscreenFallback;
+    state.root.dataset.mechConsoleMode = "docked";
+    synchronize();
+    if (ownedFullscreen && document.fullscreenElement === pane) {
+      try {
+        await document.exitFullscreen();
+      } catch (error) {
+        if (!ownsOperation()) return;
+        appendError(error);
+      }
+      if (!ownsOperation()) return;
+      synchronize();
+    }
+  };
+  state.consoleFullscreenController = { exit };
   addRuntimeEventListener(toggle, "click", async () => {
     const ownsOperation = captureComponentOwnership();
     if (
       buttonFullscreenState !== "idle" ||
       consoleMode() === "button"
     ) {
-      buttonFullscreenState = "idle";
-      const ownedRequest = fullscreenRequest;
-      const ownedFullscreen = ownsFullscreen(ownedRequest);
-      releaseFullscreen(ownedRequest);
-      fullscreenRequest = null;
-      delete pane.dataset.mechFullscreenFallback;
-      state.root.dataset.mechConsoleMode = "docked";
-      synchronize();
-      if (ownedFullscreen && document.fullscreenElement === pane) {
-        try {
-          await document.exitFullscreen();
-        } catch (error) {
-          if (!ownsOperation()) return;
-          appendError(error);
-        }
-        if (!ownsOperation()) return;
-        synchronize();
-      }
+      await exit();
       return;
     }
 
@@ -3667,6 +3756,7 @@ function initializeOutputFullscreen() {
     fullscreenRequest = claimFullscreen("output");
     const request = fullscreenRequest;
     if (isOutputPresentation()) {
+      captureOutputFullscreenPagePosition();
       state.root.dataset.mechPresentationView = "output";
     }
     setOutputFullscreenVisualState(true);

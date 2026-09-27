@@ -69,6 +69,16 @@
 .workshop-figure svg { width:100%; height:auto; display:block; }
 .workshop-figure .figure-frame { width:100%; min-width:0; max-width:100%; border:1px solid var(--mech-border); padding:14px; background:var(--mech-canvas); }
 .workshop-figure .chart-mobile { display:none; }
+@container (max-width:600px) {
+  [data-mechdown] .workshop-source-size { display:table; table-layout:fixed; width:100%; }
+  [data-mechdown] .workshop-source-size th:nth-child(1) { width:38%; }
+  [data-mechdown] .workshop-source-size th:nth-child(2) { width:18%; }
+  [data-mechdown] .workshop-source-size th:nth-child(3) { width:24%; }
+  [data-mechdown] .workshop-source-size th:nth-child(4) { width:20%; }
+  [data-mechdown] .workshop-source-size .mech-table-header-cell { padding:12px 4px; font-size:11px; line-height:1.4; letter-spacing:0; overflow-wrap:normal; }
+  [data-mechdown] .workshop-source-size th .mech-paragraph { margin:0; overflow-wrap:normal; }
+  [data-mechdown] .workshop-source-size .mech-table-cell { padding:12px 4px; font-size:14px; line-height:1.5; }
+}
 .workshop-timeline { container-type:inline-size; }
 .workshop-timeline .timeline-vertical { display:none; max-width:440px; margin-inline:auto; }
 @container (max-width:800px) {

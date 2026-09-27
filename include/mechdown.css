@@ -567,6 +567,19 @@
   text-align: right;
 }
 
+/* Tables can scroll internally; prose wrapping must not crush their labels. */
+[data-mechdown] .mechdown-table .mech-paragraph {
+  overflow-wrap: normal;
+}
+
+/* Keep numeric values intact even when surrounding prose wraps on a phone. */
+[data-mechdown] .mechdown-table td.right {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: normal;
+}
+
 [data-mechdown] :is(.mech-output-value, .mech-code-block) > .mechdown-table:last-child {
   margin-bottom: 0;
 }

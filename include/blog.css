@@ -366,7 +366,8 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
 
 @media (max-width: 900px) {
   html[data-mech-shim="blog"] .article-layout {
-    display: block;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Start compact pages with the article visible. The shared controller reads
@@ -378,7 +379,8 @@ html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
 
 @container (max-width: 900px) {
   html[data-mech-shim="blog"] .article-layout {
-    display: block;
+    display: flex;
+    flex-direction: column;
   }
 
   html[data-mech-shim="blog"] .article-abstract .mech-paragraph {

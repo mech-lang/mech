@@ -74,12 +74,15 @@
           <button class="console-tab" id="mech-console-tab-console" type="button" role="tab" aria-selected="true" aria-controls="mech-console-panel-console" data-mech-console-tab="console">Console</button>
           <button class="console-tab" id="mech-console-tab-errors" type="button" role="tab" aria-selected="false" aria-controls="mech-console-panel-errors" data-mech-console-tab="errors">Errors</button>
         </div>
-        <button class="output-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen output" data-mech-output-fullscreen>
+        <button class="output-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen output" title="Enter fullscreen output" data-mech-output-fullscreen>
           <span aria-hidden="true">⛶</span>
+          <span data-mech-fullscreen-label>Fullscreen output</span>
         </button>
-        <button class="console-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" data-mech-console-fullscreen>
+        <button class="console-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" title="Enter fullscreen workspace" data-mech-console-fullscreen>
           <span aria-hidden="true">⛶</span>
+          <span data-mech-fullscreen-label>Fullscreen workspace</span>
         </button>
+        <button type="button" aria-label="Close document console" data-mech-console-close>Close</button>
       </div>
       <div class="console-panels">
         <section class="console-panel" id="mech-console-panel-console" role="tabpanel" aria-labelledby="mech-console-tab-console" data-mech-console-panel="console">

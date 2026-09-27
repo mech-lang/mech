@@ -484,6 +484,47 @@ fn canonical_palette_is_a_single_token_layer_without_gradients() {
 }
 
 #[test]
+fn compact_console_owns_viewport_safe_area_and_labeled_touch_controls() {
+    let repl = include("mech-repl.css");
+    let mobile = repl
+        .split("@media (max-width: 900px)")
+        .nth(1)
+        .expect("portable REPL must own its compact presentation");
+    let overlay = mobile
+        .split("[data-mech-repl-host][data-mech-console-open=\"true\"] [data-mech-console-pane] {")
+        .nth(1)
+        .unwrap()
+        .split('}')
+        .next()
+        .unwrap();
+    for rule in [
+        "position: fixed",
+        "top: 0",
+        "height: 100dvh !important",
+        "width: 100vw !important",
+        "z-index: 1200",
+    ] {
+        assert!(overlay.contains(rule), "compact overlay lost {rule}");
+    }
+    assert!(!overlay.contains("70vh"));
+    assert!(mobile.contains("env(safe-area-inset-top, 0px)"));
+    assert!(mobile.contains("env(safe-area-inset-bottom, 0px)"));
+    assert!(mobile.contains("min-height: 44px"));
+    assert!(mobile.contains("overscroll-behavior: contain"));
+    assert!(mobile.contains("[data-mech-console-close]"));
+
+    let blog = include("blog.html");
+    assert!(blog.contains("data-mech-console-close>Close</button>"));
+    assert!(blog.contains("data-mech-fullscreen-label>Fullscreen output</span>"));
+    assert!(blog.contains("data-mech-fullscreen-label>Fullscreen workspace</span>"));
+    let controller = include("document.js");
+    assert!(controller.contains("ensureConsoleControls(pane)"));
+    assert!(controller.contains("async function closeDocumentConsole()"));
+    assert!(controller.contains("state.outputFullscreenController?.exit({ revealWorkspace: false })"));
+    assert!(controller.contains("state.consoleFullscreenController?.exit()"));
+}
+
+#[test]
 fn established_blog_design_remains_in_the_shared_layers() {
     let page = include("style.css");
     for selector in [

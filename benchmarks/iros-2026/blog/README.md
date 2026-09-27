@@ -415,12 +415,20 @@ preview (port defaults shown; no browser is launched by the test):
 ```sh
 IROS_CDP_PORT=9227 IROS_URL=http://127.0.0.1:8768/index.html \
   node benchmarks/iros-2026/blog/test-browser-scene.mjs
+IROS_CDP_PORT=9227 IROS_URL=http://127.0.0.1:8768/index.html \
+  node benchmarks/iros-2026/blog/test-browser-mobile-layout.mjs
 node benchmarks/iros-2026/blog/test-document-runtime.mjs
 node benchmarks/iros-2026/blog/test-app-turns.mjs
 node benchmarks/iros-2026/blog/test-drawing.mjs
 node benchmarks/iros-2026/blog/test-camera-kernel.mjs
 node hosts/scene/tests/document-renderer.mjs
 ```
+
+`test-browser-mobile-layout.mjs` checks Contents spacing and navigation,
+unbroken numeric table cells, and the compact demo's top-aligned overlay,
+Close button, fullscreen controls, and reading-position restoration. It tests
+responsive Chrome layouts, including the fallback without a native fullscreen
+API; it does not substitute for testing on an iPhone or in Safari.
 
 `test-app-turns.mjs` isolates the browser host's error paths, including a
 display failure after numerical acceptance; that condition must not increment
