@@ -2029,11 +2029,12 @@ fn append_match_execution_cases(
     static_selectors: &mut ArtifactStaticSelectorResolver,
     cases: &mut Vec<ConcreteExecutionCase>,
 ) -> Result<(), ResidentActivationError> {
-    for block in control
-        .arms
-        .iter()
-        .flat_map(|arm| arm.guard.iter().chain(core::iter::once(&arm.body)))
-    {
+    for (arm, block) in control.arms.iter().flat_map(|arm| {
+        arm.guard
+            .iter()
+            .chain(core::iter::once(&arm.body))
+            .map(move |block| (arm, block))
+    }) {
         for operation in &block.operations {
             let inputs = operation
                 .inputs
@@ -2043,7 +2044,23 @@ fn append_match_execution_cases(
                     crate::ControlValue::Parameter { ordinal, .. } => {
                         let input = match block.parameters[ordinal as usize].source {
                             crate::ControlParameterSource::Scrutinee => control.scrutinee,
-                            crate::ControlParameterSource::PatternBinding(_) => return None,
+                            crate::ControlParameterSource::PatternBinding(local) => {
+                                // A root binding uses call-local storage at runtime but
+                                // still has the scrutinee's static capability provenance.
+                                // Component bindings remain unresolved projections.
+                                let crate::MatchPattern::Structural(
+                                    crate::CollectionPattern::Bind {
+                                        local: root_local, ..
+                                    },
+                                ) = &arm.pattern
+                                else {
+                                    return None;
+                                };
+                                if *root_local != local {
+                                    return None;
+                                }
+                                control.scrutinee
+                            }
                             crate::ControlParameterSource::Capture(index) => {
                                 control.captures[index as usize].input
                             }
