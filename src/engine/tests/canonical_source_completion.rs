@@ -162,6 +162,10 @@ fn recursive_pattern_functions_use_bounded_call_local_frames() {
         "tuple-countdown(state<(f64,f64)>) => <(f64,f64)>\n  | (0, answer) => (0, answer)\n  | (n, answer) => tuple-countdown((n - 1, answer + 1)).\ntuple-countdown((5, 37))\n",
         Data::Tuple(vec![f(0.0), f(42.0)].into_boxed_slice()),
     );
+    execute_document(
+        "nested-countdown(n<f64>) => <f64>\n  | 0 => 0\n  | n => (n > 0 ? | true => nested-countdown(n - 1) | false => 0).\nnested-countdown(5)\n",
+        f(0.0),
+    );
 }
 
 #[test]

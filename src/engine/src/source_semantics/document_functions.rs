@@ -972,14 +972,14 @@ impl SemanticBuilder {
                 Ok(SourceMatchArm {
                     pattern,
                     guard: None,
-                    value,
+                    body: SourceMatchBody::Expression(value),
                     syntax: arm,
                 })
             })
             .collect::<Result<Vec<_>, SourceSemanticError>>()?;
         if arms
             .iter()
-            .map(|arm| calls_function(arm.value.syntax(), name))
+            .map(|arm| calls_function(arm.body.syntax(), name))
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
             .any(|recursive| recursive)
@@ -991,7 +991,7 @@ impl SemanticBuilder {
                 }
                 for parameter in &self.scope_definitions {
                     if !bindings.iter().any(|binding| &binding.name == parameter)
-                        && references_variable(arm.value.syntax(), parameter)?
+                        && references_variable(arm.body.syntax(), parameter)?
                     {
                         return Err(SourceSemanticError {
                             code: "source-semantics/recursive-function-capture",
@@ -1013,8 +1013,14 @@ impl SemanticBuilder {
             expected.clone(),
             self.match_depth + 1,
         ));
-        let result =
-            self.lower_match_expression(scrutinee, &arms, body, !enum_input, Some(&expected));
+        let result = self.lower_match_expression(
+            scrutinee,
+            &arms,
+            body,
+            !enum_input,
+            Some(&expected),
+            false,
+        );
         self.active_recursive_outputs.pop();
         let result = result?;
         self.conform_schema_draft(

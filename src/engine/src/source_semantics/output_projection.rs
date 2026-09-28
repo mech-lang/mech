@@ -343,6 +343,7 @@ fn retain_node_requirements(
                 requirement: None, ..
             }
             | crate::SourceNodeBody::Match(_)
+            | crate::SourceNodeBody::Activation(_)
             | crate::SourceNodeBody::Comprehension(_)
             | crate::SourceNodeBody::Fsm(_) => None,
         })

@@ -1,6 +1,7 @@
 use mech_core::{
-    ExternalInteraction, InstanceEpoch, MResult, MechError, MechErrorKind, ProgramRevision,
-    ReactiveInstanceId, ResidentValueKind, TransactionalEffectProtocol, Value, ValueHash,
+    CellSlotId, ExternalInteraction, InstanceEpoch, MResult, MechError, MechErrorKind,
+    ProgramRevision, ReactiveInstanceId, ResidentValueKind, TransactionalEffectProtocol, Value,
+    ValueHash,
 };
 use mech_engine::{
     ProgramArtifact,
@@ -29,10 +30,11 @@ use crate::{
 
 use super::{
     BoundResidentEffect, BoundResidentExternalPlan, CapturedInputBatch, CapturedInputFact,
-    ResidentExternalAuthority, ResidentOutboxPayload, ResidentTurnReceiptV1, ResidentTurnRecord,
-    bind_external_requirements, bind_replay_requirements, resident_effect_id,
-    resident_effect_ids_hash, resident_idempotency_key, resident_idempotency_keys_hash,
-    resident_outbox_policy, resident_transaction_id,
+    ResidentExternalAuthority, ResidentExternalTurnMode, ResidentOutboxPayload,
+    ResidentTurnReceiptV1, ResidentTurnRecord, bind_external_requirements,
+    bind_replay_requirements, resident_effect_id, resident_effect_ids_hash,
+    resident_idempotency_key, resident_idempotency_keys_hash, resident_outbox_policy,
+    resident_transaction_id, retained_input_value_bytes,
 };
 use crate::runtime::effect_journal::{
     RuntimeEffectJournal, deliver_prepared_after_commit, validate_prepared_after_commit,
@@ -143,6 +145,42 @@ struct RuntimeResidentPublicationAuthority {
 // infallible local append, transactional commit, and after-commit delivery.
 unsafe impl ResidentExternalPublicationAuthority for RuntimeResidentPublicationAuthority {}
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ResidentExternalReplayBootstrap {
+    initial_publication_required: bool,
+    driverless_trigger_inputs: Box<[CellSlotId]>,
+}
+
+impl ResidentExternalReplayBootstrap {
+    pub fn new(
+        initial_publication_required: bool,
+        driverless_trigger_inputs: Box<[CellSlotId]>,
+    ) -> Self {
+        Self {
+            initial_publication_required,
+            driverless_trigger_inputs,
+        }
+    }
+
+    pub const fn initial_publication_required(&self) -> bool {
+        self.initial_publication_required
+    }
+
+    pub fn driverless_trigger_inputs(&self) -> &[CellSlotId] {
+        &self.driverless_trigger_inputs
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ResidentExternalReplayLoadingPhase {
+    InitialPublication,
+    InitialContinuation,
+    DriverlessBootstrap,
+    DriverlessContinuation,
+    Complete,
+    Failed,
+}
+
 pub struct ResidentExternalCoordinator {
     instance: Option<ReactiveInstance>,
     publication_authority: RuntimeResidentPublicationAuthority,
@@ -152,8 +190,17 @@ pub struct ResidentExternalCoordinator {
     layout_generation: mech_core::LayoutGeneration,
     artifact: Arc<ProgramArtifact>,
     live: bool,
+    replay_bootstrap: ResidentExternalReplayBootstrap,
+    replay_loading_phase: ResidentExternalReplayLoadingPhase,
     bound: BoundResidentExternalPlan,
     latest_live_inputs: Vec<Option<Value>>,
+    latest_live_input_bytes: Vec<usize>,
+    latest_live_input_retained_bytes: usize,
+    pending_live_inputs: Vec<Option<Value>>,
+    pending_live_input_bytes: Vec<usize>,
+    pending_live_input_retained_bytes: usize,
+    replay_pending_snapshot_step: bool,
+    latest_live_input_byte_limit: usize,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
     published_state_hash: u64,
@@ -189,7 +236,26 @@ impl ResidentExternalCoordinator {
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
         let bound = bind_external_requirements(&instance.plan, &artifact, providers, authority)?;
-        Self::from_bound(instance, artifact, true, bound, durability, limits)
+        let mut coordinator = Self::from_bound(
+            instance,
+            artifact,
+            true,
+            ResidentExternalReplayBootstrap::default(),
+            bound,
+            durability,
+            limits,
+        )?;
+        let trigger_sources = coordinator.trigger_sources()?;
+        let driverless_trigger_inputs = coordinator.driverless_trigger_inputs()?;
+        let initial_publication_required = (trigger_sources.is_empty()
+            && driverless_trigger_inputs.is_empty())
+            || (!driverless_trigger_inputs.is_empty()
+                && coordinator.instance().plan.has_activation_scopes());
+        coordinator.replay_bootstrap = ResidentExternalReplayBootstrap::new(
+            initial_publication_required,
+            driverless_trigger_inputs,
+        );
+        Ok(coordinator)
     }
 
     /// Constructs an offline replay coordinator without live providers or
@@ -201,17 +267,27 @@ impl ResidentExternalCoordinator {
     pub fn new_replay(
         instance: ReactiveInstance,
         artifact: Arc<ProgramArtifact>,
+        replay_bootstrap: ResidentExternalReplayBootstrap,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
         let bound = bind_replay_requirements(&instance.plan, &artifact)?;
-        Self::from_bound(instance, artifact, false, bound, durability, limits)
+        Self::from_bound(
+            instance,
+            artifact,
+            false,
+            replay_bootstrap,
+            bound,
+            durability,
+            limits,
+        )
     }
 
     fn from_bound(
         instance: ReactiveInstance,
         artifact: Arc<ProgramArtifact>,
         live: bool,
+        replay_bootstrap: ResidentExternalReplayBootstrap,
         bound: BoundResidentExternalPlan,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
@@ -243,6 +319,32 @@ impl ResidentExternalCoordinator {
                 None,
             ));
         }
+        let trigger_inputs = instance
+            .plan
+            .turn_trigger_inputs
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        let observation_inputs = bound
+            .observations()
+            .iter()
+            .map(|observation| observation.input.artifact_slot)
+            .collect::<std::collections::BTreeSet<_>>();
+        if (!live && trigger_inputs.is_empty() && !replay_bootstrap.initial_publication_required)
+            || (!replay_bootstrap.driverless_trigger_inputs.is_empty()
+                && !replay_bootstrap.initial_publication_required
+                && instance.plan.has_activation_scopes())
+            || replay_bootstrap
+                .driverless_trigger_inputs
+                .windows(2)
+                .any(|inputs| inputs[0] >= inputs[1])
+            || replay_bootstrap
+                .driverless_trigger_inputs
+                .iter()
+                .any(|input| !trigger_inputs.contains(input) || !observation_inputs.contains(input))
+        {
+            return invalid_coordinator("invalid retained replay bootstrap profile");
+        }
         let instance_id = instance.id;
         let published_state_hash = instance.published_state_hash();
         let program_revision = instance.plan.program_revision;
@@ -250,6 +352,9 @@ impl ResidentExternalCoordinator {
         let layout_generation = instance.plan.layout_generation;
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
         let latest_live_inputs = vec![None; bound.observations().len()];
+        let latest_live_input_bytes = vec![0; bound.observations().len()];
+        let pending_live_inputs = vec![None; bound.observations().len()];
+        let pending_live_input_bytes = vec![0; bound.observations().len()];
         Ok(Self {
             instance: Some(instance),
             publication_authority,
@@ -259,8 +364,25 @@ impl ResidentExternalCoordinator {
             layout_generation,
             artifact,
             live,
+            replay_loading_phase: if live {
+                ResidentExternalReplayLoadingPhase::Complete
+            } else if replay_bootstrap.initial_publication_required {
+                ResidentExternalReplayLoadingPhase::InitialPublication
+            } else if !replay_bootstrap.driverless_trigger_inputs.is_empty() {
+                ResidentExternalReplayLoadingPhase::DriverlessBootstrap
+            } else {
+                ResidentExternalReplayLoadingPhase::Complete
+            },
+            replay_bootstrap,
             bound,
             latest_live_inputs,
+            latest_live_input_bytes,
+            latest_live_input_retained_bytes: 0,
+            pending_live_inputs,
+            pending_live_input_bytes,
+            pending_live_input_retained_bytes: 0,
+            replay_pending_snapshot_step: false,
+            latest_live_input_byte_limit: limits.input_bytes,
             durability,
             health: ResidentExternalHealth::Healthy,
             published_state_hash,
@@ -277,6 +399,17 @@ impl ResidentExternalCoordinator {
 
     pub const fn durability(&self) -> ResidentDurabilityPolicy {
         self.durability
+    }
+
+    /// Whether the live loader must publish one dormant turn before admitting
+    /// provider-backed triggers. Retained replay must persist and restore this
+    /// decision because offline bindings intentionally omit provider policy.
+    pub const fn initial_publication_required(&self) -> bool {
+        self.replay_bootstrap.initial_publication_required
+    }
+
+    pub fn replay_bootstrap(&self) -> ResidentExternalReplayBootstrap {
+        self.replay_bootstrap.clone()
     }
 
     pub fn health(&self) -> &ResidentExternalHealth {
@@ -296,24 +429,47 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
-    /// Transfers the latest dequeued live-input snapshot across a compatible
-    /// resident replacement. Observation node/slot identities are artifact
-    /// local, so migration matches the stable resource request plus its schema
-    /// and shape, then re-materializes the value against the candidate schema
-    /// table. Every compatible candidate observation inherits that same
-    /// authoritative value, including duplicates introduced by the candidate.
-    /// Observations with a newly introduced source identity remain unseeded and
-    /// will read their provider on first use.
+    /// Transfers both the last retained live-input snapshot and any staged
+    /// capture-only replacements across a compatible resident replacement.
+    /// Observation node/slot identities are artifact local, so migration
+    /// matches the stable resource request plus its schema and shape, then
+    /// re-materializes the value against the candidate schema table. Every
+    /// compatible candidate observation inherits that same authoritative
+    /// value, including duplicates introduced by the candidate. Observations
+    /// with a newly introduced source identity remain unseeded and will read
+    /// their provider on first use.
     #[cfg(feature = "resident-routing-source")]
     pub(crate) fn preserve_compatible_live_inputs_from(
         &mut self,
         previous: &ResidentExternalCoordinator,
     ) -> MResult<()> {
+        let replacements = self.compatible_live_input_replacements_from(
+            previous,
+            &previous.latest_live_inputs,
+            "live input snapshot",
+        )?;
+        self.install_live_input_replacements(replacements)?;
+        let pending_replacements = self.compatible_live_input_replacements_from(
+            previous,
+            &previous.pending_live_inputs,
+            "pending live input snapshot",
+        )?;
+        self.install_pending_live_input_replacements(pending_replacements)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn compatible_live_input_replacements_from(
+        &self,
+        previous: &ResidentExternalCoordinator,
+        previous_inputs: &[Option<Value>],
+        snapshot_name: &str,
+    ) -> MResult<Vec<(usize, Value, usize)>> {
+        let mut replacements = Vec::new();
         for (target_ordinal, target) in self.bound.observations().iter().enumerate() {
             let Some(value) = previous.bound.observations().iter().enumerate().find_map(
                 |(source_ordinal, source)| {
                     observations_share_snapshot(source, target)
-                        .then(|| previous.latest_live_inputs.get(source_ordinal)?.as_ref())
+                        .then(|| previous_inputs.get(source_ordinal)?.as_ref())
                         .flatten()
                 },
             ) else {
@@ -327,12 +483,17 @@ impl ResidentExternalCoordinator {
                 )
                 .map_err(|error| {
                     invalid_value(format!(
-                        "live input snapshot is incompatible with the replacement: {error:?}"
+                        "{snapshot_name} is incompatible with the replacement: {error:?}"
                     ))
                 })?;
-            self.latest_live_inputs[target_ordinal] = Some(migrated);
+            let retained_bytes = retained_input_value_bytes(
+                &migrated,
+                &target.input.shape,
+                self.artifact.schemas(),
+            )?;
+            replacements.push((target_ordinal, migrated, retained_bytes));
         }
-        Ok(())
+        Ok(replacements)
     }
 
     #[cfg(feature = "resident_external_test_support")]
@@ -364,7 +525,7 @@ impl ResidentExternalCoordinator {
         self.instance().has_active_candidate()
     }
 
-    pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
+    pub fn input_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
         let mut sources = std::collections::BTreeSet::new();
         for observation in self.bound.observations() {
             let binding = observation.provider_binding.as_ref().ok_or_else(|| {
@@ -383,6 +544,189 @@ impl ResidentExternalCoordinator {
             }
         }
         Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
+    }
+
+    pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
+        let triggers = self
+            .instance()
+            .plan
+            .turn_trigger_inputs
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut sources = std::collections::BTreeSet::new();
+        for observation in self.bound.observations() {
+            if !triggers.contains(&observation.input.artifact_slot) {
+                continue;
+            }
+            let binding = observation.provider_binding.as_ref().ok_or_else(|| {
+                invalid_value("live observation has no provider binding".to_owned())
+            })?;
+            let request = RuntimeResourceReadRequest {
+                base_uri: observation.request.base_uri.clone(),
+                path: observation.request.path.clone(),
+                context_name: observation.request.context_name.clone(),
+            };
+            if binding.observation_requires_input_driver(&request)? {
+                sources.insert(crate::RuntimeHostInputSource::new(
+                    request.base_uri,
+                    request.path,
+                )?);
+            }
+        }
+        Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
+    }
+
+    fn driverless_trigger_inputs(&self) -> MResult<Box<[CellSlotId]>> {
+        let triggers = self
+            .instance()
+            .plan
+            .turn_trigger_inputs
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut driverless = std::collections::BTreeSet::new();
+        for observation in self.bound.observations() {
+            if !triggers.contains(&observation.input.artifact_slot) {
+                continue;
+            }
+            let binding = observation.provider_binding.as_ref().ok_or_else(|| {
+                invalid_value("live observation has no provider binding".to_owned())
+            })?;
+            let request = RuntimeResourceReadRequest {
+                base_uri: observation.request.base_uri.clone(),
+                path: observation.request.path.clone(),
+                context_name: observation.request.context_name.clone(),
+            };
+            if !binding.observation_requires_input_driver(&request)? {
+                driverless.insert(observation.input.artifact_slot);
+            }
+        }
+        Ok(driverless
+            .into_iter()
+            .collect::<Vec<_>>()
+            .into_boxed_slice())
+    }
+
+    pub(crate) fn has_driverless_trigger_observation(&self) -> MResult<bool> {
+        Ok(!self.replay_bootstrap.driverless_trigger_inputs.is_empty())
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub(crate) fn sample_host_updates(
+        &mut self,
+        updates: &[crate::RuntimeHostInputUpdate],
+    ) -> MResult<()> {
+        self.ensure_live_bindings()?;
+        self.validate_host_updates(updates)?;
+        let mut replacements = Vec::new();
+        for (ordinal, observation) in self.bound.observations().iter().enumerate() {
+            let Some(update) = updates.iter().rev().find(|update| {
+                update.source.base_uri() == observation.request.base_uri
+                    && update.source.path() == observation.request.path
+            }) else {
+                continue;
+            };
+            let value = update
+                .value
+                .clone()
+                .into_value()?
+                .rebind(
+                    observation.input.schema,
+                    &observation.input.shape,
+                    self.artifact.schemas(),
+                )
+                .map_err(|error| {
+                    invalid_value(format!(
+                        "host input does not match the observed schema: {error:?}"
+                    ))
+                })?;
+            let retained_bytes = retained_input_value_bytes(
+                &value,
+                &observation.input.shape,
+                self.artifact.schemas(),
+            )?;
+            replacements.push((ordinal, value, retained_bytes));
+        }
+        self.install_pending_live_input_replacements(replacements)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn install_live_input_replacements(
+        &mut self,
+        replacements: Vec<(usize, Value, usize)>,
+    ) -> MResult<()> {
+        let retained_bytes = live_input_retained_bytes_after_replacements(
+            self.latest_live_input_retained_bytes,
+            &self.latest_live_input_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        for (ordinal, value, replacement_bytes) in replacements {
+            self.latest_live_inputs[ordinal] = Some(value);
+            self.latest_live_input_bytes[ordinal] = replacement_bytes;
+        }
+        self.latest_live_input_retained_bytes = retained_bytes;
+        Ok(())
+    }
+
+    fn install_pending_live_input_replacements(
+        &mut self,
+        replacements: Vec<(usize, Value, usize)>,
+    ) -> MResult<()> {
+        let effective_bytes = self
+            .latest_live_input_bytes
+            .iter()
+            .zip(&self.pending_live_inputs)
+            .zip(&self.pending_live_input_bytes)
+            .map(|((latest, pending), pending_bytes)| {
+                if pending.is_some() {
+                    *pending_bytes
+                } else {
+                    *latest
+                }
+            })
+            .collect::<Vec<_>>();
+        let effective_retained_bytes =
+            effective_bytes.iter().try_fold(0usize, |total, bytes| {
+                total
+                    .checked_add(*bytes)
+                    .ok_or_else(|| invalid_value("live input snapshot byte accounting".to_owned()))
+            })?;
+        live_input_retained_bytes_after_replacements(
+            effective_retained_bytes,
+            &effective_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        let pending_retained_bytes = live_input_retained_bytes_after_replacements(
+            self.pending_live_input_retained_bytes,
+            &self.pending_live_input_bytes,
+            replacements
+                .iter()
+                .map(|(ordinal, _, retained_bytes)| (*ordinal, *retained_bytes)),
+            self.latest_live_input_byte_limit,
+        )?;
+        for (ordinal, value, replacement_bytes) in replacements {
+            self.pending_live_inputs[ordinal] = Some(value);
+            self.pending_live_input_bytes[ordinal] = replacement_bytes;
+        }
+        self.pending_live_input_retained_bytes = pending_retained_bytes;
+        Ok(())
+    }
+
+    fn has_pending_live_inputs(&self) -> bool {
+        self.pending_live_inputs.iter().any(Option::is_some)
+    }
+
+    fn clear_pending_live_inputs(&mut self) {
+        self.pending_live_inputs.fill(None);
+        self.pending_live_input_bytes.fill(0);
+        self.pending_live_input_retained_bytes = 0;
     }
 
     pub const fn structural_probe(&self) -> ResidentExternalStructuralProbe {
@@ -404,7 +748,13 @@ impl ResidentExternalCoordinator {
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
         let admission = self.reserve_live_turn()?;
-        self.execute_live_turn(None, admission, |_| Ok(()))
+        self.execute_live_turn(
+            None,
+            admission,
+            ResidentExternalTurnMode::Ordinary,
+            false,
+            |_| Ok(()),
+        )
     }
 
     /// Executes one live turn while using owned ingress values for matching
@@ -418,7 +768,13 @@ impl ResidentExternalCoordinator {
         updates: &[crate::RuntimeHostInputUpdate],
     ) -> MResult<ResidentExternalTurnOutcome> {
         let admission = self.admit_host_turn(updates)?;
-        self.execute_live_turn(Some(updates), admission, |_| Ok(()))
+        self.execute_live_turn(
+            Some(updates),
+            admission,
+            ResidentExternalTurnMode::Ordinary,
+            true,
+            |_| Ok(()),
+        )
     }
 
     pub(crate) fn admit_host_turn(
@@ -440,11 +796,17 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(Some(updates), admission, prepublication)
+        self.execute_live_turn(
+            Some(updates),
+            admission,
+            ResidentExternalTurnMode::Ordinary,
+            true,
+            prepublication,
+        )
     }
 
     #[cfg(feature = "resident-routing")]
-    pub(crate) fn execute_admitted_turn<F>(
+    pub(crate) fn execute_admitted_initial_turn<F>(
         &mut self,
         admission: ResidentExternalTurnAdmission,
         prepublication: F,
@@ -452,7 +814,55 @@ impl ResidentExternalCoordinator {
     where
         F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
     {
-        self.execute_live_turn(None, admission, prepublication)
+        self.execute_live_turn(
+            None,
+            admission,
+            ResidentExternalTurnMode::InitialPublication,
+            false,
+            prepublication,
+        )
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub(crate) fn execute_admitted_provider_turn<F>(
+        &mut self,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
+    {
+        self.execute_live_turn(
+            None,
+            admission,
+            ResidentExternalTurnMode::DriverlessBootstrap,
+            false,
+            prepublication,
+        )
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub(crate) fn execute_admitted_step_turn<F>(
+        &mut self,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce(&PreparedResidentTurn<'_>) -> MResult<()>,
+    {
+        let consumes_pending_inputs = self.has_pending_live_inputs();
+        let mode = if consumes_pending_inputs {
+            ResidentExternalTurnMode::ExplicitSnapshotStep
+        } else {
+            ResidentExternalTurnMode::ExplicitStep
+        };
+        self.execute_live_turn(
+            Some(&[]),
+            admission,
+            mode,
+            consumes_pending_inputs,
+            prepublication,
+        )
     }
 
     #[cfg(feature = "resident-routing")]
@@ -467,7 +877,13 @@ impl ResidentExternalCoordinator {
         // `Some(&[])` deliberately captures from the last accepted host
         // snapshot. A continuation belongs to that accepted input turn and
         // must not read a provider value whose packet is still queued.
-        self.execute_live_turn(Some(&[]), admission, prepublication)
+        self.execute_live_turn(
+            Some(&[]),
+            admission,
+            ResidentExternalTurnMode::ContinuationDrain,
+            false,
+            prepublication,
+        )
     }
 
     #[cfg(feature = "resident-routing")]
@@ -515,10 +931,12 @@ impl ResidentExternalCoordinator {
     /// Replays one canonical recorded turn attempt.
     ///
     /// The receipt is the decision authority. Accepted records execute and
-    /// must reproduce the complete receipt exactly; rejected records consume
-    /// their optional full or partial input batch without executing or
-    /// publishing. Input-only replay is intentionally unsupported because it
-    /// cannot preserve rejection decisions.
+    /// must reproduce the complete receipt exactly. Rejected records preserve
+    /// the recorded decision; post-materialization rejections prepare and
+    /// abort the deterministic resident candidate only to authenticate their
+    /// effect evidence, without invoking providers or publishing. Input-only
+    /// replay is intentionally unsupported because it cannot preserve
+    /// rejection decisions.
     pub fn execute_replay_batch(
         &mut self,
         batch: Option<&CapturedInputBatch>,
@@ -553,6 +971,8 @@ impl ResidentExternalCoordinator {
         &mut self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
         admission: ResidentExternalTurnAdmission,
+        mode: ResidentExternalTurnMode,
+        consumes_pending_inputs: bool,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -568,28 +988,56 @@ impl ResidentExternalCoordinator {
         } = admission;
 
         let batch = if let Some(input_permit) = input_permit {
-            let batch = match self.capture_with_providers(host_updates) {
+            let batch = match self.capture_with_providers(host_updates, mode) {
                 Ok(batch) => batch,
                 Err(failure) => {
                     let evidence = if let Some(prefix) = failure.captured_prefix {
+                        let retained_bytes = match live_input_retained_bytes_after_replacements(
+                            self.latest_live_input_retained_bytes,
+                            &self.latest_live_input_bytes,
+                            prefix
+                                .facts
+                                .iter()
+                                .enumerate()
+                                .map(|(ordinal, fact)| (ordinal, fact.retained_bytes())),
+                            self.latest_live_input_byte_limit,
+                        ) {
+                            Ok(retained_bytes) => retained_bytes,
+                            Err(error) => {
+                                drop(input_permit);
+                                drop(outbox_permit);
+                                return self.append_rejected(
+                                    receipt_permit,
+                                    turn,
+                                    transaction,
+                                    TurnEvidence::default(),
+                                    before_epoch,
+                                    mode,
+                                    TurnFailurePhase::InputInstallation,
+                                    error,
+                                );
+                            }
+                        };
                         if let Err(error) = self.append_input_batch(input_permit, prefix.clone()) {
                             drop(outbox_permit);
                             return self.append_rejected(
                                 receipt_permit,
                                 turn,
                                 transaction,
-                                RejectedTurnEvidence::default(),
+                                TurnEvidence::default(),
                                 before_epoch,
+                                mode,
                                 TurnFailurePhase::Recording,
                                 error,
                             );
                         }
                         self.advance_input_identity(&prefix)?;
                         self.remember_live_inputs(&prefix);
-                        RejectedTurnEvidence::from_input(&prefix)
+                        debug_assert_eq!(self.latest_live_input_retained_bytes, retained_bytes);
+                        TurnEvidence::from_input(&prefix)
                     } else {
                         drop(input_permit);
-                        RejectedTurnEvidence::default()
+                        TurnEvidence::default()
                     };
                     drop(outbox_permit);
                     return self.append_rejected(
@@ -598,6 +1046,7 @@ impl ResidentExternalCoordinator {
                         transaction,
                         evidence,
                         before_epoch,
+                        mode,
                         TurnFailurePhase::InputInstallation,
                         failure.error,
                     );
@@ -609,14 +1058,18 @@ impl ResidentExternalCoordinator {
                     receipt_permit,
                     turn,
                     transaction,
-                    RejectedTurnEvidence::default(),
+                    TurnEvidence::default(),
                     before_epoch,
+                    mode,
                     TurnFailurePhase::Recording,
                     error,
                 );
             }
             self.advance_input_identity(&batch)?;
             self.remember_live_inputs(&batch);
+            if consumes_pending_inputs {
+                self.clear_pending_live_inputs();
+            }
             Some(batch)
         } else {
             if host_updates.is_some_and(|updates| !updates.is_empty()) {
@@ -625,8 +1078,9 @@ impl ResidentExternalCoordinator {
                     receipt_permit,
                     turn,
                     transaction,
-                    RejectedTurnEvidence::default(),
+                    TurnEvidence::default(),
                     before_epoch,
+                    mode,
                     TurnFailurePhase::InputInstallation,
                     invalid_value("input-free resident turn received host updates".to_owned()),
                 );
@@ -635,30 +1089,16 @@ impl ResidentExternalCoordinator {
         };
         let input_evidence = batch
             .as_ref()
-            .map(RejectedTurnEvidence::from_input)
+            .map(TurnEvidence::from_input)
             .unwrap_or_default();
 
-        let inputs = batch
-            .iter()
-            .flat_map(|batch| batch.facts.iter())
-            .map(|fact| CapturedValueInput {
-                slot: self
-                    .bound
-                    .observations()
-                    .iter()
-                    .find(|observation| {
-                        observation.node == fact.node
-                            && observation.input.artifact_slot == fact.slot
-                    })
-                    .expect("validated batch observation")
-                    .input
-                    .slot,
-                value: &fact.value,
-            })
-            .collect::<Vec<_>>();
+        let inputs = self.captured_turn_inputs(batch.as_ref());
+        let activation_triggers = captured_activation_triggers(batch.as_ref());
         let mut instance = self.instance.take().expect("resident instance is present");
         let result = (|| {
-            let prepared_turn = match instance.prepare_turn_values(&inputs) {
+            let prepared =
+                prepare_resident_turn(&mut instance, mode, &inputs, &activation_triggers);
+            let prepared_turn = match prepared {
                 Ok(prepared) => prepared,
                 Err(error) => {
                     drop(outbox_permit);
@@ -673,6 +1113,7 @@ impl ResidentExternalCoordinator {
                         transaction,
                         input_evidence,
                         before_epoch,
+                        mode,
                         phase,
                         resident_execution_error(error),
                     );
@@ -686,11 +1127,36 @@ impl ResidentExternalCoordinator {
                 input_evidence,
                 receipt_permit,
                 outbox_permit,
+                mode,
                 prepublication,
             )
         })();
         self.instance = Some(instance);
         result
+    }
+
+    fn captured_turn_inputs<'a>(
+        &self,
+        batch: Option<&'a CapturedInputBatch>,
+    ) -> Vec<CapturedValueInput<'a>> {
+        batch
+            .iter()
+            .flat_map(|batch| batch.facts.iter())
+            .map(|fact| CapturedValueInput {
+                slot: self
+                    .bound
+                    .observations()
+                    .iter()
+                    .find(|observation| {
+                        observation.node == fact.node
+                            && observation.input.artifact_slot == fact.slot
+                    })
+                    .expect("captured input matches its bound observation")
+                    .input
+                    .slot,
+                value: &fact.value,
+            })
+            .collect()
     }
 
     fn execute_replay_attempt(
@@ -702,10 +1168,16 @@ impl ResidentExternalCoordinator {
         if self.live {
             return invalid_coordinator("recorded replay requires an offline coordinator");
         }
+        if self.replay_loading_phase == ResidentExternalReplayLoadingPhase::Failed {
+            return invalid_coordinator(
+                "recorded replay cannot continue after a rejected loading turn",
+            );
+        }
         let batch = batch
             .map(|batch| self.validate_replay_batch(batch))
             .transpose()?;
         self.validate_replay_record(batch.as_ref(), &record)?;
+        self.validate_rejected_materialized_effect_evidence(batch.as_ref(), &record)?;
 
         let input_permit = batch
             .as_ref()
@@ -749,12 +1221,24 @@ impl ResidentExternalCoordinator {
                 if let Some(prepared) = prepared_input {
                     self.append_prepared_input(prepared);
                 }
+                if let Some(batch) = batch.as_ref() {
+                    self.remember_live_inputs(batch);
+                }
                 if let Some(next_input) = next_input {
                     self.next_input = next_input;
                 }
                 self.next_turn = next_turn;
                 let receipt_sequence = self.append_receipt(prepared_receipt);
                 self.last_rejected_turn = Some(turn);
+                if record.body.mode == ResidentExternalTurnMode::ExplicitSnapshotStep {
+                    self.replay_pending_snapshot_step = matches!(
+                        phase,
+                        TurnFailurePhase::InputInstallation | TurnFailurePhase::Recording
+                    );
+                }
+                if self.replay_loading_phase != ResidentExternalReplayLoadingPhase::Complete {
+                    self.replay_loading_phase = ResidentExternalReplayLoadingPhase::Failed;
+                }
                 Ok(ResidentExternalTurnOutcome::Rejected {
                     turn,
                     receipt_sequence,
@@ -789,29 +1273,17 @@ impl ResidentExternalCoordinator {
         turn: TurnId,
         transaction: TransactionId,
     ) -> MResult<ResidentExternalTurnOutcome> {
-        let inputs = batch
-            .iter()
-            .flat_map(|batch| batch.facts.iter())
-            .map(|fact| CapturedValueInput {
-                slot: self
-                    .bound
-                    .observations()
-                    .iter()
-                    .find(|observation| {
-                        observation.node == fact.node
-                            && observation.input.artifact_slot == fact.slot
-                    })
-                    .expect("validated replay observation")
-                    .input
-                    .slot,
-                value: &fact.value,
-            })
-            .collect::<Vec<_>>();
+        let inputs = self.captured_turn_inputs(batch);
+        let activation_triggers = captured_activation_triggers(batch);
         let mut instance = self.instance.take().expect("resident instance is present");
         let result = (|| {
-            let prepared_turn = instance
-                .prepare_turn_values(&inputs)
-                .map_err(resident_execution_error)?;
+            let prepared_turn = prepare_resident_turn(
+                &mut instance,
+                expected.body.mode,
+                &inputs,
+                &activation_triggers,
+            )
+            .map_err(resident_execution_error)?;
             let materialized = match materialize_effects(
                 &prepared_turn,
                 &self.artifact,
@@ -825,18 +1297,13 @@ impl ResidentExternalCoordinator {
                     return Err(error);
                 }
             };
+            let evidence = batch
+                .map(TurnEvidence::from_input)
+                .unwrap_or_default()
+                .with_effects(&materialized)?;
             let summary = prepared_turn.summary();
-            let input_range = batch.map(|batch| batch.range);
-            let input_hash = batch.map_or([0; 32], |batch| batch.batch_hash);
-            let reproduced = self.accepted_record(
-                turn,
-                transaction,
-                input_range,
-                input_hash,
-                effect_batch_hash(&materialized),
-                summary,
-                &materialized,
-            )?;
+            let reproduced =
+                self.accepted_record(turn, transaction, evidence, summary, expected.body.mode)?;
             if reproduced != expected {
                 prepared_turn.abort();
                 return invalid_coordinator(
@@ -848,10 +1315,20 @@ impl ResidentExternalCoordinator {
             if let Some(prepared) = prepared_input {
                 self.append_prepared_input(prepared);
             }
+            if let Some(batch) = batch {
+                self.remember_live_inputs(batch);
+            }
             if let Some(next_input) = next_input {
                 self.next_input = next_input;
             }
             self.next_turn = next_turn;
+            if expected.body.mode == ResidentExternalTurnMode::ExplicitSnapshotStep {
+                self.replay_pending_snapshot_step = false;
+            }
+            self.advance_replay_loading_after_accepted(
+                expected.body.mode,
+                instance.continuation_wakeup().is_some(),
+            );
             let receipt_sequence = self.append_receipt(prepared_receipt);
             Ok(ResidentExternalTurnOutcome::Accepted {
                 turn,
@@ -863,6 +1340,107 @@ impl ResidentExternalCoordinator {
         result
     }
 
+    fn validate_rejected_materialized_effect_evidence(
+        &mut self,
+        batch: Option<&CapturedInputBatch>,
+        record: &ResidentTurnRecord,
+    ) -> MResult<()> {
+        if record.header.status != TurnRecordStatus::Rejected
+            || !matches!(
+                record
+                    .header
+                    .failure
+                    .as_ref()
+                    .expect("validated rejected replay receipt")
+                    .phase,
+                TurnFailurePhase::Publication
+                    | TurnFailurePhase::ExternalPrepare
+                    | TurnFailurePhase::ExternalApply
+            )
+        {
+            return Ok(());
+        }
+
+        let inputs = self.captured_turn_inputs(batch);
+        let activation_triggers = captured_activation_triggers(batch);
+        let mut instance = self.instance.take().expect("resident instance is present");
+        let result = (|| {
+            let prepared_turn = match prepare_resident_turn(
+                &mut instance,
+                record.body.mode,
+                &inputs,
+                &activation_triggers,
+            ) {
+                Ok(prepared_turn) => prepared_turn,
+                Err(_) => {
+                    return invalid_coordinator(
+                        "rejected replay effect evidence does not reproduce its resident turn",
+                    );
+                }
+            };
+            let materialized = match materialize_effects(
+                &prepared_turn,
+                &self.artifact,
+                self.bound.effects(),
+                self.instance_id,
+                record.header.turn_id,
+            ) {
+                Ok(materialized) => materialized,
+                Err(_) => {
+                    prepared_turn.abort();
+                    return invalid_coordinator(
+                        "rejected replay effect evidence does not reproduce its resident turn",
+                    );
+                }
+            };
+            let evidence = batch
+                .map(TurnEvidence::from_input)
+                .unwrap_or_default()
+                .with_effects(&materialized);
+            prepared_turn.abort();
+            if !evidence?.matches_effect_receipt(&record.body) {
+                return invalid_coordinator(
+                    "rejected replay effect evidence does not match its materialized turn",
+                );
+            }
+            Ok(())
+        })();
+        self.instance = Some(instance);
+        result
+    }
+
+    fn advance_replay_loading_after_accepted(
+        &mut self,
+        mode: ResidentExternalTurnMode,
+        continuation_ready: bool,
+    ) {
+        use ResidentExternalReplayLoadingPhase as Loading;
+
+        let driverless_pending = !self.replay_bootstrap.driverless_trigger_inputs.is_empty();
+        self.replay_loading_phase = match (self.replay_loading_phase, mode) {
+            (Loading::InitialPublication, ResidentExternalTurnMode::InitialPublication)
+            | (Loading::InitialContinuation, ResidentExternalTurnMode::ContinuationDrain) => {
+                if continuation_ready {
+                    Loading::InitialContinuation
+                } else if driverless_pending {
+                    Loading::DriverlessBootstrap
+                } else {
+                    Loading::Complete
+                }
+            }
+            (Loading::DriverlessBootstrap, ResidentExternalTurnMode::DriverlessBootstrap)
+            | (Loading::DriverlessContinuation, ResidentExternalTurnMode::ContinuationDrain) => {
+                if continuation_ready {
+                    Loading::DriverlessContinuation
+                } else {
+                    Loading::Complete
+                }
+            }
+            (Loading::Complete, _) => Loading::Complete,
+            _ => Loading::Failed,
+        };
+    }
+
     fn validate_replay_record(
         &self,
         batch: Option<&CapturedInputBatch>,
@@ -871,6 +1449,29 @@ impl ResidentExternalCoordinator {
         record.validate()?;
         let expected_turn = TurnId::new(self.next_turn).ok_or_else(sequence_exhausted)?;
         let expected_transaction = resident_transaction_id(self.instance_id, expected_turn);
+        let mode = record.body.mode;
+        let continuation_ready = self.instance().continuation_wakeup().is_some();
+        use ResidentExternalReplayLoadingPhase as Loading;
+        let loading_mode_matches = match self.replay_loading_phase {
+            Loading::InitialPublication => {
+                mode == ResidentExternalTurnMode::InitialPublication && !continuation_ready
+            }
+            Loading::InitialContinuation | Loading::DriverlessContinuation => {
+                mode == ResidentExternalTurnMode::ContinuationDrain && continuation_ready
+            }
+            Loading::DriverlessBootstrap => {
+                mode == ResidentExternalTurnMode::DriverlessBootstrap && !continuation_ready
+            }
+            Loading::Complete => match mode {
+                ResidentExternalTurnMode::Ordinary
+                | ResidentExternalTurnMode::ExplicitStep
+                | ResidentExternalTurnMode::ExplicitSnapshotStep => !continuation_ready,
+                ResidentExternalTurnMode::ContinuationDrain => continuation_ready,
+                ResidentExternalTurnMode::InitialPublication
+                | ResidentExternalTurnMode::DriverlessBootstrap => false,
+            },
+            Loading::Failed => false,
+        };
         if record.header.turn_id != expected_turn
             || record.header.transaction_id != expected_transaction
             || record.body.version != ResidentTurnReceiptV1::VERSION
@@ -879,6 +1480,13 @@ impl ResidentExternalCoordinator {
             || record.body.plan_generation != self.plan_generation
             || record.body.layout_generation != self.layout_generation
             || record.body.before_epoch != self.instance().published_epoch()
+            || !loading_mode_matches
+            || (self.replay_pending_snapshot_step && mode == ResidentExternalTurnMode::ExplicitStep)
+            || (matches!(
+                mode,
+                ResidentExternalTurnMode::ExplicitStep
+                    | ResidentExternalTurnMode::ExplicitSnapshotStep
+            ) && !self.instance().plan.has_input_free_activation_roots())
         {
             return invalid_coordinator(
                 "recorded replay receipt does not match the next activated turn",
@@ -896,13 +1504,50 @@ impl ResidentExternalCoordinator {
                 );
             }
         }
+        if let Some(batch) = batch {
+            live_input_retained_bytes_after_replacements(
+                self.latest_live_input_retained_bytes,
+                &self.latest_live_input_bytes,
+                batch
+                    .facts
+                    .iter()
+                    .enumerate()
+                    .map(|(ordinal, fact)| (ordinal, fact.retained_bytes())),
+                self.latest_live_input_byte_limit,
+            )?;
+        }
+        self.validate_replay_activation_scope(batch, record)?;
+        let facts = batch.iter().flat_map(|batch| &batch.facts);
+        if facts.enumerate().any(|(ordinal, fact)| {
+            let observation = &self.bound.observations()[ordinal];
+            let belongs_to_trigger_source = self.bound.observations().iter().any(|candidate| {
+                self.instance()
+                    .plan
+                    .turn_trigger_inputs
+                    .contains(&candidate.input.artifact_slot)
+                    && observations_share_host_source(candidate, observation)
+            });
+            let must_reuse_snapshot = mode.reuses_input_snapshot()
+                || (mode == ResidentExternalTurnMode::ExplicitSnapshotStep
+                    && belongs_to_trigger_source);
+            must_reuse_snapshot
+                && self
+                    .latest_live_inputs
+                    .get(ordinal)
+                    .and_then(|value| value.as_ref())
+                    .is_some_and(|value| {
+                        value.value_hash(self.artifact.schemas()).ok() != Some(fact.payload_hash)
+                    })
+        }) {
+            return invalid_coordinator("recorded replay turn changes its retained input snapshot");
+        }
+        let complete_inputs = if self.bound.observations().is_empty() {
+            batch.is_none()
+        } else {
+            batch.is_some_and(|batch| batch.facts.len() == self.bound.observations().len())
+        };
         match record.header.status {
             TurnRecordStatus::Accepted => {
-                let complete_inputs = if self.bound.observations().is_empty() {
-                    batch.is_none()
-                } else {
-                    batch.is_some_and(|batch| batch.facts.len() == self.bound.observations().len())
-                };
                 if !complete_inputs || record.body.after_epoch.is_none() {
                     return invalid_coordinator(
                         "accepted replay requires the activated complete input boundary",
@@ -912,9 +1557,69 @@ impl ResidentExternalCoordinator {
             TurnRecordStatus::Rejected => {
                 if record.body.after_epoch.is_some()
                     || record.body.state_hash != self.published_state_hash
+                    || record.body.touched_slots != 0
+                    || record.body.changed_slots != 0
+                    || record.body.executed_nodes != 0
                 {
                     return invalid_coordinator(
                         "rejected replay receipt must preserve the published state",
+                    );
+                }
+                let phase = record
+                    .header
+                    .failure
+                    .as_ref()
+                    .expect("validated rejected replay receipt")
+                    .phase;
+                let empty_effect_evidence = record.body.effect_count == 0
+                    && record.body.outbox_effect_count == 0
+                    && record.body.transactional_effect_count == 0
+                    && record.body.effect_batch_hash == [0; 32]
+                    && record.body.effect_ids_hash == [0; 32]
+                    && record.body.idempotency_keys_hash == [0; 32];
+                let effect_counts_match_plan = record
+                    .body
+                    .outbox_effect_count
+                    .checked_add(record.body.transactional_effect_count)
+                    == Some(record.body.effect_count)
+                    && usize::try_from(record.body.effect_count)
+                        .is_ok_and(|count| count <= self.bound.effects().len())
+                    && usize::try_from(record.body.outbox_effect_count)
+                        .is_ok_and(|count| count <= self.bound.ordinary_effect_count())
+                    && usize::try_from(record.body.transactional_effect_count).is_ok_and(|count| {
+                        count
+                            <= self
+                                .bound
+                                .effects()
+                                .len()
+                                .saturating_sub(self.bound.ordinary_effect_count())
+                    });
+                let evidence_matches_phase = match phase {
+                    TurnFailurePhase::InputInstallation => {
+                        empty_effect_evidence
+                            && batch.is_none_or(|batch| {
+                                batch.facts.len() < self.bound.observations().len()
+                            })
+                    }
+                    TurnFailurePhase::Recording => empty_effect_evidence && batch.is_none(),
+                    TurnFailurePhase::Execution
+                    | TurnFailurePhase::Integrity
+                    | TurnFailurePhase::EffectMaterialization => {
+                        empty_effect_evidence && complete_inputs
+                    }
+                    TurnFailurePhase::Publication
+                    | TurnFailurePhase::ExternalPrepare
+                    | TurnFailurePhase::ExternalApply => {
+                        complete_inputs && effect_counts_match_plan
+                    }
+                    TurnFailurePhase::Admission
+                    | TurnFailurePhase::ExternalCommit
+                    | TurnFailurePhase::EffectDelivery
+                    | TurnFailurePhase::Finalization => false,
+                };
+                if !evidence_matches_phase {
+                    return invalid_coordinator(
+                        "rejected replay evidence does not match its failure phase",
                     );
                 }
             }
@@ -925,14 +1630,120 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
+    fn validate_replay_activation_scope(
+        &self,
+        batch: Option<&CapturedInputBatch>,
+        record: &ResidentTurnRecord,
+    ) -> MResult<()> {
+        let mode = record.body.mode;
+        let eligible = &self.instance().plan.turn_trigger_inputs;
+        let facts = batch.map_or(&[][..], |batch| batch.facts.as_ref());
+        let trigger_count = facts.iter().filter(|fact| fact.trigger).count();
+        let driverless = self.replay_bootstrap.driverless_trigger_inputs();
+        let invalid_fact = facts
+            .iter()
+            .any(|fact| fact.trigger && !eligible.contains(&fact.slot));
+        let split_source_group = mode == ResidentExternalTurnMode::Ordinary
+            && facts.iter().zip(self.bound.observations()).enumerate().any(
+                |(ordinal, (fact, observation))| {
+                    eligible.contains(&fact.slot)
+                        && facts[..ordinal]
+                            .iter()
+                            .zip(&self.bound.observations()[..ordinal])
+                            .any(|(previous_fact, previous_observation)| {
+                                eligible.contains(&previous_fact.slot)
+                                    && observations_share_host_source(
+                                        previous_observation,
+                                        observation,
+                                    )
+                                    && previous_fact.trigger != fact.trigger
+                            })
+                },
+            );
+        let conflicting_host_payload =
+            matches!(
+                mode,
+                ResidentExternalTurnMode::Ordinary | ResidentExternalTurnMode::ExplicitSnapshotStep
+            ) && facts.iter().zip(self.bound.observations()).enumerate().any(
+                |(ordinal, (fact, observation))| {
+                    let source_was_triggered = facts.iter().zip(self.bound.observations()).any(
+                        |(candidate_fact, candidate)| {
+                            candidate_fact.trigger
+                                && observations_share_host_source(candidate, observation)
+                        },
+                    );
+                    let source_was_sampled = mode == ResidentExternalTurnMode::ExplicitSnapshotStep
+                        && facts.iter().zip(self.bound.observations()).enumerate().any(
+                            |(candidate_ordinal, (candidate_fact, candidate))| {
+                                observations_share_host_payload(candidate, observation)
+                                    && self.latest_live_inputs[candidate_ordinal]
+                                        .as_ref()
+                                        .is_some_and(|previous| {
+                                            previous.value_hash(self.artifact.schemas()).ok()
+                                                != Some(candidate_fact.payload_hash)
+                                        })
+                            },
+                        );
+                    (source_was_triggered || source_was_sampled)
+                        && facts[..ordinal]
+                            .iter()
+                            .zip(&self.bound.observations()[..ordinal])
+                            .any(|(previous_fact, previous_observation)| {
+                                observations_share_host_payload(previous_observation, observation)
+                                    && previous_fact.payload_hash != fact.payload_hash
+                            })
+                },
+            );
+        let invalid_driverless = mode == ResidentExternalTurnMode::DriverlessBootstrap
+            && (facts
+                .iter()
+                .any(|fact| fact.trigger != driverless.contains(&fact.slot))
+                || (record.header.status == TurnRecordStatus::Accepted
+                    && facts
+                        .iter()
+                        .filter(|fact| fact.trigger)
+                        .map(|fact| fact.slot)
+                        .collect::<std::collections::BTreeSet<_>>()
+                        != driverless.iter().copied().collect()));
+        let trigger_free_ordinary = record.header.status == TurnRecordStatus::Accepted
+            && mode == ResidentExternalTurnMode::Ordinary
+            && trigger_count == 0;
+        let snapshot_step_without_capture_source = mode
+            == ResidentExternalTurnMode::ExplicitSnapshotStep
+            && self.bound.observations().iter().all(|observation| {
+                self.bound.observations().iter().any(|candidate| {
+                    eligible.contains(&candidate.input.artifact_slot)
+                        && observations_share_host_source(candidate, observation)
+                })
+            });
+        if conflicting_host_payload {
+            return invalid_coordinator(
+                "recorded replay contains conflicting payloads for one activated host source",
+            );
+        }
+        if invalid_fact
+            || (!mode.admits_trigger_facts() && trigger_count != 0)
+            || split_source_group
+            || invalid_driverless
+            || trigger_free_ordinary
+            || snapshot_step_without_capture_source
+        {
+            return invalid_coordinator(
+                "recorded replay triggers do not match the activated turn scope",
+            );
+        }
+        Ok(())
+    }
+
     fn prepare_and_publish<F>(
         &mut self,
         prepared_turn: PreparedResidentTurn<'_>,
         turn: TurnId,
         transaction: TransactionId,
-        input_evidence: RejectedTurnEvidence,
+        input_evidence: TurnEvidence,
         receipt_permit: LedgerPermit,
         outbox_permit: Option<OutboxPermit>,
+        mode: ResidentExternalTurnMode,
         prepublication: F,
     ) -> MResult<ResidentExternalTurnOutcome>
     where
@@ -956,24 +1767,16 @@ impl ResidentExternalCoordinator {
                     transaction,
                     input_evidence,
                     before_epoch,
+                    mode,
                     TurnFailurePhase::EffectMaterialization,
                     error,
                 );
             }
         };
-        let effect_batch_hash = effect_batch_hash(&materialized);
         let rejected_evidence = input_evidence.with_effects(&materialized)?;
         self.observe_prepared_turn(prepared_turn.structural_probe());
         let summary = prepared_turn.summary();
-        let receipt = self.accepted_record(
-            turn,
-            transaction,
-            input_evidence.input_range,
-            input_evidence.input_batch_hash,
-            effect_batch_hash,
-            summary,
-            &materialized,
-        )?;
+        let receipt = self.accepted_record(turn, transaction, rejected_evidence, summary, mode)?;
         let mut journal = RuntimeEffectJournal::new();
         if let Err(failure) = self.prepare_provider_effects(&materialized, &mut journal) {
             prepared_turn.abort();
@@ -984,6 +1787,7 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                mode,
                 TurnFailurePhase::ExternalPrepare,
                 failure.error,
                 failure.cleanup,
@@ -1001,6 +1805,7 @@ impl ResidentExternalCoordinator {
                     transaction,
                     rejected_evidence,
                     before_epoch,
+                    mode,
                     TurnFailurePhase::ExternalPrepare,
                     error,
                     cleanup,
@@ -1018,6 +1823,7 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                mode,
                 TurnFailurePhase::ExternalPrepare,
                 step.error,
                 cleanup,
@@ -1034,6 +1840,7 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
+                mode,
                 TurnFailurePhase::ExternalApply,
                 step.error,
                 cleanup,
@@ -1051,7 +1858,8 @@ impl ResidentExternalCoordinator {
                 transaction,
                 rejected_evidence,
                 before_epoch,
-                TurnFailurePhase::Execution,
+                mode,
+                TurnFailurePhase::Publication,
                 error,
                 cleanup,
             );
@@ -1119,6 +1927,7 @@ impl ResidentExternalCoordinator {
     fn capture_with_providers(
         &self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
+        mode: ResidentExternalTurnMode,
     ) -> Result<CapturedInputBatch, CaptureFailure> {
         let mut facts: Vec<CapturedInputFact> = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
@@ -1149,6 +1958,27 @@ impl ResidentExternalCoordinator {
                                 "host input does not match the observed schema: {error:?}"
                             ))
                         })?
+                } else if let Some(value) = matches!(
+                    mode,
+                    ResidentExternalTurnMode::Ordinary
+                        | ResidentExternalTurnMode::ExplicitSnapshotStep
+                )
+                .then(|| {
+                    self.bound.observations().iter().enumerate().find_map(
+                        |(candidate_ordinal, candidate)| {
+                            observations_share_snapshot(candidate, observation)
+                                .then(|| {
+                                    self.pending_live_inputs
+                                        .get(candidate_ordinal)
+                                        .and_then(|value| value.as_ref())
+                                })
+                                .flatten()
+                        },
+                    )
+                })
+                .flatten()
+                {
+                    value.clone()
                 } else if let Some(value) = host_updates.and_then(|_| {
                     self.bound.observations().iter().enumerate().find_map(
                         |(candidate_ordinal, candidate)| {
@@ -1194,7 +2024,31 @@ impl ResidentExternalCoordinator {
                             ))
                         })?
                 };
-                CapturedInputFact::new(
+                let eligible_provider_trigger =
+                    if mode == ResidentExternalTurnMode::DriverlessBootstrap {
+                        let provider_binding =
+                            observation.provider_binding.as_ref().ok_or_else(|| {
+                                invalid_value("live observation has no provider binding".to_owned())
+                            })?;
+                        !provider_binding.observation_requires_input_driver(
+                            &RuntimeResourceReadRequest {
+                                base_uri: observation.request.base_uri.clone(),
+                                path: observation.request.path.clone(),
+                                context_name: observation.request.context_name.clone(),
+                            },
+                        )?
+                    } else {
+                        true
+                    };
+                let trigger = mode.admits_trigger_facts()
+                    && eligible_provider_trigger
+                    && self
+                        .instance()
+                        .plan
+                        .turn_trigger_inputs
+                        .contains(&observation.input.artifact_slot)
+                    && (host_updates.is_none() || packet_value.is_some());
+                CapturedInputFact::new_with_trigger(
                     sequence,
                     observation.requirement,
                     observation.node,
@@ -1202,6 +2056,7 @@ impl ResidentExternalCoordinator {
                     observation.input.schema_key,
                     observation.input.shape.clone(),
                     value,
+                    trigger,
                     self.artifact.schemas(),
                 )
             })();
@@ -1218,7 +2073,7 @@ impl ResidentExternalCoordinator {
             .facts
             .iter()
             .map(|fact| {
-                CapturedInputFact::new(
+                CapturedInputFact::new_with_trigger(
                     fact.sequence,
                     fact.requirement,
                     fact.node,
@@ -1226,6 +2081,7 @@ impl ResidentExternalCoordinator {
                     fact.schema_key,
                     fact.shape.clone(),
                     fact.value.clone(),
+                    fact.trigger,
                     self.artifact.schemas(),
                 )
             })
@@ -1611,31 +2467,15 @@ impl ResidentExternalCoordinator {
         &self,
         turn: TurnId,
         transaction: TransactionId,
-        input_range: Option<InputSequenceRange>,
-        input_batch_hash: [u8; 32],
-        effect_batch_hash: [u8; 32],
+        evidence: TurnEvidence,
         summary: ResidentTurnSummary,
-        effects: &[MaterializedEffect],
+        mode: ResidentExternalTurnMode,
     ) -> MResult<ResidentTurnRecord> {
-        let effect_count = effects.len();
-        let outbox_effect_count = effects
-            .iter()
-            .filter(|effect| matches!(effect.bound.interaction, ExternalInteraction::Effect(_)))
-            .count();
-        let transactional_effect_count = effects
-            .iter()
-            .filter(|effect| {
-                matches!(
-                    effect.bound.interaction,
-                    ExternalInteraction::TransactionalExternal(_)
-                )
-            })
-            .count();
         Ok(OwnedTurnRecord {
             header: TurnRecordHeader {
                 turn_id: turn,
                 transaction_id: transaction,
-                input_range,
+                input_range: evidence.input_range,
                 status: TurnRecordStatus::Accepted,
                 failure: None,
             },
@@ -1645,23 +2485,20 @@ impl ResidentExternalCoordinator {
                 program_revision: summary.program_revision,
                 plan_generation: self.plan_generation,
                 layout_generation: self.layout_generation,
-                input_batch_hash,
+                input_batch_hash: evidence.input_batch_hash,
+                mode,
                 before_epoch: summary.before_epoch,
                 after_epoch: Some(summary.after_epoch),
                 state_hash: summary.state_hash,
                 touched_slots: u32::from(summary.touched_slots),
                 changed_slots: u32::from(summary.changed_slots),
                 executed_nodes: u32::from(summary.dirty_nodes),
-                effect_count: u32::try_from(effect_count).map_err(|_| count_overflow())?,
-                outbox_effect_count: u32::try_from(outbox_effect_count)
-                    .map_err(|_| count_overflow())?,
-                transactional_effect_count: u32::try_from(transactional_effect_count)
-                    .map_err(|_| count_overflow())?,
-                effect_batch_hash,
-                effect_ids_hash: resident_effect_ids_hash(effects.iter().map(|effect| effect.id)),
-                idempotency_keys_hash: resident_idempotency_keys_hash(
-                    effects.iter().map(|effect| effect.idempotency_key.as_str()),
-                ),
+                effect_count: evidence.effect_count,
+                outbox_effect_count: evidence.outbox_effect_count,
+                transactional_effect_count: evidence.transactional_effect_count,
+                effect_batch_hash: evidence.effect_batch_hash,
+                effect_ids_hash: evidence.effect_ids_hash,
+                idempotency_keys_hash: evidence.idempotency_keys_hash,
             },
         })
     }
@@ -1671,14 +2508,13 @@ impl ResidentExternalCoordinator {
         &self,
         summary: ResidentTurnSummary,
     ) -> MResult<ResidentTurnRecord> {
+        let evidence = TurnEvidence::default().with_effects(&[])?;
         self.accepted_record(
             TurnId::new(1).expect("non-zero test turn"),
             TransactionId(1),
-            None,
-            [0; 32],
-            [0; 32],
+            evidence,
             summary,
-            &[],
+            ResidentExternalTurnMode::Ordinary,
         )
     }
 
@@ -1687,8 +2523,9 @@ impl ResidentExternalCoordinator {
         permit: LedgerPermit,
         turn: TurnId,
         transaction: TransactionId,
-        evidence: RejectedTurnEvidence,
+        evidence: TurnEvidence,
         before_epoch: InstanceEpoch,
+        mode: ResidentExternalTurnMode,
         phase: TurnFailurePhase,
         error: MechError,
     ) -> MResult<ResidentExternalTurnOutcome> {
@@ -1713,6 +2550,7 @@ impl ResidentExternalCoordinator {
                 plan_generation: self.plan_generation,
                 layout_generation: self.layout_generation,
                 input_batch_hash: evidence.input_batch_hash,
+                mode,
                 before_epoch,
                 after_epoch: None,
                 state_hash: self.published_state_hash,
@@ -1743,8 +2581,9 @@ impl ResidentExternalCoordinator {
         permit: LedgerPermit,
         turn: TurnId,
         transaction: TransactionId,
-        evidence: RejectedTurnEvidence,
+        evidence: TurnEvidence,
         before_epoch: InstanceEpoch,
+        mode: ResidentExternalTurnMode,
         phase: TurnFailurePhase,
         error: MechError,
         cleanup: Vec<RuntimeEffectFailure>,
@@ -1755,6 +2594,7 @@ impl ResidentExternalCoordinator {
             transaction,
             evidence,
             before_epoch,
+            mode,
             phase,
             error,
         )?;
@@ -1898,9 +2738,58 @@ impl ResidentExternalCoordinator {
 
     fn remember_live_inputs(&mut self, batch: &CapturedInputBatch) {
         debug_assert!(batch.facts.len() <= self.latest_live_inputs.len());
-        for (latest, fact) in self.latest_live_inputs.iter_mut().zip(batch.facts.iter()) {
-            *latest = Some(fact.value.clone());
+        for (ordinal, fact) in batch.facts.iter().enumerate() {
+            self.latest_live_input_retained_bytes = self
+                .latest_live_input_retained_bytes
+                .checked_sub(self.latest_live_input_bytes[ordinal])
+                .and_then(|bytes| bytes.checked_add(fact.retained_bytes()))
+                .expect("validated live input byte accounting");
+            self.latest_live_inputs[ordinal] = Some(fact.value.clone());
+            self.latest_live_input_bytes[ordinal] = fact.retained_bytes();
         }
+        debug_assert!(
+            self.latest_live_input_retained_bytes <= self.latest_live_input_byte_limit,
+            "an admitted input batch fits the live snapshot byte limit"
+        );
+    }
+}
+
+fn live_input_retained_bytes_after_replacements(
+    mut retained_bytes: usize,
+    current_bytes: &[usize],
+    replacements: impl IntoIterator<Item = (usize, usize)>,
+    retained_byte_limit: usize,
+) -> MResult<usize> {
+    for (ordinal, replacement_bytes) in replacements {
+        let previous = *current_bytes.get(ordinal).ok_or_else(|| {
+            invalid_value("live input snapshot ordinal is out of bounds".to_owned())
+        })?;
+        retained_bytes = retained_bytes
+            .checked_sub(previous)
+            .and_then(|bytes| bytes.checked_add(replacement_bytes))
+            .ok_or_else(|| invalid_value("live input snapshot byte accounting".to_owned()))?;
+    }
+    if retained_bytes > retained_byte_limit {
+        return Err(invalid_value(format!(
+            "live input snapshot requires {retained_bytes} retained bytes, maximum {retained_byte_limit}"
+        )));
+    }
+    Ok(retained_bytes)
+}
+
+#[cfg(test)]
+mod live_input_accounting_tests {
+    use super::live_input_retained_bytes_after_replacements;
+
+    #[test]
+    fn partial_prefix_is_admitted_against_the_retained_suffix() {
+        let error = live_input_retained_bytes_after_replacements(90, &[10, 80], [(0, 30)], 100)
+            .unwrap_err();
+        assert!(
+            error
+                .simple_message()
+                .contains("live input snapshot requires 110 retained bytes, maximum 100")
+        );
     }
 }
 
@@ -1911,6 +2800,53 @@ fn observations_share_snapshot(
     left.request == right.request
         && left.input.schema_key == right.input.schema_key
         && left.input.shape == right.input.shape
+}
+
+fn observations_share_host_source(
+    left: &super::BoundResidentObservation,
+    right: &super::BoundResidentObservation,
+) -> bool {
+    left.request.base_uri == right.request.base_uri && left.request.path == right.request.path
+}
+
+fn observations_share_host_payload(
+    left: &super::BoundResidentObservation,
+    right: &super::BoundResidentObservation,
+) -> bool {
+    observations_share_host_source(left, right)
+        && left.input.schema_key == right.input.schema_key
+        && left.input.shape == right.input.shape
+}
+
+fn captured_activation_triggers(batch: Option<&CapturedInputBatch>) -> Vec<CellSlotId> {
+    batch
+        .iter()
+        .flat_map(|batch| batch.facts.iter())
+        .filter(|fact| fact.trigger)
+        .map(|fact| fact.slot)
+        .collect()
+}
+
+fn prepare_resident_turn<'a>(
+    instance: &'a mut ReactiveInstance,
+    mode: ResidentExternalTurnMode,
+    inputs: &[CapturedValueInput<'_>],
+    activation_triggers: &[CellSlotId],
+) -> Result<PreparedResidentTurn<'a>, ResidentExecutionError> {
+    match mode {
+        ResidentExternalTurnMode::InitialPublication => {
+            instance.prepare_initial_turn_values(inputs)
+        }
+        ResidentExternalTurnMode::ContinuationDrain => {
+            instance.prepare_continuation_turn_values(inputs)
+        }
+        ResidentExternalTurnMode::Ordinary
+        | ResidentExternalTurnMode::DriverlessBootstrap
+        | ResidentExternalTurnMode::ExplicitStep
+        | ResidentExternalTurnMode::ExplicitSnapshotStep => {
+            instance.prepare_turn_values_with_activation_triggers(inputs, activation_triggers)
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -1925,7 +2861,7 @@ struct MaterializedEffect {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-struct RejectedTurnEvidence {
+struct TurnEvidence {
     input_range: Option<InputSequenceRange>,
     input_batch_hash: [u8; 32],
     effect_count: u32,
@@ -1936,7 +2872,7 @@ struct RejectedTurnEvidence {
     idempotency_keys_hash: [u8; 32],
 }
 
-impl RejectedTurnEvidence {
+impl TurnEvidence {
     fn from_input(batch: &CapturedInputBatch) -> Self {
         Self {
             input_range: Some(batch.range),
@@ -1972,6 +2908,15 @@ impl RejectedTurnEvidence {
             effects.iter().map(|effect| effect.idempotency_key.as_str()),
         );
         Ok(self)
+    }
+
+    fn matches_effect_receipt(self, receipt: &ResidentTurnReceiptV1) -> bool {
+        self.effect_count == receipt.effect_count
+            && self.outbox_effect_count == receipt.outbox_effect_count
+            && self.transactional_effect_count == receipt.transactional_effect_count
+            && self.effect_batch_hash == receipt.effect_batch_hash
+            && self.effect_ids_hash == receipt.effect_ids_hash
+            && self.idempotency_keys_hash == receipt.idempotency_keys_hash
     }
 }
 

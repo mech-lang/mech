@@ -23,6 +23,9 @@ pub(super) fn node_bodies_semantically_equal(
         (ExecutableNodeBody::Match(left), ExecutableNodeBody::Match(right)) => {
             comparison.match_declaration(left, right)
         }
+        (ExecutableNodeBody::Activation(left), ExecutableNodeBody::Activation(right)) => {
+            comparison.match_declaration(left, right)
+        }
         (ExecutableNodeBody::Comprehension(left), ExecutableNodeBody::Comprehension(right)) => {
             comparison.comprehension_declaration(left, right)
         }
@@ -99,6 +102,9 @@ impl Comparison<'_> {
                         )
                     }
                     (MatchPatternValue::Binding(left), MatchPatternValue::Binding(right)) => {
+                        left == right
+                    }
+                    (MatchPatternValue::Input(left), MatchPatternValue::Input(right)) => {
                         left == right
                     }
                     _ => false,
@@ -180,6 +186,25 @@ impl Comparison<'_> {
             (CollectionPattern::Equal(left), CollectionPattern::Equal(right)) => {
                 values_equal(self, left, right)
             }
+            (
+                CollectionPattern::Enum {
+                    ordinal: left_ordinal,
+                    payload: left_payload,
+                },
+                CollectionPattern::Enum {
+                    ordinal: right_ordinal,
+                    payload: right_payload,
+                },
+            ) => {
+                left_ordinal == right_ordinal
+                    && match (left_payload, right_payload) {
+                        (Some(left), Some(right)) => {
+                            self.collection_pattern(left, right, values_equal)
+                        }
+                        (None, None) => true,
+                        _ => false,
+                    }
+            }
             (CollectionPattern::Tuple(left), CollectionPattern::Tuple(right)) => {
                 fields(left, right)
             }
@@ -215,6 +240,7 @@ impl Comparison<'_> {
         right: &mech_engine::MatchDeclaration,
     ) -> bool {
         left.scrutinee == right.scrutinee
+            && left.partial == right.partial
             && left.captures.len() == right.captures.len()
             && left
                 .captures
@@ -309,6 +335,11 @@ impl Comparison<'_> {
                 ControlOperationBody::Comprehension(left),
                 ControlOperationBody::Comprehension(right),
             ) => self.comprehension_declaration(left, right),
+            (ControlOperationBody::Recur(left), ControlOperationBody::Recur(right)) => {
+                left == right
+            }
+            (ControlOperationBody::Suspend, ControlOperationBody::Suspend)
+            | (ControlOperationBody::Publish, ControlOperationBody::Publish) => true,
             _ => false,
         }
     }
@@ -346,9 +377,10 @@ impl Comparison<'_> {
 #[cfg(test)]
 mod tests {
     use super::node_bodies_semantically_equal;
-    use mech_engine::{ExecutableNodeBody, ProgramArtifact};
+    use mech_engine::{CanonicalSourceFrontend, ExecutableNodeBody, ProgramArtifact};
     use mech_syntax::document::{
-        AstNode, DocumentId, ExpressionSyntax, ParseConfig, Revision, SyntaxNode, TextSnapshot,
+        AstNode, DocumentId, DocumentSyntax, ExpressionSyntax, ParseConfig, Revision, SyntaxNode,
+        TextSnapshot, parse_canonical_document,
     };
 
     fn compile(source: &str) -> ProgramArtifact {
@@ -380,6 +412,41 @@ mod tests {
             .find(|node| matches!(node.body, ExecutableNodeBody::Match(_)))
             .unwrap()
             .body
+    }
+
+    fn compile_document(source: &str) -> ProgramArtifact {
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(823), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        let document = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        CanonicalSourceFrontend
+            .compile_document(&document)
+            .unwrap()
+            .compile_artifact()
+            .unwrap()
+    }
+
+    fn activation(artifact: &ProgramArtifact) -> &ExecutableNodeBody {
+        &artifact
+            .nodes()
+            .iter()
+            .find(|node| matches!(node.body, ExecutableNodeBody::Activation(_)))
+            .unwrap()
+            .body
+    }
+
+    #[test]
+    fn activation_reuse_compares_computed_pattern_inputs() {
+        let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
+        let original = compile_document(source);
+        let shifted = compile_document(&format!("padding := 7u8\n{source}"));
+        assert!(node_bodies_semantically_equal(
+            &original,
+            activation(&original),
+            &shifted,
+            activation(&shifted),
+        ));
     }
 
     #[test]
