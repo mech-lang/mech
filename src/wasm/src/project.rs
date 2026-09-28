@@ -4108,7 +4108,7 @@ mod tests {
     fn formatter_legacy_code_payload_remains_decodable() {
         let tree = mech_syntax::parser::parse("value := 41\nResult {value + 1}.\n").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let payload = decode_document_payload(&encoded, "document.mec").unwrap();
+        let payload = decode_document_payload(&encoded, "document.mec", None).unwrap();
         assert_eq!(payload.root_specifier(), "document.mec");
         assert_eq!(
             payload.presentation_output_ids(),
@@ -4127,7 +4127,7 @@ mod tests {
         let decoded: mech_core::Program =
             mech_core::nodes::decode_and_decompress(&encoded).unwrap();
         assert_eq!(decoded.title.as_ref().unwrap().fields.len(), 2);
-        let payload = decode_document_payload(&encoded, "document.mec").unwrap();
+        let payload = decode_document_payload(&encoded, "document.mec", None).unwrap();
         assert_eq!(
             payload.source().matches("author:").count(),
             2,
