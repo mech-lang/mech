@@ -56,6 +56,17 @@ pub fn generated_cases() -> Vec<GeneratedCase> {
             "x := 1.0\nsafe! := x <= 2.0\n\"integrity-done\"",
             "\"integrity-done\"",
         ),
+        compiled(
+            "canonical-artifact-features",
+            "generated_native_canonical_artifact_features",
+            concat!(
+                "~value<f64> := 42\n",
+                "converted<u8> := value\n",
+                "matrix<[f32]:2,3> := [1f32 2f32 3f32; 4f32 5f32 6f32]\n",
+                "converted",
+            ),
+            "42",
+        ),
         GeneratedCase {
             profile: OwnerProfile::Fixed,
             case: "fixed-matrix",

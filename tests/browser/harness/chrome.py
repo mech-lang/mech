@@ -402,7 +402,12 @@ class ChromeSession:
         last = None
         while time.monotonic() < deadline:
             try:
-                last = self.evaluate(expression)
+                # A busy page cannot answer Runtime.evaluate until its current
+                # task yields. Let that in-flight probe use the scenario's
+                # remaining budget instead of failing at the transport's
+                # shorter default timeout.
+                remaining = max(0.01, deadline - time.monotonic())
+                last = self.evaluate(expression, timeout=remaining)
             except NavigationContextPending:
                 last = None
             if last:

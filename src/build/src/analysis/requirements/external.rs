@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use mech_core::{
     ApplicationRequirement, BytecodeExternalContractResolver, BytecodeHostCallContract,
-    BytecodeResourceReadContract, BytecodeResourceWriteContract, MResult, MechError,
+    BytecodeResourceReadContract, BytecodeResourceWriteContract, MResult, MechError, NodeId,
     ResourceIntent, Value, ValueData, validate_stable_value_update,
 };
 use mech_runtime::{
@@ -149,6 +149,171 @@ impl<'catalog> NativeBytecodeContractResolver<'catalog> {
             owner,
         });
     }
+
+    pub(crate) fn plan_artifact_resource_read(
+        &mut self,
+        node: NodeId,
+        request: &mech_core::ExecutionResourceRequest,
+    ) -> MResult<Value> {
+        self.plan_resource_read(request, NativeContractSite::ArtifactNode(node))
+    }
+
+    pub(crate) fn plan_artifact_resource_write(
+        &mut self,
+        node: NodeId,
+        request: &mech_core::ExecutionResourceRequest,
+        source: &Value,
+    ) -> MResult<()> {
+        self.plan_resource_write(request, source, NativeContractSite::ArtifactNode(node))
+    }
+
+    fn plan_resource_read(
+        &mut self,
+        request: &mech_core::ExecutionResourceRequest,
+        site: NativeContractSite,
+    ) -> MResult<Value> {
+        let (planned, owner, grant, driven_live) = {
+            let owner = resolve_resource_owner(request, &self.materialized)?;
+            let configured_grants = self
+                .normalized_config
+                .as_ref()
+                .map(|config| config.run_grants.as_slice())
+                .unwrap_or_default();
+            let grant = validate_resource_authorization(request, &owner, configured_grants)?;
+            let planned = owner
+                .provider
+                .plan_read(mech_runtime::RuntimeResourceReadRequest {
+                    base_uri: request.base_uri.clone(),
+                    path: request.path.clone(),
+                    context_name: owner.context.name.clone(),
+                })
+                .map_err(|error| {
+                    native_build_error(
+                        NativeBuildErrorKind::NativeResourcePathInvalid {
+                            target: runtime_resource_grant_target(&grant),
+                            path: request.path.clone(),
+                        },
+                        None,
+                    )
+                    .with_source(error)
+                })?;
+            let driven_live = if request.delivery == mech_core::ResourceDelivery::Live {
+                owner.has_input_driver_for(request).map_err(|error| {
+                    site.invalid(format!(
+                        "live resource read `{}/{}` has an invalid input source: {}",
+                        request.base_uri,
+                        request.path,
+                        error.display_message(),
+                    ))
+                    .with_source(error)
+                })?
+            } else {
+                false
+            };
+            (planned, owner.planned_owner(), grant, driven_live)
+        };
+        if request.delivery == mech_core::ResourceDelivery::Live && !driven_live {
+            return Err(site.invalid(format!(
+                "live resource read `{}/{}` is not driven by its materialized native host",
+                request.base_uri, request.path,
+            )));
+        }
+        self.record_resource_requirement(request, owner, grant);
+        Ok(planned)
+    }
+
+    fn plan_resource_write(
+        &mut self,
+        request: &mech_core::ExecutionResourceRequest,
+        source: &Value,
+        site: NativeContractSite,
+    ) -> MResult<()> {
+        let intent = match request.intent {
+            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+            ResourceIntent::Read => {
+                return Err(site.invalid("resource write carries a read intent".to_owned()));
+            }
+        };
+        let operation =
+            RuntimeCapabilityOperation::from_name(request.operation.clone()).map_err(|error| {
+                site.invalid(format!(
+                    "invalid resource operation `{}`",
+                    request.operation
+                ))
+                .with_source(error)
+            })?;
+        let (owner, grant) = {
+            let owner = resolve_resource_owner(request, &self.materialized)?;
+            let configured_grants = self
+                .normalized_config
+                .as_ref()
+                .map(|config| config.run_grants.as_slice())
+                .unwrap_or_default();
+            let grant = validate_resource_authorization(request, &owner, configured_grants)?;
+            owner
+                .provider
+                .preflight_write(RuntimeResourceWritePreflightRequest {
+                    base_uri: request.base_uri.clone(),
+                    path: request.path.clone(),
+                    context_name: owner.context.name.clone(),
+                    operation: operation.clone(),
+                    intent,
+                })
+                .map_err(|error| {
+                    native_build_error(
+                        NativeBuildErrorKind::NativeResourcePathInvalid {
+                            target: runtime_resource_grant_target(&grant),
+                            path: request.path.clone(),
+                        },
+                        None,
+                    )
+                    .with_source(error)
+                })?;
+            owner
+                .provider
+                .plan_write(RuntimeResourceWriteCommand {
+                    base_uri: request.base_uri.clone(),
+                    path: request.path.clone(),
+                    context_name: owner.context.name.clone(),
+                    operation,
+                    value: source.clone(),
+                    intent,
+                })
+                .map_err(|error| {
+                    site.invalid(format!(
+                        "resource write/send `{}/{}` rejected its payload: {}",
+                        request.base_uri,
+                        request.path,
+                        error.display_message(),
+                    ))
+                    .with_source(error)
+                })?;
+            (owner.planned_owner(), grant)
+        };
+        self.record_resource_requirement(request, owner, grant);
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+enum NativeContractSite {
+    Instruction(u32),
+    ArtifactNode(NodeId),
+}
+
+impl NativeContractSite {
+    fn invalid(self, reason: String) -> MechError {
+        match self {
+            Self::Instruction(instruction) => application_instruction_error(instruction, reason),
+            Self::ArtifactNode(node) => native_build_error(
+                NativeBuildErrorKind::NativeProgramArtifactInvalid {
+                    reason: format!("external node {} is invalid: {reason}", node.get()),
+                },
+                None,
+            ),
+        }
+    }
 }
 
 impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
@@ -213,63 +378,10 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
         &mut self,
         contract: BytecodeResourceReadContract<'_>,
     ) -> MResult<Value> {
-        let (planned, owner, grant, driven_live) = {
-            let owner = resolve_resource_owner(contract.request, &self.materialized)?;
-            let configured_grants = self
-                .normalized_config
-                .as_ref()
-                .map(|config| config.run_grants.as_slice())
-                .unwrap_or_default();
-            let grant =
-                validate_resource_authorization(contract.request, &owner, configured_grants)?;
-            let planned = owner
-                .provider
-                .plan_read(mech_runtime::RuntimeResourceReadRequest {
-                    base_uri: contract.request.base_uri.clone(),
-                    path: contract.request.path.clone(),
-                    context_name: owner.context.name.clone(),
-                })
-                .map_err(|error| {
-                    native_build_error(
-                        NativeBuildErrorKind::NativeResourcePathInvalid {
-                            target: runtime_resource_grant_target(&grant),
-                            path: contract.request.path.clone(),
-                        },
-                        None,
-                    )
-                    .with_source(error)
-                })?;
-            let driven_live = if contract.request.delivery == mech_core::ResourceDelivery::Live {
-                owner
-                    .has_input_driver_for(contract.request)
-                    .map_err(|error| {
-                        application_instruction_error(
-                            contract.instruction,
-                            format!(
-                                "live resource read `{}/{}` has an invalid input source: {}",
-                                contract.request.base_uri,
-                                contract.request.path,
-                                error.display_message(),
-                            ),
-                        )
-                        .with_source(error)
-                    })?
-            } else {
-                false
-            };
-            (planned, owner.planned_owner(), grant, driven_live)
-        };
-        if contract.request.delivery == mech_core::ResourceDelivery::Live && !driven_live {
-            return Err(application_instruction_error(
-                contract.instruction,
-                format!(
-                    "live resource read `{}/{}` is not driven by its materialized native host",
-                    contract.request.base_uri, contract.request.path,
-                ),
-            ));
-        }
-        self.record_resource_requirement(contract.request, owner, grant);
-        Ok(planned)
+        self.plan_resource_read(
+            contract.request,
+            NativeContractSite::Instruction(contract.instruction),
+        )
     }
 
     fn validate_resource_write(
@@ -285,76 +397,11 @@ impl BytecodeExternalContractResolver for NativeBytecodeContractResolver<'_> {
                 ),
             ));
         }
-        let intent = match contract.request.intent {
-            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
-            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
-            ResourceIntent::Read => unreachable!("shared traversal validates resource intent"),
-        };
-        let operation = RuntimeCapabilityOperation::from_name(contract.request.operation.clone())
-            .map_err(|error| {
-            application_instruction_error(
-                contract.instruction,
-                format!(
-                    "invalid resource operation `{}`",
-                    contract.request.operation
-                ),
-            )
-            .with_source(error)
-        })?;
-        let (owner, grant) = {
-            let owner = resolve_resource_owner(contract.request, &self.materialized)?;
-            let configured_grants = self
-                .normalized_config
-                .as_ref()
-                .map(|config| config.run_grants.as_slice())
-                .unwrap_or_default();
-            let grant =
-                validate_resource_authorization(contract.request, &owner, configured_grants)?;
-            owner
-                .provider
-                .preflight_write(RuntimeResourceWritePreflightRequest {
-                    base_uri: contract.request.base_uri.clone(),
-                    path: contract.request.path.clone(),
-                    context_name: owner.context.name.clone(),
-                    operation: operation.clone(),
-                    intent,
-                })
-                .map_err(|error| {
-                    native_build_error(
-                        NativeBuildErrorKind::NativeResourcePathInvalid {
-                            target: runtime_resource_grant_target(&grant),
-                            path: contract.request.path.clone(),
-                        },
-                        None,
-                    )
-                    .with_source(error)
-                })?;
-            owner
-                .provider
-                .plan_write(RuntimeResourceWriteCommand {
-                    base_uri: contract.request.base_uri.clone(),
-                    path: contract.request.path.clone(),
-                    context_name: owner.context.name.clone(),
-                    operation,
-                    value: contract.source.clone(),
-                    intent,
-                })
-                .map_err(|error| {
-                    application_instruction_error(
-                        contract.instruction,
-                        format!(
-                            "resource write/send `{}/{}` rejected its payload: {}",
-                            contract.request.base_uri,
-                            contract.request.path,
-                            error.display_message(),
-                        ),
-                    )
-                    .with_source(error)
-                })?;
-            (owner.planned_owner(), grant)
-        };
-        self.record_resource_requirement(contract.request, owner, grant);
-        Ok(())
+        self.plan_resource_write(
+            contract.request,
+            contract.source,
+            NativeContractSite::Instruction(contract.instruction),
+        )
     }
 }
 

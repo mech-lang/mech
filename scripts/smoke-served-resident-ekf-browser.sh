@@ -1191,7 +1191,7 @@ try:
                 consoleError: data.mechConsoleError || "",
                 pageError: data.mechPageError || "",
               };
-            })()''') or {}
+            })()''', timeout=max(0.01, probe_deadline - time.monotonic())) or {}
             if any((
                 probe.get("done"),
                 probe.get("consoleError"),
@@ -1238,7 +1238,7 @@ try:
             consoleError: data.mechConsoleError || "",
             pageError: data.mechPageError || "",
           };
-        })()''') or {}
+        })()''', timeout=max(0.01, deadline - time.monotonic())) or {}
         milestones = snapshot
         if any((
             snapshot.get("done"),

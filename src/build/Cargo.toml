@@ -20,7 +20,7 @@ full-hosts = ["standard-hosts", "dep:mech-robot-arm"]
 
 [dependencies]
 mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["native-plan", "program", "serde"] }
-mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["artifact-codec"] }
+mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["resident-artifact"] }
 mech-runtime = { version = "0.3.5", path = "../runtime", default-features = false, features = ["runtime", "serde", "string"] }
 mech-terminal = { version = "0.3.5", path = "../../hosts/terminal", default-features = false, features = ["provider"], optional = true }
 mech-console = { version = "0.3.5", path = "../../hosts/console", default-features = false, features = ["native"], optional = true }

@@ -62,43 +62,46 @@ impl NativeApplicationBuilder {
             &self.environment.host_catalog,
             request.target.as_deref(),
         )?;
-        program.validate_runtime_contracts_with(
-            &self.environment.function_catalog,
-            &mut native_resolver,
-        )?;
-        let mut runtime_functions = analysis::analyze_runtime_functions(
-            &program,
-            &self.environment.function_catalog,
-            request.instruction_type_bindings.as_deref(),
-            request.instruction_type_binding_requirements.as_deref(),
-        )?;
-        let mut artifact_type_features = Vec::new();
-        if !program.artifact.is_empty() {
+        let artifact_features = if program.artifact.is_empty() {
+            program.validate_runtime_contracts_with(
+                &self.environment.function_catalog,
+                &mut native_resolver,
+            )?;
+            None
+        } else {
             let artifact = mech_engine::decode_program_artifact_bytecode_v1(&request.bytecode)
                 .map_err(|error| {
                     error::native_build_error(
-                        error::NativeBuildErrorKind::NativeRuntimeFunctionBindingInvalid {
-                            reason: format!("canonical artifact admission failed: {error:?}"),
+                        error::NativeBuildErrorKind::NativeProgramArtifactInvalid {
+                            reason: format!("{error:?}"),
                         },
                         None,
                     )
                 })?;
-            runtime_functions.extend(analysis::analyze_artifact_runtime_functions(
+            analysis::artifact::plan_artifact_external_contracts(
                 &artifact,
                 &self.environment.function_catalog,
-            )?);
-            artifact_type_features = analysis::artifact_schema_features(artifact.schemas());
-            runtime_functions.sort_by_key(|function| function.runtime_id);
-            runtime_functions.dedup_by_key(|function| function.runtime_id);
-        }
+                &mut native_resolver,
+            )?;
+            Some(analysis::artifact::analyze_artifact_native_features(
+                &artifact,
+            ))
+        };
+        let runtime_functions = if artifact_features.is_some() {
+            Vec::new()
+        } else {
+            analysis::analyze_runtime_functions(
+                &program,
+                &self.environment.function_catalog,
+                request.instruction_type_bindings.as_deref(),
+                request.instruction_type_binding_requirements.as_deref(),
+            )?
+        };
         for function in &runtime_functions {
             plan::validate_installer_path(&function.installer_path)?;
         }
         let referenced_runtime_types = program.referenced_runtime_types()?;
-        let mut runtime_types = analysis::analyze_runtime_types(&referenced_runtime_types)?;
-        runtime_types.cargo_features.extend(artifact_type_features);
-        runtime_types.cargo_features.sort();
-        runtime_types.cargo_features.dedup();
+        let runtime_types = analysis::analyze_runtime_types(&referenced_runtime_types)?;
         let requirements = native_resolver.finish()?;
         let application_kind = if analysis::application_requires_hosting(&program.requirements)
             || request.runtime_config.is_some()
@@ -113,12 +116,19 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            core_features.extend(artifact.value_features.iter().cloned());
+        }
         core_features.insert("program".to_owned());
         let mut engine_features = runtime_types
             .cargo_features
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            engine_features.extend(artifact.value_features.iter().cloned());
+            engine_features.extend(artifact.engine_features.iter().cloned());
+        }
         // `mech-engine` retains dynamic row-vector construction through its
         // matrix-assignment implementation. A program that returns only a
         // `RowVectorD` therefore still needs this engine-internal closure;
@@ -141,6 +151,9 @@ impl NativeApplicationBuilder {
             .iter()
             .cloned()
             .collect::<BTreeSet<_>>();
+        if let Some(artifact) = &artifact_features {
+            runtime_features.extend(artifact.value_features.iter().cloned());
+        }
         runtime_features.insert("runtime".to_owned());
         runtime_features.insert("string".to_owned());
         runtime_features.insert("resident-routing".to_owned());
