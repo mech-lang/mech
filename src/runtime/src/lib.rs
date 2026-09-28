@@ -34,6 +34,7 @@ mod snapshot;
 
 #[cfg(feature = "runtime")]
 pub mod actor;
+mod browser_document;
 #[cfg(feature = "runtime")]
 pub mod capability;
 #[cfg(feature = "runtime")]
@@ -92,6 +93,7 @@ pub use self::snapshot::*;
 
 #[cfg(feature = "runtime")]
 pub use self::actor::*;
+pub use self::browser_document::*;
 #[cfg(feature = "runtime")]
 pub use self::capability::*;
 #[cfg(feature = "runtime")]

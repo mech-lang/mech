@@ -335,9 +335,11 @@ try:
         timeout=90,
         interval=0.25,
     )
-    browser.write_dom(dom_file)
 finally:
-    browser.close()
+    try:
+        browser.write_dom(dom_file)
+    finally:
+        browser.close()
 raise SystemExit(124)
 PY
 }

@@ -21,7 +21,8 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
 use mech_engine::{
-    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_program_output_id,
+    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_output_ids,
+    root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -1308,7 +1309,7 @@ mod document {
     impl WasmDocument {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
-            let payload = decode_document_payload(encoded)?;
+            let payload = decode_document_payload(encoded, "document.mec", None)?;
             let root_specifier = payload.root_specifier().to_owned();
             let source_map = HashMap::from([(root_specifier.clone(), payload.source().to_owned())]);
             Self::from_payload_with_sources(payload, &root_specifier, source_map, Vec::new())
@@ -1323,8 +1324,12 @@ mod document {
             root_specifier: &str,
             sources: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let payload = decode_document_payload(encoded)?;
             let source_map = source_map_from_js(sources)?;
+            let payload = decode_document_payload(
+                encoded,
+                root_specifier,
+                source_map.get(root_specifier).map(String::as_str),
+            )?;
             Self::from_payload_with_sources(payload, root_specifier, source_map, Vec::new())
         }
 
@@ -1336,8 +1341,12 @@ mod document {
             resolutions: JsValue,
             provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let payload = decode_document_payload(encoded)?;
             let source_map = source_map_from_js(sources)?;
+            let payload = decode_document_payload(
+                encoded,
+                root_specifier,
+                source_map.get(root_specifier).map(String::as_str),
+            )?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
             Self::from_payload_with_sources_and_provenance(
@@ -1427,9 +1436,13 @@ mod document {
             config_source: &str,
             sources: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let payload = decode_document_payload(encoded)?;
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
+            let payload = decode_document_payload(
+                encoded,
+                root_specifier,
+                source_map.get(root_specifier).map(String::as_str),
+            )?;
             let authority = served_browser_authority()?;
             Self::from_served_payload(
                 payload,
@@ -1456,9 +1469,13 @@ mod document {
             resolutions: JsValue,
             provenance: JsValue,
         ) -> Result<WasmDocument, JsValue> {
-            let payload = decode_document_payload(encoded)?;
             let document = parse_project_config(config_source)?;
             let source_map = source_map_from_js(sources)?;
+            let payload = decode_document_payload(
+                encoded,
+                root_specifier,
+                source_map.get(root_specifier).map(String::as_str),
+            )?;
             let resolutions = document_resolutions_from_js(resolutions, &source_map)?;
             let provenance = served_provenance_from_js(provenance, &source_map)?;
             let authority = served_browser_authority()?;
@@ -1605,7 +1622,8 @@ mod document {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
             let mut replacement_bootstrap = self.bootstrap.clone();
-            let payload = decode_document_payload(encoded)?;
+            let payload =
+                decode_document_payload(encoded, &replacement_bootstrap.root_specifier, None)?;
             if payload.root_specifier() != replacement_bootstrap.root_specifier {
                 return Err(js_error(
                     "replacement document changes the retained root specifier",
@@ -2327,8 +2345,27 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
     .map_err(to_js_error)
 }
 
-fn decode_document_payload(encoded: &str) -> Result<BrowserDocumentPayload, JsValue> {
-    BrowserDocumentPayload::decode(encoded).map_err(to_js_error)
+fn decode_document_payload(
+    encoded: &str,
+    legacy_root_specifier: &str,
+    legacy_source: Option<&str>,
+) -> Result<BrowserDocumentPayload, JsValue> {
+    if let Ok(payload) = BrowserDocumentPayload::decode(encoded) {
+        return Ok(payload);
+    }
+    let tree: mech_core::Program =
+        mech_core::nodes::decode_and_decompress(encoded).map_err(|error| {
+            js_error(format!(
+                "failed to decode browser document payload or legacy syntax tree: {error}"
+            ))
+        })?;
+    let output_ids = root_document_output_ids(&tree);
+    let source = legacy_source
+        .map(str::to_owned)
+        .unwrap_or_else(|| mech_syntax::Formatter::new().format(&tree));
+    BrowserDocumentPayload::new(legacy_root_specifier, source)
+        .map(|payload| payload.with_presentation_output_ids(output_ids))
+        .map_err(to_js_error)
 }
 
 fn validate_document_payload(
@@ -3275,6 +3312,28 @@ fn to_js_error(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn legacy_tree_payload_uses_the_exact_served_source() {
+        let source = "  answer := 1\r\nanswer\r\n";
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let payload = decode_document_payload(&encoded, "main.mec", Some(source)).unwrap();
+        assert_eq!(payload.root_specifier(), "main.mec");
+        assert_eq!(payload.source(), source);
+    }
+
+    #[test]
+    fn browser_documentation_fixture_has_canonical_syntax() {
+        let source = "Accepted Documentation\n===============================================================================\nAccepted documentation evaluates {answer}.\n\n";
+        let document = CanonicalWasmDocument::retain(
+            "browser:documentation:fixture",
+            mech_syntax::document::Revision(0),
+            source,
+        )
+        .unwrap();
+        document.document().index().unwrap();
+    }
 
     const CONFIG: &str = r#"config := {
   hosts: []
@@ -4493,7 +4552,7 @@ phase"#;
         let candidate = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
-            retained,
+            retained.clone(),
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();

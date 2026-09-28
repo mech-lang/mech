@@ -4954,7 +4954,7 @@ try:
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency-next.mec')) {
       return new Promise((resolve, reject) => {
         window.__MECH_DOCUMENTATION_RELEASES__.set('latency-next', () => resolve(new Response(
-          'Accepted Documentation\\n----------------------\\nAccepted documentation evaluates {answer}.\\n\\n',
+          'Accepted Documentation\\n===============================================================================\\nAccepted documentation evaluates {answer}.\\n\\n',
           { status: 200, headers: { 'content-type': 'text/plain' } },
         )));
         init?.signal?.addEventListener(
