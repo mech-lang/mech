@@ -924,18 +924,6 @@ pub(super) fn validate_match_inner(
                             }
                         }
                         ControlOperationBody::Suspend => {
-                            let Some((lexical_input, lexical_output)) = lexical_signature else {
-                                return Err(invalid(
-                                    "suspended control requires an enclosing lexical signature",
-                                ));
-                            };
-                            if inputs.as_slice() != [lexical_input]
-                                || operation.schema != lexical_output
-                            {
-                                return Err(invalid(
-                                    "suspended control must preserve the enclosing input and output schemas",
-                                ));
-                            }
                             if !enclosing_matches.is_empty()
                                 || guarded
                                 || inside_comprehension
@@ -950,8 +938,25 @@ pub(super) fn validate_match_inner(
                                     "suspension must be the terminal FSM body yield",
                                 ));
                             }
+                            let Some((lexical_input, lexical_output)) = lexical_signature else {
+                                return Err(invalid(
+                                    "suspended control requires an enclosing lexical signature",
+                                ));
+                            };
+                            if inputs.as_slice() != [lexical_input]
+                                || operation.schema != lexical_output
+                            {
+                                return Err(invalid(
+                                    "suspended control must preserve the enclosing input and output schemas",
+                                ));
+                            }
                         }
                         ControlOperationBody::Publish => {
+                            if guarded || inside_comprehension {
+                                return Err(invalid(
+                                    "FSM publication cannot execute inside a guard or comprehension",
+                                ));
+                            }
                             let Some((_, lexical_output)) = lexical_signature else {
                                 return Err(invalid(
                                     "FSM publication requires an enclosing lexical signature",
@@ -962,11 +967,6 @@ pub(super) fn validate_match_inner(
                             {
                                 return Err(invalid(
                                     "FSM publication must preserve the enclosing output schema",
-                                ));
-                            }
-                            if guarded || inside_comprehension {
-                                return Err(invalid(
-                                    "FSM publication cannot execute inside a guard or comprehension",
                                 ));
                             }
                         }
