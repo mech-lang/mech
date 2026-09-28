@@ -987,7 +987,20 @@ fn runtime_document(
     source: &WasmDocumentBootstrap,
     candidate: &SourceDocument,
 ) -> MResult<(SourceDocument, Option<OutputId>)> {
-    use mech_syntax::document::{ParseConfig, Revision};
+    use mech_syntax::document::{
+        AstNode, CodeBlockSyntax, ParseConfig, Revision, SyntaxNode, TextSize,
+    };
+
+    fn enclosing_fence_end(node: &SyntaxNode, point: TextSize) -> Option<usize> {
+        if let Some(fence) = CodeBlockSyntax::cast(node.clone()) {
+            let range = fence.syntax().range();
+            if range.start <= point && point <= range.end {
+                return Some(range.end.0 as usize);
+            }
+        }
+        node.children()
+            .find_map(|child| enclosing_fence_end(&child, point))
+    }
 
     let original = source.initial_repl_source();
     let candidate_source = candidate.source().to_contiguous_string();
@@ -1050,7 +1063,10 @@ fn runtime_document(
                 .outputs
                 .get(output.output as usize)
         })
-        .map(|anchor| anchor.range.end.0 as usize);
+        .map(|anchor| {
+            enclosing_fence_end(base_document.document().syntax(), anchor.range.end)
+                .unwrap_or(anchor.range.end.0 as usize)
+        });
     let Some(program_boundary) = program_boundary else {
         return Ok((candidate.clone(), None));
     };
@@ -1222,11 +1238,14 @@ mod document {
             .initial_bundle
             .as_ref()
             .is_some_and(|bundle| bundle.source == candidate.source().to_contiguous_string());
-        let (runtime_source, program_output) = if bundled_initial {
-            (candidate.clone(), None)
-        } else {
-            runtime_document(bootstrap, candidate)?
-        };
+        if bundled_initial {
+            return bundled_output_ordinals(
+                bootstrap,
+                bootstrap.initial_bundle.as_ref().expect("checked above"),
+                require_all,
+            );
+        }
+        let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
         let nominal_origin = runtime_source.nominal_origin().cloned().or_else(|| {
             bootstrap
                 .provenance
@@ -1266,17 +1285,63 @@ mod document {
             .copied()
             .zip(outputs.into_iter().map(|output| u64::from(output.output)))
             .collect::<HashMap<_, _>>();
-        let program_output = program_output.or_else(|| {
-            bundled_initial.then(|| {
-                program
-                    .document_outputs()
-                    .iter()
-                    .find(|output| output.kind == SourceDocumentOutputKind::Program)
-                    .map(|output| OutputId::new(output.output))
-            })?
-        });
         if let Some(output) = program_output {
             ordinals.insert(root_document_program_output_id(), u64::from(output.0));
+        }
+        Ok(ordinals)
+    }
+
+    fn bundled_output_ordinals(
+        bootstrap: &WasmDocumentBootstrap,
+        bundle: &CanonicalProgramBundle,
+        require_all: bool,
+    ) -> MResult<HashMap<u64, u64>> {
+        let artifact = mech_engine::decode_program_artifact_bytecode_v1(&bundle.bytecode).map_err(
+            |error| document_runtime_error(format!("invalid bundled artifact: {error:?}")),
+        )?;
+        let document_prefix = format!("{}:", bundle.document_id);
+        let mut presentation = artifact
+            .outputs()
+            .iter()
+            .filter_map(|output| {
+                let name = mech_engine::decode_interactive_symbol_output_name(&output.name)
+                    .unwrap_or_else(|| output.name.clone());
+                let suffix = name.strip_prefix("document:")?;
+                let suffix = suffix.strip_prefix(&document_prefix).unwrap_or(suffix);
+                let (role, offset) = suffix.split_once(':')?;
+                matches!(role, "inline" | "fence")
+                    .then(|| {
+                        offset
+                            .parse::<u32>()
+                            .ok()
+                            .map(|offset| (offset, u64::from(output.output.0)))
+                    })
+                    .flatten()
+            })
+            .collect::<Vec<_>>();
+        presentation.sort_by_key(|(offset, _)| *offset);
+        if require_all && presentation.len() != bootstrap.presentation_output_ids.len() {
+            return Err(document_runtime_error(format!(
+                "bundled artifact has {} presentation outputs for {} browser addresses",
+                presentation.len(),
+                bootstrap.presentation_output_ids.len()
+            )));
+        }
+        let mut ordinals = bootstrap
+            .presentation_output_ids
+            .iter()
+            .copied()
+            .zip(presentation.into_iter().map(|(_, ordinal)| ordinal))
+            .collect::<HashMap<_, _>>();
+        if let Some(output) = artifact.outputs().first() {
+            let name = mech_engine::decode_interactive_symbol_output_name(&output.name)
+                .unwrap_or_else(|| output.name.clone());
+            if !name.starts_with("document:") {
+                ordinals.insert(
+                    root_document_program_output_id(),
+                    u64::from(output.output.0),
+                );
+            }
         }
         Ok(ordinals)
     }
@@ -3456,6 +3521,21 @@ fn test_document_payload(root_specifier: &str, source: &str) -> BrowserDocumentP
 mod tests {
     use super::*;
 
+    #[test]
+    fn pretty_text_normalizes_set_commas() {
+        let document = SourceDocument::parse_resolved(
+            "set-format.mec",
+            mech_syntax::document::Revision(0),
+            "values:={1,2}\n",
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let formatted = mech_runtime::CanonicalDocumentRenderer
+            .format_pretty_text(&document.document())
+            .unwrap();
+        assert_eq!(formatted, "values := {1, 2}\n");
+    }
+
     const CONFIG: &str = r#"config := {
   hosts: []
   run: {
@@ -3542,6 +3622,50 @@ mod tests {
                 outputs.contains_key(&root_document_program_output_id()),
                 bootstrap.program_output_id().unwrap().is_some(),
             );
+        }
+    }
+
+    #[test]
+    fn bundled_import_outputs_use_the_server_artifact_ordinals() {
+        let source = "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n\nResult {answer}.\n";
+        let mut resolver = InMemorySourceResolver::new();
+        resolver
+            .insert_canonical_string("dep.mec", "value := 41.0\n<+ value\n")
+            .unwrap();
+        resolver
+            .insert_canonical_string("main.mec", source)
+            .unwrap();
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .source_resolver(resolver)
+            .build_compiler()
+            .unwrap();
+        let product = compiler
+            .compile_canonical_interactive_root(SourceRequest::new("main.mec"))
+            .unwrap();
+        let root = SourceDocument::parse_resolved(
+            "main.mec",
+            mech_syntax::document::Revision(0),
+            source,
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let bundle = CanonicalProgramBundle::from_product("main.mec", &root, &product).unwrap();
+        let mut bootstrap = document_bootstrap(
+            "main.mec",
+            source,
+            HashMap::from([("dep.mec".to_owned(), "value := 41.0\n<+ value\n".to_owned())]),
+            Vec::new(),
+        );
+        bootstrap.presentation_output_ids =
+            mech_runtime::canonical_document_presentation_output_ids(&root.document()).unwrap();
+        assert!(!bootstrap.presentation_output_ids.is_empty());
+        bootstrap.initial_bundle = Some(bundle);
+
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert!(ordinals.contains_key(&root_document_program_output_id()));
+        for output_id in &bootstrap.presentation_output_ids {
+            assert!(ordinals.contains_key(output_id));
         }
     }
 

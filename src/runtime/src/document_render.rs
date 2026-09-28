@@ -3006,6 +3006,7 @@ fn format_canonical_item(node: &SyntaxNode) -> Result<String, CanonicalDocumentR
         SyntaxKind::ArgumentList,
         SyntaxKind::Map,
         SyntaxKind::Record,
+        SyntaxKind::Set,
     ] {
         collect_nodes(node, kind, &mut separator_lists);
     }
