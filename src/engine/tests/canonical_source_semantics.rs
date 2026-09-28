@@ -2394,15 +2394,12 @@ fn activation_reads_forwarded_output_from_the_current_input_turn() {
         .find(|slot| slot.role == mech_engine::SlotRole::State)
         .unwrap()
         .slot;
-    let mech_engine::__resident::ResidentValueBorrow::Snapshot { values, .. } =
+    let mech_engine::__resident::ResidentValueBorrow::F64 { values, .. } =
         instance.state_borrow(selected).unwrap()
     else {
-        panic!("mutable activation state uses snapshot storage")
+        panic!("mutable activation state uses typed f64 storage")
     };
-    assert_eq!(
-        values[0].as_ref().unwrap().canonical_data_draft().unwrap(),
-        ValueDataDraft::F64(mech_core::snapshot::F64Bits::from_f64(current))
-    );
+    assert_eq!(values, [current]);
 }
 
 #[test]
@@ -2730,7 +2727,7 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
         .collect::<Vec<_>>();
     let other_trigger = instance.plan.inputs[2].artifact_slot;
     let initial = instance.prepare_initial_turn_values(&inputs).unwrap();
-    assert_eq!(initial.summary().dirty_nodes, 2);
+    assert_eq!(initial.summary().dirty_nodes, 1);
     initial.abort();
     let prepared = instance
         .prepare_turn_values_with_activation_triggers(&inputs, &[other_trigger])

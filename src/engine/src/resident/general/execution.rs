@@ -1429,6 +1429,16 @@ impl ReactiveInstance {
                 );
             }
             for update in updates.iter() {
+                if *update != *node
+                    && !sampled.contains(update)
+                    && bit_is_set(&self.plan.topology.turn_root_mask, update.get() as usize)
+                {
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                    continue;
+                }
                 clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
                 set_bit(
                     &mut self.workspace.suppressed_activation_bits,
@@ -1481,6 +1491,16 @@ impl ReactiveInstance {
                 );
             }
             for update in updates.iter() {
+                if *update != *node
+                    && !sampled.contains(update)
+                    && bit_is_set(&self.plan.topology.turn_root_mask, update.get() as usize)
+                {
+                    clear_bit(
+                        &mut self.workspace.suppressed_activation_bits,
+                        update.get() as usize,
+                    );
+                    continue;
+                }
                 clear_bit(&mut self.workspace.dirty_bits, update.get() as usize);
                 set_bit(
                     &mut self.workspace.suppressed_activation_bits,
@@ -5578,7 +5598,9 @@ fn region_bytes(region: ResidentRegion) -> usize {
 }
 
 fn bit_is_set(words: &[u64], bit: usize) -> bool {
-    words[bit / 64] & (1_u64 << (bit % 64)) != 0
+    words
+        .get(bit / 64)
+        .is_some_and(|word| word & (1_u64 << (bit % 64)) != 0)
 }
 
 fn set_bit(words: &mut [u64], bit: usize) {

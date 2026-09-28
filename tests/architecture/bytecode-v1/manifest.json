@@ -2018,7 +2018,7 @@
           "reserved": 0
         }
       ],
-      "sha256": "50a6860bb740c342e4e1b80d062c3f47b5d1be93874d696dc250af9c00f9ee3f",
+      "sha256": "e06f056d4a9d4b7b4643c0b8f4e7650f888a34499b53e6dfe64736fd698b3c88",
       "source": "(1, 2) ? | (left, right), left > 0 => left + right | * => 0",
       "source_file": "structural-match.mec"
     },
