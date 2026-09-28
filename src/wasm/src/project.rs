@@ -845,6 +845,7 @@ fn compile_browser_interactive_document(
         .plan_canonical_interactive_resolved_root(resolved_root)
 }
 
+#[cfg(test)]
 fn presentation_output_ids_for_document(document: &SourceDocument) -> MResult<Vec<u64>> {
     let source = document.source().to_contiguous_string();
     let program = mech_syntax::parser::parse(source.trim()).map_err(|error| {
@@ -1263,6 +1264,38 @@ fn retained_submission_fragment<'a>(
     Ok((&retained_source[start..end], start))
 }
 
+fn retained_document_fragment_addresses(
+    bindings: &[document::DocumentOutputBinding],
+    fragment_start: usize,
+    fragment_len: usize,
+) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
+    use mech_syntax::document::{TextRange, TextSize};
+
+    let fragment_end = fragment_start.checked_add(fragment_len).ok_or_else(|| {
+        document_runtime_error("accepted documentation fragment range overflowed")
+    })?;
+    bindings
+        .iter()
+        .filter_map(|binding| {
+            let (start, end) = binding.source_span?;
+            (start >= fragment_start && end <= fragment_end).then_some((binding, start, end))
+        })
+        .map(|(binding, start, end)| {
+            let start = u32::try_from(start - fragment_start).map_err(|_| {
+                document_runtime_error("documentation output start exceeds renderer limits")
+            })?;
+            let end = u32::try_from(end - fragment_start).map_err(|_| {
+                document_runtime_error("documentation output end exceeds renderer limits")
+            })?;
+            Ok((
+                TextRange::new(TextSize(start), TextSize(end)),
+                binding.output_id,
+            ))
+        })
+        .collect()
+}
+
+#[cfg(test)]
 fn live_document_fragment_addresses(
     bootstrap: &WasmDocumentBootstrap,
     accepted: &SourceDocument,
@@ -1398,17 +1431,17 @@ mod document {
     }
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    struct DocumentOutputBinding {
-        output_id: u64,
+    pub(super) struct DocumentOutputBinding {
+        pub(super) output_id: u64,
         semantic_id: u64,
         kind: SourceDocumentOutputKind,
         ordinal: u64,
-        source_span: Option<(usize, usize)>,
+        pub(super) source_span: Option<(usize, usize)>,
     }
 
     #[derive(Default)]
-    struct DocumentOutputState {
-        bindings: Vec<DocumentOutputBinding>,
+    pub(super) struct DocumentOutputState {
+        pub(super) bindings: Vec<DocumentOutputBinding>,
         program_output: Option<u64>,
     }
 
@@ -1458,7 +1491,7 @@ mod document {
         )
     }
 
-    fn document_output_state_for_source(
+    pub(super) fn document_output_state_for_source(
         bootstrap: &WasmDocumentBootstrap,
         candidate: &SourceDocument,
         require_all: bool,
@@ -1803,6 +1836,36 @@ mod document {
                     .collect::<Vec<_>>(),
                 vec![base, second, third]
             );
+        }
+
+        #[test]
+        fn appended_fragment_uses_the_retained_binding_after_duplicate_removal() {
+            let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            // The first duplicate was removed in an earlier edit, so the
+            // surviving fence deliberately retains the second occurrence ID.
+            let previous = vec![fence(second, 4, 0)];
+            let mut next = vec![fence(base, 4, 0), fence(second, 5, 2)];
+
+            retain_output_identities(
+                &previous,
+                &mut next,
+                "F",
+                "F F",
+                Some(SourceEditAnchors {
+                    old_start: 1,
+                    old_end: 1,
+                    new_start: 1,
+                    new_end: 3,
+                }),
+            );
+
+            assert_eq!(next[0].output_id, second);
+            assert_eq!(next[1].output_id, base);
+            let addresses =
+                super::super::retained_document_fragment_addresses(&next, 2, 1).unwrap();
+            assert_eq!(addresses.len(), 1);
+            assert_eq!(addresses[0].1, base);
         }
 
         #[test]
@@ -2914,11 +2977,10 @@ mod document {
                     accepted_fragment.to_owned(),
                 )
                 .map_err(to_js_error)?;
-                let addresses = live_document_fragment_addresses(
-                    &self.bootstrap,
-                    current,
-                    accepted_fragment,
+                let addresses = retained_document_fragment_addresses(
+                    &self.document_output_bindings,
                     fragment_start,
+                    accepted_fragment.len(),
                 )
                 .map_err(to_js_error)?;
                 Some(
