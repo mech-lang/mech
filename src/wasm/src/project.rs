@@ -20,9 +20,10 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
+#[cfg(test)]
+use mech_engine::CanonicalSourceFrontend;
 use mech_engine::{
-    CanonicalSourceFrontend, SourceDocumentOutputKind, root_document_output_ids,
-    root_document_program_output_id,
+    SourceDocumentOutputKind, root_document_output_ids, root_document_program_output_id,
 };
 #[cfg(feature = "browser_host_scene")]
 use mech_runtime::MechEvent;
@@ -792,6 +793,90 @@ struct DocumentRuntimeCandidate {
     scenes: BrowserSceneRegistry,
 }
 
+fn compile_browser_interactive_document(
+    bootstrap: &WasmDocumentBootstrap,
+    document: &SourceDocument,
+) -> MResult<mech_engine::CanonicalSourceProgram> {
+    let resolver = document_source_resolver(document, bootstrap)?;
+    let resolved_root = mech_runtime::SourceResolver::resolve(
+        &resolver,
+        &SourceRequest::new(&bootstrap.root_specifier),
+    )?
+    .ok_or_else(|| document_runtime_error("browser document root did not resolve"))?;
+    document_planning_compiler(bootstrap, document)?
+        .plan_canonical_interactive_resolved_root(resolved_root)
+}
+
+fn document_planning_compiler(
+    bootstrap: &WasmDocumentBootstrap,
+    document: &SourceDocument,
+) -> MResult<mech_runtime::ProgramCompiler> {
+    let source = bootstrap.source();
+    #[cfg(feature = "browser_host_scene")]
+    let planning_scenes = BrowserSceneRegistry::new();
+    let mut builder = runtime_builder_with_factories(
+        None,
+        #[cfg(feature = "browser_host_scene")]
+        planning_scenes,
+    )
+    .map_err(js_value_to_mech_error)?;
+    let resolver = document_source_resolver(document, source)?;
+
+    #[cfg(feature = "served_project_authority")]
+    match bootstrap.served.as_ref() {
+        None => {
+            builder = builder
+                .config(mech_runtime::RuntimeConfig::new("wasm-document-planning"))
+                .source_resolver(resolver);
+        }
+        Some(served) => {
+            let config = parse_config_document(
+                "mech.mcfg",
+                &served.config_source,
+                ConfigProfileOptions::default(),
+            )?;
+            builder = builder
+                .config(served.authority.into_runtime_config()?)
+                .source_resolver(resolver);
+            for required in config
+                .hosts
+                .iter()
+                .filter(|host| host.provider != "compute")
+            {
+                if let Some(host) =
+                    served.authority.hosts.iter().find(|host| {
+                        host.name == required.name && host.provider == required.provider
+                    })
+                {
+                    builder = builder.host_instance(host.clone());
+                }
+            }
+            for grant in required_issued_grants(&config, &served.authority) {
+                builder = builder.run_resource_grant(grant);
+            }
+        }
+    }
+    #[cfg(not(feature = "served_project_authority"))]
+    {
+        builder = builder
+            .config(mech_runtime::RuntimeConfig::new("wasm-document-planning"))
+            .source_resolver(resolver);
+    }
+
+    builder
+        .host_instance(HostInstanceConfig {
+            name: source.console_instance.clone(),
+            provider: "console".to_string(),
+            settings: ConfigValue::Map(Default::default()),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: format!("{}/output", source.console_instance),
+            operations: vec!["write".to_string()],
+            paths: vec!["line".to_string()],
+        })
+        .build_compiler()
+}
+
 fn build_document_repl_runtime_for_document(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
@@ -988,10 +1073,7 @@ fn runtime_document(
         ParseConfig::default(),
     )
     .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
-    let original_program = match CanonicalSourceFrontend.compile_interactive_document_with_catalog(
-        &base_document.document(),
-        mech_stdlib::source_catalog(),
-    ) {
+    let original_program = match compile_browser_interactive_document(source, &base_document) {
         Ok(program) => program,
         Err(_) => return Ok((candidate.clone(), None)),
     };
@@ -1050,12 +1132,7 @@ fn runtime_document(
     .map_err(|error| {
         document_runtime_error(format!("invalid browser runtime source: {error:?}"))
     })?;
-    let program = CanonicalSourceFrontend
-        .compile_interactive_document_with_catalog(
-            &document.document(),
-            mech_stdlib::source_catalog(),
-        )
-        .map_err(|error| document_runtime_error(error.to_string()))?;
+    let program = compile_browser_interactive_document(source, &document)?;
     let output = program.document_outputs().iter().find_map(|output| {
         let anchor = program.source_map().outputs.get(output.output as usize)?;
         let start = anchor.range.start.0 as usize;
@@ -1112,12 +1189,7 @@ fn live_document_fragment_addresses(
             document_runtime_error("accepted documentation fragment was not retained")
         })?;
     let fragment_end = fragment_start + fragment.len();
-    let program = CanonicalSourceFrontend
-        .compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        )
-        .map_err(|error| document_runtime_error(error.to_string()))?;
+    let program = compile_browser_interactive_document(bootstrap, &runtime_source)?;
     Ok(program
         .document_outputs()
         .iter()
@@ -1184,13 +1256,18 @@ mod document {
         require_all: bool,
     ) -> MResult<HashMap<u64, u64>> {
         let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
-        let program = match CanonicalSourceFrontend.compile_interactive_document_with_catalog(
-            &runtime_source.document(),
-            mech_stdlib::source_catalog(),
-        ) {
+        if runtime_source
+            .source()
+            .to_contiguous_string()
+            .trim()
+            .is_empty()
+        {
+            return Ok(HashMap::new());
+        }
+        let program = match compile_browser_interactive_document(bootstrap, &runtime_source) {
             Ok(program) => program,
             Err(_) if bootstrap.presentation_output_ids.is_empty() => return Ok(HashMap::new()),
-            Err(error) => return Err(document_runtime_error(error.to_string())),
+            Err(error) => return Err(error),
         };
         let outputs = program
             .document_outputs()
@@ -1622,8 +1699,14 @@ mod document {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
             let mut replacement_bootstrap = self.bootstrap.clone();
-            let payload =
-                decode_document_payload(encoded, &replacement_bootstrap.root_specifier, None)?;
+            let payload = decode_document_payload(
+                encoded,
+                &replacement_bootstrap.root_specifier,
+                replacement_bootstrap
+                    .source_map
+                    .get(&replacement_bootstrap.root_specifier)
+                    .map(String::as_str),
+            )?;
             if payload.root_specifier() != replacement_bootstrap.root_specifier {
                 return Err(js_error(
                     "replacement document changes the retained root specifier",
@@ -4458,6 +4541,12 @@ phase"#;
         document.repl.session.clear_variables(&[]).unwrap();
         assert!(document.repl.session.source().is_empty());
         assert!(document.repl.session.symbols(&[]).unwrap().is_empty());
+        let current = document.repl.session.source_document().unwrap();
+        assert!(
+            document::document_output_ordinals_for_source(&document.bootstrap, current, false)
+                .unwrap()
+                .is_empty()
+        );
         assert_eq!(
             document.runtime().unwrap().program_route(),
             RuntimeProgramRoute::None,
@@ -4536,6 +4625,44 @@ phase"#;
             .unwrap();
         assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
         assert!(html.contains("class='mech-block-output'"), "{html}");
+    }
+
+    #[test]
+    fn documentation_then_console_write_uses_configured_planning_resources() {
+        let baseline = "answer := 1\nanswer\n";
+        let appended = "\nAccepted documentation evaluates {answer}.\n\n@out := console://repl/output{:write(line)}\n@out/line <- \"browser-output\"\n";
+        let bootstrap = document_bootstrap("document.mec", baseline, HashMap::new(), Vec::new());
+        let candidate = SourceDocument::parse_resolved(
+            "runtime:interactive",
+            mech_syntax::document::Revision(1),
+            format!("{baseline}{appended}"),
+            mech_syntax::document::ParseConfig::default(),
+        )
+        .unwrap();
+        let (runtime_source, _) = runtime_document(&bootstrap, &candidate).unwrap();
+        compile_browser_interactive_document(&bootstrap, &runtime_source).unwrap();
+    }
+
+    #[test]
+    fn browser_output_planning_resolves_imported_value_kinds() {
+        let source = "+> ./widgets.mec\nanswer := widgets/widget + 41.0\nanswer\n";
+        let source_map = HashMap::from([(
+            "bundle/widgets.mec".to_owned(),
+            "widget := 1.0\n<+ widget\n".to_owned(),
+        )]);
+        let resolutions = vec![SourceResolutionEntry::new(
+            "bundle/main.mec",
+            "./widgets.mec",
+            "bundle/widgets.mec",
+        )];
+        let bootstrap = document_bootstrap("bundle/main.mec", source, source_map, resolutions);
+        let (_, output) = runtime_document(&bootstrap, bootstrap.document.document()).unwrap();
+        assert!(output.is_some());
+        assert!(
+            document::document_output_ordinals(&bootstrap)
+                .unwrap()
+                .contains_key(&root_document_program_output_id())
+        );
     }
 
     #[test]

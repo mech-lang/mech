@@ -327,6 +327,31 @@ impl ProgramCompiler {
         self.view().compile_interactive_document(document)
     }
 
+    /// Plan an interactive retained document using this compiler's configured
+    /// resource registry, including context-addressed writes.
+    pub fn plan_interactive_document(
+        &mut self,
+        document: &SourceDocument,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> MResult<CanonicalSourceProgram> {
+        self.view()
+            .plan_interactive_document(document, resolved_source_modules)
+    }
+
+    /// Plan a retained interactive root with its resolved source dependencies.
+    pub fn plan_canonical_interactive_resolved_root(
+        &mut self,
+        resolved: ResolvedSource,
+    ) -> MResult<CanonicalSourceProgram> {
+        let resolved = admit_resolved_canonical_source(resolved)?;
+        self.view().compile_canonical_graph_document(
+            &resolved,
+            &mut CanonicalGraphCompilation::new(None),
+            false,
+            true,
+        )
+    }
+
     /// Prepared canonical source entry point for the coordinated C cutover.
     /// B keeps the shipping source route unchanged while proving this product
     /// boundary against retained documents and real activation.
@@ -587,6 +612,43 @@ impl<'a> ProgramCompilerView<'a> {
         ProgramCompilationProduct::from_canonical_artifact(
             self.canonical_document_artifact_with_projection(document, true)?,
         )
+    }
+
+    fn plan_interactive_document(
+        &self,
+        document: &SourceDocument,
+        resolved_source_modules: &BTreeSet<String>,
+    ) -> MResult<CanonicalSourceProgram> {
+        let index = document
+            .index()
+            .map_err(|error| MechError::new(error, None))?;
+        let (input_schemas, resource_reads, resource_writes, planned_reads) =
+            self.canonical_document_resources(&index.root, &document.document())?;
+        let mut program = canonical_frontend(document)
+            .compile_interactive_document_with_planning_contract(
+                &document.document(),
+                Arc::clone(&self.function_catalog),
+                input_schemas,
+                resource_writes,
+                &BTreeSet::new(),
+                &BTreeSet::new(),
+                resolved_source_modules,
+            )
+            .map_err(|error| canonical_compilation_error(error.to_string()))?;
+        self.validate_canonical_planning_candidate(&program, &planned_reads)?;
+        for (name, request) in resource_reads {
+            if program
+                .program()
+                .inputs
+                .iter()
+                .any(|input| input.name == name)
+            {
+                program = program
+                    .bind_resource_input(&name, request)
+                    .map_err(|error| canonical_compilation_error(error.to_string()))?;
+            }
+        }
+        Ok(program)
     }
 
     pub(crate) fn compile_document_artifact(
