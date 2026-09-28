@@ -512,38 +512,50 @@ impl Formatter {
         render_html_shim(&shim, &slots)
     }
 
+    fn render_title_field(&mut self, field: &TitleField, slots: &mut TitleSlots) {
+        match field {
+            TitleField::Author(paragraph) => {
+                slots.author = self.inline_para_el(paragraph, "mech-author")
+            }
+            TitleField::Date(paragraph) => slots.date = self.inline_para_el(paragraph, "mech-date"),
+            TitleField::Hero(hero) => slots.hero = self.hero_el(hero),
+            TitleField::Kicker(paragraph) => {
+                slots.kicker = self.inline_para_el(paragraph, "hero-kicker")
+            }
+            TitleField::Section(paragraph) => {
+                slots.section = self.inline_para_el(paragraph, "mech-section")
+            }
+            TitleField::Summary(paragraph) => slots.summary = self.synopsis_el(paragraph),
+            TitleField::Next(paragraph) => slots.next = self.inline_para_el(paragraph, "mech-next"),
+            TitleField::Previous(paragraph) => {
+                slots.previous = self.inline_para_el(paragraph, "mech-previous")
+            }
+        }
+    }
+
+    fn advance_discarded_title_field_outputs(&mut self, field: &TitleField) {
+        // Repeated fields retain only their final rendered slot. Format an
+        // earlier occurrence in an isolated snapshot so its presentation IDs
+        // still advance in authored order without leaking footnote, citation,
+        // figure, or other formatter state into the visible document.
+        let mut isolated = self.clone();
+        isolated.render_title_field(field, &mut TitleSlots::default());
+        self.inline_eval_counters = isolated.inline_eval_counters;
+        self.fenced_output_counters = isolated.fenced_output_counters;
+    }
+
     fn title_slots(&mut self, title: &Option<Title>) -> TitleSlots {
         match title {
             Some(title) if !title.fields.is_empty() => {
                 let mut slots = TitleSlots::default();
-                // Format every authored occurrence so duplicate inline values
-                // advance the same identity namespace as canonical lowering.
-                // Repeated fields retain the last rendered value in their
-                // template slot, matching the legacy Title projection.
-                for field in &title.fields {
-                    match field {
-                        TitleField::Author(paragraph) => {
-                            slots.author = self.inline_para_el(paragraph, "mech-author")
-                        }
-                        TitleField::Date(paragraph) => {
-                            slots.date = self.inline_para_el(paragraph, "mech-date")
-                        }
-                        TitleField::Hero(hero) => slots.hero = self.hero_el(hero),
-                        TitleField::Kicker(paragraph) => {
-                            slots.kicker = self.inline_para_el(paragraph, "hero-kicker")
-                        }
-                        TitleField::Section(paragraph) => {
-                            slots.section = self.inline_para_el(paragraph, "mech-section")
-                        }
-                        TitleField::Summary(paragraph) => {
-                            slots.summary = self.synopsis_el(paragraph)
-                        }
-                        TitleField::Next(paragraph) => {
-                            slots.next = self.inline_para_el(paragraph, "mech-next")
-                        }
-                        TitleField::Previous(paragraph) => {
-                            slots.previous = self.inline_para_el(paragraph, "mech-previous")
-                        }
+                for (index, field) in title.fields.iter().enumerate() {
+                    let overwritten = title.fields[index + 1..].iter().any(|candidate| {
+                        core::mem::discriminant(candidate) == core::mem::discriminant(field)
+                    });
+                    if overwritten {
+                        self.advance_discarded_title_field_outputs(field);
+                    } else {
+                        self.render_title_field(field, &mut slots);
                     }
                 }
                 slots
@@ -1108,10 +1120,11 @@ impl Formatter {
                 }
             }
             ParagraphElement::Highlight(n) => {
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<mark class=\"mech-highlight\">{}</mark>", n.to_string())
+                    format!("<mark class=\"mech-highlight\">{}</mark>", p)
                 } else {
-                    format!("!!{}!!", n.to_string())
+                    format!("!!{}!!", p)
                 }
             }
             ParagraphElement::SectionReference(n) => {
@@ -1170,24 +1183,27 @@ impl Formatter {
                 }
             }
             ParagraphElement::Emphasis(n) => {
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<em class=\"mech-em\">{}</em>", n.to_string())
+                    format!("<em class=\"mech-em\">{}</em>", p)
                 } else {
-                    format!("*{}*", n.to_string())
+                    format!("*{}*", p)
                 }
             }
             ParagraphElement::Underline(n) => {
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<u class=\"mech-u\">{}</u>", n.to_string())
+                    format!("<u class=\"mech-u\">{}</u>", p)
                 } else {
-                    format!("_{}_", n.to_string())
+                    format!("_{}_", p)
                 }
             }
             ParagraphElement::Strikethrough(n) => {
+                let p = self.paragraph_element(n);
                 if self.html {
-                    format!("<del class=\"mech-del\">{}</del>", n.to_string())
+                    format!("<del class=\"mech-del\">{}</del>", p)
                 } else {
-                    format!("~{}~", n.to_string())
+                    format!("~{}~", p)
                 }
             }
             ParagraphElement::InlineCode(n) => {
@@ -1240,9 +1256,9 @@ impl Formatter {
             self.interpreter_id = block.config.namespace;
         }
         let parent_presentation_outputs_enabled = self.presentation_outputs_enabled;
-        if block.config.disabled || block.config.hidden {
-            self.presentation_outputs_enabled = false;
-        }
+        // A fence publishes only its canonical block output. Evaluated syntax
+        // inside source comments must not consume root inline output IDs.
+        self.presentation_outputs_enabled = false;
         let block_id = hash_str(&format!("{:?}", block));
         let namespace_str = &block.config.namespace_str;
         let mut src = String::new();

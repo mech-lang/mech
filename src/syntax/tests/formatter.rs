@@ -249,6 +249,42 @@ fn repeated_title_fields_advance_authored_inline_occurrences() {
 }
 
 #[test]
+fn discarded_title_fields_do_not_advance_visible_footnote_numbering() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: Discarded[^discarded]\nauthor: Visible[^visible]\n========\n",
+    )
+    .unwrap();
+    let html = Formatter::new().format_html(&tree, String::new(), "{{AUTHOR}}".to_string());
+
+    assert!(
+        html.contains("class=\"mech-footnote-reference\">1</a>"),
+        "{html}"
+    );
+    assert!(
+        !html.contains("class=\"mech-footnote-reference\">2</a>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn styled_inline_evaluations_render_live_placeholders() {
+    for (source, wrapper) in [
+        ("*{1 + 1}*\n", "mech-em"),
+        ("!!{1 + 1}!!\n", "mech-highlight"),
+        ("_{1 + 1}_\n", "mech-u"),
+        ("~{1 + 1}~\n", "mech-del"),
+    ] {
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+        assert!(html.contains(wrapper), "{source}: {html}");
+        assert!(
+            html.contains("class=\"mech-inline-mech-code\""),
+            "{source}: {html}"
+        );
+    }
+}
+
+#[test]
 fn body_inline_occurrences_continue_after_title_fields() {
     let tree = mech_syntax::parser::parse(
         "Document\n========\nauthor: {40 + 2}\n========\n\nBody {40 + 2}.\n",
@@ -294,6 +330,35 @@ fn outputless_fences_do_not_consume_visible_occurrences() {
         .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
     assert_eq!(fence_output_addresses(&html).len(), 1, "{html}");
+}
+
+#[test]
+fn visible_fence_comments_do_not_consume_root_inline_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "```mech\n42 -- Result {answer + 1}\n```\n\nVisible {answer + 1}.\n\nanswer := 41\n",
+    )
+    .unwrap();
+    let visible_expression = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .find_map(|element| match element {
+            SectionElement::Paragraph(paragraph) => {
+                paragraph.elements.iter().find_map(|element| match element {
+                    ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .unwrap();
+    let first = inline_document_output_id(0, visible_expression, 0);
+    let second = inline_document_output_id(0, visible_expression, 1);
+    let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
+
+    assert!(html.contains(&format!("id=\"{first}:0\"")), "{html}");
+    assert!(!html.contains(&format!("id=\"{second}:0\"")), "{html}");
 }
 
 fn fence_output_addresses(html: &str) -> Vec<&str> {

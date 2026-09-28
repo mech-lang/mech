@@ -748,6 +748,13 @@ mod tests {
     }
 
     #[test]
+    fn styled_inline_outputs_are_published_in_formatter_order() {
+        let tree = mech_syntax::parse("*{1 + 1}* !!{2 + 2}!! _{3 + 3}_ ~{4 + 4}~\n").unwrap();
+        assert_eq!(root_document_output_ids(&tree).len(), 4);
+        assert_eq!(root_document_inline_eval_count(&tree), 4);
+    }
+
+    #[test]
     fn title_front_matter_preserves_authored_output_order_and_duplicates() {
         let tree = mech_syntax::parse(
             "Document\n========\ndate: {40 + 2}\nauthor: {41 + 1}\nauthor: {42 + 0}\n========\n",

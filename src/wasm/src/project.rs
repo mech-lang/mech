@@ -50,7 +50,7 @@ use mech_scene::{BrowserSceneHostFactory, BrowserSceneRegistry};
 use mech_time::BrowserTimeHostFactory;
 #[cfg(feature = "browser_host_timer")]
 use mech_timer::BrowserTimerHostFactory;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1605,6 +1605,7 @@ mod document {
         previous_source: &str,
         next_source: &str,
         edit: Option<SourceEditAnchors>,
+        reserved: &mut HashSet<u64>,
     ) {
         let mut groups =
             HashMap::<(SourceDocumentOutputKind, u64), (Vec<usize>, Vec<usize>)>::new();
@@ -1623,12 +1624,11 @@ mod document {
                 .push(index);
         }
 
-        // Retired addresses stay reserved for this update. Reusing one for an
-        // ambiguous new block could make an old mounted placeholder show it.
-        let mut claimed = previous
-            .iter()
-            .map(|binding| binding.output_id)
-            .collect::<HashSet<_>>();
+        // Static document markup can outlive several accepted source edits.
+        // Keep every address ever published by this document reserved so a
+        // removed placeholder can never begin displaying a later output.
+        let mut claimed = reserved.clone();
+        claimed.extend(previous.iter().map(|binding| binding.output_id));
         let mut old_assigned = vec![false; previous.len()];
         let mut assigned = vec![false; next.len()];
         for ((kind, semantic_id), (old, new)) in groups {
@@ -1693,7 +1693,10 @@ mod document {
                         );
                     }
                 }
-            } else if previous_source == next_source {
+            } else if previous_source == next_source || old.len() == new.len() {
+                // Full-source replacement has no insertion boundary. Equal
+                // cardinality makes authored order the stable correspondence
+                // for otherwise indistinguishable duplicate outputs.
                 for (&old_index, &new_index) in old.iter().zip(&new) {
                     preserve_output_identity(
                         previous,
@@ -1751,6 +1754,7 @@ mod document {
                 assigned[index] = true;
             }
         }
+        reserved.extend(next.iter().map(|binding| binding.output_id));
     }
 
     fn preserve_output_identity(
@@ -1787,6 +1791,7 @@ mod document {
             let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
             let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
             let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(third, 6, 4)];
+            let mut reserved = HashSet::from([base, second]);
 
             retain_output_identities(
                 &previous,
@@ -1799,6 +1804,7 @@ mod document {
                     new_start: 0,
                     new_end: 2,
                 }),
+                &mut reserved,
             );
 
             assert_eq!(
@@ -1816,6 +1822,7 @@ mod document {
             let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
             let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
             let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(third, 6, 4)];
+            let mut reserved = HashSet::from([base, second]);
 
             retain_output_identities(
                 &previous,
@@ -1828,6 +1835,7 @@ mod document {
                     new_start: 3,
                     new_end: 5,
                 }),
+                &mut reserved,
             );
 
             assert_eq!(
@@ -1839,13 +1847,15 @@ mod document {
         }
 
         #[test]
-        fn appended_fragment_uses_the_retained_binding_after_duplicate_removal() {
+        fn appended_fragment_skips_an_id_retired_by_an_earlier_edit() {
             let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
             let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
             // The first duplicate was removed in an earlier edit, so the
             // surviving fence deliberately retains the second occurrence ID.
             let previous = vec![fence(second, 4, 0)];
             let mut next = vec![fence(base, 4, 0), fence(second, 5, 2)];
+            let mut reserved = HashSet::from([base, second]);
 
             retain_output_identities(
                 &previous,
@@ -1858,14 +1868,36 @@ mod document {
                     new_start: 1,
                     new_end: 3,
                 }),
+                &mut reserved,
             );
 
             assert_eq!(next[0].output_id, second);
-            assert_eq!(next[1].output_id, base);
+            assert_eq!(next[1].output_id, third);
             let addresses =
                 super::super::retained_document_fragment_addresses(&next, 2, 1).unwrap();
             assert_eq!(addresses.len(), 1);
-            assert_eq!(addresses[0].1, base);
+            assert_eq!(addresses[0].1, third);
+        }
+
+        #[test]
+        fn full_replacement_preserves_equal_duplicate_groups_by_order() {
+            let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let previous = vec![fence(base, 4, 2), fence(second, 5, 4)];
+            let mut next = vec![fence(base, 4, 8), fence(second, 5, 10)];
+            let mut reserved = HashSet::from([base, second]);
+
+            retain_output_identities(
+                &previous,
+                &mut next,
+                "A F F",
+                "Changed F F",
+                None,
+                &mut reserved,
+            );
+
+            assert_eq!(next[0].output_id, base);
+            assert_eq!(next[1].output_id, second);
         }
 
         #[test]
@@ -1874,8 +1906,9 @@ mod document {
             let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
             let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
             let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(0, 6, 4)];
+            let mut reserved = HashSet::from([base, second]);
 
-            retain_output_identities(&previous, &mut next, "F F", "F F F", None);
+            retain_output_identities(&previous, &mut next, "F F", "F F F", None, &mut reserved);
 
             assert!(
                 next.iter()
@@ -1972,6 +2005,7 @@ mod document {
         pub(super) bootstrap: WasmDocumentBootstrap,
         document_output_ordinals: HashMap<u64, u64>,
         document_output_bindings: Vec<DocumentOutputBinding>,
+        reserved_document_output_ids: HashSet<u64>,
         document_output_source: String,
         program_output: Option<DocumentProgramOutput>,
         started: bool,
@@ -2089,6 +2123,11 @@ mod document {
             let document_output_state =
                 document_output_state_for_source(&bootstrap, bootstrap.document.document(), true)?;
             let document_output_ordinals = document_output_state.ordinals();
+            let reserved_document_output_ids = document_output_state
+                .bindings
+                .iter()
+                .map(|binding| binding.output_id)
+                .collect();
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
             let document_output_source = bootstrap
@@ -2101,6 +2140,7 @@ mod document {
                 bootstrap,
                 document_output_ordinals,
                 document_output_bindings: document_output_state.bindings,
+                reserved_document_output_ids,
                 document_output_source,
                 program_output,
                 started: false,
@@ -2364,6 +2404,7 @@ mod document {
             self.bootstrap = replacement.bootstrap;
             self.document_output_ordinals = replacement.document_output_ordinals;
             self.document_output_bindings = replacement.document_output_bindings;
+            self.reserved_document_output_ids = replacement.reserved_document_output_ids;
             self.document_output_source = replacement.document_output_source;
             self.program_output = replacement.program_output;
             self.started = false;
@@ -3046,6 +3087,7 @@ mod document {
                 &self.document_output_source,
                 &current_source,
                 edit,
+                &mut self.reserved_document_output_ids,
             );
             let ordinals = state.ordinals();
             let output_id = ordinals
@@ -3136,6 +3178,50 @@ fn parse_project_config(source: &str) -> Result<MechConfigDocument, JsValue> {
     .map_err(to_js_error)
 }
 
+/// The positional title layout emitted before authored title fields were
+/// retained. Bincode cannot apply `serde(default)` to a missing middle field,
+/// so browser payload fallback decodes this exact historical representation.
+#[derive(Deserialize, Serialize)]
+struct PreTitleFieldsProgram {
+    title: Option<PreTitleFieldsTitle>,
+    body: mech_core::Body,
+}
+
+#[derive(Deserialize, Serialize)]
+struct PreTitleFieldsTitle {
+    text: mech_core::Token,
+    imports: Vec<(mech_core::ModuleImport, Option<mech_core::Comment>)>,
+    author: Option<mech_core::Paragraph>,
+    date: Option<mech_core::Paragraph>,
+    hero: Option<mech_core::SectionElement>,
+    kicker: Option<mech_core::Paragraph>,
+    section: Option<mech_core::Paragraph>,
+    summary: Option<mech_core::Paragraph>,
+    next: Option<mech_core::Paragraph>,
+    previous: Option<mech_core::Paragraph>,
+}
+
+impl From<PreTitleFieldsProgram> for mech_core::Program {
+    fn from(program: PreTitleFieldsProgram) -> Self {
+        Self {
+            title: program.title.map(|title| mech_core::Title {
+                text: title.text,
+                imports: title.imports,
+                fields: Vec::new(),
+                author: title.author,
+                date: title.date,
+                hero: title.hero,
+                kicker: title.kicker,
+                section: title.section,
+                summary: title.summary,
+                next: title.next,
+                previous: title.previous,
+            }),
+            body: program.body,
+        }
+    }
+}
+
 fn decode_document_payload(
     encoded: &str,
     legacy_root_specifier: &str,
@@ -3144,12 +3230,18 @@ fn decode_document_payload(
     if let Ok(payload) = BrowserDocumentPayload::decode(encoded) {
         return Ok(payload);
     }
-    let tree: mech_core::Program =
-        mech_core::nodes::decode_and_decompress(encoded).map_err(|error| {
-            js_error(format!(
-                "failed to decode browser document payload or legacy syntax tree: {error}"
-            ))
-        })?;
+    let tree: mech_core::Program = match mech_core::nodes::decode_and_decompress(encoded) {
+        Ok(tree) => tree,
+        Err(current_error) => {
+            let historical: PreTitleFieldsProgram =
+                mech_core::nodes::decode_and_decompress(encoded).map_err(|historical_error| {
+                    js_error(format!(
+                        "failed to decode browser document payload, current syntax tree ({current_error}), or pre-title-fields syntax tree ({historical_error})"
+                    ))
+                })?;
+            historical.into()
+        }
+    };
     let output_ids = root_document_output_ids(&tree);
     let source = legacy_source
         .map(str::to_owned)
@@ -4193,6 +4285,43 @@ mod tests {
         assert_eq!(
             payload.source().matches("author:").count(),
             2,
+            "{}",
+            payload.source()
+        );
+        assert_eq!(
+            payload.presentation_output_ids(),
+            root_document_output_ids(&tree)
+        );
+    }
+
+    #[test]
+    fn pre_title_fields_payload_remains_decodable() {
+        let tree = mech_syntax::parser::parse(
+            "Document\n========\nauthor: Result {40 + 2}\n========\n\nBody.\n",
+        )
+        .unwrap();
+        let title = tree.title.as_ref().unwrap();
+        let historical = PreTitleFieldsProgram {
+            title: Some(PreTitleFieldsTitle {
+                text: title.text.clone(),
+                imports: title.imports.clone(),
+                author: title.author.clone(),
+                date: title.date.clone(),
+                hero: title.hero.clone(),
+                kicker: title.kicker.clone(),
+                section: title.section.clone(),
+                summary: title.summary.clone(),
+                next: title.next.clone(),
+                previous: title.previous.clone(),
+            }),
+            body: tree.body.clone(),
+        };
+        let encoded = mech_core::nodes::compress_and_encode(&historical).unwrap();
+        assert!(mech_core::nodes::decode_and_decompress::<mech_core::Program>(&encoded).is_err());
+
+        let payload = decode_document_payload(&encoded, "document.mec", None).unwrap();
+        assert!(
+            payload.source().contains("author: Result"),
             "{}",
             payload.source()
         );
