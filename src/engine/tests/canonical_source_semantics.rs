@@ -1990,6 +1990,7 @@ fn declared_fsm_runs_through_canonical_recursive_control() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
     let source = "tick := 0\n~x := 0\n~> tick {\n  next := x + 1\n  x = next\n}\nx\n";
@@ -2153,6 +2154,7 @@ fn activation_scope_owns_triggered_register_updates_without_running_at_load() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn artifact_rejects_activation_as_its_trigger_state_writer() {
     let base = CanonicalSourceFrontend
@@ -2259,6 +2261,7 @@ fn artifact_rejects_activation_as_its_trigger_state_writer() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn patterned_activation_dispatches_first_successful_guard_and_samples_captures() {
     let source = "event := event-source<f64>\nsample := sample-source<f64>\n~selected := 0\n~> event\n  | value, value > 10 => { selected = value + sample }\n  | value, value > 0 => { selected = value * sample }\n  | * => { selected = -1 }\nselected\n";
@@ -2308,6 +2311,7 @@ fn patterned_activation_dispatches_first_successful_guard_and_samples_captures()
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn activation_reads_forwarded_output_from_the_current_input_turn() {
     let base = CanonicalSourceFrontend
@@ -2402,6 +2406,7 @@ fn activation_reads_forwarded_output_from_the_current_input_turn() {
     assert_eq!(values, [current]);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn forwarded_activation_capture_orders_its_terminal_producer_first() {
     let base = CanonicalSourceFrontend
@@ -2522,6 +2527,7 @@ fn forwarded_activation_capture_orders_its_terminal_producer_first() {
     assert_eq!(values, [4.0]);
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn computed_activation_pattern_dependencies_remain_sample_only() {
     let source = "event := event-source<[f64]:1,2>\nexpected := expected-source<f64>\n~selected := 0\n~> event\n  | [head, expected + 0] => { selected = head }\n  | * => { selected = -1 }\nselected\n";
@@ -2575,6 +2581,7 @@ fn computed_activation_pattern_dependencies_remain_sample_only() {
     }
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn published_activation_capture_dependencies_remain_turn_triggers() {
     use mech_engine::__resident::CapturedValueInput;
@@ -2669,6 +2676,7 @@ fn published_activation_capture_dependencies_remain_turn_triggers() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
     use mech_engine::__resident::CapturedValueInput;
@@ -2748,6 +2756,7 @@ fn unrelated_activation_keeps_computed_pattern_samples_dormant() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
     use mech_engine::__resident::CapturedValueInput;
@@ -2829,6 +2838,7 @@ fn dormant_activation_does_not_suppress_ordinary_state_consumers() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn retained_state_stops_activation_continuation_dependency_checks() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 1u64.\n~trigger := 0u64\n~count := 0u64\n~> trigger { count = count + 1u64 }\nresult := #Deferred()\ntrigger = result\ncount\n";
@@ -2848,6 +2858,7 @@ fn retained_state_stops_activation_continuation_dependency_checks() {
     .expect("retained state must sever the historical continuation dependency");
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn continuation_turn_keeps_input_free_activations_dormant() {
     let source = "#Deferred() => <u64>\n  | :Start\n  | :Done.\n#Deferred() -> :Start\n  :Start ~> :Done\n  :Done => 41u64.\ntrigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\n#Deferred()\n";
@@ -2918,6 +2929,7 @@ fn continuation_turn_keeps_input_free_activations_dormant() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn dormant_activation_suppresses_direct_integrity_descendants() {
     let source = "trigger := true\n~count := 0u64\n~> trigger { count = count + 1u64 }\nvalid! := count > 0u64\ncount\n";
@@ -3088,6 +3100,7 @@ fn dormant_activation_suppresses_direct_integrity_descendants() {
     assert_eq!(count(&instance), ValueDataDraft::U64(1));
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
     let source = "event := event-source<f64>\nordinary := ordinary-source<f64>\n~count := 0.0\n~> event { count = count + 1.0 }\npayload := ordinary + 1.0\ncount\n";
@@ -3320,6 +3333,7 @@ fn dormant_activation_suppresses_mixed_paths_to_external_effects() {
     prepared.abort();
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn activation_with_computed_trigger_stays_dormant_during_initial_publication() {
     let source =
@@ -3367,6 +3381,7 @@ fn activation_with_computed_trigger_stays_dormant_during_initial_publication() {
     );
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn activation_structural_patterns_and_computed_samples_are_canonical_and_stable() {
     let cases = [
@@ -3494,6 +3509,7 @@ fn activation_bytecode_rejects_payload_literals_as_exhaustive_variants() {
     assert!(format!("{error:?}").contains("non-exhaustive match"));
 }
 
+#[cfg(feature = "resident-artifact")]
 #[test]
 fn activation_register_commit_is_atomic_and_retryable() {
     let source = "tick := 0\n~x := 0\n~y := 0\n~> tick {\n  next-x := x + 1\n  next-y := y + 2\n  x = next-x\n  y = next-y\n}\n(x, y)\n";
