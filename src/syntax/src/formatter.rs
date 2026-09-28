@@ -440,6 +440,7 @@ impl Formatter {
         self.fenced_output_counters.clear();
 
         let title_slots = self.title_slots(&tree.title);
+        let section_seed = self.clone();
         let (
             formatted_abstract,
             formatted_intro,
@@ -500,7 +501,7 @@ impl Formatter {
         slots.insert("REPL".to_string(), repl_html.to_string());
         slots.insert("PRESENTATION".to_string(), "document".to_string());
 
-        for (ix, section_html) in self.section_slots(tree).into_iter().enumerate() {
+        for (ix, section_html) in section_seed.section_slots(tree).into_iter().enumerate() {
             slots.insert(format!("SECTION{}", ix + 1), section_html);
         }
 
@@ -593,7 +594,7 @@ impl Formatter {
         }
     }
 
-    fn document_slots(&self, tree: &Program) -> (String, String, String, String, String) {
+    fn document_slots(&mut self, tree: &Program) -> (String, String, String, String, String) {
         let first_section_ix = tree
             .body
             .sections
@@ -603,9 +604,6 @@ impl Formatter {
         let intro_sections = &tree.body.sections[..first_section_ix];
         let content_sections = &tree.body.sections[first_section_ix..];
 
-        let mut slot_formatter = Formatter::new();
-        slot_formatter.html = true;
-
         let mut abstract_src = String::new();
         let mut intro_src = String::new();
         let mut contents_src = String::new();
@@ -614,25 +612,25 @@ impl Formatter {
             for el in &section.elements {
                 match el {
                     SectionElement::Abstract(paragraphs) => {
-                        abstract_src.push_str(&slot_formatter.abstract_el(paragraphs));
+                        abstract_src.push_str(&self.abstract_el(paragraphs));
                     }
                     _ => {
-                        intro_src.push_str(&slot_formatter.section_element(el));
+                        intro_src.push_str(&self.section_element(el));
                     }
                 }
             }
         }
 
         for section in content_sections {
-            contents_src.push_str(&slot_formatter.section(section));
+            contents_src.push_str(&self.section(section));
         }
 
         if !intro_src.is_empty() {
             intro_src = format!("<section class=\"mech-intro\">{}</section>", intro_src);
         }
 
-        let cited_src = slot_formatter.works_cited();
-        let footnotes_src = slot_formatter.footnotes();
+        let cited_src = self.works_cited();
+        let footnotes_src = self.footnotes();
 
         (
             abstract_src,
@@ -651,8 +649,7 @@ impl Formatter {
             .position(|s| s.subtitle.is_some())
             .unwrap_or(tree.body.sections.len());
         let content_sections = &tree.body.sections[first_section_ix..];
-        let mut section_formatter = Formatter::new();
-        section_formatter.html = true;
+        let mut section_formatter = self.clone();
         for section in &tree.body.sections[..first_section_ix] {
             for element in &section.elements {
                 let _ = section_formatter.section_element(element);

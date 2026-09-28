@@ -422,7 +422,7 @@ pub struct Title {
     /// Recognized front-matter values in authored source order. The named
     /// fields below remain the last-value projection used by templates and by
     /// legacy serialized programs.
-    #[cfg_attr(feature = "serde", serde(skip))]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub fields: Vec<TitleField>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,

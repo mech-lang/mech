@@ -1260,7 +1260,7 @@ fn live_document_fragment_addresses(
 ) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
     use mech_syntax::document::{TextRange, TextSize};
 
-    let (runtime_source, _) = runtime_document(bootstrap, accepted)?;
+    let (runtime_source, program_output) = runtime_document(bootstrap, accepted)?;
     let executable = runtime_source.source().to_contiguous_string();
     let fragment_start = executable
         .rfind(fragment)
@@ -1273,8 +1273,17 @@ fn live_document_fragment_addresses(
     let outputs = program
         .document_outputs()
         .iter()
-        .filter(|output| output.visible && output.kind != SourceDocumentOutputKind::Program)
+        .filter(|output| {
+            output.visible
+                && output.kind != SourceDocumentOutputKind::Program
+                && Some(output.output) != program_output.map(|id| id.get())
+        })
         .collect::<Vec<_>>();
+    // Suppressed submissions can retain comment syntax for display while
+    // publishing no canonical value to bind to that syntax.
+    if outputs.is_empty() {
+        return Ok(Vec::new());
+    }
     let output_ids = presentation_output_ids_for_document(accepted)?;
     if output_ids.len() != outputs.len() {
         return Err(document_runtime_error(format!(
@@ -1476,7 +1485,20 @@ mod document {
     fn retain_output_identities(
         previous: &[DocumentOutputBinding],
         next: &mut [DocumentOutputBinding],
+        previous_source: &str,
+        next_source: &str,
     ) {
+        let common_prefix = previous_source
+            .bytes()
+            .zip(next_source.bytes())
+            .take_while(|(old, new)| old == new)
+            .count();
+        let common_suffix = previous_source
+            .bytes()
+            .rev()
+            .zip(next_source.bytes().rev())
+            .take_while(|(old, new)| old == new)
+            .count();
         let mut groups = Vec::<(SourceDocumentOutputKind, u64)>::new();
         for binding in previous.iter().chain(next.iter()) {
             let key = (binding.kind, binding.semantic_id);
@@ -1499,11 +1521,13 @@ mod document {
                 .map(|(index, _)| index)
                 .collect::<Vec<_>>();
 
-            // With indistinguishable duplicate source, a full-source replacement
-            // cannot reveal which occurrence was inserted. Match from the end
-            // when cardinality changes so prepending an identical stateful fence
-            // never renumbers the retained placeholders already in the DOM.
-            let preserve_from_end = old.len() != new.len();
+            // Exact duplicate outputs have the same semantic identity. Use the
+            // unchanged side of the source edit to keep their public addresses:
+            // insertions at the front match from the end, while additions at
+            // the back match from the start. When both sides are identical,
+            // full-source replacement cannot reveal the insertion site, so
+            // keep the leading mounted addresses.
+            let preserve_from_end = old.len() != new.len() && common_suffix > common_prefix;
             let pairs = old.len().min(new.len());
             for pair in 0..pairs {
                 let old_index = if preserve_from_end {
@@ -1566,13 +1590,31 @@ mod document {
             let previous = vec![fence(base, 4), fence(second, 5)];
             let mut next = vec![fence(base, 4), fence(second, 5), fence(third, 6)];
 
-            retain_output_identities(&previous, &mut next);
+            retain_output_identities(&previous, &mut next, "one two", "zero one two");
 
             assert_eq!(
                 next.iter()
                     .map(|binding| binding.output_id)
                     .collect::<Vec<_>>(),
                 vec![third, base, second]
+            );
+        }
+
+        #[test]
+        fn appended_identical_fence_keeps_leading_output_addresses() {
+            let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
+            let previous = vec![fence(base, 4), fence(second, 5)];
+            let mut next = vec![fence(base, 4), fence(second, 5), fence(third, 6)];
+
+            retain_output_identities(&previous, &mut next, "F\nF\n", "F\nF\nF\n");
+
+            assert_eq!(
+                next.iter()
+                    .map(|binding| binding.output_id)
+                    .collect::<Vec<_>>(),
+                vec![base, second, third]
             );
         }
     }
@@ -1658,6 +1700,7 @@ mod document {
         pub(super) bootstrap: WasmDocumentBootstrap,
         document_output_ordinals: HashMap<u64, u64>,
         document_output_bindings: Vec<DocumentOutputBinding>,
+        document_output_source: String,
         program_output: Option<DocumentProgramOutput>,
         started: bool,
         stopped: bool,
@@ -1776,11 +1819,17 @@ mod document {
             let document_output_ordinals = document_output_state.ordinals();
             let mut repl = crate::repl::WasmRepl::from_document(bootstrap.clone())?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
+            let document_output_source = bootstrap
+                .document
+                .document()
+                .source()
+                .to_contiguous_string();
             Ok(Self {
                 repl,
                 bootstrap,
                 document_output_ordinals,
                 document_output_bindings: document_output_state.bindings,
+                document_output_source,
                 program_output,
                 started: false,
                 stopped: false,
@@ -2638,7 +2687,13 @@ mod document {
                     document_runtime_error("document session has no retained source")
                 })?;
             let mut state = document_output_state_for_source(&self.bootstrap, current, false)?;
-            retain_output_identities(&self.document_output_bindings, &mut state.bindings);
+            let current_source = current.source().to_contiguous_string();
+            retain_output_identities(
+                &self.document_output_bindings,
+                &mut state.bindings,
+                &self.document_output_source,
+                &current_source,
+            );
             let ordinals = state.ordinals();
             let output_id = ordinals
                 .get(&root_document_program_output_id())
@@ -2646,6 +2701,7 @@ mod document {
                 .map(OutputId::new);
             self.document_output_ordinals = ordinals;
             self.document_output_bindings = state.bindings;
+            self.document_output_source = current_source;
             if let (Some(program_output), Some(output_id)) =
                 (self.program_output.as_mut(), output_id)
             {
@@ -3770,6 +3826,53 @@ mod tests {
         assert!(payload.source().contains("value := 41"));
     }
 
+    #[test]
+    fn legacy_title_payload_retains_repeated_field_output_addresses() {
+        let tree = mech_syntax::parser::parse(
+            "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n",
+        )
+        .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let decoded: mech_core::Program =
+            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+        assert_eq!(decoded.title.as_ref().unwrap().fields.len(), 2);
+        let payload = decode_document_payload(&encoded, "document.mec").unwrap();
+        assert_eq!(
+            payload.source().matches("author:").count(),
+            2,
+            "{}",
+            payload.source()
+        );
+        assert_eq!(
+            payload.presentation_output_ids(),
+            root_document_output_ids(&tree)
+        );
+    }
+
+    #[test]
+    fn hidden_fence_comment_has_no_visible_canonical_output() {
+        let source = "```mech:hidden\n42 -- Result {1 + 1}\n```\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert!(bootstrap.presentation_output_ids.is_empty());
+        document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
+    #[test]
+    fn primary_subtitle_matches_canonical_inline_output() {
+        let source = "1. Result {40 + 2}\n--------\nBody {41 + 1}.\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 2);
+        document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
+    #[test]
+    fn title_import_comment_does_not_add_canonical_output() {
+        let source = "Document\n===============================================================================\nauthor: {40 + 2}\n+> math -- Import {41 + 1}\ndate: {42 + 0}\n===============================================================================\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 2);
+        document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
     fn document_bootstrap(
         root_specifier: &str,
         source: &str,
@@ -4791,7 +4894,7 @@ phase"#;
                 .unwrap();
         let sources = HashMap::from([(
             "main.mec".to_string(),
-            "<event> := :idle | :busy\n".to_string(),
+            "<event> := :idle | :busy\nanswer := 1\nanswer\n".to_string(),
         )]);
         let provenance = HashMap::from([(
             "main.mec".to_string(),
@@ -4815,7 +4918,7 @@ phase"#;
 
         let mut bootstrap = document_bootstrap(
             "main.mec",
-            "<event> := :idle | :busy\n",
+            "<event> := :idle | :busy\nanswer := 1\nanswer\n",
             sources,
             Vec::new(),
         );
@@ -5129,7 +5232,7 @@ phase"#;
     }
 
     #[test]
-    fn suppressed_documentation_renders_live_ranges_from_the_normalized_fragment() {
+    fn suppressed_documentation_renders_without_unpublished_live_ranges() {
         let baseline = "answer := 1\nanswer";
         let submitted = "answer + 1; -- Result {answer}";
         let retained = format!("{baseline}\nanswer + 1 -- Result {{answer}}\n");
@@ -5139,7 +5242,7 @@ phase"#;
         let candidate = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),
-            retained,
+            retained.clone(),
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
@@ -5156,7 +5259,8 @@ phase"#;
         let html = mech_runtime::CanonicalDocumentRenderer
             .format_html_body_live(&parsed.document(), &addresses)
             .unwrap();
-        assert!(html.contains("class='mech-inline-mech-code'"), "{html}");
+        assert!(html.contains("answer + 1 -- Result {answer}"), "{html}");
+        assert!(!html.contains("class='mech-inline-mech-code'"), "{html}");
     }
 
     #[test]
@@ -5480,14 +5584,14 @@ Width {scene.width}.
         );
         let mut bootstrap = document_bootstrap("main.mec", source, HashMap::new(), Vec::new());
         bootstrap.console_instance = internal_repl_console_instance(&config.hosts);
-        bootstrap.presentation_output_ids = vec![0x22];
+        let output_id = bootstrap.presentation_output_ids[0];
         bootstrap.served = Some(ServedDocumentBootstrap {
             config_source: config_source.to_owned(),
             authority,
         });
 
         let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
-        assert!(ordinals.contains_key(&0x22));
+        assert!(ordinals.contains_key(&output_id));
     }
 
     #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]

@@ -1,6 +1,6 @@
 #![cfg(feature = "formatter")]
 
-use mech_core::{hash_str, inline_document_output_id, nodes::*};
+use mech_core::{inline_document_output_id, nodes::*};
 use mech_syntax::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets};
 
 fn token(kind: TokenKind, text: &str) -> Token {
@@ -249,22 +249,58 @@ fn repeated_title_fields_advance_authored_inline_occurrences() {
 }
 
 #[test]
-fn outputless_fences_do_not_consume_visible_occurrences() {
-    let tree = mech_syntax::parser::parse("```mech{output: false}\n42\n```\n\n```mech\n42\n```\n")
-        .unwrap();
-    let block = tree
-        .body
-        .sections
+fn body_inline_occurrences_continue_after_title_fields() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: {40 + 2}\n========\n\nBody {40 + 2}.\n",
+    )
+    .unwrap();
+    let expression = tree
+        .title
+        .as_ref()
+        .unwrap()
+        .author
+        .as_ref()
+        .unwrap()
+        .elements
         .iter()
-        .flat_map(|section| &section.elements)
         .find_map(|element| match element {
-            SectionElement::FencedMechCode(block) if block.config.output => Some(block),
+            ParagraphElement::EvalInlineMechCode(expression) => Some(expression),
             _ => None,
         })
         .unwrap();
-    let base_id = hash_str(&format!("{:?}", block.code.last().unwrap().0));
+    let title_id = inline_document_output_id(0, expression, 0);
+    let body_id = inline_document_output_id(0, expression, 1);
+    let html =
+        Formatter::new().format_html(&tree, String::new(), "{{AUTHOR}}{{INTRO}}".to_string());
+    assert!(html.contains(&format!("id=\"{title_id}:0\"")), "{html}");
+    assert!(html.contains(&format!("id=\"{body_id}:0\"")), "{html}");
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn serialized_title_retains_repeated_field_occurrences() {
+    let tree = mech_syntax::parser::parse(
+        "Document\n========\nauthor: {40 + 2}\nauthor: {40 + 2}\n========\n",
+    )
+    .unwrap();
+    let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+    let decoded: Program = mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+    assert_eq!(decoded.title.unwrap().fields.len(), 2);
+}
+
+#[test]
+fn outputless_fences_do_not_consume_visible_occurrences() {
+    let tree = mech_syntax::parser::parse("```mech{output: false}\n42\n```\n\n```mech\n42\n```\n")
+        .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
-    assert!(html.contains(&format!("id=\"{base_id}:0\"")), "{html}");
+    assert_eq!(fence_output_addresses(&html).len(), 1, "{html}");
+}
+
+fn fence_output_addresses(html: &str) -> Vec<&str> {
+    html.split("class=\"mech-block-output\" id=\"")
+        .skip(1)
+        .map(|suffix| suffix.split('"').next().unwrap())
+        .collect()
 }
 
 #[test]
@@ -300,12 +336,11 @@ fn document_slots_share_fence_occurrences_across_intro_and_content() {
             ],
         },
     };
-    let base_id = hash_str(&format!("{:?}", block.code.last().unwrap().0));
-    let second_id = hash_str(&format!("mech/fenced-document-output/{base_id}/1"));
     let html =
         Formatter::new().format_html(&tree, String::new(), "{{INTRO}}{{CONTENTS}}".to_string());
-    assert!(html.contains(&format!("id=\"{base_id}:0\"")), "{html}");
-    assert!(html.contains(&format!("id=\"{second_id}:0\"")), "{html}");
+    let addresses = fence_output_addresses(&html);
+    assert_eq!(addresses.len(), 2, "{html}");
+    assert_ne!(addresses[0], addresses[1], "{html}");
 }
 
 fn first_statement(src: &str) -> Statement {

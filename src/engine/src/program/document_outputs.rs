@@ -115,6 +115,14 @@ pub fn root_document_output_identities(program: &Program) -> Vec<RootDocumentOut
         );
     }
     for section in &program.body.sections {
+        if let Some(subtitle) = &section.subtitle {
+            collect_paragraph_output_ids(
+                &subtitle.text,
+                &mut inline_count,
+                &mut inline_occurrences,
+                &mut output_ids,
+            );
+        }
         for element in &section.elements {
             collect_section_output_ids(
                 element,
@@ -154,6 +162,14 @@ pub fn root_document_inline_eval_count(program: &Program) -> u64 {
         );
     }
     for section in &program.body.sections {
+        if let Some(subtitle) = &section.subtitle {
+            collect_paragraph_output_ids(
+                &subtitle.text,
+                &mut inline_count,
+                &mut inline_occurrences,
+                &mut output_ids,
+            );
+        }
         for element in &section.elements {
             collect_section_output_ids(
                 element,
@@ -760,8 +776,18 @@ mod tests {
 
     #[test]
     fn declaration_only_fences_have_no_presentation_address() {
-        let tree = mech_syntax::parse("```mech\n#Identity(x) => x\n```\n").unwrap();
+        let tree = mech_syntax::parse(
+            "```mech\nidentity(value<f32>) = result<f32> :=\n  result := value.\n```\n",
+        )
+        .unwrap();
         assert!(root_document_output_ids(&tree).is_empty());
+    }
+
+    #[test]
+    fn primary_subtitle_inline_outputs_precede_section_body_outputs() {
+        let tree = mech_syntax::parse("1. Result {40 + 2}\n--------\nBody {41 + 1}.\n").unwrap();
+        assert_eq!(root_document_output_ids(&tree).len(), 2);
+        assert_eq!(root_document_inline_eval_count(&tree), 2);
     }
 
     #[test]
