@@ -1106,6 +1106,16 @@ fn runtime_document(
     source: &WasmDocumentBootstrap,
     candidate: &SourceDocument,
 ) -> MResult<(SourceDocument, Option<OutputId>)> {
+    let (document, output, _) = runtime_document_with_capture(source, candidate)?;
+    Ok((document, output))
+}
+
+/// The optional byte range is the text inserted into the accepted source for
+/// the private program-result capture.
+fn runtime_document_with_capture(
+    source: &WasmDocumentBootstrap,
+    candidate: &SourceDocument,
+) -> MResult<(SourceDocument, Option<OutputId>, Option<(usize, usize)>)> {
     use mech_syntax::document::{
         AstNode, CodeBlockSyntax, CodeFenceScope, MechCodeSyntax, ParseConfig, Revision, SyntaxKind,
     };
@@ -1125,7 +1135,7 @@ fn runtime_document(
     .map_err(|error| document_runtime_error(format!("invalid browser source: {error:?}")))?;
     let original_program = match compile_browser_interactive_document(source, &base_document) {
         Ok(program) => program,
-        Err(_) => return Ok((candidate.clone(), None)),
+        Err(_) => return Ok((candidate.clone(), None, None)),
     };
     let presentation = mech_syntax::parser::parse(base.trim()).map_err(|error| {
         document_runtime_error(format!(
@@ -1182,12 +1192,13 @@ fn runtime_document(
         })
         .flatten();
     let Some(program_boundary) = program_boundary else {
-        return Ok((candidate.clone(), None));
+        return Ok((candidate.clone(), None, None));
     };
 
     const CAPTURE: &str = "```mech\nans\n```\n";
     let mut executable = String::with_capacity(candidate_source.len() + CAPTURE.len() + 1);
-    let (program_prefix, trailing_presentation) = base.split_at(program_boundary.min(base.len()));
+    let insert_at = program_boundary.min(base.len());
+    let (program_prefix, trailing_presentation) = base.split_at(insert_at);
     executable.push_str(program_prefix);
     if !executable.ends_with(['\r', '\n']) {
         executable.push('\n');
@@ -1218,7 +1229,7 @@ fn runtime_document(
     let output = output.ok_or_else(|| {
         document_runtime_error("canonical browser program output capture was not published")
     })?;
-    Ok((document, Some(output)))
+    Ok((document, Some(output), Some((insert_at, capture_end))))
 }
 
 fn retained_submission_fragment<'a>(
@@ -1279,9 +1290,19 @@ fn live_document_fragment_addresses(
                 && Some(output.output) != program_output.map(|id| id.get())
         })
         .collect::<Vec<_>>();
-    // Suppressed submissions can retain comment syntax for display while
-    // publishing no canonical value to bind to that syntax.
-    if outputs.is_empty() {
+    // A suppressed fragment can have no canonical outputs even when earlier
+    // accepted source has visible outputs. Do not bind its display-only syntax.
+    if !outputs.iter().any(|output| {
+        program
+            .source_map()
+            .outputs
+            .get(output.output as usize)
+            .is_some_and(|anchor| {
+                let start = anchor.range.start.0 as usize;
+                let end = anchor.range.end.0 as usize;
+                start >= fragment_start && end <= fragment_end
+            })
+    }) {
         return Ok(Vec::new());
     }
     let output_ids = presentation_output_ids_for_document(accepted)?;
@@ -1344,6 +1365,37 @@ fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
 
 mod document {
     use super::*;
+    use std::collections::HashSet;
+
+    #[derive(Clone, Copy, Debug)]
+    struct SourceEditAnchors {
+        old_start: usize,
+        old_end: usize,
+        new_start: usize,
+        new_end: usize,
+    }
+
+    #[derive(Clone, Copy, Debug)]
+    struct PendingSourceEdit {
+        old_start: usize,
+        old_end: usize,
+        new_start: usize,
+        new_end: usize,
+    }
+
+    fn utf16_to_byte_offset(source: &str, offset: u32) -> Option<usize> {
+        let mut units = 0_u32;
+        for (byte, character) in source.char_indices() {
+            if units == offset {
+                return Some(byte);
+            }
+            units = units.checked_add(character.len_utf16() as u32)?;
+            if units > offset {
+                return None;
+            }
+        }
+        (units == offset).then_some(source.len())
+    }
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     struct DocumentOutputBinding {
@@ -1351,6 +1403,7 @@ mod document {
         semantic_id: u64,
         kind: SourceDocumentOutputKind,
         ordinal: u64,
+        source_span: Option<(usize, usize)>,
     }
 
     #[derive(Default)]
@@ -1392,19 +1445,33 @@ mod document {
         Ok(document_output_state_for_source(bootstrap, candidate, require_all)?.ordinals())
     }
 
+    #[cfg(test)]
+    pub(super) fn document_output_spans(
+        bootstrap: &WasmDocumentBootstrap,
+    ) -> MResult<Vec<Option<(usize, usize)>>> {
+        Ok(
+            document_output_state_for_source(bootstrap, bootstrap.document.document(), true)?
+                .bindings
+                .into_iter()
+                .map(|binding| binding.source_span)
+                .collect(),
+        )
+    }
+
     fn document_output_state_for_source(
         bootstrap: &WasmDocumentBootstrap,
         candidate: &SourceDocument,
         require_all: bool,
     ) -> MResult<DocumentOutputState> {
-        let (runtime_source, program_output) = runtime_document(bootstrap, candidate)?;
+        let (runtime_source, program_output, capture_range) =
+            runtime_document_with_capture(bootstrap, candidate)?;
         if runtime_source
             .source()
             .to_contiguous_string()
             .trim()
             .is_empty()
         {
-            return Ok(HashMap::new());
+            return Ok(DocumentOutputState::default());
         }
         let program = match compile_browser_interactive_document(bootstrap, &runtime_source) {
             Ok(program) => program,
@@ -1444,6 +1511,23 @@ mod document {
                 semantic_id: identity.semantic_id,
                 kind: output.kind,
                 ordinal: u64::from(output.output),
+                source_span: program
+                    .source_map()
+                    .outputs
+                    .get(output.output as usize)
+                    .and_then(|anchor| {
+                        let start = anchor.range.start.0 as usize;
+                        let end = anchor.range.end.0 as usize;
+                        match capture_range {
+                            None => Some((start, end)),
+                            Some((insert_at, _)) if end <= insert_at => Some((start, end)),
+                            Some((insert_at, inserted_end)) if start >= inserted_end => {
+                                let shift = inserted_end - insert_at;
+                                Some((start - shift, end - shift))
+                            }
+                            Some(_) => None,
+                        }
+                    }),
             })
             .collect::<Vec<_>>();
         if require_all
@@ -1487,98 +1571,179 @@ mod document {
         next: &mut [DocumentOutputBinding],
         previous_source: &str,
         next_source: &str,
+        edit: Option<SourceEditAnchors>,
     ) {
-        let common_prefix = previous_source
-            .bytes()
-            .zip(next_source.bytes())
-            .take_while(|(old, new)| old == new)
-            .count();
-        let common_suffix = previous_source
-            .bytes()
-            .rev()
-            .zip(next_source.bytes().rev())
-            .take_while(|(old, new)| old == new)
-            .count();
-        let mut groups = Vec::<(SourceDocumentOutputKind, u64)>::new();
-        for binding in previous.iter().chain(next.iter()) {
-            let key = (binding.kind, binding.semantic_id);
-            if !groups.contains(&key) {
-                groups.push(key);
-            }
+        let mut groups =
+            HashMap::<(SourceDocumentOutputKind, u64), (Vec<usize>, Vec<usize>)>::new();
+        for (index, binding) in previous.iter().enumerate() {
+            groups
+                .entry((binding.kind, binding.semantic_id))
+                .or_default()
+                .0
+                .push(index);
+        }
+        for (index, binding) in next.iter().enumerate() {
+            groups
+                .entry((binding.kind, binding.semantic_id))
+                .or_default()
+                .1
+                .push(index);
         }
 
-        let mut claimed = Vec::<u64>::new();
+        // Retired addresses stay reserved for this update. Reusing one for an
+        // ambiguous new block could make an old mounted placeholder show it.
+        let mut claimed = previous
+            .iter()
+            .map(|binding| binding.output_id)
+            .collect::<HashSet<_>>();
+        let mut old_assigned = vec![false; previous.len()];
         let mut assigned = vec![false; next.len()];
-        for (kind, semantic_id) in groups {
-            let old = previous
-                .iter()
-                .filter(|binding| binding.kind == kind && binding.semantic_id == semantic_id)
-                .collect::<Vec<_>>();
-            let new = next
-                .iter()
-                .enumerate()
-                .filter(|(_, binding)| binding.kind == kind && binding.semantic_id == semantic_id)
-                .map(|(index, _)| index)
-                .collect::<Vec<_>>();
-
-            // Exact duplicate outputs have the same semantic identity. Use the
-            // unchanged side of the source edit to keep their public addresses:
-            // insertions at the front match from the end, while additions at
-            // the back match from the start. When both sides are identical,
-            // full-source replacement cannot reveal the insertion site, so
-            // keep the leading mounted addresses.
-            let preserve_from_end = old.len() != new.len() && common_suffix > common_prefix;
-            let pairs = old.len().min(new.len());
-            for pair in 0..pairs {
-                let old_index = if preserve_from_end {
-                    old.len() - 1 - pair
-                } else {
-                    pair
-                };
-                let new_index = if preserve_from_end {
-                    new.len() - 1 - pair
-                } else {
-                    pair
-                };
-                let output_id = old[old_index].output_id;
-                next[new[new_index]].output_id = output_id;
-                assigned[new[new_index]] = true;
-                if !claimed.contains(&output_id) {
-                    claimed.push(output_id);
+        for ((kind, semantic_id), (old, new)) in groups {
+            if let Some(edit) = edit {
+                let old_before = old
+                    .iter()
+                    .copied()
+                    .filter(|&index| {
+                        previous[index]
+                            .source_span
+                            .is_some_and(|(_, end)| end <= edit.old_start)
+                    })
+                    .collect::<Vec<_>>();
+                let new_before = new
+                    .iter()
+                    .copied()
+                    .filter(|&index| {
+                        next[index]
+                            .source_span
+                            .is_some_and(|(_, end)| end <= edit.new_start)
+                    })
+                    .collect::<Vec<_>>();
+                for (old_index, new_index) in old_before.into_iter().zip(new_before) {
+                    preserve_output_identity(
+                        previous,
+                        next,
+                        old_index,
+                        new_index,
+                        &mut old_assigned,
+                        &mut assigned,
+                    );
+                }
+                let old_after = old
+                    .iter()
+                    .rev()
+                    .copied()
+                    .filter(|&index| {
+                        previous[index]
+                            .source_span
+                            .is_some_and(|(start, _)| start >= edit.old_end)
+                    })
+                    .collect::<Vec<_>>();
+                let new_after = new
+                    .iter()
+                    .rev()
+                    .copied()
+                    .filter(|&index| {
+                        next[index]
+                            .source_span
+                            .is_some_and(|(start, _)| start >= edit.new_end)
+                    })
+                    .collect::<Vec<_>>();
+                for (old_index, new_index) in old_after.into_iter().zip(new_after) {
+                    if !old_assigned[old_index] && !assigned[new_index] {
+                        preserve_output_identity(
+                            previous,
+                            next,
+                            old_index,
+                            new_index,
+                            &mut old_assigned,
+                            &mut assigned,
+                        );
+                    }
+                }
+            } else if previous_source == next_source {
+                for (&old_index, &new_index) in old.iter().zip(&new) {
+                    preserve_output_identity(
+                        previous,
+                        next,
+                        old_index,
+                        new_index,
+                        &mut old_assigned,
+                        &mut assigned,
+                    );
                 }
             }
 
+            let remaining_old = old
+                .iter()
+                .copied()
+                .filter(|&index| !old_assigned[index])
+                .collect::<Vec<_>>();
+            let remaining_new = new
+                .iter()
+                .copied()
+                .filter(|&index| !assigned[index])
+                .collect::<Vec<_>>();
+            // A unique semantic output has only one possible match even when a
+            // full replacement did not provide an edit range.
+            if old.len() == 1
+                && new.len() == 1
+                && remaining_old.len() == 1
+                && remaining_new.len() == 1
+            {
+                preserve_output_identity(
+                    previous,
+                    next,
+                    remaining_old[0],
+                    remaining_new[0],
+                    &mut old_assigned,
+                    &mut assigned,
+                );
+            }
+
+            let mut occurrence = 0_u64;
             for index in new {
                 if assigned[index] {
                     continue;
                 }
-                let mut occurrence = 0_u64;
-                loop {
-                    let output_id = occurrence_output_id(kind, semantic_id, occurrence);
-                    if !claimed.contains(&output_id) {
-                        next[index].output_id = output_id;
-                        assigned[index] = true;
-                        claimed.push(output_id);
-                        break;
-                    }
+                let output_id = loop {
+                    let candidate = occurrence_output_id(kind, semantic_id, occurrence);
                     occurrence = occurrence
                         .checked_add(1)
                         .expect("document output occurrence space is exhausted");
-                }
+                    if claimed.insert(candidate) {
+                        break candidate;
+                    }
+                };
+                next[index].output_id = output_id;
+                assigned[index] = true;
             }
         }
+    }
+
+    fn preserve_output_identity(
+        previous: &[DocumentOutputBinding],
+        next: &mut [DocumentOutputBinding],
+        old_index: usize,
+        new_index: usize,
+        old_assigned: &mut [bool],
+        assigned: &mut [bool],
+    ) {
+        next[new_index].output_id = previous[old_index].output_id;
+        old_assigned[old_index] = true;
+        assigned[new_index] = true;
     }
 
     #[cfg(test)]
     mod output_identity_tests {
         use super::*;
 
-        fn fence(output_id: u64, ordinal: u64) -> DocumentOutputBinding {
+        fn fence(output_id: u64, ordinal: u64, start: usize) -> DocumentOutputBinding {
             DocumentOutputBinding {
                 output_id,
                 semantic_id: 17,
                 kind: SourceDocumentOutputKind::Fence,
                 ordinal,
+                source_span: Some((start, start + 1)),
             }
         }
 
@@ -1587,10 +1752,21 @@ mod document {
             let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
             let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
             let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
-            let previous = vec![fence(base, 4), fence(second, 5)];
-            let mut next = vec![fence(base, 4), fence(second, 5), fence(third, 6)];
+            let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
+            let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(third, 6, 4)];
 
-            retain_output_identities(&previous, &mut next, "one two", "zero one two");
+            retain_output_identities(
+                &previous,
+                &mut next,
+                "F F",
+                "F F F",
+                Some(SourceEditAnchors {
+                    old_start: 0,
+                    old_end: 0,
+                    new_start: 0,
+                    new_end: 2,
+                }),
+            );
 
             assert_eq!(
                 next.iter()
@@ -1605,10 +1781,21 @@ mod document {
             let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
             let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
             let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
-            let previous = vec![fence(base, 4), fence(second, 5)];
-            let mut next = vec![fence(base, 4), fence(second, 5), fence(third, 6)];
+            let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
+            let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(third, 6, 4)];
 
-            retain_output_identities(&previous, &mut next, "F\nF\n", "F\nF\nF\n");
+            retain_output_identities(
+                &previous,
+                &mut next,
+                "F F",
+                "F F F",
+                Some(SourceEditAnchors {
+                    old_start: 3,
+                    old_end: 3,
+                    new_start: 3,
+                    new_end: 5,
+                }),
+            );
 
             assert_eq!(
                 next.iter()
@@ -1616,6 +1803,28 @@ mod document {
                     .collect::<Vec<_>>(),
                 vec![base, second, third]
             );
+        }
+
+        #[test]
+        fn full_replacement_does_not_guess_duplicate_insertion_side() {
+            let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
+            let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(0, 6, 4)];
+
+            retain_output_identities(&previous, &mut next, "F F", "F F F", None);
+
+            assert!(
+                next.iter()
+                    .all(|binding| binding.output_id != base && binding.output_id != second)
+            );
+        }
+
+        #[test]
+        fn utf16_edit_offsets_reject_half_a_surrogate_pair() {
+            assert_eq!(utf16_to_byte_offset("a😀b", 1), Some(1));
+            assert_eq!(utf16_to_byte_offset("a😀b", 2), None);
+            assert_eq!(utf16_to_byte_offset("a😀b", 3), Some(5));
         }
     }
 
@@ -2092,6 +2301,7 @@ mod document {
             self.bootstrap = replacement.bootstrap;
             self.document_output_ordinals = replacement.document_output_ordinals;
             self.document_output_bindings = replacement.document_output_bindings;
+            self.document_output_source = replacement.document_output_source;
             self.program_output = replacement.program_output;
             self.started = false;
             self.stopped = false;
@@ -2210,7 +2420,7 @@ mod document {
                 .session
                 .rebuild_runtime_preserving_state()
                 .map_err(to_js_error)?;
-            self.refresh_document_output_ordinals()
+            self.refresh_document_output_ordinals(None)
                 .map_err(to_js_error)?;
             if self.compute_backend() == mech_compute::WGPU_BACKEND {
                 return Err(js_error(
@@ -2357,7 +2567,18 @@ mod document {
                 self.bootstrap
                     .rebase_document_boundary_if_needed(&accepted_before, accepted)
                     .map_err(to_js_error)?;
-                self.refresh_document_output_ordinals()
+                let edit = self
+                    .repl
+                    .session
+                    .source()
+                    .starts_with(&accepted_before)
+                    .then(|| PendingSourceEdit {
+                        old_start: accepted_before.len(),
+                        old_end: accepted_before.len(),
+                        new_start: accepted_before.len(),
+                        new_end: self.repl.session.source().len(),
+                    });
+                self.refresh_document_output_ordinals(edit)
                     .map_err(to_js_error)?;
             }
             Ok(response)
@@ -2376,7 +2597,50 @@ mod document {
         /// from their new plan initializers and report that reset explicitly.
         #[wasm_bindgen(js_name = replReplaceSource)]
         pub fn repl_replace_source(&mut self, source: &str) -> Result<JsValue, JsValue> {
+            self.replace_source_with_edit(source, None)
+        }
+
+        /// Apply one editor change using UTF-16 offsets in the accepted source.
+        /// This preserves the insertion side of otherwise identical outputs.
+        #[wasm_bindgen(js_name = replApplyEdit)]
+        pub fn repl_apply_edit(
+            &mut self,
+            start: u32,
+            end: u32,
+            inserted: &str,
+        ) -> Result<JsValue, JsValue> {
             let accepted_before = self.repl.session.source().to_string();
+            let start = utf16_to_byte_offset(&accepted_before, start)
+                .ok_or_else(|| js_error("edit start is not a UTF-16 character boundary"))?;
+            let end = utf16_to_byte_offset(&accepted_before, end)
+                .ok_or_else(|| js_error("edit end is not a UTF-16 character boundary"))?;
+            if end < start {
+                return Err(js_error("edit end precedes edit start"));
+            }
+            let mut source = accepted_before;
+            source.replace_range(start..end, inserted);
+            self.replace_source_with_edit(&source, Some((start, end, inserted.len())))
+        }
+
+        fn replace_source_with_edit(
+            &mut self,
+            source: &str,
+            edit: Option<(usize, usize, usize)>,
+        ) -> Result<JsValue, JsValue> {
+            let accepted_before = self.repl.session.source().to_string();
+            let pending_edit = edit
+                .map(|(start, end, inserted_len)| {
+                    let new_end = start
+                        .checked_add(inserted_len)
+                        .ok_or_else(|| js_error("edited source is too large"))?;
+                    Ok::<_, JsValue>(PendingSourceEdit {
+                        old_start: start,
+                        old_end: end,
+                        new_start: start,
+                        new_end,
+                    })
+                })
+                .transpose()?;
             let revision = self
                 .repl
                 .session
@@ -2406,7 +2670,12 @@ mod document {
             if self.repl.session.source() != accepted_before {
                 self.program_output =
                     capture_program_output(&mut self.repl, &self.bootstrap).map_err(to_js_error)?;
-                self.refresh_document_output_ordinals()
+                let accepted_edit = if self.repl.session.source() == source {
+                    pending_edit
+                } else {
+                    None
+                };
+                self.refresh_document_output_ordinals(accepted_edit)
                     .map_err(to_js_error)?;
             } else {
                 self.bootstrap.abort();
@@ -2603,10 +2872,22 @@ mod document {
             mech_runtime::CanonicalDocumentRenderer
                 .format_html_body(&document.document().document())
                 .map_err(|error| js_error(error.to_string()))?;
-            let accepted_before = self.repl.session.source().len();
+            let accepted_source = self.repl.session.source().to_string();
+            let accepted_before = accepted_source.len();
             let accepted = match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
-                    self.refresh_document_output_ordinals()
+                    let edit = self
+                        .repl
+                        .session
+                        .source()
+                        .starts_with(&accepted_source)
+                        .then(|| PendingSourceEdit {
+                            old_start: accepted_before,
+                            old_end: accepted_before,
+                            new_start: accepted_before,
+                            new_end: self.repl.session.source().len(),
+                        });
+                    self.refresh_document_output_ordinals(edit)
                         .map_err(to_js_error)?;
                     true
                 }
@@ -2681,18 +2962,28 @@ mod document {
                 .ok_or_else(|| js_error("document runtime is not active"))
         }
 
-        fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
+        fn refresh_document_output_ordinals(
+            &mut self,
+            edit: Option<PendingSourceEdit>,
+        ) -> MResult<()> {
             let current =
                 self.repl.session.source_document().ok_or_else(|| {
                     document_runtime_error("document session has no retained source")
                 })?;
             let mut state = document_output_state_for_source(&self.bootstrap, current, false)?;
             let current_source = current.source().to_contiguous_string();
+            let edit = edit.map(|edit| SourceEditAnchors {
+                old_start: edit.old_start,
+                old_end: edit.old_end,
+                new_start: edit.new_start,
+                new_end: edit.new_end,
+            });
             retain_output_identities(
                 &self.document_output_bindings,
                 &mut state.bindings,
                 &self.document_output_source,
                 &current_source,
+                edit,
             );
             let ordinals = state.ordinals();
             let output_id = ordinals
@@ -3863,6 +4154,34 @@ mod tests {
         let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
         assert_eq!(bootstrap.presentation_output_ids.len(), 2);
         document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
+    #[test]
+    fn fenced_comment_does_not_add_a_root_inline_output() {
+        let source = "```mech\nanswer := 1 -- Result {1 + 1}\n```\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 1);
+        document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
+    #[test]
+    fn import_comment_inside_fence_does_not_add_visible_outputs() {
+        let source = "answer := 1\n\n```mech\n+> math -- Result {1 + 1}\n```\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert!(bootstrap.presentation_output_ids.is_empty());
+        document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
+    #[test]
+    fn canonical_output_spans_map_back_past_private_capture() {
+        let source =
+            "value := 1\n\n```mech\nvalue\n```\n\n```mech\nvalue\n```\n\nResult {value}.\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        let spans = document::document_output_spans(&bootstrap).unwrap();
+        assert_eq!(spans.len(), 3);
+        let spans = spans.into_iter().map(Option::unwrap).collect::<Vec<_>>();
+        assert!(spans.windows(2).all(|pair| pair[0].0 < pair[1].0));
+        assert!(source[spans[2].0..spans[2].1].contains("value"));
     }
 
     #[test]
@@ -5233,12 +5552,13 @@ phase"#;
 
     #[test]
     fn suppressed_documentation_renders_without_unpublished_live_ranges() {
-        let baseline = "answer := 1\nanswer";
+        let baseline = "Baseline {1}.\n\nanswer := 1\nanswer";
         let submitted = "answer + 1; -- Result {answer}";
         let retained = format!("{baseline}\nanswer + 1 -- Result {{answer}}\n");
         let (fragment, fragment_start) =
             retained_submission_fragment(&retained, baseline.len(), submitted).unwrap();
         let bootstrap = document_bootstrap("document.mec", baseline, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 1);
         let candidate = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(1),

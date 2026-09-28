@@ -352,15 +352,15 @@ fn collect_section_output_ids(
 
 fn collect_fenced_output_ids(
     block: &FencedMechCode,
-    inline_count: &mut u64,
-    inline_occurrences: &mut Vec<(u64, u64)>,
+    _inline_count: &mut u64,
+    _inline_occurrences: &mut Vec<(u64, u64)>,
     fence_occurrences: &mut Vec<(u64, u64)>,
     output_ids: &mut Vec<RootDocumentOutputIdentity>,
 ) {
     if block.config.disabled || block.config.hidden || block.config.namespace != 0 {
         return;
     }
-    collect_code_comments(&block.code, inline_count, inline_occurrences, output_ids);
+    // Comments inside a fence do not publish root inline outputs.
     // The capture executes beside the source value so it snapshots the right
     // `ans`, but its public ordinal belongs to the original document boundary.
     // The boundary annotation below publishes it after all source-visible

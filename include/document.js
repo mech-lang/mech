@@ -2169,6 +2169,17 @@ globalThis.MechDocumentController = Object.freeze({
     renderValues();
     return controller.replSource();
   },
+  applyEdit(start, end, inserted) {
+    const controller = activeDocumentController("apply an edit", "replApplyEdit");
+    if (!Number.isInteger(start) || !Number.isInteger(end) ||
+        start < 0 || end < start || end > 0xffffffff) {
+      throw documentControllerError("MECH_DOCUMENT_INVALID_EDIT", "invalid UTF-16 edit range");
+    }
+    const response = controller.replApplyEdit(start, end, String(inserted));
+    consumeReplResponse(response);
+    renderValues();
+    return controller.replSource();
+  },
   async invoke(source) {
     activeDocumentController("invoke an interactive request", "replInvoke");
     if (state.replBusy) {

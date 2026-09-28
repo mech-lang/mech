@@ -3103,9 +3103,9 @@ mod tests {
         let encoded = String::from_utf8(code.bytes).unwrap();
         assert_ne!(encoded, source_text);
         assert!(!encoded.contains("x := 1"));
-        let decoded = mech_runtime::BrowserDocumentPayload::decode(&encoded).unwrap();
-        assert_eq!(decoded.root_specifier(), "main.mec");
-        assert_eq!(decoded.source(), source_text);
+        let decoded: mech_core::Program =
+            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
+        assert_eq!(decoded, mech_syntax::parser::parse(source_text).unwrap());
         std::fs::remove_dir_all(root).unwrap();
     }
 
