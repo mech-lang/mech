@@ -25,17 +25,78 @@ project_dir="$(mktemp -d "$target_dir/served-resident-ekf.XXXXXX")"
 browser_dir="$(mktemp -d "$target_dir/served-resident-ekf-browser.XXXXXX")"
 server_log="$browser_dir/server.log"
 chrome_log="$browser_dir/chrome.stderr"
+harness_log="$browser_dir/harness.stderr"
 dom_file="$browser_dir/chrome.dom"
 chrome_profile="$browser_dir/chrome-profile"
 server_pid=""
 
 cleanup() {
+  exit_status="$?"
+  # Bash can expose internal parse status 258 to EXIT; the process returns 2.
+  exit_status="$((exit_status % 256))"
   if [[ -n "$server_pid" ]]; then
     kill "$server_pid" 2>/dev/null || true
     wait "$server_pid" 2>/dev/null || true
   fi
   rm -rf "$project_dir"
-  rm -rf "$browser_dir"
+  if [[ "$exit_status" -eq 0 ]]; then
+    rm -rf "$browser_dir"
+  else
+    # Keep failure diagnostics separate from the successful numerical result.
+    # Do not retain the browser profile, which is large and unrelated evidence.
+    rm -rf "$chrome_profile"
+    if ! python3 - "$browser_dir" "$exit_status" "${compute_backend:-}" \
+      "${filter_count:-}" "${continuity_edit:-}" "${terminal_submit_probe:-}" <<'PY'
+from html.parser import HTMLParser
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+
+class DatasetParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.dataset = {}
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "html":
+            self.dataset.update({
+                name: value for name, value in attrs if name.startswith("data-")
+            })
+
+
+directory, status, backend, filters, continuity, terminal_probe = sys.argv[1:]
+directory = Path(directory)
+parser = DatasetParser()
+dom = directory / "chrome.dom"
+if dom.exists():
+    parser.feed(dom.read_text(errors="replace"))
+revision = subprocess.run(
+    ["git", "rev-parse", "HEAD"], text=True, capture_output=True, timeout=10,
+)
+dirty = subprocess.run(
+    ["git", "status", "--porcelain"], text=True, capture_output=True, timeout=10,
+)
+(directory / "failure.json").write_text(json.dumps({
+    "outcome": "failed",
+    "exit_status": int(status),
+    "revision": revision.stdout.strip(),
+    "worktree_dirty": bool(dirty.stdout.strip()),
+    "requested_backend": backend,
+    "filter_count": filters,
+    "continuity_edit": continuity,
+    "terminal_submit_probe": terminal_probe,
+    "dataset": parser.dataset,
+    "artifacts": ["server.log", "chrome.stderr", "harness.stderr", "chrome.dom"],
+}, indent=2, sort_keys=True) + "\n")
+PY
+    then
+      echo "Could not write structured EKF failure diagnostics" >&2
+    fi
+    echo "Retained EKF failure diagnostics: $browser_dir" >&2
+  fi
+  return "$exit_status"
 }
 trap cleanup EXIT
 
@@ -174,6 +235,10 @@ harness = r'''<script>
         computeLifecycle: root.dataset.mechComputeLifecycle || "",
         computeBackend: root.dataset.mechComputeBackend || "",
         computeDispatches: root.dataset.mechComputeDispatches || "0",
+        gpuBindingInventory: root.dataset.mechGpuBindingInventory || "",
+        gpuRequiredStorageBindings: root.dataset.mechGpuRequiredStorageBindings || "",
+        gpuSupportedStorageBindings: root.dataset.mechGpuSupportedStorageBindings || "",
+        gpuBridgeError: root.dataset.mechGpuBridgeError || "",
         consoleError: root.dataset.mechConsoleError || "",
         pageError: root.dataset.mechPageError || "",
       });
@@ -1284,7 +1349,7 @@ set +e
 : >"$dom_file"
 : >"$chrome_log"
 python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" \
-  "$terminal_submit_probe" <<'PY'
+  "$terminal_submit_probe" <<'PY' 2>"$harness_log"
 import json
 from pathlib import Path
 import sys
@@ -1350,6 +1415,16 @@ with BrowserCompletionServer() as completion:
                 raise RuntimeError(
                     f"terminal compute submission proof failed: {probe!r}"
                 )
+            (Path(chrome_log).parent / "terminal-probe.json").write_text(
+                json.dumps(probe, sort_keys=True) + "\n"
+            )
+            print("EKF_TERMINAL_SUBMIT", json.dumps(probe, sort_keys=True), flush=True)
+            # The disposed document can still have accepted GPU work settling.
+            # Reap its browser before launching the independent numerical run;
+            # a second navigation in that target can wait on its renderer.
+            browser.close()
+            Path(chrome_log).rename(Path(chrome_log).parent / "terminal.chrome.stderr")
+            browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
 
         completion.last_progress = None
         query = urllib.parse.urlencode({"mech-canary-callback": callback})
@@ -1368,11 +1443,16 @@ with BrowserCompletionServer() as completion:
         ))
         snapshot = {
             "documentStatus": dataset.get("mechDocumentStatus", ""),
+            "documentError": dataset.get("mechDocumentError", ""),
             "adapterStatus": dataset.get("mechComputeAdapterStatus", ""),
             "deviceStatus": dataset.get("mechComputeDeviceStatus", ""),
             "computeLifecycle": dataset.get("mechComputeLifecycle", ""),
             "computeBackend": dataset.get("mechComputeBackend", ""),
             "computeDispatches": dataset.get("mechComputeDispatches", "0"),
+            "gpuBindingInventory": dataset.get("mechGpuBindingInventory", ""),
+            "gpuRequiredStorageBindings": dataset.get("mechGpuRequiredStorageBindings", ""),
+            "gpuSupportedStorageBindings": dataset.get("mechGpuSupportedStorageBindings", ""),
+            "gpuBridgeError": dataset.get("mechGpuBridgeError", ""),
             "done": dataset.get("mechDone") == "true",
             "timedOut": dataset.get("mechTimedOut") == "true",
             "consoleError": dataset.get("mechConsoleError", ""),
@@ -1380,6 +1460,8 @@ with BrowserCompletionServer() as completion:
         }
         milestones = snapshot
         write_dataset_snapshot(dom_file, dataset)
+        if snapshot["gpuBindingInventory"]:
+            print("EKF_GPU_BINDINGS", snapshot["gpuBindingInventory"], flush=True)
     finally:
         if not milestones and completion.last_progress is not None:
             message, body, _observed_at = completion.last_progress
@@ -1404,6 +1486,7 @@ raise SystemExit(124)
 PY
 chrome_status="$?"
 set -e
+cat "$harness_log" >&2
 
 updates="$(sed -n 's/.*data-mech-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 expected_continuity_generation_changed="$continuity_edit"

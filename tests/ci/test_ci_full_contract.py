@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import ast
+import html
 import json
 import os
 import re
+import shlex
 import subprocess
 import tempfile
 import textwrap
@@ -532,6 +534,117 @@ class FullWorkflowContractTests(unittest.TestCase):
             "shutdown-completed",
         ):
             self.assertIn(milestone, EKF_BROWSER)
+
+    def test_ekf_failure_diagnostics_are_not_numerical_evidence(self):
+        for backend, label in (("cpu", "scalar"), ("wgpu", "WebGPU")):
+            with self.subTest(backend=backend):
+                steps = job_steps(CI, f"browser-ekf-{backend}")
+                evidence = next(
+                    step for step in steps
+                    if f"name: Upload {label} EKF evidence" in step
+                )
+                diagnostics = next(
+                    step for step in steps
+                    if f"name: Retain {label} EKF failure diagnostics" in step
+                )
+                self.assertNotRegex(evidence, r"(?m)^        if:")
+                self.assertIn(f"name: browser-ekf-{backend}-results\n", evidence)
+                self.assertIn("if-no-files-found: error", evidence)
+                self.assertIn("if: always()", diagnostics)
+                self.assertIn("uses: actions/upload-artifact@v4", diagnostics)
+                self.assertIn(f"name: browser-ekf-{backend}-diagnostics-", diagnostics)
+                self.assertIn("path: target/served-resident-ekf-browser.*", diagnostics)
+                self.assertNotIn("-results", diagnostics)
+                self.assertGreater(steps.index(diagnostics), steps.index(evidence))
+        for field in (
+            "mechGpuBindingInventory", "mechGpuRequiredStorageBindings",
+            "mechGpuSupportedStorageBindings", "mechGpuBridgeError",
+        ):
+            self.assertIn(f"root.dataset.{field}", EKF_BROWSER)
+            self.assertIn(f'dataset.get("{field}", "")', EKF_BROWSER)
+        self.assertIn('2>"$harness_log"', EKF_BROWSER)
+
+    def test_ekf_terminal_probe_reaps_its_browser_before_numerical_launch(self):
+        terminal = EKF_BROWSER.index('"terminal compute submission proof failed:')
+        close = EKF_BROWSER.index("            browser.close()", terminal)
+        restart = EKF_BROWSER.index("            browser = ChromeSession", close)
+        numerical = EKF_BROWSER.index('"the fresh numeric EKF document to commit"', restart)
+        self.assertLess(terminal, close)
+        self.assertLess(close, restart)
+        self.assertLess(restart, numerical)
+        self.assertIn('"terminal-probe.json"', EKF_BROWSER[terminal:numerical])
+        self.assertIn('"terminal.chrome.stderr"', EKF_BROWSER[terminal:numerical])
+        self.assertIn('"EKF_TERMINAL_SUBMIT"', EKF_BROWSER[terminal:numerical])
+
+    def test_ekf_cleanup_keeps_failed_artifacts_and_preserves_exit_status(self):
+        match = re.search(
+            r"(?ms)^cleanup\(\) \{\n.*?^\}\n(?=trap cleanup EXIT)", EKF_BROWSER,
+        )
+        self.assertIsNotNone(match)
+        capability_error = (
+            "region ekf-batch requires 12 for maxStorageBuffersPerShaderStage, "
+            "but this adapter supports 10"
+        )
+        inventory = json.dumps([{"binding": 0, "name": "state_read", "access": "read"}])
+        for status in (0, 27):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                project = directory / "project"
+                browser = directory / "browser"
+                profile = browser / "chrome-profile"
+                project.mkdir()
+                profile.mkdir(parents=True)
+                (profile / "private-profile-data").write_text("discard profile")
+                (browser / "server.log").write_text("server diagnostics\n")
+                (browser / "chrome.stderr").write_text("adapter diagnostics\n")
+                (browser / "harness.stderr").write_text("bridge creation failed\n")
+                (browser / "chrome.dom").write_text(
+                    '<html data-mech-compute-dispatches="0" '
+                    f'data-mech-document-error="{html.escape(capability_error)}" '
+                    f'data-mech-gpu-binding-inventory="{html.escape(inventory)}">'
+                    "<head></head><body></body></html>\n"
+                )
+                script = "\n".join((
+                    "set -euo pipefail",
+                    f"project_dir={shlex.quote(str(project))}",
+                    f"browser_dir={shlex.quote(str(browser))}",
+                    f"chrome_profile={shlex.quote(str(profile))}",
+                    "server_pid=''",
+                    "compute_backend=wgpu",
+                    "filter_count=1000",
+                    "continuity_edit=false",
+                    "terminal_submit_probe=false",
+                    match.group(),
+                    "trap cleanup EXIT",
+                    f"exit {status}",
+                ))
+                result = subprocess.run(
+                    ["bash", "--noprofile", "--norc", "-c", script], cwd=ROOT,
+                    text=True, capture_output=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertFalse(project.exists())
+                if status == 0:
+                    self.assertFalse(browser.exists())
+                    continue
+                self.assertFalse(profile.exists())
+                self.assertIn(f"Retained EKF failure diagnostics: {browser}", result.stderr)
+                self.assertTrue((browser / "chrome.stderr").exists())
+                self.assertTrue((browser / "harness.stderr").exists())
+                failure = json.loads((browser / "failure.json").read_text())
+                self.assertEqual(failure["outcome"], "failed")
+                self.assertEqual(failure["exit_status"], status)
+                self.assertEqual(failure["requested_backend"], "wgpu")
+                self.assertRegex(failure["revision"], r"^[0-9a-f]{40}$")
+                self.assertEqual(
+                    failure["dataset"]["data-mech-document-error"], capability_error,
+                )
+                self.assertEqual(
+                    failure["dataset"]["data-mech-gpu-binding-inventory"], inventory,
+                )
+                self.assertEqual(failure["dataset"]["data-mech-compute-dispatches"], "0")
+                self.assertNotIn("output", failure)
+                self.assertFalse((directory / "ekf-wgpu-no-edit.json").exists())
 
     def test_engine_owner_runs_source_semantics_before_full_validation(self):
         owners = (ROOT / ".github/ci/owners.toml").read_text(encoding="utf-8")

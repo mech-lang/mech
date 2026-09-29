@@ -648,6 +648,14 @@ jobs:
           path: /tmp/ekf-cpu*.json
           if-no-files-found: error
           retention-days: 1
+      - name: Retain scalar EKF failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-cpu-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/served-resident-ekf-browser.*
+          if-no-files-found: ignore
+          retention-days: 7
 
   browser-ekf-wgpu:
     name: Browser EKF WebGPU
@@ -696,6 +704,14 @@ jobs:
           path: /tmp/ekf-wgpu*.json
           if-no-files-found: error
           retention-days: 1
+      - name: Retain WebGPU EKF failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-wgpu-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/served-resident-ekf-browser.*
+          if-no-files-found: ignore
+          retention-days: 7
 
   browser-ekf-parity:
     name: Browser EKF parity

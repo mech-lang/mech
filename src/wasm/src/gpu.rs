@@ -127,6 +127,7 @@ pub(crate) fn gpu_program_manifest(
     for state in &execution.states {
         let value = Object::new();
         set(&value, "slot", state.slot)?;
+        set(&value, "recurrence", state.recurrence)?;
         set(
             &value,
             "elements",

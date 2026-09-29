@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
 
 globalThis.GPUMapMode = { READ: 1 };
 globalThis.GPUBufferUsage = { COPY_DST: 1, MAP_READ: 2 };
@@ -234,6 +236,73 @@ const creationManifest = {
   physicalRevision: `sha256:${"a".repeat(64)}`,
   wgsl: "@compute @workgroup_size(1) fn main() {}",
 };
+const inventoryManifest = {
+  ...creationManifest,
+  region: "ekf-batch",
+  bindings: [
+    { binding: 0, name: "control", role: "input", access: "read", slot: 2, elements: 1 },
+    { binding: 1, name: "state.3.read", role: "state-read", access: "read", slot: 3, elements: 1 },
+    { binding: 2, name: "state.3.write", role: "state-write", access: "read-write", slot: 3, elements: 1 },
+    { binding: 3, name: "integrity-fault", role: "integrity-fault", access: "read-write", slot: 0, elements: 2 },
+  ],
+  wgsl: `
+    @group(0) @binding(0) var<storage, read> input_2: array<f32>;
+    @group(0) @binding(1) var<storage, read> state_read_3: array<f32>;
+    @group(0) @binding(2) var<storage, read_write> state_write_3: array<f32>;
+    @group(0) @binding(3) var<storage, read_write> integrity_fault: array<atomic<u32>>;
+    fn record_integrity_fault() { atomicAdd(&integrity_fault[0], 1u); }
+    @compute @workgroup_size(1) fn main() {
+      state_write_3[0] = input_2[0]; record_integrity_fault();
+    }`,
+};
+const inventory = Device.bindingInventory(inventoryManifest);
+assert.deepEqual(inventory.map(binding => [binding.entryPointReads, binding.entryPointWrites]),
+  [[true, false], [false, false], [false, true], [true, true]]);
+assert.deepEqual(inventory[1], {
+  binding: 1, name: "state.3.read", role: "state-read", access: "read", slot: 3,
+  wgslVariable: "state_read_3", entryPointReads: false, entryPointWrites: false,
+});
+let rejectedDeviceRequests = 0;
+await assert.rejects(() => Device.create(inventoryManifest, {
+  limits: { ...supported, maxStorageBuffersPerShaderStage: 3 },
+  async requestDevice() { rejectedDeviceRequests += 1; },
+}), /compute region `ekf-batch`: Mech requires 4 for maxStorageBuffersPerShaderStage, but this adapter supports 3/);
+assert.equal(rejectedDeviceRequests, 0, "a capability mismatch must fail before requesting a device");
+
+// Exercise the production fallback function without starting the DOM host.
+const documentSource = readFileSync(new URL("../include/document.js", import.meta.url), "utf8");
+const fallbackSource = documentSource.slice(
+  documentSource.indexOf("async function createDocumentComputeBridgeWithFallback("),
+  documentSource.indexOf("async function main()"),
+);
+const bridgeError = new Error("compute region `ekf-batch`: Mech requires 12 for maxStorageBuffersPerShaderStage, but this adapter supports 10");
+const fallbackDataset = {};
+const fallbackContext = vm.createContext({
+  Error,
+  state: {},
+  document: { documentElement: { dataset: fallbackDataset } },
+  window: {},
+  DocumentComputeBridge: { async create() { throw bridgeError; } },
+  servedComputeHostConfig: () => ({ settings: { backend: "auto" } }),
+  setComputeBridgeLifecycle() {},
+});
+const createBridge = vm.runInContext(`${fallbackSource}\ncreateDocumentComputeBridgeWithFallback;`, fallbackContext);
+let fallbackAttempts = 0;
+const explicitController = {
+  computeManifest: () => ({ requestedBackend: "wgpu" }),
+  computeBackend: () => "wgpu",
+  fallbackComputeToCpu() { fallbackAttempts += 1; },
+};
+await assert.rejects(() => createBridge(explicitController, null, () => true, () => {}), error => error === bridgeError);
+assert.equal(fallbackAttempts, 0, "an explicit WebGPU source request must not attempt CPU fallback");
+assert.equal(fallbackDataset.mechGpuBridgeError, bridgeError.message);
+await assert.rejects(() => createBridge({
+  ...explicitController,
+  computeManifest: () => ({ requestedBackend: "auto" }),
+  fallbackComputeToCpu() { throw new Error("WebGPU is unavailable in this browser"); },
+}, null, () => true, () => {}), error =>
+  error.cause === bridgeError && error.message.startsWith(bridgeError.message) &&
+  error.message.includes("CPU fallback also failed"));
 let requestedLimits = null;
 let deviceDestroyed = 0;
 let bufferRealizations = 0;

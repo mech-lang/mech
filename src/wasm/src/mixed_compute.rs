@@ -426,6 +426,37 @@ pub(crate) fn prepare_browser_compute_runtime(
         prepared.timings,
     )
     .map_err(|failure| mixed_error(format!("browser compute manifest failed: {failure:?}")))?;
+    // Carry the validated source request to the asynchronous bridge. The
+    // serialized host-authority object is not the parsed ConfigValue settings.
+    let requested_backend = backend_override
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| match &document.hosts[compute_index].settings {
+            ConfigValue::Map(settings) => match settings.get("backend") {
+                Some(ConfigValue::String(backend)) => backend.as_str(),
+                _ => "auto",
+            },
+            _ => "auto",
+        });
+    Reflect::set(
+        &manifest,
+        &JsValue::from_str("region"),
+        &JsValue::from_str(&prepared.region),
+    )
+    .map_err(|failure| {
+        mixed_error(format!(
+            "browser compute manifest region failed: {failure:?}"
+        ))
+    })?;
+    Reflect::set(
+        &manifest,
+        &JsValue::from_str("requestedBackend"),
+        &JsValue::from_str(requested_backend),
+    )
+    .map_err(|failure| {
+        mixed_error(format!(
+            "browser compute manifest backend failed: {failure:?}"
+        ))
+    })?;
     let physical_revision = Reflect::get(&manifest, &JsValue::from_str("physicalRevision"))
         .map_err(|failure| {
             mixed_error(format!(
