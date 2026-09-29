@@ -845,17 +845,6 @@ fn compile_browser_interactive_document(
         .plan_canonical_interactive_resolved_root(resolved_root)
 }
 
-#[cfg(test)]
-fn presentation_output_ids_for_document(document: &SourceDocument) -> MResult<Vec<u64>> {
-    let source = document.source().to_contiguous_string();
-    let program = mech_syntax::parser::parse(source.trim()).map_err(|error| {
-        document_runtime_error(format!(
-            "browser presentation identity parsing failed: {error:?}"
-        ))
-    })?;
-    Ok(root_document_output_ids(&program))
-}
-
 fn document_planning_compiler(
     bootstrap: &WasmDocumentBootstrap,
     document: &SourceDocument,
@@ -1304,8 +1293,7 @@ fn live_document_fragment_addresses(
 ) -> MResult<Vec<(mech_syntax::document::TextRange, u64)>> {
     use mech_syntax::document::{TextRange, TextSize};
 
-    let (runtime_source, program_output) = runtime_document(bootstrap, accepted)?;
-    let executable = runtime_source.source().to_contiguous_string();
+    let executable = accepted.source().to_contiguous_string();
     let fragment_start = executable
         .rfind(fragment)
         .filter(|start| *start >= accepted_before)
@@ -1313,53 +1301,19 @@ fn live_document_fragment_addresses(
             document_runtime_error("accepted documentation fragment was not retained")
         })?;
     let fragment_end = fragment_start + fragment.len();
-    let program = compile_browser_interactive_document(bootstrap, &runtime_source)?;
-    let outputs = program
-        .document_outputs()
-        .iter()
-        .filter(|output| {
-            output.visible
-                && output.kind != SourceDocumentOutputKind::Program
-                && Some(output.output) != program_output.map(|id| id.get())
-        })
-        .collect::<Vec<_>>();
-    // A suppressed fragment can have no canonical outputs even when earlier
-    // accepted source has visible outputs. Do not bind its display-only syntax.
-    if !outputs.iter().any(|output| {
-        program
-            .source_map()
-            .outputs
-            .get(output.output as usize)
-            .is_some_and(|anchor| {
-                let start = anchor.range.start.0 as usize;
-                let end = anchor.range.end.0 as usize;
-                start >= fragment_start && end <= fragment_end
-            })
-    }) {
-        return Ok(Vec::new());
-    }
-    let output_ids = presentation_output_ids_for_document(accepted)?;
-    if output_ids.len() != outputs.len() {
-        return Err(document_runtime_error(format!(
-            "browser presentation identity count {} does not match {} canonical outputs",
-            output_ids.len(),
-            outputs.len(),
-        )));
-    }
-    Ok(output_ids
+    let state = document::document_output_state_for_source(bootstrap, accepted, false)?;
+    Ok(state
+        .bindings
         .into_iter()
-        .zip(outputs)
-        .filter_map(|(output_id, output)| {
-            let anchor = program.source_map().outputs.get(output.output as usize)?;
-            let start = anchor.range.start.0 as usize;
-            let end = anchor.range.end.0 as usize;
+        .filter_map(|binding| {
+            let (start, end) = binding.source_span?;
             (start >= fragment_start && end <= fragment_end).then(|| {
                 (
                     TextRange::new(
                         TextSize((start - fragment_start) as u32),
                         TextSize((end - fragment_start) as u32),
                     ),
-                    output_id,
+                    binding.output_id,
                 )
             })
         })
@@ -1439,6 +1393,15 @@ mod document {
         pub(super) source_span: Option<(usize, usize)>,
     }
 
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    struct RetiredDocumentOutput {
+        output_id: u64,
+        semantic_id: u64,
+        kind: SourceDocumentOutputKind,
+        source: String,
+        anchor: usize,
+    }
+
     #[derive(Default)]
     pub(super) struct DocumentOutputState {
         pub(super) bindings: Vec<DocumentOutputBinding>,
@@ -1457,6 +1420,47 @@ mod document {
             }
             ordinals
         }
+    }
+
+    fn source_location_byte_offset(
+        source: &str,
+        location: mech_core::SourceLocation,
+    ) -> Option<usize> {
+        let row = location.row.checked_sub(1)?;
+        let column = location.col.checked_sub(1)?;
+        let mut line_start = 0;
+        for _ in 0..row {
+            line_start += source.get(line_start..)?.find('\n')? + 1;
+        }
+        let remainder = source.get(line_start..)?;
+        let line_end = remainder.find('\n').unwrap_or(remainder.len());
+        let line = remainder.get(..line_end)?;
+        let line = line.strip_suffix('\r').unwrap_or(line);
+        let mut byte_offset = 0;
+        let mut display_column = 0;
+        for grapheme in mech_syntax::graphemes::init_tag(line) {
+            if display_column == column {
+                return Some(line_start + byte_offset);
+            }
+            display_column += mech_syntax::graphemes::width(grapheme);
+            byte_offset += grapheme.len();
+        }
+        (display_column == column).then_some(line_start + byte_offset)
+    }
+
+    fn presentation_source_span(
+        source: &str,
+        range: Option<(mech_core::SourceLocation, mech_core::SourceLocation)>,
+    ) -> Option<(usize, usize)> {
+        let (start, end) = range?;
+        Some((
+            source_location_byte_offset(source, start)?,
+            source_location_byte_offset(source, end)?,
+        ))
+    }
+
+    fn source_spans_overlap(left: (usize, usize), right: (usize, usize)) -> bool {
+        left.0 < right.1 && right.0 < left.1
     }
 
     #[cfg(test)]
@@ -1521,30 +1525,8 @@ mod document {
                     && output.kind != SourceDocumentOutputKind::Program
                     && Some(output.output) != program_output.map(|id| id.get())
             })
-            .collect::<Vec<_>>();
-        let source = candidate.source().to_contiguous_string();
-        let presentation = mech_syntax::parser::parse(source.trim()).map_err(|error| {
-            document_runtime_error(format!(
-                "browser presentation identity parsing failed: {error:?}"
-            ))
-        })?;
-        let identities = root_document_output_identities(&presentation);
-        if identities.len() != outputs.len() {
-            return Err(document_runtime_error(format!(
-                "browser presentation identity count {} does not match {} canonical outputs",
-                identities.len(),
-                outputs.len(),
-            )));
-        }
-        let bindings = identities
-            .into_iter()
-            .zip(outputs)
-            .map(|(identity, output)| DocumentOutputBinding {
-                output_id: identity.output_id,
-                semantic_id: identity.semantic_id,
-                kind: output.kind,
-                ordinal: u64::from(output.output),
-                source_span: program
+            .map(|output| {
+                let source_span = program
                     .source_map()
                     .outputs
                     .get(output.output as usize)
@@ -1560,8 +1542,67 @@ mod document {
                             }
                             Some(_) => None,
                         }
-                    }),
+                    });
+                (output, source_span)
             })
+            .collect::<Vec<_>>();
+        let source = candidate.source().to_contiguous_string();
+        let presentation = mech_syntax::parser::parse(&source).map_err(|error| {
+            document_runtime_error(format!(
+                "browser presentation identity parsing failed: {error:?}"
+            ))
+        })?;
+        let identities = root_document_output_identities(&presentation);
+        let mut claimed = vec![false; outputs.len()];
+        let bindings = identities
+            .into_iter()
+            .map(|identity| {
+                let presentation_span = presentation_source_span(&source, identity.source_range);
+                let ranged_match = presentation_span.and_then(|presentation_span| {
+                    outputs
+                        .iter()
+                        .enumerate()
+                        .position(|(index, (output, canonical_span))| {
+                            !claimed[index]
+                                && output.kind == identity.kind
+                                && canonical_span.is_some_and(|canonical_span| {
+                                    source_spans_overlap(presentation_span, canonical_span)
+                                })
+                        })
+                });
+                // Legacy fenced-code tokens are scoped to the fence body, so
+                // their row/column locations are not document absolute. Fence
+                // publication order is canonical and contains no ignored
+                // front-matter values, making kind/order the precise fallback.
+                let ordered_fence_match = (identity.kind == SourceDocumentOutputKind::Fence)
+                    .then(|| {
+                        outputs.iter().enumerate().position(|(index, (output, _))| {
+                            !claimed[index] && output.kind == SourceDocumentOutputKind::Fence
+                        })
+                    })
+                    .flatten();
+                let Some(index) = ranged_match.or(ordered_fence_match) else {
+                    if !require_all {
+                        return Ok(None);
+                    }
+                    return Err(document_runtime_error(format!(
+                        "browser presentation output {} has no matching canonical source output",
+                        identity.output_id
+                    )));
+                };
+                claimed[index] = true;
+                let (output, source_span) = outputs[index];
+                Ok(Some(DocumentOutputBinding {
+                    output_id: identity.output_id,
+                    semantic_id: identity.semantic_id,
+                    kind: output.kind,
+                    ordinal: u64::from(output.output),
+                    source_span,
+                }))
+            })
+            .collect::<MResult<Vec<_>>>()?
+            .into_iter()
+            .flatten()
             .collect::<Vec<_>>();
         if require_all
             && bootstrap.presentation_output_ids.iter().any(|output_id| {
@@ -1649,6 +1690,21 @@ mod document {
             })
     }
 
+    fn offset_after_edit(offset: usize, edit: SourceEditAnchors) -> usize {
+        if offset <= edit.old_start {
+            offset
+        } else if offset >= edit.old_end {
+            edit.new_end.saturating_add(offset - edit.old_end)
+        } else {
+            edit.new_start
+        }
+    }
+
+    fn binding_source<'a>(binding: &DocumentOutputBinding, source: &'a str) -> Option<&'a str> {
+        let (start, end) = binding.source_span?;
+        source.get(start..end)
+    }
+
     fn retain_output_identities(
         previous: &[DocumentOutputBinding],
         next: &mut [DocumentOutputBinding],
@@ -1656,6 +1712,7 @@ mod document {
         next_source: &str,
         edit: Option<SourceEditAnchors>,
         reserved: &mut HashSet<u64>,
+        retired: &mut Vec<RetiredDocumentOutput>,
     ) {
         let edit = edit.or_else(|| inferred_source_edit(previous_source, next_source));
         let mut groups =
@@ -1828,6 +1885,79 @@ mod document {
             }
         }
 
+        // A removed placeholder may still exist in the static DOM. Retain
+        // enough source identity to reactivate that exact address if a later
+        // edit restores the same output at the removal site. Other outputs
+        // continue to skip every retired address through `reserved`.
+        if let Some(edit) = edit {
+            for tombstone in retired.iter_mut() {
+                tombstone.anchor = offset_after_edit(tombstone.anchor, edit);
+            }
+            let mut restored_tombstones = Vec::new();
+            for (index, binding) in next.iter_mut().enumerate() {
+                if assigned[index]
+                    || !binding_intersects_edit(binding, edit.new_start, edit.new_end)
+                {
+                    continue;
+                }
+                let Some(source) = binding_source(binding, next_source) else {
+                    continue;
+                };
+                let Some(tombstone_index) =
+                    retired
+                        .iter()
+                        .enumerate()
+                        .find_map(|(tombstone_index, tombstone)| {
+                            (!restored_tombstones.contains(&tombstone_index)
+                                && tombstone.anchor == edit.new_start
+                                && tombstone.kind == binding.kind
+                                && tombstone.semantic_id == binding.semantic_id
+                                && tombstone.source == source)
+                                .then_some(tombstone_index)
+                        })
+                else {
+                    continue;
+                };
+                binding.output_id = retired[tombstone_index].output_id;
+                assigned[index] = true;
+                claimed.insert(binding.output_id);
+                restored_tombstones.push(tombstone_index);
+            }
+            restored_tombstones.sort_unstable();
+            restored_tombstones.dedup();
+            for index in restored_tombstones.into_iter().rev() {
+                retired.remove(index);
+            }
+
+            for (index, binding) in previous.iter().enumerate() {
+                if old_assigned[index]
+                    || retired
+                        .iter()
+                        .any(|tombstone| tombstone.output_id == binding.output_id)
+                {
+                    continue;
+                }
+                let Some(source) = binding_source(binding, previous_source) else {
+                    continue;
+                };
+                let anchor = if binding_intersects_edit(binding, edit.old_start, edit.old_end) {
+                    edit.new_start
+                } else {
+                    binding
+                        .source_span
+                        .map(|(start, _)| offset_after_edit(start, edit))
+                        .unwrap_or(edit.new_start)
+                };
+                retired.push(RetiredDocumentOutput {
+                    output_id: binding.output_id,
+                    semantic_id: binding.semantic_id,
+                    kind: binding.kind,
+                    source: source.to_owned(),
+                    anchor,
+                });
+            }
+        }
+
         for ((kind, semantic_id), (_, new)) in groups {
             let mut occurrence = 0_u64;
             for index in new {
@@ -1866,6 +1996,25 @@ mod document {
     #[cfg(test)]
     mod output_identity_tests {
         use super::*;
+
+        fn retain_output_identities(
+            previous: &[DocumentOutputBinding],
+            next: &mut [DocumentOutputBinding],
+            previous_source: &str,
+            next_source: &str,
+            edit: Option<SourceEditAnchors>,
+            reserved: &mut HashSet<u64>,
+        ) {
+            super::retain_output_identities(
+                previous,
+                next,
+                previous_source,
+                next_source,
+                edit,
+                reserved,
+                &mut Vec::new(),
+            );
+        }
 
         fn fence_with_semantic(
             output_id: u64,
@@ -1979,6 +2128,94 @@ mod document {
                 super::super::retained_document_fragment_addresses(&next, 2, 1).unwrap();
             assert_eq!(addresses.len(), 1);
             assert_eq!(addresses[0].1, third);
+        }
+
+        #[test]
+        fn restoring_a_deleted_output_reactivates_its_original_address() {
+            let original = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let previous = vec![fence(original, 4, 0)];
+            let mut removed = Vec::new();
+            let mut reserved = HashSet::from([original]);
+            let mut retired = Vec::new();
+
+            super::retain_output_identities(
+                &previous,
+                &mut removed,
+                "F",
+                "",
+                Some(SourceEditAnchors {
+                    old_start: 0,
+                    old_end: 1,
+                    new_start: 0,
+                    new_end: 0,
+                }),
+                &mut reserved,
+                &mut retired,
+            );
+            assert_eq!(retired.len(), 1);
+
+            let mut restored = vec![fence(original, 5, 0)];
+            super::retain_output_identities(
+                &removed,
+                &mut restored,
+                "",
+                "F",
+                Some(SourceEditAnchors {
+                    old_start: 0,
+                    old_end: 0,
+                    new_start: 0,
+                    new_end: 1,
+                }),
+                &mut reserved,
+                &mut retired,
+            );
+
+            assert_eq!(restored[0].output_id, original);
+            assert!(retired.is_empty());
+        }
+
+        #[test]
+        fn an_identical_output_at_another_location_does_not_reuse_a_tombstone() {
+            let original = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let previous = vec![fence(original, 4, 0)];
+            let mut removed = Vec::new();
+            let mut reserved = HashSet::from([original]);
+            let mut retired = Vec::new();
+
+            super::retain_output_identities(
+                &previous,
+                &mut removed,
+                "F X",
+                " X",
+                Some(SourceEditAnchors {
+                    old_start: 0,
+                    old_end: 1,
+                    new_start: 0,
+                    new_end: 0,
+                }),
+                &mut reserved,
+                &mut retired,
+            );
+
+            let mut appended = vec![fence(original, 5, 3)];
+            super::retain_output_identities(
+                &removed,
+                &mut appended,
+                " X",
+                " X F",
+                Some(SourceEditAnchors {
+                    old_start: 2,
+                    old_end: 2,
+                    new_start: 2,
+                    new_end: 4,
+                }),
+                &mut reserved,
+                &mut retired,
+            );
+
+            assert_eq!(appended[0].output_id, second);
+            assert_eq!(retired[0].output_id, original);
         }
 
         #[test]
@@ -2153,6 +2390,7 @@ mod document {
         document_output_ordinals: HashMap<u64, u64>,
         document_output_bindings: Vec<DocumentOutputBinding>,
         reserved_document_output_ids: HashSet<u64>,
+        retired_document_outputs: Vec<RetiredDocumentOutput>,
         document_output_source: String,
         program_output: Option<DocumentProgramOutput>,
         started: bool,
@@ -2288,6 +2526,7 @@ mod document {
                 document_output_ordinals,
                 document_output_bindings: document_output_state.bindings,
                 reserved_document_output_ids,
+                retired_document_outputs: Vec::new(),
                 document_output_source,
                 program_output,
                 started: false,
@@ -2552,6 +2791,7 @@ mod document {
             self.document_output_ordinals = replacement.document_output_ordinals;
             self.document_output_bindings = replacement.document_output_bindings;
             self.reserved_document_output_ids = replacement.reserved_document_output_ids;
+            self.retired_document_outputs = replacement.retired_document_outputs;
             self.document_output_source = replacement.document_output_source;
             self.program_output = replacement.program_output;
             self.started = false;
@@ -3235,6 +3475,7 @@ mod document {
                 &current_source,
                 edit,
                 &mut self.reserved_document_output_ids,
+                &mut self.retired_document_outputs,
             );
             let ordinals = state.ordinals();
             let output_id = ordinals
@@ -4532,6 +4773,27 @@ mod tests {
         let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
         assert_eq!(bootstrap.presentation_output_ids.len(), 2);
         document::document_output_ordinals(&bootstrap).unwrap();
+    }
+
+    #[test]
+    fn unrendered_title_field_outputs_do_not_shift_rendered_bindings() {
+        let source = "Document\r\n===============================================================================\r\ncustom: 🐝 {1 + 1}\r\nauthor: Result 👩‍🔬 {40 + 2}\r\n===============================================================================\r\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 1);
+
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert_eq!(ordinals.len(), 1);
+        assert!(ordinals.contains_key(&bootstrap.presentation_output_ids[0]));
+    }
+
+    #[test]
+    fn title_figure_table_caption_maps_to_its_live_output() {
+        let source = "Gallery\n===============================================================================\nhero: | ![Result {40 + 2}](first.svg) |\n===============================================================================\n";
+        let bootstrap = document_bootstrap("document.mec", source, HashMap::new(), Vec::new());
+        assert_eq!(bootstrap.presentation_output_ids.len(), 1);
+
+        let ordinals = document::document_output_ordinals(&bootstrap).unwrap();
+        assert!(ordinals.contains_key(&bootstrap.presentation_output_ids[0]));
     }
 
     fn document_bootstrap(

@@ -1,8 +1,10 @@
 use mech_core::{
     BlockConfig, Comment, FencedMechCode, MDList, MechCode, Paragraph, ParagraphElement, Program,
-    SectionAnnotation, SectionElement, Statement, Title, TitleField, hash_str,
-    inline_document_output_id,
+    SectionAnnotation, SectionElement, SourceLocation, Statement, Title, TitleField, Token,
+    hash_str, inline_document_output_id,
 };
+
+use crate::source_semantics::SourceDocumentOutputKind;
 
 /// One stable browser presentation address and its content-derived identity.
 /// The semantic identity intentionally omits positional occurrence so a
@@ -12,6 +14,11 @@ use mech_core::{
 pub struct RootDocumentOutputIdentity {
     pub output_id: u64,
     pub semantic_id: u64,
+    pub kind: SourceDocumentOutputKind,
+    /// Source coordinates for the expression or fence that owns this rendered
+    /// output. Browser adapters use the range to join presentation identities
+    /// to canonical outputs without depending on equal list lengths.
+    pub source_range: Option<(SourceLocation, SourceLocation)>,
 }
 
 /// Runtime-only namespace used by the browser document adapter to capture the
@@ -138,7 +145,13 @@ pub fn root_document_output_identities(program: &Program) -> Vec<RootDocumentOut
             .any(|annotation| annotation.name.as_ref() == PROGRAM_OUTPUT_PUBLICATION_ANNOTATION)
         {
             let output_id = root_document_program_output_id();
-            push_unique(&mut output_ids, output_id, output_id);
+            push_unique(
+                &mut output_ids,
+                output_id,
+                output_id,
+                SourceDocumentOutputKind::Program,
+                None,
+            );
         }
     }
     output_ids
@@ -389,6 +402,10 @@ fn collect_fenced_output_ids(
         output_ids.push(RootDocumentOutputIdentity {
             output_id: fenced_document_output_occurrence_id(block, occurrence).unwrap(),
             semantic_id: base_id,
+            kind: SourceDocumentOutputKind::Fence,
+            // Fenced code is parsed in a fence-local coordinate space. Its
+            // document output is joined by canonical fence order instead.
+            source_range: None,
         });
     }
 }
@@ -617,6 +634,8 @@ fn collect_paragraph_element_output_ids(
                 output_ids,
                 inline_document_output_id(0, expression, occurrence),
                 base,
+                SourceDocumentOutputKind::Inline,
+                token_source_range(&expression.tokens()),
             );
         }
         ParagraphElement::Emphasis(element)
@@ -685,7 +704,20 @@ fn collect_list_output_ids(
     }
 }
 
-fn push_unique(output_ids: &mut Vec<RootDocumentOutputIdentity>, output_id: u64, semantic_id: u64) {
+fn token_source_range(tokens: &[Token]) -> Option<(SourceLocation, SourceLocation)> {
+    Some((
+        tokens.first()?.src_range.start,
+        tokens.last()?.src_range.end,
+    ))
+}
+
+fn push_unique(
+    output_ids: &mut Vec<RootDocumentOutputIdentity>,
+    output_id: u64,
+    semantic_id: u64,
+    kind: SourceDocumentOutputKind,
+    source_range: Option<(SourceLocation, SourceLocation)>,
+) {
     if !output_ids
         .iter()
         .any(|identity| identity.output_id == output_id)
@@ -693,6 +725,8 @@ fn push_unique(output_ids: &mut Vec<RootDocumentOutputIdentity>, output_id: u64,
         output_ids.push(RootDocumentOutputIdentity {
             output_id,
             semantic_id,
+            kind,
+            source_range,
         });
     }
 }

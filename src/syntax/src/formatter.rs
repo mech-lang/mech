@@ -1468,7 +1468,7 @@ impl Formatter {
                     captions.push(format!(
             "<span class=\"mech-figure-caption-ref\">({})</span> <span class=\"mech-figure-caption-text\">{}</span>",
             label,
-            figure.caption.to_string()
+            self.paragraph(&figure.caption)
           ));
                     figure_ix += 1;
                 }

@@ -457,6 +457,20 @@ fn formatter_keeps_figure_table_hero_frontmatter_parseable() {
 }
 
 #[test]
+fn formatter_renders_live_outputs_in_figure_table_hero_captions() {
+    let source = "Gallery\n===============================================================================\nhero: | ![Result {40 + 2}](first.svg) |\n===============================================================================\n";
+    let program = mech_syntax::parser::parse(source).unwrap();
+    let html = Formatter::new().format_html(&program, String::new(), "{{HERO}}".to_string());
+
+    assert_eq!(
+        html.matches("class=\"mech-inline-mech-code\"").count(),
+        1,
+        "{html}"
+    );
+    assert!(html.contains("mech-figure-caption-text"), "{html}");
+}
+
+#[test]
 fn formatter_emits_renderer_ready_equations_and_diagrams_with_safe_source_text() {
     let source = token(TokenKind::Text, "x < y & z > 0");
     let mut formatter = Formatter::new();
