@@ -157,6 +157,17 @@ harness = r'''<script>
         }).catch(() => navigator.sendBeacon(url, payload));
       }
     };
+    let lastReportedComputeTurn = 0;
+    const signalProgress = completedTurns => {
+      if (
+        completionUrl &&
+        Number.isFinite(completedTurns) &&
+        completedTurns - lastReportedComputeTurn >= 25
+      ) {
+        lastReportedComputeTurn = completedTurns;
+        navigator.sendBeacon(`${completionUrl}/ekf-progress`, String(completedTurns));
+      }
+    };
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
     console.error = (...args) => {
@@ -354,6 +365,7 @@ harness = r'''<script>
     });
     window.addEventListener("mech:compute-complete", (event) => {
       const completedTurns = event.detail?.completedTurns;
+      signalProgress(completedTurns);
       if (
         performContinuityEdit && completedTurns === continuityEditTurn &&
         !continuityEditRequested
@@ -1175,6 +1187,8 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 set +e
+: >"$dom_file"
+: >"$chrome_log"
 python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" \
   "$terminal_submit_probe" <<'PY'
 import json
@@ -1218,9 +1232,12 @@ with BrowserCompletionServer() as completion:
                 "the terminal-submit probe document to commit",
                 timeout=20,
             )
-            probe_data = json.loads(
-                completion.wait_for("ekf-terminal-finished", timeout=150)
-            )
+            probe_data = json.loads(completion.wait_for(
+                "ekf-terminal-finished",
+                timeout=300,
+                progress=("ekf-progress",),
+                max_timeout=600,
+            ))
             probe = {
                 "done": probe_data.get("mechDone") == "true",
                 "observed": probe_data.get("mechTerminalSubmitObserved") == "true",
@@ -1248,7 +1265,12 @@ with BrowserCompletionServer() as completion:
             "the fresh numeric EKF document to commit",
             timeout=20,
         )
-        dataset = json.loads(completion.wait_for("ekf-finished", timeout=150))
+        dataset = json.loads(completion.wait_for(
+            "ekf-finished",
+            timeout=300,
+            progress=("ekf-progress",),
+            max_timeout=900,
+        ))
         snapshot = {
             "documentStatus": dataset.get("mechDocumentStatus", ""),
             "adapterStatus": dataset.get("mechComputeAdapterStatus", ""),

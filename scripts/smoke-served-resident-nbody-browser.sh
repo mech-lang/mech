@@ -95,6 +95,11 @@ harness = r'''<script>
         );
       }
     };
+    const signalProgress = () => {
+      if (completionUrl) {
+        navigator.sendBeacon(`${completionUrl}/nbody-progress`, String(sunFrameCount));
+      }
+    };
     console.error = (...args) => {
       root.dataset.mechConsoleError = args.map(String).join(" ");
       originalConsoleError.apply(console, args);
@@ -110,6 +115,7 @@ harness = r'''<script>
     let firstMercuryX;
     let firstMercuryY;
     let lastSunDisplayUpdate = -1;
+    let lastReportedSunFrame = 0;
     let sunFrameCount = 0;
     let maximumSunOffset = 0;
     let sunEverOffCenter = false;
@@ -196,6 +202,10 @@ harness = r'''<script>
         maximumSunOffset = Math.max(maximumSunOffset, sunOffset);
         sunEverOffCenter ||= sunOffset >= 0.001;
         minimumMercuryOffset = Math.min(minimumMercuryOffset, mercuryOffset);
+        if (sunFrameCount - lastReportedSunFrame >= 50) {
+          lastReportedSunFrame = sunFrameCount;
+          signalProgress();
+        }
       }
       const sunCentered = sunFrameCount > 0 && !sunEverOffCenter;
       // The independently bounded 0.295 AU perihelion maps above 23 px.
@@ -323,6 +333,8 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 run_chrome() {
+  : >"$dom_file"
+  : >"$chrome_log"
   python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" <<'PY'
 import json
 import sys
@@ -349,7 +361,12 @@ with BrowserCompletionServer() as completion:
     try:
         query = urllib.parse.urlencode({"mech-canary-callback": completion.base_url})
         browser.navigate(f"{page_url}?{query}")
-        payload = completion.wait_for("nbody-finished", timeout=90)
+        payload = completion.wait_for(
+            "nbody-finished",
+            timeout=300,
+            progress=("nbody-progress",),
+            max_timeout=600,
+        )
         write_dataset_snapshot(dom_file, json.loads(payload))
     finally:
         browser.close()

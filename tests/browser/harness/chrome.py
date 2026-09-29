@@ -63,9 +63,24 @@ class BrowserCompletionServer:
         host, port = self.server.server_address[:2]
         return f"http://{host}:{port}/{self.token}"
 
-    def wait_for(self, expected: str, *, timeout: float = 30) -> bytes:
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
+    def wait_for(
+        self,
+        expected: str,
+        *,
+        timeout: float = 30,
+        progress: tuple[str, ...] = (),
+        max_timeout: float | None = None,
+    ) -> bytes:
+        """Wait for completion while explicit progress renews the idle budget."""
+        started = time.monotonic()
+        idle_deadline = started + timeout
+        max_deadline = started + max_timeout if max_timeout is not None else None
+        while True:
+            deadline = idle_deadline
+            if max_deadline is not None:
+                deadline = min(deadline, max_deadline)
+            if time.monotonic() >= deadline:
+                break
             try:
                 message, body = self.messages.get(
                     timeout=max(0.01, deadline - time.monotonic())
@@ -74,7 +89,11 @@ class BrowserCompletionServer:
                 break
             if message == expected:
                 return body
-        raise BrowserFailure(f"timed out waiting for browser completion beacon {expected!r}")
+            if message in progress:
+                idle_deadline = time.monotonic() + timeout
+        raise BrowserFailure(
+            f"timed out waiting for browser completion beacon {expected!r}"
+        )
 
     def close(self) -> None:
         self.server.shutdown()

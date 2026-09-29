@@ -6148,6 +6148,10 @@ mod browser_tests {
     }
 
     fn encoded_document(source: &str) -> String {
+        encoded_document_at("document.mec", source)
+    }
+
+    fn encoded_document_at(root_specifier: &str, source: &str) -> String {
         let document = SourceDocument::parse_resolved(
             "runtime:interactive",
             mech_syntax::document::Revision(0),
@@ -6171,7 +6175,7 @@ mod browser_tests {
                     })
                     .collect::<Vec<_>>()
             });
-        BrowserDocumentPayload::new("document.mec", source)
+        BrowserDocumentPayload::new(root_specifier, source)
             .unwrap()
             .with_presentation_output_ids(presentation_output_ids)
             .encode()
@@ -6266,7 +6270,7 @@ mod browser_tests {
     fn wasm_document_reset_reuses_validated_served_authority() {
         let authority = served_document_authority();
         install_served_authority(&authority);
-        let encoded = encoded_document(served_document_source());
+        let encoded = encoded_document_at("docs/main.mec", served_document_source());
         let mut document = WasmDocument::from_served_encoded(
             &encoded,
             "docs/main.mec",
@@ -6289,7 +6293,7 @@ mod browser_tests {
     fn wasm_document_reset_does_not_adopt_replaced_global_authority() {
         let authority = served_document_authority();
         install_served_authority(&authority);
-        let encoded = encoded_document(served_document_source());
+        let encoded = encoded_document_at("docs/main.mec", served_document_source());
         let mut document = WasmDocument::from_served_encoded(
             &encoded,
             "docs/main.mec",
@@ -6320,7 +6324,7 @@ mod browser_tests {
     fn wasm_document_reset_survives_removed_global_authority() {
         let authority = served_document_authority();
         install_served_authority(&authority);
-        let encoded = encoded_document(served_document_source());
+        let encoded = encoded_document_at("docs/main.mec", served_document_source());
         let mut document = WasmDocument::from_served_encoded(
             &encoded,
             "docs/main.mec",

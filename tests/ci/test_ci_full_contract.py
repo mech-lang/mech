@@ -12,6 +12,15 @@ ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/ci-full.yml").read_text(encoding="utf-8")
 NATIVE = (ROOT / ".github/workflows/ci-native-plan.yml").read_text(encoding="utf-8")
+NBODY_BROWSER = (ROOT / "scripts/smoke-served-resident-nbody-browser.sh").read_text(
+    encoding="utf-8"
+)
+EKF_BROWSER = (ROOT / "scripts/smoke-served-resident-ekf-browser.sh").read_text(
+    encoding="utf-8"
+)
+BROWSER_HARNESS = (ROOT / "tests/browser/harness/chrome.py").read_text(
+    encoding="utf-8"
+)
 STATIC = (ROOT / "scripts/check-static-distribution-profiles.sh").read_text(
     encoding="utf-8"
 )
@@ -105,6 +114,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             "live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure",
             "cli_hosted_native_application_builds_and_emits_once",
             "generated_executables_accept_only_once",
+            "every_generated_application_fixture_builds_and_executes",
             "materialize_every_generated_project",
         ])
         for script in ("check-native-host-catalog.py", "check-generated-project-determinism.py", "check-native-application-graphs.py"):
@@ -223,6 +233,14 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("smoke-gpu-particles-browser.py", compute)
         self.assertIn("smoke-served-resident-ekf-browser.sh", compute)
         self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
+
+    def test_long_browser_canaries_use_progress_watchdogs_with_hard_caps(self):
+        self.assertIn("if message in progress:", BROWSER_HARNESS)
+        self.assertIn("deadline = min(deadline, max_deadline)", BROWSER_HARNESS)
+        self.assertIn('progress=("nbody-progress",)', NBODY_BROWSER)
+        self.assertIn("max_timeout=600", NBODY_BROWSER)
+        self.assertIn('progress=("ekf-progress",)', EKF_BROWSER)
+        self.assertIn("max_timeout=900", EKF_BROWSER)
 
     def test_engine_owner_runs_source_semantics_before_full_validation(self):
         owners = (ROOT / ".github/ci/owners.toml").read_text(encoding="utf-8")
