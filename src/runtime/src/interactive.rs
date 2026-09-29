@@ -2076,6 +2076,83 @@ display := b + 10
     }
 
     #[test]
+    fn source_replacement_initializes_a_renamed_state_like_a_fresh_session() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session
+            .replace_source("~a := 0\na += 1\na\n".to_string())
+            .unwrap();
+        session.step(3).unwrap();
+        assert_eq!(session.symbol("a").unwrap().unwrap().to_string(), "4");
+
+        let replacement = "~b := 0\nb += 1\nb\n";
+        let mut fresh = ResidentReplSession::new(SourceRuntimeFactory);
+        let fresh_result = fresh.replace_source(replacement.to_string()).unwrap();
+        let replacement_result = session.replace_source(replacement.to_string()).unwrap();
+
+        assert_eq!(replacement_result, fresh_result);
+        assert_eq!(session.symbol("b").unwrap(), fresh.symbol("b").unwrap());
+        assert_eq!(session.symbol("ans").unwrap(), fresh.symbol("ans").unwrap());
+        assert!(session.symbol("a").unwrap().is_none());
+        session.step(1).unwrap();
+        fresh.step(1).unwrap();
+        assert_eq!(session.symbol("b").unwrap(), fresh.symbol("b").unwrap());
+    }
+
+    #[test]
+    fn source_replacement_initializes_inserted_state_and_preserves_surviving_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session
+            .replace_source("~a := 0\n~b := 0\na += 1\nb += 10\nb\n".to_string())
+            .unwrap();
+        session.step(2).unwrap();
+        let surviving_state = session.symbol("b").unwrap();
+        assert_eq!(session.symbol("a").unwrap().unwrap().to_string(), "3");
+        assert_eq!(surviving_state.as_ref().unwrap().to_string(), "30");
+
+        let replacement = "~c := 0\n~b := 0\nc += 1\nb += 10\nb\n";
+        let mut fresh = ResidentReplSession::new(SourceRuntimeFactory);
+        fresh.replace_source(replacement.to_string()).unwrap();
+        session.replace_source(replacement.to_string()).unwrap();
+
+        assert_eq!(session.symbol("c").unwrap(), fresh.symbol("c").unwrap());
+        assert_eq!(session.symbol("b").unwrap(), surviving_state);
+        assert_ne!(session.symbol("b").unwrap(), fresh.symbol("b").unwrap());
+        assert!(session.symbol("a").unwrap().is_none());
+        session.step(1).unwrap();
+        fresh.step(1).unwrap();
+        assert_eq!(session.symbol("c").unwrap(), fresh.symbol("c").unwrap());
+        assert_eq!(session.symbol("b").unwrap().unwrap().to_string(), "40");
+    }
+
+    #[test]
+    fn source_replacement_preserves_each_same_shaped_state_after_reordering() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session
+            .replace_source("~a := 0\n~b := 0\na += 1\nb += 10\na + b\n".to_string())
+            .unwrap();
+        session.step(2).unwrap();
+        let previous_a = session.symbol("a").unwrap();
+        let previous_b = session.symbol("b").unwrap();
+        assert_eq!(previous_a.as_ref().unwrap().to_string(), "3");
+        assert_eq!(previous_b.as_ref().unwrap().to_string(), "30");
+
+        let replacement = "~b := 0\n~a := 0\na += 1\nb += 10\na + b\n";
+        let mut fresh = ResidentReplSession::new(SourceRuntimeFactory);
+        fresh.replace_source(replacement.to_string()).unwrap();
+        let result = session.replace_source(replacement.to_string()).unwrap();
+
+        assert_eq!(session.symbol("a").unwrap(), previous_a);
+        assert_eq!(session.symbol("b").unwrap(), previous_b);
+        for name in ["a", "b"] {
+            assert_ne!(session.symbol(name).unwrap(), fresh.symbol(name).unwrap());
+        }
+        assert_eq!(result.to_string(), "33");
+        session.step(1).unwrap();
+        assert_eq!(session.symbol("a").unwrap().unwrap().to_string(), "4");
+        assert_eq!(session.symbol("b").unwrap().unwrap().to_string(), "40");
+    }
+
+    #[test]
     fn accepted_source_uses_explicit_mutable_redefinition_instead_of_migrated_state() {
         let mut session = ResidentReplSession::new(SourceRuntimeFactory);
         session.submit("~counter := 0").unwrap();

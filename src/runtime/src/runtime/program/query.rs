@@ -411,6 +411,22 @@ fn compatible_state_mappings(
             _ => None,
         })
         .collect::<BTreeMap<_, _>>();
+    let source_named_states = source_named.values().copied().collect::<BTreeSet<_>>();
+    let target_named_states = target
+        .interactive_symbol_bindings()
+        .filter(|binding| binding.lexical_name != "ans")
+        .filter_map(|binding| match binding.artifact_source {
+            ArtifactSource::Slot(slot)
+                if target
+                    .slots()
+                    .get(slot.get() as usize)
+                    .is_some_and(|declaration| declaration.role == SlotRole::State) =>
+            {
+                Some(slot)
+            }
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
     let mut mapped_sources = BTreeSet::new();
     let mut mapped_targets = BTreeSet::new();
     let excluded_targets = target
@@ -506,14 +522,14 @@ fn compatible_state_mappings(
     }
     semantic_equivalence.clear();
 
-    // Preserve non-exported state when its producer remains structurally
-    // identical. This intentionally requires producer identity as well as slot
-    // compatibility so deleting or reordering unrelated definitions cannot
-    // migrate state into a different computation that merely reused an index.
+    // Only genuinely unnamed state may use structural matching. Artifact-local
+    // producer positions do not establish lexical declaration identity: a named
+    // state whose named match failed must retain its replacement initializer,
+    // and a retired named state must not supply an unnamed replacement cell.
     for target_slot in target
         .slots()
         .iter()
-        .filter(|slot| slot.role == SlotRole::State)
+        .filter(|slot| slot.role == SlotRole::State && !target_named_states.contains(&slot.slot))
     {
         if mapped_targets.contains(&target_slot.slot)
             || excluded_targets.contains(&target_slot.slot)
@@ -522,6 +538,7 @@ fn compatible_state_mappings(
         }
         let Some(source_slot) = source.slots().iter().find(|source_slot| {
             source_slot.role == SlotRole::State
+                && !source_named_states.contains(&source_slot.slot)
                 && source_slot.producer == target_slot.producer
                 && source.schemas().get(source_slot.schema)
                     == target.schemas().get(target_slot.schema)
@@ -909,9 +926,13 @@ fn missing_resident_symbol(operation: &'static str, name: &str) -> MechError {
 
 #[cfg(all(test, feature = "resident-routing-source"))]
 mod tests {
-    use super::*;
+    use super::{ArtifactSource, ProgramArtifact, SlotRole, compatible_state_mappings};
 
     fn artifact(source: &str) -> ProgramArtifact {
+        artifact_with_interactive_projection(source, true)
+    }
+
+    fn artifact_with_interactive_projection(source: &str, interactive: bool) -> ProgramArtifact {
         let mut compiler = crate::RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
             .build_compiler()
@@ -923,11 +944,12 @@ mod tests {
             mech_syntax::document::ParseConfig::default(),
         )
         .unwrap();
-        compiler
-            .compile_interactive_document(&document)
-            .unwrap()
-            .into_parts()
-            .0
+        let product = if interactive {
+            compiler.compile_interactive_document(&document)
+        } else {
+            compiler.compile_document(&document)
+        };
+        product.unwrap().into_parts().0
     }
 
     fn named_state(artifact: &ProgramArtifact, name: &str) -> mech_core::CellSlotId {
@@ -973,6 +995,119 @@ mod tests {
                 .iter()
                 .any(|mapping| { mapping.source == previous_a && mapping.target == shifted_a })
         );
+    }
+
+    #[test]
+    fn renamed_state_cannot_reuse_an_artifact_local_producer_identity() {
+        let previous = artifact("~a := 0\na += 1\na\n");
+        let replacement = artifact("~b := 0\nb += 1\nb\n");
+        let previous_a = named_state(&previous, "a");
+        let replacement_b = named_state(&replacement, "b");
+        assert_eq!(
+            previous.slots()[previous_a.get() as usize].producer,
+            replacement.slots()[replacement_b.get() as usize].producer,
+            "the witness must reuse the same artifact-local producer identity",
+        );
+
+        let mappings = compatible_state_mappings(&previous, &replacement, &Default::default());
+        assert!(
+            mappings
+                .iter()
+                .all(|mapping| mapping.target != replacement_b),
+            "a different named declaration must remain freshly initialized",
+        );
+    }
+
+    #[test]
+    fn structural_state_matching_requires_unnamed_cells_on_both_sides() {
+        let source = "~a := 0\na += 1\na\n";
+        let named = artifact(source);
+        let unnamed = artifact_with_interactive_projection(source, false);
+        assert_eq!(unnamed.interactive_symbol_bindings().count(), 0);
+        let named_state = named_state(&named, "a");
+        let unnamed_state = unnamed
+            .slots()
+            .iter()
+            .find(|slot| slot.role == SlotRole::State)
+            .unwrap()
+            .slot;
+        assert_eq!(
+            named.slots()[named_state.get() as usize].producer,
+            unnamed.slots()[unnamed_state.get() as usize].producer,
+        );
+
+        let named_to_unnamed = compatible_state_mappings(&named, &unnamed, &Default::default());
+        assert!(
+            named_to_unnamed
+                .iter()
+                .all(|mapping| mapping.target != unnamed_state)
+        );
+        let unnamed_to_named = compatible_state_mappings(&unnamed, &named, &Default::default());
+        assert!(
+            unnamed_to_named
+                .iter()
+                .all(|mapping| mapping.target != named_state)
+        );
+
+        let unnamed_to_unnamed = compatible_state_mappings(&unnamed, &unnamed, &Default::default());
+        assert!(
+            unnamed_to_unnamed.iter().any(|mapping| {
+                mapping.source == unnamed_state && mapping.target == unnamed_state
+            })
+        );
+    }
+
+    #[test]
+    fn deleted_state_cannot_migrate_into_an_inserted_same_shaped_declaration() {
+        let previous = artifact("~a := 0\n~b := 0\na += 1\nb += 10\nb\n");
+        let replacement = artifact("~c := 0\n~b := 0\nc += 1\nb += 10\nb\n");
+        let previous_a = named_state(&previous, "a");
+        let previous_b = named_state(&previous, "b");
+        let replacement_c = named_state(&replacement, "c");
+        let replacement_b = named_state(&replacement, "b");
+        assert_eq!(
+            previous.slots()[previous_a.get() as usize].producer,
+            replacement.slots()[replacement_c.get() as usize].producer,
+        );
+
+        let mappings = compatible_state_mappings(&previous, &replacement, &Default::default());
+        assert!(
+            mappings
+                .iter()
+                .all(|mapping| mapping.target != replacement_c)
+        );
+        assert!(
+            mappings
+                .iter()
+                .any(|mapping| { mapping.source == previous_b && mapping.target == replacement_b })
+        );
+    }
+
+    #[test]
+    fn reordered_same_shaped_states_migrate_only_by_their_lexical_names() {
+        let previous = artifact("~a := 0\n~b := 0\na += 1\nb += 10\nb\n");
+        let replacement = artifact("~b := 0\n~a := 0\na += 1\nb += 10\nb\n");
+        let mappings = compatible_state_mappings(&previous, &replacement, &Default::default());
+
+        for name in ["a", "b"] {
+            let source = named_state(&previous, name);
+            let target = named_state(&replacement, name);
+            assert_ne!(
+                previous.slots()[source.get() as usize].producer,
+                replacement.slots()[target.get() as usize].producer,
+                "reordering must change the artifact-local producer for {name}",
+            );
+            assert!(
+                mappings
+                    .iter()
+                    .any(|mapping| { mapping.source == source && mapping.target == target })
+            );
+            assert!(
+                mappings
+                    .iter()
+                    .all(|mapping| { mapping.target != target || mapping.source == source })
+            );
+        }
     }
 
     #[test]

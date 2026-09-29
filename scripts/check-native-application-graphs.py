@@ -18,6 +18,9 @@ ROOT = Path(__file__).resolve().parents[1]
 GENERATOR_TIMEOUT_SECONDS = int(
     os.environ.get("MECH_NATIVE_APPLICATION_GENERATOR_TIMEOUT_SECS", "1320")
 )
+METADATA_TIMEOUT_SECONDS = int(
+    os.environ.get("MECH_NATIVE_APPLICATION_METADATA_TIMEOUT_SECS", "120")
+)
 GENERATOR_HEARTBEAT_SECONDS = 30
 PROJECT_MARKER = "MECH_NATIVE_PROJECT_CASE="
 EXPECTED_FEATURES = {
@@ -194,25 +197,52 @@ FORBIDDEN_PACKAGES = {"mech-stdlib", "mech-syntax", "mech-bytecode", "mech-build
 
 
 def execute(
-    arguments: list[str], environment: dict[str, str] | None = None
+    arguments: list[str], environment: dict[str, str] | None = None, *, label: str
 ) -> str:
-    process = subprocess.run(
+    if METADATA_TIMEOUT_SECONDS <= 0:
+        raise RuntimeError(
+            "MECH_NATIVE_APPLICATION_METADATA_TIMEOUT_SECS must be positive"
+        )
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+    process = subprocess.Popen(
         arguments,
         cwd=ROOT,
         env=environment,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        check=False,
+        start_new_session=os.name != "nt",
+        creationflags=creationflags,
     )
-    if process.returncode:
-        details = "\n".join(
-            output.strip()
-            for output in (process.stdout, process.stderr)
-            if output.strip()
-        )
-        raise RuntimeError(f"{' '.join(arguments)} failed:\n{details}")
-    return process.stdout
+
+    def interrupted(signum: int, _frame: object) -> None:
+        raise RuntimeError(f"{label} interrupted by signal {signum}")
+
+    previous_sigterm = signal.signal(signal.SIGTERM, interrupted)
+    try:
+        try:
+            stdout, stderr = process.communicate(timeout=METADATA_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(
+                f"{label} exceeded {METADATA_TIMEOUT_SECONDS}s"
+            ) from error
+        if process.returncode:
+            details = "\n".join(
+                output.strip() for output in (stdout, stderr) if output.strip()
+            )
+            raise RuntimeError(f"{label} failed:\n{details}")
+        return stdout
+    except BaseException:
+        terminate_process_tree(process)
+        raise
+    finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
 
 
 def execute_streamed(
@@ -565,7 +595,8 @@ def validate_project(project: Path) -> str:
                 str(project / "Cargo.toml"),
                 "--locked",
                 "--offline",
-            ]
+            ],
+            label=f"stage=cargo metadata project={binary} path={project}",
         )
     )
     packages = {package["id"]: package for package in metadata["packages"]}

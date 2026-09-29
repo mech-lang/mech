@@ -257,7 +257,26 @@ pub fn run_json_command<T: DeserializeOwned>(
     timeout: Duration,
     log_root: &Path,
 ) -> Result<T, String> {
-    let output = run_command(command, context, timeout, log_root)?;
+    run_json_command_observed(command, context, timeout, log_root, |_, _| Ok(()))
+}
+
+/// Observable startup boundaries used by containment contract tests. Observers
+/// may hold a boundary; the execution deadline starts after application release.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProcessBoundary {
+    StartupBlocked,
+    SupervisionArmed,
+    ApplicationReleased,
+}
+
+pub fn run_json_command_observed<T: DeserializeOwned>(
+    command: Command,
+    context: CommandContext<'_>,
+    timeout: Duration,
+    log_root: &Path,
+    mut observer: impl FnMut(ProcessBoundary, u32) -> io::Result<()>,
+) -> Result<T, String> {
+    let output = run_command_observed(command, context, timeout, log_root, &mut observer)?;
     require_success(&output, context)?;
     serde_json::from_slice(&output.stdout).map_err(|error| {
         format_process_error(
@@ -279,10 +298,20 @@ struct CapturedProcess {
 }
 
 fn run_command(
+    command: Command,
+    context: CommandContext<'_>,
+    timeout: Duration,
+    log_root: &Path,
+) -> Result<CapturedProcess, String> {
+    run_command_observed(command, context, timeout, log_root, &mut |_, _| Ok(()))
+}
+
+fn run_command_observed(
     mut command: Command,
     context: CommandContext<'_>,
     timeout: Duration,
     log_root: &Path,
+    observer: &mut impl FnMut(ProcessBoundary, u32) -> io::Result<()>,
 ) -> Result<CapturedProcess, String> {
     std::fs::create_dir_all(log_root).map_err(|error| {
         format!(
@@ -306,7 +335,6 @@ fn run_command(
         .map_err(|error| format!("failed to create {}: {error}", stderr_path.display()))?;
 
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
-    configure_process_group(&mut command);
     let command_text = command_text(&command);
     eprintln!(
         "MECH_NATIVE_OWNER_PROGRESS case={} profile={} stage={} progress=spawn timeout={timeout:?} command={command_text} stdout={} stderr={}",
@@ -316,18 +344,7 @@ fn run_command(
         stdout_path.display(),
         stderr_path.display(),
     );
-    let child = command.spawn().map_err(|error| {
-        format!(
-            "native owner process failed to start: case={} profile={} stage={} command={} error={error} stdout={} stderr={}",
-            context.case,
-            context.profile,
-            context.stage,
-            command_text,
-            stdout_path.display(),
-            stderr_path.display(),
-        )
-    })?;
-    let mut process = ProcessTree::new(child).map_err(|error| {
+    let mut process = ProcessTree::spawn(command, observer).map_err(|error| {
         format!(
             "native owner process tree setup failed: case={} profile={} stage={} command={} error={error} stdout={} stderr={}",
             context.case,
@@ -628,6 +645,8 @@ struct ProcessTree {
     child: Option<Child>,
     process_id: u32,
     #[cfg(unix)]
+    startup_writer: Option<UnixStream>,
+    #[cfg(unix)]
     watchdog_writer: Option<UnixStream>,
     #[cfg(unix)]
     watchdog: Option<Child>,
@@ -636,37 +655,53 @@ struct ProcessTree {
 }
 
 impl ProcessTree {
-    fn new(mut child: Child) -> io::Result<Self> {
-        let process_id = child.id();
+    fn spawn(
+        command: Command,
+        observer: &mut impl FnMut(ProcessBoundary, u32) -> io::Result<()>,
+    ) -> io::Result<Self> {
         #[cfg(unix)]
-        let (watchdog_writer, watchdog) = match spawn_parent_death_watchdog(process_id) {
-            Ok((writer, watchdog)) => (Some(writer), Some(watchdog)),
-            Err(error) => {
-                terminate_process_tree(process_id, true);
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(error);
-            }
-        };
-        #[cfg(windows)]
-        let job = match create_kill_on_close_job_and_resume(&child) {
-            Ok(job) => Some(job),
-            Err(error) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(error);
-            }
-        };
-        Ok(Self {
+        let (mut command, startup_writer) = startup_launcher(&command)?;
+        #[cfg(not(unix))]
+        let mut command = command;
+        configure_process_group(&mut command);
+        let child = command.spawn()?;
+        let process_id = child.id();
+        let mut process = Self {
             child: Some(child),
             process_id,
             #[cfg(unix)]
-            watchdog_writer,
+            startup_writer: Some(startup_writer),
             #[cfg(unix)]
-            watchdog,
+            watchdog_writer: None,
+            #[cfg(unix)]
+            watchdog: None,
             #[cfg(windows)]
-            job,
-        })
+            job: None,
+        };
+        observer(ProcessBoundary::StartupBlocked, process_id)?;
+        #[cfg(unix)]
+        {
+            let (writer, watchdog) = spawn_parent_death_watchdog(process_id)?;
+            process.watchdog_writer = Some(writer);
+            process.watchdog = Some(watchdog);
+        }
+        #[cfg(windows)]
+        {
+            process.job = Some(create_kill_on_close_job(process.child_mut())?);
+        }
+        observer(ProcessBoundary::SupervisionArmed, process_id)?;
+        #[cfg(unix)]
+        {
+            // The launcher cannot exec the application until the watchdog has
+            // acknowledged its parent-death channel. EOF before this release
+            // makes the launcher exit, including if this wrapper is SIGKILLed.
+            let mut startup = process.startup_writer.take().expect("startup barrier");
+            startup.write_all(b"run\n")?;
+        }
+        #[cfg(windows)]
+        resume_contained_child(process.child_mut())?;
+        observer(ProcessBoundary::ApplicationReleased, process_id)?;
+        Ok(process)
     }
 
     fn try_wait(&mut self) -> io::Result<Option<ExitStatus>> {
@@ -685,6 +720,7 @@ impl ProcessTree {
     fn kill_remaining_group(&mut self) -> io::Result<()> {
         #[cfg(unix)]
         {
+            drop(self.startup_writer.take());
             // EOF is also delivered when this entire test process is killed,
             // allowing the separately grouped watchdog to clean descendants
             // even though Rust destructors cannot run.
@@ -753,20 +789,66 @@ fn configure_process_group(command: &mut Command) {
 }
 
 #[cfg(unix)]
-fn spawn_parent_death_watchdog(process_group: u32) -> io::Result<(UnixStream, Child)> {
+fn startup_launcher(command: &Command) -> io::Result<(Command, UnixStream)> {
     let (reader, writer) = UnixStream::pair()?;
+    let reader: OwnedFd = reader.into();
+    let mut launcher = Command::new("sh");
+    launcher
+        .args([
+            "-c",
+            "IFS= read -r release && test \"$release\" = run || exit 125; exec \"$@\" </dev/null",
+            "native-owner-startup",
+        ])
+        .arg(command.get_program())
+        .args(command.get_args())
+        .stdin(Stdio::from(reader))
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(directory) = command.get_current_dir() {
+        launcher.current_dir(directory);
+    }
+    for (key, value) in command.get_envs() {
+        match value {
+            Some(value) => launcher.env(key, value),
+            None => launcher.env_remove(key),
+        };
+    }
+    Ok((launcher, writer))
+}
+
+#[cfg(unix)]
+fn spawn_parent_death_watchdog(process_group: u32) -> io::Result<(UnixStream, Child)> {
+    let (reader, mut writer) = UnixStream::pair()?;
+    let acknowledgement: OwnedFd = reader.try_clone()?.into();
     let reader: OwnedFd = reader.into();
     let mut command = Command::new("sh");
     command
         .arg("-c")
-        .arg("IFS= read -r _ || true; exec /bin/kill -KILL -- \"-$1\"")
+        .arg("printf armed; IFS= read -r _ || true; exec /bin/kill -KILL -- \"-$1\"")
         .arg("native-owner-watchdog")
         .arg(process_group.to_string())
         .stdin(Stdio::from(reader))
-        .stdout(Stdio::null())
+        .stdout(Stdio::from(acknowledgement))
         .stderr(Stdio::null());
     configure_process_group(&mut command);
-    command.spawn().map(|watchdog| (writer, watchdog))
+    let mut watchdog = command.spawn()?;
+    let mut acknowledgement = [0; 5];
+    let acknowledged = writer
+        .set_read_timeout(Some(Duration::from_secs(30)))
+        .and_then(|()| writer.read_exact(&mut acknowledgement));
+    if let Err(error) = acknowledged {
+        drop(writer);
+        let _ = wait_for_watchdog(&mut watchdog);
+        return Err(error);
+    }
+    if &acknowledgement != b"armed" {
+        drop(writer);
+        let _ = wait_for_watchdog(&mut watchdog);
+        return Err(io::Error::other(
+            "parent-death watchdog did not acknowledge supervision",
+        ));
+    }
+    Ok((writer, watchdog))
 }
 
 #[cfg(unix)]
@@ -787,13 +869,12 @@ fn wait_for_watchdog(watchdog: &mut Child) -> io::Result<()> {
 }
 
 #[cfg(windows)]
-fn create_kill_on_close_job_and_resume(child: &Child) -> io::Result<OwnedHandle> {
+fn create_kill_on_close_job(child: &Child) -> io::Result<OwnedHandle> {
     use windows_sys::Win32::System::JobObjects::{
         AssignProcessToJobObject, CreateJobObjectW, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobObjectExtendedLimitInformation,
         SetInformationJobObject,
     };
-    use windows_sys::Win32::System::Threading::ResumeThread;
 
     // SAFETY: every handle and pointer is either returned by Windows, borrowed
     // from the live Child, or points to an initialized structure for the call.
@@ -817,17 +898,25 @@ fn create_kill_on_close_job_and_resume(child: &Child) -> io::Result<OwnedHandle>
         if AssignProcessToJobObject(raw_job, child.as_raw_handle()) == 0 {
             return Err(io::Error::last_os_error());
         }
-        let previous_suspend_count = ResumeThread(child.main_thread_handle().as_raw_handle());
-        if previous_suspend_count == u32::MAX {
-            return Err(io::Error::last_os_error());
-        }
-        if previous_suspend_count != 1 {
-            return Err(io::Error::other(format!(
-                "native owner process had unexpected suspend count {previous_suspend_count}"
-            )));
-        }
         Ok(job)
     }
+}
+
+#[cfg(windows)]
+fn resume_contained_child(child: &Child) -> io::Result<()> {
+    use windows_sys::Win32::System::Threading::ResumeThread;
+    // SAFETY: the thread handle is borrowed from the live suspended Child.
+    let previous_suspend_count =
+        unsafe { ResumeThread(child.main_thread_handle().as_raw_handle()) };
+    if previous_suspend_count == u32::MAX {
+        return Err(io::Error::last_os_error());
+    }
+    if previous_suspend_count != 1 {
+        return Err(io::Error::other(format!(
+            "native owner process had unexpected suspend count {previous_suspend_count}"
+        )));
+    }
+    Ok(())
 }
 
 #[cfg(windows)]
