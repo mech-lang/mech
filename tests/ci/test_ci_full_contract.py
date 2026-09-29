@@ -728,6 +728,59 @@ class FullWorkflowContractTests(unittest.TestCase):
             block,
         )
 
+    def test_full_validation_stops_on_cancellation_and_keeps_selected_dependency_gates(self):
+        block = job_block(CI, "full-validation")
+        condition = re.search(r"(?s)    if: >-\n\s*\$\{\{(.*?)\}\}", block).group(1)
+        self.assertIn("!cancelled()", condition)
+
+        def selected(cancelled=False, **overrides):
+            values = {
+                "needs.impact.outputs.full_validation_required": "true",
+                "needs.impact.outputs.docs_only": "false",
+                "needs.static-contracts.result": "success",
+                "needs.standard-linux.result": "success",
+                "needs.standard-windows.result": "success",
+                "needs.changed-owner-tests.result": "success",
+                "needs.browser-canary.result": "success",
+            }
+            values.update(overrides)
+            expression = re.sub(
+                r"needs\.[a-z-]+\.(?:outputs\.[a-z_]+|result)",
+                lambda match: repr(values[match.group()]), condition,
+            )
+            expression = expression.replace("cancelled()", repr(cancelled)).replace("always()", "True")
+            expression = expression.replace("&&", " and ").replace("||", " or ")
+            expression = re.sub(r"!(?!=)", " not ", expression)
+            expression = " ".join(expression.split())
+            return eval(expression, {"__builtins__": {}}, {})
+
+        self.assertTrue(selected())
+        self.assertFalse(selected(cancelled=True))
+        self.assertFalse(selected(**{"needs.impact.outputs.full_validation_required": "false"}))
+        skipped_optional = {
+            "needs.changed-owner-tests.result": "skipped",
+            "needs.browser-canary.result": "skipped",
+        }
+        self.assertTrue(selected(**skipped_optional))
+        self.assertFalse(selected(cancelled=True, **skipped_optional))
+        skipped_docs = {
+            "needs.impact.outputs.docs_only": "true",
+            **{f"needs.{job}.result": "skipped" for job in (
+                "static-contracts", "standard-linux", "standard-windows",
+                "changed-owner-tests", "browser-canary",
+            )},
+        }
+        self.assertTrue(selected(**skipped_docs))
+        self.assertFalse(selected(cancelled=True, **skipped_docs))
+        for job in ("static-contracts", "standard-linux", "standard-windows",
+                    "changed-owner-tests", "browser-canary"):
+            for result in ("failure", "cancelled"):
+                with self.subTest(job=job, result=result):
+                    self.assertFalse(selected(**{f"needs.{job}.result": result}))
+        for job in ("static-contracts", "standard-linux", "standard-windows"):
+            with self.subTest(job=job, result="skipped"):
+                self.assertFalse(selected(**{f"needs.{job}.result": "skipped"}))
+
     def test_reusable_workflow_declares_ref_and_falls_back_for_other_invocations(self):
         self.assertRegex(
             FULL,

@@ -821,7 +821,7 @@ jobs:
       - browser-canary
     if: >-
       ${{
-        always() &&
+        !cancelled() &&
         needs.impact.outputs.full_validation_required == 'true' &&
         (needs.static-contracts.result == 'success' ||
           (needs.impact.outputs.docs_only == 'true' && needs.static-contracts.result == 'skipped')) &&
