@@ -87,6 +87,7 @@ class ImpactClassifierTests(unittest.TestCase):
         for path in (
             "examples/ekf/localization.mec",
             "examples/ekf/mech.mcfg",
+            "scripts/check-ekf-browser-results.py",
             "scripts/smoke-served-resident-ekf-browser.sh",
         ):
             with self.subTest(path=path):

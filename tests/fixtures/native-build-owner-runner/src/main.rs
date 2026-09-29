@@ -4,19 +4,22 @@ use std::error::Error;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output, Stdio};
 use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use mech_build::{
     NativeActorBootstrap, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildPlan,
-    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
+    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit,
+    NativeRuntimeConfig,
 };
+#[cfg(feature = "fixed")]
+use mech_core::FunctionCatalogBuilder;
 use mech_core::{
     BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionCatalog, ParsedProgram,
     RuntimeType, write_bytecode_with_artifact,
 };
-#[cfg(feature = "fixed")]
-use mech_core::FunctionCatalogBuilder;
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 use serde::Serialize;
 
@@ -106,7 +109,7 @@ fn main() -> AppResult<()> {
         if case.ends_with("-once") {
             command.arg("--once");
         }
-        let output = command.output()?;
+        let output = output_with_timeout(command, Duration::from_secs(30))?;
         if !output.status.success() {
             return Err(format!(
                 "generated binary failed with {}: stdout={} stderr={}",
@@ -120,6 +123,30 @@ fn main() -> AppResult<()> {
     }
     serde_json::to_writer(std::io::stdout(), &result)?;
     Ok(())
+}
+
+fn output_with_timeout(mut command: Command, timeout: Duration) -> io::Result<Output> {
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    let mut child = command.spawn()?;
+    let started = Instant::now();
+    loop {
+        if child.try_wait()?.is_some() {
+            return child.wait_with_output();
+        }
+        if started.elapsed() >= timeout {
+            child.kill()?;
+            let output = child.wait_with_output()?;
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                format!(
+                    "generated binary exceeded {timeout:?}: stdout={} stderr={}",
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr),
+                ),
+            ));
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
 }
 
 #[cfg(feature = "full")]
@@ -298,11 +325,9 @@ fn owner_catalog() -> AppResult<Arc<FunctionCatalog>> {
         .map_err(|error| mech_error("engine resident owner catalog", error))?;
     mech_math::install_runtime(&mut builder)
         .map_err(|error| mech_error("math owner catalog", error))?;
-    Ok(Arc::new(
-        builder
-            .build()
-            .map_err(|error| mech_error("fixed owner catalog", error))?,
-    ))
+    Ok(Arc::new(builder.build().map_err(|error| {
+        mech_error("fixed owner catalog", error)
+    })?))
 }
 
 #[cfg(any(
@@ -402,7 +427,9 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
             }
             RuntimeType::F64 if output.bytes.len() == 8 => {
                 if output.bytes.iter().all(|byte| *byte == 0) {
-                    return Err(format!("compiler output seed {constant_id} was already zero").into());
+                    return Err(
+                        format!("compiler output seed {constant_id} was already zero").into(),
+                    );
                 }
                 output.bytes.fill(0);
             }
@@ -426,9 +453,10 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
                     continue;
                 }
                 if output.bytes[8..].iter().all(|byte| *byte == 0) {
-                    return Err(
-                        format!("compiler matrix output seed {constant_id} was already zero").into(),
-                    );
+                    return Err(format!(
+                        "compiler matrix output seed {constant_id} was already zero"
+                    )
+                    .into());
                 }
                 output.bytes[8..].fill(0);
             }
@@ -468,9 +496,7 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
                 }
             }
             runtime_type => {
-                return Err(
-                    format!("cannot poison output seed of type {runtime_type:?}").into(),
-                );
+                return Err(format!("cannot poison output seed of type {runtime_type:?}").into());
             }
         }
     }

@@ -109,14 +109,20 @@ class FullWorkflowContractTests(unittest.TestCase):
         pair = "cargo +nightly-2026-03-03 test -p mech-build --all-features --test registry_generated_project"
         pruning = "cargo +nightly-2026-03-03 test -p mech-build --all-features --test native_host_pruning"
         self.assertLess(native.index(pair), native.index(pruning))
-        self.assertEqual(re.findall(r"--skip ([a-z_]+)", native), [
-            "registry_project_is_exact_unpatched_and_buildable_with_a_test_only_patch",
-            "live_registry_project_runs_once_handles_ctrlc_and_cleans_up_after_failure",
-            "cli_hosted_native_application_builds_and_emits_once",
-            "generated_executables_accept_only_once",
-            "every_generated_application_fixture_builds_and_executes",
-            "materialize_every_generated_project",
-        ])
+        bounded = "cargo +nightly-2026-03-03 test -p mech-build --all-features"
+        self.assertEqual(native.count(bounded), 3)
+        self.assertIn("--lib", native)
+        self.assertIn("--test standard_host_source_planning", native)
+        self.assertNotIn("--test planning", native)
+        self.assertNotIn("--skip", native)
+        for expensive_target in (
+            "native_literal",
+            "native_scalar",
+            "native_representative_families",
+            "native_output_seed_arities",
+            "native_generated_end_to_end",
+        ):
+            self.assertNotIn(f"--test {expensive_target}", native)
         for script in ("check-native-host-catalog.py", "check-generated-project-determinism.py", "check-native-application-graphs.py"):
             self.assertIn(f"python3 scripts/{script}", native)
 
@@ -203,6 +209,11 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_browser_suites_run_in_parallel_behind_one_required_gate(self):
         standard = job_block(CI, "browser-standard-canary")
         nbody = job_block(CI, "browser-nbody-reference")
+        compute_build = job_block(CI, "browser-compute-build")
+        compute_smoke = job_block(CI, "browser-compute-smoke")
+        ekf_cpu = job_block(CI, "browser-ekf-cpu")
+        ekf_wgpu = job_block(CI, "browser-ekf-wgpu")
+        ekf_parity = job_block(CI, "browser-ekf-parity")
         compute = job_block(CI, "browser-compute-canary")
         aggregate = job_block(CI, "browser-canary")
 
@@ -210,10 +221,23 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("Verify resident rendering without browser errors", standard)
         self.assertNotIn("Verify N-body physics against independent references", standard)
         self.assertIn("Verify N-body physics against independent references", nbody)
-        self.assertIn("Build mixed compute WASM and refresh the server", compute)
-        self.assertIn("--profile browser-compute-canary", compute)
-        self.assertIn("Verify report-only particle WebGPU execution", compute)
-        self.assertIn("Verify scalar and WebGPU EKF rendering", compute)
+        self.assertIn("Build mixed compute WASM and refresh the server", compute_build)
+        self.assertIn("--profile browser-compute-canary", compute_build)
+        self.assertIn("browser-compute-canary-build", compute_build)
+        self.assertIn("Verify report-only particle WebGPU execution", compute_smoke)
+        self.assertIn("Verify scalar EKF rendering", ekf_cpu)
+        self.assertIn("Verify WebGPU EKF rendering", ekf_wgpu)
+        self.assertIn("scripts/check-ekf-browser-results.py", ekf_parity)
+        for dependency in (
+            "browser-compute-build",
+            "browser-compute-smoke",
+            "browser-ekf-cpu",
+            "browser-ekf-wgpu",
+            "browser-ekf-parity",
+        ):
+            self.assertIn(f"- {dependency}", compute)
+        for result in ("BUILD", "SMOKE", "CPU", "WGPU", "PARITY"):
+            self.assertIn(f'test "${result}_RESULT" = success', compute)
         self.assertIn("Smoke test rich served documents before full validation", standard)
         self.assertIn("smoke-served-rich-document-browser.sh", standard)
         project_browser = job_block(FULL, "project-browser")
@@ -230,8 +254,9 @@ class FullWorkflowContractTests(unittest.TestCase):
 
         self.assertIn("smoke-served-resident-nbody-browser.sh", standard)
         self.assertNotIn("smoke-gpu-particles-browser.py", standard)
-        self.assertIn("smoke-gpu-particles-browser.py", compute)
-        self.assertIn("smoke-served-resident-ekf-browser.sh", compute)
+        self.assertIn("smoke-gpu-particles-browser.py", compute_smoke)
+        self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_cpu)
+        self.assertIn("smoke-served-resident-ekf-browser.sh", ekf_wgpu)
         self.assertNotIn("smoke-served-resident-nbody-browser.sh", compute)
 
     def test_long_browser_canaries_use_progress_watchdogs_with_hard_caps(self):

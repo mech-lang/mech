@@ -382,12 +382,12 @@ jobs:
             public_nbody_viewer_integrates_mutual_gravity_residently \
             --lib
 
-  browser-compute-canary:
-    name: Browser compute canary
+  browser-compute-build:
+    name: Browser compute build
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -395,6 +395,8 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install Rust, WASM, and wasm-pack
         env:
           WASM_PACK_VERSION: v0.15.0
@@ -416,12 +418,60 @@ jobs:
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
+          tar -czf /tmp/browser-compute-canary.tar.gz target/debug/mech src/wasm/pkg
+      - name: Upload the shared compute browser build
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  browser-compute-smoke:
+    name: Browser compute smoke
+    needs:
+      - impact
+      - browser-compute-build
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Download the shared compute browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary
+      - name: Restore the shared compute browser build
+        run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
       - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech
           python3 scripts/smoke-gpu-particles-browser.py
           --backend gpu --particle-count 16384 --software-adapter
-      - name: Verify scalar and WebGPU EKF rendering against one numeric oracle
+
+  browser-ekf-cpu:
+    name: Browser EKF scalar
+    needs:
+      - impact
+      - browser-compute-build
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Download the shared compute browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary
+      - name: Restore the shared compute browser build
+        run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+      - name: Verify scalar EKF rendering
         run: |
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
@@ -443,6 +493,35 @@ jobs:
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
             MECH_EKF_RESULT_FILE=/tmp/ekf-cpu.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
+      - name: Upload scalar EKF evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-cpu-results
+          path: /tmp/ekf-cpu*.json
+          if-no-files-found: error
+          retention-days: 1
+
+  browser-ekf-wgpu:
+    name: Browser EKF WebGPU
+    needs:
+      - impact
+      - browser-compute-build
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Download the shared compute browser build
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-compute-canary-build
+          path: /tmp/browser-compute-canary
+      - name: Restore the shared compute browser build
+        run: tar -xzf /tmp/browser-compute-canary/browser-compute-canary.tar.gz
+      - name: Verify WebGPU EKF rendering
+        run: |
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=wgpu \
             MECH_EKF_CONTINUITY_EDIT=false \
@@ -453,104 +532,72 @@ jobs:
             MECH_EKF_COMPUTE_BACKEND=wgpu \
             MECH_EKF_RESULT_FILE=/tmp/ekf-wgpu.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
-          python3 - <<'PY'
-          import json
-          import math
+      - name: Upload WebGPU EKF evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ekf-wgpu-results
+          path: /tmp/ekf-wgpu*.json
+          if-no-files-found: error
+          retention-days: 1
 
-          with open("/tmp/ekf-cpu-single.json") as source:
-              cpu_single = json.load(source)
-          with open("/tmp/ekf-cpu-single-no-edit.json") as source:
-              cpu_single_no_edit = json.load(source)
-          with open("/tmp/ekf-cpu-no-edit.json") as source:
-              cpu_no_edit = json.load(source)
-          with open("/tmp/ekf-cpu.json") as source:
-              cpu = json.load(source)
-          with open("/tmp/ekf-wgpu.json") as source:
-              wgpu = json.load(source)
-          with open("/tmp/ekf-wgpu-no-edit.json") as source:
-              wgpu_no_edit = json.load(source)
-          # Each smoke independently proves that its asynchronous live robot
-          # remains bounded and trackable. The continuity oracle is the first
-          # completed filter turn after the edit boundary and is compared to
-          # an independent no-edit run on the same backend and filter count;
-          # unlike a later display frame, it is anchored to compute progress.
-          if (
-              cpu_single["backend"] != "cpu-scalar"
-              or cpu_single_no_edit["backend"] != "cpu-scalar"
-              or cpu_no_edit["backend"] != "cpu-scalar"
-              or cpu["backend"] != "cpu-scalar"
-              or wgpu_no_edit["backend"] != "wgpu"
-              or wgpu["backend"] != "wgpu"
-          ):
-              raise SystemExit("an EKF checkpoint reported the wrong compute backend")
-          if cpu["updates"] != wgpu["updates"]:
-              raise SystemExit("scalar and WebGPU checkpoints used different completed turns")
-          if len(cpu["output"]) != 15 or len(wgpu["output"]) != 15:
-              raise SystemExit("the EKF checkpoint must contain state, covariance, and prediction")
-          if any(len(result["continuity_output"]) != 15 for result in (
-              cpu_single, cpu_single_no_edit, cpu_no_edit, cpu, wgpu_no_edit, wgpu,
-          )):
-              raise SystemExit("the EKF continuity checkpoint must contain one complete lane")
-          relative_tolerance = 5e-5
-          absolute_tolerance = 1e-6
-          continuity_failures = []
-          continuity_oracles = (
-              ("CPU-1000 edited", cpu_no_edit["continuity_output"], cpu["continuity_output"]),
-              (
-                  "CPU-1 edited",
-                  cpu_single_no_edit["continuity_output"],
-                  cpu_single["continuity_output"],
-              ),
-              (
-                  "WebGPU-1000 edited",
-                  wgpu_no_edit["continuity_output"],
-                  wgpu["continuity_output"],
-              ),
-          )
-          for label, reference, observed in continuity_oracles:
-              for index, (left, right) in enumerate(zip(reference, observed)):
-                  error = abs(left - right)
-                  tolerance = absolute_tolerance + relative_tolerance * max(abs(left), abs(right))
-                  if not math.isfinite(error) or error > tolerance:
-                      continuity_failures.append(
-                          (label, index, left, right, error, tolerance)
-                      )
-          if continuity_failures:
-              label, index, left, right, error, tolerance = max(
-                  continuity_failures, key=lambda item: item[4] / item[5]
-              )
-              raise SystemExit(
-                  f"{label} EKF restarted or diverged after compatible REPL replacement at "
-                  f"component {index}: no_edit={left}, observed={right}, "
-                  f"error={error}, tolerance={tolerance}"
-              )
-          # Backend parity is a separate numerical property from same-backend
-          # no-edit/edit continuity. Shader and scalar evaluation order can
-          # differ slightly while representing the same f32 trajectory.
-          parity_relative_tolerance = relative_tolerance
-          for index, (left, right) in enumerate(zip(
-              cpu_no_edit["continuity_output"],
-              wgpu_no_edit["continuity_output"],
-          )):
-              error = abs(left - right)
-              tolerance = absolute_tolerance + parity_relative_tolerance * max(abs(left), abs(right))
-              if not math.isfinite(error) or error > tolerance:
-                  raise SystemExit(
-                      f"CPU/WebGPU turn-121 parity failed at component {index}: "
-                      f"cpu={left}, wgpu={right}, error={error}, tolerance={tolerance}"
-                  )
-          print("EKF_WEBGPU_PARITY", json.dumps({
-              "cpu_single_no_edit": cpu_single_no_edit,
-              "cpu_single": cpu_single,
-              "cpu_no_edit": cpu_no_edit,
-              "cpu": cpu,
-              "wgpu_no_edit": wgpu_no_edit,
-              "wgpu": wgpu,
-          }, sort_keys=True))
-          PY
-      - name: Remove generated browser package
-        if: always()
-        run: rm -rf src/wasm/pkg
+  browser-ekf-parity:
+    name: Browser EKF parity
+    needs:
+      - impact
+      - browser-ekf-cpu
+      - browser-ekf-wgpu
+    if: needs.impact.outputs.browser_canary_required == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Download scalar and WebGPU EKF evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: browser-ekf-*-results
+          path: /tmp/browser-ekf-results
+          merge-multiple: true
+      - name: Verify scalar continuity and WebGPU parity
+        run: python3 scripts/check-ekf-browser-results.py /tmp/browser-ekf-results
+
+  browser-compute-canary:
+    name: Browser compute canary
+    needs:
+      - impact
+      - browser-compute-build
+      - browser-compute-smoke
+      - browser-ekf-cpu
+      - browser-ekf-wgpu
+      - browser-ekf-parity
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every selected compute browser suite
+        env:
+          REQUIRED: ${{ needs.impact.outputs.browser_canary_required }}
+          BUILD_RESULT: ${{ needs.browser-compute-build.result }}
+          SMOKE_RESULT: ${{ needs.browser-compute-smoke.result }}
+          CPU_RESULT: ${{ needs.browser-ekf-cpu.result }}
+          WGPU_RESULT: ${{ needs.browser-ekf-wgpu.result }}
+          PARITY_RESULT: ${{ needs.browser-ekf-parity.result }}
+        run: |
+          if test "$REQUIRED" = true
+          then
+            test "$BUILD_RESULT" = success
+            test "$SMOKE_RESULT" = success
+            test "$CPU_RESULT" = success
+            test "$WGPU_RESULT" = success
+            test "$PARITY_RESULT" = success
+          else
+            test "$BUILD_RESULT" = skipped
+            test "$SMOKE_RESULT" = skipped
+            test "$CPU_RESULT" = skipped
+            test "$WGPU_RESULT" = skipped
+            test "$PARITY_RESULT" = skipped
+          fi
 
   browser-canary:
     name: Browser canary
