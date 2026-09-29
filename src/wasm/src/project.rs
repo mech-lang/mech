@@ -1599,6 +1599,56 @@ mod document {
         }
     }
 
+    fn inferred_source_edit(previous: &str, next: &str) -> Option<SourceEditAnchors> {
+        if previous == next {
+            return None;
+        }
+
+        let mut prefix = previous
+            .bytes()
+            .zip(next.bytes())
+            .take_while(|(old, new)| old == new)
+            .count();
+        while prefix > 0 && (!previous.is_char_boundary(prefix) || !next.is_char_boundary(prefix)) {
+            prefix -= 1;
+        }
+
+        let suffix_limit = (previous.len() - prefix).min(next.len() - prefix);
+        let mut suffix = previous
+            .as_bytes()
+            .iter()
+            .rev()
+            .zip(next.as_bytes().iter().rev())
+            .take(suffix_limit)
+            .take_while(|(old, new)| old == new)
+            .count();
+        while suffix > 0
+            && (!previous.is_char_boundary(previous.len() - suffix)
+                || !next.is_char_boundary(next.len() - suffix))
+        {
+            suffix -= 1;
+        }
+
+        Some(SourceEditAnchors {
+            old_start: prefix,
+            old_end: previous.len() - suffix,
+            new_start: prefix,
+            new_end: next.len() - suffix,
+        })
+    }
+
+    fn binding_intersects_edit(binding: &DocumentOutputBinding, start: usize, end: usize) -> bool {
+        binding
+            .source_span
+            .is_some_and(|(binding_start, binding_end)| {
+                if start == end {
+                    binding_start <= start && binding_end >= end
+                } else {
+                    binding_start < end && binding_end > start
+                }
+            })
+    }
+
     fn retain_output_identities(
         previous: &[DocumentOutputBinding],
         next: &mut [DocumentOutputBinding],
@@ -1607,6 +1657,7 @@ mod document {
         edit: Option<SourceEditAnchors>,
         reserved: &mut HashSet<u64>,
     ) {
+        let edit = edit.or_else(|| inferred_source_edit(previous_source, next_source));
         let mut groups =
             HashMap::<(SourceDocumentOutputKind, u64), (Vec<usize>, Vec<usize>)>::new();
         for (index, binding) in previous.iter().enumerate() {
@@ -1631,7 +1682,7 @@ mod document {
         claimed.extend(previous.iter().map(|binding| binding.output_id));
         let mut old_assigned = vec![false; previous.len()];
         let mut assigned = vec![false; next.len()];
-        for ((kind, semantic_id), (old, new)) in groups {
+        for (old, new) in groups.values() {
             if let Some(edit) = edit {
                 let old_before = old
                     .iter()
@@ -1697,7 +1748,7 @@ mod document {
                 // Full-source replacement has no insertion boundary. Equal
                 // cardinality makes authored order the stable correspondence
                 // for otherwise indistinguishable duplicate outputs.
-                for (&old_index, &new_index) in old.iter().zip(&new) {
+                for (&old_index, &new_index) in old.iter().zip(new) {
                     preserve_output_identity(
                         previous,
                         next,
@@ -1719,13 +1770,20 @@ mod document {
                 .copied()
                 .filter(|&index| !assigned[index])
                 .collect::<Vec<_>>();
-            // A unique semantic output has only one possible match even when a
-            // full replacement did not provide an edit range.
-            if old.len() == 1
-                && new.len() == 1
-                && remaining_old.len() == 1
-                && remaining_new.len() == 1
-            {
+            // An explicit or inferred edit boundary makes authored order the
+            // stable correspondence for outputs changed inside that boundary.
+            if edit.is_some() {
+                for (old_index, new_index) in remaining_old.into_iter().zip(remaining_new) {
+                    preserve_output_identity(
+                        previous,
+                        next,
+                        old_index,
+                        new_index,
+                        &mut old_assigned,
+                        &mut assigned,
+                    );
+                }
+            } else if remaining_old.len() == 1 && remaining_new.len() == 1 {
                 preserve_output_identity(
                     previous,
                     next,
@@ -1735,7 +1793,42 @@ mod document {
                     &mut assigned,
                 );
             }
+        }
 
+        // An edited output may retain its authored location while changing its
+        // semantic hash. Pair the still-unmatched outputs inside the edit by
+        // kind and order so live DOM placeholders keep their public address.
+        if let Some(edit) = edit {
+            let mut changed = HashMap::<SourceDocumentOutputKind, (Vec<usize>, Vec<usize>)>::new();
+            for (index, binding) in previous.iter().enumerate() {
+                if !old_assigned[index]
+                    && binding_intersects_edit(binding, edit.old_start, edit.old_end)
+                {
+                    changed.entry(binding.kind).or_default().0.push(index);
+                }
+            }
+            for (index, binding) in next.iter().enumerate() {
+                if !assigned[index]
+                    && binding_intersects_edit(binding, edit.new_start, edit.new_end)
+                {
+                    changed.entry(binding.kind).or_default().1.push(index);
+                }
+            }
+            for (old, new) in changed.values() {
+                for (&old_index, &new_index) in old.iter().zip(new) {
+                    preserve_output_identity(
+                        previous,
+                        next,
+                        old_index,
+                        new_index,
+                        &mut old_assigned,
+                        &mut assigned,
+                    );
+                }
+            }
+        }
+
+        for ((kind, semantic_id), (_, new)) in groups {
             let mut occurrence = 0_u64;
             for index in new {
                 if assigned[index] {
@@ -1774,14 +1867,23 @@ mod document {
     mod output_identity_tests {
         use super::*;
 
-        fn fence(output_id: u64, ordinal: u64, start: usize) -> DocumentOutputBinding {
+        fn fence_with_semantic(
+            output_id: u64,
+            semantic_id: u64,
+            ordinal: u64,
+            start: usize,
+        ) -> DocumentOutputBinding {
             DocumentOutputBinding {
                 output_id,
-                semantic_id: 17,
+                semantic_id,
                 kind: SourceDocumentOutputKind::Fence,
                 ordinal,
                 source_span: Some((start, start + 1)),
             }
+        }
+
+        fn fence(output_id: u64, ordinal: u64, start: usize) -> DocumentOutputBinding {
+            fence_with_semantic(output_id, 17, ordinal, start)
         }
 
         #[test]
@@ -1901,19 +2003,64 @@ mod document {
         }
 
         #[test]
-        fn full_replacement_does_not_guess_duplicate_insertion_side() {
+        fn full_replacement_infers_duplicate_insertion_side() {
             let base = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
             let second = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 1);
+            let third = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 2);
             let previous = vec![fence(base, 4, 0), fence(second, 5, 2)];
             let mut next = vec![fence(base, 4, 0), fence(second, 5, 2), fence(0, 6, 4)];
             let mut reserved = HashSet::from([base, second]);
 
             retain_output_identities(&previous, &mut next, "F F", "F F F", None, &mut reserved);
 
-            assert!(
+            assert_eq!(
                 next.iter()
-                    .all(|binding| binding.output_id != base && binding.output_id != second)
+                    .map(|binding| binding.output_id)
+                    .collect::<Vec<_>>(),
+                vec![base, second, third]
             );
+        }
+
+        #[test]
+        fn edited_output_keeps_its_public_id_when_semantics_change() {
+            let old_id = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let generated_id = occurrence_output_id(SourceDocumentOutputKind::Fence, 29, 0);
+            let previous = vec![fence_with_semantic(old_id, 17, 4, 0)];
+            let mut next = vec![fence_with_semantic(generated_id, 29, 5, 0)];
+            let mut reserved = HashSet::from([old_id]);
+
+            retain_output_identities(
+                &previous,
+                &mut next,
+                "A",
+                "B",
+                Some(SourceEditAnchors {
+                    old_start: 0,
+                    old_end: 1,
+                    new_start: 0,
+                    new_end: 1,
+                }),
+                &mut reserved,
+            );
+
+            assert_eq!(next[0].output_id, old_id);
+            assert_eq!(next[0].semantic_id, 29);
+            assert_eq!(next[0].ordinal, 5);
+        }
+
+        #[test]
+        fn full_replacement_infers_semantic_change_and_keeps_public_id() {
+            let old_id = occurrence_output_id(SourceDocumentOutputKind::Fence, 17, 0);
+            let generated_id = occurrence_output_id(SourceDocumentOutputKind::Fence, 29, 0);
+            let previous = vec![fence_with_semantic(old_id, 17, 4, 0)];
+            let mut next = vec![fence_with_semantic(generated_id, 29, 5, 0)];
+            let mut reserved = HashSet::from([old_id]);
+
+            retain_output_identities(&previous, &mut next, "A", "B", None, &mut reserved);
+
+            assert_eq!(next[0].output_id, old_id);
+            assert_eq!(next[0].semantic_id, 29);
+            assert_eq!(next[0].ordinal, 5);
         }
 
         #[test]
@@ -4255,7 +4402,11 @@ mod tests {
 }"#;
 
     fn document_payload(root_specifier: &str, source: &str) -> BrowserDocumentPayload {
-        test_document_payload(root_specifier, source)
+        let tree = mech_syntax::parser::parse(source.trim()).unwrap();
+        let presentation_output_ids = root_document_output_ids(&tree);
+        BrowserDocumentPayload::new(root_specifier, source)
+            .unwrap()
+            .with_presentation_output_ids(presentation_output_ids)
     }
 
     #[test]
@@ -4390,7 +4541,7 @@ mod tests {
         resolutions: Vec<SourceResolutionEntry>,
     ) -> WasmDocumentBootstrap {
         source_map.insert(root_specifier.to_owned(), source.to_owned());
-        let payload = test_document_payload(root_specifier, source);
+        let payload = document_payload(root_specifier, source);
         let document = CanonicalWasmDocument::retain(
             "runtime:interactive",
             mech_syntax::document::Revision(0),
