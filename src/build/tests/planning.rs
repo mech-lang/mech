@@ -46,6 +46,16 @@ const LITERAL_F64: &[u8] =
     include_bytes!("../../../tests/architecture/bytecode-v1/literal-f64.mecb");
 const CLI_STDOUT: &[u8] = include_bytes!("../../../tests/architecture/bytecode-v1/cli-stdout.mecb");
 
+#[test]
+#[ignore = "explicit CI preparation stage; normal planning execution consumes the prepared profiles"]
+fn prepare_planning_owner_runners() {
+    isolated::prepare_owner_runners(
+        &[OwnerProfile::Standard, OwnerProfile::Fixed],
+        "planning-owner-preparation",
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
+}
+
 #[cfg(not(feature = "full-hosts"))]
 fn cli_manifest() -> MResult<HostManifestConfig> {
     Ok(HostManifestConfig {
@@ -436,6 +446,307 @@ fn canonical_source_native_plan_uses_only_resident_operation_authority() {
         &["f64", "runtime"],
         &["f64", "resident-routing", "runtime", "string"],
     );
+}
+
+fn canonical_constant_bytecode(
+    schema: mech_core::SchemaBody,
+    data: impl FnOnce(mech_core::SchemaId) -> mech_core::ValueDataDraft,
+) -> Vec<u8> {
+    use mech_core::snapshot::SnapshotValidationContext;
+    use mech_core::{
+        ConstantStoreBuilder, OperationContractTableBuilder, SchemaBody, SchemaDraft,
+        SchemaTableBuilder, ValueDraft,
+    };
+
+    let mut schemas = SchemaTableBuilder::new();
+    let handle = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: schema,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let index_handle = schemas
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Index,
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let build = schemas.finish().unwrap();
+    let schema = build.resolve(handle).unwrap();
+    let index_schema = build.resolve(index_handle).unwrap();
+    let schemas = build.table;
+    let value = ValueDraft {
+        schema,
+        shape_values: Box::new([]),
+        data: data(index_schema),
+    }
+    .finalize(&SnapshotValidationContext::new(&schemas))
+    .unwrap();
+    let mut constants = ConstantStoreBuilder::new(&schemas);
+    constants.insert(value).unwrap();
+    let constants = constants.finish().unwrap().store;
+    let artifact = ProgramArtifactDraft {
+        schemas,
+        constants,
+        contracts: OperationContractTableBuilder::new().finish().unwrap().table,
+        requirements: ApplicationRequirementTable::empty(),
+        inputs: Box::new([]),
+        slots: Box::new([]),
+        nodes: Box::new([]),
+        bindings: Box::new([]),
+        outputs: Box::new([]),
+        constraints: Box::new([]),
+        compute_regions: Box::new([]),
+    }
+    .finalize()
+    .unwrap();
+    let bytecode = encode_program_artifact_bytecode_v1(&artifact).unwrap();
+    assert_artifact_only_bytecode(&bytecode, &[]);
+    bytecode
+}
+
+#[test]
+fn canonical_native_plan_admits_u32_max_index_on_a_32_bit_target() {
+    let bytecode = canonical_constant_bytecode(mech_core::SchemaBody::Index, |_| {
+        mech_core::ValueDataDraft::Index(u64::from(u32::MAX))
+    });
+    let mut request = request(&bytecode);
+    request.target = Some("i686-pc-windows-msvc".to_owned());
+    let plan = NativeApplicationBuilder::new(environment(empty_catalog()))
+        .plan(&request)
+        .unwrap();
+    assert!(plan.runtime_types.is_empty());
+    assert!(plan.runtime_functions.is_empty());
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn canonical_native_plan_checks_index_constants_against_the_target_pointer_width() {
+    let value = u64::from(u32::MAX) + 1;
+    let bytecode = canonical_constant_bytecode(mech_core::SchemaBody::Index, |_| {
+        mech_core::ValueDataDraft::Index(value)
+    });
+    let mut request = request(&bytecode);
+    request.target = Some("i686-pc-windows-msvc".to_owned());
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    let error = builder.plan(&request).unwrap_err();
+    assert_eq!(error.kind_name(), "NativeBuildIndexConstantOutOfRange");
+    assert!(error.display_message().contains(&value.to_string()));
+
+    request.target = Some("x86_64-unknown-linux-gnu".to_owned());
+    let plan = builder.plan(&request).unwrap();
+    assert!(plan.runtime_types.is_empty());
+    assert!(plan.runtime_functions.is_empty());
+}
+
+#[cfg(target_pointer_width = "64")]
+#[cfg(target_pointer_width = "64")]
+fn nested_canonical_index_cases(
+    value: u64,
+) -> Vec<(
+    &'static str,
+    mech_core::SchemaBody,
+    mech_core::ValueDataDraft,
+)> {
+    use mech_core::snapshot::{
+        EnumDraft, MapEntryDraft, NamedValueDraft, OptionDraft, TableColumnDraft,
+    };
+    use mech_core::{
+        CardinalitySpec, DimensionExpr, EnumVariantSchema, NominalKey, SchemaBody, SchemaField,
+        ValueDataDraft,
+    };
+    let extent = || CardinalitySpec::Exact(DimensionExpr::Constant(1));
+    let tuple = || SchemaBody::Tuple(vec![SchemaBody::Index].into_boxed_slice());
+    let tuple_data =
+        || ValueDataDraft::Tuple(vec![ValueDataDraft::Index(value)].into_boxed_slice());
+    vec![
+        ("tuple", tuple(), tuple_data()),
+        (
+            "option",
+            SchemaBody::Option(Box::new(tuple())),
+            ValueDataDraft::Option(OptionDraft {
+                present: true,
+                value: Some(Box::new(tuple_data())),
+            }),
+        ),
+        (
+            "record",
+            SchemaBody::Record(
+                vec![SchemaField {
+                    name: "index".into(),
+                    schema: tuple(),
+                }]
+                .into_boxed_slice(),
+            ),
+            ValueDataDraft::Record(
+                vec![NamedValueDraft {
+                    name: "index".into(),
+                    value: tuple_data(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "packed matrix",
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::Index),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(vec![ValueDataDraft::Index(value)].into_boxed_slice()),
+        ),
+        (
+            "nested matrix",
+            SchemaBody::Matrix {
+                element: Box::new(tuple()),
+                dimensions: vec![DimensionExpr::Constant(1), DimensionExpr::Constant(1)]
+                    .into_boxed_slice(),
+            },
+            ValueDataDraft::Matrix(vec![tuple_data()].into_boxed_slice()),
+        ),
+        (
+            "packed table",
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "index".into(),
+                    schema: SchemaBody::Index,
+                }]
+                .into_boxed_slice(),
+                rows: extent(),
+            },
+            ValueDataDraft::Table(
+                vec![TableColumnDraft {
+                    name: "index".into(),
+                    values: vec![ValueDataDraft::Index(value)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "nested table",
+            SchemaBody::Table {
+                columns: vec![SchemaField {
+                    name: "index".into(),
+                    schema: tuple(),
+                }]
+                .into_boxed_slice(),
+                rows: extent(),
+            },
+            ValueDataDraft::Table(
+                vec![TableColumnDraft {
+                    name: "index".into(),
+                    values: vec![tuple_data()].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "set",
+            SchemaBody::Set {
+                element: Box::new(tuple()),
+                cardinality: extent(),
+            },
+            ValueDataDraft::Set(vec![tuple_data()].into_boxed_slice()),
+        ),
+        (
+            "map key",
+            SchemaBody::Map {
+                key: Box::new(tuple()),
+                value: Box::new(SchemaBody::Bool),
+                cardinality: extent(),
+            },
+            ValueDataDraft::Map(
+                vec![MapEntryDraft {
+                    items: vec![tuple_data(), ValueDataDraft::Bool(true)].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "map value",
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::Bool),
+                value: Box::new(tuple()),
+                cardinality: extent(),
+            },
+            ValueDataDraft::Map(
+                vec![MapEntryDraft {
+                    items: vec![ValueDataDraft::Bool(true), tuple_data()].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+            ),
+        ),
+        (
+            "enum payload",
+            SchemaBody::Enum {
+                key: NominalKey::from_bytes([23; 32]),
+                variants: vec![EnumVariantSchema {
+                    name: "index".into(),
+                    payload: Some(tuple()),
+                }]
+                .into_boxed_slice(),
+            },
+            ValueDataDraft::Enum(EnumDraft {
+                ordinal: 0,
+                payload: Some(Box::new(tuple_data())),
+            }),
+        ),
+    ]
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn canonical_native_plan_checks_index_constants_in_supported_nested_aggregates() {
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    for value in [u64::from(u32::MAX), u64::from(u32::MAX) + 1] {
+        for (name, schema, data) in nested_canonical_index_cases(value) {
+            let bytecode = canonical_constant_bytecode(schema, |_| data);
+            let mut request = request(&bytecode);
+            request.target = Some("i686-pc-windows-msvc".to_owned());
+            let result = builder.plan(&request);
+            if value == u64::from(u32::MAX) {
+                assert!(result.is_ok(), "{name}: {result:?}");
+            } else {
+                assert_eq!(
+                    result.unwrap_err().kind_name(),
+                    "NativeBuildIndexConstantOutOfRange",
+                    "{name}",
+                );
+            }
+            request.target = Some("x86_64-unknown-linux-gnu".to_owned());
+            assert!(builder.plan(&request).is_ok(), "{name}");
+        }
+    }
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn canonical_native_plan_checks_index_constants_inside_dynamic_values() {
+    use mech_core::{SchemaBody, ValueDataDraft, ValueDraft};
+    let bytecode = canonical_constant_bytecode(SchemaBody::Dynamic, |schema| {
+        ValueDataDraft::Dynamic(Some(Box::new(ValueDraft {
+            schema,
+            shape_values: Box::new([]),
+            data: ValueDataDraft::Index(u64::from(u32::MAX) + 1),
+        })))
+    });
+    let mut request = request(&bytecode);
+    request.target = Some("i686-pc-windows-msvc".to_owned());
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    assert_eq!(
+        builder.plan(&request).unwrap_err().kind_name(),
+        "NativeBuildIndexConstantOutOfRange",
+    );
+    request.target = Some("x86_64-unknown-linux-gnu".to_owned());
+    builder.plan(&request).unwrap();
 }
 
 #[test]

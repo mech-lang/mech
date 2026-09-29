@@ -19,18 +19,23 @@ use serde::de::DeserializeOwned;
 
 const OWNER_BUILD_TIMEOUT_ENV: &str = "MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS";
 const OWNER_RUN_TIMEOUT_ENV: &str = "MECH_NATIVE_OWNER_RUN_TIMEOUT_SECS";
+const HOST_TARGET_TIMEOUT_ENV: &str = "MECH_NATIVE_HOST_TARGET_TIMEOUT_SECS";
+const OWNER_REQUIRE_PREBUILT_ENV: &str = "MECH_NATIVE_OWNER_REQUIRE_PREBUILT";
 const DEFAULT_OWNER_BUILD_TIMEOUT: Duration = Duration::from_secs(20 * 60);
 const DEFAULT_OWNER_RUN_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const DEFAULT_OWNER_BUILD_ACTION_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+const DEFAULT_HOST_TARGET_TIMEOUT: Duration = Duration::from_secs(30);
 const PROCESS_POLL_INTERVAL: Duration = Duration::from_millis(50);
 const PROCESS_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(30);
 const TERMINATION_GRACE: Duration = Duration::from_millis(500);
+#[cfg(unix)]
 const WATCHDOG_JOIN_GRACE: Duration = Duration::from_secs(2);
 const READER_JOIN_GRACE: Duration = Duration::from_secs(5);
 
-static STANDARD_RUNNER: OnceLock<Result<PathBuf, String>> = OnceLock::new();
-static FULL_RUNNER: OnceLock<Result<PathBuf, String>> = OnceLock::new();
-static FIXED_RUNNER: OnceLock<Result<PathBuf, String>> = OnceLock::new();
+// Profile caches and output directories remain separate, but cold builds share
+// one resource budget. A cached runner does not acquire the build gate.
+static OWNER_RUNNERS: OwnerRunnerPreparation = OwnerRunnerPreparation::new();
+static PINNED_HOST_TARGET: OnceLock<String> = OnceLock::new();
 static NEXT_LOG_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -56,13 +61,50 @@ impl OwnerProfile {
             Self::Fixed => "fixed",
         }
     }
+}
 
-    fn build_cache(self) -> &'static OnceLock<Result<PathBuf, String>> {
-        match self {
-            Self::Standard => &STANDARD_RUNNER,
-            Self::Full => &FULL_RUNNER,
-            Self::Fixed => &FIXED_RUNNER,
+#[derive(Default)]
+pub struct OwnerRunnerPreparation {
+    standard: OnceLock<Result<PathBuf, String>>,
+    full: OnceLock<Result<PathBuf, String>>,
+    fixed: OnceLock<Result<PathBuf, String>>,
+    build_gate: Mutex<()>,
+}
+
+impl OwnerRunnerPreparation {
+    pub const fn new() -> Self {
+        Self {
+            standard: OnceLock::new(),
+            full: OnceLock::new(),
+            fixed: OnceLock::new(),
+            build_gate: Mutex::new(()),
         }
+    }
+
+    pub fn get_or_build(
+        &self,
+        profile: OwnerProfile,
+        case: &str,
+        build: impl FnOnce() -> Result<PathBuf, String>,
+    ) -> Result<PathBuf, String> {
+        let cache = match profile {
+            OwnerProfile::Standard => &self.standard,
+            OwnerProfile::Full => &self.full,
+            OwnerProfile::Fixed => &self.fixed,
+        };
+        cache
+            .get_or_init(|| {
+                eprintln!(
+                    "MECH_NATIVE_OWNER_PROGRESS case={case} profile={} stage=prepare-owner-runner progress=waiting-for-build-gate",
+                    profile.label(),
+                );
+                let _build_gate = self
+                    .build_gate
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                build()
+            })
+            .clone()
     }
 }
 
@@ -153,10 +195,17 @@ pub fn run_owner(
 }
 
 fn owner_runner(profile: OwnerProfile, case: &str, workspace: &Path) -> Result<PathBuf, String> {
-    profile
-        .build_cache()
-        .get_or_init(|| build_owner_runner(profile, case, workspace))
-        .clone()
+    OWNER_RUNNERS.get_or_build(profile, case, || {
+        build_owner_runner(profile, case, workspace)
+    })
+}
+
+pub fn prepare_owner_runners(profiles: &[OwnerProfile], case: &str) -> Result<(), String> {
+    let workspace = workspace_root();
+    for &profile in profiles {
+        owner_runner(profile, case, &workspace)?;
+    }
+    Ok(())
 }
 
 fn build_owner_runner(
@@ -164,10 +213,29 @@ fn build_owner_runner(
     case: &str,
     workspace: &Path,
 ) -> Result<PathBuf, String> {
-    let host_target = pinned_nightly_host_target()?;
+    let host_target = pinned_nightly_host_target(profile, case, workspace)?;
     let target_dir = workspace
         .join("target/bytecode-v1-fixtures/owner-runner")
         .join(profile.label());
+    let executable = target_dir.join(&host_target).join("debug").join(format!(
+        "native-build-owner-runner{}",
+        std::env::consts::EXE_SUFFIX
+    ));
+    if std::env::var_os(OWNER_REQUIRE_PREBUILT_ENV).is_some() {
+        if !executable.is_file() {
+            return Err(format!(
+                "native owner runner preparation missing: case={case} profile={} stage=require-prebuilt-owner-runner executable={}",
+                profile.label(),
+                executable.display(),
+            ));
+        }
+        eprintln!(
+            "MECH_NATIVE_OWNER_PROGRESS case={case} profile={} stage=require-prebuilt-owner-runner progress=ready executable={}",
+            profile.label(),
+            executable.display(),
+        );
+        return Ok(executable);
+    }
     let mut command = Command::new("cargo");
     command
         .arg("+nightly-2026-03-03")
@@ -201,10 +269,6 @@ fn build_owner_runner(
     )?;
     require_success(&output, context)?;
 
-    let executable = target_dir.join(&host_target).join("debug").join(format!(
-        "native-build-owner-runner{}",
-        std::env::consts::EXE_SUFFIX
-    ));
     if !executable.is_file() {
         return Err(format_process_error(
             context,
@@ -224,28 +288,56 @@ fn build_owner_runner(
     Ok(executable)
 }
 
-fn pinned_nightly_host_target() -> Result<String, String> {
-    let output = Command::new("rustc")
-        .args(["+nightly-2026-03-03", "--print", "host-tuple"])
-        .output()
-        .map_err(|error| format!("failed to query pinned nightly host target: {error}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "failed to query pinned nightly host target: status={} stderr={}",
-            output.status,
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
+fn pinned_nightly_host_target(
+    profile: OwnerProfile,
+    case: &str,
+    workspace: &Path,
+) -> Result<String, String> {
+    if let Some(target) = PINNED_HOST_TARGET.get() {
+        return Ok(target.clone());
     }
-    let target = String::from_utf8(output.stdout)
-        .map_err(|error| format!("pinned nightly host target was not UTF-8: {error}"))?;
+    let mut command = Command::new("rustc");
+    command.args(["+nightly-2026-03-03", "--print", "host-tuple"]);
+    let target = query_pinned_host_target(
+        command,
+        CommandContext {
+            case,
+            profile: profile.label(),
+            stage: "discover-host-target",
+        },
+        timeout_from_env(HOST_TARGET_TIMEOUT_ENV, DEFAULT_HOST_TARGET_TIMEOUT),
+        &owner_log_root(workspace),
+    )?;
+    // Failed discovery remains retryable; only a validated result is cached.
+    let _ = PINNED_HOST_TARGET.set(target.clone());
+    Ok(target)
+}
+
+pub fn query_pinned_host_target(
+    command: Command,
+    context: CommandContext<'_>,
+    timeout: Duration,
+    log_root: &Path,
+) -> Result<String, String> {
+    let output = run_command(command, context, timeout, log_root)?;
+    require_success(&output, context)?;
+    let target = std::str::from_utf8(&output.stdout).map_err(|error| {
+        format_process_error(
+            context,
+            &output,
+            format!("pinned nightly host target was not UTF-8: {error}"),
+        )
+    })?;
     let target = target.trim();
     if target.is_empty()
         || !target
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'.' | b'-'))
     {
-        return Err(format!(
-            "pinned nightly returned invalid host target {target:?}"
+        return Err(format_process_error(
+            context,
+            &output,
+            format!("pinned nightly returned invalid host target {target:?}"),
         ));
     }
     Ok(target.to_owned())

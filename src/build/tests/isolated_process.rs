@@ -10,11 +10,15 @@ mod isolated;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::mpsc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Barrier, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use isolated::{CommandContext, ProcessBoundary, run_json_command, run_json_command_observed};
+use isolated::{
+    CommandContext, OwnerProfile, OwnerRunnerPreparation, ProcessBoundary,
+    query_pinned_host_target, run_json_command, run_json_command_observed,
+};
 
 const FIXTURE_ROOT: &str = "MECH_NATIVE_PROCESS_FIXTURE_ROOT";
 const FIXTURE_MODE: &str = "MECH_NATIVE_PROCESS_FIXTURE_MODE";
@@ -118,6 +122,62 @@ fn fixture_command(root: &Path, test: &str, mode: &str) -> Command {
         .env(FIXTURE_ROOT, root)
         .env(FIXTURE_MODE, mode);
     command
+}
+
+#[test]
+fn cold_profile_builds_share_one_budget_and_keep_separate_cached_outputs() {
+    let temporary = tempfile::tempdir().unwrap();
+    let preparation = OwnerRunnerPreparation::new();
+    let active_builds = AtomicUsize::new(0);
+    let peak_builds = AtomicUsize::new(0);
+    let started = Barrier::new(3);
+    let profiles = [
+        (OwnerProfile::Standard, "standard"),
+        (OwnerProfile::Full, "full"),
+        (OwnerProfile::Fixed, "fixed"),
+    ];
+    thread::scope(|scope| {
+        let preparation = &preparation;
+        let started = &started;
+        let active_builds = &active_builds;
+        let peak_builds = &peak_builds;
+        let workers = profiles
+            .iter()
+            .map(|&(profile, label)| {
+                let expected = temporary.path().join(label);
+                scope.spawn(move || {
+                    started.wait();
+                    let executable = preparation
+                        .get_or_build(profile, "profile-budget", || {
+                            let active = active_builds.fetch_add(1, Ordering::SeqCst) + 1;
+                            peak_builds.fetch_max(active, Ordering::SeqCst);
+                            // Keep each simulated compiler active briefly while
+                            // the other profile initializers contend for admission.
+                            thread::sleep(Duration::from_millis(100));
+                            active_builds.fetch_sub(1, Ordering::SeqCst);
+                            Ok(expected.clone())
+                        })
+                        .unwrap();
+                    assert_eq!(executable, expected);
+                })
+            })
+            .collect::<Vec<_>>();
+        for worker in workers {
+            worker.join().unwrap();
+        }
+    });
+    assert_eq!(peak_builds.load(Ordering::SeqCst), 1);
+    assert_eq!(active_builds.load(Ordering::SeqCst), 0);
+    for (profile, label) in profiles {
+        assert_eq!(
+            preparation
+                .get_or_build(profile, "warm-profile", || {
+                    panic!("cached profile {label} must not start another build")
+                })
+                .unwrap(),
+            temporary.path().join(label),
+        );
+    }
 }
 
 struct ObservedProcess {
@@ -609,6 +669,97 @@ fn unsuccessful_child_reports_status_progress_and_log_paths() {
         "stderr=",
     ] {
         assert!(error.contains(detail), "{error}");
+    }
+}
+
+#[test]
+fn host_target_discovery_timeout_retains_stage_progress_and_logs() {
+    let temporary = tempfile::tempdir().unwrap();
+    let error = query_pinned_host_target(
+        fixture_command(
+            temporary.path(),
+            "host_target_discovery_fixture_process",
+            "hang",
+        ),
+        context("discover-host-target"),
+        Duration::from_secs(5),
+        temporary.path(),
+    )
+    .unwrap_err();
+    for detail in [
+        "timed out",
+        "stage=discover-host-target",
+        "pinned host discovery deliberately stalled",
+        "stdout=",
+        "stderr=",
+    ] {
+        assert!(error.contains(detail), "{error}");
+    }
+    assert_discovery_stderr_retained(
+        temporary.path(),
+        "pinned host discovery deliberately stalled",
+    );
+    assert_no_fixture_failures(temporary.path());
+}
+
+#[test]
+fn unsuccessful_host_target_discovery_retains_status_progress_and_logs() {
+    let temporary = tempfile::tempdir().unwrap();
+    let error = query_pinned_host_target(
+        fixture_command(
+            temporary.path(),
+            "host_target_discovery_fixture_process",
+            "fail",
+        ),
+        context("discover-host-target"),
+        SAFETY_DEADLINE,
+        temporary.path(),
+    )
+    .unwrap_err();
+    for detail in [
+        "exited unsuccessfully",
+        "stage=discover-host-target",
+        "status=",
+        "pinned host discovery deliberately failed",
+        "stdout=",
+        "stderr=",
+    ] {
+        assert!(error.contains(detail), "{error}");
+    }
+    assert_discovery_stderr_retained(
+        temporary.path(),
+        "pinned host discovery deliberately failed",
+    );
+}
+
+fn assert_discovery_stderr_retained(root: &Path, detail: &str) {
+    let stderr_logs = std::fs::read_dir(root)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| {
+            let name = path.file_name().unwrap().to_string_lossy();
+            name.contains("discover-host-target") && name.ends_with(".stderr.log")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(stderr_logs.len(), 1);
+    let retained = std::fs::read_to_string(&stderr_logs[0]).unwrap();
+    assert!(retained.contains(detail), "{retained}");
+}
+
+#[test]
+#[ignore = "injected pinned-host discovery command, isolated from process-global PATH"]
+fn host_target_discovery_fixture_process() {
+    let root = PathBuf::from(std::env::var_os(FIXTURE_ROOT).unwrap());
+    match std::env::var(FIXTURE_MODE).unwrap().as_str() {
+        "hang" => {
+            eprintln!("pinned host discovery deliberately stalled");
+            wait_fixture_file(&root, "host-discovery-release");
+        }
+        "fail" => {
+            eprintln!("pinned host discovery deliberately failed");
+            std::process::exit(7);
+        }
+        mode => panic!("unexpected host-discovery fixture mode {mode}"),
     }
 }
 

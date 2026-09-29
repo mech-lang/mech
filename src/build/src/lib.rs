@@ -71,7 +71,11 @@ impl NativeApplicationBuilder {
             analysis::artifact::validate_artifact_requirement_reachability(&artifact)?;
             Some(artifact)
         };
-        plan::validate_target_index_constants(&program, request.target.as_deref())?;
+        plan::validate_target_index_constants(
+            &program,
+            artifact.as_ref(),
+            request.target.as_deref(),
+        )?;
         let mut native_resolver = analysis::NativeBytecodeContractResolver::new(
             &program.requirements,
             request.runtime_config.as_ref(),

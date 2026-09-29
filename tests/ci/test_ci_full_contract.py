@@ -182,19 +182,24 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("Record exact native-plan checkout", native)
         self.assertIn('expected=$(git rev-parse "$VALIDATION_REF^{commit}")', native)
         self.assertIn('test "$actual" = "$expected"', native)
-        self.assertIn('CARGO_BUILD_JOBS: "2"', native)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', native)
         self.assertIn('CARGO_PROFILE_DEV_DEBUG: "0"', native)
         self.assertIn('CARGO_PROFILE_TEST_DEBUG: "0"', native)
         pair = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test registry_generated_project"
         wrapper = "cargo +nightly-2026-03-03 test --locked -p mech-build --test isolated_process -- --nocapture"
-        planning = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test planning -- --nocapture"
+        planning_compile = "--test planning --no-run --message-format=json-render-diagnostics"
+        planning_prepare = "--ignored --exact prepare_planning_owner_runners --test-threads=1 --nocapture"
+        planning = "--stage 02-planning-execution"
         pruning = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features --test native_host_pruning"
         self.assertLess(native.index(pair), native.index(wrapper))
-        self.assertLess(native.index(wrapper), native.index(planning))
+        self.assertLess(native.index(wrapper), native.index(planning_compile))
+        self.assertLess(native.index(planning_compile), native.index(planning_prepare))
+        self.assertLess(native.index(planning_prepare), native.index(planning))
         self.assertLess(native.index(planning), native.index(pruning))
         self.assertLess(native.index(pair), native.index(pruning))
         bounded = "cargo +nightly-2026-03-03 test --locked -p mech-build --all-features"
-        self.assertEqual(native.count(bounded), 4)
+        self.assertEqual(native.count(bounded), 3)
+        self.assertIn("cargo +nightly-2026-03-03 test --locked --offline -p mech-build --all-features", native)
         self.assertIn("--lib", native)
         self.assertIn("--test standard_host_source_planning", native)
         self.assertIn("Verify native build planning contracts", native)
@@ -229,17 +234,54 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(
             "cases=hang,parent-death,failed-parent-tree,nonzero,malformed-json", native
         )
-        self.assertEqual(
-            native.count("timeout --verbose --signal=TERM --kill-after=30s"), 8
-        )
-        self.assertEqual(native.count('pipeline_status=("${PIPESTATUS[@]}")'), 8)
-        self.assertEqual(native.count("command_exit_status=%s tee_exit_status=%s"), 8)
-        self.assertEqual(native.count('if [ "$tee_status" -ne 0 ]'), 8)
+        self.assertEqual(native.count("python3 scripts/run-native-plan-stage.py"), 10)
+        self.assertNotIn("pipeline_status", native)
         self.assertIn("Retain native-plan diagnostics", native)
         self.assertIn("target/native-plan-logs", native)
         self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", native)
         self.assertIn("if: always()", native)
         self.assertIn("retention-days: 14", native)
+
+    def test_planning_preparation_execution_and_deadlines_remain_separate(self):
+        steps = job_steps(NATIVE, "native-plan")
+        def named(name):
+            return next(step for step in steps if f"- name: {name}\n" in step)
+        compile_step = named("Compile native planning contracts without execution")
+        prepare_step = named("Prepare exactly the planning owner profiles")
+        execution_step = named("Verify native build planning contracts")
+        self.assertIn("--record-test-executable planning", compile_step)
+        self.assertIn("--no-run", compile_step)
+        for step in (prepare_step, execution_step):
+            self.assertIn("--test-executable-file target/native-plan-logs/planning-executable", step)
+            self.assertNotIn("cargo +", step)
+        self.assertIn("--ignored --exact prepare_planning_owner_runners", prepare_step)
+        self.assertIn("&[OwnerProfile::Standard, OwnerProfile::Fixed]", NATIVE_PLANNING)
+        self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', execution_step)
+        self.assertIn("--test-threads=1 --nocapture", execution_step)
+        self.assertNotIn("--ignored", execution_step)
+        self.assertNotIn("--exact", execution_step)
+        self.assertNotIn("--skip", execution_step)
+        build_timeout = int(re.search(r'MECH_NATIVE_OWNER_BUILD_TIMEOUT_SECS: "(\d+)"', prepare_step).group(1))
+        prepare_timeout = int(re.search(r"--timeout-secs (\d+)", prepare_step).group(1))
+        # Both serial profile builds and host discovery/reaping fit before the
+        # outer boundary; that boundary also leaves room before Actions expiry.
+        self.assertGreater(prepare_timeout, 2 * build_timeout + 2 * (30 + 10))
+        for step in steps:
+            if "python3 scripts/run-native-plan-stage.py" in step:
+                command_timeout = int(re.search(r"--timeout-secs (\d+)", step).group(1))
+                actions_timeout = int(re.search(r"timeout-minutes: (\d+)", step).group(1)) * 60
+                self.assertGreater(actions_timeout, command_timeout + 30 + 5 + 15)
+        for stage, checkpoint in (
+            (compile_step, "Retain native planning compilation evidence"),
+            (prepare_step, "Retain native planning preparation evidence"),
+            (execution_step, "Retain native planning execution evidence before the next stage"),
+        ):
+            retained = steps[steps.index(stage) + 1]
+            self.assertIn(checkpoint, retained)
+            self.assertIn("if: always()", retained)
+            self.assertIn("target/native-plan-logs", retained)
+            self.assertIn("target/bytecode-v1-fixtures/owner-runner/logs", retained)
+        self.assertIn("python3 -B scripts/tests/test_native_plan_stage.py", NATIVE)
 
     def test_native_metadata_subprocess_contracts_run_before_generation(self):
         steps = job_steps(NATIVE, "native-plan")
@@ -327,7 +369,7 @@ class FullWorkflowContractTests(unittest.TestCase):
             r"--test native_generated_end_to_end",
             FULL,
         )
-        self.assertEqual(len(generated_commands), 4)
+        self.assertEqual(len(generated_commands), 5)
 
         windows = job_block(FULL, "native-windows")
         self.assertNotIn("actor-alpha", windows)
@@ -338,6 +380,15 @@ class FullWorkflowContractTests(unittest.TestCase):
         )
         self.assertIn("Validate Windows owner-process containment", windows)
         self.assertIn("--test isolated_process -- --nocapture", windows)
+        qualification = "Compile required Windows owner-helper consumers"
+        self.assertIn(qualification, windows)
+        for command in (
+            "cargo +nightly-2026-03-03 test --locked --offline -p mech-build --test isolated_process --no-run",
+            "cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end --no-run",
+        ):
+            self.assertIn(command, windows)
+            self.assertLess(windows.index(command), windows.index("Validate Windows owner-process containment"))
+            self.assertLess(windows.index(command), windows.index("Build selected native fixture families"))
         self.assertIn('#![cfg(feature = "full-hosts")]', NATIVE_GENERATED_END_TO_END)
         self.assertIn("assert_eq!(", NATIVE_GENERATED_END_TO_END)
         self.assertIn("matched, requested", NATIVE_GENERATED_END_TO_END)
@@ -346,7 +397,8 @@ class FullWorkflowContractTests(unittest.TestCase):
             NATIVE_PLANNING,
         )
         native = job_block(NATIVE, "native-plan")
-        self.assertIn("--all-features --test planning -- --nocapture", native)
+        self.assertIn("--test planning --no-run --message-format=json-render-diagnostics", native)
+        self.assertIn("--stage 02-planning-execution", native)
 
         engine = job_block(FULL, "native-engine")
         grouped = (

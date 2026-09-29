@@ -1129,6 +1129,16 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      - name: Compile required Windows owner-helper consumers
+        shell: pwsh
+        run: |
+          # Compile each required consumer with its execution feature selection.
+          # isolated_process permits unused support APIs; the ordinary fixture
+          # target must independently satisfy the warning policy.
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --test isolated_process --no-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-build --features full-hosts --test native_generated_end_to_end --no-run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Validate Windows owner-process containment
         shell: pwsh
         run: cargo +nightly-2026-03-03 test --locked -p mech-build --test isolated_process -- --nocapture
